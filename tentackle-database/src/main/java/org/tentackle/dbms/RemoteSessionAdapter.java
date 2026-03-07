@@ -18,17 +18,15 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.dbms.rmi.RemoteDbSession;
+import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.log.Logger;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.RemoteSession;
 import org.tentackle.session.SessionInfo;
 
-import java.rmi.RemoteException;
-
 /**
- * Adapter for a remote session.<br>
- * Hides the RMI stuff.
+ * Adapter for a {@link RemoteDbSession}.<br>
+ * This hides the remote session and allows extensions independent of the
+ * concrete remote session implementation.
  *
  * @author harald
  */
@@ -45,7 +43,6 @@ public class RemoteSessionAdapter implements RemoteSession {
     this.rs = rs;
   }
 
-
   /**
    * Gets the remote db session object.
    *
@@ -55,46 +52,24 @@ public class RemoteSessionAdapter implements RemoteSession {
     return rs;
   }
 
-
   @Override
   public SessionInfo getClientSessionInfo() {
-    try {
-      return rs.getClientSessionInfo();
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    return rs.getClientSessionInfo();
   }
-
 
   @Override
   public void log(Logger.Level level, String message) {
-    try {
-      rs.log(null, level, message);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    rs.log(null, level, message);
   }
 
   @Override
   public void log(String name, Logger.Level level, String message) {
-    try {
-      rs.log(name, level, message);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    rs.log(name, level, message);
   }
 
   @Override
   public void logStatistics(Logger.Level level, boolean clear) {
-    try {
-      rs.logStatistics(level, clear);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    rs.logStatistics(level, clear);
   }
 
 }

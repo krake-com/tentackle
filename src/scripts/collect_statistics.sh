@@ -10,7 +10,7 @@ Collects statistics information from a Tentackle log file, tab separated to stdo
 OPTIONS:
    -t           collect transaction statistics
    -s           collect sql statistics
-   -r           collect rmi statistics
+   -r           collect trip statistics
    -p           collect pdo statistics
    -o           collect operation statistics
    -n           use the locale's decimal point character (default is period)
@@ -37,7 +37,7 @@ do
         PATTERN="    >SQL-Stats: "
         ;;
         r)
-        PATTERN="    >RMI-Stats: "
+        PATTERN="    >TRP-Stats: "
         ;;
         p)
         PATTERN="    >PDO-Stats: "

@@ -27,6 +27,7 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
@@ -142,6 +143,13 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter(property = "jlinkTool")
   private File jlinkTool;
+
+  /**
+   * Extra jlink options.<br>
+   * Provided for platform-specific or hidden options, such as {@code --upgrade-files}.
+   */
+  @Parameter
+  private List<String> jlinkOptions;
 
   /**
    * The optional file holding the jlink options.<br>
@@ -636,7 +644,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   public File createZipFile(File dir, String name) throws MojoExecutionException {
     File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
-    zipArchiver.addDirectory(dir);
+    zipArchiver.addFileSet(DefaultFileSet.fileSet(dir).prefixed("")
+                                         .includeExclude(null, null)
+                                         .includeEmptyDirs(zipArchiver.getIncludeEmptyDirs()));
     zipArchiver.setDestFile(zipFile);
     try {
       zipArchiver.createArchive();
@@ -739,6 +749,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
     if (noManPages) {
       jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+    }
+    if (jlinkOptions != null) {
+      jlinkOptions.forEach(jlinkRunner::arg);
     }
     result.generateJlinkModulePath(jlinkRunner);
     result.generateJlinkModules(jlinkRunner);

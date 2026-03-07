@@ -18,14 +18,15 @@
 
 package org.tentackle.fx.table;
 
+import org.tentackle.fx.ThemeUtilities;
+import org.tentackle.fx.component.FxTableView;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-
-import org.tentackle.fx.component.FxTableView;
 
 /**
  * A table displaying the totals of another table.<br>
@@ -42,6 +43,9 @@ public class TotalsTableView<S> extends FxTableView<S> {
    * Avoids public accessor methods in {@link FxTableView} because this is an implementation detail.
    */
   private static final String TOTALS_TABLE_VIEW_PROPERTY = "totals-table-view";
+
+  private static final String CSS_NAME = "totalstable.css";
+  private static final String STYLE_CLASS = "totalstable";
 
 
   /**
@@ -122,8 +126,8 @@ public class TotalsTableView<S> extends FxTableView<S> {
    */
   protected void applyCSS() {
     // the totals table uses its own CSS file that makes the header and horizontal scrollbar invisible
-    getStylesheets().addAll(TotalsTableView.class.getResource("totalstable.css").toExternalForm());
-    getStyleClass().add("totalstable");
+    getStylesheets().addAll(ThemeUtilities.getInstance().getResourceURL(TotalsTableView.class, CSS_NAME).toExternalForm());
+    getStyleClass().add(STYLE_CLASS);
   }
 
   /**

@@ -18,18 +18,21 @@
 
 package org.tentackle.session;
 
+import org.tentackle.trip.TripReferencable;
+
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * A master serial event containing a list of events.<br>
- * This event type is used, whenever there is more than one event pending for the client.
+ * This event type is used whenever there is more than one event pending for the client.
  * <p>
  * Important: adding an event should <em>only</em> be done via {@link #add(MasterSerialEvent)} and
  * no other method, because the other methods (such as addAll, addFirst, etc...) are not overridden
  * to check for {@link MasterSerialEvent#isOverridingOlderEvents()}!
  */
+@TripReferencable(TripReferencable.NEVER)
 public class MasterSerialListEvent extends ArrayList<MasterSerialEvent> implements MasterSerialEvent {
 
   @Serial
@@ -56,7 +59,7 @@ public class MasterSerialListEvent extends ArrayList<MasterSerialEvent> implemen
   @Override
   public boolean add(MasterSerialEvent event) {
     if (event.isOverridingOlderEvents()) {
-      // remove older such event, if any
+      // remove older event, if any.
       // since the list contains only very few elements, we can afford sequential scanning
       removeIf(event::isOverridingEvent);
     }

@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Application specific security manager.<br>
+ * Application-specific security manager.<br>
  * Implements the user to group relationship.
  */
 public class ${application}SecurityManager extends DefaultSecurityManager {

@@ -32,6 +32,7 @@ import org.tentackle.pdo.PersistentOperation;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.util.Collection;
@@ -40,13 +41,14 @@ import java.util.Objects;
 
 /**
  * A {@code AbstractPersistentOperation} provides methods that are not part of {@link PersistentOperation}s
- * and is associated to a {@link DomainContext}. Complex transactions are usually
- * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remote capable.
+ * and is associated to a {@link DomainContext}. Complex transactions usually are
+ * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remoting capable.
  *
  * @param <T> the PO class (interface)
  * @param <P> the operation implementation class
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)    // only proxies are referenced, not implementations
 public abstract class AbstractPersistentOperation<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
        extends AbstractDbOperation<P>
        implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T>, OperationMethodCacheProvider<T> {
@@ -56,7 +58,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
 
   private DomainContext context;                  // application domain context
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
-  private T operation;                            // the operation proxy instance this is a delegate for
+  private T operation;                            // operation proxy instance this is a delegate for
 
 
   /**
@@ -126,7 +128,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    */
   @Override
   public PersistentOperationClassVariables<T,P> getClassVariables() {
-    throw new PersistenceException("classvariables undefined for " + getClass());
+    throw new PersistenceException("class variables undefined for " + getClass());
   }
 
   @Override

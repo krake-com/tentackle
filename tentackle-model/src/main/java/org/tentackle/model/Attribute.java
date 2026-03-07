@@ -172,9 +172,9 @@ public interface Attribute extends ModelElement {
   boolean isEmbedded();
 
   /**
-   * Gets the name of the application specific type, if a Convertible type.
+   * Gets the name of the application-specific type, if a Convertible type.
    *
-   * @return the application specific type, never null or empty
+   * @return the application-specific type, never null or empty
    * @throws ModelException if this is not a Convertible type
    */
   String getApplicationTypeName() throws ModelException;
@@ -189,7 +189,7 @@ public interface Attribute extends ModelElement {
 
   /**
    * Gets the effective type exposed to the backend.<br>
-   * If this is an application specific type, the inner type will be returned.
+   * If this is an application-specific type, the inner type will be returned.
    *
    * @return the effective data type
    * @throws ModelException if model garbled

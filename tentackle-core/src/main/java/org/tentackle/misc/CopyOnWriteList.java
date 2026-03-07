@@ -82,6 +82,14 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
   }
 
   /**
+   * Creates a wrapper for an empty list.
+   */
+  public CopyOnWriteList() {
+    this(new ImmutableArrayList<>(), false, true);
+  }
+
+
+  /**
    * Gets the list.
    *
    * @return the original or cloned list

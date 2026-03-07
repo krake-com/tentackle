@@ -19,10 +19,15 @@
 
 package org.tentackle.reflect;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.TentackleRuntimeException;
+
+import java.lang.reflect.Constructor;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.fail;
 
 
 /**
@@ -55,45 +60,60 @@ public class ReflectionHelperTest {
 
   @Test
   public void testClassBaseName() {
-    Assert.assertEquals(ReflectionHelper.getClassBaseName(getClass().getName()), "ReflectionHelperTest");
+    assertEquals(ReflectionHelper.getClassBaseName(getClass().getName()), "ReflectionHelperTest");
   }
 
   @Test
   public void testPackageName() {
-    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test"),"aa.bb.cc");
-    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test$1"),"aa.bb.cc");
-    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.test"),"aa.bb.cc.test");
-    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Outer.Inner"),"aa.bb.cc");
-    Assert.assertEquals(ReflectionHelper.getPackageName("Blah"),"");
-    Assert.assertEquals(ReflectionHelper.getPackageName(""),"");
+    assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test"),"aa.bb.cc");
+    assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test$1"),"aa.bb.cc");
+    assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.test"),"aa.bb.cc.test");
+    assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Outer.Inner"),"aa.bb.cc");
+    assertEquals(ReflectionHelper.getPackageName("Blah"),"");
+    assertEquals(ReflectionHelper.getPackageName(""),"");
   }
 
   @Test
   public void testOutermostClassName() {
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Outer.Inner1.Inner2"),"aa.bb.cc.Outer");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah"),"aa.bb.cc.Blah");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$1"),"aa.bb.cc.Blah");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$$Lambda$1/2147972"),"aa.bb.cc.Blah");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc"),"aa.bb.cc");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc."),"aa.bb.cc.");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah"),"Blah");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah."),"Blah");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1.Inner2"),"Outer");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1$$Lambda$1/23231.Inner2"),"Outer");
-    Assert.assertEquals(ReflectionHelper.getOutermostClassName(""),"");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Outer.Inner1.Inner2"),"aa.bb.cc.Outer");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah"),"aa.bb.cc.Blah");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$1"),"aa.bb.cc.Blah");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$$Lambda$1/2147972"),"aa.bb.cc.Blah");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc"),"aa.bb.cc");
+    assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc."),"aa.bb.cc.");
+    assertEquals(ReflectionHelper.getOutermostClassName("Blah"),"Blah");
+    assertEquals(ReflectionHelper.getOutermostClassName("Blah."),"Blah");
+    assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1.Inner2"),"Outer");
+    assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1$$Lambda$1/23231.Inner2"),"Outer");
+    assertEquals(ReflectionHelper.getOutermostClassName(""),"");
   }
 
   @Test
   public void testGetValueByPath() {
-    Assert.assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
-    Assert.assertNull(ReflectionHelper.getValueByPath(this, "otherClass.myField"));
+    assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
+    assertNull(ReflectionHelper.getValueByPath(this, "otherClass.myField"));
 
     try {
       ReflectionHelper.getValueByPath(this, "otherClass.myField*");
-      Assert.fail("should have thrown a TentackleRuntimeException!");
+      fail("should have thrown a TentackleRuntimeException!");
     }
     catch (TentackleRuntimeException ex) {
       // fine
+    }
+  }
+
+  @Test
+  public void testCanonicalConstructor() {
+    record MyRecord(int myField, String myString) { }
+
+    try {
+      Constructor<MyRecord> constructor = ReflectionHelper.getCanonicalConstructor(MyRecord.class);
+      assertEquals(constructor.getParameterCount(), 2);
+      assertEquals(constructor.getParameterTypes()[0], int.class);
+      assertEquals(constructor.getParameterTypes()[1], String.class);
+    }
+    catch (TentackleRuntimeException ex) {
+      fail(ex.getMessage());
     }
   }
 

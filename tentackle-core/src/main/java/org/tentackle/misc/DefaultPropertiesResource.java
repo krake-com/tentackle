@@ -32,7 +32,7 @@ import java.util.Properties;
 @PropertiesResourceService    // defaults to priority 100
 public class DefaultPropertiesResource implements PropertiesResource {
 
-  private static final Logger LOG = Logger.get(DefaultPropertiesResource.class);
+  private static final Logger LOGGER = Logger.get(DefaultPropertiesResource.class);
 
   /**
    * Creates the default loader.
@@ -46,16 +46,16 @@ public class DefaultPropertiesResource implements PropertiesResource {
     try {
       try {
         FileHelper.loadProperties(name, false, properties);
-        LOG.fine("properties {0} loaded from file", name);
+        LOGGER.fine("properties {0} loaded from file", name);
       }
       catch (FileNotFoundException fx1) {
         try {
           // try as resource
           FileHelper.loadProperties(name, true, properties);
-          LOG.fine("properties {0} loaded from resource", name);
+          LOGGER.fine("properties {0} loaded from resource", name);
         }
         catch (FileNotFoundException fx2) {
-          LOG.fine("properties {0} not found: {1}, and {2}", name, fx1.getMessage(), fx2.getMessage());
+          LOGGER.fine("properties {0} not found: {1}, and {2}", name, fx1.getMessage(), fx2.getMessage());
           return false;
         }
       }

@@ -26,6 +26,7 @@ import org.tentackle.reflect.InterceptableMethod;
 import org.tentackle.reflect.InterceptableMethodInvoker;
 import org.tentackle.reflect.Mixin;
 import org.tentackle.session.Session;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -42,6 +43,7 @@ import java.util.List;
  * @param <T> the PDO type
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)
 public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implements InvocationHandler, Serializable {
 
   @Serial
@@ -110,18 +112,18 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
-
   private final Class<T> clazz;                                   // the pdo class
   private final Mixin<T,PersistentObject<T>> persistenceMixin;    // the persistence mixin
   private final Mixin<T,DomainObject<T>> domainMixin;             // the domain mixin
+
   private transient PdoMethodCache<T> methodCache;                // the method cache (not serialized!)
 
 
   /**
    * Creates an invocation handler.
    *
-   * @param persistenceMapper the classmapper for the persistence implementations
-   * @param domainMapper the classmapper for the domain implementations
+   * @param persistenceMapper the class mapper for the persistence implementations
+   * @param domainMapper the class mapper for the domain implementations
    * @param clazz the PDO declaring interface
    *
    * @throws ClassNotFoundException if no implementation found
@@ -133,6 +135,14 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
     domainMixin = new Mixin<>(domainMapper, clazz, DomainObject.class);
   }
 
+  /**
+   * No-args constructor provided for TRIP.
+   */
+  public PdoInvocationHandler() {
+    this.clazz = null;
+    this.persistenceMixin = null;
+    this.domainMixin = null;
+  }
 
 
   /**
@@ -159,7 +169,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   /**
    * Creates the delegates for the given proxy instance and the session.
    * <p>
-   * Note: The domain context must be set by the application!
+   * Note: The application must set the domain context!
    *
    * @param pdo the dynamic proxy instance
    * @param session the session
@@ -182,7 +192,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   /**
    * Creates the delegates for the given proxy instance and a persistence delegate.
    * <p>
-   * Note: The domain context must be set by the application!
+   * Note: The application must set the domain context!
    *
    * @param pdo the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate

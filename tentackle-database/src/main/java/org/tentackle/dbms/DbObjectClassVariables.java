@@ -18,7 +18,7 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
+import org.tentackle.dbms.trip.AbstractDbObjectRemoteDelegate;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
@@ -541,7 +541,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * If the remoteDelegateId is 0, it will be prepared
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote sessions.
-   * The RMI-server creates a delegate for each subclass of AbstractDbObject (DbObjectRemoteDelegateImpl resp.)
+   * The TRIP-server creates a delegate for each subclass of AbstractDbObject (DbObjectRemoteDelegateImpl resp.)
    *
    * @return the delegate id
    */

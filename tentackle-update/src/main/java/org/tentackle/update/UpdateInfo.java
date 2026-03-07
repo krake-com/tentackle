@@ -18,11 +18,11 @@
 
 package org.tentackle.update;
 
-import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.trip.ClientTransportCloseRequest;
+import org.tentackle.trip.TripDeduplicatable;
+import org.tentackle.trip.TripReferencable;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,23 +30,26 @@ import java.net.URL;
 
 /**
  * Update info sent back to the client.
+ * <p>
+ * Notice: no more encrypted since there is now the "tripe" protocol
+ * that should be used instead.
+ *
+ * @param version the new application version
+ * @param urlStr the string representation of the ZIP-file's URL
+ * @param checksum the checksum hash to verify the downloaded file
+ * @param size the size of the ZIP file
+ * @param updateExecutor the filename to execute to perform the update
+ *
+ * @see ClientInfo
+ * @see org.tentackle.trip.transport.EncryptedTransport
  */
-public class UpdateInfo implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  // transfer as strings because it may be encrypted
-  private final String version;
-  private final String url;
-  private final String checksum;
-  private final String size;
-  private final String updateExecutor;
-  private final boolean encrypted;
+@TripReferencable(TripReferencable.NEVER)
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+public record UpdateInfo(String version, String urlStr, String checksum, long size, String updateExecutor)
+       implements ClientTransportCloseRequest {
 
   /**
-   * Creates the update info.<br>
-   * The internal state is encrypted if a {@link Cryptor} is configured.
+   * Creates the update info.
    *
    * @param version the new application version
    * @param url the URL of the ZIP file the client must download
@@ -55,33 +58,7 @@ public class UpdateInfo implements Serializable {
    * @param updateExecutor the filename to execute to perform the update
    */
   public UpdateInfo(String version, URL url, String checksum, long size, String updateExecutor) {
-    Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
-      this.version = cryptor.encrypt64(version);
-      this.url = cryptor.encrypt64(url.toExternalForm());
-      this.checksum = cryptor.encrypt64(checksum);
-      this.size = cryptor.encrypt64(Long.toString(size));
-      this.updateExecutor = cryptor.encrypt64(updateExecutor);
-      encrypted = true;
-    }
-    else {
-      this.version = version;
-      this.url = url.toExternalForm();
-      this.checksum = checksum;
-      this.size = Long.toString(size);
-      this.updateExecutor = updateExecutor;
-      encrypted = false;
-    }
-  }
-
-  /**
-   * Gets the new application version.<br>
-   * Just an info that can be shown to the user.
-   *
-   * @return the new version
-   */
-  public String getVersion() {
-    return encrypted ? Cryptor.getInstance().decrypt64(version) : version;
+    this(version, url.toExternalForm(), checksum, size, updateExecutor);
   }
 
   /**
@@ -91,48 +68,19 @@ public class UpdateInfo implements Serializable {
    */
   public URL getUrl() {
     try {
-      return new URI(encrypted ? Cryptor.getInstance().decrypt64(url) : url).toURL();
+      return new URI(urlStr).toURL();
     }
     catch (URISyntaxException | MalformedURLException mx) {
       throw new TentackleRuntimeException(mx);
     }
   }
 
-  /**
-   * Gets the checksum hash to verify the download.
-   *
-   * @return the checksum hash
-   */
-  public String getChecksum() {
-    return encrypted ? Cryptor.getInstance().decrypt64(checksum) : checksum;
-  }
-
-  /**
-   * Gets the size of the ZIP file.
-   *
-   * @return the size
-   */
-  public long getSize() {
-    return Long.parseLong(encrypted ? Cryptor.getInstance().decrypt64(size) : size);
-  }
-
-  /**
-   * Gets the name of the file to perform the update.
-   *
-   * @return the updater, usually {@code "update.sh"} or {@code "update.cmd"}, depending on the platform
-   */
-  public String getUpdateExecutor() {
-    return encrypted ? Cryptor.getInstance().decrypt64(updateExecutor) : updateExecutor;
-  }
-
   @Override
-  public String toString() {
-    return "UpdateInfo{" +
-           "version='" + getVersion() + '\'' +
-           ", url=" + getUrl() +
-           ", checksum='" + getChecksum() + '\'' +
-           ", size=" + getSize() +
-           ", updateExecutor='" + getUpdateExecutor() + '\'' +
-           '}';
+  public boolean isCloseAllTransportsRequested() {
+    // Close the transport gracefully after having received the update info.
+    // This avoids nasty socket reset exceptions in the server when the client terminates
+    // after updating and restarts.
+    return true;
   }
+
 }

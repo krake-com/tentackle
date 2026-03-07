@@ -18,7 +18,7 @@ DMoney           total           total             sum (without tax)
 DMoney           tax             tax               tax (vat)
 Timestamp        printed         printed           first printed [utc, default 1970-01-01 00:00:00.000]
 Double(10,2)     someDouble      some_double       digits with scale
-MyType<int>      extra           extra             some application specific type
+MyType<int>      extra           extra             some application-specific type
 # some binary object
 Binary<Blah>     blah            blah
 Boolean          testBool        testbool          some boolean [default true]

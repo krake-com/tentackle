@@ -19,23 +19,20 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.Timestamp;
-
-import java.io.Serial;
-import java.io.Serializable;
-
+import org.tentackle.trip.TripDeduplicatable;
+import org.tentackle.trip.TripReferencable;
 
 /**
  * The edited-by token lock info.<br>
- * Holds the columns editedBy, editedSince and editedExpiry in one DTO.
+ * Holds the columns {@code editedBy}, {@code editedSince} and {@code editedExpiry} in one DTO.
  *
  * @param editedBy     the object ID of the user holding the token, 0 = unlocked
  * @param editedSince  the timestamp when editing started
- * @param editedExpiry the timestamp when token will expire
+ * @param editedExpiry the timestamp when the token will expire
  */
-public record TokenLockInfo(long editedBy, Timestamp editedSince, Timestamp editedExpiry) implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+@TripReferencable(TripReferencable.NEVER)
+public record TokenLockInfo(long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
 
   @Override
   public String toString() {

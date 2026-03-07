@@ -27,7 +27,7 @@ import java.io.Serializable;
  * The modification type.<br>
  * The default types are defined in {@link DbModificationType}, which is an enum.
  * Since enums cannot be extended, we're using this interface instead.
- * Application specific modification types can be introduced as follows:
+ * Application-specific modification types can be introduced as follows:
  * <ul>
  *   <li>create another enum implementing {@link ModificationType}.
  *   Make sure to use other character values than in {@link DbModificationType}!</li>

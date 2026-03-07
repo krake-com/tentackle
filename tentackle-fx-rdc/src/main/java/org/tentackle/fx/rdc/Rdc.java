@@ -53,7 +53,7 @@ public class Rdc {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modal true if modal mode
    * @return the crud controller
    */
@@ -177,8 +177,8 @@ public class Rdc {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
-   * @param owner the owner, null if none
+   * @param editable true if the user may edit the pdo, false if to view only
+   * @param owner the owner window, null if none
    */
   public static <T extends PersistentDomainObject<T>> void displayCrudStage(T pdo, boolean editable, Window owner) {
     displayCrudStage(pdo, null, editable, Modality.NONE, owner, null, null);
@@ -189,9 +189,9 @@ public class Rdc {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modality the modality
-   * @param owner the owner, null if none
+   * @param owner the owner window, null if none
    * @param updatedPdo the consumer for the possibly changed pdo if modal
    */
   public static <T extends PersistentDomainObject<T>> void displayCrudStage(
@@ -205,9 +205,9 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modality the modality
-   * @param owner the owner, null if none
+   * @param owner the owner window, null if none
    * @param updatedPdo the consumer for the possibly changed pdo if modal
    * @param configurator optional crud configurator
    */
@@ -218,12 +218,12 @@ public class Rdc {
 
   /**
    * Gets a CRUD for a PDO.<br>
-   * If the PDO is already being edited the corresponding stage will be brought to front and null is returned.
+   * If the PDO is already being edited, the corresponding stage will be brought to the front and null is returned.
    *
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modality the modality
    * @param owner the owner, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
@@ -239,11 +239,11 @@ public class Rdc {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @return the CRUD showing stage, null if there is no such stage
    */
-  public static <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
-    return RdcUtilities.getInstance().getCrud(pdo, editable);
+  public static <T extends PersistentDomainObject<T>> Stage getCrudStage(T pdo, boolean editable) {
+    return RdcUtilities.getInstance().getCrudStage(pdo, editable);
   }
 
   /**
@@ -251,8 +251,8 @@ public class Rdc {
    *
    * @param <T> the pdo type
    * @param pdo the pdo as a template
-   * @param owner the owner, null if none
-   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param owner the owner window, null if none
+   * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
    */
   public static <T extends PersistentDomainObject<T>> void displaySearchStage(
       T pdo, Window owner, boolean createPdoAllowed) {
@@ -265,8 +265,8 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo as a template
    * @param modality the modality
-   * @param owner the owner, null if none
-   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param owner the owner window, null if none
+   * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
    * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
    */
   public static <T extends PersistentDomainObject<T>> void displaySearchStage(
@@ -280,10 +280,10 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo as a template
    * @param modality the modality
-   * @param owner the owner, null if none
-   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param owner the owner window, null if none
+   * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
    * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
-   * @param configurator the optional configurator for the PdoSearch
+   * @param configurator the optional configurator for the {@link PdoSearch}
    */
   public static <T extends PersistentDomainObject<T>> void displaySearchStage(
                     T pdo, Modality modality, Window owner, boolean createPdoAllowed,
@@ -308,25 +308,26 @@ public class Rdc {
   /**
    * Shows the tree of a PDO in a modal scene.
    *
+   * @param owner the owner window or node
    * @param pdo the PDO
    * @param <T> the PDO type
    */
-  public static <T extends PersistentDomainObject<T>> void showTree(T pdo) {
-    RdcUtilities.getInstance().showTree(pdo);
+  public static <T extends PersistentDomainObject<T>> void showTree(Object owner, T pdo) {
+    RdcUtilities.getInstance().showTree(owner, pdo);
   }
 
   /**
-   * Shows a question dialog whether to save, discard or cancel editing of a PDO.
+   * Shows a question dialog whether to save, discard, or cancel editing of a PDO.
    *
    * @param owner the owner window or node
-   * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
+   * @param doIt consumer invoked with true to save, false to discard changes, null to cancel, and do nothing
    */
   public static void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
     RdcUtilities.getInstance().showSaveDiscardCancelDialog(owner, doIt);
   }
 
   /**
-   * Closes the stage hierarchy of given node, except the main stage.
+   * Closes the stage hierarchy of the given node, except the main stage.
    *
    * @param node the node
    */
@@ -352,7 +353,7 @@ public class Rdc {
    * </pre>
    *
    * @param <V>      the type returned by the runner
-   * @param node     the optional node this background task is related to, null if none
+   * @param node     optional node this background task is related to, null if none
    * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue
    * @param failedUI optional UI updater invoked if execution failed
@@ -367,7 +368,7 @@ public class Rdc {
    * The exception is shown as an error dialog.
    *
    * @param <V>      the type returned by the runner
-   * @param node     the optional node this background task is related to, null if none
+   * @param node     optional node this background task is related to, null if none
    * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue
    */
@@ -378,7 +379,7 @@ public class Rdc {
   /**
    * Runs some code in another thread.
    *
-   * @param node   the optional node this background task is related to, null if none
+   * @param node   optional node this background task is related to, null if none
    * @param runner the code running in another thread in parallel to the FX thread
    * @see #bg(Node, Supplier, Consumer)
    */

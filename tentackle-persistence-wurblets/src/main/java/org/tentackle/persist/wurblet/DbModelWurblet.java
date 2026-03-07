@@ -1084,7 +1084,7 @@ public class DbModelWurblet extends ModelWurblet {
       else {
         buf.append(")");
       }
-      // for multi-column types, such as BMoney (not application specific types)
+      // for multi-column types, such as BMoney (not application-specific types)
       if (dataType.isColumnCountBackendSpecific()) {
         throw new WurbelException("backend-specific datatype " + dataType + " cannot be used in where-clauses");
       }
@@ -1410,7 +1410,7 @@ public class DbModelWurblet extends ModelWurblet {
 
   /**
    * Creates java code applicable to the application model from JDBC variable access code.<br>
-   * Applies .toInternal() if attribute is an application specific type.
+   * Applies .toInternal() if attribute is an application-specific type.
    * Otherwise, jdbcCode is returned unchanged.
    *
    * @param attribute the attribute
@@ -1434,7 +1434,7 @@ public class DbModelWurblet extends ModelWurblet {
 
   /**
    * Creates java code applicable to the JDBC layer from model variable access code.<br>
-   * Applies .toExternal() if attribute is an application specific type.
+   * Applies .toExternal() if the attribute is an application-specific type.
    * Otherwise, modelCode is returned unchanged.
    *
    * @param attribute the attribute

@@ -313,9 +313,9 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
 
   /**
-   * Sets the application specific type if Convertible.
+   * Sets the application-specific type if Convertible.
    *
-   * @param applicationTypeName the name of the application specific type
+   * @param applicationTypeName the name of the application-specific type
    */
   public void setApplicationTypeName(String applicationTypeName) {
     this.applicationTypeName = applicationTypeName;
@@ -325,11 +325,11 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   public String getApplicationTypeName() throws ModelException {
     if (isConvertible()) {
       if (StringHelper.isAllWhitespace(applicationTypeName)) {
-        throw createModelException("application specific type not set");
+        throw createModelException("application-specific type not set");
       }
     }
     else  {
-      throw createModelException("application specific type not supported for " + dataType);
+      throw createModelException("application-specific type not supported for " + dataType);
     }
     return applicationTypeName;
   }

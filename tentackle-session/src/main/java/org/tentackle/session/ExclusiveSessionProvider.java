@@ -25,9 +25,6 @@ package org.tentackle.session;
  * Once a session is requested, it cannot be requested by any other thread
  * until it is released. If a thread requests a session more than once,
  * it must release it the appropriate number of times until it gets released.
- * <p>
- * Notice the difference to the {@link ReturnableSessionProvider}, which provides
- * access to a pool of sessions.
  *
  * @author harald
  */

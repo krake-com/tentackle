@@ -21,17 +21,14 @@ package org.tentackle.update;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+import org.tentackle.trip.Transport;
+import org.tentackle.trip.TransportManager;
+import org.tentackle.trip.TripRuntimeException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.rmi.AlreadyBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
 
 interface ServerUpdateUtilitiesHolder {
   ServerUpdateUtilities INSTANCE = ServiceFactory.createService(ServerUpdateUtilities.class, ServerUpdateUtilities.class);
@@ -42,6 +39,8 @@ interface ServerUpdateUtilitiesHolder {
  */
 @Service(ServerUpdateUtilities.class)
 public class ServerUpdateUtilities {
+
+  private static final Logger LOGGER = Logger.get(ServerUpdateUtilities.class);
 
   /**
    * The singleton.
@@ -61,73 +60,44 @@ public class ServerUpdateUtilities {
   }
 
   /**
-   * Creates a registry and exports the update service.
-   * <p>
-   * Notice: either both csf and ssf must be given or none.
+   * Starts the update service.
    *
-   * @param serviceUrlName the rmi service url, ex. {@code "rmi://localhost/Update:33002"}
+   * @param serviceUrlName the update service url, ex. {@code "trip://localhost/Update:33001"}
    * @param updateUrlName the URL base holding the downloads, ex. {@code "http://localhost/myapp/downloads"}
    * @param updateServiceImplClass the class implementing the remote {@link UpdateService}
-   * @param csf the client socket factory, null if system default
-   * @param ssf the server socket factory, null if system default
    */
-  public void exportUpdateService(String serviceUrlName, String updateUrlName, Class<? extends UpdateService> updateServiceImplClass,
-                                  RMIClientSocketFactory csf, RMIServerSocketFactory ssf) {
+  public void startUpdateService(String serviceUrlName, String updateUrlName, Class<? extends UpdateService> updateServiceImplClass) {
+    URI uri = URI.create(serviceUrlName);
+    LOGGER.info("starting update service " + uri);
     try {
-      URI uri = new URI(serviceUrlName);
-      int port = uri.getPort();
-      Registry updateRegistry = csf != null && ssf != null ?
-                                LocateRegistry.createRegistry(port, csf, ssf) : LocateRegistry.createRegistry(port);
-      String uriPath = uri.getPath();
-      String serviceName = uriPath.startsWith("/") ? uriPath.substring(1) : uriPath;
-      updateRegistry.bind(serviceName, createUpdateServiceImpl(updateServiceImplClass, port, updateUrlName, csf, ssf));
+      Transport transport = TransportManager.getInstance().requestTransport(uri);
+      if (!transport.isAccepting()) {
+        // new transport
+        transport.accept();
+      }
+      UpdateService updateService = createUpdateServiceImpl(updateServiceImplClass, updateUrlName);
+      transport.getRegistry().register(updateService, uri.getPath());
     }
-    catch (URISyntaxException e) {
-      throw new TentackleRuntimeException("malformed updateService URL '" + serviceUrlName + "'", e);
-    }
-    catch (RemoteException e) {
-      throw new TentackleRuntimeException("cannot create update service", e);
-    }
-    catch (AlreadyBoundException e) {
-      throw new TentackleRuntimeException("cannot bind update registry", e);
+    catch (TripRuntimeException tx) {
+      throw new TripRuntimeException("cannot start update service " + uri, tx);
     }
   }
 
-  /**
-   * Creates a registry and exports the update service using default socket factories.
-   *
-   * @param serviceUrlName the rmi service url, ex. {@code "rmi://localhost/Update:33002"}
-   * @param updateUrlName the URL base holding the downloads, ex. {@code "http://localhost/myapp/downloads"}
-   * @param updateServiceImplClass the class implementing the remote {@link UpdateService}
-   */
-  public void exportUpdateService(String serviceUrlName, String updateUrlName, Class<? extends UpdateService> updateServiceImplClass) {
-    exportUpdateService(serviceUrlName, updateUrlName, updateServiceImplClass, null, null);
-  }
 
   /**
    * Creates the update service implementation.<br>
-   * Invoked by {@link #exportUpdateService(String, String, Class, RMIClientSocketFactory, RMIServerSocketFactory)}.
    *
    * @param updateServiceImplClass the class implementing the remote {@link UpdateService}
-   * @param port the ip port
    * @param updateUrlName the download base URL
-   * @param csf the client socket factory, null if system default
-   * @param ssf the server socket factory, null if system default
    * @return the service implementation
    */
-  protected UpdateService createUpdateServiceImpl(Class<? extends UpdateService> updateServiceImplClass, int port, String updateUrlName,
-                                                  RMIClientSocketFactory csf, RMIServerSocketFactory ssf) {
+  protected UpdateService createUpdateServiceImpl(Class<? extends UpdateService> updateServiceImplClass, String updateUrlName) {
     try {
-      if (csf != null && ssf != null) {
-        Constructor<? extends UpdateService> constructor = updateServiceImplClass.getConstructor(Integer.TYPE, String.class, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
-        return constructor.newInstance(port, updateUrlName, csf, ssf);
-      }
-      else {
-        Constructor<? extends UpdateService> constructor = updateServiceImplClass.getConstructor(Integer.TYPE, String.class);
-        return constructor.newInstance(port, updateUrlName);
-      }
+        Constructor<? extends UpdateService> constructor = updateServiceImplClass.getConstructor(String.class);
+        return constructor.newInstance(updateUrlName);
     }
-    catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+           NoSuchMethodException ex) {
       throw new TentackleRuntimeException("cannot create update service " + updateServiceImplClass.getName(), ex);
     }
   }

@@ -88,6 +88,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("filter", "mdi2f-filter-outline");
     nm.put("generate", "mdi2c-cog");
     nm.put("help", "mdi2h-help");
+    nm.put("hide", "mdi2e-eye-off");
     nm.put("id", "mdi2i-id-card");
     nm.put("login", "mdi2l-login");
     nm.put("new", "mdi2s-shape-rectangle-plus");
@@ -103,6 +104,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("session", "mdi2l-lan-connect");
     nm.put("subtract", "mdi2m-minus");
     nm.put("table", "mdi2t-table");
+    nm.put("theme", "mdi2t-theme-light-dark");
     nm.put("tree", "mdi2f-file-tree");
     nm.put("unchecked", "mdi2c-checkbox-blank-outline");
     nm.put("unknown", "mdi2h-help-circle-outline");

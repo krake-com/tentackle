@@ -22,7 +22,7 @@ import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.i18n.pdo.rmi.StoredBundleRemoteDelegate;
+import org.tentackle.i18n.pdo.trip.StoredBundleRemoteDelegate;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -36,7 +36,6 @@ import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.Join;
 import org.tentackle.persist.JoinedSelect;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
@@ -46,7 +45,6 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -280,14 +278,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public StoredBundle selectByUniqueDomainKey(String name, String locale) {
     if (getSession().isRemote())  {
-      try {
-        StoredBundle obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name, locale);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      StoredBundle obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name, locale);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_UNIQUE_DOMAIN_KEY_STMT,
       b -> {
@@ -585,14 +578,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   public StoredBundle selectByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk) {
     StoredBundle obj;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, udk);
-        configureRemoteObject(context, obj);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, udk);
+      configureRemoteObject(context, obj);
     }
     else {
       obj = me().findByUniqueDomainKey(udk);
@@ -619,14 +607,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public TrackedList<StoredBundle> findByName(String name) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<StoredBundle> list = getRemoteDelegate().findByName(getDomainContext(), name);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<StoredBundle> list = getRemoteDelegate().findByName(getDomainContext(), name);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(
@@ -666,14 +649,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public StoredBundle findByNameAndLocale(String name, String locale) {
     if (getSession().isRemote())  {
-      try {
-        StoredBundle obj = getRemoteDelegate().findByNameAndLocale(getDomainContext(), name, locale);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      StoredBundle obj = getRemoteDelegate().findByNameAndLocale(getDomainContext(), name, locale);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(

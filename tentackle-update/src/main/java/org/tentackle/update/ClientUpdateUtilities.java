@@ -24,6 +24,9 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+import org.tentackle.trip.Transport;
+import org.tentackle.trip.TransportManager;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -32,17 +35,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.RMIClientSocketFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
@@ -57,6 +54,8 @@ interface ClientUpdateUtilitiesHolder {
  */
 @Service(ClientUpdateUtilities.class)
 public class ClientUpdateUtilities {
+
+  private static final Logger LOGGER = Logger.get(ClientUpdateUtilities.class);
 
   /**
    * The singleton.
@@ -103,7 +102,7 @@ public class ClientUpdateUtilities {
   /**
    * Checks whether the application is running in an updatable jlink directory.
    *
-   * @return true if current working directory contains an updatable jlink image
+   * @return true if the current working directory contains an updatable jlink image
    */
   public boolean isUpdateableJlinkApplication() {
     return isUpdatableJlinkDirectory(new File("."));
@@ -187,32 +186,19 @@ public class ClientUpdateUtilities {
   /**
    * Gets the remote update service object.
    *
-   * @param serviceName the service name, for ex. {@code "rmi://localhost/Update:33002"}
-   * @param csf the optional socket factory, null if default
+   * @param serviceName the service name, for ex. {@code "trip://localhost/Update:33001"}
    * @return the update service
    */
-  public UpdateService getUpdateService(String serviceName, RMIClientSocketFactory csf) {
+  public UpdateService getUpdateService(String serviceName) {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      serviceName = cryptor.deriveURL(serviceName, new String[]{"http:", "https:"});
+      serviceName = cryptor.deriveURL(serviceName, "http:", "https:", "rmi:");
     }
-
-    try {
-      URI uri = new URI(serviceName);
-      String host = uri.getHost();
-      int port = uri.getPort();
-      String path = uri.getPath();
-      if (path.startsWith("/")) {
-        path = path.substring(1);
-      }
-      Registry registry = LocateRegistry.getRegistry(host, port, csf);
-      return (UpdateService) registry.lookup(path);
-    }
-    catch (RemoteException | URISyntaxException | NotBoundException nx) {
-      throw new TentackleRuntimeException("cannot connect to update service '" + serviceName + "'", nx);
-    }
+    URI uri = URI.create(serviceName);
+    Transport transport = TransportManager.getInstance().requestTransport(uri);
+    LOGGER.info("connecting to {0}", transport);
+    return transport.lookup(UpdateService.class, uri.getPath());
   }
-
 
   /**
    * Gets the message digest to create the checksum of the downloaded zip file.
@@ -224,7 +210,6 @@ public class ClientUpdateUtilities {
     return MessageDigest.getInstance("SHA-256");
   }
 
-
   /**
    * Downloads the zip-file.
    *
@@ -235,7 +220,7 @@ public class ClientUpdateUtilities {
    */
   public File downloadZip(UpdateInfo updateInfo, File updateDir, Consumer<Double> progressConsumer) {
     try {
-      // create or re-create update directory (must be empty!)
+      // create or re-create the update directory (must be empty!)
       if (!updateDir.mkdir()) {
         FileHelper.removeDirectory(updateDir.getName());
         if (!updateDir.mkdir()) {
@@ -253,7 +238,7 @@ public class ClientUpdateUtilities {
 
       // download the ZIP file into the update directory
       try (ReadableByteChannel readableByteChannel = new CallbackReadableByteChannel(
-               Channels.newChannel(updateInfo.getUrl().openStream()), updateInfo.getSize(), progressConsumer);
+               Channels.newChannel(updateInfo.getUrl().openStream()), updateInfo.size(), progressConsumer);
            FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
            FileChannel fileChannel = fileOutputStream.getChannel()) {
 
@@ -269,7 +254,7 @@ public class ClientUpdateUtilities {
           digest.update(buffer, 0, count);
         }
       }
-      String expectedChecksum = updateInfo.getChecksum();
+      String expectedChecksum = updateInfo.checksum();
       String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedChecksum.length(), '0');
       if (!foundChecksum.equals(expectedChecksum)) {
         throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);

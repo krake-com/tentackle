@@ -46,7 +46,7 @@ import java.util.StringTokenizer;
 @Service(SecurityFactory.class)
 public class DefaultSecurityFactory implements SecurityFactory {
 
-  private static final Logger LOG = Logger.get(DefaultSecurityFactory.class);
+  private static final Logger LOGGER = Logger.get(DefaultSecurityFactory.class);
 
   private final SecurityManager securityManager;                                      // the manager singleton
   private final Map<String, Class<? extends Permission>> permissionInterfacesByName;  // permission interfaces by name
@@ -218,7 +218,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
       // accidentally passed BlahPermissionImpl.class instead of BlahPermission.class ?
       permission = (T) permissionsByClass.get(iFace);
       if (permission != null) {
-        LOG.warning("passed {0} instead of its interface! please fix that!", iFace);
+        LOGGER.warning("passed {0} instead of its interface! please fix that!", iFace);
       }
     }
     if (permission == null) {

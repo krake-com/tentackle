@@ -54,7 +54,7 @@ public class DiagnosticUtilities {
     return DiagnosticUtilitiesHolder.INSTANCE;
   }
 
-  private static final Logger LOG = Logger.get(DiagnosticUtilities.class);
+  private static final Logger LOGGER = Logger.get(DiagnosticUtilities.class);
 
   private final AtomicLong dumpCount;       // dump counter
 
@@ -101,7 +101,7 @@ public class DiagnosticUtilities {
    * @param message the header message
    */
   public void logStackDump(Logger.Level level, String message) {
-    LOG.log(level, null, () -> message + createStackDump());
+    LOGGER.log(level, null, () -> message + createStackDump());
   }
 
 

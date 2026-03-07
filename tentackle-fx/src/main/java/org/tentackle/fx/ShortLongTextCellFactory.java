@@ -18,6 +18,8 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.misc.ShortLongText;
+
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -26,9 +28,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-
-import org.tentackle.misc.ShortLongText;
-
 import java.util.List;
 
 /**
@@ -36,12 +35,13 @@ import java.util.List;
  */
 public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
-  private static final double GRID_GAP = 20.0;  // visual gap between short and long text columns
+  private static final double GRID_GAP = 20.0;      // visual gap between short and long text columns
+  private static final double FONT_PADDING = 2.0;   // extra passing to avoid dots due to rounding errors
 
-  private boolean listenerPending = true;       // true if add listener to check if popup closed
-  private boolean widthPending;                 // true if (re-)compute widths
-  private double shortWidth;                    // width for the short text column
-  private double longWidth;                     // width for the long text column
+  private boolean listenerPending = true;           // true if add listener to check if the popup was closed
+  private boolean widthPending;                     // true if (re-)compute widths
+  private double shortWidth;                        // width for the short text column
+  private double longWidth;                         // width for the long text column
 
   /**
    * Creates the short/long-text cell factory.
@@ -54,7 +54,7 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
   public ListCell<T> call(ListView<T> listView) {
 
     if (listenerPending) {
-      listView.focusedProperty().addListener((observable, oldValue, newValue) -> {
+      listView.focusedProperty().addListener((_, oldValue, _) -> {
         if (oldValue) {   // was focused and is now unfocused (popup hidden)
           widthPending = true;
         }
@@ -80,7 +80,7 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
         }
         else {
           if (widthPending) {
-            computeWidths(getFont(), listView.getItems());
+            computeWidths(ThemeUtilities.getInstance().getDefaultFont(), listView.getItems());
             widthPending = false;
           }
           if (gridPane == null) {
@@ -174,6 +174,8 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
         shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
       }
     }
+    shortWidth += FONT_PADDING;
+    longWidth += FONT_PADDING;
   }
 
 }

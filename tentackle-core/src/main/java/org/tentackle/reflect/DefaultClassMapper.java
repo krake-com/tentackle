@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A default implementation of a classmapper.<br>
+ * A default implementation of a class mapper.<br>
  * The map is either initialized from a map or a {@link Properties}-object which in turn
  * could be loaded from a properties file, an XML-file or constructed at runtime.
  *
@@ -138,7 +138,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * @param name the class name
    * @param lenient true if try superclasses/interfaces
    * @return the mapped class, never null
-   * @throws ClassNotFoundException if no mapping or mapped classname not found
+   * @throws ClassNotFoundException if no mapping found
    */
   private Class<?> mapClass(String name, boolean lenient) throws ClassNotFoundException {
     Class<?> clazz = classMap.get(name);
@@ -186,7 +186,18 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
 
   @Override
   public Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException {
-    return mapLenient(clazz.getCanonicalName());
+    String name;
+    if (clazz.getEnclosingClass() != null && clazz.isMemberClass()) {
+      name = clazz.getName();   // inner class must keep the $xxx to be loadable by Class.forName()
+    }
+    else {
+      name = clazz.getCanonicalName();
+      if (name == null) {
+        // local class (or anonymous or hidden -> useless but better than null name)
+        name = clazz.getName();
+      }
+    }
+    return mapLenient(name);
   }
 
   @Override

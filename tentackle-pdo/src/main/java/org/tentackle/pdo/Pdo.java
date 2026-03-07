@@ -451,7 +451,7 @@ public class Pdo {
 
   /**
    * Removes all objects in ALL caches that refer to a given session.<br>
-   * Useful after having closed a session in an RMI-Server, for example.
+   * Useful after having closed a session in a TRIP-Server, for example.
    *
    * @param session the session (probably closed)
    */
@@ -580,7 +580,7 @@ public class Pdo {
    * @return the domain context
    */
   public static DomainContext createDomainContext() {
-    return DomainContextFactory.getInstance().create((Session) null);
+    return DomainContextFactory.getInstance().create();
   }
 
 

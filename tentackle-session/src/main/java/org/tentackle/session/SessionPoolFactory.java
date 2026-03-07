@@ -20,9 +20,11 @@ package org.tentackle.session;
 
 import org.tentackle.common.ServiceFactory;
 
+
 interface SessionPoolFactoryHolder {
   SessionPoolFactory INSTANCE = ServiceFactory.createService(SessionPoolFactory.class);
 }
+
 
 /**
  * Factory for session pools.
@@ -42,29 +44,31 @@ public interface SessionPoolFactory {
    * Creates a single-user session pool.
    *
    * @param name the name of the pool
-   * @param session the lead session to get the configuration from (session info, implementation specific stuff)
-   * @param iniSize the initial pool size
-   * @param incSize the number of sessions to enlarge the pool if all in use
-   * @param minSize the minimum number of sessions to keep in pool, &lt; 0 to shut down pool if all sessions closed
-   * @param maxSize the maximum number of sessions, 0 = unlimited
-   * @param maxIdleMinutes the idle timeout in minutes to close unused sessions, 0 = unlimited
-   * @param maxUsageMinutes the max. used time in minutes, 0 = unlimited
+   * @param session the lead session to get the configuration from
+   * @param initialSize the initial pool size
+   * @param incrementSize the number of sessions to enlarge the pool if all in use
+   * @param minimumSize the minimum number of sessions to keep in pool, &lt; 0 to shut down pool if all sessions closed
+   * @param maximumSize the maximum number of sessions, 0 = unlimited
+   * @param idleMinutes the idle timeout in minutes to close unused sessions, 0 = unlimited
+   * @param usageMinutes the max. used time in minutes, 0 = unlimited
    * @return the pool
    */
   SessionPool create(String name, Session session,
-                     int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes);
+                     int initialSize, int incrementSize, int minimumSize, int maximumSize,
+                     long idleMinutes, long usageMinutes);
 
   /**
    * Creates a multi-user session pool.
    *
-   * @param name            the name of the pool
-   * @param session         the lead session to get the low-level configuration from (backend info, implementation specific stuff)
-   * @param maxSize         the maximum number of sessions per session info
-   * @param maxTotalSize    the maximum total number of sessions
-   * @param maxIdleMinutes  the idle timeout in minutes to close unused sessions per session info, 0 = unlimited
-   * @param maxUsageMinutes the max. used time in minutes per session info, 0 = unlimited
+   * @param name the name of the pool
+   * @param session the lead session to get the low-level configuration from
+   * @param maximumSize the maximum number of sessions per session info
+   * @param maximumTotalSize the maximum total number of sessions
+   * @param idleMinutes the idle timeout in minutes to close unused sessions per session info, 0 = unlimited
+   * @param usageMinutes the max. used time in minutes per session info, 0 = unlimited
    * @return the pool
    */
-  MultiUserSessionPool create(String name, Session session, int maxSize, int maxTotalSize, long maxIdleMinutes, long maxUsageMinutes);
+  MultiUserSessionPool create(String name, Session session, int maximumSize, int maximumTotalSize,
+                              long idleMinutes, long usageMinutes);
 
 }

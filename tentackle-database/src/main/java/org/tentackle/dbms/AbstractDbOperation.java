@@ -18,7 +18,7 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
+import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionDependable;
@@ -57,7 +57,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Creates an operation object not associated to a session.<br>
+   * Creates an operation object not associated with a session.<br>
    * The session must be set via {@link #setSession} in order to use it.
    */
   public AbstractDbOperation() {

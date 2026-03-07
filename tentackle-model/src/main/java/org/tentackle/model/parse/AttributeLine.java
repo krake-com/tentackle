@@ -61,7 +61,7 @@ import java.util.StringTokenizer;
  * DMoney           tax             tax               tax (vat)
  * Timestamp        printed         printed           first printed
  * Double(10,2)     someDouble      some_double       digits with scale
- * MyType&lt;int&gt;      extra           extra             some application specific type
+ * MyType&lt;int&gt;      extra           extra             some application-specific type
  * </pre>
  *
  * @author harald
@@ -71,7 +71,7 @@ public class AttributeLine extends SingleLine {
   /** Java model type. */
   private String javaType;
 
-  /** additional generic/application specific type. */
+  /** additional generic/application-specific type. */
   private String innerType;
 
   /** limited size (e.g. for varchars). */

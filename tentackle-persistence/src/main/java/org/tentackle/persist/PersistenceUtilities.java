@@ -26,7 +26,7 @@ import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbUtilities;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -139,7 +139,7 @@ public class PersistenceUtilities extends DbUtilities {
 
   @Override
   public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
-    if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // cleanup tokens only once for the main session
+    if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // clean up tokens only once for the main session
       LockManager.getInstance().cleanupUserTokens(remoteSession.getSession(), remoteSession.getClientSessionInfo().getUserId());
     }
   }

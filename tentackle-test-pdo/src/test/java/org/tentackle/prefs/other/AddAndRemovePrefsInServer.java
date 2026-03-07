@@ -24,10 +24,10 @@ import org.tentackle.common.Version;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
 import org.tentackle.dbms.prefs.DbPreferencesNode;
-import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
-import org.tentackle.dbms.rmi.RemoteDbSession;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.dbms.rmi.RmiServer;
+import org.tentackle.dbms.trip.RemoteDbConnectionImpl;
+import org.tentackle.dbms.trip.RemoteDbSession;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.TripServer;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
@@ -38,11 +38,9 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.Transport;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
 import java.util.prefs.BackingStoreException;
 
 /**
@@ -59,17 +57,13 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
    */
   public static class ConnectionImpl extends RemoteDbConnectionImpl {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-
-    public ConnectionImpl(RmiServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
-           throws RemoteException {
-      super(server, port, csf, ssf);
+    public ConnectionImpl(TripServer server, Transport transport) {
+      super(server, transport);
     }
 
     @Override
-    public RemoteDbSession createSession(SessionInfo clientInfo) throws RemoteException {
-      return new SessionImpl(this, clientInfo, getRmiServer().getSessionInfo().clone());
+    public RemoteDbSession createSession(SessionInfo clientInfo) {
+      return new SessionImpl(this, clientInfo, getServer().getSessionInfo().clone());
     }
   }
 

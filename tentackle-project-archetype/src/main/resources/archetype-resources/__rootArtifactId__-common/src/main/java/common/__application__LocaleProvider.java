@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Application specific locale provider.
+ * Application-specific locale provider.
  * <p>
  * Narrows the locales to their languages.<br>
  * The default language is "en".<br>

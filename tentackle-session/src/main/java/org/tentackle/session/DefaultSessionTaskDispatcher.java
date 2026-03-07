@@ -34,8 +34,8 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
 
 
-  private boolean sessionClosedOnTermination;   // true if session should be closed
-  private boolean sessionKeptAlive;             // true if ping to keep session alive periodically
+  private boolean sessionClosedOnTermination;   // true if the session should be closed
+  private boolean sessionKeptAlive;             // true if ping to keep the session alive periodically
   private Session session;                      // the session this thread is attached to
 
 
@@ -117,8 +117,9 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
   /**
    * Adds a task to the queue.
+   *
    * @param task the task to add
-   * @return true if added, false if already in queue
+   * @return true if added, false if already in the queue
    */
   @Override
   public boolean addTask(Task task) {

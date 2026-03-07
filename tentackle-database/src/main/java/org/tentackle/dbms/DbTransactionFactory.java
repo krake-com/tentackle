@@ -33,8 +33,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 interface DbTransactionFactoryHolder {
   DbTransactionFactory INSTANCE = ServiceFactory.createService(DbTransactionFactory.class, DbTransactionFactory.class);
@@ -57,12 +59,12 @@ public class DbTransactionFactory {
   }
 
 
-  private static final Logger LOG = Logger.get(DbTransactionFactory.class);
+  private static final Logger LOGGER = Logger.get(DbTransactionFactory.class);
 
   private static final String TX_IDLE_INTERVAL = "txIdleInterval";
   private static final String TX_IDLE_TIMEOUT = "txIdleTimeout";
 
-  private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // default is to check every second
+  private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // the default is to check every second
   private static final int DEFAULT_TX_IDLE_TIMEOUT = 60;                        // 1 minute idle transaction timeout
 
 
@@ -76,6 +78,9 @@ public class DbTransactionFactory {
   private volatile boolean configChanged;
   private boolean collectingStatistics;
   private volatile boolean terminationRequested;
+
+  // the transaction counter
+  private static final AtomicLong TX_COUNT = new AtomicLong();
 
 
   /**
@@ -110,10 +115,10 @@ public class DbTransactionFactory {
    *
    * @param db the session
    * @param txName the transaction name, null if &lt;unnamed&gt;
-   * @param fromRemote true if initiated from remote client
+   * @param fromRemote true if initiated from the remote client
    */
   public DbTransaction create(Db db, String txName, boolean fromRemote) {
-    DbTransaction transaction = new DbTransaction(db, txName, fromRemote);
+    DbTransaction transaction = new DbTransaction(db, createVoucher(fromRemote), txName, TX_COUNT.incrementAndGet());
     transactions.put(transaction.getTxNumber(), new WeakReference<>(transaction));
     ensureSupervisorAlive();
     return transaction;
@@ -133,7 +138,7 @@ public class DbTransactionFactory {
     if (collectingStatistics) {
       statistics.countTransaction(transaction, rolledBack);
     }
-    finishedTransactions.add(txId);   // hand over to supervisor thread asynchronously
+    finishedTransactions.add(txId);   // hand over to the supervisor thread asynchronously
   }
 
   /**
@@ -213,6 +218,25 @@ public class DbTransactionFactory {
   }
 
 
+  /**
+   * Creates a new transaction voucher.
+   *
+   * @param fromRemote true if the transaction was started at the remote client
+   * @return the voucher
+   */
+  protected long createVoucher(boolean fromRemote) {
+    // create a new commit/rollback voucher
+    long magic;
+    do {
+      magic = UUID.randomUUID().getLeastSignificantBits();
+    }
+    while (magic == 0);
+
+    // remote are negative, local positive
+    return (fromRemote && magic > 0 || !fromRemote && magic < 0) ? -magic : magic;
+  }
+
+
   private synchronized void ensureSupervisorAlive() {
     if (transactionSupervisor == null) {
       transactionSupervisor = new TransactionSupervisor();
@@ -230,7 +254,7 @@ public class DbTransactionFactory {
    * It also closes sessions with transactions being idle too long.
    * The thread is started when the first transaction (local sessions only!) is created.
    * For remote sessions, the thread will never be started and the {@code DbTransactionFactory} is just dummy,
-   * for example in a remote {@code ServerApplication}.
+   * for example, in a remote {@code ServerApplication}.
    */
   private class TransactionSupervisor extends Thread {
 
@@ -270,7 +294,7 @@ public class DbTransactionFactory {
     public void run() {
       while (!terminationRequested) {
         if (configChanged) {
-          LOG.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
+          LOGGER.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
           configChanged = false;
         }
         try {
@@ -292,7 +316,7 @@ public class DbTransactionFactory {
               // If we encounter an unreferenced tx, it must have been detached within the transaction or some other weird condition.
               Long txId = entry.getKey();
               TxIdleCounter idleCounter = idleMap.remove(txId);
-              LOG.severe("unreferenced transaction {0} detected", idleCounter == null ? txId : idleCounter);
+              LOGGER.severe("unreferenced transaction {0} detected", idleCounter == null ? txId : idleCounter);
               iter.remove();
             }
             else {
@@ -302,26 +326,26 @@ public class DbTransactionFactory {
               }
               else {
                 if (txIdleTimeout > 0 &&
-                    idleMap.computeIfAbsent(transaction.getTxNumber(), txNumber -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
+                    idleMap.computeIfAbsent(transaction.getTxNumber(), _ -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
                   String msg = "idle transaction " + transaction.getSession() + " timed out after " +
                                 txIdleTimeout * txIdleInterval / Constants.SECOND_MS + " s";
-                  LOG.warning(msg);
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
                   Db session = transaction.getSession();
                   ManagedConnection mc = session.getConnection();
                   if (mc != null) {
-                    final Connection con = mc.getConnection();
+                    LOGGER.warning(msg + ":\n" + mc.toDiagnosticString());  // with statements!
+                    Connection con = mc.getConnection();
                     if (con != null) {
-                      // do that in a separate thread, if it gets stuck, the supervisor still keeps running
+                      // do that in a separate thread (if it gets stuck, the supervisor still keeps running!)
                       createTxCleanupThread(mc, con).start();
                     }
                     else {
-                      LOG.warning("managed connection {0} already closed", mc);
+                      LOGGER.warning("managed connection {0} already closed", mc);
                     }
                   }
                   else {
-                    LOG.warning("managed connection already detached from session {0}", session);
+                    LOGGER.warning(msg + " (managed connection already detached from session {0})", session);
                   }
                 }
               }
@@ -332,12 +356,12 @@ public class DbTransactionFactory {
           // daemon thread is terminated via requestTermination()
         }
         catch (RuntimeException ex) {
-          LOG.severe("cleanup transactions failed", ex);
+          LOGGER.severe("cleanup transactions failed", ex);
         }
       }
 
       supervisorTerminated();
-      LOG.info("{0} terminated", getName());
+      LOGGER.info("{0} terminated", getName());
     }
 
     private static Thread createTxCleanupThread(ManagedConnection mc, Connection con) {
@@ -345,18 +369,18 @@ public class DbTransactionFactory {
         @Override
         public void run() {
           try {
-            LOG.warning("performing low-level rollback and close of {0}", con);
+            LOGGER.warning("performing low-level rollback and close of {0}", con);
             // really low level (as if the database closed it suddenly)
             try {
               con.rollback();
             }
             catch (SQLException sr) {
-              LOG.warning("low-level rollback failed", sr);
+              LOGGER.warning("low-level rollback failed", sr);
             }
             con.close();   // just close -> leave the cleanup to the thread stuck in transaction
           }
           catch (SQLException | RuntimeException ex) {
-            LOG.warning("closing JDBC connection failed", ex);
+            LOGGER.warning("closing JDBC connection failed", ex);
           }
         }
       };

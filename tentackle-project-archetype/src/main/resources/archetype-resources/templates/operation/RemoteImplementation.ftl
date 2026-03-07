@@ -15,7 +15,6 @@ import ${remotePackage}.${remoteInterface};
 import ${superImplPackage}.${superImplementation};
 </#if>
 
-import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
@@ -23,7 +22,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 
@@ -38,7 +37,7 @@ public class ${remoteImplementation}<T extends ${operationInterface}<T>, P exten
   /**
    * Creates the remote delegate for {@link ${persistenceImplementation}}.
    *
-   * @param serverSession the RMI session
+   * @param serverSession the TRIP session
    * @param persistenceClass the persistence implementation class
    * @param operationClass the operation interface class
    */
@@ -53,7 +52,7 @@ public class ${remoteImplementation}
   /**
    * Creates the remote delegate for {@link ${persistenceImplementation}}.
    *
-   * @param serverSession the RMI session
+   * @param serverSession the TRIP session
    * @param persistenceClass the persistence implementation class
    * @param operationClass the operation interface class
    */

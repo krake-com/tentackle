@@ -52,8 +52,8 @@ import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.pdo.TokenLockInfo;
-import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
-import org.tentackle.persist.rmi.RemoteResultSetCursor;
+import org.tentackle.persist.trip.AbstractPersistentObjectRemoteDelegate;
+import org.tentackle.persist.trip.RemoteResultSetCursor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityException;
@@ -64,6 +64,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
+import org.tentackle.trip.TripReferencable;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
@@ -76,7 +77,6 @@ import org.tentackle.validate.scope.PersistenceScope;
 import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -117,6 +117,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @param <P> the persistence implementation class
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)    // only proxies are referenced, not implementations
 public abstract class AbstractPersistentObject<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
        extends AbstractDbObject<P>
        implements PersistentObject<T>, EffectiveClassProvider<T>, PdoMethodCacheProvider<T>, Cloneable {
@@ -146,7 +147,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Optional class id of the root entity.<br>
-   * Improves performance in selects in composite entities
+   * Improves performance in SELECTs for composite entities
    * if the components belong to different kinds of root entities.
    */
   private int rootClassId;
@@ -1466,7 +1467,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If there is a transaction running in batched mode, the statement will be executed via JDBC batching.
    * Otherwise, the method is equivalent to {@link #getPreparedStatement(StatementId, SqlSupplier)}.
    * <p>
-   * The method must only be used for inserts, updates and delete of a single row!
+   * The method must only be used for inserts, updates, and delete of a single row!
    *
    * @param modType the modification type
    * @param stmtId the statement ID
@@ -1862,14 +1863,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     T obj = null;
     if (id > 0) {
       if (getSession().isRemote())  {
-        try {
-          DomainContext context = getDomainContext();
-          obj = getRemoteDelegate().select(context, id, forUpdate, tokenLocked);
-          configureRemoteObject(context, obj);
-        }
-        catch (RemoteException e) {
-          throw PersistenceException.createFromRemoteException(this, e);
-        }
+        DomainContext context = getDomainContext();
+        obj = getRemoteDelegate().select(context, id, forUpdate, tokenLocked);
+        configureRemoteObject(context, obj);
       }
       else {
         if (forUpdate || tokenLocked) {
@@ -1923,18 +1919,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         configureRemoteObject(context, obj);
         return obj;
       }
-      catch (RemoteException e) {
-        RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
-        if (rex instanceof LockException lx) {
+      catch (RuntimeException e) {
+        if (e instanceof LockException lx) {
           applyTokenLockInfo(lx.getTokenLockInfo());
         }
-        throw rex;
+        throw e;
       }
     }
 
     long txVoucher = db.begin(TX_SELECT_TOKENLOCKED);
     try {
-      return select(id, false, true);
+      T obj = select(id, false, true);
+      db.commit(txVoucher);
+      return obj;
     }
     catch (PersistenceException px) {
       db.rollback(txVoucher, !px.isTemporary());
@@ -2451,16 +2448,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public List<T> selectByNormText(String text) {
-    if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectByNormText(context, text);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+    if (getSession().isRemote()) {
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectByNormText(context, text);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     JoinedSelect<T> js = getEagerJoinedSelect();
@@ -2482,14 +2474,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public ScrollableResource<T> selectByNormTextAsCursor(String text) {
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        RemoteResultSetCursor<T> remoteCursor = getRemoteDelegate().selectByNormTextAsCursor(context, text);
-        return new ResultSetCursor<>(context, remoteCursor);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      RemoteResultSetCursor<T> remoteCursor = getRemoteDelegate().selectByNormTextAsCursor(context, text);
+      return new ResultSetCursor<>(context, remoteCursor);
     }
     JoinedSelect<T> js = getEagerJoinedSelect();
     return new ResultSetCursor<>(pdo, resultByNormTextCursor(text, js), js);
@@ -2767,15 +2754,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public List<T> selectAll() {
     if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectAll(context);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectAll(context);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     JoinedSelect<T> js = getEagerJoinedSelect();
@@ -2789,15 +2771,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public List<T> selectAny(Collection<Long> ids) {
     if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectAny(context, ids);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectAny(context, ids);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     if (getBackend().isArrayOperatorSupported(SQL_ARRAY_ANY)) {
@@ -2823,15 +2800,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
     if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     JoinedSelect<T> js = getEagerJoinedSelect();
@@ -2845,15 +2817,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public List<T> selectAllWithExpiredTableSerials(long oldSerial, long maxSerial) {
     if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial, maxSerial);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial, maxSerial);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     JoinedSelect<T> js = getEagerJoinedSelect();
@@ -2874,13 +2841,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public ScrollableResource<T> selectAllAsCursor() {
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        return new ResultSetCursor<>(context, getRemoteDelegate().selectAllAsCursor(context));
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      return new ResultSetCursor<>(context, getRemoteDelegate().selectAllAsCursor(context));
     }
     JoinedSelect<T> js = getEagerJoinedSelect();
     return new ResultSetCursor<>(pdo, resultAllCursor(js), js);
@@ -2890,15 +2852,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public List<T> selectLatest(long greaterId, int limit) {
     if (getSession().isRemote())  {
-      try {
-        DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectLatest(context, greaterId, limit);
-        configureRemoteObjects(context, list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      List<T> list = getRemoteDelegate().selectLatest(context, greaterId, limit);
+      configureRemoteObjects(context, list);
+      return list;
     }
 
     getSession().assertNotRemote();
@@ -2943,7 +2900,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets the cache.
    * The default implementation returns null.
-   * Must be overridden to enable optimization features with RMI servers.
+   * Must be overridden to enable optimization features with TRIP servers.
    *
    * @return the cache, null if uncached
    */
@@ -2994,14 +2951,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public List<T> selectAllForCache() {
     List<T> list;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        list = getRemoteDelegate().selectAllForCache(context);
-        configureRemoteObjects(context, list);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      list = getRemoteDelegate().selectAllForCache(context);
+      configureRemoteObjects(context, list);
     }
     else {
       list = selectAll();
@@ -3018,14 +2970,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public List<T> selectAnyForCache(Collection<Long> ids) {
     List<T> list;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        list = getRemoteDelegate().selectAnyForCache(context, ids);
-        configureRemoteObjects(context, list);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      list = getRemoteDelegate().selectAnyForCache(context, ids);
+      configureRemoteObjects(context, list);
     }
     else {
       list = selectAny(ids);
@@ -3037,14 +2984,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public T selectForCache(long id) {
     T obj;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        obj = getRemoteDelegate().selectForCache(context, id);
-        configureRemoteObject(context, obj);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      obj = getRemoteDelegate().selectForCache(context, id);
+      configureRemoteObject(context, obj);
     }
     else {
       obj = select(id);
@@ -3170,21 +3112,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public boolean isReferenced() {
     if (getSession().isRemote()) {
-      if (isNew())  {
+      if (isNew()) {
         // new objects are never referenced because they simply don't exist in the db!
         // so we can saveImpl a roundtrip here
         return false;
       }
-      else  {
-        try {
-          return getRemoteDelegate().isReferenced(getDomainContext(), getId());
-        }
-        catch (RemoteException e) {
-          throw PersistenceException.createFromRemoteException(this, e);
-        }
+      else {
+        return getRemoteDelegate().isReferenced(getDomainContext(), getId());
       }
     }
-    else  {
+    else {
       // local model
       return super.isReferenced();
     }
@@ -3626,19 +3563,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of delete bypassing the invocation handler.
    */
   protected void deleteImpl() {
-    if (getSession().isRemote())  {
+    if (getSession().isRemote()) {
       assertPersistable();
-      try {
-        prepareDelete();
-        long tableSerial = getRemoteDelegate().deleteImpl(pdo);     // this will do delete() in server, i.e. all checks
-        setPersistable(false);                                      // pdo cannot be used anymore
-        expireCache(tableSerial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      prepareDelete();
+      long tableSerial = getRemoteDelegate().deleteImpl(pdo);     // this will do delete() in server, i.e. all checks
+      setPersistable(false);                                      // pdo cannot be used anymore
+      expireCache(tableSerial);
     }
-    else  {
+    else {
       deleteObject();
     }
   }
@@ -3657,23 +3589,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of save bypassing the invocation handler.
    */
   protected void saveImpl() {
-    if (getSession().isRemote())  {
+    if (getSession().isRemote()) {
       assertPersistable();
-
       // execute in the 3-tier client
       clearOnRemoteSave();
       prepareSave();
-
-      try {
-        long tableSerial = getRemoteDelegate().saveImpl(pdo);
-        setPersistable(false);    // pdo cannot be used anymore
-        expireCache(tableSerial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      long tableSerial = getRemoteDelegate().saveImpl(pdo);
+      setPersistable(false);    // pdo cannot be used anymore
+      expireCache(tableSerial);
     }
-    else  {
+    else {
       if (!isValidated()) {
         validate();
       }
@@ -3774,7 +3699,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Implementation of persist bypassing the invocation handler.
+   * Implementation of persist() bypassing the invocation handler.
    *
    * @return the persisted PDO
    */
@@ -3791,16 +3716,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
        * change the reference to the persistent object in the PDO proxy object.
        * Hence, we must transfer the whole PDO proxy and update the context/session on return.
        */
-      try {
-        T persistedPdo = getRemoteDelegate().persistImpl(pdo);
-        configureRemoteObject(getDomainContext(), persistedPdo);
-        return persistedPdo;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      T persistedPdo = getRemoteDelegate().persistImpl(pdo);
+      configureRemoteObject(getDomainContext(), persistedPdo);
+      return persistedPdo;
     }
-    else  {
+    else {
       if (!isValidated()) {
         validate();
       }
@@ -3948,25 +3868,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createTransferTokenLockSql() {
     assertTokenLockProvided();
     return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
            CN_EDITEDBY + SQL_EQUAL_PAR +
            SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
   }
-
-  /**
-   * Creates the SQL code for the {@link #transferTokenLock} statement with tableserial.
-   *
-   * @return the SQL code
-   */
-  public String createTransferTokenLockWithTableSerialSql() {
-    assertTokenLockProvided();
-    return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
-           CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
-           CN_TABLESERIAL + SQL_EQUAL_PAR +
-           SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
-  }
-
 
   /**
    * Gets the id of the user currently editing this object.
@@ -4124,8 +4028,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
-   * @param userId is the current user (unused if tokenExpiry is null)
-   * @param curTime is the current system time
+   * @param userId the current user (unused if tokenExpiry is null)
+   * @param curTime the current system-time
    */
   public void updateTokenLock(Timestamp tokenExpiry, long userId, Timestamp curTime) {
     Db db = getSession();
@@ -4133,12 +4037,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       try {
         applyTokenLockInfo(getRemoteDelegate().updateTokenLock(getDomainContext(), getId(), tokenExpiry, userId, curTime));
       }
-      catch (RemoteException e) {
-        RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
-        if (rex instanceof LockException lx) {
+      catch (RuntimeException e) {
+        if (e instanceof LockException lx) {
           applyTokenLockInfo(lx.getTokenLockInfo());
         }
-        throw rex;
+        throw e;
       }
     }
     else  {
@@ -4245,12 +4148,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void updateTokenLockOnly() {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        getRemoteDelegate().updateTokenLockOnly(getDomainContext(), getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      getRemoteDelegate().updateTokenLockOnly(getDomainContext(), getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
     }
     else  {
       assertNotCached();
@@ -4290,44 +4188,28 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T transferTokenLock(long userId) {
     Db db = getSession();
-    if (db.isRemote())  {
-      try {
-        T tPdo = getRemoteDelegate().transferTokenLock(pdo, userId);
-        configureRemoteObject(getDomainContext(), tPdo);
-        return tPdo;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+    if (db.isRemote()) {
+      T tPdo = getRemoteDelegate().transferTokenLock(pdo, userId);
+      configureRemoteObject(getDomainContext(), tPdo);
+      return tPdo;
     }
-    else  {
+    else {
       assertNotCached();
       assertPersistable();
       assertRootEntity();
       assertWritePermission();
 
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
-        // within a TX cause of countModification to invalidateCache
         long txVoucher = db.begin(TX_TRANSFER_TOKENLOCK);
         try {
-          boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
-                  _ -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
-          long newTableSerial = countModification();    // this will roll back and terminate on error
-          if (withTableSerial) {
-            setTableSerial(newTableSerial);
-          }
+                                                             _ -> createTransferTokenLockSql());
           int ndx = 0;
           st.setLong(++ndx, userId);
           setEditedBy(userId);
-          if (withTableSerial) {
-            st.setLong(++ndx, getTableSerial());
-          }
           st.setLong(++ndx, getId());
           st.setLong(++ndx, getSerial());
           assertThisRowAffected(st.executeUpdate());
-
-          setSerial(getSerial() + 1);   // was incremented
 
           if (userId != 0) {
             // set/refresh the expiry
@@ -4478,11 +4360,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Checks write permission for this object.
    *
-   * @throws SecurityException if there is no write permission
+   * @throws SecurityException if there is no write-permission
    */
   protected void assertWritePermission() {
     if (!isWriteAllowed()) {
-      throw new SecurityException(this, "no write permission");
+      throw new SecurityException(this, "no write-permission");
     }
   }
 
@@ -4493,7 +4375,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   protected void assertReadPermission() {
     if (!isReadAllowed()) {
-      throw new SecurityException(this, "no read permission");
+      throw new SecurityException(this, "no read-permission");
     }
   }
 

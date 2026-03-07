@@ -18,17 +18,15 @@
 
 package org.tentackle.persist.app;
 
-import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.dbms.rmi.RmiServer;
+import org.tentackle.dbms.trip.RemoteDbConnectionImpl;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.TripServer;
 import org.tentackle.log.Logger;
 import org.tentackle.persist.LockManager;
 
-import java.rmi.RemoteException;
-
 
 /**
- * RMI Application Server.
+ * TRIP Application Server.
  *
  * @author harald
  */
@@ -37,15 +35,15 @@ public abstract class ServerApplication extends AbstractServerApplication {
   private static final Logger LOGGER = Logger.get(ServerApplication.class);
 
   private final Class<? extends RemoteDbConnectionImpl> connectionClass;    // the connection class
-  private RmiServer rmiServer;                                              // the RMI server instance
+  private TripServer tripServer;                                            // the TRIP server instance
 
 
   /**
    * Creates an instance of an application server.
    *
    * @param name the application name, null for default name
-   * @param version the application version, null for default version
-   * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
+   * @param version the application version, null for the default version
+   * @param connectionClass the class of the connection object to instantiate, null = default, or from serverInfo's properties file
    */
   public ServerApplication(String name, String version, Class<? extends RemoteDbConnectionImpl> connectionClass) {
     super(name, version);
@@ -54,35 +52,33 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
 
   /**
-   * Gets the RMI server.
+   * Gets the TRIP server.
    *
-   * @return the RMI server
+   * @return the TRIP server
    */
-  public RmiServer getRmiServer() {
-    return rmiServer;
+  public TripServer getTripServer() {
+    return tripServer;
   }
 
 
   @Override
   protected void startup() {
     super.startup();
-
-    LOGGER.fine("start RMI services");
-    // start the RMI-server
-    startRmiServer();
+    LOGGER.fine("start TRIP services");
+    startTripServer();
   }
 
 
   /**
-   * Creates the RMI-server instance (but does not start it).<br>
-   * The default implementation creates a {@link RmiServer}.
+   * Creates the TRIP-server instance (but does not start it).<br>
+   * The default implementation creates a {@link TripServer}.
    *
    * @param connectionClass the class of the connection object to instantiate,
    *                        null = default or from server's properties config
    * @return the created RmiServer
    */
-  protected RmiServer createRmiServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
-    return new RmiServer(getSessionInfo(), connectionClass);
+  protected TripServer createRmiServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
+    return new TripServer(getSessionInfo(), connectionClass);
   }
 
 
@@ -90,19 +86,19 @@ public abstract class ServerApplication extends AbstractServerApplication {
   protected void finishStartup() {
     if (!getSession().isRemote()) {
       LockManager.getInstance().initialize(getSession());
-      // see also org.tentackle.dbms.rmi.RemoteDbSessionImpl.cleanup
+      // see also org.tentackle.dbms.trip.RemoteDbSessionImpl.cleanup
     }
     super.finishStartup();
-    rmiServer = createRmiServer(connectionClass);
+    tripServer = createRmiServer(connectionClass);
   }
 
 
   /**
-   * Starts the RMI-server.<br>
+   * Starts the TRIP-server.<br>
    * The default implementation just does {@code rmiServer.start()}.
    */
-  protected void startRmiServer() {
-    rmiServer.start();
+  protected void startTripServer() {
+    tripServer.start();
   }
 
 
@@ -113,16 +109,16 @@ public abstract class ServerApplication extends AbstractServerApplication {
       try {
         session.close();
       }
-      catch (RemoteException | RuntimeException rex) {
+      catch (RuntimeException rex) {
         LOGGER.warning("closing pending session " + session + " failed:", rex);
       }
     }
 
     RemoteDbSessionImpl.stopCleanupThread();
 
-    if (rmiServer != null) {
-      rmiServer.stop();
-      rmiServer = null;
+    if (tripServer != null) {
+      tripServer.stop();
+      tripServer = null;
     }
 
     super.cleanup();

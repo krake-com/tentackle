@@ -111,7 +111,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
    * @param context the domain context
    */
   public static Stage show(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
     PdoBrowser diffDialog = Fx.load(PdoBrowser.class);
     Scene scene = Fx.createScene(diffDialog.getView());
     stage.setScene(scene);
@@ -455,7 +455,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         finderButton.setOnAction(_ -> {
           finder = guiProvider.createFinder();
           finder.setPdo(proxy);
-          Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+          Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
           FxBorderPane borderPane = Fx.create(BorderPane.class);
           borderPane.setPadding(new Insets(10));
           borderPane.setCenter(finder.getView());

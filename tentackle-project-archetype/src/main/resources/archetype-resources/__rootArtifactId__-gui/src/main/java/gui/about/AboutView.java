@@ -16,6 +16,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxLabel;
 
@@ -40,7 +41,7 @@ public class AboutView extends AbstractFxController {
                .duration(5000)
                .fadeOut(1500)
                .hide(popup::hide)
-               .css(AboutView.class.getResource(FxUtilities.getInstance().isDarkMode() ? "AboutView-dark.css" : "AboutView.css"))
+               .css(AboutView.class.getResource(ThemeUtilities.getInstance().isDarkMode() ? "AboutView-dark.css" : "AboutView.css"))
                .build();
     FxUtilities.getInstance().showNotification(owner, popup, notification, null);
   }

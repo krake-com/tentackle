@@ -110,28 +110,18 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
     if (db.isRemote())  {
-      try {
 @{to remoteOut}@
-  @(rmiListType)@ @(methodName)@(@(params)@) throws RemoteException;
+  @(rmiListType)@ @(methodName)@(@(params)@);
 @{to implOut}@
 
   \@Override
-  public @(rmiListType)@ @(methodName)@(@(params)@) throws RemoteException {
-    try {
-      return dbObject.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(rmiListType)@ @(methodName)@(@(params)@) {
+    return dbObject.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(listType)@ list = getRemoteDelegate().@(methodName)@(@(iparms)@);
-        db.applyTo(list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(db, e);
-      }
+      @(listType)@ list = getRemoteDelegate().@(methodName)@(@(iparms)@);
+      db.applyTo(list);
+      return list;
     }
 @[
     } // end if remote

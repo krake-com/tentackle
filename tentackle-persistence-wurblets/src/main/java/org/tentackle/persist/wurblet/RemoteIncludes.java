@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 /**
  * Handles generated remote interface and implementation code.
  * <p>
- * Creates the RMI-java files from freemarker templates, if missing.
+ * Creates the TRIP-java files from freemarker templates, if missing.
  *
  * @author harald
  */
@@ -66,24 +66,24 @@ public class RemoteIncludes {
       switch (superClassName) {
         case "AbstractPersistentObject":
           superInterface = "AbstractPersistentObjectRemoteDelegate";
-          superPackage = "org.tentackle.persist.rmi";
+          superPackage = "org.tentackle.persist.trip";
           superImplementation = "AbstractPersistentObjectRemoteDelegateImpl";
-          superImplPackage = "org.tentackle.persist.rmi";
+          superImplPackage = "org.tentackle.persist.trip";
           break;
 
         case "AbstractPersistentOperation":
           superInterface = "AbstractPersistentOperationRemoteDelegate";
-          superPackage = "org.tentackle.persist.rmi";
+          superPackage = "org.tentackle.persist.trip";
           superImplementation = "AbstractPersistentOperationRemoteDelegateImpl";
-          superImplPackage = "org.tentackle.persist.rmi";
+          superImplPackage = "org.tentackle.persist.trip";
           break;
 
         case "AbstractDbObject":
           // just convenience for TT-builds...
           superInterface = "AbstractDbObjectRemoteDelegate";
-          superPackage = "org.tentackle.dbms.rmi";
+          superPackage = "org.tentackle.dbms.trip";
           superImplementation = "AbstractDbObjectRemoteDelegateImpl";
-          superImplPackage = "org.tentackle.dbms.rmi";
+          superImplPackage = "org.tentackle.dbms.trip";
           break;
 
         default:

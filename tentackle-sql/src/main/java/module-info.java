@@ -30,6 +30,8 @@ module org.tentackle.sql {
 
   requires java.naming;
 
+  opens org.tentackle.sql to org.tentackle.core;   // necessary for TRIP
+
   provides org.tentackle.common.ModuleHook with org.tentackle.sql.service.Hook;
 
 }

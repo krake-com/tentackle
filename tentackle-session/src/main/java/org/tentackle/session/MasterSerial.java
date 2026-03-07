@@ -18,8 +18,6 @@
 
 package org.tentackle.session;
 
-import java.io.Serializable;
-
 /**
  * Wraps the master serial used by the {@link ModificationTracker}.<br>
  * The tracker of a remote client periodically requests the master serial from the server.
@@ -27,7 +25,7 @@ import java.io.Serializable;
  * This can be a record or some other object representing a {@link MasterSerialEvent}
  * with optional, application-specific payload data.
  */
-public interface MasterSerial extends Serializable {
+public interface MasterSerial {
 
   /**
    * Gets the serial value.

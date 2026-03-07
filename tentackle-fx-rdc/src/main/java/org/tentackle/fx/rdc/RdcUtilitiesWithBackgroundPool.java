@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 
 /**
  * Extended {@link RdcUtilities} with a thread- and session pool for background execution.<br>
- * Replace with application specific implementation via {@link org.tentackle.common.Service} annotation.
+ * Replace it with application-specific implementation via {@link org.tentackle.common.Service} annotation.
  * <p>
  * Example:
  * <pre>

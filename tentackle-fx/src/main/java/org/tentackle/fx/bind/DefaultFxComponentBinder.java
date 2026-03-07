@@ -41,6 +41,7 @@ import org.tentackle.validate.Validator;
 
 import javafx.scene.Parent;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -566,7 +567,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         }
       }
     }
-    catch (IllegalAccessException | IllegalArgumentException ex) {
+    catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException ex) {
       throw new BindingException("cannot access " + field, ex);
     }
     return component;

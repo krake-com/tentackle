@@ -145,6 +145,14 @@
               <name>foldtype</name>
               <value>collapsed</value>
             </property>
+            <property>
+              <name>componentIncludeDir</name>
+              <value>${project.basedir}/src/main/java/org/tentackle/fx/component/include</value>
+            </property>
+            <property>
+              <name>containerIncludeDir</name>
+              <value>${project.basedir}/src/main/java/org/tentackle/fx/container/include</value>
+            </property>
           </wurbletProperties>
 
           <filesets>

@@ -1,0 +1,20 @@
+
+.diff-mismatch {
+    -fx-background-color: #454567;
+}
+
+.diff-mismatch:selected {
+    -fx-background-color: #151588;
+}
+
+.implicit-attribute {
+    -fx-font-weight: bold;
+}
+
+.key-attribute {
+    -fx-underline: true;
+}
+
+.hidden-component {
+    -fx-font-style: italic;
+}

@@ -15,6 +15,7 @@
               <MenuItem fx:id="securityManagerItem" mnemonicParsing="false" text="%Security Manager" />
               <MenuItem fx:id="sessionsItem" mnemonicParsing="false" text="%Sessions" />
               <MenuItem fx:id="preferencesItem" mnemonicParsing="false" text="%Preferences" />
+              <MenuItem fx:id="themeItem" mnemonicParsing="false" text="%Theme"/>
               <MenuItem fx:id="passwordItem" mnemonicParsing="false" text="%Change Password" />
               <MenuItem fx:id="exitItem" text="%Exit" />
             </items>

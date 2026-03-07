@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>25.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-fx-atlanta</artifactId>
+  <packaging>jar</packaging>
+  <name>Tentackle FX Atlanta Theme</name>
+  <description>Atlanta theme and components for FX</description>
+  <url>https://tentackle.org</url>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-fx-rdc</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- avoid transitive dependency -->
+    </dependency>
+    <dependency>
+      <groupId>io.github.mkpaz</groupId>
+      <artifactId>atlantafx-base</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+
+    <resources>
+      <!-- workaround:
+        SceneBuilder cannot locate the controller if the fxml file is not in the same
+        directory as the java file. Hence, we change the convention
+        as follows:
+        1. each controller and its related fxml, resource-properties and css files go into the same physical folder.
+        2. there is only one such folder/package per controller
+      -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>target/generated-resources</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.fxml</include>
+          <include>**/*.css</include>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-check-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>bundles</id>
+            <goals>
+              <goal>bundles</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <locales>en_US, de_DE</locales>
+          <showCompileOutput>true</showCompileOutput>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>wurbel</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <wurbletDependencies>
+            <wurbletDependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>tentackle-wurblets</artifactId>
+              <version>${project.version}</version>
+            </wurbletDependency>
+          </wurbletDependencies>
+
+          <verbosity>info</verbosity>
+
+          <wurbletPaths>
+            <param>org.tentackle.wurblet</param>
+          </wurbletPaths>
+
+          <wurbletProperties>
+            <property>
+              <name>guardtype</name>
+              <value>netbeans</value>
+            </property>
+            <property>
+              <name>foldtype</name>
+              <value>collapsed</value>
+            </property>
+            <property>
+              <name>componentIncludeDir</name>
+              <value>${rootBasedir}/tentackle-fx/src/main/java/org/tentackle/fx/component/include</value>
+            </property>
+            <property>
+              <name>containerIncludeDir</name>
+              <value>${rootBasedir}/tentackle-fx/src/main/java/org/tentackle/fx/container/include</value>
+            </property>
+          </wurbletProperties>
+
+          <filesets>
+            <fileset>
+              <includes>
+                <include>**/component/*.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

@@ -19,6 +19,8 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.trip.TripReferencable;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -35,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <M> the type of the mixin
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)    // only proxies are referenced, not the mixins
 public class Mixin<T, M extends Serializable> implements Serializable {
 
   @Serial
@@ -95,7 +98,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * @param mapper the class-mapper to find implementation classes, null if this is a dummy mixin
    * @param clazz the declaring interface class
    * @param superInterface the super interface class the implementation class must implement an extension of,
-   *        null to use the clazz as the declaring class
+   *                       or null to use the clazz as the declaring class
    *
    * @throws ClassNotFoundException if no implementation found
    */
@@ -106,14 +109,14 @@ public class Mixin<T, M extends Serializable> implements Serializable {
     Objects.requireNonNull(clazz, "clazz");
 
     if (mapper != null) {
-      // get the implementation class via classmapper
+      // get the implementation class via class mapper
       implClass = (Class<M>) mapper.mapLenient(clazz);
 
       // find the declaring interface
       if (superInterface != null) {
-        for (Class<?> interfaze: implClass.getInterfaces()) {
-          if (superInterface.isAssignableFrom(interfaze)) {
-            declClass = (Class<M>) interfaze;
+        for (Class<?> iFace: implClass.getInterfaces()) {
+          if (superInterface.isAssignableFrom(iFace)) {
+            declClass = (Class<M>) iFace;
             break;
           }
         }
@@ -131,18 +134,23 @@ public class Mixin<T, M extends Serializable> implements Serializable {
     }
   }
 
-
   /**
    * Creates a dummy mixin.<br>
    * Dummy mixins just map nothing at all.
    *
-   * @param clazz the declaring interface class
+   * @param clazz          the declaring interface class
    * @param superInterface the super interface class the implementation class must implement an extension of,
-   *        null to use the clazz as the declaring class
+   *                       or null to use the clazz as the declaring class
    * @throws ClassNotFoundException if no implementation found
    */
   public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {
     this(null, clazz, superInterface);
+  }
+
+  /**
+   * No-arys constructor provided for TRIP.
+   */
+  public Mixin() {
   }
 
 
@@ -158,7 +166,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
   /**
    * Creates the delegate instance for the implementation class.<br>
-   * Since delegates may be found in superclasses we need some expensive isAssignableFrom checking.
+   * Since delegates may be found in superclasses, we need some expensive isAssignableFrom checking.
    * However, the constructors found are cached by a map, which speeds up again.
    *
    * @param constructorArgumentClasses the constructor argument classes
@@ -248,7 +256,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   /**
    * Gets the implementing class.
    *
-   * @return the class, null if dummy
+   * @return the class, null for dummy
    */
   public Class<M> getImplementingClass() {
     return implClass;
@@ -283,12 +291,12 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   }
 
 
-  private boolean matchInterface(Class<?> clazz, Class<?> interfaze) {
-    if (clazz.equals(interfaze)) {
+  private boolean matchInterface(Class<?> clazz, Class<?> iFace) {
+    if (clazz.equals(iFace)) {
       return true;
     }
     // try super interfaces
-    for (Class<?> superInterface: interfaze.getInterfaces()) {
+    for (Class<?> superInterface: iFace.getInterfaces()) {
       if (matchInterface(clazz, superInterface)) {
         return true;
       }

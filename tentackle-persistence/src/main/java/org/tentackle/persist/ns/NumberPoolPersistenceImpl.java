@@ -33,7 +33,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
+import org.tentackle.persist.ns.trip.NumberPoolRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
@@ -43,7 +43,6 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
 
@@ -519,14 +518,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public NumberPool selectByUniqueDomainKey(String name) {
     if (getSession().isRemote())  {
-      try {
-        NumberPool obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      NumberPool obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_UNIQUE_DOMAIN_KEY_STMT,
       b -> {
@@ -747,14 +741,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public NumberPool selectByNameRealm(String name, String realm) {
     if (getSession().isRemote())  {
-      try {
-        NumberPool obj = getRemoteDelegate().selectByNameRealm(getDomainContext(), name, realm);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      NumberPool obj = getRemoteDelegate().selectByNameRealm(getDomainContext(), name, realm);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NAME_REALM_STMT,
       b -> {

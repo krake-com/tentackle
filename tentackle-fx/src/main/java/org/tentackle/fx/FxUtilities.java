@@ -46,8 +46,6 @@ import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -148,11 +146,6 @@ public class FxUtilities {
    */
   private String helpURL;
 
-  /**
-   * Holds the dark theme boolean.<br>
-   * False is light mode (default).
-   */
-  private final BooleanProperty darkMode = new SimpleBooleanProperty();
 
   /**
    * Flag to avoid invoking Platform.exit() more than once
@@ -179,50 +172,6 @@ public class FxUtilities {
     stage.show();
   }
 
-  /**
-   * Returns whether to enable dark mode.
-   *
-   * @return true to enable dark mode
-   */
-  public boolean isDarkMode() {
-    return darkMode.get();
-  }
-
-  /**
-   * Enables dark mode.
-   *
-   * @param darkMode true to enable dark theme, false for light theme (default)
-   */
-  public void setDarkMode(boolean darkMode) {
-    this.darkMode.set(darkMode);
-  }
-
-  public BooleanProperty darkModeProperty() {
-    return darkMode;
-  }
-
-  /**
-   * Applies the default stylesheets to a scene.<br>
-   * Invoked for all newly created scenes or via {@link #reapplyStyleSheets()}.
-   *
-   * @param scene the scene
-   */
-  public void applyStylesheets(Scene scene) {
-    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
-  }
-
-  /**
-   * Resets and applies the stylesheets to all scenes.<br>
-   * Useful when the dark mode configuration changed, for example.
-   */
-  public void reapplyStyleSheets() {
-    for (Window window : Window.getWindows()) {
-      Scene scene = window.getScene();
-      if (scene != null) {
-        applyStylesheets(scene);
-      }
-    }
-  }
 
   /**
    * Gets the default cursor for the given node.
@@ -395,7 +344,7 @@ public class FxUtilities {
    * Gets the stage for a node.
    *
    * @param node the node
-   * @return the stage, null if node does not belong to a scene or scene does not belong to a stage.
+   * @return the stage, null if the node does not belong to a scene or the scene does not belong to a stage.
    */
   public Stage getStage(Node node) {
     Stage stage = null;
@@ -416,7 +365,7 @@ public class FxUtilities {
 
   /**
    * Gets the window of an owner object.<br>
-   * The owner can be a window, a scene or a node.<br>
+   * The owner can be a window, a scene, or a node.<br>
    * Throws {@link FxRuntimeException} if the window cannot be determined.
    *
    * @param owner the owner object
@@ -484,7 +433,7 @@ public class FxUtilities {
 
 
   /**
-   * Closes the hierarchy of stages from the given node stopping at given stage.
+   * Closes the hierarchy of stages from the given node stopping at the given stage.
    *
    * @param node the node
    * @param stopStage the stop stage, null to close the whole application
@@ -630,7 +579,7 @@ public class FxUtilities {
    * If the execution fails, an error dialog is shown.
    *
    * @param owner the owner window or node
-   * @param runnable the runnable to execute in background
+   * @param runnable the runnable to execute in the background
    */
   public void run(Object owner, Runnable runnable) {
     javafx.concurrent.Service<Void> service = new javafx.concurrent.Service<>() {
@@ -667,7 +616,7 @@ public class FxUtilities {
    * @param owner the owner window or node
    * @param popup the popup
    * @param notification the notification node
-   * @param onClose the optional runner to execute when notification is closed/hidden
+   * @param onClose the optional runner to execute when the notification is closed/hidden
    */
   public void showNotification(Object owner, Popup popup, Parent notification, Runnable onClose) {
     popup.getContent().add(notification);
@@ -677,7 +626,7 @@ public class FxUtilities {
     }
     Window window = getWindow(owner);
     popup.addEventFilter(WindowEvent.WINDOW_SHOWN, event -> { // filter event is triggered _before_ actually shown
-      // center above owner window
+      // center above the owner window
       popup.setAnchorX(window.getX() + (window.getWidth() - popup.getWidth()) / 2.0);
       popup.setAnchorY(window.getY() + (window.getHeight() - popup.getHeight()) / 2.0);
     });
@@ -689,7 +638,7 @@ public class FxUtilities {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param onClose optional runnable invoked when dialog is closed
+   * @param onClose optional runnable invoked when the dialog is closed
    */
   public void showInfoDialog(Object owner, String message, Runnable onClose) {
     Popup popup = FxFactory.getInstance().createNotificationPopup();
@@ -707,7 +656,7 @@ public class FxUtilities {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param onClose optional runnable invoked when dialog is closed
+   * @param onClose optional runnable invoked when the dialog is closed
    */
   public void showWarningDialog(Object owner, String message, Runnable onClose) {
     Popup popup = FxFactory.getInstance().createNotificationPopup();
@@ -727,7 +676,7 @@ public class FxUtilities {
    * method returns immediately. The result is then provided via a {@link Consumer}.<br>
    * As a convenience, typing the key "0" is interpreted as "no" and "1" as "yes".
    * <p>
-   * Note: if you need to wait for a decision of the user (i.e. no async use), you can do that from another
+   * Note: if you need to wait for a decision of the user (i.e., no async use), you can do that from another
    * than the FX-thread by using a {@link org.tentackle.misc.BlockingHolder} like so:
    * <pre>
    *      BlockingHolder&lt;Boolean&gt; answer = new BlockingHolder&lt;&gt;();
@@ -766,7 +715,7 @@ public class FxUtilities {
         popup.hide();
       }
     });
-    // trigger the result consumer when popup is closed
+    // trigger the result consumer when the popup is closed
     showNotification(owner, popup, notification, () -> answer.accept(result.get()));
   }
 
@@ -777,7 +726,7 @@ public class FxUtilities {
    * @param owner the owner window or node
    * @param message the message
    * @param t optional throwable
-   * @param onClose optional runnable invoked when dialog is closed
+   * @param onClose optional runnable invoked when the dialog is closed
    */
   public void showErrorDialog(Object owner, String message, Throwable t, Runnable onClose) {
     String details;
@@ -815,7 +764,7 @@ public class FxUtilities {
    * Shows an error popup for a component.
    *
    * @param component the component
-   * @return the popup, null if no errormessage in component
+   * @return the popup window (null if no errormessage in the component)
    */
   public PopupWindow showErrorPopup(ErrorPopupSupported component) {
     PopupWindow popup = null;
@@ -835,7 +784,7 @@ public class FxUtilities {
    * Shows an info popup for a component.
    *
    * @param component the component
-   * @return the popup, null if no info-message in component
+   * @return the popup window (null if no info-message in the component)
    */
   public PopupWindow showInfoPopup(InfoPopupSupported component) {
     PopupWindow popup = null;
@@ -944,7 +893,7 @@ public class FxUtilities {
 
 
   /**
-   * Adds focus handling to sync with model.
+   * Adds focus handling to sync with the model.
    *
    * @param control the fx control
    */
@@ -988,7 +937,7 @@ public class FxUtilities {
    * @param component the fx component
    */
   public void focusGained(FxComponent component) {
-    if (component.getError() == null) {  // don't override view if there is a parsing error
+    if (component.getError() == null) {  // don't override the view if there is a parsing error
       component.updateView();
       if (component.isChangeable() && component instanceof FxTextComponent) {
         // By default, FX auto-selects a field if on re-focus.
@@ -996,7 +945,7 @@ public class FxUtilities {
         // In TT, this is configurable via the autoSelect feature.
         // in FX components are auto-selected if the field is focused by TAB (or ENTER in TT).
         // If by mouse, the cursor is positioned where the mouse points to and nothing is selected.
-        // For numeric fields, however, (and where desired) this behaviour leads to unexpected data entry.
+        // For numeric fields, however, this behavior leads to unexpected data entry.
         Platform.runLater(((FxTextComponent) component)::autoSelect);
       }
     }
@@ -1068,10 +1017,9 @@ public class FxUtilities {
    * @param control the fx control
    */
   public void filterKeys(Control control) {
-    if (control instanceof FxComponent) {
+    if (control instanceof FxComponent comp) {
       control.addEventFilter(KeyEvent.ANY, event -> {
         if (!event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
-          FxComponent comp = (FxComponent) control;
           if (event.isControlDown()) {
             if (event.getCode() == KeyCode.Z) {
               if (comp.isViewModified() && comp.isSavedViewObjectValid()) {
@@ -1136,7 +1084,7 @@ public class FxUtilities {
 
   /**
    * Recursively expands all tree items while checking for recursion loops.<br>
-   * The default implementation in TreeViewBehavior and TreeTableViewBehavior is not only in a private API,
+   * The default implementation in TreeViewBehavior and TreeTableViewBehavior is not only in a private API
    * but cannot be accessed from the applications at all. The default implementation is dangerous since
    * it does not check for recursion loops. We replace it by mapping the event to this utility method.
    *
@@ -1162,7 +1110,7 @@ public class FxUtilities {
    *
    * @param treeItem the tree item to check
    * @param <T> the value's type
-   * @return true if value is in path
+   * @return true if value is in the path
    */
   public <T> boolean isValueInParentPath(TreeItem<T> treeItem) {
     boolean inPath = false;
@@ -1323,7 +1271,7 @@ public class FxUtilities {
    * @param comp the component
    * @param member the binding member
    * @param option the option
-   * @return true if option known and applied, false if unknown option
+   * @return true if option known and applied, false if an unknown option
    */
   protected boolean applyBindingOption(FxTextComponent comp, BindingMember member, String option) {
 
@@ -1422,7 +1370,7 @@ public class FxUtilities {
    * @param columnConfiguration the column config
    * @param member the binding member
    * @param option the option
-   * @return true if option known and processed, false if unknown option
+   * @return true if option known and processed, false if an unknown option
    */
   @SuppressWarnings("rawtypes")
   protected boolean applyBindingOption(TableColumnConfiguration columnConfiguration, BindingMember member, String option) {
@@ -1492,7 +1440,7 @@ public class FxUtilities {
    * Resizes the width of all columns of a table to fit the displayed content.<br>
    * Unlike the "double-click on column separator"-feature this method computes
    * the column widths according to the content currently displayed. For tables
-   * with a large number of rows this is much more efficient than scanning the whole table.
+   * with a large number of rows, this is much more efficient than scanning the whole table.
    *
    * @param table the table view
    */
@@ -1512,11 +1460,11 @@ public class FxUtilities {
             if (cellFactory != null) {
               TableCell cell = (TableCell) cellFactory.call(column);
               if (cell != null) {
-                Font cellFont = cell.getFont();
-                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font cellFont = ThemeUtilities.getInstance().getDefaultFont();
+                // BOLD may not work if the header is styled with CSS, but that's ok for default configs
                 Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
-                double maxWidth = 20;   // don't go below this so that column remains visible
+                double maxWidth = 20;   // don't go below this so that the column remains visible
                 // apply header text first
                 cell.updateTableColumn(column);
                 cell.updateTableView(table);
@@ -1529,6 +1477,7 @@ public class FxUtilities {
                   cell.updateIndex(row);
                   maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
                 }
+                maxWidth += ThemeUtilities.getInstance().getAutoAdjustPadding();
                 table.resizeColumn(column, maxWidth - column.getWidth());
               }
             }
@@ -1542,7 +1491,7 @@ public class FxUtilities {
    * Resizes the width of all columns of a tree table to fit the displayed content.<br>
    * Unlike the "double-click on column separator"-feature this method computes
    * the column widths according to the content currently displayed. For tables
-   * with a large number of rows this is much more efficient than scanning the whole table.
+   * with a large number of rows, this is much more efficient than scanning the whole table.
    *
    * @param table the tree table view
    */
@@ -1563,11 +1512,11 @@ public class FxUtilities {
             if (cellFactory != null) {
               TreeTableCell cell = (TreeTableCell) cellFactory.call(column);
               if (cell != null) {
-                Font cellFont = cell.getFont();
-                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font cellFont = ThemeUtilities.getInstance().getDefaultFont();
+                // BOLD may not work if the header is styled with CSS, but that's ok for default configs
                 Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
-                double maxWidth = 20;   // don't go below this so that column remains visible
+                double maxWidth = 20;   // don't go below this so that the column remains visible
                 // apply header text first
                 cell.updateTableColumn(column);
                 cell.updateTreeTableView(table);
@@ -1581,9 +1530,10 @@ public class FxUtilities {
                   maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
                 }
                 if (firstVisibleColumn) {
-                  maxWidth += 50;   // extra space for navigation icon
+                  maxWidth += 50;   // extra space for the navigation icon
                   firstVisibleColumn = false;
                 }
+                maxWidth += ThemeUtilities.getInstance().getAutoAdjustPadding();
                 table.resizeColumn(column, maxWidth - column.getWidth());
               }
             }
@@ -1618,7 +1568,7 @@ public class FxUtilities {
    */
   public Point2D determineCenteredLocation(Window window)  {
     Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
-    // align sizes (for computation below)
+    // align sizes (for the computation below)
     double windowWidth = window.getWidth();
     double windowHeight = window.getHeight();
     if (window.getWidth() > screenSize.getWidth())  {
@@ -1705,7 +1655,7 @@ public class FxUtilities {
    * Gets the virtual flow for a given control.
    *
    * @param control the control
-   * @return the virtual flow, null if no virtual flow associated to the control
+   * @return the virtual flow, null if no virtual flow associated with the control
    */
   @SuppressWarnings("rawtypes")
   public VirtualFlow getVirtualFlow(Skinnable control) {
@@ -1727,7 +1677,7 @@ public class FxUtilities {
 
 
   /**
-   * Computes the row number to scrollTo in order to position the given row in the middle of the viewport.
+   * Computes the row number to scrollTo to position the given row in the middle of the viewport.
    *
    * @param control the control, usually a table- or tree-view
    * @param row the row to position in the middle of the viewport, if possible
@@ -1875,7 +1825,7 @@ public class FxUtilities {
         return location;
       }
 
-      // try other direction clockwise
+      // try another direction clockwise
       if (dx > 0.0 && dy > 0.0) {
         dx = -stepX;
       }

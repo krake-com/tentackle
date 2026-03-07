@@ -38,17 +38,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * A thread executing tasks in a serialized manner.
  * <p>
  * Primarily, the task dispatcher executes tasks from a queue.
- * Additionally, dispatchers can be locked by the application which will
+ * Additionally, dispatchers can be locked by the application, which will
  * prevent tasks from being executed until the dispatcher is unlocked again.
  * This is particularly useful whenever resources must be shared between the dispatcher and the application.<br>
  * The TaskDispatcher's lock/unlock synchronization may be either mutex- or counter-based.
- * Mutex-based is the preferred method if the lock and its corresponding unlock-operation is invoked
+ * Mutex-based is the preferred method if the lock and its corresponding unlock-operation are invoked
  * from the same thread. Any attempt to unlock from a different thread will result
  * in an {@link IllegalMonitorStateException}.<br>
  * If different threads may lock and unlock, counter-based synchronization should be used instead.
- * For example, RMI services requests via threads from a threadpool and consecutive RMI-requests
+ * For example, TRIP services requests via threads from a threadpool and consecutive TRIP-requests
  * may be serviced by different threads.<br>
- * With counter based synchronization it is strongly recommended to provide
+ * With counter-based synchronization, it is strongly recommended to provide
  * an application-specific locking key for each lock/unlock operation. This ensures
  * that only threads with the correct key (usually a shared resource) may unlock the dispatcher.
  *
@@ -74,16 +74,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private long sleepInterval;                           // keepalive in ms
   private long deadInterval;                            // dead detection interval in ms, 0 if disabled
   private long waitInterval;                            // timeout for waitForTask, 0 if disabled
-  private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 if permanent
-  private long lastActivity;                            // last activity, 0 if a tasks is currently executed
+  private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 for permanent
+  private long lastActivity;                            // last activity, 0 if a task is currently executed
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final List<TaskListener> listeners;           // task listeners
-  private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of task
+  private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
   private int nonMutexLockCount;                        // non-mutex lock count
   private Object unlockKey;                             // optional key to unlock
   private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
-  private volatile boolean stopRequested;               // true if stop has been requested
+  private volatile boolean terminationRequested;        // true if termination has been requested
   private volatile boolean killed;                      // true if daemon has been killed
   private volatile boolean delayInterrupt;              // true if delay the interrupt until in safe code
   private volatile boolean wasInterrupted;              // true if interrupted while executing a task
@@ -117,7 +117,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Creates a task dispatcher with counter-based locking, 1s sleep, 30s dead interval.
+   * Creates a task dispatcher with counter-based locking, 1 s sleep, 30 s dead interval.
    *
    * @param name the dispatcher's name
    */
@@ -126,7 +126,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Checks whether current thread is this task dispatcher itself.
+   * Checks whether the current thread is this task dispatcher itself.
    *
    * @return true if invoker is this task dispatcher
    */
@@ -209,7 +209,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
        .append(", deadInterval=").append(getDeadInterval())
        .append(", waitInterval=").append(getWaitInterval())
        .append("\n    lastMillis=").append(new Timestamp(lastMillis))
-       .append(", stopRequested=").append(stopRequested)
+       .append(", stopRequested=").append(terminationRequested)
        .append(", dead=").append(isDead())
        .append(", killed=").append(isKilled());
     if (unlockKey != null) {
@@ -363,7 +363,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
     removeTask(task);
 
-    // Could be a deadlock: a task being executed is blocked by the waiting thread somehow.
+    // Could be a deadlock: the waiting thread blocks a task being executed somehow.
     // we don't want a dead dispatcher...
     throw new TaskException("pending task timed out");
   }
@@ -421,13 +421,13 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public void requestTermination() {
     assertNotKilled();
-    stopRequested = true;
+    terminationRequested = true;
     interrupt();
   }
 
   @Override
   public boolean isTerminationRequested() {
-    return stopRequested;
+    return terminationRequested;
   }
 
   @Override
@@ -447,7 +447,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
 
       if (isAlive()) {
-        // thread won't die
         LOGGER.severe(this + " does not terminate -> marking dispatcher killed!");
         killed = true;
       }
@@ -541,7 +540,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Releases a lock after having executed a task from the queue (or none).
    *
-   * @param sleepMs milliseconds to sleep after unlock, 0 if no sleep, limited to {@link #getSleepInterval()}
+   * @param sleepMs milliseconds to sleep after unlocking, 0 if no sleep, limited to {@link #getSleepInterval()}
    */
   protected void unlockInternal(long sleepMs) {
     unlockImpl(null);
@@ -571,7 +570,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     assertIntervalsInRange();
 
     try {
-      while (!stopRequested && !isKilled()) {
+      while (!terminationRequested && !isKilled()) {
 
         lockInternal();
 
@@ -579,7 +578,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
         Task task = nextTask();
 
-        if (stopRequested || isKilled()) {
+        if (terminationRequested || isKilled()) {
           break;
         }
 
@@ -589,7 +588,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
             LOGGER.info("shutting down {0} due to idle timeout", this);
             break;
           }
-          unlockInternal(sleepInterval);   // unlock and wait (until interrupted due to added task or time elapsed)
+          unlockInternal(sleepInterval);   // unlock and wait (until interrupted due to the added task or time elapsed)
         }
         else if (task.getScheduledEpochalTime() > lastMillis) {
           long sleepMs = task.getScheduledEpochalTime() - lastMillis;
@@ -609,7 +608,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     }
     catch (RuntimeException rex) {
-      if (!stopRequested) {
+      if (!terminationRequested) {
         LOGGER.severe("dispatcher failed", rex);
         terminationCause = rex;
       }
@@ -708,7 +707,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
       long repeat = task.getRepeatInterval();
       if (repeat > 0 && task.getDispatcher() == this) {
-        // if repeat and not removed from dispatcher in the meantime
+        // if repeat and not removed from the dispatcher in the meantime
         task.setScheduledEpochalTime(lastMillis + repeat);
         queue.add(task);
       }
@@ -723,16 +722,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Does any necessary cleanup after dispatcher thread has been terminated.<br>
+   * Does any necessary cleanup after the dispatcher thread has been terminated.<br>
    */
   protected void cleanup() {
-    // to be implemented in derivates
+    terminationRequested = true;  // in case termination due to some exception
   }
 
   /**
-   * Sleeps for sleep interval.
+   * Sleeps for the given sleep interval.
    *
-   * @param sleepMs the interval to sleep
+   * @param sleepMs the sleep interval in ms
    */
   protected void sleepForInterval(long sleepMs) {
     try {
@@ -755,7 +754,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Asserts that dispatcher is still alive.
+   * Asserts that the dispatcher is still alive.
    */
   protected void assertAlive() {
     if (lastMillis > 0 && !isAlive()) {
@@ -764,7 +763,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Asserts that dispatcher is not running.
+   * Asserts that the dispatcher is not running.
    */
   protected void assertNotAlive() {
     if (isAlive()) {
@@ -785,19 +784,19 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Waits for the lock.
    *
-   * @param key the optional unlock key
+   * @param key the optional unlock-key
    * @return the lock if really locked, else just incremented the lock count
    */
   private TaskDispatcherLock lockImpl(Object key) {
 
     int lockingLevel;
 
-    for (;;) {    // repeat if key doesn't match
+    for (;;) {    // repeat if the key doesn't match
 
       if (usingMutexLocking) {
         /*
          * We don't need a 'synchronized(this)' here because
-         * if there is already a lock only the same thread can lock it again.
+         * if there is already a lock, only the same thread can lock it again.
          * If it is not the same thread the lock() below will block.
          */
         for (;;) {
@@ -843,7 +842,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           assertAlive();
           assertNotKilled();
           nonMutexLockCount++;
-          // we need a synchronized here because otherwise another thread
+          // we need synchronization here because otherwise another thread
           // may increment and checkLockKey in parallel
           lockingLevel = nonMutexLockCount;
           try {
@@ -871,8 +870,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   /**
    * Sets and checks the locking key.<br>
-   * If lockingLevel == 1 the key is just set.
-   * Otherwise, it is compared with the current key and if it does
+   * If lockingLevel == 1, the key is just set.
+   * Otherwise, it is compared with the current key, and if it does
    * not match, the nested lock is decremented by one and the thread
    * waits for an unlock operation by another thread.
    *
@@ -902,7 +901,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         nonMutexLockCount--;    // revert increment of the lock count
         try {
           LOGGER.finer("{0}: waiting for unlock of {1} ...", this, unlockKey);
-          wait(sleepInterval); // release monitor on this and wait for notify
+          wait(sleepInterval); // release monitor on this and wait for notification
         }
         catch (InterruptedException ie) {
           // daemon thread is terminated via requestTermination!
@@ -918,7 +917,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Performs the unlock operation.
    *
-   * @param key the unlock key
+   * @param key the unlock-key
    * @return true if really unlocked, else just decremented the lock count
    */
   private boolean unlockImpl(Object key) {
@@ -929,7 +928,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       /*
        * We don't need a 'synchronized(this)' here because we can assume
        * that the same thread that locked the dispatcher will also unlock it.
-       * If it is not the same thread or there is no lock at all
+       * If it is a different thread or there is no lock at all
        * the "unlock()" below will fail with an IllegalMonitorStateException.
        */
       checkUnlockKey(key);
@@ -964,7 +963,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   /**
    * Safely interrupt the dispatcher without interrupting any running task.
-   * (even if task was interruptable)
+   * (even if the task was interruptable)
    */
   private void safeInterrupt() {
     if (interruptMutex.readLock().tryLock()) {
@@ -976,11 +975,11 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         interruptMutex.readLock().unlock();
       }
     }
-    // else: executing task: no need to interrupt because not sleeping
+    // else the executing task: no need to interrupt because not sleeping
   }
 
   /**
-   * Warns if key is not null for counter-based dispatchers.
+   * Warns if the key is not null for counter-based dispatchers.
    *
    * @param key the lock/unlock key
    */
@@ -993,7 +992,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
 
   /**
-   * Checks for matching unlock key.
+   * Checks for matching the unlock-key.
    *
    * @param key the key to unlock
    */

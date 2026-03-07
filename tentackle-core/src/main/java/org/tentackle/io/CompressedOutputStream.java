@@ -16,17 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import org.tentackle.log.Logger;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.Deflater;
-
-
 
 /**
  * Stream to write compressed data to the underlying output stream.
@@ -35,7 +31,7 @@ import java.util.zip.Deflater;
  * capable for communication link streams like tcp-sockets.
  * The standard classes are only file-capable (relying on EOF-detection).
  * In comlinks, however, there are several packets instead of a single file.
- * Hence, the stream must be blocked, i.e. the (varying) blocksize must
+ * Hence, the stream must be blocked, i.e., the (varying) blocksize must
  * become part of the protocol to allow the corresponding input stream
  * to detect the end of the packets.
  * Furthermore, we optimize to compress only packets larger than a certain size.
@@ -44,14 +40,15 @@ import java.util.zip.Deflater;
  * MSBit signals whether the packet is compressed or not.
  * Because of this, the maximum buffer size is limited to 32K - 1.
  */
-public class CompressedOutputStream extends FilterOutputStream {
+public class CompressedOutputStream extends PacketSizedOutputStream {
 
   private static final Logger LOGGER = Logger.get(CompressedOutputStream.class);
 
   /**
-   * The maximum compression buffer size. The larger the buffer, the better the compression.
+   * The maximum compression buffer size.
+   * Larger buffers provide better compression.
    */
-  public static final int MAX_BUFFER_SIZE = Short.MAX_VALUE;
+  private static final int MAX_BUFFER_SIZE = Short.MAX_VALUE;
 
 
   static final int COMPRESSED = MAX_BUFFER_SIZE + 1;    // 0x8000 MSBit: 1 = compressed, 0 = uncompressed
@@ -64,38 +61,45 @@ public class CompressedOutputStream extends FilterOutputStream {
   private int orgLen;                         // number of bytes in orgBuf
   private final Deflater deflater;            // the zip deflater
   private final byte[] defBuf;                // deflated/compressed output data buffer
-  private boolean closed;                     // true if closed
 
-  // for statistic only (Level.FINE must be enabled)
-  private long totalWritten;                  // total number of bytes written by application
+  // for statistic only (Level.FINE)
+  private long totalWritten;                  // total number of bytes written by the application
   private long totalCompressed;               // number of compressed bytes written to stream
   private long totalUncompressed;             // number of uncompressed bytes written to stream
 
   /**
    * Creates a compressed output stream.
    *
-   * @param out the underlying output stream (e.g. from a socket)
-   * @param bufSize the buffer size for compression. Packets larger than bufSize are split.
-   * @param minCompressSize the minimum compressed packet size. Smaller packets pass the stream uncompressed.
+   * @param out the underlying output stream (e.g., from a socket)
+   * @param bufSize the buffer size for compression (larger packets are split)
+   * @param minCompressSize the minimum packet size to use compression (smaller packets will remain uncompressed)
    */
   public CompressedOutputStream(OutputStream out, int bufSize, int minCompressSize) {
-
     super(out);
 
     if (bufSize <= minCompressSize || bufSize > MAX_BUFFER_SIZE) {
-      throw new IllegalArgumentException("illegal bufSize [" + minCompressSize + " < ?" + bufSize + "? <= " + MAX_BUFFER_SIZE + "]");
+      throw new IllegalArgumentException("illegal buffer size [" + minCompressSize + " < ?" + bufSize + "? <= " + MAX_BUFFER_SIZE + "]");
     }
-
-    this.bufSize         = bufSize;
+    this.bufSize = bufSize;
     this.minCompressSize = minCompressSize;
 
-    orgBuf        = new byte[bufSize];
-    deflater      = new Deflater(Deflater.DEFAULT_COMPRESSION, true);  // with noWrap: less metadata -> better compression
-    defBuf        = new byte[bufSize];
+    orgBuf = new byte[bufSize];
+    deflater = createDeflater();
+    defBuf = new byte[bufSize];
   }
 
   /**
-   * Creates a compressed output stream with maximum allowed buffersize (32K-1) and
+   * Creates a compressed output stream.
+   *
+   * @param out the underlying output stream (e.g., from a socket)
+   * @param minCompressSize the minimum packet size to use compression (smaller packets will remain uncompressed)
+   */
+  public CompressedOutputStream(OutputStream out, int minCompressSize) {
+    this(out, MAX_BUFFER_SIZE, minCompressSize);
+  }
+
+  /**
+   * Creates a compressed output stream with the maximum allowed buffer size (32K-1) and
    * a default minCompressSize of 64.
    *
    * @param out the underlying output stream
@@ -108,15 +112,14 @@ public class CompressedOutputStream extends FilterOutputStream {
   /**
    * Writes the specified <code>byte</code> to this output stream.
    *
-   * @param      b   the <code>byte</code>.
-   * @exception  IOException  if an I/O error occurs.
+   * @param b the <code>byte</code>
+   * @exception IOException if an I/O error occurs
    */
   @Override
   public void write(int b) throws IOException {
     byteBuf[0] = (byte)b;
     write(byteBuf, 0, 1);
   }
-
 
   /**
    * Writes <code>len</code> bytes from the specified
@@ -126,10 +129,10 @@ public class CompressedOutputStream extends FilterOutputStream {
    * Packets larger than the buffer size will be split and written to
    * the underlying output stream as separate packets.
    *
-   * @param      b     the data.
-   * @param      off   the start offset in the data.
-   * @param      len   the number of bytes to write.
-   * @exception  IOException  if an I/O error occurs.
+   * @param      b     the data
+   * @param      off   the start offset in the data
+   * @param      len   the number of bytes to write
+   * @exception  IOException  if an I/O error occurs
    */
   @Override
   public void write(byte[] b, int off, int len) throws IOException {
@@ -140,7 +143,7 @@ public class CompressedOutputStream extends FilterOutputStream {
 
       int num = len;
       if (num > bufSize - orgLen) {
-        num = bufSize - orgLen;    // align to buffersize
+        num = bufSize - orgLen;    // align to buffer size
       }
 
       System.arraycopy(b, off, orgBuf, orgLen, num);
@@ -155,12 +158,11 @@ public class CompressedOutputStream extends FilterOutputStream {
     }
   }
 
-
   /**
    * Flushes this output stream and forces any buffered output bytes
    * to be written out to the stream.
    *
-   * @exception  IOException  if an I/O error occurs.
+   * @exception IOException if an I/O error occurs
    */
   @Override
   public void flush() throws IOException {
@@ -168,16 +170,14 @@ public class CompressedOutputStream extends FilterOutputStream {
     super.flush();
   }
 
-
   /**
    * Overridden to print stats only
    */
   @Override
   public void close() throws IOException {
-    if (!closed) {
-      closed = true;
-      deflater.end();
+    if (!isClosed()) {
       super.close();
+      deflater.end();
       LOGGER.fine(() ->
           "compressed output stream stats: total=" + totalWritten +
           ", compressed=" + totalCompressed +
@@ -188,10 +188,13 @@ public class CompressedOutputStream extends FilterOutputStream {
 
 
   /**
-   * @return true if closed
+   * Creates the deflater.
+   *
+   * @return the deflater
    */
-  public boolean isClosed() {
-    return closed;
+  protected Deflater createDeflater() {
+    // with noWrap: less metadata -> better compression
+    return new Deflater(Deflater.DEFAULT_COMPRESSION, true);
   }
 
 
@@ -199,21 +202,17 @@ public class CompressedOutputStream extends FilterOutputStream {
    * Writes the header.
    *
    * @param size the logical packet size
-   * @param compressed is true if packet is compressed, false if uncompressed
+   * @param compressed is true if the packet is compressed, false if uncompressed
    */
-  private void writeHeader(int size, boolean compressed) throws IOException {
+  protected void writeHeader(int size, boolean compressed) throws IOException {
     if (compressed) {
       size |= COMPRESSED;
     }
-    // msb first
-    out.write((size >>> 8) & 0xff);
-    out.write(size & 0xff);
+    super.writeHeader(size);
   }
 
-
-
   /**
-   * Flushes the buffer.
+   * Flushes the buffer.<br>
    * If the packet size is large enough, the data will be compressed.
    * If the compressed data is smaller than the original data, a compressed
    * packet will be written. Otherwise, an uncompressed packet is written
@@ -255,5 +254,5 @@ public class CompressedOutputStream extends FilterOutputStream {
       LOGGER.fine("uncompressed packet written: {0}", orgLen);
     }
   }
-}
 
+}

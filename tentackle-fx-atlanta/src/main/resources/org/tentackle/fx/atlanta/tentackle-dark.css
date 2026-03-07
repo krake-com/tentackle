@@ -1,0 +1,125 @@
+/**
+ * Adds styles for tentackle-specific extensions.
+ * Dark mode variant.
+ */
+
+.root {
+
+  /**
+   * light yellow components indicate a mandatory field.
+   */
+  -tt-mandatory-color: -color-warning-8;
+
+  /**
+   * light red components indicate an error.
+   */
+  -tt-error-color: -color-danger-8;
+
+  /**
+   * light green components indicate an info/hint.
+   */
+  -tt-info-color: -color-success-8;
+
+}
+
+.tt-info {
+  -fx-control-inner-background: -tt-info-color;
+  -fx-base: -tt-info-color;
+  -color-bg-default: -tt-info-color;
+}
+
+.tt-mandatory {
+  -fx-control-inner-background: -tt-mandatory-color;
+  -fx-base: -tt-mandatory-color;
+  -color-bg-default: -tt-mandatory-color;
+}
+
+.tt-error {
+  -fx-control-inner-background: -tt-error-color;
+  -fx-base: -tt-error-color;
+  -color-bg-default: -tt-error-color;
+}
+
+.tt-i18n {
+  -fx-background-image: url('/org/tentackle/fx/atlanta/i18n-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right top;
+}
+
+.tt-i18n.text-area {
+  -fx-padding: 0 13 0 0;
+}
+
+
+.table-view .table-row-cell {
+  -fx-cell-size: 2em;
+}
+
+.table-view > .column-header-background .column-header {
+  -fx-size: 2em;
+  -fx-background-color: -color-cell-border, -color-header-bg;
+  -fx-background-insets: 0, 0 1 0 0;
+}
+
+.table-view .table-row-cell > .table-cell {
+  -fx-border-color: transparent -color-cell-border transparent transparent;
+}
+
+
+.tree-table-view .tree-table-row-cell {
+  -fx-cell-size: 2em;
+}
+
+.tree-table-view > .column-header-background .column-header {
+  -fx-size: 2em;
+  -fx-background-color: -color-cell-border, -color-header-bg;
+  -fx-background-insets: 0, 0 1 0 0;
+}
+
+.tree-table-view .tree-table-row-cell > .tree-table-cell {
+  -fx-border-color: transparent -color-cell-border transparent transparent;
+}
+
+
+.list-view .list-cell {
+  -fx-cell-size: 2em;
+}
+
+
+.check-box:disabled {
+  -fx-opacity: 0.6;
+}
+.check-box:disabled > .box {
+  -fx-opacity: 0.6;
+}
+
+.radio-button:disabled {
+  -fx-opacity: 0.6;
+}
+.radio-button:disabled > .radio {
+  -fx-opacity: 0.6;
+}
+
+.combo-box-base:disabled {
+  -fx-opacity: 0.6;
+}
+
+.choice-box:disabled {
+  -fx-opacity: 0.6;
+}
+
+.text-input:disabled {
+  -fx-opacity: 0.6;
+}
+
+.button:disabled {
+  -fx-opacity: 0.6;
+}
+
+.toggle-button:disabled {
+  -fx-opacity: 0.6;
+}
+
+.toggle-switch:disabled {
+  -fx-opacity: 0.6;
+}

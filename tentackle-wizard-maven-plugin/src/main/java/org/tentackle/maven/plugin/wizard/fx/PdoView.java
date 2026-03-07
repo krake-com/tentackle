@@ -43,10 +43,12 @@ import javafx.stage.WindowEvent;
 /**
  * Shows the contents of a PDO with optional diff to a savepoint.
  */
-@FxControllerService(url = FxControllerService.FXML_NONE, resources = FxControllerService.RESOURCES_NONE)
+@FxControllerService(url = FxControllerService.FXML_NONE,
+                     resources = FxControllerService.RESOURCES_NONE,
+                     cssDarkAware = true)
 public class PdoView extends AbstractFxController {
 
-  private static final String STYLE_MISMATCH = "diff-mismatch";     // css style for differences
+  private static final String STYLE_MISMATCH = "diff-mismatch";     // CSS style for differences
 
   @Bindable
   private DataDiff diff;

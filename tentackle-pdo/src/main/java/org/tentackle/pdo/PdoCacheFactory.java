@@ -77,7 +77,7 @@ public interface PdoCacheFactory {
 
   /**
    * Removes all objects in ALL caches that refer to a given session.<br>
-   * Useful after having closed a session in an RMI-Server, for example.
+   * Useful after having closed a session in a TRIP-Server, for example.
    *
    * @param session the session (probably closed)
    */

@@ -21,14 +21,13 @@ package org.tentackle.persist;
 import org.tentackle.common.Service;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.persist.rmi.AdminExtensionAdapterRemoteDelegate;
+import org.tentackle.persist.trip.AdminExtensionAdapterRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 
-import java.rmi.RemoteException;
 import java.util.List;
 
 /**
- * Adapter hiding the rmi-stuff for the admin session extension.
+ * Adapter for the admin session extension.
  *
  * @author harald
  */
@@ -58,44 +57,24 @@ public class AdminExtensionAdapter implements AdminExtension {
       throw new PersistenceException("context can be set only once!");
     }
     this.context = context;
-    try {
-      PdoRemoteSessionAdapter adapter = (PdoRemoteSessionAdapter) context.getSession().getRemoteSession();
-      adminExt = adapter.getRemoteDbSession().getRemoteDelegate(getClass().getName());
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    PdoRemoteSessionAdapter adapter = (PdoRemoteSessionAdapter) context.getSession().getRemoteSession();
+    adminExt = adapter.getRemoteDbSession().getRemoteDelegate(getClass().getName());
   }
 
 
   @Override
   public List<SessionData> getSessions() {
-    try {
-      return adminExt.getSessions(context);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    return adminExt.getSessions(context);
   }
 
   @Override
   public boolean logout(long userId, long sessionGroupId, String applicationName, long applicationId) {
-    try {
-      return adminExt.logout(context, userId, sessionGroupId, applicationName, applicationId);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    return adminExt.logout(context, userId, sessionGroupId, applicationName, applicationId);
   }
 
   @Override
   public int kill(long userId, long sessionGroupId, String applicationName,  long applicationId) {
-    try {
-      return adminExt.kill(context, userId, sessionGroupId, applicationName, applicationId);
-    }
-    catch (RemoteException rex) {
-      throw PersistenceException.createFromRemoteException(this, rex);
-    }
+    return adminExt.kill(context, userId, sessionGroupId, applicationName, applicationId);
   }
 
 

@@ -119,7 +119,7 @@
             <!-- wurbel rmis last -->
             <fileset>
               <includes>
-                <include>**/rmi/*.java</include>
+                <include>**/trip/*.java</include>
               </includes>
               <followSymlinks>false</followSymlinks>
             </fileset>
@@ -132,8 +132,8 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <sourceFileExcludes>
-            <exclude>**/rmi/*Delegate.java</exclude>
-            <exclude>**/rmi/*DelegateImpl.java</exclude>
+            <exclude>**/trip/*Delegate.java</exclude>
+            <exclude>**/trip/*DelegateImpl.java</exclude>
           </sourceFileExcludes>
           <tags>
             <tag>

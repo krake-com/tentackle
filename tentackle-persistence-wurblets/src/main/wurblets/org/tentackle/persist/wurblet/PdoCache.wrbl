@@ -178,17 +178,12 @@ For more options, see {\@link DbModelWurblet}.
           PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
-  T selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException;
+  T selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@);
 @{to implOut}@
 
   \@Override
-  public T selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException {
-    try {
-      return newInstance(context).selectCachedBy@(suffix)@(@(name)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public T selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) {
+    return newInstance(context).selectCachedBy@(suffix)@(@(name)@);
   }
 @{to}@
 
@@ -226,17 +221,12 @@ For more options, see {\@link DbModelWurblet}.
           PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
-  T selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
+  T selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@);
 @{to implOut}@
 
   \@Override
-  public T selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException {
-    try {
-      return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public T selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) {
+    return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
   }
 @{to}@
                                   (context, @(udkName)@) -> (X) Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@),
@@ -315,17 +305,12 @@ For more options, see {\@link DbModelWurblet}.
           PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
-  @(pdoType)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException;
+  @(pdoType)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@);
 @{to implOut}@
 
   \@Override
-  public @(pdoType)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException {
-    try {
-      return newInstance(context).selectCachedBy@(suffix)@(@(name)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(pdoType)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) {
+    return newInstance(context).selectCachedBy@(suffix)@(@(name)@);
   }
 @{to}@
 
@@ -360,17 +345,12 @@ For more options, see {\@link DbModelWurblet}.
           PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
-  @(pdoType)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
+  @(pdoType)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@);
 @{to implOut}@
 
   \@Override
-  public @(pdoType)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException {
-    try {
-      return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(pdoType)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) {
+    return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
   }
 @{to}@
                                   (context, @(udkName)@) -> Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@),
@@ -544,14 +524,9 @@ For more options, see {\@link DbModelWurblet}.
   public @(pdoType)@ selectBy@(suffix)@ForCache(@(type)@ @(name)@) {
     @(pdoType)@ obj;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        obj = getRemoteDelegate().selectBy@(suffix)@ForCache(context, @(name)@);
-        configureRemoteObject(context, obj);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      obj = getRemoteDelegate().selectBy@(suffix)@ForCache(context, @(name)@);
+      configureRemoteObject(context, obj);
     }
     else {
       obj = me().findBy@(suffix)@(@(name)@);
@@ -614,14 +589,9 @@ For more options, see {\@link DbModelWurblet}.
   public @(pdoType)@ selectByUniqueDomainKeyForCache(@(udkType)@ @(udkName)@) {
     @(pdoType)@ obj;
     if (getSession().isRemote()) {
-      try {
-        DomainContext context = getDomainContext();
-        obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, @(udkName)@);
-        configureRemoteObject(context, obj);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      DomainContext context = getDomainContext();
+      obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, @(udkName)@);
+      configureRemoteObject(context, obj);
     }
     else {
       obj = me().findByUniqueDomainKey(@(udkName)@);

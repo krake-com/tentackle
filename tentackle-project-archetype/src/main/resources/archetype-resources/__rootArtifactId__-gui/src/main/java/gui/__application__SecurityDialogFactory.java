@@ -29,7 +29,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.util.function.Consumer;
 
 /**
- * Application specific security dialog factory.<br>
+ * Application-specific security dialog factory.<br>
  * Implements the selection of the grantee.
  */
 @Service(SecurityDialogFactory.class)
@@ -38,10 +38,11 @@ public class ${application}SecurityDialogFactory extends DefaultSecurityDialogFa
 
   @Override
   @SuppressWarnings({"rawtypes"})
-  public void selectGrantee(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
-    showUserOrGroupDialog(owner, ifUser -> {
+  public void selectGrantee(Object owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
+    Window window = FxUtilities.getInstance().getWindow(owner);
+    showUserOrGroupDialog(window, ifUser -> {
       OrgUnit orgUnit = ifUser ? Pdo.create(User.class, context) : Pdo.create(UserGroup.class, context);
-      Rdc.displaySearchStage(orgUnit, Modality.APPLICATION_MODAL, owner, false,
+      Rdc.displaySearchStage(orgUnit, Modality.APPLICATION_MODAL, window, false,
                              list -> grantee.accept(list.isEmpty() ? null : list.get(0)));
     });
   }

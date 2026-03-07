@@ -12,7 +12,7 @@ import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.OrgUnitPersistence;
 import ${package}.pdo.td.Message;
-import ${package}.persist.md.rmi.OrgUnitRemoteDelegate;
+import ${package}.persist.md.trip.OrgUnitRemoteDelegate;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.DbModificationType;
@@ -34,7 +34,6 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;

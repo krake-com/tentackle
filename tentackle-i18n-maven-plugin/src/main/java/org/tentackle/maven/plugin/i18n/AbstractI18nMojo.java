@@ -150,23 +150,32 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
 
-    try (Session session = Pdo.createSession(sessionInfo)) {
-      session.makeCurrent();
-      context = Pdo.createDomainContext(session);
+    try {
+      Session session = Pdo.createSession(sessionInfo);
+      try {
+        session.makeCurrent();
+        context = Pdo.createDomainContext(session);
 
-      ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
-      pdoTracker.setSession(session);
+        ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create the tracker but don't start the thread
+        pdoTracker.setSession(session);
 
-      List<MavenProject> projects;
-      if (isExecutionRecursive()) {
-        projects = new ArrayList<>();
-        projects.add(getMavenProject());
+        List<MavenProject> projects;
+        if (isExecutionRecursive()) {
+          projects = new ArrayList<>();
+          projects.add(getMavenProject());
+        }
+        else {
+          projects = getMavenProject().getCollectedProjects();
+        }
+
+        processBundles(session, projects);
       }
-      else {
-        projects = getMavenProject().getCollectedProjects();
+      finally {
+        session.close();
       }
-
-      processBundles(session, projects);
+    }
+    catch (RuntimeException ex) {
+      throw new MojoExecutionException("cannot connect to the backend", ex);
     }
 
     getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
@@ -237,7 +246,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
    * the classloader's getResourceAsStream method.
    *
    * @param classLoader the project classloader
-   * @param resourceName the bundle resource name without leading slash
+   * @param resourceName the bundle resource name without a leading slash
    * @param bundleName the original bundle class name
    * @param locale the locale, null if default
    * @throws MojoExecutionException if execution failed

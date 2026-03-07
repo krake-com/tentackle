@@ -36,7 +36,7 @@ import java.util.prefs.Preferences;
  * <p>
  * Whether username and password are optional depends on the use case. If the configuration
  * is used by a standard DesktopApplication (see fx-rdc module), the user/password is mandatory
- * for local sessions (with driver) and optional for remote sessions (without driver).<br>
+ * for local sessions (with a driver) and optional for remote sessions (without a driver).<br>
  * Other application types may enforce their own rules.
  * <p>
  * Notice that the implementation does not depend on the tentackle-database or tentackle-sql module!
@@ -95,7 +95,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
-   * Removes all backend configurations for given application.
+   * Removes all backend configurations for the given application.
    *
    * @param application the application name
    * @param system true if load from system preferences, else user preferences

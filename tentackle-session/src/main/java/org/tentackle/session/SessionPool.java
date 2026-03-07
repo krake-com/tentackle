@@ -16,18 +16,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
+import org.tentackle.misc.Pool;
 
 /**
- * A pool of sessions for a given session info.<br>
+ * A pool of sessions for a given session-info.<br>
  * Allows a single user to use multiple sessions in parallel.
  *
  * @see SessionPoolFactory
  * @author harald
  */
-public interface SessionPool extends ReturnableSessionProvider {
+public interface SessionPool extends Pool<Session> {
 
   /**
    * Gets the session info.
@@ -39,45 +39,8 @@ public interface SessionPool extends ReturnableSessionProvider {
   /**
    * Gets the session group id.
    *
-   * @return the session group, 0 if ungrouped
+   * @return the session group ID, 0 if ungrouped
    */
   int getSessionGroupId();
-
-  /**
-   * Gets the name of this pool.
-   *
-   * @return the name
-   */
-  String getName();
-
-
-  /**
-   * Gets the maximum pool size.
-   *
-   * @return the max. number of concurrent session instances, 0 = unlimited
-   */
-  int getMaxSize();
-
-
-  /**
-   * Gets the current number of session instances.
-   *
-   * @return the number of sessions managed by this pool
-   */
-  int getSize();
-
-
-  /**
-   * Closes all sessions in the pool, cleans up and makes the pool unusable.
-   */
-  void shutdown();
-
-
-  /**
-   * Returns whether the pool is shutdown.
-   *
-   * @return true if shutdown
-   */
-  boolean isShutdown();
 
 }

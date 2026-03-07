@@ -13,7 +13,7 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityManager;
 
 /**
- * Application specific security factory.
+ * Application-specific security factory.
  */
 @Service(SecurityFactory.class)
 public class ${application}SecurityFactory extends DefaultSecurityFactory {

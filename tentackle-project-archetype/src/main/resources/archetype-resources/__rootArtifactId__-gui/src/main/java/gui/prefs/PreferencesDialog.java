@@ -65,7 +65,7 @@ public class PreferencesDialog extends AbstractFxController {
     saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> {
       try {
-        ${application}Preferences.getInstance().sync();
+        ${application}Preferences.getInstance().getSystemPrefs().sync();
         getStage().hide();
       }
       catch (BackingStoreException ex) {
@@ -94,15 +94,17 @@ public class PreferencesDialog extends AbstractFxController {
    * Shows the security dialog.
    */
   private void security() {
-    SecurityDialogFactory.getInstance().showDialog(PreferencesDialog.class);
+    SecurityDialogFactory.getInstance().showDialog(getView(), PreferencesDialog.class);
   }
 
 
   /**
    * Shows the modal preferences window.
+   *
+   * @param owner the owner window or node
    */
-  public static void show() {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+  public static void show(Object owner) {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, owner);
     PreferencesDialog pp = Fx.load(PreferencesDialog.class);
     Scene scene = Fx.createScene(pp.getView());
     stage.setScene(scene);

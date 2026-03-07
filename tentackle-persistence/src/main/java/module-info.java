@@ -25,10 +25,16 @@ module org.tentackle.persistence {
   exports org.tentackle.persist.app;
   exports org.tentackle.persist.lock;
   exports org.tentackle.persist.ns;
-  exports org.tentackle.persist.ns.rmi;
-  exports org.tentackle.persist.rmi;
+  exports org.tentackle.persist.ns.trip;
+  exports org.tentackle.persist.trip;
   exports org.tentackle.persist.security;
-  exports org.tentackle.persist.security.rmi;
+  exports org.tentackle.persist.security.trip;
+
+  // necessary for TRIP
+  opens org.tentackle.persist to org.tentackle.core;
+  opens org.tentackle.persist.ns to org.tentackle.core;
+  opens org.tentackle.persist.security to org.tentackle.core;
+  opens org.tentackle.persist.trip to org.tentackle.core;
 
   requires transitive org.tentackle.pdo;
   requires transitive org.tentackle.database;

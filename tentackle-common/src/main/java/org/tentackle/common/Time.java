@@ -35,18 +35,17 @@ import static java.util.Calendar.SECOND;
  * <p>
  * Differs from {@code java.sql.Time} when
  * serialized/deserialized in different timezones. Databases don't provide a
- * date and no timezone for a time, i.e. when sent over wire to different
- * locations a time should always remain the same for all timezones. In
+ * date and no timezone for a time, i.e., when sent over wire to different
+ * locations, the time should always remain the same for all timezones. In
  * {@code java.sql.Time}, however, the epochal time is serialized which may lead
  * to a different time when deserialized in another timezone. In {@link Time}
- * the effective date is serialized as HHMMSSmmm to provide the same semantics
+ * the effective date is serialized as {@code HHMMSSmmm} to provide the same semantics
  * as databases do.
  * <p>
- * Furthermore, tentackle times can be frozen, i.e. made immutable.
+ * Furthermore, tentackle times can be frozen, i.e., made immutable.
  *
  * @author harald
  */
-@SuppressWarnings("deprecation")
 public class Time extends java.sql.Time implements Freezable {
 
   @Serial
@@ -79,7 +78,7 @@ public class Time extends java.sql.Time implements Freezable {
 
   /**
    * Constructs a
-   * <code>Time</code> object using a milliseconds time value.
+   * <code>Time</code> object using a millisecond time value.
    *
    * @param time milliseconds since January 1, 1970, 00:00:00 GMT; a negative
    * number is milliseconds before January 1, 1970, 00:00:00 GMT
@@ -133,7 +132,7 @@ public class Time extends java.sql.Time implements Freezable {
   }
 
   // others overridden to check for frozen.
-  // those methods are deprecated anyway, but may still be used by an application
+  // those methods are deprecated anyway but may still be used by an application
 
   @Deprecated
   @Override
@@ -185,9 +184,10 @@ public class Time extends java.sql.Time implements Freezable {
 
   /**
    * Save the state of this object to a stream.
-   *
-   * @serialData the value HHMMSSsss is emitted. This allows serializing
+   * <p>
+   * The value {@code HHMMSSsss} is emitted. This allows serializing
    * and deserializing in different timezones without changing the time.
+   *
    * @param s the stream
    * @throws IOException if writing to stream failed
    */

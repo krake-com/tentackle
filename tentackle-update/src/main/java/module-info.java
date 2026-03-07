@@ -23,9 +23,10 @@ module org.tentackle.update {
 
   exports org.tentackle.update;
 
-  requires transitive org.tentackle.common;
+  opens org.tentackle.update to org.tentackle.core; // TRIP
 
-  requires transitive java.rmi;
+  requires transitive org.tentackle.core;
+
   requires java.net.http;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.update.service.Hook;

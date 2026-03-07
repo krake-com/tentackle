@@ -1,0 +1,95 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+
+package org.tentackle.dbms.trip;
+
+import org.tentackle.dbms.AbstractDbObject;
+import org.tentackle.misc.IdSerialTuple;
+
+import java.util.Collection;
+import java.util.List;
+
+
+
+/**
+ * Delegate for the AbstractDbObject class.<br>
+ * Notice: in this class we cut off generics!
+ * The reason is AbstractDbObject.getRemoteDelegate() which can't
+ * be made generic without making AbstractDbObject generic.
+ * This would end up with such silly things like "new Customer&lt;Customer&gt;()",
+ * because java provides no runtime type information of generic type parameters.
+ *
+ * @param <P> the db object class
+ * @author harald
+ */
+public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> extends RemoteDbDelegate {
+
+  long obtainReservedId();
+
+  P selectObject(long id);
+
+  P selectObjectForUpdate(long id);
+
+  List<P> selectAllObjects();
+
+  List<IdSerialTuple> selectAllIdSerial();
+
+  long selectSerial(long id);
+
+  long selectMaxId();
+
+  long selectMaxTableSerial();
+
+  void deletePlain(long id, long serial);
+
+  void insertPlain(P obj);
+
+  void updatePlain(P obj);
+
+  void dummyUpdate(P obj);
+
+  void updateSerial(long id, long serial);
+
+  void updateAndSetSerial(long id, long serial);
+
+  void updateSerialAndTableSerial(long id, long serial, long tableSerial);
+
+  List<IdSerialTuple> selectExpiredTableSerials(long oldSerial);
+
+  List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial);
+
+  Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial);
+
+  List<P> selectObjectsWithExpiredTableSerials(long oldSerial);
+
+  DbObjectResult insertObject(P obj);
+
+  DbObjectResult updateObject(P obj);
+
+  DbObjectResult saveObject(P obj);
+
+  P persistObject(P obj);
+
+  DbObjectResult deleteObject(P obj);
+
+  long countModification();
+
+  boolean isReferenced(long id);
+}

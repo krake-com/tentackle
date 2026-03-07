@@ -18,6 +18,9 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
+
 import java.io.Serial;
 import java.util.Objects;
 
@@ -41,6 +44,7 @@ public class IdSerialNameTuple extends IdSerialTuple {
    * @param serial the serial number
    * @param name   the name associated with the ID
    */
+  @CanonicalConstructor
   public IdSerialNameTuple(long id, long serial, String name) {
     super(id, serial);
     this.name = Objects.requireNonNull(name, "name cannot be null");
@@ -51,6 +55,7 @@ public class IdSerialNameTuple extends IdSerialTuple {
    *
    * @return the name associated with the ID
    */
+  @CanonicalGetter(ordinal = 2)
   public String getName() {
     return name;
   }

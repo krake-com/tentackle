@@ -60,7 +60,7 @@ public class DocumentTest {
 "DMoney           tax             tax               tax (vat)\n" +
 "Timestamp        printed         printed           first printed\n" +
 "Double (10,2 )   someDouble      some_double       digits with scale\n" +
-"MyType<int>      extra           extra             some application specific type\n" +
+"MyType<int>      extra           extra             some application-specific type\n" +
 "\n" +
 "# validations\n" +
 "invoiceNo:    @NotNull(message=\"{ @('please_enter_the_invoice-number') }\")\n" +
@@ -202,7 +202,7 @@ public class DocumentTest {
       assertEquals(al.getSize(), Integer.valueOf(10));
       assertEquals(al.getScale(), Integer.valueOf(2));
 
-      //  "MyType<int>      extra           extra             some application specific type\n" +
+      //  "MyType<int>      extra           extra             some application-specific type\n" +
       line = iter.next();
       assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;

@@ -11,7 +11,7 @@ import ${package}.pdo.md.User;
 import ${package}.pdo.md.User2Group;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.User2GroupPersistence;
-import ${package}.persist.md.rmi.User2GroupRemoteDelegate;
+import ${package}.persist.md.trip.User2GroupRemoteDelegate;
 
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
@@ -25,7 +25,6 @@ import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 
 /**
  * Persistence implementation for User2Group.

@@ -61,9 +61,8 @@ public class I18NEditor extends AbstractFxController {
   public static void showDialog(I18NText i18NText, I18NTextStringTranslator i18NTextStringTranslator) {
     I18NEditor i18NEditor = Fx.load(I18NEditor.class);
     i18NEditor.setI18NText(i18NText, i18NTextStringTranslator);
-    Stage stage = Fx.createStage(Modality.WINDOW_MODAL);
+    Stage stage = Fx.createStage(Modality.WINDOW_MODAL, i18NEditor.component);
     Scene scene = Fx.createScene(i18NEditor.getView());
-    stage.initOwner(Fx.getStage(i18NEditor.component));
     stage.setTitle(i18NEditor.resources.getString("translations"));
     stage.setScene(scene);
     Fx.show(stage);

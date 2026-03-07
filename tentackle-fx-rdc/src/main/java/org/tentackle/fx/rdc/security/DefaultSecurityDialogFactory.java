@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc.security;
 
-import javafx.stage.Window;
-
 import org.tentackle.common.Service;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.pdo.DomainContext;
@@ -51,7 +49,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
    * This needs to be implemented by the application!
    */
   @Override
-  public void selectGrantee(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
+  public void selectGrantee(Object owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
     throw new RdcRuntimeException("grantee selection not implemented for this application");
   }
 
@@ -61,22 +59,22 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   }
 
   @Override
-  public void selectDomainContextObject(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> contextPdo) {
+  public void selectDomainContextObject(Object owner, DomainContext context, Consumer<PersistentDomainObject<?>> contextPdo) {
     throw new RdcRuntimeException("context selection not implemented for this application");
   }
 
   @Override
-  public void showDialog(PersistentDomainObject<?> pdo) {
-    SecurityRulesView.show(null, pdo);
+  public void showDialog(Object owner, PersistentDomainObject<?> pdo) {
+    SecurityRulesView.show(owner, null, pdo);
   }
 
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public void showDialog(int classId, DomainContext context) {
+  public void showDialog(Object owner, int classId, DomainContext context) {
     try {
       Class<PersistentDomainObject> cls = (Class<PersistentDomainObject>)
               Class.forName(SessionUtilities.getInstance().getClassName(classId));
-      SecurityRulesView.show(null, Pdo.create(cls, context));
+      SecurityRulesView.show(owner, null, Pdo.create(cls, context));
     }
     catch (ClassNotFoundException ex) {
       throw new RdcRuntimeException("cannot create security dialog for classId=" + classId, ex);
@@ -84,8 +82,8 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   }
 
   @Override
-  public void showDialog(Class<?> clazz) {
-    SecurityRulesView.show(clazz, null);
+  public void showDialog(Object owner, Class<?> clazz) {
+    SecurityRulesView.show(owner, clazz, null);
   }
 
 }

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.tentackle.log.Logger;
@@ -112,8 +111,6 @@ public class MethodCache {
     methodMap = new ConcurrentHashMap<>();
   }
 
-
-
   /**
    * Gets the name of the method cache.
    *
@@ -123,14 +120,10 @@ public class MethodCache {
     return name;
   }
 
-
-
   @Override
   public String toString() {
     return getName();
   }
-
-
 
   /**
    * Gets a method from the cache.
@@ -142,7 +135,6 @@ public class MethodCache {
   public Method getMethod(Class<?> clazz, Class<?>... parameterTypes) {
     return methodMap.get(new Key(clazz, parameterTypes));
   }
-
 
   /**
    * Adds the method to the cache.
@@ -164,7 +156,6 @@ public class MethodCache {
     return oldMethod;
   }
 
-
   /**
    * Removes a method from the cache.
    *
@@ -183,6 +174,5 @@ public class MethodCache {
     }
     return method;
   }
-
 
 }

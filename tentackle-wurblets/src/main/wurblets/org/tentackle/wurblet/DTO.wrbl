@@ -31,6 +31,7 @@ In TT, the default is to use "frommers" instead of "withers", since builder impl
 that use withers for builder methods (which return the builder and not the object to be built!). This may be confusing.
 TT supports both, though.</li>
 <li><em>--nott:</em> generate generic code that does not need any Tentackle dependency (such as TentackleRuntimeException)</li>
+<li><em>--canonical:</em> generate code with \@Canonical... annotations (used by TRIP, for example).</li>
 <li><em>--nofinal:</em> generate serialization-friendly code. With JEP-500 and JDK &gt;&gt; 26, serialization frameworks
  cannot modify final fields anymore without using special JDK-internal features. With this option, all fields are non-final
  and a protected no-args constructor is generated. This does not change the semantics of the DTO but
@@ -188,10 +189,19 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
             }
             superArgs.append(property.getName());
           }
-          if (args.length() > 0) {
-            args.append(", ");
-          }
           if (!withBuilder) {
+            if (canonical) {
+              if (args.length() > 0) {
+                args.append(',');
+              }
+              args.append("\n            ")
+                  .append("\@CanonicalName(").append('"').append(property.getName()).append('"').append(") ");
+            }
+            else {
+              if (args.length() > 0) {
+                args.append(", ");
+              }
+            }
             args.append(property.getType()).append(' ').append(property.getName());
           }
         }
@@ -204,6 +214,11 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
       }
 
       if (withBuilder) {
+        if (canonical) {
+]@
+  \@CanonicalBuilder(Builder.class)
+@[
+        }
 ]@
   protected @(getClassName())@(Builder builder) {
 @[
@@ -256,6 +271,11 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
 @[
       }
       else {
+        if (canonical) {
+]@
+  \@CanonicalConstructor
+@[
+        }
 ]@
   public @(getClassName())@(@(args.toString())@) {
 @[

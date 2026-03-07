@@ -16,27 +16,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.io;
 
 import org.tentackle.log.Logger;
 
 import java.io.EOFException;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-
-
 /**
- * Stream to read compressed data from the underlying input stream.<br>
- *
- * Counterpart to CompressedOutputStream.
+ * Stream to read compressed data from the underlying input stream.
+ * <p>
+ * Counterpart to {@link CompressedOutputStream}.
  */
-public class CompressedInputStream extends FilterInputStream {
+public class CompressedInputStream extends PacketSizedInputStream {
 
   private static final Logger LOGGER = Logger.get(CompressedInputStream.class);
 
@@ -44,22 +39,19 @@ public class CompressedInputStream extends FilterInputStream {
   private final Inflater inflater;      // zip inflater
   private final byte[] byteBuf;         // single byte buffer for read()
 
-  private byte[] infBuf;                // buffer holding compressed data for the inflater (size is dynamically adapted)
-  private boolean compressed;           // true if current packet is compressed and inf... is valid
-  private int readPending;              // number of bytes pending to read from underlying stream
-  private boolean closed;               // true if closed
+  private byte[] inflaterBuffer;        // buffer holding compressed data for the inflater (size is dynamically adapted)
+  private boolean compressed;           // true if the current packet is compressed and inf... is valid
+  private int readPending;              // number of bytes pending to read from the underlying stream
 
   // for statistic only (Level.FINE must be enabled)
   private long totalRead;               // total number of bytes read by application
-  private long totalCompressed;         // number of compressed bytes read from stream
-  private long totalUncompressed;       // number of uncompressed bytes read from stream
-
+  private long totalCompressed;         // number of compressed bytes read from the stream
+  private long totalUncompressed;       // number of uncompressed bytes read from the stream
 
 
   /**
    * Creates a new compressed input stream.<br>
-   *
-   * The buffersize adapts dynamically to the packet size.
+   * The buffer size adapts dynamically to the packet size.
    *
    * @param in the underlying input stream
    */
@@ -73,41 +65,27 @@ public class CompressedInputStream extends FilterInputStream {
 
   @Override
   public void close() throws IOException {
-    if (!closed) {
-      closed = true;
+    if (!isClosed()) {
       super.close();
       LOGGER.fine(() ->
-          "compressed output stream stats: total=" + totalRead +
+          "compressed input stream stats: total=" + totalRead +
           ", compressed=" + totalCompressed +
           ", uncompressed=" + totalUncompressed +
           ", ratio=" + (int)((totalCompressed + totalUncompressed) * 100.0d / (totalRead == 0 ? 1 : totalRead)) + "%");
     }
   }
 
-
-  /**
-   * Returns the closed state.
-   *
-   * @return true if closed
-   */
-  public boolean isClosed() {
-    return closed;
-  }
-
-
   /**
    * Reads the next uncompressed byte of data from the input stream.
    *
-   * @return     the next byte of data, or <code>-1</code> if the end of the
-   *             stream is reached.
-   * @exception  IOException  if an I/O error occurs.
+   * @return the next byte of data, or <code>-1</code> if the end of the stream is reached.
+   * @exception IOException if an I/O error occurs
    */
   @Override
   public int read() throws IOException {
     int num = read(byteBuf, 0, 1);
     return num < 0 ? num : (byteBuf[0] & 0xff);
   }
-
 
   /**
    * Reads up to <code>len</code> uncompressed bytes of data from this input stream
@@ -120,7 +98,7 @@ public class CompressedInputStream extends FilterInputStream {
    *             <code>-1</code> if there is no more data because the end of
    *             the stream has been reached.
    *
-   * @exception  IOException  if an I/O error occurs.
+   * @exception  IOException  if an I/O error occurs
    */
   @Override
   public int read(byte[] b, int off, int len) throws IOException {
@@ -150,19 +128,19 @@ public class CompressedInputStream extends FilterInputStream {
           // all data from infBuf has been decompressed
           if (readPending == 0) {
             // read header of next packet
-            if (!readHeader()) {
+            if (readHeader() < 0) {
               return -1;    // end of stream reached
             }
             if (!compressed) {
-              // new packet is not compressed: start over
+              // the new packet is not compressed: start over
               continue;
             }
           }
           if (inflater.needsInput()) {
             // read as much as you can into the buffer.
             // At best: read the whole packet.
-            int num = in.read(infBuf, 0, readPending);
-            LOGGER.finer("read into infBuf: {0}", num);
+            int num = in.read(inflaterBuffer, 0, readPending);
+            LOGGER.finer("read into inflater buffer: {0}", num);
             if (num < 0) {
               // unexpected EOF
               throw new EOFException();
@@ -170,10 +148,10 @@ public class CompressedInputStream extends FilterInputStream {
             readPending -= num;
             totalCompressed += num;
             // pass compressed data to the inflater
-            inflater.setInput(infBuf, 0, num);
+            inflater.setInput(inflaterBuffer, 0, num);
           }
           else {
-            throw new IOException("nothing decompressed but inflator does not request more input");
+            throw new IOException("nothing decompressed but inflater does not request more input");
           }
         }
       }
@@ -181,11 +159,11 @@ public class CompressedInputStream extends FilterInputStream {
         // uncompressed
         if (readPending == 0) {
           // read header of next packet
-          if (!readHeader()) {
+          if (readHeader() < 0) {
             return -1;
           }
           if (compressed) {
-            // next packet is compressed: start over
+            // the next packet is compressed: start over
             continue;
           }
         }
@@ -209,40 +187,24 @@ public class CompressedInputStream extends FilterInputStream {
   }
 
 
-
-  /**
-   * Reads the header of the next packet.
-   *
-   * @return true if next packet loaded, false if end of stream
-   */
-  private boolean readHeader() throws IOException {
-
-    // read header first
-    int ch1 = in.read();
-    if (ch1 < 0) {
-      return false;   // EOF
-    }
-    int ch2 = in.read();
-    if (ch2 < 0) {
-      throw new EOFException();
-    }
-
-    readPending = (ch1 << 8) + ch2;
-    compressed = ((readPending & CompressedOutputStream.COMPRESSED) == CompressedOutputStream.COMPRESSED);
-    readPending &= ~CompressedOutputStream.COMPRESSED;
-
-    if (compressed) {
-      // reset decompressor on each new compressed packet
-      inflater.reset();
-      // make sure buffer is large enough to hold the whole packet.
-      if (infBuf == null || infBuf.length < readPending) {
-        // allocate larger buffer
-        infBuf = new byte[readPending];
-        LOGGER.finer("infBuf enlarged to: {0}", readPending);
+  @Override
+  protected int readHeader() throws IOException {
+    readPending = super.readHeader();
+    if (readPending >= 0) {
+      compressed = ((readPending & CompressedOutputStream.COMPRESSED) == CompressedOutputStream.COMPRESSED);
+      readPending &= ~CompressedOutputStream.COMPRESSED;
+      if (compressed) {
+        // reset the decompressor on each new compressed packet
+        inflater.reset();
+        // make sure the buffer is large enough to hold the whole packet.
+        if (inflaterBuffer == null || inflaterBuffer.length < readPending) {
+          // allocate larger buffer
+          inflaterBuffer = new byte[readPending];
+          LOGGER.finer("inflater buffer enlarged to: {0}", readPending);
+        }
       }
     }
-
-    return true;
+    return readPending;
   }
 
 }

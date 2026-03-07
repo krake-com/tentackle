@@ -20,6 +20,7 @@
 package org.tentackle.fx.component;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.skin.NoteSkin;
 
 import javafx.animation.FadeTransition;
@@ -39,10 +40,10 @@ import java.util.List;
 /**
  * A note control.<br>
  * Notes display information related to another linkedNode. Tentackle uses notes to display errors due to bad user input
- * in a linkedNode, e.g. after a ParseException.
+ * in a linkedNode, e.g., after a ParseException.
  * <p>
  * A note is displayed "nearby" its linkedNode. The default position is to the right side of the linkedNode. However,
- * if there is not enough space left on the screen, the note may be displayed below, left or on top of its
+ * if there is not enough space left on the screen, the note may be displayed below, left, or on top of its
  * linkedNode.<p>
  * The link between the note and its linkedNode is visualized by a straight line and a circle above the linkedNode's
  * border.<p>
@@ -68,7 +69,7 @@ public class Note extends PopupControl {
     ERROR("error"),
 
     /**
-     * just an info.
+     * info message.
      */
     INFO("info"),
 
@@ -176,6 +177,7 @@ public class Note extends PopupControl {
   }
 
   private static final String CSS_NAME = "note.css";
+  private static final String CSS_NAME_DARK = "note-dark.css";
 
 
   private final StackPane rootPane;
@@ -247,7 +249,7 @@ public class Note extends PopupControl {
 
 
   /**
-   * Configures an animation to fade-in, pause showing and fade-out again.
+   * Configures an animation to fade-in, pause for showing, and fade-out again.
    *
    * @param fadeIn time to fade-in in [ms]
    * @param pause time to pause showing in [ms]
@@ -405,7 +407,8 @@ public class Note extends PopupControl {
    * @return the URL
    */
   protected URL getCSS() {
-    return Note.class.getResource(CSS_NAME);
+    return ThemeUtilities.getInstance().getResourceURL(
+      Note.class, ThemeUtilities.getInstance().isDarkMode() ? CSS_NAME_DARK : CSS_NAME);
   }
 
 }

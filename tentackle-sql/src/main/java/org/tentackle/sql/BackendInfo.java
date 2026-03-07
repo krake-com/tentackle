@@ -51,7 +51,7 @@ public class BackendInfo {
 
 
   /**
-   * Creates a backend info from a backend.<br>
+   * Creates a backend-info from a backend.<br>
    * The info cannot be used to connect.
    *
    * @param backend the backend
@@ -66,7 +66,7 @@ public class BackendInfo {
   }
 
   /**
-   * Creates a backend info from a backend name.<br>
+   * Creates a backend-info from a backend name.<br>
    * The info cannot be used to connect.
    *
    * @param backendName the backend name
@@ -76,7 +76,7 @@ public class BackendInfo {
   }
 
   /**
-   * Creates a backend info.<br>
+   * Creates a backend-info.<br>
    * This info is able to create a connection.
    *
    * @param url the backend url
@@ -95,7 +95,7 @@ public class BackendInfo {
 
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      url = cryptor.deriveURL(url, new String[]{"http:", "https:"});
+      url = cryptor.deriveURL(url, "http:", "https:", "rmi:");
     }
 
     // cut the optional backend type
@@ -116,7 +116,7 @@ public class BackendInfo {
       }
 
       if (backendType == null) {
-        // backend type not given: open temporary connection to get the URL
+        // backend-type was not given: open temporary connection to get the URL
         try (Connection tempCon = jndiDataSource.getConnection()) {
           DatabaseMetaData metaData = tempCon.getMetaData();
           if (metaData == null) {
@@ -135,34 +135,28 @@ public class BackendInfo {
         catch (SQLException sqx) {
           throw new BackendException("cannot retrieve metadata of JNDI source " + jndiName, sqx);
         }
-        // return to pool. The connections are managed by the ConnectionManager
-        // ignore closing exception
       }
       else  {
         backend = BackendFactory.getInstance().getBackendByName(backendType);
       }
     }
-    else if (url.startsWith(Constants.BACKEND_RMI_URL_INTRO)) {
-      backend = null;
-      jndiDataSource = null;
-    }
-    else {
-      // JDBC
-      if (!url.startsWith(Constants.BACKEND_JDBC_URL_INTRO)) {
-        url = Constants.BACKEND_JDBC_URL_INTRO + url;
-      }
+    else if (url.startsWith(Constants.BACKEND_JDBC_URL_INTRO)) {
       backend = backendType == null ?
                 BackendFactory.getInstance().getBackendByUrl(url) :
                 BackendFactory.getInstance().getBackendByName(backendType);
+      jndiDataSource = null;
+    }
+    else {
+      // trip
+      backend = null;
       jndiDataSource = null;
     }
 
     this.url = url;
   }
 
-
   /**
-   * Creates a backend info from backend properties.<br>
+   * Creates a backend-info from backend properties.<br>
    * The info is able to create a connection.
    *
    * @param backendProperties the properties
@@ -187,9 +181,8 @@ public class BackendInfo {
     }
   }
 
-
   /**
-   * Creates a backend info from another one with a different user and password.
+   * Creates a backend-info from another one with a different user and password.
    *
    * @param backendInfo the original backend info
    * @param user the username
@@ -203,6 +196,7 @@ public class BackendInfo {
     this.jndiDataSource = backendInfo.jndiDataSource;
     this.schemas = backendInfo.schemas;
   }
+
 
   /**
    * Gets the backend.
@@ -296,8 +290,8 @@ public class BackendInfo {
   /**
    * Sets the database connection inactivity timeout.<br>
    * Some databases close connections if being idle for a certain time, which cannot
-   * be deactivated especially in clouds.<br>
-   * When this timeout is set, a dummy select will be sent to the backend, to
+   * be deactivated, especially in clouds.<br>
+   * When this timeout is set, a dummy select will be sent to the backend to
    * make sure that the connection hasn't been closed in the meantime
    * and/or to keep it alive periodically.
    *

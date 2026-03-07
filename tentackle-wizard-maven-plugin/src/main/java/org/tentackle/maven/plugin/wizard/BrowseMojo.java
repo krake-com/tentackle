@@ -92,38 +92,47 @@ public class BrowseMojo extends AbstractWizardMojo {
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
-    try (Session session = Pdo.createSession(sessionInfo)) {
-      DomainContext context = Pdo.createDomainContext(session);
-
-      ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
-      pdoTracker.setSession(session);
-
-      CountDownLatch latch = new CountDownLatch(1);
-
-      Platform.startup(() -> {
-        try {
-          configureFx();
-          registerUncaughtExceptionHandler();
-          session.makeCurrent();
-          stage = PdoBrowser.show(this, context);
-          stage.setOnHidden(event -> latch.countDown());
-        }
-        catch (Throwable t) {
-          getLog().error(t);
-          latch.countDown();
-        }
-      });
-
+    try {
+      Session session = Pdo.createSession(sessionInfo);
       try {
-        latch.await();
+        DomainContext context = Pdo.createDomainContext(session);
+        ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
+        pdoTracker.setSession(session);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Platform.startup(() -> {
+          try {
+            configureFx();
+            registerUncaughtExceptionHandler();
+            session.makeCurrent();
+            stage = PdoBrowser.show(this, context);
+            stage.setOnHidden(_ -> latch.countDown());
+          }
+          catch (Throwable t) {
+            getLog().error(t);
+            latch.countDown();
+          }
+        });
+
+        try {
+          latch.await();
+        }
+        catch (InterruptedException e) {
+          throw new InterruptedRuntimeException(e);
+        }
       }
-      catch (InterruptedException e) {
-        throw new InterruptedRuntimeException(e);
+      catch (PersistenceException ex) {
+        // no database? wrong database? whatever: testing environment incomplete
+        throw new MojoExecutionException("no backend found", ex);
+      }
+      finally {
+        if (session != null) {
+          session.close();
+        }
       }
     }
     catch (PersistenceException ex) {
-      // no database? wrong database? whatever: testing environment incomplete
-      throw new MojoExecutionException("no backend found", ex);
+      throw new MojoExecutionException("failed to connect to the backend", ex);
     }
   }
 

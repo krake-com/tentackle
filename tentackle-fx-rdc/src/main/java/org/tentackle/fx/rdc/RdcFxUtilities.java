@@ -18,12 +18,11 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.Scene;
-import javafx.scene.control.TreeItem;
-
 import org.tentackle.common.Service;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.scene.control.TreeItem;
 
 /**
  * {@link FxUtilities} for RDC.
@@ -36,12 +35,6 @@ public class RdcFxUtilities extends FxUtilities {
    */
   public RdcFxUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
-  }
-
-  @Override
-  public void applyStylesheets(Scene scene) {
-    super.applyStylesheets(scene);
-    scene.getStylesheets().add("/org/tentackle/fx/rdc/translate/pdo-style.css");
   }
 
   @Override
@@ -58,7 +51,7 @@ public class RdcFxUtilities extends FxUtilities {
    *
    * @param treeItem the PDO tree item
    * @param <T> the PDO type
-   * @return true if PDO type is in path
+   * @return true if the PDO type is in the path
    */
   protected <T extends PersistentDomainObject<T>> boolean isPdoTypeInParentPath(PdoTreeItem<T> treeItem) {
     // we limit by PDO type instead of PDO identity.

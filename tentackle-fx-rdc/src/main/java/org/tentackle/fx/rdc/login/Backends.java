@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.fx.rdc.login;
 
 import org.tentackle.bind.Bindable;
@@ -53,7 +54,7 @@ import java.text.MessageFormat;
 import java.util.List;
 
 /**
- * Controller to add, edit and remove backends.
+ * Controller to add, edit, and remove backends.
  */
 @FxControllerService(binding = FxControllerService.BINDING.BINDABLE_INHERITED)
 public class Backends extends AbstractFxController {
@@ -61,14 +62,15 @@ public class Backends extends AbstractFxController {
   /**
    * Opens a dialog to edit the backend- and driver configurations.
    *
+   * @param owner the owner window or node
    * @param application the application name
    * @param system true if user system preferences, else user preferences
-   * @param updatedRunnable invoked whenever the backend were modified, null if none
+   * @param updatedRunnable invoked whenever the backend was modified, null if none
    */
-  public static void editBackends(String application, boolean system, Runnable updatedRunnable) {
+  public static void editBackends(Object owner, String application, boolean system, Runnable updatedRunnable) {
     Backends controller = Fx.load(Backends.class);
     Scene scene = Fx.createScene(controller.getView());
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, owner);
     stage.setScene(scene);
     stage.setTitle(RdcFxRdcBundle.getString("Backends"));
     controller.setApplication(application, system);
@@ -79,7 +81,7 @@ public class Backends extends AbstractFxController {
         stage.close();
       }
     });
-    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> controller.persist());
+    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, _ -> controller.persist());
     Fx.show(stage);
   }
 
@@ -164,9 +166,9 @@ public class Backends extends AbstractFxController {
 
     backends.setBindable(false);
     backends.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-    backends.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+    backends.getSelectionModel().selectedItemProperty().addListener((_, oldValue, newValue) -> {
       if (oldValue != null) {
-        backendPane.updateModel();  // necessary bec. focus lost may arrive after change event
+        backendPane.updateModel();  // necessary bec. focus lost may arrive after the change event
         persist(oldValue);
       }
       backend = newValue;
@@ -177,14 +179,14 @@ public class Backends extends AbstractFxController {
     });
 
     addBackendButton.setGraphic(Fx.createGraphic("add"));
-    addBackendButton.setOnAction(event -> {
+    addBackendButton.setOnAction(_ -> {
       backends.getItems().add(new BackendConfiguration(application, null, null, null,null, null, null));
       backends.getSelectionModel().selectLast();
       backendName.requestFocus();
     });
 
     removeBackendButton.setGraphic(Fx.createGraphic("delete"));
-    removeBackendButton.setOnAction(event -> {
+    removeBackendButton.setOnAction(_ -> {
       BackendConfiguration current = backends.getSelectionModel().getSelectedItem();
       if (current != null) {
         backends.getItems().remove(current);
@@ -196,7 +198,7 @@ public class Backends extends AbstractFxController {
       }
     });
 
-    backendTab.setOnSelectionChanged(event -> {
+    backendTab.setOnSelectionChanged(_ -> {
       if (backendTab.isSelected()) {
         loadDriverConfigurations();
       }
@@ -204,9 +206,9 @@ public class Backends extends AbstractFxController {
 
     drivers.setBindable(false);
     drivers.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-    drivers.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+    drivers.getSelectionModel().selectedItemProperty().addListener((_, oldValue, newValue) -> {
       if (oldValue != null) {
-        driverPane.updateModel();   // necessary bec. focus lost may arrive after change event
+        driverPane.updateModel();   // necessary bec. focus lost may arrive after the change event
         persist(driver);
       }
       driver = newValue;
@@ -219,14 +221,14 @@ public class Backends extends AbstractFxController {
     driverButton.setDisable(true);
 
     addDriverButton.setGraphic(Fx.createGraphic("add"));
-    addDriverButton.setOnAction(event -> {
+    addDriverButton.setOnAction(_ -> {
       drivers.getItems().add(new DriverConfiguration(null, null, null));
       drivers.getSelectionModel().selectLast();
       driverName.requestFocus();
     });
 
     removeDriverButton.setGraphic(Fx.createGraphic("delete"));
-    removeDriverButton.setOnAction(event -> {
+    removeDriverButton.setOnAction(_ -> {
       DriverConfiguration current = drivers.getSelectionModel().getSelectedItem();
       if (current != null) {
         drivers.getItems().remove(current);
@@ -239,7 +241,7 @@ public class Backends extends AbstractFxController {
     });
 
     driverButton.setGraphic(Fx.createGraphic("file"));
-    driverButton.setOnAction(event -> {
+    driverButton.setOnAction(_ -> {
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java JAR File", "*.jar"));
       File file = fileChooser.showOpenDialog(Fx.getStage(getView()));
@@ -263,9 +265,9 @@ public class Backends extends AbstractFxController {
           }
         }
         if (backend.isPersisted()) {
-          backend.remove(system); // remove old instance, will be persisted as new
+          backend.remove(system); // remove the old instance, will be persisted as new
         }
-        Platform.runLater(backends::refresh); // update name in list
+        Platform.runLater(backends::refresh); // update name in the list
       }
     });
     driverName.getBinding().addToModelListener(e -> {
@@ -331,7 +333,7 @@ public class Backends extends AbstractFxController {
 
   /**
    * Persists currently edited backend and/or driver.<br>
-   * Invoked when dialog is closed.
+   * Invoked when the dialog is closed.
    */
   public void persist() {
     if (backend != null) {

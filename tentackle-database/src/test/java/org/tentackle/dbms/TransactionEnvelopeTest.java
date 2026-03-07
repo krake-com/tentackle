@@ -51,7 +51,8 @@ public class TransactionEnvelopeTest {
 
   @Test
   public void testEnvelope() {
-    try (Session session = SessionFactory.getInstance().create()) {
+    Session session = SessionFactory.getInstance().create();
+    try {
 
       // without checked exception
       int rv = session.transaction(() -> {
@@ -107,6 +108,9 @@ public class TransactionEnvelopeTest {
         return 10;
       });
       assertEquals(rv, 10);
+    }
+    finally {
+      session.close();
     }
   }
 

@@ -31,6 +31,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
+import org.tentackle.common.TBinary;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -66,7 +67,7 @@ import java.util.Map;
 public class ResultSetWrapper implements AutoCloseable {
 
   /**
-   * Enables a warning logging if result sets are longer open than given milliseconds.<br>
+   * Enables warning logging if result sets are longer open than given milliseconds.<br>
    * 0 to disable (default).<br>
    * Useful to detect unexpected database write locks or programming errors when result sets are kept open
    * for a long time (consuming an attached connection), for example, due to expensive processing while reading the result set.
@@ -99,8 +100,8 @@ public class ResultSetWrapper implements AutoCloseable {
     private ResultSetSkipBlock skipBlock;           // current skip block
     private boolean commitOnCloseVoucherValid;      // true if commitOnCloseVoucher has been set
     private long commitOnCloseVoucher;              // != 0 if issue a commit() before close()
-    private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skipmode)
-    private boolean closeStatementOnClose;          // true = close the statement after resultset is closed
+    private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skip mode)
+    private boolean closeStatementOnClose;          // true = close the statement after the resultset is closed
     private ResultSetWrapper me;                    // != null if normal close, else cleanup
     private int rowCount;                           // number of rows fetched
 
@@ -197,13 +198,13 @@ public class ResultSetWrapper implements AutoCloseable {
 
   private final Resources resources;                // resources to be cleaned up
   private final Cleanable cleanable;                // to clean up the result set
-  private int columnOffset;                         // offset to add to column index (e.g. for eager loading / joins)
+  private int columnOffset;                         // offset to add to the column index (e.g., for eager loading / joins)
   private int columnCount;                          // number of columns returned, -1 if unknown
   private ResultSetMetaData metaData;               // the metadata, null if not retrieved yet
   private int skipBlockIndex;                       // the current skip block
-  private boolean cursorMovedInSkipMode;            // true if cursor moved the first time while in skipmode
+  private boolean cursorMovedInSkipMode;            // true if the cursor moved the first time while in skip mode
   private Map<Object,ResultSetSection> sections;    // the configured column sections
-  private ResultSetSection currentSection;          // the current section, null if none
+  private ResultSetSection currentSection;          // current section, null if none
 
 
   /**
@@ -221,7 +222,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Gets the session associated to the result set.
+   * Gets the session associated with the result set.
    *
    * @return the db
    */
@@ -232,7 +233,7 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Gets the statement.
    *
-   * @return the statement being executes for this result set
+   * @return the statement being executed for this result set
    */
   public StatementWrapper getStatement() {
     return resources.stmt;
@@ -285,9 +286,9 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Set whether to commit() before close() or not.<br>
-   * Some dbms (e.g. Postgres) cannot use cursors outside a transaction.
+   * Some dbms (e.g., Postgres) cannot use cursors outside a transaction.
    * In this case a transaction must be started before executeQuery()
-   * (see PreparedStatementWrapper and Query).
+   * (see PreparedStatementWrapper and Query)
    * and closed when the resultset (or the cursor) is closed.
    * The default is not to commit on close.
    *
@@ -324,10 +325,10 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Set the statement to be closed when result set is closed.
+   * Set the statement to be closed when the result set is closed.<br>
    * By default, the statement remains open.
    *
-   * @param closeStatementOnClose true if close statement on close
+   * @param closeStatementOnClose true to close the statement on close
    */
   public void setCloseStatementOnclose(boolean closeStatementOnClose) {
     resources.closeStatementOnClose = closeStatementOnClose;
@@ -336,7 +337,7 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Gets the statement-on-close flag.
    *
-   * @return true if close statement on close
+   * @return true to close the statement on close
    */
   public boolean isCloseStatementOnclose()  {
     return resources.closeStatementOnClose;
@@ -410,7 +411,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <p>
    * If the result set is in skip mode, the first column with that name is found
    * after having skipped some columns according to the last invocation of {@link #skip()}.
-   * Otherwise, the standard JDBC-implementation is used.
+   * Otherwise, the standard JDBC implementation is used.
    *
    * @param name the column name
    * @return the index in the result set
@@ -431,7 +432,7 @@ public class ResultSetWrapper implements AutoCloseable {
   }
 
   /**
-   * Skips given number of columns in current skip block.<br>
+   * Skips the given number of columns in the current skip block.<br>
    * This is usually the column count of an entity.
    *
    * @param columnCount the number of columns
@@ -445,9 +446,9 @@ public class ResultSetWrapper implements AutoCloseable {
    * Starts or restarts skip mode.
    * <p>
    * Skipmode allows multiple columns with the same name belonging to different entities.
-   * For example, in a joined select of two unrelated tables (i.e. no MULTI-inheritance),
+   * For example, in a joined SELECT of two unrelated tables (i.e., no MULTI-inheritance),
    * at least the columns id and serial will appear twice. With skip mode enabled,
-   * the column configuration allows skipping already configured columns (hence the name skipmode).
+   * the column configuration allows skipping already configured columns (hence the name skip mode).
    * <p>
    * Skipmode is implemented by changing the way {@link #findColumn(java.lang.String)} maps names to column indexes.
    * All other methods are unaffected.
@@ -580,15 +581,15 @@ public class ResultSetWrapper implements AutoCloseable {
    * Configures a section within this resultset for retrieval.
    * <p>
    * A section is a logical group of columns within the result set.<br>
-   * There must be at least one section activated in order to retrieve columns
+   * There must be at least one section activated to retrieve columns
    * by section configuration instead of the traditional way by position or by name.<br>
-   * A section may span the whole result set or there may be more than one section,
-   * for example one for each joined table. It's up to the application.<br>
+   * A section may span the whole result-set, or there may be more than one section,
+   * for example, one for each joined table. It's up to the application.<br>
    * If {@code configureSection} returns true, a new section was created and
    * the columns of this section must be configured once via {@link #configureColumn} in
    * the order of their retrieval.<br>
    * Otherwise, the section is already configured.<br>
-   * This is the preferred way to retrieve values from a result set, since
+   * This is the preferred way to retrieve values from a result-set since
    * it is the best compromise between speed and flexibility with respect to
    * the order of the returned columns.<p>
    *
@@ -605,8 +606,8 @@ public class ResultSetWrapper implements AutoCloseable {
    *  ...
    * </pre>
    *
-   * @param key the unique section key, usually the classvariables
-   * @return true if columns of new section must be configured
+   * @param key the unique section key, usually the class variables
+   * @return true if columns of the new section must be configured
    * @see #configureColumn(java.lang.String)
    */
   public boolean configureSection(Object key) {
@@ -637,7 +638,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Configures all columns for the given name and datatype.<br>
-   * The method is mainly provided for backend-specific datatypes, but can be used for any datatype.
+   * The method is mainly provided for backend-specific datatypes but can be used for any datatype.
    *
    * @param dataType the datatype
    * @param columnName the column name (basename from the model)
@@ -734,7 +735,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Moves the cursor froward one row from its current position.
+   * Moves the cursor forward one row from its current position.<br>
    * A <code>ResultSet</code> cursor is initially positioned
    * before the first row; the first call to the method
    * <code>next</code> makes the first row the current row; the
@@ -744,12 +745,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * the cursor is positioned after the last row. Any
    * invocation of a <code>ResultSet</code> method which requires a
    * current row will result in a <code>SQLException</code> being thrown.
-   *  If the result set type is <code>TYPE_FORWARD_ONLY</code>, it is vendor specified
+   * If the result set type is <code>TYPE_FORWARD_ONLY</code>, it is vendor specified
    * whether their JDBC driver implementation will return <code>false</code> or
-   *  throw an <code>SQLException</code> on a
-   * subsequent call to <code>next</code>.
-   *
-   * <p>If an input stream is open for the current row, a call
+   * throw an <code>SQLException</code> on a further call to <code>next</code>.
+   * <p>
+   * If an input stream is open for the current row, a call
    * to the method <code>next</code> will
    * implicitly close it. A <code>ResultSet</code> object's
    * warning chain is cleared when a new row is read.
@@ -1146,11 +1146,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -1171,11 +1171,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>Boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -1880,8 +1880,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a {@link Binary} in the Java programming language.
+   * of this <code>ResultSet</code> object as a {@link Binary}.
    *
    * @param name the label for the column specified with the SQL AS clause.
    *        If the SQL AS clause was not specified, then the label is the name of the column
@@ -1890,7 +1889,25 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public <T extends Serializable> Binary<T> getBinary(String name, int bufSize)  {
     try {
-      return Binary.createBinary(resources.rs.getBinaryStream(name), bufSize, true);
+      return Binary.create(resources.rs.getBinaryStream(name), bufSize, true);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@link TBinary}.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column
+   * @param bufSize the initial buffer size for the TBinary
+   * @return the binary read from db
+   */
+  public <T> TBinary<T> getTBinary(String name, int bufSize)  {
+    try {
+      return TBinary.create(resources.rs.getBinaryStream(name), bufSize, true);
     }
     catch (SQLException | IOException e)  {
       throw new PersistenceException(resources.db, e);
@@ -1946,7 +1963,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param mapNull true if unmap null-values
    * @param size the optional size from the model
    * @param <T> the type
-   * @return the object, may be null
+   * @return the object (can be null)
    */
   public <T> T get(DataType<T> dataType, int[] pos, boolean mapNull, Integer size) {
     if (pos.length != dataType.getColumnCount(resources.backend)) {
@@ -2073,11 +2090,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -2099,11 +2116,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>Boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -2794,8 +2811,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a {@link Binary} in the Java programming language.
+   * of this <code>ResultSet</code> object as a {@link Binary}.
    *
    * @param pos the parameter index in the result set
    * @param bufSize the initial buffer size for the Binary
@@ -2803,7 +2819,24 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public <T extends Serializable> Binary<T> getBinary(int pos, int bufSize)  {
     try {
-      return Binary.createBinary(resources.rs.getBinaryStream(pos + columnOffset), bufSize, true);
+      return Binary.create(resources.rs.getBinaryStream(pos + columnOffset), bufSize, true);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@link TBinary}.
+   *
+   * @param pos the parameter index in the result set
+   * @param bufSize the initial buffer size for the TBinary
+   * @return the binary read from db
+   */
+  public <T> TBinary<T> getTBinary(int pos, int bufSize)  {
+    try {
+      return TBinary.create(resources.rs.getBinaryStream(pos + columnOffset), bufSize, true);
     }
     catch (SQLException | IOException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2858,7 +2891,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param mapNull true if unmap null-values
    * @param size the optional size from the model
    * @param <T> the type
-   * @return the object, may be null
+   * @return the object (can be null)
    */
   public <T> T get(DataType<T> dataType, boolean mapNull, Integer size) {
     int[] pos = new int[dataType.getColumnCount(resources.backend)];
@@ -2951,11 +2984,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>false</code>
@@ -2976,11 +3009,11 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>Boolean</code> in the Java programming language.
    *
    * <P>If the designated column has a datatype of CHAR or VARCHAR
-   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
    * of CHAR or VARCHAR
-   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
-   * and contains  a 1, a value of <code>true</code> is returned.
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER, or BIGINT
+   * and contains a 1, a value of <code>true</code> is returned.
    *
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -3596,15 +3629,30 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a {@link Binary} in the Java programming language.
+   * of this <code>ResultSet</code> object as a {@link Binary}.
    *
    * @param bufSize the initial buffer size for the Binary
    * @return the binary read from db
    */
   public <T extends Serializable> Binary<T> getBinary(int bufSize)  {
     try {
-      return Binary.createBinary(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
+      return Binary.create(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@link TBinary}.
+   *
+   * @param bufSize the initial buffer size for the TBinary
+   * @return the binary read from db
+   */
+  public <T> TBinary<T> getTBinary(int bufSize)  {
+    try {
+      return TBinary.create(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
     }
     catch (SQLException | IOException e)  {
       throw new PersistenceException(resources.db, e);
@@ -3673,7 +3721,7 @@ public class ResultSetWrapper implements AutoCloseable {
   }
 
   /**
-   * Asserts that current section is valid.
+   * Asserts that the current section is valid.
    */
   private void assertValidSection() {
     if (currentSection == null) {
@@ -3682,11 +3730,11 @@ public class ResultSetWrapper implements AutoCloseable {
   }
 
   /**
-   * Asserts that result set is in skipmode.
+   * Asserts that the result set is in skip mode.
    */
   private void assertInSkipMode() {
     if (!isInSkipMode()) {
-      throw new PersistenceException(resources.db, "result set is not in skipmode");
+      throw new PersistenceException(resources.db, "result set is not in skip mode");
     }
   }
 

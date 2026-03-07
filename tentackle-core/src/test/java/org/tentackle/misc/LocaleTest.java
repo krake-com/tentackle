@@ -21,6 +21,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -51,4 +53,21 @@ public class LocaleTest {
     Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
     Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
   }
+
+  @Test
+  public void testFallbackLocale() {
+    Locale locale = Locale.of("en");
+    SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
+    Assert.assertEquals(format.toPattern(), "MMM d, y, h:mm:ss a");
+    Assert.assertEquals(format.toLocalizedPattern(), "MMM d, y, h:mm:ss a");
+    DecimalFormat fmt = new DecimalFormat("#0.0#", new DecimalFormatSymbols(locale));
+    Assert.assertEquals(fmt.format(1.25), "1.25");
+    locale = Locale.of("de");
+    format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
+    Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
+    Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
+    fmt = new DecimalFormat("#0.0#", new DecimalFormatSymbols(locale));
+    Assert.assertEquals(fmt.format(1.25), "1,25");
+  }
+
 }

@@ -107,7 +107,7 @@ public class ModelImpl implements Model {
   /** the entity factory. */
   private final EntityFactory entityFactory;
 
-  /** application specific model validators. */
+  /** application-specific model validators. */
   private final Collection<CustomModelValidator> customModelValidators;
 
   /** the foreign keys. */

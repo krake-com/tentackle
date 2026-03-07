@@ -20,6 +20,7 @@
 package org.tentackle.bind;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -184,7 +185,7 @@ public class DefaultBindableElement implements BindableElement {
         }
       }
     }
-    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+    catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new BindingException("cannot get " + camelName, ex);
     }
   }
@@ -232,7 +233,7 @@ public class DefaultBindableElement implements BindableElement {
       // it is okay that there's no setter, no from-method and no field (for example read-only methods)
       return updatedParent;
     }
-    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+    catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new BindingException("cannot set " + camelName, ex);
     }
   }

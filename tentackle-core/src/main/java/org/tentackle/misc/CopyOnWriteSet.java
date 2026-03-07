@@ -19,6 +19,7 @@
 package org.tentackle.misc;
 
 import java.io.Serial;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -60,6 +61,13 @@ public class CopyOnWriteSet<E> extends CopyOnWriteCollection<E> implements Set<E
    */
   public CopyOnWriteSet(Set<E> set) {
     super(set);
+  }
+
+  /**
+   * Creates a wrapper for an empty set.
+   */
+  public CopyOnWriteSet() {
+    this(new HashSet<>());
   }
 
 }

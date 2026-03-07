@@ -45,18 +45,21 @@ public abstract class ValueStringTranslator<M> extends AbstractValueTranslator<M
 
   @Override
   public M toModel(String text) {
-    if (text != null) {
-      char filler = getComponent().getFiller();
-      if (filler != ' ') {
-        text = text.replace(filler, ' ');
+    FxTextComponent component = getComponent();
+    if (component != null) {
+      if (text != null) {
+        char filler = component.getFiller();
+        if (filler != ' ') {
+          text = text.replace(filler, ' ');
+        }
+        text = text.trim();
+        if (text.isEmpty()) {
+          text = null;
+        }
       }
-      text = text.trim();
-      if (text.isEmpty()) {
-        text = null;
+      if (component.isErrorTemporary()) {
+        component.setError(null);    // clear temporary parsing error, if any
       }
-    }
-    if (getComponent().isErrorTemporary()) {
-      getComponent().setError(null);    // clear temporary parsing error, if any
     }
     return super.toModel(text);
   }

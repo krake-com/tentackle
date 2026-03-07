@@ -83,9 +83,6 @@ public class Constants {
   /** intro in URL to denote a JDBC connection. */
   public static final String BACKEND_JDBC_URL_INTRO = "jdbc:";
 
-  /** intro in URL to denote a remote connection. */
-  public static final String BACKEND_RMI_URL_INTRO = "rmi:";
-
   /** intro in URL to denote a JNDI connection. */
   public static final String BACKEND_JNDI_URL_INTRO = "jndi:";
 

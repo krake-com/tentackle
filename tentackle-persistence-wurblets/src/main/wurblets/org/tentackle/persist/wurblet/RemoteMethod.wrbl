@@ -152,7 +152,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
     if (getSession().isRemote())  {
-      try {
 @[
 
 
@@ -160,40 +159,35 @@ For more options, see {\@link DbModelWurblet}.
         String poType = isGenerified() ? "P" : getClassName();
 ]@
 @{to remoteOut}@
-  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@);
 @{to implOut}@
 
   \@Override
-  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException {
-    try {
+  public @(returnType)@ @(methodName)@(@(dparms)@) {
 @[
         if (firstIsDomainContext) {
 ]@
-      @(setDomainContext)@;
+    @(setDomainContext)@;
 @[
         }
         if (addThis) {
 ]@
-      ((@(poType)@) obj.getPersistenceDelegate()).setOverloadable(true);
-      obj.setSession(getSession());
+    ((@(poType)@) obj.getPersistenceDelegate()).setOverloadable(true);
+    obj.setSession(getSession());
 @[
         }
         for (String statement: helper.getUpdateDbInParametersStatements()) {
 ]@
-      @(statement)@;
+    @(statement)@;
 @[
         }
 ]@
-      return @(dbObject)@.@(methodName)@(@(riparms)@);
-    }
-    catch (Exception e) {
-      throw createException(e);
-    }
+    return @(dbObject)@.@(methodName)@(@(riparms)@);
   }
 @{to}@
-        @(returnType)@ obj = @(imethod)@.@(methodName)@(@(iparms)@);
-        @(apply)@;
-        return obj;
+      @(returnType)@ obj = @(imethod)@.@(methodName)@(@(iparms)@);
+      @(apply)@;
+      return obj;
 @[
       }
 
@@ -201,39 +195,34 @@ For more options, see {\@link DbModelWurblet}.
       else if (returningCollection) {
 ]@
 @{to remoteOut}@
-  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@);
 @{to implOut}@
 
   \@Override
-  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException {
-    try {
+  public @(returnType)@ @(methodName)@(@(dparms)@) {
 @[
         if (firstIsDomainContext) {
 ]@
-      @(setDomainContext)@;
+    @(setDomainContext)@;
 @[
         }
         if (addThis) {
 ]@
-      obj.setSession(getSession());
+    obj.setSession(getSession());
 @[
         }
         for (String statement: helper.getUpdateDbInParametersStatements()) {
 ]@
-      @(statement)@;
+    @(statement)@;
 @[
         }
 ]@
-      return @(dbObject)@.@(methodName)@(@(riparms)@);
-    }
-    catch (Exception e) {
-      throw createException(e);
-    }
+    return @(dbObject)@.@(methodName)@(@(riparms)@);
   }
 @{to}@
-        @(returnType)@ list = @(imethod)@.@(methodName)@(@(iparms)@);
-        @(apply)@;
-        return list;
+      @(returnType)@ list = @(imethod)@.@(methodName)@(@(iparms)@);
+      @(apply)@;
+      return list;
 @[
       }
 
@@ -241,47 +230,42 @@ For more options, see {\@link DbModelWurblet}.
       else if (returningCursor) {
 ]@
 @{to remoteOut}@
-  RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@);
 @{to implOut}@
 
   \@Override
-  public RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@) throws RemoteException {
-    try {
+  public RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@) {
 @[
         if (firstIsDomainContext) {
 ]@
-      @(setDomainContext)@;
+    @(setDomainContext)@;
 @[
         }
         if (addThis) {
 ]@
-      obj.setSession(getSession());
+    obj.setSession(getSession());
 @[
         }
         for (String statement: helper.getUpdateDbInParametersStatements()) {
 ]@
-      @(statement)@;
+    @(statement)@;
 @[
         }
 ]@
-      return createRemoteResultSetCursorDelegate(@(dbObject)@.@(methodName)@(@(riparms)@));
-    }
-    catch (Exception e) {
-      throw createException(e);
-    }
+    return createRemoteResultSetCursorDelegate(@(dbObject)@.@(methodName)@(@(riparms)@));
   }
 @{to}@
 @[
         if (isPdoOrOperation) {
 ]@
-        return new ResultSetCursor<>(getDomainContext(),
-                     @(imethod)@.@(methodName)@(@(iparms)@));
+      return new ResultSetCursor<>(getDomainContext(),
+                   @(imethod)@.@(methodName)@(@(iparms)@));
 @[
         }
         else  {
 ]@
-        return new ResultSetCursor<>(getSession(),
-                     @(imethod)@.@(methodName)@(@(iparms)@));
+      return new ResultSetCursor<>(getSession(),
+                   @(imethod)@.@(methodName)@(@(iparms)@));
 @[
         }
       }
@@ -289,38 +273,33 @@ For more options, see {\@link DbModelWurblet}.
       else if (returningVoid) {
 ]@
 @{to remoteOut}@
-  void @(methodName)@(@(dparms)@) throws RemoteException;
+  void @(methodName)@(@(dparms)@);
 @{to implOut}@
 
   \@Override
-  public void @(methodName)@(@(dparms)@) throws RemoteException {
-    try {
+  public void @(methodName)@(@(dparms)@) {
 @[
         if (firstIsDomainContext) {
 ]@
-      @(setDomainContext)@;
+    @(setDomainContext)@;
 @[
         }
         if (addThis) {
 ]@
-      obj.setSession(getSession());
+    obj.setSession(getSession());
 @[
         }
         for (String statement: helper.getUpdateDbInParametersStatements()) {
 ]@
-      @(statement)@;
+    @(statement)@;
 @[
         }
 ]@
-      @(dbObject)@.@(methodName)@(@(riparms)@);
-    }
-    catch (Exception e) {
-      throw createException(e);
-    }
+    @(dbObject)@.@(methodName)@(@(riparms)@);
   }
 @{to}@
-        @(imethod)@.@(methodName)@(@(iparms)@);
-        return;
+      @(imethod)@.@(methodName)@(@(iparms)@);
+      return;
 @[
       }
 
@@ -328,44 +307,35 @@ For more options, see {\@link DbModelWurblet}.
       else  {
 ]@
 @{to remoteOut}@
-  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@);
 @{to implOut}@
 
   \@Override
-  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException {
-    try {
+  public @(returnType)@ @(methodName)@(@(dparms)@) {
 @[
         if (firstIsDomainContext) {
 ]@
-      @(setDomainContext)@;
+    @(setDomainContext)@;
 @[
         }
         if (addThis) {
 ]@
-      obj.setSession(getSession());
+    obj.setSession(getSession());
 @[
         }
         for (String statement: helper.getUpdateDbInParametersStatements()) {
 ]@
-      @(statement)@;
+    @(statement)@;
 @[
         }
 ]@
-      return @(dbObject)@.@(methodName)@(@(riparms)@);
-    }
-    catch (Exception e) {
-      throw createException(e);
-    }
+    return @(dbObject)@.@(methodName)@(@(riparms)@);
   }
 @{to}@
-        return @(imethod)@.@(methodName)@(@(iparms)@);
+      return @(imethod)@.@(methodName)@(@(iparms)@);
 @[
       }
 ]@
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
     }
 @[
     }

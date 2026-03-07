@@ -45,7 +45,7 @@ interface InterceptionUtilitiesHolder {
 @Service(InterceptionUtilities.class)   // defaults to self
 public class InterceptionUtilities {
 
-  private static final Logger LOG = Logger.get(InterceptionUtilities.class);
+  private static final Logger LOGGER = Logger.get(InterceptionUtilities.class);
 
   /**
    * The singleton.
@@ -209,7 +209,7 @@ public class InterceptionUtilities {
    * @return the effective interface method to scan for public interceptors
    */
   public Method findDeclaredMethod(Class<?> clazz, Method method) {
-    LOG.warning("method {0} is not declared in {1} or its interfaces", method, clazz);
+    LOGGER.warning("method {0} is not declared in {1} or its interfaces", method, clazz);
     return method;
   }
 

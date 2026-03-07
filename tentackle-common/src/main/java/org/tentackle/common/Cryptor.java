@@ -80,7 +80,7 @@ interface CryptorHolder {
 public class Cryptor implements Function<String, String> {
 
   /**
-   * Gets the optional application specific cryptor singleton.
+   * Gets the optional application-specific cryptor singleton.
    *
    * @return the cryptor, null if no {@code @Service(Cryptor.class)} configured
    */
@@ -97,7 +97,7 @@ public class Cryptor implements Function<String, String> {
   public static Cryptor getInstanceSafely() {
     Cryptor cryptor = getInstance();
     if (cryptor == null) {
-      throw new TentackleRuntimeException("missing application specific Cryptor");
+      throw new TentackleRuntimeException("missing application-specific Cryptor");
     }
     return cryptor;
   }

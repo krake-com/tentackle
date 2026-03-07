@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.ClassMapper;
@@ -26,6 +25,7 @@ import org.tentackle.reflect.InterceptableMethod;
 import org.tentackle.reflect.InterceptableMethodInvoker;
 import org.tentackle.reflect.Mixin;
 import org.tentackle.session.Session;
+import org.tentackle.trip.TripReferencable;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -40,6 +40,7 @@ import java.util.List;
  * @param <T> the operation type
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)
 public class OperationInvocationHandler<T extends Operation<T>> implements InvocationHandler {
 
   /**
@@ -103,12 +104,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   }
 
 
-
   private final Class<T> clazz;                                 // the operation class
   private Mixin<T,PersistentOperation<T>> persistenceMixin;     // the persistence mixin
   private Mixin<T,DomainOperation<T>> domainMixin;              // the domain mixin
-  private transient OperationMethodCache<T> methodCache;        // the method cache (not serialized!)
 
+  private transient OperationMethodCache<T> methodCache;        // the method cache (not serialized!)
 
   /**
    * Creates an invocation handler.
@@ -151,6 +151,14 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     }
   }
 
+  /**
+   * No-args constructor provided for TRIP.
+   */
+  public OperationInvocationHandler() {
+    this.clazz = null;
+    this.persistenceMixin = null;
+    this.domainMixin = null;
+  }
 
 
   /**
@@ -177,7 +185,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   /**
    * Creates the delegates for the given proxy instance and the session.
    * <p>
-   * Note: The domain context must be set by the application!
+   * Note: The application must set the domain context!
    *
    * @param operation the dynamic proxy instance
    * @param session the session
@@ -200,7 +208,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   /**
    * Creates the delegates for the given proxy instance and a persistence delegate.
    * <p>
-   * Note: The domain context must be set by the application!
+   * Note: The application must set the domain context!
    *
    * @param operation the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate
@@ -318,7 +326,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
             return domainMixin.getDelegate().equals(((Operation) obj).getDomainDelegate());
           }
           else {
-            // at least one of domain- or persistence delegate is present
+            // at least one of the domain- or persistence delegate is present
             return persistenceMixin.getDelegate().equals(((Operation) obj).getPersistenceDelegate());
           }
         }
@@ -382,7 +390,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
     if (methodCache == null) {
       if (persistenceMixin.isDummy()) {
-        // use the global cachemap
+        // use the global cache map
         methodCache = OperationMethodCache.getCache(clazz);
       }
       else {  // faster, but needs persistence delegate

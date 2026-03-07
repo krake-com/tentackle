@@ -47,7 +47,7 @@ package org.tentackle.session;
  *   </pre>
  *   </li>
  *   <li>
- *   create a {@link java.util.function.Consumer} for this event which will serve as its event handler.
+ *   Create a {@link java.util.function.Consumer} for this event which will serve as its event handler.
  *   The handler must be annotated with {@link MasterSerialEventService}. This is a {@link org.tentackle.common.MappedService}
  *   and provides the mapping of the event to its handler, which allows providing different handlers for different
  *   clients connecting to the same server. Furthermore, the server does not need to know the handlers at all.<br>
@@ -58,14 +58,14 @@ package org.tentackle.session;
  *
  *       &#64;Override
  *       public void accept(MyEvent event) {
- *         ...
+ *         // handle event
  *       }
  *     }
  *   </pre>
  *   </li>
  *   <li>
  *   To send an event from the server to the client, use the method
- *   <code>org.tentackle.dbms.rmi.RemoteDbSessionImpl#addMasterSerialEvent</code>, which is part of the
+ *   <code>org.tentackle.dbms.trip.RemoteDbSessionImpl#addMasterSerialEvent</code>, which is part of the
  *   module <code>tentackle-database</code>.
  *   </li>
  * </ul>
@@ -84,7 +84,7 @@ public interface MasterSerialEvent extends MasterSerial {
 
   /**
    * Returns whether only the latest event counts.<br>
-   * Useful for events, that contain status information or alike.
+   * Useful for events that contain status information or alike.
    *
    * @return true if replace older event of this type, false to deliver each event
    */
@@ -93,11 +93,11 @@ public interface MasterSerialEvent extends MasterSerial {
   }
 
   /**
-   * Returns whether this event is overriding given other event.<br>
+   * Returns whether this event is overriding given an older event.<br>
    * The method is only invoked if {@link #isOverridingOlderEvents()} returns true.
    *
    * @param olderEvent the older event
-   * @return true if other event should be replaced by this event
+   * @return true if this event should replace the older event
    */
   default boolean isOverridingEvent(MasterSerialEvent olderEvent) {
     return getClass() == olderEvent.getClass();

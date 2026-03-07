@@ -8,7 +8,7 @@
 /**
  * Domain logic implementation module.
  */
-module ${package}.domain {
+open module ${package}.domain {
   exports ${package}.domain;
   exports ${package}.domain.md;
   exports ${package}.domain.td;

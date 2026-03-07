@@ -103,7 +103,7 @@ public class TablePrinter extends AbstractFxController {
 
   @SuppressWarnings("rawtypes")
   private static void print(FxTableView<?> table, FxTreeTableView treeTable, String title, PrinterJob job) {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, table != null ? table : treeTable);
     TablePrinter printer = Fx.load(TablePrinter.class);
     Scene scene = Fx.createScene(printer.getView());
     stage.setScene(scene);

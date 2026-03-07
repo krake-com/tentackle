@@ -19,105 +19,35 @@
 package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
+import org.tentackle.trip.TripDeduplicatable;
+import org.tentackle.trip.TripReferencable;
 
 /**
  * Client application info sent to the update server.
+ *
+ * @param application  the client application name
+ * @param version      the client application version
+ * @param platform     the operating system
+ * @param architecture the hardware architecture
+ * @param installationType the installation type
+ *
+ * @see UpdateInfo
+ * @see org.tentackle.trip.transport.EncryptedTransport
  */
-public class ClientInfo implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  private final String application;
-  private final String version;
-  private final String platform;
-  private final String architecture;
-  private final InstallationType installationType;
+@TripReferencable(TripReferencable.NEVER)
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+public record ClientInfo(String application, String version, String platform,
+                         String architecture, InstallationType installationType) {
 
   /**
-   * Creates a client application info.
-   *
-   * @param application the client application name
-   * @param version the client application version
-   * @param platform the operating system
-   * @param architecture the hardware architecture
-   */
-  public ClientInfo(String application, String version, String platform, String architecture, InstallationType installationType) {
-    this.application = Objects.requireNonNull(application);
-    this.version = Objects.requireNonNull(version);
-    this.platform = Objects.requireNonNull(platform);
-    this.architecture = Objects.requireNonNull(architecture);
-    this.installationType = Objects.requireNonNull(installationType);
-  }
-
-  /**
-   * Creates a client application info.<br>
+   * Creates a client application-info.<br>
    * Platform and architecture are determined from the system properties.
    *
    * @param application the client application name
-   * @param version the client application version
+   * @param version     the client application version
    */
   public ClientInfo(String application, String version, InstallationType installationType) {
     this(application, version, StringHelper.getPlatform(), StringHelper.getArchitecture(), installationType);
   }
 
-  /**
-   * Gets the application name.
-   *
-   * @return the client application
-   */
-  public String getApplication() {
-    return application;
-  }
-
-  /**
-   * Gets the application version.
-   *
-   * @return the version the client application is currently running
-   */
-  public String getVersion() {
-    return version;
-  }
-
-  /**
-   * Gets the client's platform.
-   *
-   * @return the platform
-   */
-  public String getPlatform() {
-    return platform;
-  }
-
-  /**
-   * Gets the architecture.
-   *
-   * @return the architecture
-   */
-  public String getArchitecture() {
-    return architecture;
-  }
-
-  /**
-   * Gets the installation type.
-   *
-   * @return the installation type
-   */
-  public InstallationType getInstallationType() {
-    return installationType;
-  }
-
-  @Override
-  public String toString() {
-    return "ClientInfo{" +
-           "application='" + application + '\'' +
-           ", version='" + version + '\'' +
-           ", platform='" + platform + '\'' +
-           ", architecture='" + architecture + '\'' +
-           ", installationType=" + installationType +
-           '}';
-  }
 }

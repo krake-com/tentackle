@@ -1,0 +1,171 @@
+/**
+ * Adds styles for tentackle-specific extensions.
+ * Dark mode variant (not very elaborated yet, but better than nothing)
+ */
+
+.root {
+  -fx-base: #101010;
+  /*-fx-accent: #e7eff7;*/
+  /*-fx-default-button: #7f878f;*/
+  /*-fx-focus-color: #efefef;*/
+  /*-fx-faint-focus-color: #efefef22;*/
+  /*-fx-focused-text-base-color: ladder(*/
+  /*  -fx-selection-bar,*/
+  /*  -fx-light-text-color 45%,*/
+  /*  -fx-dark-text-color 46%,*/
+  /*  -fx-dark-text-color 59%,*/
+  /*  -fx-mid-text-color 60%*/
+  /*);*/
+  /*-fx-focused-mark-color: -fx-focused-text-base-color;*/
+
+  /**
+   * light yellow components indicate a mandatory field.
+   */
+  -tt-mandatory-color: #fcd777;
+
+  /**
+   * light red components indicate an error.
+   */
+  -tt-error-color: #fed1d1;
+
+  /**
+   * light green components indicate an info/hint.
+   */
+  -tt-info-color: #ccffcc;
+
+  /**
+   * opacity for disabled components like radio-buttons, checkboxes and comboboxes.
+   */
+  -tt-disabled-opacity: 0.6;
+
+  /**
+   * special base color for scrollbars (would be way too dark otherwise, see below)
+   */
+  -tt-scrollbar-color: derive(-fx-base, 50%);
+}
+
+.tt-info {
+  -fx-control-inner-background: -tt-info-color;
+  -fx-base: -tt-info-color;
+}
+
+.tt-mandatory {
+  -fx-control-inner-background: -tt-mandatory-color;
+  -fx-base: -tt-mandatory-color;
+}
+
+.tt-error {
+  -fx-control-inner-background: -tt-error-color;
+  -fx-base: -tt-error-color;
+}
+
+.tt-i18n {
+  -fx-background-image: url('/org/tentackle/fx/i18n-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right top;
+}
+
+.tt-i18n.text-area {
+  -fx-padding: 0 13 0 0;
+}
+
+/**
+ * better visualization for non-editable text fields.
+ */
+.text-input:focused {
+  -fx-highlight-text-fill: ladder(
+    -fx-highlight-fill,
+    -fx-light-text-color 45%,
+    -fx-dark-text-color 46%,
+    -fx-dark-text-color 59%,
+    -fx-mid-text-color 60%
+  );
+}
+
+.text-input:readonly {
+  -fx-text-fill: derive(-fx-text-inner-color, 30%);
+  -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+  -fx-background-insets: -0.4, 1, 2;
+  -fx-background-radius: 3.4, 2, 2;
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
+}
+
+.text-area:readonly .content {
+  -fx-text-fill: derive(-fx-text-inner-color, 30%);
+  -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+  -fx-background-insets: -0.4, 1, 2;
+  -fx-background-radius: 3.4, 2, 2;
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
+}
+
+.radio-button:disabled {
+  -fx-opacity: 1.0;
+}
+
+.radio-button:disabled > .radio {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.check-box:disabled {
+  -fx-opacity: 1.0;
+}
+
+.check-box:disabled > .box {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.combo-box-base:disabled {
+  -fx-opacity: 1.0;
+}
+
+.combo-box-base:disabled > .arrow-button {
+  -fx-opacity: 1.0;
+  -fx-text-fill: white;
+}
+
+.combo-box-base:disabled > .arrow-button > .arrow {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.ikonli-font-icon {
+  -fx-icon-size: 16;
+  -fx-icon-color: white;
+}
+
+
+.scroll-bar:horizontal {
+  -fx-background-color: derive(-fx-box-border,30%), linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: 0, 1 0 1 0;
+}
+.scroll-bar:vertical {
+  -fx-background-color: derive(-fx-box-border,30%), linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: 0, 0 1 0 1;
+}
+.scroll-bar:focused {
+  -fx-background-color:
+    -fx-focus-color,
+    linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%)),
+    -fx-faint-focus-color,
+    linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: -0.2, 1, -1.4, 2.6;
+}
+.scroll-bar:vertical:focused {
+  -fx-background-color:
+    -fx-focus-color,
+    linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%)),
+    -fx-faint-focus-color,
+    linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+}
+
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-45%);
+}
+.scroll-bar > .increment-button:hover > .increment-arrow,
+.scroll-bar > .decrement-button:hover > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-50%);
+}
+.scroll-bar > .increment-button:pressed > .increment-arrow,
+.scroll-bar > .decrement-button:pressed > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-55%);
+}

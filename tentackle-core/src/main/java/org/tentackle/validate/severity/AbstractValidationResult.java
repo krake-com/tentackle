@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.severity;
 
 import org.tentackle.common.StringHelper;
@@ -62,7 +61,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
     this.validationContext = Objects.requireNonNull(validationContext, "validationContext");
     this.message = message;
     this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
-    // extract early in case result is passed back via rmi to the client
+    // extract early in case the result is passed back via TRIP to the client
     configuredScopes = validator.getConfiguredScopes(validationContext);
     validationPath = validationContext.getValidationPath();
   }
@@ -76,6 +75,18 @@ public abstract class AbstractValidationResult implements ValidationResult {
    */
   public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message) {
     this(validator, validationContext, message, null);
+  }
+
+  /**
+   * For TRIP.
+   */
+  protected AbstractValidationResult() {
+    this.validator = null;
+    this.validationContext = null;
+    this.message = null;
+    this.errorCode = null;
+    configuredScopes = null;
+    validationPath = null;
   }
 
 

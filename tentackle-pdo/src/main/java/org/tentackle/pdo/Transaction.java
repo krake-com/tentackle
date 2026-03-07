@@ -69,12 +69,12 @@ public @interface Transaction {
 
   /**
    * Determines whether rollbacks should be logged in detail or not.<br>
-   * By default, rollbacks are logged with detailed diagnostics, such as executed statements, durations and more,
+   * By default, rollbacks are logged with detailed diagnostics, such as executed statements, durations, and more,
    * if they are caused by a non-temporary {@link org.tentackle.session.PersistenceException} (for example, due to a constraint violation).
-   * This is desired for most of such rollbacks, since they are unexpected. Certain transactions, however, are expected
+   * This is desired for most of such rollbacks since they are unexpected. Certain transactions, however, are expected
    * to fail most of the time. In such cases, the amount of logging can be reduced significantly by setting this flag to true.
    * <p>
-   * Please notice that rollbacks caused by temporary or other exceptions (application specific, domain related),
+   * Please notice that rollbacks caused by temporary or other exceptions (application-specific, domain related),
    * are always rolled back silently.
    *
    * @return true to suppress detailed logging for rollbacks, default is false
@@ -97,16 +97,16 @@ public @interface Transaction {
   TransactionWritability writability() default TransactionWritability.DEFAULT;
 
   /**
-   * Determines whether a transaction that is rolled back due to a temporary exception should be retried.<br>
+   * Determines whether a transaction rolled back due to a temporary exception should be retried.<br>
    * By default, transactions will not be retried.<br>
    * Isolation levels {@link TransactionIsolation#REPEATABLE_READ} and {@link TransactionIsolation#SERIALIZABLE}
    * may produce database serialization errors and throw transient SQL exceptions, which usually
    * requires retryable transactions to work reliably in production.<br>
-   * Another source for such temporary exceptions are database deadlocks.<br>
+   * Another source for such temporary exceptions is database deadlocks.<br>
    * The Tentackle persistence layer will also mark {@link org.tentackle.session.NotFoundException}s as temporary,
    * if an optimistic locking error is detected (serial mismatch). The same applies to the pessimistic {@link LockException}.
    * <p>
-   * CAUTION: retryable transactions must be idempotent except for database modifications! This basically means,
+   * CAUTION: retryable transactions must be idempotent except for database modifications! This basically means
    * that all code executed within such a transaction must not modify the conditions that exist at the beginning
    * of its execution. Whenever a temporary exception is thrown, the modifications of the database are rolled back,
    * but the state of the involved java objects is left unchanged!
@@ -131,4 +131,3 @@ public @interface Transaction {
   Logger.Level retryLogLevel() default Logger.Level.WARNING;
 
 }
-

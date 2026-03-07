@@ -25,6 +25,11 @@ module org.tentackle.domain {
   exports org.tentackle.domain.ns;
   exports org.tentackle.domain.security;
 
+  // necessary for TRIP
+  opens org.tentackle.domain to org.tentackle.core;
+  opens org.tentackle.domain.ns to org.tentackle.core;
+  opens org.tentackle.domain.security to org.tentackle.core;
+
   requires transitive org.tentackle.pdo;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.domain.service.Hook;

@@ -85,10 +85,11 @@ public class Fx {
    *
    * @param stageStyle the style
    * @param modality the modality
+   * @param owner the view or window, null if none
    * @return the stage
    */
-  public static Stage createStage(StageStyle stageStyle, Modality modality) {
-    return FxFactory.getInstance().createStage(stageStyle, modality);
+  public static Stage createStage(StageStyle stageStyle, Modality modality, Object owner) {
+    return FxFactory.getInstance().createStage(stageStyle, modality, owner);
   }
 
   /**
@@ -97,10 +98,11 @@ public class Fx {
    * because the stage will be configured to meet certain framework-wide conventions.
    *
    * @param modality the modality
+   * @param owner the view or window, null if none
    * @return the stage
    */
-  public static Stage createStage(Modality modality) {
-    return createStage(StageStyle.DECORATED, modality);
+  public static Stage createStage(Modality modality, Object owner) {
+    return createStage(StageStyle.DECORATED, modality, owner);
   }
 
   /**

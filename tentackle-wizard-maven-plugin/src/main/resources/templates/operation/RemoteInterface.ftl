@@ -12,7 +12,6 @@ import ${persistenceImplPackage}.${persistenceImplementation};
 import ${superPackage}.${superInterface};
 </#if>
 
-import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;

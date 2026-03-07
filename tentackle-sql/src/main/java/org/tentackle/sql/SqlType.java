@@ -18,7 +18,6 @@
 
 package org.tentackle.sql;
 
-import org.tentackle.common.Binary;
 import org.tentackle.sql.datatypes.UUIDType;
 
 import java.math.BigDecimal;
@@ -29,7 +28,7 @@ import java.sql.Types;
 import java.util.function.Function;
 
 /**
- * The sql types used when talking to the database backend.
+ * The SQL types used when talking to the database backend.
  * <p>
  * Defines a typesafe subset of {@link Types}.
  *
@@ -38,10 +37,10 @@ import java.util.function.Function;
 public enum SqlType {
 
   /** String. */
-  VARCHAR(String.class, "", SqlType::removeSingleQuotes),
+  VARCHAR("", SqlType::removeSingleQuotes),
 
   /** Date. */
-  DATE(Date.class, new Date(0), t -> {
+  DATE(new Date(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Date.valueOf(t);
@@ -52,7 +51,7 @@ public enum SqlType {
   }),
 
   /** Time. */
-  TIME(Time.class, new Time(0), t -> {
+  TIME(new Time(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Time.valueOf(t);
@@ -63,7 +62,7 @@ public enum SqlType {
   }),
 
   /** Timestamp. */
-  TIMESTAMP(Timestamp.class, new Timestamp(0), t -> {
+  TIMESTAMP(new Timestamp(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Timestamp.valueOf(t);
@@ -74,13 +73,13 @@ public enum SqlType {
   }),
 
   /** Arbitrary data usually stored as BLOB. */
-  BLOB(Binary.class, null, t -> null),  // cannot be converted
+  BLOB(null, _ -> null),  // cannot be converted
 
   /** Large Strings usually stored as CLOB. */
-  CLOB(String.class, "", SqlType::removeSingleQuotes),
+  CLOB("", SqlType::removeSingleQuotes),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(BigDecimal.class, new BigDecimal(0), t -> {
+  DECIMAL(new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return BigDecimal.valueOf(Double.parseDouble(t));
@@ -91,7 +90,7 @@ public enum SqlType {
   }),
 
   /** Character and char. */
-  CHAR(Character.class, ' ', t -> {
+  CHAR(' ', t -> {
     t = removeSingleQuotes(t);
     try {
       return t.isEmpty() ? ' ' : t.charAt(0);
@@ -102,7 +101,7 @@ public enum SqlType {
   }),
 
   /** Boolean and boolean. */
-  BIT(Boolean.class, false, t -> {
+  BIT(false, t -> {
     t = removeSingleQuotes(t);
     try {
       return Boolean.valueOf(t);
@@ -113,7 +112,7 @@ public enum SqlType {
   }),
 
   /** Byte and byte. */
-  TINYINT(Byte.class, (byte) 0, t -> {
+  TINYINT((byte) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Byte.valueOf(t);
@@ -124,7 +123,7 @@ public enum SqlType {
   }),
 
   /** Short and short. */
-  SMALLINT(Short.class, (short) 0, t -> {
+  SMALLINT((short) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Short.valueOf(t);
@@ -135,7 +134,7 @@ public enum SqlType {
   }),
 
   /** Integer and int. */
-  INTEGER(Integer.class, 0, t -> {
+  INTEGER(0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Integer.valueOf(t);
@@ -146,7 +145,7 @@ public enum SqlType {
   }),
 
   /** Long and long. */
-  BIGINT(Long.class, 0L, t -> {
+  BIGINT(0L, t -> {
     t = removeSingleQuotes(t);
     try {
       return Long.valueOf(t);
@@ -157,7 +156,7 @@ public enum SqlType {
   }),
 
   /** Float and float. */
-  FLOAT(Float.class, 0.0f, t -> {
+  FLOAT(0.0f, t -> {
     t = removeSingleQuotes(t);
     try {
       return Float.valueOf(t);
@@ -168,7 +167,7 @@ public enum SqlType {
   }),
 
   /** Double and double. */
-  DOUBLE(Double.class, 0.0d, t -> {
+  DOUBLE(0.0d, t -> {
     t = removeSingleQuotes(t);
     try {
       return Double.valueOf(t);
@@ -179,7 +178,7 @@ public enum SqlType {
   }),
 
   /** UUID. */
-  UUID(java.util.UUID.class, UUIDType.NIL, t -> {
+  UUID(UUIDType.NIL, t -> {
     t = removeSingleQuotes(t);
     try {
       return java.util.UUID.fromString(t);
@@ -189,12 +188,12 @@ public enum SqlType {
     }
   }),
 
-  /** Application specific. */
-  JAVA_OBJECT(Object.class, null, t -> null);    // conversion not possible
+  /** Application-specific. */
+  JAVA_OBJECT(null, _ -> null);    // conversion not possible
 
 
   /**
-   * Removes optional single quotes if returned from meta data.
+   * Removes optional single quotes if returned from meta-data.
    *
    * @param str the meta data string
    * @return the cleaned string
@@ -207,7 +206,6 @@ public enum SqlType {
   }
 
 
-  private final Class<?> clazz;                     // the corresponding java class
   private final Object defaultValue;                // the default value
   private final Function<String,Object> parser;     // to parse JDBC metadata
 
@@ -217,19 +215,9 @@ public enum SqlType {
    * @param defaultValue the default value
    * @param parser the parser to parse JDBC metadata
    */
-  SqlType(Class<?> clazz, Object defaultValue, Function<String,Object> parser) {
-    this.clazz = clazz;
+  SqlType(Object defaultValue, Function<String,Object> parser) {
     this.defaultValue = defaultValue;
     this.parser = parser;
-  }
-
-  /**
-   * Gets the corresponding class.
-   *
-   * @return the class
-   */
-  public Class<?> getClazz() {
-    return clazz;
   }
 
   /**

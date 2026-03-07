@@ -8,13 +8,13 @@
 /**
  * Persistence implementation module.
  */
-module ${package}.persist {
+open module ${package}.persist {
   exports ${package}.persist;
   exports ${package}.persist.md;
-  exports ${package}.persist.md.rmi;
-  exports ${package}.persist.rmi;
+  exports ${package}.persist.md.trip;
+  exports ${package}.persist.trip;
   exports ${package}.persist.td;
-  exports ${package}.persist.td.rmi;
+  exports ${package}.persist.td.trip;
 
   requires transitive ${package}.pdo;
   requires transitive org.tentackle.persistence;

@@ -23,7 +23,7 @@ package org.tentackle.misc;
  * A convertible object.
  * <p>
  * Convertibles provide a mapping to some other type. Enums, for example,
- * could map to an integer or a string and optionally to some application specific types.
+ * could map to an integer or a string and optionally to some application-specific types.
  * Any class implementing this interface must provide three methods:
  *
  * <ul>

@@ -694,8 +694,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     // load all nodes and keys for this root (ordered by id, i.e. creation)
     RefreshInfo info = new DbPreferencesOperation(db).loadRefreshInfo(root.node, db.isRemote() ? root.serial : 0);
     if (info != null) {
-      Collection<DbPreferencesNode> prefNodes = info.prefNodes;
-      Collection<DbPreferencesKey> prefKeys = info.prefKeys;
+      Collection<DbPreferencesNode> prefNodes = info.prefNodes();
+      Collection<DbPreferencesKey> prefKeys = info.prefKeys();
 
       // to speed up: build maps of ID:node and ID:key
       Map<Long,DbPreferences> idNodeMap = new HashMap<>();
@@ -785,7 +785,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
 
       if (db.isRemote()) {
-        root.serial = info.serial;
+        root.serial = info.serial();
       }
       else {
         root.countUpdate();

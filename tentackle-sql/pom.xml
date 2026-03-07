@@ -33,6 +33,17 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <!-- added "-module" due to opens to tentackle-core in module-info -->
+            <arg>-Xlint:${javac.lint},-module</arg>
+            <arg>-proc:full</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>${project.groupId}</groupId>
         <artifactId>tentackle-maven-plugin</artifactId>
         <version>${project.version}</version>

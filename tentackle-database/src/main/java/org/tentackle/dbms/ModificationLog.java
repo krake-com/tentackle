@@ -24,7 +24,7 @@ import org.tentackle.common.ParameterString;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
+import org.tentackle.dbms.trip.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Canonicalizer;
 import org.tentackle.session.ClassId;
@@ -38,7 +38,6 @@ import org.tentackle.sql.Backend;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -210,7 +209,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /**
    * Creates an empty modification log for a given session.
-   * Useful for reading the log or as an RMI-proxy.
+   * Useful for reading the log or as a TRIP-proxy.
    *
    * @param db the session
    */
@@ -268,7 +267,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
 
     if (modType == DbModificationType.INSERT || modType == DbModificationType.UPDATE) {
-      // keep object for RMI transfers (not DELETE as this will be loaded on the servers side)
+      // keep object for TRIP transfers (not DELETE as this will be loaded on the servers side)
       lazyObject = object;
     }
   }
@@ -596,7 +595,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /**
    * Canonicalize the strings in this modlog.<br>
-   * Used to reduce communication bandwidth when sending larger collections of modlogs via RMI.
+   * Used to reduce communication bandwidth when sending larger collections of modlogs via TRIP.
    *
    * @param stringCanonicalizer the canonicalizer for the strings, null if none
    * @param objectCanonicalizer the canonicalizer for the lazy object, null if none
@@ -859,14 +858,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectFirstUnprocessed() {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        ModificationLog obj = getRemoteDelegate().selectFirstUnprocessed();
-        db.applyTo(obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      ModificationLog obj = getRemoteDelegate().selectFirstUnprocessed();
+      db.applyTo(obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_STMT,
       b -> {
@@ -944,14 +938,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectFirstUnprocessedGreater(long id) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        ModificationLog obj = getRemoteDelegate().selectFirstUnprocessedGreater(id);
-        db.applyTo(obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      ModificationLog obj = getRemoteDelegate().selectFirstUnprocessedGreater(id);
+      db.applyTo(obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_GREATER_STMT,
       b -> {
@@ -1034,14 +1023,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectGreaterId(long id) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        ModificationLog obj = getRemoteDelegate().selectGreaterId(id);
-        db.applyTo(obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      ModificationLog obj = getRemoteDelegate().selectGreaterId(id);
+      db.applyTo(obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_GREATER_ID_STMT,
       b -> {
@@ -1120,14 +1104,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectLastProcessed() {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        ModificationLog obj = getRemoteDelegate().selectLastProcessed();
-        db.applyTo(obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      ModificationLog obj = getRemoteDelegate().selectLastProcessed();
+      db.applyTo(obj);
+      return obj;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_LAST_PROCESSED_STMT,
       b -> {
@@ -1172,14 +1151,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectByObject(int objectClassId, long objectId) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        List<ModificationLog> list = getRemoteDelegate().selectByObject(objectClassId, objectId);
-        db.applyTo(list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(db, e);
-      }
+      List<ModificationLog> list = getRemoteDelegate().selectByObject(objectClassId, objectId);
+      db.applyTo(list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
       b -> {
@@ -1234,14 +1208,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectByUserAndType(long userId, ModificationType modType) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        List<ModificationLog> list = getRemoteDelegate().selectByUserAndType(userId, modType);
-        db.applyTo(list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(db, e);
-      }
+      List<ModificationLog> list = getRemoteDelegate().selectByUserAndType(userId, modType);
+      db.applyTo(list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_USER_AND_TYPE_STMT,
       b -> {
@@ -1292,12 +1261,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public boolean isReferencingUser(long userId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().isReferencingUser(userId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().isReferencingUser(userId);
     }
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_USER_STMT,
       b -> {
@@ -1340,12 +1304,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public boolean isReferencingObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().isReferencingObject(objectClassId, objectId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().isReferencingObject(objectClassId, objectId);
     }
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_OBJECT_STMT,
       b -> {
@@ -1397,12 +1356,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, ModificationType modType, long serial) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().updateByObjectTypeSerial(processed, objectClassId, objectId, modType, serial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().updateByObjectTypeSerial(processed, objectClassId, objectId, modType, serial);
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_BY_OBJECT_TYPE_SERIAL_STMT,
@@ -1461,12 +1415,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public int deleteByObjectTypeSerial(int objectClassId, long objectId, ModificationType modType, long serial) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByObjectTypeSerial(objectClassId, objectId, modType, serial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByObjectTypeSerial(objectClassId, objectId, modType, serial);
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_OBJECT_TYPE_SERIAL_STMT,
@@ -1518,14 +1467,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<? extends ModificationLog> selectByTxId(long txId) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        List<? extends ModificationLog> list = getRemoteDelegate().selectByTxId(txId);
-        db.applyTo(list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(db, e);
-      }
+      List<? extends ModificationLog> list = getRemoteDelegate().selectByTxId(txId);
+      db.applyTo(list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_TX_ID_STMT,
       b -> {
@@ -1571,12 +1515,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public int updateUnprocessedByTxId(Timestamp processed, long txId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().updateUnprocessedByTxId(processed, txId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().updateUnprocessedByTxId(processed, txId);
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_UNPROCESSED_BY_TX_ID_STMT,
@@ -1618,12 +1557,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public int deleteByTxId(long txId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByTxId(txId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByTxId(txId);
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_TX_ID_STMT,
@@ -1662,12 +1596,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public int deleteProcessed(Timestamp processed) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteProcessed(processed);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteProcessed(processed);
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_PROCESSED_STMT,
@@ -1708,14 +1637,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectUpTo(Timestamp processed) {
     Db db = getSession();
     if (db.isRemote())  {
-      try {
-        List<ModificationLog> list = getRemoteDelegate().selectUpTo(processed);
-        db.applyTo(list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(db, e);
-      }
+      List<ModificationLog> list = getRemoteDelegate().selectUpTo(processed);
+      db.applyTo(list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_UP_TO_STMT,
       b -> {
@@ -1761,12 +1685,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     //<editor-fold defaultstate="collapsed" desc="code 'selectTxIds' generated by wurblet RemoteMethod">//GEN-BEGIN:selectTxIds
 
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().selectTxIds(fromId, upToId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      return getRemoteDelegate().selectTxIds(fromId, upToId);
     }
 
     //</editor-fold>//GEN-END:selectTxIds
@@ -1798,14 +1717,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
     if (getSession().isRemote()) {
       // invoke remote method
-      try {
-        getRemoteDelegate().updateProcessed(processed, this);
-        this.processed = processed;
-        return;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      getRemoteDelegate().updateProcessed(processed, this);
+      this.processed = processed;
+      return;
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_PROCESSES_STMTID, b ->
@@ -1827,7 +1741,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @param processed the processing timestamp, null to mark unprocessed
    * @param comment the comment to add to the message, null if none
-   * @throws ParseException if message does not contain a valid parameter string
+   * @throws ParseException if the message does not contain a valid parameter string
    */
   public void updateDiagnostics(Timestamp processed, String comment) throws ParseException {
 
@@ -1843,15 +1757,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
     if (getSession().isRemote()) {
       // invoke remote method
-      try {
-        getRemoteDelegate().updateDiagnostics(processed, comment, this);
-        this.processed = processed;
-        this.message = parStr;
-        return;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      getRemoteDelegate().updateDiagnostics(processed, comment, this);
+      this.processed = processed;
+      this.message = parStr;
+      return;
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_DIAGNOSTICS_STMTID, b ->
@@ -1913,7 +1822,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
     LOGGER.fine("replaying modlog {0} to {1}", modlog, toDb);
 
-    // load the object (lazily during rmi, because the object is already switched to local db)
+    // load the object (lazily during TRIP, because the object is already switched to local db)
     boolean retrieveFromDestination = modlog.isDestinationReferringLog();
     Session db = retrieveFromDestination ? toDb : modlog.getSession();
     AbstractDbObject<?> object = modlog.getObject(db);

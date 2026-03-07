@@ -19,16 +19,13 @@
 package org.tentackle.app;
 
 import org.tentackle.session.MasterSerialEvent;
-
-import java.io.Serial;
+import org.tentackle.trip.TripReferencable;
 
 /**
  * A master serial event to request a remote client logout.
  */
+@TripReferencable(TripReferencable.NEVER)
 public class LogoutEvent implements MasterSerialEvent {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
 
   private long serial;
 
@@ -50,4 +47,5 @@ public class LogoutEvent implements MasterSerialEvent {
   public boolean isOverridingOlderEvents() {
     return true;
   }
+
 }

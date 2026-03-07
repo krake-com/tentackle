@@ -34,7 +34,7 @@ public final class ModuleInfo {
   private final Module module;                        // the module name
   private final Set<String> requiredModuleNames;      // the required module names
 
-  private int ordinal;                                // the ordinal, != 0 if sorted
+  private int ordinal;                                // the ordinal (!= 0 if sorted)
   private boolean visited;                            // true if visited by sorter
 
   /**
@@ -51,7 +51,14 @@ public final class ModuleInfo {
     }
     requiredModuleNames = new HashSet<>();
     for (ModuleDescriptor.Requires req : module.getDescriptor().requires()) {
-      requiredModuleNames.add(req.name());
+      if (!req.modifiers().contains(ModuleDescriptor.Requires.Modifier.STATIC)) {
+        requiredModuleNames.add(req.name());
+      }
+      // if a module is required "static", _and_ it has a ModuleHook, it will be moved
+      // to the end of the module hierarchy (i.e., gets the lowest priority),
+      // unless required non-static by another module.
+      // As a result, declaring an application module as statically required
+      // de facto turns off any service overrides contained in that module!
     }
   }
 
@@ -122,7 +129,7 @@ public final class ModuleInfo {
   }
 
   /**
-   * Returns whether node has been visited.<br>
+   * Returns whether the node has been visited.<br>
    * Package scope. For dependency sorting.
    *
    * @return true if visited

@@ -42,7 +42,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
 
 
 
-  private final long minAliveInterval;            // the minimum alive interval
+  private final long minAliveInterval;            // the minimum alive-interval
   private final Map<Session,Task> sessionTaskMap; // the session/task map
   private final ExecutorService executorService;  // background executor service
   private final AtomicInteger threadNumber;       // set alive thread number
@@ -52,7 +52,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
   /**
    * Creates the daemon.<br>
    *
-   * @param minAliveInterval the minimum alive interval
+   * @param minAliveInterval the minimum alive-interval in ms
    */
   public SessionKeepAliveDaemon(long minAliveInterval) {
     super("Session Keep Alive Daemon", false, SLEEP_INTERVAL, SLEEP_INTERVAL * 10);
@@ -76,7 +76,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
   }
 
   /**
-   * Handles the change of a keep alive interval of a session.
+   * Handles the change of a keep alive-interval of a session.
    *
    * @param session the session
    */
@@ -103,7 +103,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
 
 
   /**
-   * Removes the task for given session.
+   * Removes the task for the given session.
    *
    * @param session the session
    */
@@ -135,14 +135,14 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
     return Executors.newCachedThreadPool(runnable -> {
       Thread t = new Thread(threadGroup, runnable, "Keep Alive Thread(" + threadNumber.getAndIncrement() + ")", 0);
       t.setDaemon(true);                    // don't inhibit termination of JVM
-      t.setPriority(Thread.MAX_PRIORITY);   // keep alive is important!
+      t.setPriority(Thread.MAX_PRIORITY);   // keep-alive is important!
       return t;
     });
   }
 
 
   /**
-   * Creates a keep alive task.
+   * Creates a keep-alive task.
    *
    * @param session the session
    * @param interval the keep-alive interval in milliseconds

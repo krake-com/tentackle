@@ -32,6 +32,7 @@ import org.tentackle.misc.Holder;
 import org.tentackle.reflect.DefaultClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -63,6 +64,9 @@ import java.util.ResourceBundle;
 public class DefaultFxFactory implements FxFactory {
 
   private static final Logger LOGGER = Logger.get(DefaultFxFactory.class);
+
+  private static final String CSS_EXTENSION = ".css";
+  private static final String DARK_SUFFIX = "-dark";
 
 
   /**
@@ -165,7 +169,7 @@ public class DefaultFxFactory implements FxFactory {
     viewTranslatorMap = new HashMap<>();
     for (Map.Entry<ValueTranslatorKey<?,?>, Class<ValueTranslator>> entry: translatorMap.entrySet()) {
       Class<?> viewClass = entry.getKey().viewClass();
-      DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, k ->
+      DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, _ ->
               new DefaultClassMapper(
                       viewClass.getSimpleName() + "-translator",
                       ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
@@ -235,9 +239,15 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
-  public Stage createStage(StageStyle stageStyle, Modality modality) {
+  public Stage createStage(StageStyle stageStyle, Modality modality, Object owner) {
     Stage stage = new Stage(stageStyle);
     stage.initModality(modality);
+    if (owner != null) {
+      Window window = FxUtilities.getInstance().getWindow(owner);
+      if (window != null) {
+        stage.initOwner(window);
+      }
+    }
     getConfigurator(Window.class).configure(stage);
     return stage;
   }
@@ -245,7 +255,7 @@ public class DefaultFxFactory implements FxFactory {
   @Override
   public Scene createScene(Parent root) {
     Scene scene = new Scene(root);
-    FxUtilities.getInstance().applyStylesheets(scene);
+    ThemeUtilities.getInstance().applyStylesheets(scene);
     return scene;
   }
 
@@ -257,12 +267,13 @@ public class DefaultFxFactory implements FxFactory {
       public void hide() {
         Long since = shownSince.get();
         // this prevents accidental events from hiding the popup before becoming visible to the user
-        if (since == null || System.currentTimeMillis() > since + 500) {    // 500 ms is short enough for a "fast" user
+        if ((since == null || System.currentTimeMillis() > since + 500) && isShowing()) {
+          // 500 ms is short enough for a "fast" user
           super.hide();
         }
       }
     };
-    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> shownSince.accept(System.currentTimeMillis()));
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, _ -> shownSince.accept(System.currentTimeMillis()));
     popup.setAutoHide(true);
     return popup;
   }
@@ -328,7 +339,6 @@ public class DefaultFxFactory implements FxFactory {
     try {
       Parent view;
       if (viewClass != null) {
-        Constructor<? extends Parent> viewConstructor;
         if (resources != null) {
           try {
             view = viewClass.getConstructor(ResourceBundle.class).newInstance(resources);
@@ -353,7 +363,7 @@ public class DefaultFxFactory implements FxFactory {
       else {
         FXMLLoader loader = new FXMLLoader(fxmlUrl, resources, getBuilderFactory());
         if (annotatedClass != controllerClass) {
-          loader.setControllerFactory(cls -> {
+          loader.setControllerFactory(_ -> {
             try {
               return controllerClass.getConstructor().newInstance();
             }
@@ -379,7 +389,18 @@ public class DefaultFxFactory implements FxFactory {
       if (cssUrl == null) {
         String cssName = service.css();
         if (cssName.isEmpty()) {
-          cssName = controllerClass.getSimpleName() + ".css";
+          cssName = controllerClass.getSimpleName();
+        }
+        if (service.cssDarkAware() && ThemeUtilities.getInstance().isDarkMode()) {
+          if (cssName.endsWith(CSS_EXTENSION)) {
+            cssName = cssName.substring(0, cssName.length() - CSS_EXTENSION.length()) + DARK_SUFFIX + CSS_EXTENSION;
+          }
+          else {
+            cssName += DARK_SUFFIX;
+          }
+        }
+        if (!cssName.endsWith(CSS_EXTENSION)) {
+          cssName += CSS_EXTENSION;
         }
         cssUrl = controllerClass.getResource(cssName);
       }
@@ -394,7 +415,14 @@ public class DefaultFxFactory implements FxFactory {
         case ALL_INHERITED -> controller.getBinder().bindAllInherited();
       }
 
-      controller.configure();
+      if (Platform.isFxApplicationThread()) {
+        controller.configure();
+      }
+      else {
+        // configure() may contain operations that require the FX-thread.
+        // -> delegate to the FX-thread for sure
+        Platform.runLater(controller::configure);
+      }
 
       return controller;
     }

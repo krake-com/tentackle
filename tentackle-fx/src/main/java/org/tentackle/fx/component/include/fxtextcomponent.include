@@ -1,0 +1,39 @@
+  private ${classname}Delegate delegate;
+
+  /**
+   * Creates a ${classname}.
+   */
+  public ${classname}() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected ${classname}Delegate createDelegate() {
+    return new ${classname}Delegate(this);
+  }
+
+  @Override
+  public ${classname}Delegate getDelegate() {
+    if (delegate == null) {
+      setDelegate(createDelegate());
+    }
+    return delegate;
+  }
+
+  /**
+   * Sets the delegate.<br>
+   * Useful for application-specific needs.
+   *
+   * @param delegate the delegate
+   */
+  public void setDelegate(${classname}Delegate delegate) {
+    this.delegate = delegate;
+  }
+
+  // @wurblet component Include \$componentIncludeDir/component.include
+
+  // @wurblet textcomponent Include \$componentIncludeDir/textcomponent.include

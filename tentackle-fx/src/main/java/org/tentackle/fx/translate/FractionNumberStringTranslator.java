@@ -18,6 +18,7 @@
 
 package org.tentackle.fx.translate;
 
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxTextComponent;
 
 /**
@@ -42,16 +43,17 @@ public abstract class FractionNumberStringTranslator<M extends Number> extends N
     return true;
   }
 
+
   @Override
-  public String getValidChars() {
-    String validChars = super.getValidChars();
-    String pattern = getComponent().getPattern();
+  protected void initializeValidChars() {
+    super.initializeValidChars();
     if (pattern != null && pattern.indexOf('E') >= 0) {
-      // notice: unsigned doesn't really make sense for numbers with an exponent,
-      // so we don't check that here...
-      validChars = ".,-0123456789eE";
+      String exp = getFormat().getDecimalFormatSymbols().getExponentSeparator();
+      String expLC = exp.toLowerCase(LocaleProvider.getInstance().getLocale());
+      String expUC = exp.toUpperCase(LocaleProvider.getInstance().getLocale());
+      signedValidChars += expLC + expUC;
+      unsignedValidChars += expLC + expUC;
     }
-    return validChars;
   }
 
 }

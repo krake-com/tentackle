@@ -14,7 +14,7 @@ import java.io.Serial;
 import java.util.Locale;
 
 /**
- * Application specific session info.
+ * Application-specific session info.
  */
 public class ${application}SessionInfo extends DefaultSessionInfo {
 

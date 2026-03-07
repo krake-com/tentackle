@@ -22,7 +22,6 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 
 /**
  * Database runtime exception.
@@ -33,22 +32,6 @@ public class PersistenceException extends TentackleRuntimeException {
 
   @Serial
   private static final long serialVersionUID = 1L;
-
-
-  /**
-   * Creates a RuntimeException from a {@link RemoteException}.<br>
-   * Returns the first RuntimeException in the chain.
-   * If the first non-RemoteException is not a RuntimeException, the exception
-   * is wrapped by a PersistenceException.
-   *
-   * @param relatedObject the optional related object, only used if remote cause is not a {@link PersistenceException}
-   * @param remoteException the remote exception
-   * @return the runtime exception
-   */
-  public static RuntimeException createFromRemoteException(Object relatedObject, RemoteException remoteException) {
-    return SessionUtilities.getInstance().createFromRemoteException(relatedObject, remoteException);
-  }
-
 
 
   /**

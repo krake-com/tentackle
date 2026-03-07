@@ -11,7 +11,7 @@ import ${package}.pdo.md.User;
 import ${package}.pdo.md.User2Group;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.UserGroupPersistence;
-import ${package}.persist.md.rmi.UserGroupRemoteDelegate;
+import ${package}.persist.md.trip.UserGroupRemoteDelegate;
 
 import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;

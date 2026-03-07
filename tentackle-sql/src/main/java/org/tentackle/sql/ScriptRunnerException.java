@@ -38,16 +38,29 @@ public class ScriptRunnerException extends BackendException {
   /**
    * Creates a new ScriptRunnerException.
    *
-   * @param  message the detail message
+   * @param message the detail message
    * @param sql the SQL code that failed
-   * @param  results the successful results collected so far
-   * @param  cause the cause
+   * @param results the successful results collected so far
+   * @param cause the cause
    */
   public ScriptRunnerException(String message, String sql, List<ScriptRunnerResult> results, Throwable cause) {
     super(message, cause);
     this.sql = sql;
     this.results = results;
   }
+
+  /**
+   * For TRIP.
+   *
+   * @param message the detail message
+   * @param cause the cause
+   */
+  protected ScriptRunnerException(String message, Throwable cause) {
+    super(message, cause);
+    sql = null;
+    results = null;
+  }
+
 
   /**
    * Gets the SQL code that failed.

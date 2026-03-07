@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Base64;
@@ -49,7 +50,7 @@ import java.util.prefs.Preferences;
  * Persisted preferences implementation.
  * <p>
  * The DbPreferences are an extension of the default Java {@link Preferences}. The main difference
- * is, that the DbPreferences use the database as the backing store. The nodes are persisted
+ * is that the DbPreferences use the database as the backing store. The nodes are persisted
  * via {@link DbPreferencesNode} while the key/value-pairs are persisted via {@link DbPreferencesKey}.
  * <p>
  * Implementation details:
@@ -59,7 +60,7 @@ import java.util.prefs.Preferences;
  * </li>
  * <li>
  * Listeners are fired when the changes are flushed to the backing store
- * and not as soon as a preference is changed or node is added/removed.
+ * and not as soon as a preference is changed or the node is added/removed.
  * </li>
  * </ul>
  *
@@ -77,7 +78,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   private final String absolutePath;                    // the absolute path
   private final String name;                            // the name relative to the parent
   private final DbPreferencesNode prefNode;             // the persistent node
-
   @SuppressWarnings("serial")
   private final Map<String,DbPreferences> childMap;     // children of this node <subname:node>
   @SuppressWarnings("serial")
@@ -127,6 +127,24 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     }
   }
 
+  /**
+   * Creates an empty preferences-node.<br>
+   * The constructor is provided for TRIP.
+   * <p>
+   * We cannot use {@link org.tentackle.reflect.CanonicalConstructor} since
+   * components of this object contain back-references to itself.
+   */
+  public DbPreferences() {
+    this.root = null;
+    this.parent = null;
+    this.absolutePath = null;
+    this.name = null;
+    this.prefNode = null;
+    this.childMap = null;
+    this.keyMap = null;
+  }
+
+
   @Override
   public int hashCode() {
     int hash = 3;
@@ -159,7 +177,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    * <ul>
    * <li>user node: "user:absolutePath"</li>
    * <li>system node: "&lt;system&gt;:absolutePath"</li>
-   * <li>if node is removed: "(removed)" is appended</li>
+   * <li>if the node is removed: "(removed)" is appended</li>
    * </ul>
    *
    * @return the string
@@ -190,7 +208,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     }
     else if (prefKey.isRemoved()) {
       prefKey.setRemoved(false);
-      prefKey.setModified(true);    // in case value didn't change
+      prefKey.setModified(true);    // in case the value didn't change
     }
     prefKey.setValue(value);
   }
@@ -471,8 +489,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return prefNode.getUser() != null;
   }
 
-
-
   /**
    * Gets the root of this node.<br>
    * If this is a root, "this" will be returned.
@@ -554,7 +570,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   /**
-   * Gets the child with given relative name.
+   * Gets the child with the given relative name.
    *
    * @param name the name relative to this node
    * @return the child, null if no such name
@@ -563,12 +579,11 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return childMap.get(name);
   }
 
-
   /**
    * Adds a key.
    *
    * @param key the key
-   * @return the replaced key, null if key was new
+   * @return the replaced key, null if the key was new
    */
   public DbPreferencesKey putPersistentKey(DbPreferencesKey key) {
     key.setRemoved(false);
@@ -647,28 +662,29 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   /**
    * Exports a preferences node.<br>
-   * XmlSupport is package scope.
+   * {@code java.util.prefs.XmlSupport} is package-scope.
    * Hence, we must use reflection to invoke the export method.
    *
    * @param os the output stream
-   * @param subtree true if whole subtree, false this node only
+   * @param subtree true for the whole subtree, false this node only
    */
   protected void exportImpl(OutputStream os, boolean subtree) {
     try {
-      // @todo: doesnt work with jigsaw, needs --add-opens
+      // workaround since that wouldn't work with jigsaw as it needs explicit --add-opens
       Method exportMethod = Class.forName("java.util.prefs.XmlSupport").
               getDeclaredMethod("export", OutputStream.class, Preferences.class, Boolean.TYPE);
       exportMethod.setAccessible(true);               // it's package scope!
       exportMethod.invoke(null, os, this, subtree);   // static method
     }
-    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException |
+    catch (ClassNotFoundException | InaccessibleObjectException | IllegalAccessException |
+           IllegalArgumentException | NoSuchMethodException |
            SecurityException | InvocationTargetException ex) {
       LOGGER.severe("exporting node failed", ex);
     }
   }
 
   /**
-   * Recursive implementation of flush.
+   * Recursive implementation of {@link #flush()}.
    *
    * @param db the session
    * @param triggerListeners true if trigger listeners

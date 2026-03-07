@@ -22,7 +22,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.ModificationTracker;

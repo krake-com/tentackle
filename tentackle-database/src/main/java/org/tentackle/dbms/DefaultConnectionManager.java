@@ -174,7 +174,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * <p>
    * With an initial size of 2, a maximum of 8 concurrent connections and an id offset of 1.
    * This is the default connection manager for 2-tier client applications.
-   * The max connections will prevent ill behaving applications from tearing down the RMI server
+   * The max connections will prevent applications from tearing down the TRIP server
    * by opening connections excessively. The usual client application holds 2 connections and temporarily
    * a few more.<br>
    * Within 12 to 36h (approx. once a day), close and reopen connections

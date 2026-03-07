@@ -39,9 +39,9 @@ import org.tentackle.misc.BlockingHolder;
 import org.tentackle.misc.Holder;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
-import org.tentackle.update.ClientInfo;
 import org.tentackle.update.ClientUpdateUtilities;
 import org.tentackle.update.InstallationType;
+import org.tentackle.update.ClientInfo;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
@@ -85,7 +85,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
     if (ex instanceof VersionIncompatibleException ||
-        // or SSL certificate changed due to new server version
+        // or SSL certificate changed due to a new server version
         ExceptionHelper.extractException(true, ex, SSLHandshakeException.class) != null) {
 
       InstallationType installationType = ClientUpdateUtilities.getInstance().determineInstallationType();
@@ -96,10 +96,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
             ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion(), installationType);
             UpdateInfo updateInfo = service.getUpdateInfo(clientInfo);
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
-            if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
+            if (!updateInfo.version().equals(clientInfo.version())) {
               return createUpdateRunnable(clientInfo, updateInfo, installationType);
             }
-            // else: version is okay, but TLS handshake didn't work -> proceed with standard impl below
+            // else: the version is okay, but TLS handshake didn't work -> proceed with standard impl below
           }
           catch (Exception rx) {
             LOGGER.warning("getting update info failed", rx);
@@ -138,7 +138,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       BlockingHolder<Boolean> answer = new BlockingHolder<>();    // wait for result!
       Platform.runLater(() -> showUpdateDialog(
         getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                        clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
+                                        clientInfo.application(), clientInfo.version(), updateInfo.version()),
         answer));
       if (answer.get()) {
         update(updateInfo, installationType);
@@ -215,8 +215,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * @return the service object, null if no service configured
    */
   protected UpdateService createUpdateService() {
-    String serviceUrl = getApplication().getPropertyIgnoreCase("updateService");
-    return serviceUrl == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(serviceUrl, null);
+    String updateService = getApplication().getPropertyIgnoreCase("updateService");
+    return updateService == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(updateService);
   }
 
   /**
@@ -243,7 +243,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    */
   protected void update(UpdateInfo updateInfo, InstallationType installationType) {
     File updateDir = createUpdateDirectory(installationType);
-    LOGGER.info("using update directory {0}", updateDir);
+    LOGGER.info("using update directory: {0}", updateDir);
 
     File zipFile = ClientUpdateUtilities.getInstance().downloadZip(updateInfo, updateDir,
                    progress -> getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("DOWNLOADING"), progress));
@@ -268,7 +268,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       });
       zipFile.delete();
 
-      File updateScript = new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor());
+      File updateScript = new File(new File(updateDir, "bin"), updateInfo.updateExecutor());
       if (!updateScript.exists()) {
         throw new IOException("no such update script: " + updateScript);
       }
