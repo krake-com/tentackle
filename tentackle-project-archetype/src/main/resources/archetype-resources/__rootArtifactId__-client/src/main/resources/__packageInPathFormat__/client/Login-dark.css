@@ -17,4 +17,6 @@
   -fx-padding: 5 0 5 150;
 }
 
-#revealButton { -fx-background-color: transparent; }
+#revealButton {
+  -fx-background-color: transparent;
+}

@@ -311,7 +311,7 @@ public class ThemeUtilities {
    * @param scene the scene
    */
   public void applyStylesheets(Scene scene) {
-    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
+    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/tentackle-dark.css" : "/org/tentackle/fx/tentackle.css");
   }
 
   /**

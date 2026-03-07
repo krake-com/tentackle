@@ -68,7 +68,7 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
 
   @Override
   public void applyStylesheets(Scene scene) {
-    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/atlanta/tentackle_dark.css" : "/org/tentackle/fx/atlanta/tentackle.css");
+    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/atlanta/tentackle-dark.css" : "/org/tentackle/fx/atlanta/tentackle.css");
     scene.getStylesheets().add("/org/tentackle/fx/atlanta/pdo-style.css");
   }
 

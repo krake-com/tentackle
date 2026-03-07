@@ -25,10 +25,10 @@
   <children>
     <GridPane fx:id="loginPane" hgap="5.0" vgap="5.0" GridPane.rowIndex="1">
       <columnConstraints>
-        <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" />
+            <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" />
+        <ColumnConstraints hgrow="SOMETIMES" maxWidth="1.7976931348623157E308" minWidth="10.0" />
         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
-        <ColumnConstraints hgrow="SOMETIMES" minWidth="0.0" />
       </columnConstraints>
       <rowConstraints>
         <RowConstraints vgrow="NEVER" />
@@ -37,19 +37,30 @@
         <RowConstraints vgrow="NEVER" />
       </rowConstraints>
       <children>
-        <Label fx:id="backendLabel" text="%Backend:" GridPane.halignment="RIGHT" />
-        <ComboBox fx:id="backendField" GridPane.columnIndex="1" GridPane.columnSpan="1" />
-        <Button fx:id="backendButton" GridPane.columnIndex="2" />
-        <Label text="%Username:" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-        <Label text="%Password:" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-        <TextField fx:id="usernameField" maxWidth="-Infinity" promptText="%username" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" />
-            <HBox GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="2">
+        <Label fx:id="backendLabel" text="%Backend:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" />
+            <HBox GridPane.columnIndex="2" GridPane.columnSpan="2147483647">
                <children>
-              <PasswordField fx:id="passwordField" maxWidth="-Infinity" promptText="%password" />
-                  <Button fx:id="revealButton" mnemonicParsing="false" />
+              <ComboBox fx:id="backendField" />
+              <Button fx:id="backendButton">
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin>
+                  </Button>
                </children>
             </HBox>
-        <HBox spacing="5.0" GridPane.columnIndex="1" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
+        <Label text="%Username:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+        <Label text="%Password:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+        <TextField fx:id="usernameField" maxWidth="-Infinity" promptText="%username" GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="1" />
+            <HBox GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
+               <children>
+              <PasswordField fx:id="passwordField" maxWidth="-Infinity" promptText="%password" />
+                  <Button fx:id="revealButton" mnemonicParsing="false">
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin></Button>
+               </children>
+            </HBox>
+        <HBox spacing="5.0" GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
           <children>
             <Button fx:id="loginButton" mnemonicParsing="false" text="%login" />
             <Button fx:id="cancelButton" cancelButton="true" mnemonicParsing="false" text="%cancel" />

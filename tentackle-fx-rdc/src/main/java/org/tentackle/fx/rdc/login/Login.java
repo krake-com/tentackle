@@ -131,10 +131,10 @@ public class Login extends AbstractFxController implements LoginController {
       // show some feedback (because nothing changed visually, except perhaps the save button)
       Note infoNote = Fx.create(Note.class);
       infoNote.setType(Note.Type.STICKY);
-      infoNote.setPosition(Note.Position.LEFT);
+      infoNote.setPosition(Note.Position.BOTTOM);
       infoNote.setText(passwordField.getText() == null ? resources.getString("empty password") : passwordField.getText());
       infoNote.setFadeEffect(500, 1000, 1000);
-      infoNote.show(revealButton);
+      infoNote.show(passwordField);
     });
   }
 
