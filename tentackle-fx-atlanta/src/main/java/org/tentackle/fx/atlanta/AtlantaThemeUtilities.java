@@ -19,6 +19,7 @@
 package org.tentackle.fx.atlanta;
 
 import org.tentackle.common.Service;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.Note;
@@ -36,11 +37,11 @@ import java.util.List;
 @Service(ThemeUtilities.class)
 public class AtlantaThemeUtilities extends RdcThemeUtilities {
 
-  private static final String DEFAULT_THEME_NAME = "Primer";
+  private static final String PRIMER_THEME_NAME = "Primer";
   private static final String CUPERTINO_THEME_NAME = "Cupertino";
   private static final String NORD_THEME_NAME = "Nord";
 
-  private static final List<String> SUPPORTED_THEMES = List.of(DEFAULT_THEME_NAME,
+  private static final List<String> SUPPORTED_THEMES = List.of(PRIMER_THEME_NAME,
                                                                CUPERTINO_THEME_NAME,
                                                                NORD_THEME_NAME);
 
@@ -48,7 +49,7 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
    * Creates the Atlanta FX utilities.
    */
   public AtlantaThemeUtilities() {
-    super(DEFAULT_THEME_NAME, 14);
+    super(StringHelper.getPlatform().contains("mac") ? CUPERTINO_THEME_NAME : PRIMER_THEME_NAME, 14);
   }
 
   @Override
