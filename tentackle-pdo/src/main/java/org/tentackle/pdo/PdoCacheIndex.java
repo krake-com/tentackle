@@ -265,13 +265,17 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected void assignCache(PdoCache<T> cache) {
     if (cache != null)  {
       if (this.cache != null) {
-        throw new PdoCacheException(this + " is already assigned to " + this.cache);
+        if (this.cache != cache) {
+          throw new PdoCacheException(this + " is already assigned to " + this.cache);
+        }
+        return;
       }
     }
     else  {
       // clear assignment
       if (this.cache == null) {
-        throw new PdoCacheException(this + " is not assigned to any cache");
+        LOGGER.warning("{0} is not assigned to any cache", this);
+        return;
       }
     }
     this.cache = cache;
@@ -528,7 +532,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   }
 
   /**
-   * Removes all objects for given session from index.
+   * Removes all objects for the given session from the index.
    * <p>
    * This will also remove objects that have changed their session
    * but were originally stored with the given session.
