@@ -68,6 +68,7 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
     componentClass = (Class<T>) field.getType();
     componentName = field.getName();
     isFinalField = Modifier.isFinal(field.getModifiers());
+    // CAUTION: Java >= 26 requires "--enable-final-field-mutation=org.tentackle.core"
     if (!this.getClass().getModule().canRead(field.getDeclaringClass().getModule())) {
       // MethodHandles.lookup() is caller-sensitive: make the field's module readable by this module.
       this.getClass().getModule().addReads(field.getDeclaringClass().getModule());
