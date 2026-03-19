@@ -625,6 +625,9 @@ public class FxUtilities {
       popup.setOnHidden(event -> Platform.runLater(onClose));
     }
     Window window = getWindow(owner);
+    if (window instanceof Stage stage) {
+      stage.toFront();
+    }
     popup.addEventFilter(WindowEvent.WINDOW_SHOWN, event -> { // filter event is triggered _before_ actually shown
       // center above the owner window
       popup.setAnchorX(window.getX() + (window.getWidth() - popup.getWidth()) / 2.0);
