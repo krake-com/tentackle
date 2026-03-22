@@ -37,6 +37,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Paint;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
@@ -99,6 +103,15 @@ public class DefaultFxFactory implements FxFactory {
    */
   private final Map<String, GraphicProvider> graphicProviders;
 
+  /**
+   * The image conversion pane.
+   */
+  private final Pane conversionPane;
+
+  /**
+   * The image conversion scene.
+   */
+  private final Scene conversionScene;
 
 
   /**
@@ -177,6 +190,8 @@ public class DefaultFxFactory implements FxFactory {
       translators.getNameMap().put(entry.getKey().modelClass().getCanonicalName(), entry.getValue().getName());
     }
 
+    conversionPane = new Pane();
+    conversionScene = new Scene(conversionPane);
   }
 
 
@@ -453,6 +468,16 @@ public class DefaultFxFactory implements FxFactory {
       throw new IllegalArgumentException("no graphic provider for realm '" + realm + "'");
     }
     return provider.createGraphic(name);
+  }
+
+  @Override
+  public Image createImage(Node node, Paint fill) {
+    conversionPane.getChildren().add(node);
+    SnapshotParameters snapshotParameters = new SnapshotParameters();
+    snapshotParameters.setFill(fill);
+    Image snapshot = node.snapshot(snapshotParameters, null);
+    conversionPane.getChildren().remove(node);
+    return snapshot;
   }
 
   @Override
