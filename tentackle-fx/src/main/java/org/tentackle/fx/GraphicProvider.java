@@ -22,9 +22,9 @@ package org.tentackle.fx;
 import javafx.scene.Node;
 
 /**
- * Provider for icons, images and nodes with graphical content in general.
+ * Provider for icons, images, and nodes with graphical content in general.
  * <p>
- * Graphics are categorized in realms. The default realm is used by the framework.
+ * Graphics are categorized in realms. The framework uses the default realm.
  * Applications should use their own realm.
  *
  * @see GraphicProviderService

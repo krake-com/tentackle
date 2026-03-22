@@ -25,6 +25,8 @@ import org.tentackle.fx.table.TableConfiguration;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.paint.Paint;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
@@ -63,14 +65,12 @@ public interface FxFactory {
    */
   Collection<Class<FxController>> getControllerClasses();
 
-
   /**
    * Gets the builder factory.
    *
    * @return the FX builder factory
    */
   BuilderFactory getBuilderFactory();
-
 
   /**
    * Gets the configurator for a given class.
@@ -80,7 +80,6 @@ public interface FxFactory {
    * @return the configurator, null if none
    */
   <T> Configurator<T> getConfigurator(Class<T> clazz);
-
 
   /**
    * Creates a value translator.
@@ -94,7 +93,6 @@ public interface FxFactory {
    */
   <M,V> ValueTranslator<V,M> createValueTranslator(Class<M> modelClass, Class<V> viewClass, FxComponent component);
 
-
   /**
    * Creates a configured stage.
    *
@@ -105,7 +103,6 @@ public interface FxFactory {
    */
   Stage createStage(StageStyle stageStyle, Modality modality, Object owner);
 
-
   /**
    * Creates a scene.
    *
@@ -113,7 +110,6 @@ public interface FxFactory {
    * @return the scene
    */
   Scene createScene(Parent root);
-
 
   /**
    * Creates a notification popup.<br>
@@ -124,7 +120,6 @@ public interface FxFactory {
    */
   Popup createNotificationPopup();
 
-
   /**
    * Creates a notification builder.<br>
    * Notifications are a lightweight alternative to {@link javafx.scene.control.Alert}s.
@@ -132,7 +127,6 @@ public interface FxFactory {
    * @return the builder
    */
   NotificationBuilder createNotificationBuilder();
-
 
   /**
    * Creates a controller together with its FXML-based view.<br>
@@ -147,7 +141,6 @@ public interface FxFactory {
    */
   <T extends FxController> T createController(Class<T> controllerClass, URL fxmlUrl, ResourceBundle resources, URL cssUrl);
 
-
   /**
    * Creates the graphic node for a given realm and name.<br>
    * Throws IllegalArgumentException if no such icon and/or realm.
@@ -158,6 +151,14 @@ public interface FxFactory {
    */
   Node createGraphic(String realm, String name);
 
+  /**
+   * Creates an image from the given node.
+   *
+   * @param node the node
+   * @param fill the background color
+   * @return the image
+   */
+  Image createImage(Node node, Paint fill);
 
   /**
    * Creates an empty configuration from a template object.
