@@ -75,7 +75,12 @@ public class MacUtilities {
   }
 
 
-  private void toSystemMenu(Menu menu) {
+  /**
+   * Converts {@link FontIcon}s to {@link ImageView}s.
+   *
+   * @param menu the menu
+   */
+  protected void toSystemMenu(Menu menu) {
     Node graphic = menu.getGraphic();
     if (graphic instanceof FontIcon fontIcon) {
       menu.setGraphic(createImageView(fontIcon));
@@ -93,7 +98,13 @@ public class MacUtilities {
     }
   }
 
-  private ImageView createImageView(FontIcon fontIcon) {
+  /**
+   * Creates an {@link ImageView} from a {@link FontIcon}.
+   *
+   * @param fontIcon the font icon
+   * @return the image view
+   */
+  protected ImageView createImageView(FontIcon fontIcon) {
     fontIcon.setIconSize(ICON_SIZE);
     fontIcon.setIconColor(ThemeUtilities.getInstance().isDarkMode() ? Color.WHITE : Color.BLACK);
     return new ImageView(FxFactory.getInstance().createImage(fontIcon, Color.TRANSPARENT));
