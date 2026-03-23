@@ -19,7 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.scene.Node;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 /**
@@ -37,7 +36,7 @@ public abstract class IkonliGraphicProvider implements GraphicProvider {
   }
 
   @Override
-  public Node createGraphic(String name) {
+  public FontIcon createGraphic(String name) {
     try {
       // size and color should be set via CSS
       return new FontIcon(translateName(name));
