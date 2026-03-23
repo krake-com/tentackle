@@ -47,8 +47,8 @@ module org.tentackle.fx {
   requires transitive javafx.fxml;
   requires transitive javafx.web;   // transitive java.xml, javafx.base, javafx.controls, javafx.graphics
 
-  requires org.kordamp.ikonli.javafx;
-  requires org.kordamp.ikonli.materialdesign2;
+  requires transitive org.kordamp.ikonli.javafx;
+  requires transitive org.kordamp.ikonli.materialdesign2;
 
   requires java.desktop;
 

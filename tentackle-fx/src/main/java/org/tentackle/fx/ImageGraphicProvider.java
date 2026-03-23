@@ -19,13 +19,11 @@
 
 package org.tentackle.fx;
 
-import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -86,7 +84,7 @@ public abstract class ImageGraphicProvider implements GraphicProvider {
 
 
   @Override
-  public Node createGraphic(String name) {
+  public ImageView createGraphic(String name) {
     Image image = getImage(name);
     if (image == null) {
       throw new FxRuntimeException("no such image '" + name + "'");
