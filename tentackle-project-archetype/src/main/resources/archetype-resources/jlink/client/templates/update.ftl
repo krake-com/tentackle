@@ -53,10 +53,18 @@ if [ "$1" != "" ]; then
 fi
 if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d update/legal ] && [ -d update/lib ]; then
   if [ -f update/bin/$(basename "$0") ]; then
-    rm -fr bin conf include legal lib mp cp
-    mv -f update/* .
+    for sd in bin conf include legal lib man mp cp
+    do
+      rm -fr $sd
+      mv -f update/$sd .
+    done
+    mv -f update/release .
     rm -fr update
+<#if osName?upper_case?contains("MAC")>
+    chmod +x bin/* lib/jspawnhelper
+<#else>
     chmod +x bin/* lib/jexec lib/jspawnhelper
+</#if>
     bin/${runScript}
   else
     echo this is not the correct update script
