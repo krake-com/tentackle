@@ -176,6 +176,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
+  protected String builderAnnotation;   // optional builder annotation
   protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
 
 
@@ -188,8 +189,12 @@ public class DTOWurblet extends AbstractJavaWurblet {
     super.run();
 
     for (String arg: getContainer().getArgs()) {
-      if ("--builder".equals(arg)) {
+      if (arg.startsWith("--builder")) {
         withBuilder = true;
+        if (arg.length() > 10 && arg.charAt(9) == '[' && arg.charAt(10) == '@' &&
+            arg.charAt(arg.length() - 1) == ']') {
+          builderAnnotation = arg.substring(10, arg.length() - 1);
+        }
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
