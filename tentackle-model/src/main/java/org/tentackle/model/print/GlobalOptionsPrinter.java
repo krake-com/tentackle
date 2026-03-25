@@ -133,7 +133,7 @@ public class GlobalOptionsPrinter {
       if (options.isBindable()) {
         buf.append(CommonOptionsImpl.OPTION_BIND).append(',');
       }
-      if (options.getTrackType() != TrackType.NONE) {
+      if (options.getTrackType() != TrackType.UNTRACKED) {
         buf.append(options.getTrackType()).append(',');
       }
       if (options.isAutoSelect()) {
@@ -165,7 +165,7 @@ public class GlobalOptionsPrinter {
       printBool(buf, CommonOptionsImpl.BIND_SIZE, options.isMaxCol(), modelDefaults.getSize());
       printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBindable(), modelDefaults.getBind());
 
-      if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.NONE ||
+      if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.UNTRACKED ||
           !Objects.equals(modelDefaults.getTrackType(), options.getTrackType())) {
         buf.append(options.getTrackType()).append(',');
       }
