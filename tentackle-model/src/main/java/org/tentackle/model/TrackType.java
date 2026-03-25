@@ -26,7 +26,7 @@ package org.tentackle.model;
 public enum TrackType {
 
   /** PDO is untracked. */
-  NONE,
+  UNTRACKED,
 
   /** PDO knows whether modified or not. */
   TRACKED,
@@ -44,7 +44,7 @@ public enum TrackType {
    * @return true if tracked
    */
   public boolean isTracked() {
-    return this != NONE;
+    return this != UNTRACKED;
   }
 
   /**

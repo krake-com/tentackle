@@ -99,7 +99,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     super(sourceInfo);
     this.factory = factory;
     this.entity = entity;
-    trackType = TrackType.NONE;
+    trackType = TrackType.UNTRACKED;
   }
 
 
