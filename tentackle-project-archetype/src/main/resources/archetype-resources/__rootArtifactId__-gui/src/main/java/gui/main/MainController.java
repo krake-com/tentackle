@@ -19,6 +19,7 @@ import ${package}.pdo.td.Message;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -27,11 +28,13 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import org.tentackle.app.Application;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.MacUtilities;
 import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.Rdc;
@@ -56,6 +59,9 @@ public class MainController extends AbstractFxController implements DomainContex
 
   @FXML
   private BorderPane borderPane;
+
+  @FXML
+  private MenuBar menuBar;
 
   @FXML
   private MenuItem securityManagerItem;
@@ -159,6 +165,10 @@ public class MainController extends AbstractFxController implements DomainContex
       getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), AdminExtension.class).isAccepted());
     preferencesItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
       getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
+
+    if (StringHelper.getPlatform().contains("mac")) {
+      MacUtilities.getInstance().toSystemMenuBar(menuBar);
+    }
   }
 
   /**
