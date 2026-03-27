@@ -405,11 +405,11 @@ Index lines appear in the `## indexes` section.
 ```
 
 - `unique` — creates a unique index.
-- `optional` — create only if backend supports it (usually in-memory databases used for CI tests)
+- `optional` — create only if backend supports it (mainly for in-memory databases used for CI)
 - `<indexName>` — identifier for the index (becomes part of the generated DDL name).
 - Columns are database column names or Java attribute names, comma-separated.
 - `asc` / `desc` or `+` / `-` are optional sort direction suffixes.
-  - optional SQL expression describing a filtered/conditional index (following `where` or `|`).
+- following `where` or `|`: optional SQL expression defining a filtered (a.k.a. conditional) index.
 
 ### Examples
 
@@ -453,7 +453,7 @@ relation = <type> [modifiers...]
 |------------|--------------------------------------------------------------------|
 | `object`   | 1:1 association (default).                                         |
 | `list`     | 1:N association.                                                   |
-| `reversed` | Reversed 1:1 (non-composite list that returns at most one object). |
+| `reversed` | Reversed 1:1 (non-component list that returns at most one object). |
 
 **Modifiers** (any combination):
 
@@ -594,34 +594,20 @@ text from the relation line, if any.
 Annotations and stereotypes are added separated by commas:
 
 ```
-Customer: select = cached,
-          @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}"),
+Customer: @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}"),
           #COOL
 ```
 
 ### Relation examples
 
 ```
-# eager composite 1:N
-StoredBundleKey:
-    relation = component list,
-    select   = eager,
-    name     = Keys,
-    method   = BundleId
-
-# serialized back-reference
-StoredBundle:
-    relation = serialized,
-    name     = Bundle
-
-# component with link
+# 1:N component relation
 InvoiceLine:
     relation = component list,
     link     = setInvoice position,
-    name     = lines,
-    select   = lazy
+    name     = lines
 
-# non-component object 1:1
+# 1:1 object relation
 Customer: @NotNull
 
 # N:M relation
