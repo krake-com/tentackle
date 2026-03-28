@@ -289,30 +289,30 @@ Booleans: `default true`.
 | `nomethod`       | Generate neither getter nor setter.                                                     |
 | `nodeclare`      | Do not emit the field declaration code.                                                 |
 | `noconstant`     | Do not generate the name constant.                                                      |
-| `super`          | Attribute is inherited from a super entity; do not redeclare.                           |
+| `super`          | Attribute is inherited from a super entity (if not in model of superclass)              |
 | `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`. |
 
 #### String handling options
 
-| Option      | Description                                                             |
-|-------------|-------------------------------------------------------------------------|
-| `uc`        | Convert to uppercase on write.                                          |
-| `lc`        | Convert to lowercase on write.                                          |
-| `trimread`  | Trim whitespace when reading from the database.                         |
-| `trimwrite` | Trim whitespace when writing to the database.                           |
+| Option      | Description                                     |
+|-------------|-------------------------------------------------|
 
+| `trimread`  | Trim whitespace when reading from the database. |
+| `trimwrite` | Trim whitespace when writing to the database.   |
+| `trim`      | `trimread` + `trimwrite`                        |
 
 #### Binding options
 
-| Option    | Description                   |
-|-----------|-------------------------------|
-| `bind`    | Annotate with `@Bindable`.    |
-| `size`    | Apply size binding hint.      |
-| `maxcols` | explicit maximum columns (UI) |
-| `cols`    | explicit visible columns (UI) |
-| `lines`   | explicit visible rows (UI)    |
-| `scale`   | explicit numeric scale (UI)   |
-'
+| Option    | Description                                  |
+|-----------|----------------------------------------------|
+| `bind`    | Annotate with `@Bindable` to enable binding. |
+| `size`    | Apply size binding hint.                     |
+| `maxcols` | explicit maximum columns                     |
+| `cols`    | explicit visible columns                     |
+| `lines`   | explicit visible rows (textarea)             |
+| `scale`   | explicit numeric scale                       |
+| `uc`      | Convert to uppercase                         |
+| `lc`      | Convert to lowercase                         |
 
 #### Annotation options
 
@@ -503,7 +503,7 @@ select = lazy | -pilePosition
 delete = cascade
 ```
 
-`cascade` — cascade-delete components (only necessary when integrity checks are disabled).
+`cascade` — cascade-delete components (only necessary if integrity checks are disabled).
 
 #### `link`
 
