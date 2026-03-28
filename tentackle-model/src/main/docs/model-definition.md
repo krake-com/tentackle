@@ -296,7 +296,6 @@ Booleans: `default true`.
 
 | Option      | Description                                     |
 |-------------|-------------------------------------------------|
-
 | `trimread`  | Trim whitespace when reading from the database. |
 | `trimwrite` | Trim whitespace when writing to the database.   |
 | `trim`      | `trimread` + `trimwrite`                        |
