@@ -26,6 +26,7 @@ import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.NameVerifier;
@@ -97,6 +98,11 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
    */
   public AttributeImpl(EntityFactoryImpl factory, Entity entity, SourceInfo sourceInfo, boolean implicit) {
     this(factory, entity, sourceInfo, implicit, null);
+  }
+
+  @Override
+  public Model getModel() {
+    return factory.getModel();
   }
 
   @Override
@@ -216,7 +222,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
     try {
       DataType<?> dataType = DataTypeFactory.getInstance().get(line.getJavaType());
       if (dataType == null) {
-        // may be the special Convertible type (see org.tentackle.misc.Convertible)
+        // maybe the special Convertible type (see org.tentackle.misc.Convertible)
         if (line.getInnerType() != null) {
           setDataType(DataTypeFactory.getInstance().getConvertibleType());
           setInnerTypeName(line.getInnerType());
@@ -339,7 +345,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
    * Sets the inner type name.
    *
    * @param innerTypeName the name of the inner type
-   * @throws ModelException if datatype is Convertible and the inner type is not supported or inner type not applicable to datatype
+   * @throws ModelException if datatype is Convertible, and the inner type is not supported or inner type not applicable to datatype
    */
   public void setInnerTypeName(String innerTypeName) throws ModelException {
     if (!dataType.isModelProvidingInnerType()) {

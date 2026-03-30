@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven.plugin.wizard;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -31,6 +30,7 @@ import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelManager;
 
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
@@ -42,13 +42,19 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Base wizard mojo.
  *
  * @author harald
  */
 public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
+
+  /**
+   * The model name.
+   */
+  @Parameter(defaultValue = ModelManager.DEFAULT_MODEL_NAME,
+             property = "tentackle.modelName")
+  protected String modelName;
 
   /**
    * Directory holding the model files to be processed.<br>
@@ -103,7 +109,6 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   @Parameter(defaultValue = "true")
   private boolean loadModelFromDependencies;
 
-
   /**
    * Enables dark mode.<br>
    * If missing, the mode is determined from the desktop settings.
@@ -119,6 +124,23 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   @Parameter
   private String themeName;
 
+  /**
+   * The model.
+   */
+  private Model model;
+
+
+  /**
+   * Gets the model to use.
+   *
+   * @return the model
+   */
+  public Model getModel() {
+    if (model == null) {
+      model = ModelManager.getInstance().getModel(modelName);
+    }
+    return model;
+  }
 
   /**
    * Gets the profiles.
@@ -217,7 +239,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
     if (loadModelFromDependencies) {
       try {
-        Model.getInstance().loadFromResources(true);
+        getModel().loadFromResources(true);
       }
       catch (ModelException e) {
         throw new MojoFailureException(e);
@@ -248,7 +270,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     }
 
     try {
-      getLog().info(Model.getInstance().getAllEntities().size() + " entities loaded");
+      getLog().info(getModel().getAllEntities().size() + " entities loaded");
     }
     catch (ModelException e) {
       throw new MojoExecutionException("cannot determine entities", e);
@@ -275,10 +297,9 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     String modelDirName = dir.getPath();
 
     try {
-      Model model = Model.getInstance();
-      model.setModelDefaults(getModelDefaults());
-      model.setEntityAliases(getEntityAliases());
-      Model.getInstance().loadFromDirectory(modelDirName, true);
+      getModel().setModelDefaults(getModelDefaults());
+      getModel().setEntityAliases(getEntityAliases());
+      getModel().loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
       getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());

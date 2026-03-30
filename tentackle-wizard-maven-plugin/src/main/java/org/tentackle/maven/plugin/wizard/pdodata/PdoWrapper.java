@@ -67,11 +67,12 @@ public class PdoWrapper {
   /**
    * Gets the data object tree.
    *
+   * @param nodeFactory the factory to use for creating the tree
    * @return the tree
    */
-  public DataObject getDataObject() {
+  public DataObject getDataObject(DataNodeFactory nodeFactory) {
     if (dataObject == null) {
-      dataObject = DataNodeFactory.create(pdo);
+      dataObject = nodeFactory.create(pdo);
     }
     return dataObject;
   }
@@ -79,11 +80,12 @@ public class PdoWrapper {
   /**
    * Gets the code configuration.
    *
+   * @param nodeFactory the factory to use for creating the tree
    * @return the config map, empty if no configuration available
    */
-  public Map<String, Boolean> getCodeConfiguration() {
+  public Map<String, Boolean> getCodeConfiguration(DataNodeFactory nodeFactory) {
     if (codeConfiguration == null) {
-      codeConfiguration = CodeConfigurationFactory.createConfig(getDataObject());
+      codeConfiguration = CodeConfigurationFactory.createConfig(getDataObject(nodeFactory));
     }
     return codeConfiguration;
   }

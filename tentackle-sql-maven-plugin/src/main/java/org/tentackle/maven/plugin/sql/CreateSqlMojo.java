@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Generates an SQL-script to create the database tables according to the model.
+ * Generates an SQL script to create the database tables according to the model.
  *
  * @author harald
  */
@@ -70,8 +70,8 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   private boolean createSchemas;
 
   /**
-   * Prepends the SQL-code for the model found in the resources of the classpath.<br>
-   * Useful to create the database tables for dependencies, for example the Tentackle model.<br>
+   * Prepends the SQL code for the model found in the resources of the classpath.<br>
+   * Useful to create the database tables for dependencies, for example, the Tentackle model.<br>
    * Requires that the plugin dependencies contain the model resources
    * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
    */
@@ -111,7 +111,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   /**
    * Set of backends processed so far.
    * Used if {@link #prependModelFromClassPath} or {@link #appendModelFromClassPath} is true to
-   * generate classpath model only once per backend.
+   * generate the classpath model only once per backend.
    */
   private final Set<BackendInfo> processedBackendInfos = new HashSet<>();
 
@@ -167,12 +167,12 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     Set<Entity> generatedEntities = new HashSet<>();    // entities code was generated for
     Collection<ForeignKey> foreignKeys = null;
     try {
-      Model model = Model.getInstance();
+      Model model = getModel();
       model.setModelDefaults(getModelDefaults());
       model.setEntityAliases(getEntityAliases());
       model.setSchemaNameMapped(mapSchemas);
       model.loadFromDirectory(modelDirName, true);
-      foreignKeys = Model.getInstance().getForeignKeys();
+      foreignKeys = model.getForeignKeys();
     }
     catch (ModelException mex) {
       getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());
@@ -186,7 +186,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
         // check if file exists
         File modelFile = new File(modelDirName, filename);
         if (!modelFile.exists()) {
-          getLog().error("no such modelfile: " + filename);
+          getLog().error("no such model file: " + filename);
           errorCount++;
         }
         else  {
@@ -195,7 +195,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
           }
           try {
             URL url = modelFile.toURI().toURL();
-            Entity entity = Model.getInstance().getByURL(url);
+            Entity entity = getModel().getByURL(url);
             if (entity == null) {
               throw new MojoExecutionException("no entity for " + url);
             }
@@ -334,7 +334,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     boolean failed = false;
     Backend backend = backendInfo.getBackend();
     try {
-      Model model = Model.getInstance();
+      Model model = getModel();
       model.clearModel();
       model.loadFromResources(true);
       Collection<Entity> allEntities = model.getAllEntities();
@@ -343,7 +343,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
         for (Entity entity : allEntities) {
           createTableSql(entity, backend);
         }
-        createForeignKeySql(Model.getInstance().getForeignKeys(), backend);
+        createForeignKeySql(model.getForeignKeys(), backend);
       }
       model.clearModel();
     }

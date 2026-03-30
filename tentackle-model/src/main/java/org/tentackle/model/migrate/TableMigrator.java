@@ -23,7 +23,6 @@ import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
-import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelUtilities;
 import org.tentackle.sql.Backend;
@@ -59,8 +58,8 @@ public class TableMigrator {
    * @param hints            hints to control the created output, null or empty if none
    * @param columnMigrations explicit column migrations, null or empty if none
    * @param renameColumns    explicit column rename hints, null or empty if none
-   * @param tableSql         the sql code to migrate the table
-   * @param foreignKeySql    the sql code to migrate the foreign keys
+   * @param tableSql         the SQL code to migrate the table
+   * @param foreignKeySql    the SQL code to migrate the foreign keys
    * @param warningSql       generated SQL as comments
    */
   public record Result(Collection<Pattern> hints,
@@ -73,16 +72,16 @@ public class TableMigrator {
   private final Entity entity;                        // the model's entity
   private final Collection<ForeignKey> foreignKeys;   // the foreign keys
   private final Backend backend;                      // the backend
-  private final TableMetaData table;                  // the database's table meta data, null if no such table
+  private final TableMetaData table;                  // the database's table metadata, null if no such table
 
 
   /**
    * Creates a table migrator.
    *
    * @param entity the model's entity
-   * @param foreignKeys the foreign keys related to given entity
+   * @param foreignKeys the foreign keys related to the given entity
    * @param backend the backend
-   * @param table the database's table meta data
+   * @param table the database's table metadata
    */
   public TableMigrator(Entity entity, Collection<ForeignKey> foreignKeys, Backend backend, TableMetaData table) {
     this.entity = entity;
@@ -110,9 +109,9 @@ public class TableMigrator {
   }
 
   /**
-   * Gets the database's table meta data.
+   * Gets the database's table metadata.
    *
-   * @return the database's table meta data
+   * @return the database's table metadata
    */
   public TableMetaData getTable() {
     return table;
@@ -178,7 +177,7 @@ public class TableMigrator {
   /**
    * Creates the table.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String createTable() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -192,7 +191,7 @@ public class TableMigrator {
   /**
    * Creates the foreign keys.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String createForeignKeys() {
     StringBuilder buf = new StringBuilder();
@@ -243,7 +242,7 @@ public class TableMigrator {
   /**
    * Migrates the table definition.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String migrateTable() {
     if (!Objects.equals(table.getComment(), entity.getOptions().getComment())) {
@@ -264,7 +263,7 @@ public class TableMigrator {
    * @param hints the migration hints, null if none
    * @param columnMigrations explicit column migrations, null if none
    * @param renameColumns  explicit column rename hints, null if none
-   * @return the sql
+   * @return the SQL code
    * @throws ModelException if failed
    */
   private ColumnsResult migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
@@ -328,7 +327,7 @@ public class TableMigrator {
     /*
      * attributesToAdd and columnsToDrop may contain columns that just need to be renamed.
      * rule: if a column is to drop and there is _one_ _exact_ type match in attributes to add,
-     * this column is probably just renamed. Generate the rename statement, but keep the drop- or add-
+     * this column is probably just renamed. Generate the rename-statement, but keep the drop- or add-
      * statements as comments (so they can be used if guess was wrong)
      */
     for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
@@ -559,7 +558,7 @@ public class TableMigrator {
   /**
    * Check whether a hint applies to SQL code.
    *
-   * @param sql the sql statement
+   * @param sql the SQL statement
    * @param hints the hints, null if none
    * @return the matching hint, null if none
    */
@@ -580,7 +579,7 @@ public class TableMigrator {
   /**
    * Migrates the indexes.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   private IndexMigrator.Result migrateIndexes() {
     IndexMigrator.Result result = new IndexMigrator.Result("", "");
@@ -600,7 +599,7 @@ public class TableMigrator {
           break;
         }
         else if (!IndexMigrator.isLogicallyDifferent(backend, index, existingIndex, null)) {
-          // different name, but logically equivalent: rename if backend supports that.
+          // different name, but logically equivalent -> rename it if backend supports that.
           // however, check that this is the only equivalent (special case if
           // duplicate indexes already exist in the database)
           int count = 0;
@@ -610,7 +609,7 @@ public class TableMigrator {
             }
           }
           if (count == 1) {
-            String existingName = entity.getSchemaName() == null || Model.getInstance().isSchemaNameMapped() ?
+            String existingName = entity.getSchemaName() == null || entity.getModel().isSchemaNameMapped() ?
                                   existingIndex.getIndexName() :
                                   (entity.getSchemaName() + "." + existingIndex.getIndexName());
             String sql = backend.sqlRenameIndex(entity.getTableName(), existingName, indexName);
@@ -653,7 +652,7 @@ public class TableMigrator {
   /**
    * Creates the SQL code to add foreign keys constraints.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String migrateForeignKeysToAdd() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -678,7 +677,7 @@ public class TableMigrator {
   /**
    * Creates the SQL code to drop foreign keys constraints.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String migrateForeignKeysToDrop() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -702,7 +701,7 @@ public class TableMigrator {
 
 
   /**
-   * Returns whether foreign keys from model matches with database.
+   * Returns whether foreign keys from model matches with the database.
    *
    * @param foreignKey the foreign key
    * @param existingForeignKey the meta data
@@ -713,9 +712,10 @@ public class TableMigrator {
     Entity referencingTableProvidingEntity = foreignKey.getReferencingTableProvidingEntity();
     Entity referencedTableProvidingEntity = foreignKey.getReferencedTableProvidingEntity();
 
-    boolean mapSchemas = Model.getInstance().isSchemaNameMapped();
+    boolean mapSchemas = entity.getModel().isSchemaNameMapped();
 
-    return existingForeignKey.getForeignKeyColumns().size() == 1 && // TT-model uses only foreign keys on object-ID columns -> cannot match
+    return existingForeignKey.getForeignKeyColumns().size() == 1 &&
+           // the TT-model uses only foreign keys on object-ID columns -> cannot match
 
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
 

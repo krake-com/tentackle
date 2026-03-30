@@ -26,6 +26,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.Index;
 import org.tentackle.model.MethodArgument;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
@@ -56,6 +57,9 @@ import java.util.Objects;
  */
 public class EntityFactoryImpl implements EntityFactory {
 
+  /** the model to use. */
+  private final Model model;
+
   /** last pending comment line. */
   private String pendingComment;
 
@@ -65,9 +69,17 @@ public class EntityFactoryImpl implements EntityFactory {
 
   /**
    * Creates the entity factory.
+   *
+   * @param model the model to use
    */
-  public EntityFactoryImpl() {
-    // see -Xlint:missing-explicit-ctor since Java 16
+  public EntityFactoryImpl(Model model) {
+    this.model = model;
+  }
+
+
+  @Override
+  public Model getModel() {
+    return model;
   }
 
   @Override

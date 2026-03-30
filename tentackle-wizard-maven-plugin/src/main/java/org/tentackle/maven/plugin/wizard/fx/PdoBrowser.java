@@ -124,7 +124,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
 
 
-  private static final int LATEST_DEFAULT = 100;                // number of latest to show initially
+  private static final int LATEST_DEFAULT = 100;                // number of latest PDOs to show initially
   private static final double OUTER_DIVIDER_POSITION = 0.84;    // outer split pane divider position
   private static final String POPUP_CSS = "-fx-font-weight: bold; -fx-font-size: 16;";
 
@@ -151,6 +151,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxButton closeButton;
 
   private BrowseMojo mojo;
+  private DataNodeFactory nodeFactory;
   private DomainContext context;
   private TablePopup<PdoWrapper> pdosTablePopup;
   private DataObject dataObject;
@@ -223,7 +224,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           memorizedDataObject = dataObject;
           memorizeTime = new Timestamp();
         }
-        // else: temporarily deselected, e.g. after reload
+        // else: temporarily deselected, e.g., after reload
       }
       else {
         memorizedDataObject = null;
@@ -254,7 +255,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         showDiff();
       }
       else {
-        dataObject = selectedItems.getFirst().getDataObject();
+        dataObject = selectedItems.getFirst().getDataObject(nodeFactory);
         memorizeButton.setDisable(false);
         generateButton.setDisable(false);
         updateCodeConfiguration(selectedItems);
@@ -300,6 +301,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   public void setContext(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
     this.mojo = mojo;
     this.context = context;
+    nodeFactory = new DataNodeFactory(mojo.getModel());
     profileField.getItems().setAll(mojo.getProfiles(PdoProfile.class));
     updateEntityFieldProperties();
     entityField.requestFocus();
@@ -339,7 +341,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private void showDataItem(DataItem dataItem) {
     NonCompositeRelation nonCompositeRelation = dataItem.getNonCompositeRelation();
     if (nonCompositeRelation != null) {
-      showDataObjects(List.of(DataNodeFactory.create(nonCompositeRelation.getRelatedPdo())));
+      showDataObjects(List.of(nodeFactory.create(nonCompositeRelation.getRelatedPdo())));
     }
   }
 
@@ -378,7 +380,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private void updateCodeConfiguration(List<? extends PdoWrapper> selectedItems) {
     codePaths = new LinkedHashMap<>();
     for (PdoWrapper selectedItem : selectedItems) {
-      codePaths.putAll(selectedItem.getCodeConfiguration());
+      codePaths.putAll(selectedItem.getCodeConfiguration(nodeFactory));
     }
     configPathsButton.setDisable(codePaths.isEmpty());
   }
@@ -608,7 +610,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       DataObject[] dataObjects = new DataObject[selectedItems.size()];
       int i = 0;
       for (PdoWrapper pdoWrapper : selectedItems) {
-        dataObjects[i++] = pdoWrapper.getDataObject();
+        dataObjects[i++] = pdoWrapper.getDataObject(nodeFactory);
       }
       String text = JavaCodeFactory.generateCode(codePaths, dataObjects);
       buf.append(text);

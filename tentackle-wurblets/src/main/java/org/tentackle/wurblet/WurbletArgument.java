@@ -24,7 +24,6 @@ import org.wurbelizer.wurbel.WurbelException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
-import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SortType;
@@ -82,13 +81,13 @@ import java.util.Set;
  * Defaults to <code>'='</code>.<br>
  * The special relop <code>':null'</code> will be translated to <code>" IS NULL"</code> and <code>':notnull'</code>
  * translated to <code>" IS NOT NULL"</code>.<br>
- * <code>':like'</code> will translated to <code>" LIKE "</code>. <code>':notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
+ * <code>':like'</code> will be translated to <code>" LIKE "</code>. <code>':notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
  * <code>':in'</code>, <code>':notin'</code> or if the relop ends with <code>'any'</code> or <code>'all'</code>, it will be translated to
  * IN(?), NOT IN(?), ANY(?) or ALL(?) operators with its argument being an array instead of a simple value.
  * Notice that backends may not support array operators at all or only a subset. This is verified by the wurblets.<br>
  * The optional <code>':value'</code> will be set as a '?'-parameter of the generated prepared statement.
  * As an alternative, the value may be given as <code>'#value'</code> which will include the value
- * literally in the SQL-string.
+ * literally in the SQL string.
  * </li>
  * </ul>
  * <pre>
@@ -157,7 +156,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /** the relation path to the attribute. */
   private List<WurbletRelation> wurbletRelations;
 
-  /** embedding relation path if attribute is embedded. */
+  /** embedding relation path if the attribute is embedded. */
   private final List<Relation> embeddingPath;
 
   /** != null if the first relation points to a component. */
@@ -172,7 +171,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /** set of components in EXISTS-clause. */
   private Set<Entity> existsComponents;
 
-  /** true if this is last argument of the EXISTS-clause. */
+  /** true if this is the last argument of the EXISTS-clause. */
   private boolean endOfExistsClause;
 
 
@@ -183,7 +182,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * @param entity the entity the wurblet is applied to
    * @param index the position among all arguments
    * @param text the wurblet arg
-   * @param expressionFinished true if expression is finished
+   * @param expressionFinished true if the expression is finished
    * @param argumentGroupingEnabled true if argument grouping is enabled
    *
    * @throws WurbelException if parsing failed
@@ -353,7 +352,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
       int ndx2 = str.indexOf('.', ndx + 1);    // length already checked above
       String componentName = str.substring(ndx + 1, ndx2);
       try {
-        component = Model.getInstance().getByEntityName(componentName);
+        component = entity.getModel().getByEntityName(componentName);
       }
       catch (ModelException mx) {
         throw new WurbelException("could not load component " + componentName, mx);
@@ -596,7 +595,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * Gets the embedding relation path to the attribute.<br>
    * Starts at the embedding entity.
    *
-   * @return the relation path, if attribute is embedded, empty list if not
+   * @return the relation path, if the attribute is embedded, empty list if not
    */
   public List<Relation> getEmbeddingPath() {
     return embeddingPath;
@@ -604,7 +603,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
   /**
    * Gets the embedding prefix count.<br>
-   * The embedding prefixes are only necessary for chained embedding relations, i.e.
+   * The embedding prefixes are only necessary for chained embedding relations, i.e.,
    * relations from within an embedded entity which is embedded in at least one other embedded entity.
    * This is used in wurblet joins (and fetch joins) only.
    *
@@ -613,7 +612,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   public int getEmbeddingPrefixCount() {
     int count = 0;
     for (Relation relation : embeddingPath) {
-      if (relation.isEmbedding()) {   // skip the last non-embedding, if this is a 1:1 non-composite
+      if (relation.isEmbedding()) {   // skip the last non-embedding if this is a 1:1 non-composite
         count++;
       }
     }
@@ -653,7 +652,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /**
    * Sets the relations used within the current SQL EXISTS clause.
    *
-   * @return the relations, null if argument has no relations or already covered by EXISTS-clause
+   * @return the relations, null if the argument has no relations or already covered by EXISTS-clause
    */
   public Set<Relation> getExistsRelations() {
     return existsRelations;
@@ -706,9 +705,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
 
   /**
-   * Gets the compacted relation path starting with the last component relation in chain, if any.
+   * Gets the compacted relation path starting with the last component relation in the chain, if any.
    *
-   * @return the relation path to be used in expressions, null if refers directly to the wurblet's entity
+   * @return the relation path to be used in expressions, null if refers directly to the Wurblet's entity
    */
   public List<Relation> getExpressionRelations() {
     if (wurbletRelations != null && expressionRelations == null) {
@@ -739,7 +738,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /**
    * Gets the component that prepends the relation path.
    *
-   * @return the component, null if path does not start with a component
+   * @return the component, null if the path does not start with a component
    */
   public Entity getComponent() {
     getExpressionRelations();
@@ -748,7 +747,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
 
   /**
-   * Returns whether argument points to another entity.
+   * Returns whether the argument points to another entity.
    *
    * @return true if argument describes a path to another entity
    */
@@ -789,7 +788,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * This is ether the optionally defined {@code [name]} or the name of the {@link Attribute}.
    *
    * @return the method argument name, never null
-   * @throws WurbelException if argument type provides no argument name
+   * @throws WurbelException if the argument type provides no argument name
    */
   public String getMethodArgumentName() throws WurbelException {
     if (attribute == null) {
@@ -852,7 +851,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /**
    * Returns whether argument must be treated as an array.
    *
-   * @return true if IN, ANY or ALL operators used
+   * @return true if IN, ANY, or ALL operators used
    */
   public boolean isArray() {
     return arrayOperator != null;
@@ -861,7 +860,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /**
    * Returns the array operator.
    *
-   * @return IN, ANY or ALL, null if no array relop
+   * @return IN, ANY or ALL, null if no array operator used
    */
   public String getArrayOperator() {
     return arrayOperator;

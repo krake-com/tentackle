@@ -36,7 +36,6 @@ import org.tentackle.maven.plugin.wizard.PdoMojo;
 import org.tentackle.maven.plugin.wizard.PdoProfile;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
-import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
@@ -57,7 +56,7 @@ import java.util.List;
 public class PdoWizard extends AbstractFxController {
 
   @Bindable
-  private final PdoGenerator gen;
+  private PdoGenerator gen;
 
 
   @FXML
@@ -107,8 +106,7 @@ public class PdoWizard extends AbstractFxController {
 
 
   public PdoWizard() {
-    gen = new PdoGenerator();
-    gen.setInheritanceType(InheritanceType.NONE);
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   /**
@@ -117,6 +115,8 @@ public class PdoWizard extends AbstractFxController {
    * @param mojo the PDO mojo
    */
   public void applyMojo(PdoMojo mojo) {
+    gen = new PdoGenerator(mojo.getModel());
+    gen.setInheritanceType(InheritanceType.NONE);
     genProfile.getItems().clear();
     List<PdoProfile> profiles = mojo.getPdoProfiles();
     genProfile.getItems().addAll(profiles);
@@ -125,8 +125,8 @@ public class PdoWizard extends AbstractFxController {
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_PDO));
     gen.setStatusDir(mojo.getStatusDir());
-    gen.setRemoteEnabled(Model.getInstance().getModelDefaults() == null ||
-                         Boolean.TRUE.equals(Model.getInstance().getModelDefaults().getRemote()));
+    gen.setRemoteEnabled(mojo.getModel().getModelDefaults() == null ||
+                         Boolean.TRUE.equals(mojo.getModel().getModelDefaults().getRemote()));
   }
 
   @Override
@@ -134,7 +134,7 @@ public class PdoWizard extends AbstractFxController {
     cancel.setGraphic(Fx.createGraphic("cancel"));
     generate.setGraphic(Fx.createGraphic("generate"));
     try {
-      for (Entity entity: Model.getInstance().getAllEntities()) {
+      for (Entity entity: gen.getModel().getAllEntities()) {
         if (entity.isAbstract()) {
           genSuperEntity.getItems().add(entity);
         }
@@ -161,16 +161,16 @@ public class PdoWizard extends AbstractFxController {
     genInheritanceType.addViewToModelListener(this::updateViewOfClassIdAndTableNameAndSuperEntity);
     genSuperEntity.addViewToModelListener(this::updateViewOfClassIdAndTableName);
 
-    genTableName.focusedProperty().addListener((observable, oldValue, newValue) -> {
+    genTableName.focusedProperty().addListener((_, _, newValue) -> {
       if (newValue && gen.getProfile() != null && gen.getProfile().getTablePrefix() != null &&
           gen.getProfile().getTablePrefix().equals(gen.getTableName())) {
         Platform.runLater(() -> genTableName.positionCaret(gen.getTableName().length()));
       }
     });
 
-    cancel.setOnAction(e -> close());
+    cancel.setOnAction(_ -> close());
 
-    generate.setOnAction(e -> {
+    generate.setOnAction(_ -> {
       if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() != null) {
         Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
       }

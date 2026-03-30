@@ -35,6 +35,7 @@ import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelManager;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.sql.Backend;
@@ -88,15 +89,15 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * Names of other model dirs.<br>
    * Those models will be loaded *before* the model in modelDirName and
    * represent models of other modules that are dependencies of the current module
-   * (i.e. the current model refers to).
+   * (i.e., the current model refers to).
    * <p>
-   * Important: the modelDefaults and entityAliases must be the same for all models
+   * Important: the modelDefaults and entityAliases must be the same for all models,
    * including the current!
    */
   private List<String> otherModelDirNames;
 
-  /** name of the model. */
-  private String modelName;
+  /** name of the entity model (not the whole model!). */
+  private String modelFileName;
 
   /** the model defaults. */
   private ModelDefaults modelDefaults;
@@ -371,11 +372,11 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Gets the methodname.<br>
-   * From the guardname or from arg "--method=&lt;.....&gt;" if present.
+   * Gets the method name.<br>
+   * From the guardname or from arg {@code --method=<...>}, if present.
    *
    * @return the method name
-   * @throws WurbelException if no guardname
+   * @throws WurbelException if no guard name
    */
   public String getMethodName() throws WurbelException {
     String methodName = getOption("method");
@@ -386,23 +387,24 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Gets the name of the modelfile.
+   * Gets the name of the entity model.<br>
+   * Not to be mixed up with name of the whole {@link Model}!
    *
-   * @return the name
-   * @throws WurbelException if model could not be determined
+   * @return the entity model name
+   * @throws WurbelException if the model could not be determined
    */
-  public String getModelName() throws WurbelException {
-    if (modelName == null) {
-      modelName = getOption("model");
-      if (modelName == null) {
+  public String getModelFileName() throws WurbelException {
+    if (modelFileName == null) {
+      modelFileName = getOption("model");
+      if (modelFileName == null) {
         // determine from the source file
-        modelName = getPdoClassName();
+        modelFileName = getPdoClassName();
       }
-      if (modelName == null) {
-        throw new WurbelException("model not specified");
+      if (modelFileName == null) {
+        throw new WurbelException("model name not specified");
       }
     }
-    return modelName;
+    return modelFileName;
   }
 
   /**
@@ -577,7 +579,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
   /**
    * Gets the effective datatype.<br>
-   * The effective type may be different if type is a Convertible.
+   * The effective type may be different if the type is a {@link org.tentackle.sql.datatypes.ConvertibleType}.
    *
    * @param attribute the attribute
    * @return the data type
@@ -720,9 +722,12 @@ public class ModelWurblet extends AbstractJavaWurblet {
       }
     }
 
+    String modelName = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "modelName");
+    Model model = modelName == null ? Model.getInstance() : ModelManager.getInstance().getModel(modelName);
+
     // set the backends to validate the model, if any.
     backends = BackendFactory.getInstance().getBackends(getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends"));
-    Model.getInstance().getEntityFactory().setBackends(backends);
+    model.getEntityFactory().setBackends(backends);
 
     // scan optional model defaults
     modelDefaults = null;
@@ -749,7 +754,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
 
     // load the model (if not yet done)
-    Model model = Model.getInstance();
     model.setModelDefaults(modelDefaults);
     model.setEntityAliases(entityAliases);
 
@@ -785,22 +789,22 @@ public class ModelWurblet extends AbstractJavaWurblet {
     // get the entity
 
     try {
-      if (getModelName().indexOf(File.separatorChar) >= 0) {
+      if (getModelFileName().indexOf(File.separatorChar) >= 0) {
         // is a filepath (load it if it's not already loaded)
         try {
-          entity = model.loadFromURL(new File(getModelName()).toURI().toURL(), true).getEntity();
+          entity = model.loadFromURL(new File(getModelFileName()).toURI().toURL(), true).getEntity();
         }
         catch (IOException ex) {
-          throw new ModelException("cannot determine canonical path of model " + getModelName(), ex);
+          throw new ModelException("cannot determine canonical path of model " + getModelFileName(), ex);
         }
       }
       else  {
         // is an entity name
-        entity = model.getByEntityName(getModelName());
+        entity = model.getByEntityName(getModelFileName());
       }
     }
     catch (ModelException mex) {
-      throw new WurbelTerminationException("errors in model loaded from file '" + getModelName() + "'", mex);
+      throw new WurbelTerminationException("errors in model loaded from file '" + getModelFileName() + "'", mex);
     }
 
     if (entity == null && !missingModelOk) {
@@ -814,7 +818,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       if (delayedException instanceof ModelException) {
         throw new WurbelTerminationException(delayedException.getMessage(), delayedException);
       }
-      throw new WurbelTerminationException("no such entity '" + getModelName() + "' in model " + modelDir, delayedException);
+      throw new WurbelTerminationException("no such entity '" + getModelFileName() + "' in model " + modelDir, delayedException);
     }
 
     if (entity != null) {
@@ -988,7 +992,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @param entity the entity where the path begins
    * @param path the accessor path
    * @param createSetter true if create setter, else getter
-   * @return the java code without the trailing braces
+   * @return the Java code without the trailing braces
    * @throws WurbelException if failed
    */
   public String createAccessorCode(Entity entity, String path, boolean createSetter) throws WurbelException {
@@ -1079,7 +1083,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    */
   public String determinePackageName(String className) throws WurbelException {
     final String packageName = getPackageName();    // default is the same package
-    return PACKAGE_CACHE.computeIfAbsent(className, cn -> {
+    return PACKAGE_CACHE.computeIfAbsent(className, _ -> {
       String sourceText = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_FILECONTENTS);
       if (sourceText != null) {
         String endStr = '.' + className;

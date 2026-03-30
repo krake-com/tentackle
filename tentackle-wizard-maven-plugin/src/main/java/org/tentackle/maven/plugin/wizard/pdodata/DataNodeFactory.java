@@ -52,13 +52,24 @@ public class DataNodeFactory {
 
   private static final Logger LOGGER = Logger.get(DataNodeFactory.class);
 
+  private final Model model;
+
+  /**
+   * Creates a new factory.
+   *
+   * @param model the model
+   */
+  public DataNodeFactory(Model model) {
+    this.model = model;
+  }
+
   /**
    * Creates the data object with its sub nodes.
    *
    * @param pdo the PDO
    * @return the PDO's data, never null
    */
-  public static DataObject create(PersistentDomainObject<?> pdo) {
+  public DataObject create(PersistentDomainObject<?> pdo) {
     pdo.loadComponents(false);
     return getDataObject(pdo, null, null, null, false, null);
   }
@@ -67,9 +78,9 @@ public class DataNodeFactory {
   // --- all private static below ---
 
   /**
-   * Collected infos for attributes and components of a PDO class.
+   * Collected info for attributes and components of a PDO class.
    */
-  private static class ClassInfo {
+  private class ClassInfo {
 
     private final Class<? extends PersistentDomainObject<?>> pdoClass;
     private final Entity entity;
@@ -205,11 +216,11 @@ public class DataNodeFactory {
   /**
    * Map of PDO-classes to class infos.
    */
-  private static final Map<Class<? extends PersistentDomainObject<?>>, ClassInfo> classMap = new ConcurrentHashMap<>();
+  private final Map<Class<? extends PersistentDomainObject<?>>, ClassInfo> classMap = new ConcurrentHashMap<>();
 
 
   @SuppressWarnings("unchecked")
-  private static DataObject getDataObject(PersistentDomainObject<?> pdo, String name, String comment,
+  private DataObject getDataObject(PersistentDomainObject<?> pdo, String name, String comment,
                                           PersistentDomainObject<?> parentPdo, boolean hidden, Relation compositeRelation) {
 
     ClassInfo classInfo = classMap.computeIfAbsent(pdo.getEffectiveClass(),
@@ -284,7 +295,7 @@ public class DataNodeFactory {
           boolean idOfCompositeRelation = false;
           NonCompositeRelation nonCompositeRelation = null;
           if ("long".equals(methodInfo.typeName) || "Long".equals(methodInfo.typeName)) {
-            // may be a 1:1 object relation
+            // maybe a 1:1 object relation
             List<Relation> allRelations;
             try {
               allRelations = classInfo.entity.getAllRelations();
@@ -379,7 +390,7 @@ public class DataNodeFactory {
                           new SqlCondition(pdo.getId(), classInfo.entity.getAttributeByJavaName(Constants.AN_ID, true)));
   }
 
-  private static DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo,
+  private DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo,
                                              PersistentDomainObject<?> parentPdo, boolean hidden, Relation compositeRelation) {
     DataObject dataObject;
     if (pdo == null) {
@@ -392,9 +403,9 @@ public class DataNodeFactory {
     return dataObject;
   }
 
-  private static Entity lookupEntity(String typeName) {
+  private Entity lookupEntity(String typeName) {
     try {
-      Entity entity = Model.getInstance().getByEntityName(typeName);
+      Entity entity = model.getByEntityName(typeName);
       if (entity == null) {
         throw new ModelException("entity " + typeName + " missing in model");
       }

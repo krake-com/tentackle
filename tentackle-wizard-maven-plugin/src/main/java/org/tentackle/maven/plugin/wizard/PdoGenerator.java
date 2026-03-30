@@ -65,6 +65,16 @@ public class PdoGenerator extends AbstractValidateableGenerator {
 
 
   /**
+   * Creates a new generator.
+   *
+   * @param model the model
+   */
+  public PdoGenerator(Model model) {
+    super(model);
+  }
+
+
+  /**
    * Sets the status directory.
    *
    * @param statusDir the status dir
@@ -112,7 +122,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
         generatedFile.generate();
       }
 
-      // save class ID status, if any classid created
+      // save class ID status if any classId created
       if (classId != null) {
         statusDir.mkdirs();
         try (FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT), Settings.getEncodingCharset())) {
@@ -125,24 +135,24 @@ public class PdoGenerator extends AbstractValidateableGenerator {
 
 
   /**
-   * Checks whether entity name is not already used in model.
+   * Checks whether the entity name is not already used in the model.
    *
    * @return true if ok
    * @throws ModelException if failed
    */
   public boolean isNewEntity() throws ModelException {
-    return entityName == null || Model.getInstance().getByEntityName(entityName) == null;
+    return entityName == null || getModel().getByEntityName(entityName) == null;
   }
 
   /**
-   * Checks whether classID is not already used in model.
+   * Checks whether classID is not already used in the model.
    *
    * @return true if ok
    * @throws ModelException if failed
    */
   public boolean isNewClassId() throws ModelException {
     if (classId != null && classId > 0) {
-      for (Entity entity : Model.getInstance().getAllEntities()) {
+      for (Entity entity : getModel().getAllEntities()) {
         if (entity.getClassId() == classId) {
           return false;
         }
@@ -152,7 +162,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether entity needs a class ID.
+   * Checks whether the entity needs a class ID.
    *
    * @return true if class ID necessary
    */
@@ -178,14 +188,14 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether the tablename is not already used in model.
+   * Checks whether the tablename is not already used in the model.
    *
    * @return true if ok
    * @throws ModelException if failed
    */
   public boolean isNewTableName() throws ModelException {
     if (tableName != null) {
-      for (Entity entity : Model.getInstance().getAllEntities()) {
+      for (Entity entity : getModel().getAllEntities()) {
         if (tableName.equalsIgnoreCase(entity.getTableName())) {
           return false;
         }
@@ -195,7 +205,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
-   * Checks whether entity needs a tablename.
+   * Checks whether the entity needs a tablename.
    *
    * @return true if tablename necessary
    */

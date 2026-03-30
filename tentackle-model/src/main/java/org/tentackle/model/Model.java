@@ -18,15 +18,13 @@
 
 package org.tentackle.model;
 
-import org.tentackle.common.ServiceFactory;
-
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
 
 
 interface ModelHolder {
-  Model INSTANCE = ServiceFactory.createService(Model.class);
+  Model INSTANCE = ModelManager.getInstance().getModel(ModelManager.DEFAULT_MODEL_NAME);
 }
 
 
@@ -45,14 +43,22 @@ public interface Model {
 
 
   /**
-   * The singleton.
+   * Gets the default model singleton.
    *
-   * @return the singleton
+   * @return the model singleton
    */
   static Model getInstance() {
     return ModelHolder.INSTANCE;
   }
 
+
+  /**
+   * Gets the model name.<br>
+   * The default model is named {@link ModelManager#DEFAULT_MODEL_NAME}.
+   *
+   * @return the model name
+   */
+  String getName();
 
   /**
    * Gets the entity factory singleton.
@@ -108,7 +114,7 @@ public interface Model {
    * Loads the whole model from the model directory if not yet done.
    *
    * @param modelDir the name of the directory containing the model files
-   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @param updateRelations true if update the relations, false if the model is still incomplete
    * @return the entity infos of the loaded model files
    * @throws ModelException if the model is inconsistent
    * @see #updateRelations()
@@ -120,7 +126,7 @@ public interface Model {
    * Entities are cached, so they are loaded and parsed only once.
    *
    * @param url the URL of the model file
-   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @param updateRelations true if update the relations, false if the model is still incomplete
    * @return the entity info
    * @throws ModelException if the model is inconsistent
    * @see #updateRelations()
@@ -132,26 +138,26 @@ public interface Model {
    * Reads the model files listed in {@code META-INF/MODEL-INDEX.LIST}.
    *
    * @param file the jar file
-   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @param updateRelations true if update the relations, false if the model is still incomplete
    * @return the entity infos of the loaded model files
    * @throws ModelException if the model is inconsistent
    */
   Collection<EntityInfo> loadFromJar(File file, boolean updateRelations) throws ModelException;
 
   /**
-   * Loads from resources.<br>
+   * Loads the model from resources.<br>
    * Locates all {@code META-INF/MODEL-INDEX.LIST} resources and loads the model files.
    *
-   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @param updateRelations true if update the relations, false if the model is still incomplete
    * @return the entity infos of the loaded model files
    * @throws ModelException if the model is inconsistent
    */
   Collection<EntityInfo> loadFromResources(boolean updateRelations) throws ModelException;
 
   /**
-   * Updates the relations if not yet done during load.
+   * Updates the relations if not yet done while loading the model.
    *
-   * @throws ModelException if model is inconsistent
+   * @throws ModelException if the model is inconsistent
    * @see #loadFromURL(URL, boolean)
    * @see #loadFromDirectory(String, boolean)
    */
@@ -241,7 +247,7 @@ public interface Model {
    * Gets all foreign keys.
    *
    * @return the foreign keys
-   * @throws ModelException if model is inconsistent
+   * @throws ModelException if the model is inconsistent
    */
   Collection<ForeignKey> getForeignKeys() throws ModelException;
 

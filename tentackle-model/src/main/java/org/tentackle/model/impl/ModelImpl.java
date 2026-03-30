@@ -86,6 +86,9 @@ public class ModelImpl implements Model {
   private static final String PROPS_INDEX_NAME = PROPS_PREFIX + "indexName";
 
 
+  /** the model name. */
+  private final String name;
+
   /** cached entities mapped by URL. */
   private final Map<String, EntityInfo> urlToEntityInfoMap;
 
@@ -105,7 +108,7 @@ public class ModelImpl implements Model {
   private final Map<String, ModelDirectory> modelDirs;   // <dirname, modeldir>
 
   /** the entity factory. */
-  private final EntityFactory entityFactory;
+  private EntityFactory entityFactory;
 
   /** application-specific model validators. */
   private final Collection<CustomModelValidator> customModelValidators;
@@ -128,8 +131,11 @@ public class ModelImpl implements Model {
 
   /**
    * Creates a model.
+   *
+   * @param name the model name.
    */
-  public ModelImpl() throws ModelException {
+  public ModelImpl(String name) throws ModelException {
+    this.name = name;
     entityFactory = createEntityFactory();
     nameToEntityInfoMap = new TreeMap<>();    // tree map for implicit sort by name
     tableToEntityInfoMap = new HashMap<>();
@@ -170,6 +176,16 @@ public class ModelImpl implements Model {
     if (prop != null) {
       indexName = prop;
     }
+  }
+
+  @Override
+  public String getName() {
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return getName();
   }
 
   @Override
@@ -663,7 +679,7 @@ public class ModelImpl implements Model {
    * Updates all relations.
    *
    * @param loadedEntityInfo the entity that caused the update, null if none
-   * @throws ModelException if relations or inheritance misconfiguration
+   * @throws ModelException if the relations or inheritance is misconfigured
    */
   protected void updateRelations(EntityInfo loadedEntityInfo) throws ModelException {
 
@@ -767,7 +783,7 @@ public class ModelImpl implements Model {
         }
         if (foreignEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-            // log error only if class is associated to the updated one
+            // log error only if class is associated with the updated one
             errors.add(new ModelError(relation,
                     "no such entity: " + relation.getClassName()));
           }
@@ -829,7 +845,8 @@ public class ModelImpl implements Model {
                           " points back to " + entity));
                 }
                 if (nmRelation.getSelectionType() == SelectionType.LAZY && !nmRelation.isSerialized()) {
-                  // PdoRelations-Wurblet will generate --join which makes only sense if pdos are transferred via network
+                  // the PdoRelations wurblet will generate a join
+                  // which makes only sense if the PDOs are transferred via network
                   ((RelationImpl) nmRelation).setSerialized(true);      // retrieve from server
                   ((RelationImpl) nmRelation).setClearOnRemoteSave(true); // but don't send back to server
                 }
@@ -844,7 +861,7 @@ public class ModelImpl implements Model {
             ((RelationImpl) relation).setComposite(true);
             ((RelationImpl) relation).setSelectionType(SelectionType.EMBEDDED);
             ((RelationImpl) relation).setSelectionCached(false);
-            ((RelationImpl) relation).setSelectionTypeDetermined(false);    // don't switch to cached, if entity is cached
+            ((RelationImpl) relation).setSelectionTypeDetermined(false);    // don't switch to cached if entity is cached
           }
         }
       }
@@ -911,7 +928,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    // determine deep references and set rootid,rootclassid options
+    // determine deep references and set rootId and rootClassId options
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       /*
@@ -922,7 +939,7 @@ public class ModelImpl implements Model {
       if (!entity.isEmbedded() && rootEntities.size() > 1 && entity.getRootAttribute() != null) {
         ((EntityImpl) entity).setProvidingRootClassIdAccordingToModel(true);
       }
-      // or there is a non-composite reference from an entity which is not one of its root entities (deep reference)
+      // or there is a non-composite reference from an entity which is not one of its root entities (a deep reference),
       // and the entity does not provide a fixed rootClassId.
       // deep references would otherwise be rejected by the security manager because the
       // rootId/rootClassId would not match with the domain context's root entity.
@@ -1345,7 +1362,7 @@ public class ModelImpl implements Model {
   /**
    * Updates the composite path.
    *
-   * @param compositePath the path that leads to given entity so far
+   * @param compositePath the path that leads to the given entity so far
    * @param entity the entity
    */
   protected void updateCompositePath(List<Relation> compositePath, Entity entity) throws ModelException {
@@ -1374,7 +1391,7 @@ public class ModelImpl implements Model {
    * @return the entity factory
    */
   protected EntityFactory createEntityFactory() {
-    return new EntityFactoryImpl();
+    return new EntityFactoryImpl(this);
   }
 
   /**
@@ -1382,7 +1399,7 @@ public class ModelImpl implements Model {
    *
    * @param modelDir the directory name
    * @return the model directory
-   * @throws ModelException if directory does not exist or is not a directory
+   * @throws ModelException if the directory does not exist or is not a directory
    */
   protected ModelDirectory createModelDirectory(String modelDir) throws ModelException {
     return new ModelDirectoryImpl(modelDir, modelDefaults, entityAliases);
@@ -1418,11 +1435,11 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Creates a reader for given name.
+   * Creates a reader for the given name.
    *
    * @param url the model url
    * @return the reader
-   * @throws ModelException if creating the reader failed (because file not found)
+   * @throws ModelException if creating the reader failed (because the file was not found)
    */
   protected Reader createReader(URL url) throws ModelException {
     try {
@@ -1434,8 +1451,8 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Verifies that the inheritance, integrity and track type is the same within a given inheritance hierarchy.<br>
-   * Notice that concrete classes (the leafs of the hierarchy) must have {@code InheritanceType.NONE} defined!
+   * Verifies that the inheritance, integrity, and track type are the same within a given inheritance hierarchy.<br>
+   * Notice that concrete classes (the leaf children of the hierarchy) must have {@code InheritanceType.NONE} defined!
    *
    * @param entity the entity to check
    * @param inheritanceType the inheritance type
@@ -1469,7 +1486,7 @@ public class ModelImpl implements Model {
       }
     }
     // else: no sub entities. We don't check for InheritanceType.NONE because we may be in the middle
-    // of development. We could issue warnings though, but there is no logger...
+    // of development. We could issue warnings, though, but there is no logger...
   }
 
   /**

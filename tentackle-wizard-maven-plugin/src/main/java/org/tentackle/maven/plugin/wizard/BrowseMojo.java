@@ -28,7 +28,6 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
 import org.tentackle.misc.PropertiesUtilities;
-import org.tentackle.model.Model;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
@@ -145,7 +144,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   @Override
   protected void loadModel() throws MojoFailureException, MojoExecutionException {
     if (mapSchemas) {
-      Model.getInstance().setSchemaNameMapped(true);
+      getModel().setSchemaNameMapped(true);
     }
     super.loadModel();
   }
