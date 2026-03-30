@@ -143,27 +143,27 @@ prefixed with `#`.
 
 ### Entity-level option flags
 
-| Option        | Description                                                               |
-|---------------|---------------------------------------------------------------------------|
-| `root`        | This is a root entity.                                                    |
-| `rootid`      | Adds the `rootId` attribute (filled with the root entity's id).           |
-| `rootclassid` | Adds the `rootClassId` attribute (for multi-homed components).            |
-| `remote`      | Supports remoting via TRIP.                                               |
-| `tracked`     | Tracks whether the PDO was modified or not.                               |
-| `attracked`   | Tracks the modification state per attribute.                              |
-| `fulltracked` | Full tracking per attribute including access to the old persisted value.  |
-| `untracked`   | No tracking (default, also used to override the model default).           |
-| `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`) |
-| `tableserial` | Adds the `tableSerial` attribute.                                         |
-| `normtext`    | Adds the `normText` attribute for full-text search.                       |
-| `nopkey`      | No primary key `id`.                                                      |
-| `nodefaults`  | Ignore global model defaults entirely.                                    |
-| `cached`      | Entity provides a cache (root entities only).                             |
-| `provided`    | DDL is maintained externally; no SQL generation.                          |
-| `bind`        | Apply default binding options to all attributes.                          |
-| `autoselect`  | Apply autoselect binding hints to all attributes.                         |
-| `size`        | Apply size binding hints to all attributes.                               |
-| `#Name`       | Custom stereotype `Name`.                                                 |
+| Option        | Description                                                                  |
+|---------------|------------------------------------------------------------------------------|
+| `root`        | This is a root entity.                                                       |
+| `rootid`      | Adds the `rootId` attribute (filled with the root entity's id).              |
+| `rootclassid` | Adds the `rootClassId` attribute (for multi-homed components).               |
+| `remote`      | Supports remoting via TRIP.                                                  |
+| `tracked`     | Tracks whether the PDO was modified or not.                                  |
+| `attracked`   | Tracks the modification state per attribute.                                 |
+| `fulltracked` | Full tracking per attribute including access to the old persisted value.     |
+| `untracked`   | No tracking (default, also used to override the model default).              |
+| `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`)    |
+| `tableserial` | Adds the `tableSerial` attribute.                                            |
+| `normtext`    | Adds the `normText` attribute for full-text search.                          |
+| `nopkey`      | No primary key `id`.                                                         |
+| `nodefaults`  | Ignore global model defaults entirely.                                       |
+| `cached`      | Entity provides a cache (root entities only).                                |
+| `provided`    | DDL is maintained externally; no SQL generation.                             |
+| `bind`        | Annotate methods with `@Bindable` to enable binding.                         |
+| `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.      |
+| `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable. |
+| `#Name`       | Custom stereotype `Name`.                                                    |
 
 Case doesn't matter for the options.
 Most of these options are inherited from the project-level model defaults and need
@@ -266,19 +266,17 @@ Booleans: `default true`.
 
 #### Semantic options
 
-| Option       | Description                                                                                             |
-|--------------|---------------------------------------------------------------------------------------------------------|
-| `key`        | Marks this attribute as part of the unique domain key (UDK).                                            |
-| `contextid`  | This attribute holds the context entity's ID.                                                           |
-| `utc`        | Timestamp is stored and retrieved in UTC.                                                               |
-| `tz`         | Apply a dedicated timezone for reads/writes (requires a `get<Attr>TimezoneConfig()` method on the PDO). |
-| `unsigned`   | Numeric field is unsigned.                                                                              |
-| `digitsonly` | String field accepts only digit characters.                                                             |
-| `normtext`   | Include this attribute's value in the entity's normtext column.                                         |
-| `shallow`    | Exclude this attribute from snapshot and copy operations.                                               |
-| `hidden`     | Attribute is not declared in the interface (implementation only).                                       |
-| `mute`       | Not part of the PDO — mapped to the database table only.                                                |
-| `mapnull`    | Map `null` to a constant (typically empty string `""` or zero) in the database.                         |
+| Option      | Description                                                                                         |
+|-------------|-----------------------------------------------------------------------------------------------------|
+| `key`       | Marks this attribute as part of the unique domain key (UDK).                                        |
+| `contextid` | This attribute holds the context entity's ID.                                                       |
+| `utc`       | Timestamp only: set the UTC serialization flag.                                                     |
+| `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method). |
+| `normtext`  | Include this attribute's value in the entity's normtext column.                                     |
+| `shallow`   | Exclude this attribute from snapshot and copy operations.                                           |
+| `hidden`    | Attribute is not declared in the interface (implementation only).                                   |
+| `mute`      | Not part of the PDO — mapped to the database table only.                                            |
+| `mapnull`   | Map `null` to a constant (typically empty string `""` or 0) in the database.                        |
 
 #### Access and generation options
 
@@ -294,24 +292,26 @@ Booleans: `default true`.
 
 #### String handling options
 
-| Option      | Description                                     |
-|-------------|-------------------------------------------------|
-| `trimread`  | Trim whitespace when reading from the database. |
-| `trimwrite` | Trim whitespace when writing to the database.   |
-| `trim`      | `trimread` + `trimwrite`                        |
+| Option      | Description                                  |
+|-------------|----------------------------------------------|
+| `trimread`  | Trim to size when reading from the database. |
+| `trimwrite` | Trim to size when writing to the database.   |
+| `trim`      | `trimread` + `trimwrite`                     |
 
 #### Binding options
 
-| Option    | Description                                  |
-|-----------|----------------------------------------------|
-| `bind`    | Annotate with `@Bindable` to enable binding. |
-| `size`    | Apply size binding hint.                     |
-| `maxcols` | explicit maximum columns                     |
-| `cols`    | explicit visible columns                     |
-| `lines`   | explicit visible rows (textarea)             |
-| `scale`   | explicit numeric scale                       |
-| `uc`      | Convert to uppercase                         |
-| `lc`      | Convert to lowercase                         |
+The binding options are added to the `@Bindable` annotation.
+
+| Option        | Description                          |
+|---------------|--------------------------------------|
+| `maxcols=<n>` | override maximum columns.            |
+| `cols=<n>`    | explicit visible columns.            |
+| `lines=<n>`   | explicit visible rows.               |
+| `scale=<n>`   | override numeric scale.              |
+| `uc`          | Convert to uppercase.                |
+| `lc`          | Convert to lowercase.                |
+| `unsigned`    | Numeric field is unsigned.           |
+| `digits`      | field accepts only digit characters. |
 
 #### Annotation options
 
