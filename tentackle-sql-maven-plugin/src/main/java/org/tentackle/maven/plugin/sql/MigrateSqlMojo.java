@@ -64,7 +64,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Generates an SQL-script to migrate the database tables according to the model.
+ * Generates an SQL script to migrate the database tables according to the model.
  *
  * @author harald
  */
@@ -94,12 +94,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   /**
    * The generated SQL file can be split into one file per entity.<br>
    * This is especially useful if the migrations are processed any further,
-   * for example by shell scripts.
+   * for example, by shell scripts.
    * <p>
    * The main migration file will just contain statistic comments.<br>
-   * Each migrated table gets its own directory which is a number starting at 1
-   * and as much leading zeros as necessary to keep the directory names in numeric order.<br>
-   * If there is a before-all SQL, it will go into the folder zero, i.e. 0 or 00, etc...<br>
+   * Each migrated table gets its own directory, which is a number starting at 1
+   * with leading zeros as necessary to keep the directory names in numeric order.<br>
+   * If there is a before-all SQL, it will go into the folder zero, i.e., 0 or 00, etc...<br>
    * Any after-all SQL will go into the folder with the highest number.
    */
   @Parameter
@@ -112,7 +112,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private boolean failOnUnexpectedTables;
 
   /**
-   * Fail if the model differs from the database meta data.<br>
+   * Fail if the model differs from the database metadata.<br>
    * Useful to validate that no migrations are necessary.
    * <p>
    * Same as {@code validate} goal.
@@ -122,7 +122,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   /**
    * Uses the model found in the resources of the classpath.<br>
-   * Useful to migrate the database tables for dependencies, for example the Tentackle-framework's model.<br>
+   * Useful to migrate the database tables for dependencies, for example, the Tentackle-framework's model.<br>
    * Requires that the plugin dependencies contain the model resources
    * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
    * <p>
@@ -139,7 +139,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private ModelMetaData modelMetaData;
 
   /**
-   * The migration hints for current backend.
+   * The migration hints for the current backend.
    */
   private MigrationHints backendMigrationHints;
 
@@ -149,7 +149,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private StringBuilder sqlCode;
 
   /**
-   * Generated warnings as optional SQL-code in comments.
+   * Generated warnings as optional SQL code in comments.
    */
   private StringBuilder sqlWarnings;
 
@@ -205,13 +205,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   /**
    * Set of backends processed so far.
-   * Used if {@link #loadModelFromClassPath} is true to migrate classpath model only once per backend.
+   * Used if {@link #loadModelFromClassPath} is true to migrate the classpath model only once per backend.
    */
   private final Set<BackendInfo> processedBackendInfos = new HashSet<>();
 
 
   /**
-   * Enables the meta data validation.
+   * Enables the metadata validation.
    */
   protected void enableValidation() {
     validate = true;
@@ -537,7 +537,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       Collection<ForeignKey> foreignKeys;     // foreign keys
 
       try {
-        Model model = Model.getInstance();
+        Model model = getModel();
         model.setModelDefaults(defaults);
         model.setEntityAliases(aliases);
         model.setSchemaNameMapped(mapSchemas);
@@ -553,7 +553,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         else {
           model.loadFromDirectory(modelDirName, true);
         }
-        foreignKeys = Model.getInstance().getForeignKeys();
+        foreignKeys = model.getForeignKeys();
         // build table rename maps if hints given
         renamedTables = determineRenamedTables(hints);
         revRenamedTables = new HashMap<>();
@@ -578,7 +578,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       if (loadModelFromClassPath) {
         try {
-          for (Entity entity : Model.getInstance().getAllEntities()) {
+          for (Entity entity : getModel().getAllEntities()) {
             if (verbosityLevel.isDebug()) {
               getLog().info("processing " + entity + " from classpath");
             }
@@ -608,7 +608,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
               try {
                 URL url = modelFile.toURI().toURL();
-                Entity entity = Model.getInstance().getByURL(url);
+                Entity entity = getModel().getByURL(url);
                 if (entity == null) {
                   throw new MojoExecutionException("no entity for " + url);
                 }
@@ -826,7 +826,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     if (migrated) {
 
       try {
-        // first failed validator will skip the rest, if any (same as with model validators).
+        // the first failed validator will skip the rest, if any (same as with model validators).
         // there is usually only one, btw.
         for (CustomMigrationValidator migrationValidator : CustomMigrationValidator.loadValidators()) {
           migrationValidator.validate(tableMigrator, migrationResult);
@@ -904,16 +904,16 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Applies the "rename" table hints to determine the renamed tables.
    *
    * @param hints the migration hints
-   * @return the map of tablenames (without schema) mapped to their old names
-   * @throws ModelException if model is inconsistent
+   * @return the map of table names (without schema) mapped to their old names
+   * @throws ModelException if the model is inconsistent
    */
   private Map<String, String> determineRenamedTables(MigrationHints hints) throws ModelException {
     Map<String, String> renameMap = new HashMap<>();
-    for (Entity entity: Model.getInstance().getAllEntities()) {
+    for (Entity entity: getModel().getAllEntities()) {
       String name = entity.getTableNameWithoutSchema();
       String oldName = hints.getRenameTable(name);
       if (oldName != null && otherTablesMap.get(name) == null) {
-        // old name is in database and current name not in database -> rename hint applies!
+        // old name is in database, and current name not in database -> rename hint applies!
         int ndx = oldName.indexOf('.');
         if (ndx >= 0) {
           oldName = oldName.substring(ndx + 1);
@@ -928,15 +928,15 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Applies the drop table hints to determine the tables to drop.
    *
    * @param hints the migration hints
-   * @return a set of tablenames to drop
-   * @throws ModelException if model is inconsistent
+   * @return a set of table names to drop
+   * @throws ModelException if the model is inconsistent
    */
   private Set<String> determineDroppedTables(MigrationHints hints) throws ModelException {
     Set<String> dropSet = new HashSet<>();
     for (String dropName : hints.getDropTables()) {
       int ndx = dropName.indexOf('.');
       String dropNameWithoutSchema = ndx >= 0 ? dropName.substring(ndx + 1) : dropName;
-      Entity entity = Model.getInstance().getByTableName(dropNameWithoutSchema);
+      Entity entity = getModel().getByTableName(dropNameWithoutSchema);
       if (entity == null) {
         // no more in model: check if exists in database
         DatabaseMetaDataTableHeader tableHeader = otherTablesMap.get(dropNameWithoutSchema);
@@ -1014,7 +1014,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    *
    * @param subDirCount the folder count
    * @param digits the number of digits for the folder name
-   * @param fileName the sql filename in the folder
+   * @param fileName the SQL filename in the folder
    * @param sql the SQL code
    * @param backendInfo the backend info
    * @throws MojoExecutionException if IO error
@@ -1064,7 +1064,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   /**
    * Counts a processed table.
    *
-   * @param table the table meta data
+   * @param table the table metadata
    */
   private void countTableStats(TableMetaData table) {
     if (tableStats == null) {

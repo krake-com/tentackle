@@ -48,7 +48,7 @@ import java.util.List;
 public class OperationWizard extends AbstractFxController {
 
   @Bindable
-  private final OperationGenerator gen;
+  private OperationGenerator gen;
 
 
   @FXML
@@ -92,7 +92,7 @@ public class OperationWizard extends AbstractFxController {
 
 
   public OperationWizard() {
-    gen = new OperationGenerator();
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   /**
@@ -101,6 +101,7 @@ public class OperationWizard extends AbstractFxController {
    * @param mojo the PDO mojo
    */
   public void applyMojo(OperationMojo mojo) {
+    gen = new OperationGenerator(mojo.getModel());
     genProfile.getItems().clear();
     List<OperationProfile> profiles = mojo.getOperationProfiles();
     genProfile.getItems().addAll(profiles);
@@ -132,9 +133,9 @@ public class OperationWizard extends AbstractFxController {
       genRemoteEnabled.updateView();
     });
 
-    cancel.setOnAction(e -> close());
+    cancel.setOnAction(_ -> close());
 
-    generate.setOnAction(e -> {
+    generate.setOnAction(_ -> {
       if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null) {
         Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
       }

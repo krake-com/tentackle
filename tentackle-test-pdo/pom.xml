@@ -148,7 +148,7 @@
       </plugin>
 
       <plugin>
-        <!-- create the SQL-files -->
+        <!-- create the SQL files -->
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql-maven-plugin</artifactId>
         <version>${project.version}</version>

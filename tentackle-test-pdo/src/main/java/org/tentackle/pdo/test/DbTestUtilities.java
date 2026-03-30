@@ -78,7 +78,7 @@ public class DbTestUtilities {
             .append(backend.getStatementSeparator()).append('\n');
     }
 
-    Model model = Model.getInstance();
+    Model model = Model.getInstance();    // tests always use the default model
     Set<String> schemas = new HashSet<>();
 
     for (EntityInfo entityInfo : model.loadFromResources(true)) {

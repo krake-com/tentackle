@@ -27,6 +27,7 @@ import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.NameVerifier;
@@ -52,7 +53,7 @@ import java.util.StringTokenizer;
  */
 public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneable {
 
-  /** property default (if object non-composite lazy). */
+  /** property default (if object + non-composite + lazy). */
   public static final String DEFAULT = "default";
 
   /** property relation = ... */
@@ -133,7 +134,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /** add toString value to the partOfNormText. */
   public static final String PART_OF_NORMTEXT = "normtext";
 
-  /** add blunt method to the interface. */
+  /** add the blunt method to the interface. */
   public static final String BLUNT_DECLARED = "blunt";
 
   /** cached selection flag. */
@@ -215,6 +216,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
     accessScope = AccessScope.PUBLIC;
   }
 
+  @Override
+  public Model getModel() {
+    return entity.getModel();
+  }
 
   @Override
   public RelationImpl createEmbedded(Entity embeddingEntity, String pathName, String columnPrefixPath) {
@@ -664,7 +669,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   /**
-   * Returns whether selection type was determined by rule.
+   * Returns whether rule determined the selection type.
    *
    * @return false if provided by the model, true if by automatic rule
    */

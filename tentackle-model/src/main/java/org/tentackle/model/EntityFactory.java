@@ -31,6 +31,13 @@ import java.util.Collection;
 public interface EntityFactory {
 
   /**
+   * Gets the model.
+   *
+   * @return the model, never null
+   */
+  Model getModel();
+
+  /**
    * Sets the backends to validate the model against.
    *
    * @param backends the backends, null to disable check
@@ -40,7 +47,7 @@ public interface EntityFactory {
   /**
    * Gets the backends to validate the model against.
    *
-   * @return the backends, empty if check is disabled, never null
+   * @return the backends, empty if validation is disabled, never null
    */
   Collection<Backend> getBackends();
 

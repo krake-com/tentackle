@@ -53,4 +53,11 @@ public interface ModelElement {
    */
   ModelElement getParent();
 
+  /**
+   * Gets the model this element belongs to.
+   *
+   * @return the model
+   */
+  Model getModel();
+
 }

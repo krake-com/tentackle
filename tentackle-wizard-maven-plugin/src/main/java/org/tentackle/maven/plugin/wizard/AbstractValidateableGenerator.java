@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard;
 
 import org.tentackle.buildsupport.codegen.AbstractGenerator;
+import org.tentackle.model.Model;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationScope;
@@ -30,6 +31,28 @@ import org.tentackle.validate.scope.MandatoryScope;
  * Holds common methods for {@link PdoGenerator} and {@link OperationGenerator}.
  */
 public abstract class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
+
+  /** the TT model. */
+  private final Model model;
+
+  /**
+   * Creates a new generator.
+   *
+   * @param model the model
+   */
+  public AbstractValidateableGenerator(Model model) {
+    this.model = model;
+  }
+
+
+  /**
+   * Gets the model.
+   *
+   * @return the model
+   */
+  public Model getModel() {
+    return model;
+  }
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })

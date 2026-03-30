@@ -41,8 +41,11 @@ public class TentackleWurbletsModel extends ModelImpl {
 
   /**
    * Creates a model.
+   *
+   * @param name the model name
    */
-  public TentackleWurbletsModel() throws ModelException {
+  public TentackleWurbletsModel(String name) throws ModelException {
+    super(name);
     // use the charset from the wurbelizer plugin
     org.tentackle.common.Settings.setEncodingCharset(org.wurbelizer.misc.Settings.getEncodingCharset());
   }

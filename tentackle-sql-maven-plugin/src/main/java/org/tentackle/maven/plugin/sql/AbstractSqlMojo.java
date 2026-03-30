@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -36,6 +35,7 @@ import org.tentackle.model.EntityInfo;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelManager;
 import org.tentackle.model.Relation;
 import org.tentackle.model.parse.Document;
 import org.tentackle.model.print.EntityPrinter;
@@ -70,7 +70,6 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-
 /**
  * Base tentackle sql mojo.
  *
@@ -79,10 +78,17 @@ import java.util.regex.Pattern;
 public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
   /**
-   * Explicit filesets given instead of model directory.
+   * Explicit filesets given instead of the model directory.
    */
   @Parameter
   protected List<FileSet> filesets;
+
+  /**
+   * The model name.
+   */
+  @Parameter(defaultValue = ModelManager.DEFAULT_MODEL_NAME,
+             property = "tentackle.modelName")
+  protected String modelName;
 
   /**
    * Directory holding the model files to be processed.<br>
@@ -111,7 +117,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected boolean mapSchemas;
 
   /**
-   * Directory holding the SQL generated scripts.
+   * Directory holding the SQL-generated scripts.
    */
   @Parameter(defaultValue = "${project.build.directory}/sql",
              property = "tentackle.sqlDir")
@@ -176,7 +182,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected File dumpModelIndex;
 
   /**
-   * Minimum number of spaces between columns in attribute section (default = 2).
+   * Minimum number of spaces between columns in the attribute section (default = 2).
    */
   @Parameter(defaultValue = "2")
   protected int dumpColumnGap;
@@ -196,7 +202,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected File bundleDir;
 
   /**
-   * Use IF EXISTS for drop index, constraint and column if the backend supports it.<br>
+   * Use IF EXISTS for drop index, constraint, and column if the backend supports it.<br>
    * If not supported, a warning will be logged.
    */
   @Parameter
@@ -236,6 +242,10 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   private List<Pattern> alienTablePatterns;
 
+  /**
+   * The model.
+   */
+  private Model model;
 
   /**
    * total number of errors.
@@ -243,14 +253,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected int totalErrors;
 
   /**
-   * The backends to create SQL-code for.
+   * The backends to create SQL code for.
    * <p>
    * Maps the backend-name to the backend.
    */
   protected Map<String, BackendInfo> backendInfos;
 
   /**
-   * Connectable backends to create SQL-code for.
+   * Connectable backends to create SQL code for.
    * <p>
    * Maps the jdbc-Url to the backend.
    */
@@ -273,7 +283,19 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Gets the created sql file name without leading path.
+   * Gets the entity model.
+   *
+   * @return the model, never null
+   */
+  protected Model getModel() {
+    if (model == null) {
+      model = ModelManager.getInstance().getModel(modelName);
+    }
+    return model;
+  }
+
+  /**
+   * Gets the created sql file name without the leading path.
    *
    * @return the filename
    */
@@ -318,10 +340,10 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Creates the sqlFile, sqlDirName and sqlWriter.
+   * Creates the sqlFile, sqlDirName, and sqlWriter.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException if sql file could not be created
+   * @throws MojoExecutionException if the SQL file could not be created
    */
   protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
     sqlFile = new File(new File(sqlDir, backendInfo.getBackend().getName()), getSqlFileName());
@@ -344,7 +366,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    * Opens the resources such as session and creates the SQL file.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException if sql file could not be created
+   * @throws MojoExecutionException if the SQL file could not be created
    */
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
     createSqlFile(backendInfo);
@@ -462,7 +484,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         for (BackendInfo backendInfo : connectableBackendInfos.values()) {
           validatedBackends.add(backendInfo.getBackend());
         }
-        Model.getInstance().getEntityFactory().setBackends(validatedBackends);
+        getModel().getEntityFactory().setBackends(validatedBackends);
       }
 
       return true;
@@ -554,7 +576,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         Map<Integer, String> classidMap = new TreeMap<>();    // classid:entityname
         Set<File> dumpedFiles = new LinkedHashSet<>();        // dumped model files
 
-        for (Entity entity : Model.getInstance().getAllEntities()) {
+        for (Entity entity : getModel().getAllEntities()) {
           if (entity.getDefinedTableAlias() != null) {
             aliasesMap.put(entity.getDefinedTableAlias(), entity.getName() + " (configured)");
           }
@@ -569,7 +591,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           }
 
           if (dumpModelSource) {
-            EntityInfo entityInfo = Model.getInstance().getEntityInfo(entity);
+            EntityInfo entityInfo = getModel().getEntityInfo(entity);
             if (entityInfo.isFile()) {
               File dumpFile = new File(dumpDir, entityInfo.getFile().getName());
               dumpedFiles.add(dumpFile);
@@ -579,7 +601,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                          new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
                 String modelSource = entityInfo.getModelSource();
                 if (modelSource.startsWith(Document.ORIGIN_INFO_LEAD)) {
-                  // cut source info, makes no sense outside the project
+                  // Cut the source info. Makes no sense outside the project.
                   int ndx = modelSource.indexOf('\n');
                   if (ndx >= 0) {
                     modelSource = modelSource.substring(ndx + 1);
@@ -626,7 +648,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               else {
                 dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile));
               }
-              dumpedName = dumpedName.replace('\\', '/'); // if built on windows: translate to unix-style paths
+              dumpedName = dumpedName.replace('\\', '/'); // if built on Windows: translate to unix-style paths
               if (dumpedName.startsWith("/")) {
                 dumpedName = dumpedName.substring(1);
               }
@@ -691,7 +713,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     if (bundleDir != null) {
       bundleDir.mkdirs();
       try {
-        for (Entity entity : Model.getInstance().getAllEntities()) {
+        for (Entity entity : getModel().getAllEntities()) {
           File dumpFile = new File(bundleDir, entity.getName() + ".properties");
           try (BufferedWriter writer =
                  new BufferedWriter(
@@ -724,7 +746,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     try {
       StringBuilder aliasBuf = new StringBuilder();
 
-      for (Entity entity : Model.getInstance().getAllEntities()) {
+      for (Entity entity : getModel().getAllEntities()) {
         String alias = entity.getTableAlias();
         if (entity.getDefinedTableAlias() == null && alias != null && alias.length() > 1 &&
             StringHelper.isAllDigits(alias.substring(1))) {
@@ -758,7 +780,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend info
    * @param modelDirName the model directory name
-   * @throws MojoExecutionException if writing to SQL file failed
+   * @throws MojoExecutionException if writing to the SQL file failed
    */
   protected void writeModelIntroComment(BackendInfo backendInfo, String modelDirName) throws MojoExecutionException {
     if (generateHeaderComment) {
@@ -793,9 +815,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Returns whether given table name is reserved and must not be used by the model.
+   * Returns whether the given table name is reserved and must not be used by the model.
    *
-   * @param tableName the tablename (without schema)
+   * @param tableName the tablename (without the schema)
    * @return true if belongs to the alien tables
    */
   protected boolean isAlienTable(String tableName) {
@@ -824,7 +846,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    * Checks and logs whether the table name is already used by Tentackle.
    *
    * @param entity the entity
-   * @return true if reusing the same table name, false if other name or only warning since used in another schema
+   * @return true if reusing the same table name, false if some other name, or only warning since used in another schema
    */
   protected boolean checkAndLogReservedTable(Entity entity) {
     String plainTableName = entity.getTableNameWithoutSchema();

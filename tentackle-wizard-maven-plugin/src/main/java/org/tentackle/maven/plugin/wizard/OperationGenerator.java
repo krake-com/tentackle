@@ -54,6 +54,16 @@ public class OperationGenerator extends AbstractValidateableGenerator {
 
 
   /**
+   * Creates a new generator.
+   *
+   * @param model the model
+   */
+  public OperationGenerator(Model model) {
+    super(model);
+  }
+
+
+  /**
    * Creates the operation files.
    *
    * @return the validation results, empty if okay, never null
@@ -100,8 +110,8 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   }
 
   public void initializeRemoteDefault() {
-    setRemoteEnabled(Model.getInstance().getModelDefaults() == null ||
-                     Boolean.TRUE.equals(Model.getInstance().getModelDefaults().getRemote()));
+    setRemoteEnabled(getModel().getModelDefaults() == null ||
+                     Boolean.TRUE.equals(getModel().getModelDefaults().getRemote()));
   }
 
   public boolean isDomainValid() {

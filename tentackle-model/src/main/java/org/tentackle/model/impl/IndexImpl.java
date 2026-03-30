@@ -24,6 +24,7 @@ import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.NameVerifier;
@@ -51,7 +52,7 @@ import java.util.StringTokenizer;
  * where:
  * <ul>
  *   <li>{@code optional}: create if database backend supports it. This applies only to functions and conditions
- *   that especially some in-memory databases (used by tests) don't support. In those cases, it may be sufficient to create the index only
+ *   some databases don't support (usually in-memory for tests). In those cases, it may be acceptable to create the index only
  *   for the production database. Without {@code optional} the build would fail.</li>
  *   <li>{@code unique}: create a unique constraint</li>
  *   <li>{@code name}: the suffix of the index name. The effective index name is the tablename followed
@@ -117,6 +118,11 @@ public class IndexImpl implements Index {
     this.sourceInfo = sourceInfo;
     this.factory = factory;
     attributes = new ArrayList<>();
+  }
+
+  @Override
+  public Model getModel() {
+    return factory.getModel();
   }
 
   @Override

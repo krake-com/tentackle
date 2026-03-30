@@ -27,7 +27,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.PdoWizard;
 import org.tentackle.model.Entity;
-import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 
 import javafx.application.Platform;
@@ -46,7 +45,7 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * Wizard to create PDO files.<br>
- * Brings up an FX UI to create the PDO related Java files.
+ * Brings up an FX UI to create the PDO-related Java files.
  * <p>
  * Best invoked from within the directory of the maven parent of the project.
  */
@@ -84,7 +83,7 @@ public class PdoMojo extends AbstractWizardMojo {
         stage.setScene(scene);
         stage.setTitle("PDO Wizard");
         wizard.getContainer().updateView();
-        stage.setOnHidden(event -> latch.countDown());
+        stage.setOnHidden(_ -> latch.countDown());
         Fx.show(stage);
       }
       catch (Throwable t) {
@@ -159,7 +158,7 @@ public class PdoMojo extends AbstractWizardMojo {
 
     // determine consumed class IDs
     try {
-      for (Entity entity: Model.getInstance().getAllEntities()) {
+      for (Entity entity: getModel().getAllEntities()) {
         int classId = entity.getClassId();
         if (classId > 0) {
           for (PdoProfile profile: sortedProfiles) {

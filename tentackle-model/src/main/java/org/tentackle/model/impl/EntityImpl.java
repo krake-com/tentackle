@@ -28,6 +28,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.NameVerifier;
@@ -83,7 +84,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private final EntityFactoryImpl factory;                  // the factory
   private final SourceInfo sourceInfo;                      // the source info
 
-  private String name;                                      // the entities name
+  private String name;                                      // the entity's name
   private int ordinal;                                      // the ordinal, 0 = top, 1 = first inherited, ...
   private int classId;                                      // the class id
   private String tableName;                                 // the table name
@@ -110,7 +111,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private final List<Relation> deepReferences;              // deep references to this entity
   private boolean deeplyReferenced;                         // true if this or any component is deeply referenced
   private Boolean rootEntity;                               // true if root entity (according to model or explicitly set)
-  private boolean modelRoot;                                // is root entity according to model
+  private boolean modelRoot;                                // is a root entity, according to the model
   private boolean modelRootId;                              // provides a root-ID according to model
   private boolean modelRootClassId;                         // provides a root-class-ID according to model
 
@@ -137,6 +138,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     deepReferences = new ArrayList<>();
     deepReferencesToComponents = new ArrayList<>();
     indexes = new ArrayList<>();
+  }
+
+  @Override
+  public Model getModel() {
+    return factory.getModel();
   }
 
   @Override
@@ -442,7 +448,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Recursively collects the leaf children.
    *
-   * @param leafs the list if leafs
+   * @param leafs the list of leaf children so far
    * @param entity the current entity to analyze
    */
   protected void collectLeafEntities(List<Entity> leafs, Entity entity) {
@@ -580,7 +586,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Returns whether this entity is a root-entity according to model.
+   * Returns whether this entity is a root entity, according to the model.
    *
    * @return true if root entity
    */
@@ -590,7 +596,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Sets whether this entity is a root-entity according to model.
+   * Sets whether this entity is a root entity, according to the model.
    *
    * @param modelRoot true if root entity
    */
@@ -601,7 +607,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Returns whether this entity should provide a root class id according to model.
    *
-   * @return true if should provide a root class id
+   * @return true if entity should provide a root class id
    */
   @Override
   public boolean isProvidingRootClassIdAccordingToModel() {
@@ -611,7 +617,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Sets whether this entity should provide a root class id according to model.
    *
-   * @param modelRootClassId  true if should provide a root class id
+   * @param modelRootClassId  true if entity should provide a root class id
    */
   public void setProvidingRootClassIdAccordingToModel(boolean modelRootClassId) {
     this.modelRootClassId = modelRootClassId;
@@ -797,7 +803,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         mappedAttributes = attributes;
       }
       else if (inheritanceType.isMappingToSuperTable()) {
-        // SINGLE: strip id and serial. It's mapped by the leafs
+        // SINGLE: strip id and serial. It's mapped by the leaf children
         mappedAttributes = removeIdSerial(attributes);
       }
       else  {
@@ -829,7 +835,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Moved id and serial to the end of a new created attribute list.
+   * Moved id and serial to the end of a newly created attribute list.
    *
    * @param attributes the attribute list
    * @return the new filtered attribute list
@@ -1214,7 +1220,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Adds the unique domain keys recursively for given entity to the list.
+   * Adds the unique domain keys recursively for the given entity to the list.
    *
    * @param uniqueDomainKeys the unique domain key attributes
    * @param entity the entity to inspect
@@ -1359,7 +1365,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Validates the entity without relation dependent settings.
+   * Validates the entity without relation-dependent settings.
    *
    * @throws ModelException if validation failed
    */
@@ -1505,7 +1511,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Validates the relation dependent settings.<br>
+   * Validates the relation-dependent settings.<br>
    * Assumes {@link ModelImpl#updateRelations} applied successfully.
    *
    * @throws ModelException if validation failed
