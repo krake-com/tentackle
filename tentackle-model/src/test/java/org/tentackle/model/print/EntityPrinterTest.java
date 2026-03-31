@@ -41,67 +41,79 @@ import static org.testng.Assert.assertEquals;
 public class EntityPrinterTest {
 
   private static final String EXPECTED =
-"/*\n" +
-" * @> $mapping\n" +
-" * \n" +
-" * # the invoice header\n" +
-" * name := $classname\n" +
-" * table := $tablename\n" +
-" * id := $classid\n" +
-" * integrity := $integrity\n" +
-" * \n" +
-" * ## attributes\n" +
-" * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED,#CUSTOM | -id +total]\n" +
-" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno(\"blah\")]\n" +
-" * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]\n" +
-" * Date          invoiceDate   invoice_date   the invoice's date\n" +
-" * Long          customerId    customer_id    object ID of the customer [UC,#blah=\"wow!\"]\n" +
-" * String(200)   address       address        the address (multiline) [UC,DEFAULT \"blah\\nx \"]\n" +
-" * DMoney        total         total          sum (without tax) [#WARM]\n" +
-" * DMoney        tax           tax            tax (vat)\n" +
-" * Timestamp     printed       printed        first printed [UTC,DEFAULT \"1970-01-01 00:00:00\"]\n" +
-" * Double(10,2)  someDouble    some_double    digits with scale\n" +
-" * MyType<int>   extra         extra          some application-specific type\n" +
-" * Binary<Blah>  blah          blah           some binary object\n" +
-" * Boolean       testBool      testbool       some boolean [DEFAULT true]\n" +
-" * \n" +
-" * ## indexes\n" +
-" * unique index invoice_no := -subsidiary_id, +invoice_no\n" +
-" * index invoice_customer := +customer_id\n" +
-" * # to show latest invoices\n" +
-" * index invoice_date := +invoice_date\n" +
-" * \n" +
-" * ## relations\n" +
-" * # the invoice lines\n" +
-" * InvoiceLine:\n" +
-" *     relation = component referenced list,\n" +
-" *     link = setInvoice position,\n" +
-" *     name = Lines,\n" +
-" *     @NotNull\n" +
-" * \n" +
-" * # the customer object\n" +
-" * Customer:\n" +
-" *     select = cached,\n" +
-" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\"),\n" +
-" *     #COOL,\n" +
-" *     #HAPPY\n" +
-" * \n" +
-" * ## annotations\n" +
-" * invoiceNo:\n" +
-" *     @NotNull(message=\"{ @('please_enter_the_invoice-number') }\")\n" +
-" * \n" +
-" * invoiceDate:\n" +
-" *     @NotNull(scope=AllScope.class, message=\"{ @('please_enter_the_invoice-date') }\", condition=\"{ object?.printed == null }\")\n" +
-" * \n" +
-" * customerId:\n" +
-" *     @NotNull\n" +
-" * \n" +
-" * total:\n" +
-" *     @NotNull(scope=PersistenceScope.class),\n" +
-" *     @Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")\n" +
-" * \n" +
-" * @<\n" +
-" */\n";
+    """
+      // source = /blah/somefile.java
+      
+      /*
+       * @{
+       * tablename = invoice
+       * mapping = $model/$tablename.map
+       * classid = 1
+       * @}
+       */
+      
+      /*
+       * @> $mapping
+       *\s
+       * # the invoice header
+       * name := $classname
+       * table := $tablename
+       * id := $classid
+       * integrity := $integrity
+       *\s
+       * ## attributes
+       * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED,#CUSTOM | -id +total]
+       * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno("blah")]
+       * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]
+       * Date          invoiceDate   invoice_date   the invoice's date
+       * Long          customerId    customer_id    object ID of the customer [UC,#blah="wow!"]
+       * String(200)   address       address        the address (multiline) [UC,DEFAULT "blah\\nx "]
+       * DMoney        total         total          sum (without tax) [#WARM]
+       * DMoney        tax           tax            tax (vat)
+       * Timestamp     printed       printed        first printed [UTC,DEFAULT "1970-01-01 00:00:00"]
+       * Double(10,2)  someDouble    some_double    digits with scale
+       * MyType<int>   extra         extra          some application-specific type
+       * Binary<Blah>  blah          blah           some binary object
+       * Boolean       testBool      testbool       some boolean [DEFAULT true]
+       *\s
+       * ## indexes
+       * unique index invoice_no := -subsidiary_id, +invoice_no
+       * index invoice_customer := +customer_id
+       * # to show latest invoices
+       * index invoice_date := +invoice_date
+       *\s
+       * ## relations
+       * # the invoice lines
+       * InvoiceLine:
+       *     relation = component referenced list,
+       *     link = setInvoice position,
+       *     name = Lines,
+       *     @NotNull
+       *\s
+       * # the customer object
+       * Customer:
+       *     select = cached,
+       *     @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}"),
+       *     #COOL,
+       *     #HAPPY
+       *\s
+       * ## annotations
+       * invoiceNo:
+       *     @NotNull(message="{ @('please_enter_the_invoice-number') }")
+       *\s
+       * invoiceDate:
+       *     @NotNull(scope=AllScope.class, message="{ @('please_enter_the_invoice-date') }", condition="{ object?.printed == null }")
+       *\s
+       * customerId:
+       *     @NotNull
+       *\s
+       * total:
+       *     @NotNull(scope=PersistenceScope.class),
+       *     @Greater(value="0", scope=PersistenceScope.class, condition="{ object.printed != null }")
+       *\s
+       * @<
+       */
+      """;
 
    @Test
    public void printEntity() throws Exception {
@@ -110,10 +122,12 @@ public class EntityPrinterTest {
      for (Index index : entity.getIndexes()) {   // due to delayed parsing
        ((IndexImpl) index).parse(entity);
      }
-     ModelDefaults defaults = model.getModelDefaults() == null ? new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT") : model.getModelDefaults();
+     ModelDefaults defaults = model.getModelDefaults() == null ?
+                                new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT") : model.getModelDefaults();
      List<String> optionAnnos = new ArrayList<>();
      optionAnnos.add("@MyAnno");
-     PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, optionAnnos, 2);
+     PrintConfiguration configuration = new PrintConfiguration(false, true, true,
+                                                               defaults, optionAnnos, 2);
      String text = new EntityPrinter(entity, configuration).print();
      System.out.println(text);
      assertEquals(text, EXPECTED);

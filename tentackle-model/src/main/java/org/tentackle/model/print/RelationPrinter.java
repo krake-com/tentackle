@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-
 /**
  * Prints the model spec of a relation.
  *
@@ -62,23 +61,33 @@ public class RelationPrinter {
     StringBuilder buf = new StringBuilder();
     if (!StringHelper.isAllWhitespace(relation.getComment()) &&
         !relation.getComment().equals(relation.getName())) {
-      if (configuration.isPrintingAsComment()) {
+      if (configuration.asComment()) {
         buf.append(" * ");
       }
       buf.append("# ").append(relation.getComment()).append('\n');
     }
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
       buf.append(" * ");
     }
     buf.append(relation.getClassName()).append(":\n");
 
     boolean needComma = false;
 
-    if (relation.getRelationType() != RelationType.OBJECT || relation.isReversed() ||
-        relation.isComposite() || relation.isReferenced() || relation.isProcessed() ||
-        relation.isSerialized() && !relation.isComposite() ||
-        relation.isClearOnRemoteSave() ||
-        relation.isTracked() && !relation.getEntity().isTracked()) {
+    // suppress "relation = serialized object" in compact mode
+    boolean skipCompact = configuration.compact() && !relation.isComposite() && relation.isSerialized() &&
+                          relation.getRelationType() == RelationType.OBJECT &&
+                          !relation.isProcessed() && !relation.isReferenced() &&
+                          !relation.isClearOnRemoteSave() && !relation.isImmutable() &&
+                          !relation.isShallow() && !relation.isPartOfNormText() &&
+                          !relation.isReversed() || relation.isEmbedding();
+
+    if (!skipCompact &&
+        (relation.getRelationType() != RelationType.OBJECT || relation.isReversed() ||
+         relation.isComposite() || relation.isReferenced() || relation.isProcessed() ||
+         relation.isSerialized() && !relation.isComposite() ||
+         relation.isClearOnRemoteSave() || relation.isPartOfNormText() ||
+         relation.isShallow() || relation.isImmutable() ||
+         relation.isTracked() && !relation.getEntity().isTracked())) {
       // need relation line
       lead(buf).append(RelationImpl.RELATION).append(" =");
       if (relation.isComposite()) {
@@ -87,7 +96,10 @@ public class RelationPrinter {
       if (relation.isTracked() && !relation.getEntity().isTracked()) {
         buf.append(' ').append(RelationImpl.TRACKED);
       }
-      if (relation.isReferenced()) {
+      if (relation.isReferenced() &&
+          (!configuration.compact() ||
+           // see ModelImpl.updateRelations(EntityInfo)
+           relation.getLinkMethodName() == null || !relation.isComposite() || relation.getForeignEntity() == null)) {
         buf.append(' ').append(RelationImpl.REFERENCED);
       }
       if (relation.isProcessed()) {
@@ -111,15 +123,33 @@ public class RelationPrinter {
       if (relation.isReversed()) {
         buf.append(' ').append(RelationImpl.REVERSED);
       }
-      else {
+      else if (!configuration.compact() || relation.getRelationType() != RelationType.OBJECT) {
         buf.append(' ').append(relation.getRelationType().toString().toLowerCase(Locale.ROOT));
       }
       needComma = true;
     }
 
-    if (relation.getSelectionType() != SelectionType.LAZY && !relation.isSelectionCached() ||
-        relation.getSelectionType() != SelectionType.ALWAYS && relation.isSelectionCached() ||
-        relation.isSelectionCached() || relation.getSelectionWurbletArguments() != null) {
+    // skip "select = cached" if foreign entity is providing a cache and not the NM parent
+    // skip "select = embedded" if foreign entity is embedded
+    skipCompact = false;
+    if (configuration.compact()) {
+      Relation parentRelation = relation.getForeignEntity().getRelation(relation.getEntity().getName(), true);
+      if (parentRelation == null) {
+        // check by entity instead of name (in case relation name was changed)
+        List<Relation> parentRelations = relation.getForeignEntity().getRelations(relation.getEntity(), true);
+        if (parentRelations.size() == 1) {
+          parentRelation = parentRelations.get(0);
+        }
+      }
+      skipCompact = (relation.isSelectionCached() && relation.getForeignEntity().getOptions().isCached() &&
+                     (parentRelation == null || parentRelation.getNmRelation() == null)) ||
+                    (relation.isEmbedding() && relation.getForeignEntity().isEmbedded());
+    }
+
+    if (!skipCompact &&
+        (relation.getSelectionType() != SelectionType.LAZY && !relation.isSelectionCached() ||
+         relation.getSelectionType() != SelectionType.ALWAYS && relation.isSelectionCached() ||
+         relation.isSelectionCached() || relation.getSelectionWurbletArguments() != null)) {
       if (needComma) {
         buf.append(",\n");
       }
@@ -153,34 +183,53 @@ public class RelationPrinter {
 
     if (relation.isDeletionFromMainClass() ||
         relation.isDeletionCascaded() &&
-        (configuration.getModelDefaults() == null ||
-         configuration.getModelDefaults().getDeletionCascaded() == null ||
-         !configuration.getModelDefaults().getDeletionCascaded())) {
+        (configuration.modelDefaults() == null ||
+         configuration.modelDefaults().getDeletionCascaded() == null ||
+         !configuration.modelDefaults().getDeletionCascaded())) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.DELETE).append(" =");
       if (relation.isDeletionCascaded() &&
-          (configuration.getModelDefaults() == null ||
-           configuration.getModelDefaults().getDeletionCascaded() == null ||
-           !configuration.getModelDefaults().getDeletionCascaded())) {
+          (configuration.modelDefaults() == null ||
+           configuration.modelDefaults().getDeletionCascaded() == null ||
+           !configuration.modelDefaults().getDeletionCascaded())) {
         buf.append(' ').append(RelationImpl.CASCADE);
       }
       needComma = true;
     }
 
-    if (relation.getLinkMethodName() != null || relation.getLinkMethodIndex() != null) {
+    // skip "link = set<Entity>"
+    skipCompact = configuration.compact() && relation.getLinkMethodName() != null &&
+                  relation.getLinkMethodName().equals("set" + relation.getEntity()) &&
+                  relation.getLinkMethodIndex() == null;
+
+    if (!skipCompact &&
+        (relation.getLinkMethodName() != null || relation.getLinkMethodIndex() != null)) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.LINK).append(" =");
       if (relation.getLinkMethodName() != null) {
-        buf.append(' ').append(relation.getLinkMethodName());
+        buf.append(' ');
+        if (configuration.compact() && relation.getLinkMethodName().equals("set" + relation.getEntity())) {
+          buf.append("set");
+        }
+        else {
+          buf.append(relation.getLinkMethodName());
+        }
       }
       if (relation.getLinkMethodIndex() != null) {
         buf.append(' ').append(relation.getLinkMethodIndex());
       }
       needComma = true;
+    }
+
+    if (relation.getCountAttribute() != null) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.COUNT).append(" = ").append(relation.getCountAttribute());
     }
 
     if (relation.getMethodArgs().size() > 1) {
@@ -213,6 +262,21 @@ public class RelationPrinter {
       lead(buf).append(RelationImpl.NM).append(" = ").append(relation.getNmName());
       if (relation.getNmMethodName() != null) {
         buf.append(' ').append(relation.getNmMethodName());
+      }
+      if (relation.getNmScope() != relation.getAccessScope()) {
+        buf.append(' ').append(relation.getNmScope().toString().toLowerCase(Locale.ROOT));
+      }
+      needComma = true;
+    }
+
+    if (relation.isEmbedding() &&
+        !(StringHelper.toLower(relation.getName()) + " ").equals(relation.getColumnPrefix())) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.PREFIX).append(" =");
+      if (!StringHelper.isAllWhitespace(relation.getColumnPrefix())) {
+        buf.append(' ').append(relation.getColumnPrefix());
       }
       needComma = true;
     }
@@ -255,7 +319,7 @@ public class RelationPrinter {
 
 
   private StringBuilder lead(StringBuilder buf) {
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
       buf.append(" * ");
     }
     buf.append("    ");

@@ -85,7 +85,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private String sqlFileName;
 
   /**
-   * Optionally, the generated migration file is passed to freemarker as a template.
+   * Optionally, the generated migration file is passed to freemarker as a template.<br>
+   * For each entity in the model a template variable is created of the form:
+   * <pre>
+   *   &lt;entity-name&gt;:TRUE|FALSE
+   * </pre>
+   * If TRUE, the entity needs migration, FALSE if not.
    */
   @Parameter(defaultValue = "false",
              property = "tentackle.migrateSqlAsTemplate")

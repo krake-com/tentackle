@@ -124,7 +124,7 @@ public class GlobalOptionsPrinter {
       buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
     }
 
-    ModelDefaults modelDefaults = configuration.getModelDefaults();
+    ModelDefaults modelDefaults = configuration.modelDefaults();
 
     if (options.noModelDefaults() || modelDefaults == null) {
       if (options.isMaxCol()) {

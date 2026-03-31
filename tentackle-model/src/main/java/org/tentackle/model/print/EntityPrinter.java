@@ -59,20 +59,39 @@ public class EntityPrinter {
   public String print() {
     buf.setLength(0);
 
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
+      buf.append("// source = ").append(entity.getSourceInfo().getFileName()).append("\n\n");
+      if (configuration.useVariables()) {
+        buf.append("/*\n * @{\n");
+        if (entity.getTableName() != null) {
+          buf.append(" * tablename = ").append(entity.getTableName()).append('\n')
+             .append(" * mapping = $model/$tablename.map\n");
+        }
+        else {
+          buf.append(" * mapping = $model/$classname.map\n");
+        }
+        if (entity.getClassId() != 0) {
+          buf.append(" * classid = ").append(entity.getClassId()).append('\n');
+        }
+        buf.append(" * @}\n */\n\n");
+      }
+
       buf.append("/*\n");
-      if (configuration.isUsingVariables()) {
+      if (configuration.useVariables()) {
         buf.append(" * @> $mapping\n");
       }
       else {
         buf.append(" * @> ").append(entity.getTableName()).append(".map\n");
       }
     }
+    else {
+      buf.append("# source = ").append(entity.getSourceInfo().getFileName()).append('\n');
+    }
 
     line("\n");
     line("# ").append(entity.getOptions().getComment()).append('\n');
     line("name := ");
-    if (configuration.isUsingVariables()) {
+    if (configuration.useVariables()) {
       buf.append("$classname\n");
     }
     else {
@@ -80,7 +99,7 @@ public class EntityPrinter {
     }
     if (entity.getTableName() != null) {
       line("table := ");
-      if (configuration.isUsingVariables()) {
+      if (configuration.useVariables()) {
         buf.append("$tablename\n");
       }
       else {
@@ -89,7 +108,7 @@ public class EntityPrinter {
     }
     if (entity.getClassId() != 0) {
       line("id := ");
-      if (configuration.isUsingVariables()) {
+      if (configuration.useVariables()) {
         buf.append("$classid\n");
       }
       else {
@@ -97,7 +116,7 @@ public class EntityPrinter {
       }
     }
     line("integrity := ");
-    if (configuration.isUsingVariables()) {
+    if (configuration.useVariables()) {
       buf.append("$integrity\n");
     }
     else {
@@ -171,7 +190,7 @@ public class EntityPrinter {
     }
 
     line("\n");
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
       buf.append(" * @<\n */\n");
     }
 
@@ -185,7 +204,7 @@ public class EntityPrinter {
    * @param str the leading part of the line
    */
   private StringBuilder line(String str) {
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
       buf.append(" * ");
     }
     buf.append(str);

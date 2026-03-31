@@ -49,7 +49,7 @@ public interface Entity extends ModelElement {
    * This restriction avoids unnecessary confusion and reduces the potential for errors
    * in SQL statements.
    *
-   * @return the tablename (always in lowercase), null if entity doesn't map to its own table
+   * @return the tablename (always in lowercase), null if the entity doesn't map to its own table
    */
   String getTableName();
 
@@ -68,12 +68,12 @@ public interface Entity extends ModelElement {
    * This restriction avoids unnecessary confusion and reduces the potential for errors
    * in SQL statements.
    *
-   * @return the tablename relative to its schema (always in lowercase), null if entity doesn't map to its own table
+   * @return the tablename relative to its schema (always in lowercase), null if the entity doesn't map to its own table
    */
   String getTableNameWithoutSchema();
 
   /**
-   * Gets the table alias for joined selects.<br>
+   * Gets the table alias for joined SQL SELECTs.<br>
    * The alias is unique among all tables.
    * If the model does not provide an alias, a unique alias will be generated.
    *
@@ -164,7 +164,7 @@ public interface Entity extends ModelElement {
   /**
    * Gets the attributes of the table mapped by this entity.
    *
-   * @return the attributes, empty if entity does not map to a table or does not provide attributes
+   * @return the attributes, empty if the entity does not map to a table or does not provide attributes
    */
   List<Attribute> getTableAttributes() throws ModelException;
 
@@ -186,10 +186,8 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets an attribute by its database column name.
-   * <p>
-   * Notice that upper/lowercase doesn't matter.
    *
-   * @param columnName the database column name
+   * @param columnName the database column name (case-insensitive)
    * @param all true if include inherited attributes
    * @return the attribute, null if no such attribute
    */
@@ -262,7 +260,7 @@ public interface Entity extends ModelElement {
    * Gets the relations of the table mapped by this entity.<br>
    * Will also contain the relations from embedded entities.
    *
-   * @return the relations, empty if entity does not map to a table or provides no relations
+   * @return the relations, empty if the entity does not map to a table or provides no relations
    */
   List<Relation> getTableRelations() throws ModelException;
 
@@ -370,7 +368,7 @@ public interface Entity extends ModelElement {
   /**
    * Gets the indexes of the table mapped by this entity.
    *
-   * @return the indexes, empty if entity does not map to a table or provides no indexes
+   * @return the indexes, empty if the entity does not map to a table or provides no indexes
    */
   List<Index> getTableIndexes();
 
@@ -384,32 +382,32 @@ public interface Entity extends ModelElement {
   Index getIndex(String name, boolean all);
 
   /**
-   * Creates the table creation sql code.
+   * Creates the table creation SQL code.
    *
-   * @param backend the backend to create sql code for
+   * @param backend the backend to create SQL code for
    * @return the SQL code
    * @throws ModelException if model inconsistent
    */
   String sqlCreateTable(Backend backend) throws ModelException;
 
   /**
-   * Returns whether entity has composite relations.
+   * Returns whether the entity has composite relations.
    *
    * @return true if composite entity
    */
   boolean isComposite();
 
   /**
-   * Returns whether entity has composite non-embedded relations.
+   * Returns whether the entity has composite non-embedded relations.
    *
    * @return true if not only embedded composite relations
    */
   boolean isEffectivelyComposite();
 
   /**
-   * Returns whether class may be instantiated.
+   * Returns whether the class may be instantiated.
    *
-   * @return true if class is abstract
+   * @return true if the class is abstract
    */
   boolean isAbstract();
 
@@ -417,7 +415,7 @@ public interface Entity extends ModelElement {
    * Returns whether this is an embedded entity.<br>
    * Such entities are embedded via embedding relations.
    * Embedded entities are mapped to their embedding entity, which is always a regular non-embedded entity.
-   * Embedded entities can embed other embedded entities, but cannot have regular components.
+   * Embedded entities can embed other embedded entities but cannot have regular components.
    * However, embedded entities can have non-composite object relations (1:1).
    *
    * @return true if embedded
@@ -426,7 +424,7 @@ public interface Entity extends ModelElement {
   boolean isEmbedded();
 
   /**
-   * Returns whether entity is tracked.
+   * Returns whether the entity is tracked.
    *
    * @return true if tracked
    */
@@ -441,7 +439,7 @@ public interface Entity extends ModelElement {
   Boolean isDeletionCascaded();
 
   /**
-   * Returns the attributes that corresponds to the root id.
+   * Returns the attributes that correspond to the root id.
    *
    * @return the attributes, empty list if root id is provided separately or no root id at all
    */
@@ -463,7 +461,7 @@ public interface Entity extends ModelElement {
   Set<Entity> getRootEntities();
 
   /**
-   * Returns the single root entity, if there is exactly one, and it is not abstract.
+   * Returns the single root entity if there is exactly one, and it is not abstract.
    *
    * @return the root entity, null if none or abstract or more than one
    */
@@ -478,7 +476,7 @@ public interface Entity extends ModelElement {
   boolean isRootEntity();
 
   /**
-   * Returns whether entity is the root of an inheritance hierarchy.
+   * Returns whether the entity is the root of an inheritance hierarchy.
    *
    * @return true if root
    */
@@ -487,7 +485,7 @@ public interface Entity extends ModelElement {
   /**
    * Gets the entity that provides the database table.
    *
-   * @return the table providing entity, null if entity is abstract and does not correspond to a single table
+   * @return the table providing entity, null if the entity is abstract and does not correspond to a single table
    */
   Entity getTableProvidingEntity();
 
@@ -500,7 +498,7 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the inheritance type of the hierarchy.<br>
-   * For leafs, which have {@link InheritanceType#NONE}, the type of the super entity is returned.
+   * For leaf children, which have {@link InheritanceType#NONE}, the type of the super entity is returned.
    *
    * @return the effective inheritance type
    */
@@ -536,7 +534,7 @@ public interface Entity extends ModelElement {
   Entity getTopSuperEntity();
 
   /**
-   * Gets the inheritance chain from this entity down to given sub entity.
+   * Gets the inheritance chain from this entity down to the given sub entity.
    *
    * @param subEntity the sub entity
    * @return the chain starting with this entity end ending with the sub entity
@@ -560,14 +558,14 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the list of non-abstract leaf sub entities.<br>
-   * If this entity is already non-abstract the list consists of this entity.
+   * If this entity is already non-abstract, the list consists of this entity.
    *
-   * @return the leafs
+   * @return the leaf children, empty list if no leaf children
    */
   List<Entity> getLeafEntities();
 
   /**
-   * Gets a set of all entities that are associated to this entity.<br>
+   * Gets a set of all entities that are associated with this entity.<br>
    * The kind of association can be a relation, a foreign relation or some hierarchy dependency
    * or a combination of.
    *
@@ -629,7 +627,7 @@ public interface Entity extends ModelElement {
   /**
    * Returns whether this entity should provide a root class id according to model.
    *
-   * @return true if should provide a root class id
+   * @return true provides a root class id according to the model, false otherwise
    */
   boolean isProvidingRootClassIdAccordingToModel();
 
@@ -641,7 +639,7 @@ public interface Entity extends ModelElement {
   boolean isProvidingRootIdAccordingToModel();
 
   /**
-   * Returns whether this entity is a root-entity according to model.
+   * Returns whether this entity is a root entity, according to model.
    *
    * @return true if root entity
    */

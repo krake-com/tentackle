@@ -92,14 +92,14 @@ public interface Relation extends ModelElement, Commented {
 
   /**
    * Gets the list of annotations.<br>
-   * Annotations start with an &#64;. By default, they are applied to the getters
+   * Annotations start with a {@code @}. By default, they are applied to the getters
    * of the interfaces only. However, the at-sign may be followed by one or two modifiers
-   * that changes the code generation:
+   * that change the code generation:
    *
    * <ul>
    *   <li><code>=</code>: annotate setter only.</li>
    *   <li><code>+</code>: annotate setter and getter.</li>
-   *   <li><code>~</code>: annotation is hidden, i.e. applied to the implementations instead of the interfaces.</li>
+   *   <li><code>~</code>: annotation is hidden, i.e., applied to the implementations instead of the interfaces.</li>
    * </ul>
    * Example:
    * <pre>
@@ -158,7 +158,7 @@ public interface Relation extends ModelElement, Commented {
    * Gets the path of embedding entities.<br>
    * The first entity is non-embedded.
    *
-   * @return the embedding path (never empty), null if relation is not embedded
+   * @return the embedding path (never empty), null if the relation is not embedded
    */
   List<Entity> getEmbeddingPath();
 
@@ -203,7 +203,7 @@ public interface Relation extends ModelElement, Commented {
   /**
    * Returns whether the modification state of the relation is available.
    *
-   * @return true if tracked object or tracked list
+   * @return true if tracked object or tracked list relation
    */
   boolean isTracked();
 
@@ -215,7 +215,7 @@ public interface Relation extends ModelElement, Commented {
   boolean isReferenced();
 
   /**
-   * Returns whether a process-method is invoked after initialization, select and before save.<br>
+   * Returns whether a process-method is invoked after initialization, select, and before save.<br>
    * The method has the same name as the getter with "get" replaced by "process" and must be
    * provided by the application.<br>
    * This flag applies to composite relations only.
@@ -225,7 +225,7 @@ public interface Relation extends ModelElement, Commented {
   boolean isProcessed();
 
   /**
-   * Returns whether the relation is read only.
+   * Returns whether the relation is read-only.
    *
    * @return true if no setter method
    */
@@ -255,7 +255,7 @@ public interface Relation extends ModelElement, Commented {
   boolean isClearOnRemoteSave();
 
   /**
-   * Returns whether this is list relation with only one element.<br>
+   * Returns whether this is a list relation with only one element.<br>
    * A.k.a. reversed 1:1 object relation.
    *
    * @return true if reversed
@@ -291,12 +291,12 @@ public interface Relation extends ModelElement, Commented {
   boolean isBluntDeclared();
 
   /**
-   * Returns the attribute that holds the number of elements of a 1:N relation.<br>
+   * Returns the attribute that holds the number of elements of a {@code 1:N} relation.<br>
    * Applies only to composite non-reversed list relations.<br>
    * If set, this column gets the number of elements in the list when the PDO is persisted.
-   * This avoids an initial select when the list is accessed the first time and the list is empty.
+   * This avoids an initial SQL SELECT when the list is accessed the first time and the list is empty.
    *
-   * @return the counter attribute, null if none
+   * @return the count attribute, null if none
    */
   Attribute getCountAttribute();
 
@@ -311,7 +311,7 @@ public interface Relation extends ModelElement, Commented {
   SelectionType getSelectionType();
 
   /**
-   * Returns whether the select method is a caching one.
+   * Returns whether the select method is caching.
    *
    * @return true if cached
    */
@@ -329,9 +329,9 @@ public interface Relation extends ModelElement, Commented {
   // delete = ...
 
   /**
-   * Returns whether delete method is invoked on main class instead of relation class.
+   * Returns whether the delete method is invoked on the main class instead of the relation class.
    *
-   * @return true if delete from main class
+   * @return true if delete from the main class
    */
   boolean isDeletionFromMainClass();
 
@@ -365,7 +365,7 @@ public interface Relation extends ModelElement, Commented {
   /**
    * Gets the name-part for select- and delete-methods.
    *
-   * @return the method name, null if default from foreign entity name
+   * @return the method name, null if default from the foreign entity name
    */
   String getMethodName();
 
