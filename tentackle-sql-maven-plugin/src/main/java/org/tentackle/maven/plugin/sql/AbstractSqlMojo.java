@@ -156,6 +156,16 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected File dumpDir;
 
   /**
+   * Compact model dump.<br>
+   * Omits implicit configuration in dumped model code.<br>
+   * By default, all configuration keywords are printed for proofreading.<br>
+   * In compact mode, however, only the keywords that are actually required are printed,
+   * making it more suitable as input for source code generation.
+   */
+  @Parameter
+  protected boolean dumpCompact;
+
+  /**
    * Model dump should be dumped as comment blocks (default).
    */
   @Parameter(defaultValue = "true")
@@ -188,7 +198,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected int dumpColumnGap;
 
   /**
-   * Optional annotations that should be printed as attribute options.
+   * List of annotations that should be printed as attribute options.<br>
+   * A comma separates multiple annotations.<br>
+   * If the annotation ends with a {@code |}, it matches only annotations without parameters.<br>
+   * The special annotation {@code @*} matches all annotations and {@code @*|}
+   * matches all annotations without parameters.
+   * <p>
+   * Example: {@code @NotNull|, @NotZero}
    */
   @Parameter
   protected String dumpAnnotationsAsOptions;
@@ -568,8 +584,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             optionAnnotations.add(stok.nextToken());
           }
         }
-        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
-                                                                  optionAnnotations, dumpColumnGap);
+        PrintConfiguration configuration = new PrintConfiguration(dumpCompact, dumpAsComment, dumpVariables,
+                                                                  defaults, optionAnnotations, dumpColumnGap);
 
         Map<String, String> aliasesMap = new TreeMap<>();     // alias:entityname
         Map<String, String> tableMap = new TreeMap<>();       // tablename:entityname

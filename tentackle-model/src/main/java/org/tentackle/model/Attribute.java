@@ -78,7 +78,7 @@ public interface Attribute extends ModelElement {
    * This is either the generic inner type or the wrapped type of Convertible types.
    *
    * @return the inner type name
-   * @throws ModelException if not an application type or innername not set
+   * @throws ModelException if not of an application type or inner name is not set
    */
   String getInnerTypeName() throws ModelException;
 
@@ -108,14 +108,14 @@ public interface Attribute extends ModelElement {
   AttributeOptions getOptions();
 
   /**
-   * Returns whether attribute is implicit and not result of an attribute line configuration.
+   * Returns whether the attribute is implicit and not result of an attribute line configuration.
    *
    * @return true if implicit
    */
   boolean isImplicit();
 
   /**
-   * Returns whether attribute is hidden and not part of the interface.
+   * Returns whether the attribute is hidden and not part of the interface.
    *
    * @return true if hidden
    */
@@ -151,7 +151,7 @@ public interface Attribute extends ModelElement {
    * Gets the path of embedding entities.<br>
    * The first entity is non-embedded.
    *
-   * @return the embedding path (never empty), null if attribute is not embedded
+   * @return the embedding path (never empty), null if the attribute is not embedded
    */
   List<Entity> getEmbeddingPath();
 
@@ -208,15 +208,15 @@ public interface Attribute extends ModelElement {
    * </pre>
    *
    * @return the type string
-   * @throws ModelException if type is misconfigured
+   * @throws ModelException if the type is misconfigured
    */
   String getJavaType() throws ModelException;
 
   /**
-   * Returns whether database column is nullable.
+   * Returns whether the database column is nullable.
    *
    * @return true if WITH NULL, false if NOT NULL
-   * @throws ModelException if type is misconfigured
+   * @throws ModelException if the type is misconfigured
    */
   boolean isNullable() throws ModelException;
 
@@ -235,7 +235,7 @@ public interface Attribute extends ModelElement {
   void validate() throws ModelException;
 
   /**
-   * Gets the suffix to be used in methodnames.
+   * Gets the suffix to be used in method names.
    * <p>
    * Example:
    * <pre>

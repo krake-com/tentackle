@@ -52,12 +52,12 @@ public class IndexPrinter {
   public String print() {
     StringBuilder buf = new StringBuilder();
     if (!StringHelper.isAllWhitespace(index.getComment())) {
-      if (configuration.isPrintingAsComment()) {
+      if (configuration.asComment()) {
         buf.append(" * ");
       }
       buf.append("# ").append(index.getComment()).append('\n');
     }
-    if (configuration.isPrintingAsComment()) {
+    if (configuration.asComment()) {
       buf.append(" * ");
     }
     if (index.isOptional()) {

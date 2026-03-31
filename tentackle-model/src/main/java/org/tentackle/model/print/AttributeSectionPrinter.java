@@ -73,13 +73,13 @@ public class AttributeSectionPrinter {
         maxColumnLen = str.length();
       }
     }
-    maxTypeLen += configuration.getColumnGap();
-    maxNameLen += configuration.getColumnGap();
-    maxColumnLen += configuration.getColumnGap();
+    maxTypeLen += configuration.columnGap();
+    maxNameLen += configuration.columnGap();
+    maxColumnLen += configuration.columnGap();
 
     StringBuilder buf = new StringBuilder();
     for (AttributePrinter printer: printers) {
-      if (configuration.isPrintingAsComment()) {
+      if (configuration.asComment()) {
         buf.append(" * ");
       }
       buf.append(StringHelper.fillRight(printer.printType(), maxTypeLen, ' '))
