@@ -8,17 +8,17 @@
   /**
    * light yellow components indicate a mandatory field.
    */
-  -tt-mandatory-color: -color-warning-8;
+  -tt-mandatory-color: -color-warning-7;
 
   /**
    * light red components indicate an error.
    */
-  -tt-error-color: -color-danger-8;
+  -tt-error-color: -color-danger-7;
 
   /**
    * light green components indicate an info/hint.
    */
-  -tt-info-color: -color-success-8;
+  -tt-info-color: -color-success-7;
 
 }
 
