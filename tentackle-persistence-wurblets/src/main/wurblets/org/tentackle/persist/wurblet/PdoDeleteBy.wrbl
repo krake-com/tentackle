@@ -78,9 +78,6 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
     if (getSession().isRemote())  {
-@[
-      if (getContextAttribute() != null)  {
-]@
 @{to remoteOut}@
   int @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
@@ -92,24 +89,6 @@ For more options, see {\@link DbModelWurblet}.
   }
 @{to}@
       return getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
-@[
-      }  // end if contextLine
-      else  {
-]@
-@{to remoteOut}@
-  int @(methodName)@(@(params)@);
-@{to implOut}@
-
-  \@Override
-  public int @(methodName)@(@(params)@) {
-@{to implOut}@
-    return dbObject.@(methodName)@(@(iparms)@);
-  }
-@{to}@
-      return getRemoteDelegate().@(methodName)@(@(iparms)@);
-@[
-      }
-]@
     }
     // else: local mode
 @[
