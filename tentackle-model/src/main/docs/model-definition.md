@@ -518,11 +518,18 @@ is a 0-based index (lists only). `indexAttribute` may be a path for embedded att
 #### `args`
 
 ```
-args = attr1[method()] attr2[ConstantExpr]
+args = foreign-attribute2[method()|ConstantExpr] foreign-attribute3[method()|ConstantExpr] ...
 ```
 
-Additional arguments for generated `selectBy` / `deleteBy` methods (list relations only).
-The first argument is always the current entity's ID and cannot be overridden.
+Additional arguments for the generated `selectBy` / `deleteBy` methods (list relations only).
+The first argument (and foreign attribute) is always the current entity's ID and cannot be overridden.
+The selectBy or deleteBy methods are invoked with the return values of the given method calls
+or constant expressions.
+
+Example:
+```
+args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]
+```
 
 #### `method`
 
