@@ -99,6 +99,9 @@ public class PdoWizard extends AbstractFxController {
   private FxCheckBox genRemoteEnabled;
 
   @FXML
+  private FxCheckBox genCacheEnabled;
+
+  @FXML
   private FxButton cancel;
 
   @FXML
@@ -107,6 +110,12 @@ public class PdoWizard extends AbstractFxController {
 
   public PdoWizard() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @FXML
+  public void initialize() {
+    cancel.setGraphic(Fx.createGraphic("cancel"));
+    generate.setGraphic(Fx.createGraphic("generate"));
   }
 
   /**
@@ -127,12 +136,7 @@ public class PdoWizard extends AbstractFxController {
     gen.setStatusDir(mojo.getStatusDir());
     gen.setRemoteEnabled(mojo.getModel().getModelDefaults() == null ||
                          Boolean.TRUE.equals(mojo.getModel().getModelDefaults().getRemote()));
-  }
 
-  @Override
-  public void configure() {
-    cancel.setGraphic(Fx.createGraphic("cancel"));
-    generate.setGraphic(Fx.createGraphic("generate"));
     try {
       for (Entity entity: gen.getModel().getAllEntities()) {
         if (entity.isAbstract()) {
@@ -146,6 +150,7 @@ public class PdoWizard extends AbstractFxController {
 
     genProfile.setDeselectAllowed(false);
     genInheritanceType.setDeselectAllowed(false);
+    genInheritanceType.addModelToViewListener(() -> genCacheEnabled.updateView());
 
     // changes may also change the model -> update view
     genProfile.addViewToModelListener(() -> {

@@ -62,6 +62,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   private String domainImplementation;
   private String persistenceImplementation;
   private boolean remoteEnabled;
+  private boolean cacheEnabled;
 
 
   /**
@@ -244,12 +245,25 @@ public class PdoGenerator extends AbstractValidateableGenerator {
            Boolean.TRUE : null;   // TRUE != null, null -> @NotNull triggers
   }
 
+  /**
+   * Checks whether the inheritance type is valid.
+   *
+   * @return true if valid, false if not
+   */
   public boolean isInheritanceTypeValid() {
     return InheritanceType.NONE == inheritanceType ||
            superEntity == null ||
            superEntity.getInheritanceType() == inheritanceType;
   }
 
+  /**
+   * Checks whether caching is allowed.
+   *
+   * @return true if allowed, false if not
+   */
+  public boolean isCachingAllowed() {
+    return inheritanceType != InheritanceType.EMBEDDED;
+  }
 
 
   // ------------------------------------- model -------------------------------------------------
@@ -367,6 +381,9 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   @Bindable
   public void setInheritanceType(InheritanceType inheritanceType) {
     this.inheritanceType = inheritanceType;
+    if (inheritanceType == InheritanceType.EMBEDDED) {
+      cacheEnabled = false;
+    }
   }
 
   @Bindable
@@ -440,6 +457,17 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   @Bindable
   public void setRemoteEnabled(boolean remoteEnabled) {
     this.remoteEnabled = remoteEnabled;
+  }
+
+  @Bindable
+  @Changeable(condition = "$isCachingAllowed")
+  public boolean isCacheEnabled() {
+    return cacheEnabled;
+  }
+
+  @Bindable
+  public void setCacheEnabled(boolean cacheEnabled) {
+    this.cacheEnabled = cacheEnabled;
   }
 
 

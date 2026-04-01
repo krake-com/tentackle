@@ -46,12 +46,8 @@ import org.tentackle.session.TableName;
  * integrity := $integrity
  *
  * ## attributes
-<#if profile == "masterdata" && pdoInheritance != "EMBEDDED">
-  <#if pdoExtends == "">
- * [cached, tokenlock]
-  <#else>
+<#if cacheEnabled == "true">
  * [cached]
-  </#if>
 </#if>
 <#if pdoInheritance != "EMBEDDED">
  *

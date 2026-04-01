@@ -158,41 +158,41 @@
             <goals>
               <goal>create</goal>
             </goals>
+            <configuration>
+              <verbosity>info</verbosity>
+              <generateHeaderComment>false</generateHeaderComment>
+              <checkReservedTables>false</checkReservedTables>
+              <backendNames>all</backendNames>
+              <sqlDir>${project.build.directory}/generated-resources/META-INF/sql</sqlDir>
+              <sqlFileName>createttmodel.sql</sqlFileName>
+              <dumpDir>${project.build.directory}/generated-resources/META-INF/model</dumpDir>
+              <dumpModelSource>true</dumpModelSource>
+              <dumpModelIndex>${project.build.directory}/generated-resources/META-INF/MODEL-INDEX.LIST</dumpModelIndex>
+              <backends>
+                <!-- for migration only -->
+                <backend>
+                  <url>${dbUrl}</url>
+                  <user>${dbUser}</user>
+                  <password>${dbPasswd}</password>
+                </backend>
+              </backends>
+              <sequences>
+                <sequence>
+                  <name>object_sequence_id</name>
+                  <comment>to generate the ID of PDOs</comment>
+                </sequence>
+              </sequences>
+              <prependFilesets>
+                <prependFileset>
+                  <directory>${project.basedir}/src/sql</directory>
+                  <includes>
+                    <include>*.sql</include>
+                  </includes>
+                </prependFileset>
+              </prependFilesets>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <verbosity>info</verbosity>
-          <generateHeaderComment>false</generateHeaderComment>
-          <checkReservedTables>false</checkReservedTables>
-          <backendNames>all</backendNames>
-          <sqlDir>${project.build.directory}/generated-resources/META-INF/sql</sqlDir>
-          <sqlFileName>createttmodel.sql</sqlFileName>
-          <dumpDir>${project.build.directory}/generated-resources/META-INF/model</dumpDir>
-          <dumpModelSource>true</dumpModelSource>
-          <dumpModelIndex>${project.build.directory}/generated-resources/META-INF/MODEL-INDEX.LIST</dumpModelIndex>
-          <backends>
-            <!-- for migration only -->
-            <backend>
-              <url>${dbUrl}</url>
-              <user>${dbUser}</user>
-              <password>${dbPasswd}</password>
-            </backend>
-          </backends>
-          <sequences>
-            <sequence>
-              <name>object_sequence_id</name>
-              <comment>to generate the ID of PDOs</comment>
-            </sequence>
-          </sequences>
-          <prependFilesets>
-            <prependFileset>
-              <directory>${project.basedir}/src/sql</directory>
-              <includes>
-                <include>*.sql</include>
-              </includes>
-            </prependFileset>
-          </prependFilesets>
-        </configuration>
         <dependencies>
           <!-- for migration only -->
           <dependency>

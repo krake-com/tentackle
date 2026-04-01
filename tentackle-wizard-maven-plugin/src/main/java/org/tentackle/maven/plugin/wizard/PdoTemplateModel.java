@@ -69,6 +69,7 @@ public class PdoTemplateModel extends TemplateModel {
     putValue("pdoExtends", generator.getSuperEntity());
     putValue("pdoInheritance", generator.getInheritanceType());
     putValue("remoteEnabled", generator.isRemoteEnabled());
+    putValue("cacheEnabled", generator.isCacheEnabled());
   }
 
 }
