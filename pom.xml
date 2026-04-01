@@ -82,22 +82,22 @@
     <javac.lint>all,-processing,-this-escape</javac.lint>
     <javac.version>21</javac.version>
 
-    <asm.version>9.8</asm.version>
+    <asm.version>9.10</asm.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>4.0.28</groovy.version>
-    <h2.version>2.3.232</h2.version>
+    <groovy.version>5.0.6</groovy.version>
+    <h2.version>2.4.240</h2.version>
     <ikonli.version>12.4.0</ikonli.version>
     <javafx.version>23.0.2</javafx.version>
-    <jruby.version>10.0.1.0</jruby.version>
-    <junit.version>5.13.4</junit.version>
-    <log4j2.version>2.25.1</log4j2.version>
+    <jruby.version>10.1.0.0</jruby.version>
+    <junit.version>6.0.3</junit.version>
+    <log4j2.version>2.26.0</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
-    <plexus.archiver.version>4.10.0</plexus.archiver.version>
-    <plexus.java.version>1.5.0</plexus.java.version>
-    <poi.version>5.4.1</poi.version>
-    <postgresql.version>42.7.7</postgresql.version>
-    <slf4j.version>2.0.17</slf4j.version>
-    <testng.version>7.11.0</testng.version>
+    <plexus.archiver.version>4.11.0</plexus.archiver.version>
+    <plexus.java.version>1.5.2</plexus.java.version>
+    <poi.version>5.5.1</poi.version>
+    <postgresql.version>42.7.11</postgresql.version>
+    <slf4j.version>2.0.18</slf4j.version>
+    <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
     <maven.version>3.9.0</maven.version>
