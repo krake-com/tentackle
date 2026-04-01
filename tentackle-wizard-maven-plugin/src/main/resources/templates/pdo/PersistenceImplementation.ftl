@@ -134,4 +134,8 @@ public class ${persistenceImplementation}
 
   // @wurblet relations PdoRelations
 
+<#if cacheEnabled == "true">
+  // @wurblet cache PdoCache
+
+</#if>
 }

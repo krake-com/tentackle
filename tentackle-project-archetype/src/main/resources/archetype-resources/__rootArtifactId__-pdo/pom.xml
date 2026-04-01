@@ -43,16 +43,58 @@
             <goals>
               <goal>create</goal>
             </goals>
+            <configuration>
+              <verbosity>info</verbosity>
+              <dumpDir>${symbol_dollar}{project.build.directory}/generated-resources/META-INF/model</dumpDir>
+              <dumpModelSource>true</dumpModelSource>
+              <dumpModelIndex>${symbol_dollar}{project.build.directory}/generated-resources/META-INF/MODEL-INDEX.LIST</dumpModelIndex>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <verbosity>info</verbosity>
-          <dumpDir>${symbol_dollar}{project.build.directory}/generated-resources/META-INF/model</dumpDir>
-          <dumpModelSource>true</dumpModelSource>
-          <dumpModelIndex>${symbol_dollar}{project.build.directory}/generated-resources/META-INF/MODEL-INDEX.LIST</dumpModelIndex>
-        </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!-- migrate the tentackle tables -->
+      <id>migrate-tentackle</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.tentackle</groupId>
+            <artifactId>tentackle-sql-maven-plugin</artifactId>
+            <configuration>
+              <loadModelFromClassPath>true</loadModelFromClassPath>
+              <checkReservedTables>false</checkReservedTables>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.tentackle</groupId>
+                <artifactId>tentackle-test-pdo</artifactId>
+                <version>${tentackle.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <!-- extract the model to target/wurbel/model without code generation -->
+      <id>wurbel-model-only</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.wurbelizer</groupId>
+            <artifactId>wurbelizer-maven-plugin</artifactId>
+            <configuration>
+              <lastPhase>0</lastPhase>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

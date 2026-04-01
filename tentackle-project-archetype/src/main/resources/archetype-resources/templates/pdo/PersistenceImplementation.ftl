@@ -134,7 +134,7 @@ public class ${persistenceImplementation}
 
   // @wurblet relations PdoRelations
 
-<#if profile == "masterdata" && pdoExtends == "" && pdoInheritance != "EMBEDDED">
+<#if cacheEnabled == "true">
   // @wurblet cache PdoCache
 
 </#if>
