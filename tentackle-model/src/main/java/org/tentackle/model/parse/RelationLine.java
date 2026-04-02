@@ -88,7 +88,8 @@ import java.util.Map;
  *
  * args = &lt;foreign-attribute2&gt;[&lt;method&gt; | &lt;constant&gt;] &lt;foreign-attribute3&gt;[&lt;method&gt; | &lt;constant&gt;]...
  * <ul>
- *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations.<br>
+ *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations
+ *      or reversed object relations.<br>
  *      Example: <code>args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]</code><br>
  *      The first argument cannot be overwritten. For lists, it is <code>&lt;name-of-current-entity&gt;Id[getId()]</code>.<br>
  *      (For object relations it is <code>id[get&lt;name-of-relation&gt;Id()]</code> and no extra args are allowed anyway.)

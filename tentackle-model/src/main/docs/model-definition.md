@@ -521,10 +521,13 @@ is a 0-based index (lists only). `indexAttribute` may be a path for embedded att
 args = foreign-attribute2[method()|ConstantExpr] foreign-attribute3[method()|ConstantExpr] ...
 ```
 
-Additional arguments for the generated `selectBy` / `deleteBy` methods (list relations only).
-The first argument (and foreign attribute) is always the current entity's ID and cannot be overridden.
-The selectBy or deleteBy methods are invoked with the return values of the given method calls
-or constant expressions.
+Additional arguments for the generated `selectBy` / `deleteBy` methods of list relations and reversed object relations.
+The methods are generated in the persistence layer of the related foreign entity.
+Since the first method argument (foreign attribute) is always the current entity's ID, additional filter parameters start
+at the second argument. Each argument is described as a pair of the foreign entity's attribute name and a 
+method call or constant expression in square brackets.
+The generated methods are then invoked with the ID plus the return values of the given method calls 
+or constant expressions in the given order.
 
 Example:
 ```
