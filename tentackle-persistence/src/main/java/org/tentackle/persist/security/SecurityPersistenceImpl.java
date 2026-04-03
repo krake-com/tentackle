@@ -556,7 +556,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByGrantee(int granteeClassId, long granteeId) {
     if (getSession().isRemote())  {
-      return getRemoteDelegate().deleteByGrantee(granteeClassId, granteeId);
+      return getRemoteDelegate().deleteByGrantee(getDomainContext(), granteeClassId, granteeId);
     }
     // else: local mode
     // check security rules at class level
@@ -594,7 +594,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      return getRemoteDelegate().deleteByObject(objectClassId, objectId);
+      return getRemoteDelegate().deleteByObject(getDomainContext(), objectClassId, objectId);
     }
     // else: local mode
     // check security rules at class level
@@ -635,7 +635,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByObjectClass(String objectClassName) {
     if (getSession().isRemote())  {
-      return getRemoteDelegate().deleteByObjectClass(objectClassName);
+      return getRemoteDelegate().deleteByObjectClass(getDomainContext(), objectClassName);
     }
     // else: local mode
     // check security rules at class level
@@ -673,7 +673,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByDomainContext(int domainContextClassId, long domainContextId) {
     if (getSession().isRemote())  {
-      return getRemoteDelegate().deleteByDomainContext(domainContextClassId, domainContextId);
+      return getRemoteDelegate().deleteByDomainContext(getDomainContext(), domainContextClassId, domainContextId);
     }
     // else: local mode
     // check security rules at class level

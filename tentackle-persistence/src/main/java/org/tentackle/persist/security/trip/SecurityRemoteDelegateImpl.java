@@ -73,22 +73,26 @@ public class SecurityRemoteDelegateImpl
   }
 
   @Override
-  public int deleteByGrantee(int granteeClassId, long granteeId) {
+  public int deleteByGrantee(DomainContext context, int granteeClassId, long granteeId) {
+    setDomainContext(context);
     return dbObject.deleteByGrantee(granteeClassId, granteeId);
   }
 
   @Override
-  public int deleteByObject(int objectClassId, long objectId) {
+  public int deleteByObject(DomainContext context, int objectClassId, long objectId) {
+    setDomainContext(context);
     return dbObject.deleteByObject(objectClassId, objectId);
   }
 
   @Override
-  public int deleteByObjectClass(String objectClassName) {
+  public int deleteByObjectClass(DomainContext context, String objectClassName) {
+    setDomainContext(context);
     return dbObject.deleteByObjectClass(objectClassName);
   }
 
   @Override
-  public int deleteByDomainContext(int domainContextClassId, long domainContextId) {
+  public int deleteByDomainContext(DomainContext context, int domainContextClassId, long domainContextId) {
+    setDomainContext(context);
     return dbObject.deleteByDomainContext(domainContextClassId, domainContextId);
   }
 
