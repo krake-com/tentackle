@@ -26,7 +26,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
@@ -136,7 +135,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private File saveOpts;
 
   /**
-   * Enables the auto update feature.
+   * Enables the auto-update feature.
    * <p>
    * For the <code>jlink</code> gaol an extra update script will be generated
    * via the {@link JLinkMojo#getUpdateTemplate()}.
@@ -161,7 +160,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * List of full-blown modules that should be moved to the module path explicitly.<br>
    * By default, all full-blown modules are passed to the jlink tool. If a module is listed
    * for the module path only, the module it will be moved to the <code>mp</code> folder instead.<br>
-   * This may become necessary, if a 3rd-party full-blown module (illegally!) requires automatic modules, which
+   * This may become necessary if a 3rd-party full-blown module (illegally!) requires automatic modules, which
    * would cause all artifacts to be moved to the module path by this plugin automatically, since the
    * jlink tool can only handle full-blown modules.
    * <p>
@@ -228,7 +227,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * The directory holding extra resources, such as logger configurations or database
    * credentials, that will be copied to the <code>conf</code> directory.<br>
    * Defaults to the maven-resources-plugin's destination directory, usually <code>target/classes</code>.<br>
-   * If no resources must be copied, for example in server-images for production, set this to any
+   * If no resources must be copied, for example, in server-images for production, set this to any
    * non-existent directory, for example <code>"none"</code>.
    */
   @Parameter(defaultValue = "${project.build.directory}/classes")
@@ -236,7 +235,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Extra jre or jdk modules to add to the image.<br>
-   * Useful to add the runtime localization module or extra tools in bin.
+   * Useful to add the runtime localization module or extra tools in the bin-directory.
    * <p>
    * Example:
    *
@@ -266,7 +265,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Extra variables for template or artifact generation.
    * <p>
-   * For example the subproject's basedir:
+   * For example, the subproject's basedir:
    * <pre>
    *  &lt;variables&gt;
    *    &lt;project&gt;${project.basedir}&lt;/project&gt;
@@ -358,7 +357,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Returns whether the update feature is enabled.
    *
-   * @return true if generate artifacts with auto-update feature
+   * @return true if generate artifacts with the auto-update feature
    */
   public boolean isWithUpdater() {
     return withUpdater;
@@ -366,20 +365,21 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Returns whether all application modules should go to the module path and
-   * not the jimage file.
+   * not the image (modules) file.
    *
    * @return true if forced to mp folder
    */
   public boolean isModulePathOnly() {
-    return modulePathOnly != null && modulePathOnly.size() == 1 &&
-           ("true".equals(modulePathOnly.get(0)) ||
-            "all".equals(modulePathOnly.get(0)) ||
-            "*".equals(modulePathOnly.get(0)));
+    if (modulePathOnly != null && modulePathOnly.size() == 1) {
+      String arg = modulePathOnly.get(0);
+      return "true".equals(arg) || "all".equals(arg) || "*".equals(arg);
+    }
+    return false;
   }
 
   /**
-   * Returns whether given module name should go to the module path and
-   * not the jimage file.
+   * Returns whether the given module name should go to the module path and
+   * not the image (modules) file.
    *
    * @param moduleName the name of the full-blown module
    * @return true if forced to mp folder
@@ -508,7 +508,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets optional extra classpath elements.<br>
    *
-   * @return pathnames relative to the image root, null if none
+   * @return the pathnames relative to the image root, null for none
    */
   public List<String> getExtraClasspathElements() {
     return extraClasspathElements;
@@ -600,25 +600,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Creates the zip file.<br>
-   * Invoked by the {@link ArtifactCreator}.
+   * Gets the archiver to zip the image.
    *
-   * @param dir the directory to create a zip file from
-   * @param name the zip filename without extension
-   * @return the created zip file
-   * @throws MojoExecutionException if some archiver or IO errors occurred
+   * @return the archiver, never null
    */
-  public File createZipFile(File dir, String name) throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
-    zipArchiver.addDirectory(dir);
-    zipArchiver.setDestFile(zipFile);
-    try {
-      zipArchiver.createArchive();
-    }
-    catch (ArchiverException | IOException e) {
-      throw new MojoExecutionException(e.getMessage(), e);
-    }
-    return zipFile;
+  public ZipArchiver getZipArchiver() {
+    return zipArchiver;
   }
 
 
@@ -626,7 +613,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Returns whether an artifact should be moved to the classpath explicitly.
    *
    * @param artifact the artifact
-   * @return true if move to classpath, else modulepath
+   * @return true if move to classpath, else module-path
    */
   public boolean isClasspathDependency(Artifact artifact) {
     if (classpathDependencies != null) {
@@ -671,7 +658,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // run jlink
     createJLinkImage(result);
 
-    // copy artifacts not covered by jlink to modulepath and classpath subdirectories
+    // copy remaining artifacts to the module-path and classpath subdirectories
     copyArtifacts(result);
 
     // copy resources such as backend.properties or logging config to the conf subdirectory
@@ -799,7 +786,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException("copying extra directories failed", ex);
     }
   }
-  
+
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
@@ -840,7 +827,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    *
    * @param pluginTemplate the plugin's name of the template
    * @param projectTemplate the project's name of the template
-   * @param overwrite true if overwrite existing template, false if leave unchanged
+   * @param overwrite true if overwrite the existing template, false if leave unchanged
    * @throws MojoExecutionException if installation failed
    */
   protected void installTemplate(String pluginTemplate, String projectTemplate, boolean overwrite) throws MojoExecutionException {
@@ -860,12 +847,11 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Logs the toolrunner's output at info level.
+   * Logs the {@link ToolRunner}'s output at info level.
    *
-   * @param runner the toolrunner
-   * @throws MojoExecutionException if runner not invoked so far
+   * @param runner the ToolRunner
    */
-  protected void logToolOutput(ToolRunner runner) throws MojoExecutionException {
+  protected void logToolOutput(ToolRunner runner) {
     String out = runner.getOutputAsString();
     if (!out.isEmpty()) {
       getLog().info(out);
