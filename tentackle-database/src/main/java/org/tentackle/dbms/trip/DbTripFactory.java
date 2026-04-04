@@ -26,8 +26,18 @@ import org.tentackle.trip.impl.DefaultTripFactory;
 import java.lang.reflect.InvocationHandler;
 import java.util.UUID;
 
+/**
+ * Extended TRIP factory aware of database-related remote delegates.
+ */
 @Service(TripFactory.class)
 public class DbTripFactory extends DefaultTripFactory {
+
+  /**
+   * Creates the factory.
+   */
+  public DbTripFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public InvocationHandler createInvocationHandler(UUID remoteId, Transport transport, Class<?>... clazz) {
