@@ -26,8 +26,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.ArchiverException;
-import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
@@ -251,7 +249,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * The directory holding extra resources, such as logger configurations or database
    * credentials, that will be copied to the <code>conf</code> directory.<br>
    * Defaults to the maven-resources-plugin's destination directory, usually <code>target/classes</code>.<br>
-   * If no resources must be copied, for example in server-images for production, set this to any
+   * If no resources must be copied, for example, in server-images for production, set this to any
    * non-existent directory, for example <code>"none"</code>.
    */
   @Parameter(defaultValue = "${project.build.directory}/classes")
@@ -399,7 +397,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Returns whether all application modules should go to the module path and
-   * not the jimage file.
+   * not the image (modules) file.
    *
    * @return true if forced to mp folder
    */
@@ -412,8 +410,8 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Returns whether given module name should go to the module path and
-   * not the jimage file.
+   * Returns whether the given module name should go to the module path and
+   * not the image (modules) file.
    *
    * @param moduleName the name of the full-blown module
    * @return true if forced to mp folder
@@ -634,27 +632,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Creates the zip file.<br>
-   * Invoked by the {@link ArtifactCreator}.
+   * Gets the archiver to zip the image.
    *
-   * @param dir the directory to create a zip file from
-   * @param name the zip filename without extension
-   * @return the created zip file
-   * @throws MojoExecutionException if some archiver or IO errors occurred
+   * @return the archiver, never null
    */
-  public File createZipFile(File dir, String name) throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
-    zipArchiver.addFileSet(DefaultFileSet.fileSet(dir).prefixed("")
-                                         .includeExclude(null, null)
-                                         .includeEmptyDirs(zipArchiver.getIncludeEmptyDirs()));
-    zipArchiver.setDestFile(zipFile);
-    try {
-      zipArchiver.createArchive();
-    }
-    catch (ArchiverException | IOException e) {
-      throw new MojoExecutionException(e.getMessage(), e);
-    }
-    return zipFile;
+  public ZipArchiver getZipArchiver() {
+    return zipArchiver;
   }
 
 
@@ -707,7 +690,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // run jlink
     createJLinkImage(result);
 
-    // copy artifacts not covered by jlink to module-path and classpath subdirectories
+    // copy remaining artifacts to the module-path and classpath subdirectories
     copyArtifacts(result);
 
     // copy resources such as backend.properties or logging config to the conf subdirectory

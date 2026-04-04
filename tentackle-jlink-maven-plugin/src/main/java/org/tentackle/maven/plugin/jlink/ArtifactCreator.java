@@ -30,8 +30,10 @@ interface ArtifactCreatorHolder {
 }
 
 /**
- * Modifies, creates and attaches the artifacts to be deployed.<br>
- * May be replaced via &#64;{@link org.tentackle.common.Service} annotation from within an application-specific plugin dependency.
+ * Modifies, creates, and attaches the artifacts to be deployed.<br>
+ * Can be replaced via &#64;{@link org.tentackle.common.Service} annotation from
+ * within an application-specific plugin dependency. By default, the {@link DefaultArtifactCreator} is used.
+ * <p>
  * For example, to further modify the files or create a bunch of artifacts with different configurations.
  * <p>
  * Example:
@@ -41,12 +43,12 @@ interface ArtifactCreatorHolder {
  *
  *     &#64;Override
  *     public void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException {
- *       ...
+ *       // implement the logic here
  *     }
  *   }
  * </pre>
  *
- * Add as plugin dependency:
+ * Add as a plugin dependency:
  *
  * <pre>
  *   &lt;plugin&gt;
@@ -105,7 +107,7 @@ public interface ArtifactCreator {
 
   /**
    * Creates and attaches the update ZIP file created by the jpackage goal.<br>
-   * Invoked only if update feature is enabled.
+   * Invoked only if the update feature is enabled.
    *
    * @param mojo the jpackage mojo
    * @param appImageDir the application image directory
