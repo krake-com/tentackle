@@ -19,8 +19,12 @@
 package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.util.DefaultFileSet;
+import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -39,8 +43,9 @@ public class DefaultArtifactCreator implements ArtifactCreator {
     mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
                                            AbstractJLinkMojo.ZIP_EXTENSION,
                                            mojo.getClassifier(),
-                                           mojo.createZipFile(mojo.getImageDirectory(),
-                                           mojo.getFinalName()  + "-" + mojo.getImageDirectory().getName()));
+                                           createZipFile(mojo.getImageDirectory(),
+                                                         mojo.getFinalName() + "-" + mojo.getImageDirectory().getName(),
+                                                         mojo.getZipDirectory(), mojo.getZipArchiver()));
   }
 
   @Override
@@ -51,7 +56,7 @@ public class DefaultArtifactCreator implements ArtifactCreator {
   @Override
   public void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException {
     File targetDir = new File(mojo.getMavenProject().getBuild().getDirectory());
-    String[] names = targetDir.list((dir, name) -> {
+    String[] names = targetDir.list((_, name) -> {
       String fileName = name.toLowerCase(Locale.ROOT);
       for (String extension : INSTALLER_EXTENSIONS) {
         if (fileName.endsWith(extension)) {
@@ -82,7 +87,35 @@ public class DefaultArtifactCreator implements ArtifactCreator {
     mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
                                            AbstractJLinkMojo.ZIP_EXTENSION,
                                            mojo.getClassifier() + "-pkg",
-                                           mojo.createZipFile(appImageDir,
-                                                              mojo.getFinalName() + "-" + mojo.getPackageDirectory().getName()));
+                                           createZipFile(appImageDir,
+                                                         mojo.getFinalName() + "-" + mojo.getPackageDirectory().getName(),
+                                                         mojo.getZipDirectory(), mojo.getZipArchiver()));
   }
+
+
+  /**
+   * Creates the ZIP file.
+   *
+   * @param dir the directory to create a ZIP file from
+   * @param name the ZIP filename without extension
+   * @param zipDirectory the directory where to store the ZIP file
+   * @param zipArchiver the ZIP archiver to use
+   * @return the created ZIP file
+   * @throws MojoExecutionException if some archiver or IO errors occurred
+   */
+  protected File createZipFile(File dir, String name, File zipDirectory, ZipArchiver zipArchiver) throws MojoExecutionException {
+    File zipFile = new File(zipDirectory, name + "." + AbstractJLinkMojo.ZIP_EXTENSION);
+    zipArchiver.addFileSet(DefaultFileSet.fileSet(dir).prefixed("")
+                                         .includeExclude(null, null)
+                                         .includeEmptyDirs(zipArchiver.getIncludeEmptyDirs()));
+    zipArchiver.setDestFile(zipFile);
+    try {
+      zipArchiver.createArchive();
+    }
+    catch (ArchiverException | IOException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
+    return zipFile;
+  }
+
 }
