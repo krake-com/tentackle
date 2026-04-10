@@ -46,7 +46,9 @@
     <module>tentackle.script.ruby.osgi</module>
     <module>tentackle.web.osgi</module>
     <module>tentackle.fx.osgi</module>
+    <module>tentackle.fx.atlanta.osgi</module>
     <module>tentackle.fx.rdc.osgi</module>
+    <module>tentackle.fx.rdc.poi.osgi</module>
   </modules>
 
   <dependencyManagement>
