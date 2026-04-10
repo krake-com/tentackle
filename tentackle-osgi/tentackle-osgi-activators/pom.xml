@@ -34,7 +34,9 @@
     <module>tentackle-script-ruby-osgi-activator</module>
     <module>tentackle-web-osgi-activator</module>
     <module>tentackle-fx-osgi-activator</module>
+    <module>tentackle-fx-atlanta-osgi-activator</module>
     <module>tentackle-fx-rdc-osgi-activator</module>
+    <module>tentackle-fx-rdc-poi-osgi-activator</module>
   </modules>
 
   <dependencyManagement>
