@@ -50,6 +50,14 @@ import java.util.zip.ZipInputStream;
 public class FileHelper {
 
   /**
+   * Default buffer size for unzipping/downloading.<br>
+   * The size is not critical for Unix systems, but Windows works best with 1M on CIFS shares.
+   */
+  private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
+
+
+
+  /**
    * Creates an input stream from a resource.
    *
    * @param caller the caller class, null to determine via {@link StackWalker}
@@ -64,7 +72,7 @@ public class FileHelper {
     }
     InputStream is = caller.getResourceAsStream(name);
     if (is == null) {
-      // try other variant
+      // try another variant
       is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
       if (is == null) {
         Module module = caller.getClassLoader().getUnnamedModule();
@@ -83,8 +91,8 @@ public class FileHelper {
   /**
    * Loads properties from a resource.
    *
-   * @param name the properties name
-   * @param asResource true if load from the classpath, false if from filesystem
+   * @param name the {@code Properties} name
+   * @param asResource true to load from the classpath, false if from filesystem
    * @param properties the properties to load into
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
@@ -103,10 +111,10 @@ public class FileHelper {
 
   /**
    * Loads properties.<br>
-   * Tries to load from filesystem first, then from classpath.
+   * Tries to load from filesystem first, then from the class path.
    *
-   * @param name the properties name, null if return empty properties
-   * @return the properties, empty if filename is null
+   * @param name the {@code Properties} name, null if return empty properties
+   * @return the properties, empty if the file name is null
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
    */
@@ -182,18 +190,30 @@ public class FileHelper {
   }
 
   /**
-   * Downloads data from a URL into memory.
+   * Downloads data from a URL into memory using a default buffer size.
    *
    * @param url the URL
    * @return the data as bytes
    * @throws IOException if failed
    */
   public static byte[] download(URL url) throws IOException {
+    return download(url, DEFAULT_BUFFER_SIZE);
+  }
+
+  /**
+   * Downloads data from a URL into memory.
+   *
+   * @param url the URL
+   * @param bufferSize the buffer size
+   * @return the data as bytes
+   * @throws IOException if failed
+   */
+  public static byte[] download(URL url, int bufferSize) throws IOException {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     try (BufferedInputStream in = new BufferedInputStream(url.openStream())){
-      byte[] dataBuffer = new byte[1024];
+      byte[] dataBuffer = new byte[bufferSize];
       int bytesRead;
-      while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+      while ((bytesRead = in.read(dataBuffer, 0, bufferSize)) != -1) {
         outputStream.write(dataBuffer, 0, bytesRead);
       }
       return outputStream.toByteArray();
@@ -225,7 +245,7 @@ public class FileHelper {
   }
 
   /**
-   * Unzips a zip file.
+   * Unzips a zip file using a default buffer size.
    *
    * @param zipFile the zip file
    * @param destDir the destination directory
@@ -233,7 +253,20 @@ public class FileHelper {
    * @throws IOException if failed
    */
   public static void unzip(File zipFile, File destDir, Consumer<File> fileConsumer) throws IOException {
-    byte[] buffer = new byte[1024];
+    unzip(zipFile, destDir, fileConsumer, DEFAULT_BUFFER_SIZE);
+  }
+
+  /**
+   * Unzips a zip file.
+   *
+   * @param zipFile the zip file
+   * @param destDir the destination directory
+   * @param fileConsumer optional consumer to receive the file being unzipped
+   * @param bufferSize the buffer size
+   * @throws IOException if failed
+   */
+  public static void unzip(File zipFile, File destDir, Consumer<File> fileConsumer, int bufferSize) throws IOException {
+    byte[] buffer = new byte[bufferSize];
     Set<File> createdDirs = new HashSet<>();
 
     try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(zipFile))) {
