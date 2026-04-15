@@ -116,25 +116,8 @@ public class BackendInfo {
       }
 
       if (backendType == null) {
-        // backend-type was not given: open temporary connection to get the URL
-        try (Connection tempCon = jndiDataSource.getConnection()) {
-          DatabaseMetaData metaData = tempCon.getMetaData();
-          if (metaData == null) {
-            throw new BackendException(
-                    "Metadata of JNDI-connection cannot be determined. Please add the backend type: " +
-                            url + "|<backend-type>");
-          }
-          String jndiURL = metaData.getURL();
-          if (jndiURL == null) {
-            throw new BackendException(
-                    "URL of JNDI-connection cannot be determined. Please add the backend type: " +
-                            url + "|<backend-type>");
-          }
-          backend = BackendFactory.getInstance().getBackendByUrl(jndiURL);
-        }
-        catch (SQLException sqx) {
-          throw new BackendException("cannot retrieve metadata of JNDI source " + jndiName, sqx);
-        }
+        // backend-type was not given: get it from the JNDI datasource
+        backend = getBackendFromJNDI(url, jndiDataSource);
       }
       else  {
         backend = BackendFactory.getInstance().getBackendByName(backendType);
@@ -154,6 +137,8 @@ public class BackendInfo {
 
     this.url = url;
   }
+
+
 
   /**
    * Creates a backend-info from backend properties.<br>
@@ -291,7 +276,7 @@ public class BackendInfo {
    * Sets the database connection inactivity timeout.<br>
    * Some databases close connections if being idle for a certain time, which cannot
    * be deactivated, especially in clouds.<br>
-   * When this timeout is set, a dummy select will be sent to the backend to
+   * When this timeout is set, a dummy {@code SELECT} will be sent to the backend to
    * make sure that the connection hasn't been closed in the meantime
    * and/or to keep it alive periodically.
    *
@@ -313,7 +298,7 @@ public class BackendInfo {
 
   /**
    * Sets whether a keep-alive SELECT should be sent periodically on idle connections.<br>
-   * When true and <code>backendTimeout</code> is set, a dummy select will be sent to
+   * When true and <code>backendTimeout</code> is set, a dummy {@code SELECT} will be sent to
    * the backend, when the connection is idle for more than <code>backendTimeout</code> minutes.
    * Otherwise, the dummy select will be sent when the connection is re-used after at least
    * <code>backendTimeout</code> minutes to test if the connection is still alive.
@@ -328,7 +313,7 @@ public class BackendInfo {
    * Creates a connection.
    *
    * @return the connection in autocommit mode
-   * @throws SQLException if connection could not be created
+   * @throws SQLException if the connection could not be created
    */
   public Connection connect() throws SQLException {
     Connection connection = jndiDataSource != null ?
@@ -364,12 +349,12 @@ public class BackendInfo {
 
 
   /**
-   * Parses the schemas option.
+   * Parses the {@link Constants#BACKEND_SCHEMAS} option.
    *
-   * @param str the schemas option
+   * @param str the option string, null if none
    * @return the schemas, null if no schemas set
    */
-  private static String[] parseSchemas(String str) {
+  public static String[] parseSchemas(String str) {
     String[] schemas = null;
     if (str != null) {
       StringTokenizer stok = new StringTokenizer(str, ",");
@@ -391,12 +376,42 @@ public class BackendInfo {
    * @param str the string, null if none
    * @return the char array, null if none
    */
-  private static char[] parsePassword(String str) {
+  public static char[] parsePassword(String str) {
     char[] password = null;
     if (str != null) {
       password = str.toCharArray();
     }
     return password;
+  }
+
+
+  /**
+   * Gets the backend from a JNDI datasource.
+   *
+   * @param url the url of the JNDI datasource
+   * @param jndiDataSource the datasource
+   * @return the backend
+   */
+  protected Backend getBackendFromJNDI(String url, DataSource jndiDataSource) {
+    // open temporary connection to get the JNDI URL
+    try (Connection tempCon = jndiDataSource.getConnection()) {
+      DatabaseMetaData metaData = tempCon.getMetaData();
+      if (metaData == null) {
+        throw new BackendException(
+          "Metadata of JNDI-connection cannot be determined. Please add the backend type: " +
+          url + "|<backend-type>");
+      }
+      String jndiURL = metaData.getURL();
+      if (jndiURL == null) {
+        throw new BackendException(
+          "URL of JNDI-connection cannot be determined. Please add the backend type: " +
+          url + "|<backend-type>");
+      }
+      return BackendFactory.getInstance().getBackendByUrl(jndiURL);
+    }
+    catch (SQLException sqx) {
+      throw new BackendException("cannot retrieve metadata of JNDI source " + url, sqx);
+    }
   }
 
 }
