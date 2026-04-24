@@ -71,11 +71,11 @@ This would create an instance method "fromName(String name)" that returns a new 
 <p>
 The comment may contain optional annotations or access scope enclosed in square brackets.
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno] [protected]
+String name   the name [&#64;Bindable(MAXCOLS=20)] [&#64;MyAnno] [protected]
 </pre>
 Can also be written as:
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20), &#64;MyAnno, protected]
+String name   the name [&#64;Bindable(MAXCOLS=20), &#64;MyAnno, protected]
 </pre>
 <p>
 Valid access scopes are: public (default), protected, package, private.
