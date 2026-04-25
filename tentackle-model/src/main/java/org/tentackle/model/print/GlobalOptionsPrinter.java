@@ -124,6 +124,13 @@ public class GlobalOptionsPrinter {
       buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
     }
 
+    if (options.isProvided()) {
+      buf.append(EntityOptionsImpl.OPTION_PROVIDED).append(',');
+    }
+    if (options.isCached()) {
+      buf.append(EntityOptionsImpl.OPTION_CACHED).append(',');
+    }
+
     ModelDefaults modelDefaults = configuration.modelDefaults();
 
     if (options.noModelDefaults() || modelDefaults == null) {
@@ -153,12 +160,6 @@ public class GlobalOptionsPrinter {
       }
       if (options.isRemote()) {
         buf.append(EntityOptionsImpl.OPTION_REMOTE).append(',');
-      }
-      if (options.isProvided()) {
-        buf.append(EntityOptionsImpl.OPTION_PROVIDED).append(',');
-      }
-      if (options.isCached()) {
-        buf.append(EntityOptionsImpl.OPTION_CACHED).append(',');
       }
     }
     else {
