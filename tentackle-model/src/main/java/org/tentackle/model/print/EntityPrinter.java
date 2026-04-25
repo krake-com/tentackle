@@ -85,7 +85,13 @@ public class EntityPrinter {
       }
     }
     else {
-      buf.append("# source = ").append(entity.getSourceInfo().getFileName()).append('\n');
+      // if used as model input: set the complete source info as if from a wurbelizer here-doc
+      buf.append("#@").append(entity.getSourceInfo().getFileName());
+      if (entity.getSourceInfo().getLineNumber() > 0) {
+        // wurbelizer source element offsets start at 0
+        buf.append(':').append(entity.getSourceInfo().getLineNumber() - 1);
+      }
+      buf.append('\n');
     }
 
     line("\n");
