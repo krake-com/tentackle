@@ -60,7 +60,6 @@ public class EntityPrinter {
     buf.setLength(0);
 
     if (configuration.asComment()) {
-      buf.append("// source = ").append(entity.getSourceInfo().getFileName()).append("\n\n");
       if (configuration.useVariables()) {
         buf.append("/*\n * @{\n");
         if (entity.getTableName() != null) {
