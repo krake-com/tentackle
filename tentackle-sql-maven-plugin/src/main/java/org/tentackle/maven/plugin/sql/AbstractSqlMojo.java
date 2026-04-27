@@ -633,7 +633,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             }
           }
           else {
-            File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+            File dumpFile = new File(dumpDir, entity.getName() +
+                                              (dumpAsComment || dumpVariables ? ".txt" : ".map"));
             dumpedFiles.add(dumpFile);
             try (BufferedWriter writer =
                    new BufferedWriter(

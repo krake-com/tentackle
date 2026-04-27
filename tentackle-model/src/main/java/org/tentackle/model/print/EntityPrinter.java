@@ -18,6 +18,7 @@
 
 package org.tentackle.model.print;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
@@ -94,7 +95,9 @@ public class EntityPrinter {
     }
 
     line("\n");
-    line("# ").append(entity.getOptions().getComment()).append('\n');
+    if (!StringHelper.isAllWhitespace(entity.getOptions().getComment())) {
+      line("# ").append(entity.getOptions().getComment()).append('\n');
+    }
     line("name := ");
     if (configuration.useVariables()) {
       buf.append("$classname\n");

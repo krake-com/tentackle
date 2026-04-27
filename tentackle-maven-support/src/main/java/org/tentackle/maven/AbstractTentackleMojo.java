@@ -150,7 +150,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * The encoding to read and write files.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
-  protected String charset;   // don't use the name "encoding" as this is handled by maven
+  protected String charset;   // don't use the name "encoding" as maven handles this
 
 
   /**
@@ -253,7 +253,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets a toolchain for given type and selector.
+   * Gets a toolchain for the given type and selector.
    *
    * @param type the toolchain type
    * @param selector the selector map
@@ -379,7 +379,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Implements the execution.<br>
-   * TT-mojos must override this method instead of {@link #execute()}. This method
+   * Tentackle mojos must override this method instead of {@link #execute()}. This method
    * is only invoked if validation succeeds.
    *
    * @throws MojoExecutionException if an unexpected problem occurs
@@ -400,7 +400,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Determines the encode charset.
+   * Determines the encoding charset.
    */
   public void determineEncoding() {
     if (charset != null) {
@@ -490,7 +490,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Checks if given file resides in a resource directory.
+   * Checks if the given file resides in a resource directory.
    *
    * @param file the file
    * @param test true if load test resource directories
@@ -510,7 +510,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the canonical path of diven directory.
+   * Gets the canonical path of the diven directory.
    *
    * @param dir the directory
    * @return the path
@@ -529,7 +529,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * Gets the default toolfinder to locate tools like java, jdeps, jlink, etc.
    *
    * @return the toolfinder, never null
-   * @throws MojoExecutionException if toolchain cannot be loaded
+   * @throws MojoExecutionException if the toolchain cannot be loaded
    */
   public JavaToolFinder getToolFinder() throws MojoExecutionException {
     if (toolFinder == null) {
@@ -640,7 +640,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the filenames included by given fileset.
+   * Gets the filenames included by the given fileset.
    *
    * @param fileSet the fileset
    * @return the filenames
@@ -727,7 +727,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
                     append(" in ").append(project.getName()).
                        append(" and ").append(splitPkg.getProject().getName());
               }
-              // other package is empty: keep existing with java files
+              // the other package is empty: keep existing with java files
               continue;
             }
             else if (!infoContainingFiles) {

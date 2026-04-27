@@ -12,17 +12,20 @@ import org.tentackle.pdo.Singular;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.TableName;
 
+<#if modelSource != "">
+${modelSource}
+<#else>
 /*
  * @{
-<#if pdoClassId != "">
+  <#if pdoClassId != "">
  * classid   = ${pdoClassId}
-</#if>
-<#if pdoTablename != "">
+  </#if>
+  <#if pdoTablename != "">
  * tablename = ${pdoTablename}
  * mapping   = $model/$tablename.map
-<#else>
+  <#else>
  * mapping   = $model/$classname.map
-</#if>
+  </#if>
  * @}
  */
 
@@ -31,28 +34,28 @@ import org.tentackle.session.TableName;
  *
  * # ${shortDescription}
  * name := $classname
-<#if pdoTablename != "">
+  <#if pdoTablename != "">
  * table := $tablename
-</#if>
-<#if pdoClassId != "">
+  </#if>
+  <#if pdoClassId != "">
  * id := $classid
-</#if>
-<#if pdoExtends != "">
+  </#if>
+  <#if pdoExtends != "">
  * extends := ${pdoExtends}
-</#if>
-<#if pdoInheritance != "NONE">
+  </#if>
+  <#if pdoInheritance != "NONE">
  * inheritance := ${pdoInheritance}
-</#if>
+  </#if>
  * integrity := $integrity
  *
  * ## attributes
-<#if cacheEnabled == "true">
+  <#if cacheEnabled == "true">
  * [cached]
-</#if>
-<#if pdoInheritance != "EMBEDDED">
+  </#if>
+  <#if pdoInheritance != "EMBEDDED">
  *
  * ## indexes
-</#if>
+  </#if>
  *
  * ## relations
  *
@@ -60,6 +63,7 @@ import org.tentackle.session.TableName;
  *
  * @<
  */
+</#if>
 
 /**
  * ${shortDescription}.
