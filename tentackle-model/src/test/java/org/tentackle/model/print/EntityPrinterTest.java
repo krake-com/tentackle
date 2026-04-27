@@ -42,8 +42,6 @@ public class EntityPrinterTest {
 
   private static final String EXPECTED =
     """
-      // source = /blah/somefile.java
-      
       /*
        * @{
        * tablename = invoice

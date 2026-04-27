@@ -152,7 +152,7 @@ public class Document {
    * Gets the line number for a given offset within the document.
    *
    * @param offsetInDocument the offset
-   * @return the linenumber starting at 1
+   * @return the line number starting at 1
    */
   public int getLineNumber(int offsetInDocument) {
     int lineNumber = 1;
@@ -200,8 +200,8 @@ public class Document {
   /**
    * Gets the next line.
    *
-   * @param currentLine the current line, null if start of document
-   * @return the line, null if reached end of document
+   * @param currentLine the current line, null if start of the document
+   * @return the line, null if reached the end of the document
    * @throws ModelException if parsing failed
    */
   protected Line nextLine(Line currentLine) throws ModelException {
@@ -256,7 +256,7 @@ public class Document {
         }
 
         if (colonIndex == -1 || secondWordIndex > 0 && colonIndex > secondWordIndex) {
-          // first word not followed by a colon
+          // a colon does not follow first word
           return LineType.ATTRIBUTE.createLine(this, offset);
         }
 
@@ -269,16 +269,27 @@ public class Document {
           return LineType.RELATION.createLine(this, offset);
         }
         else  {
-          if (secondWord != null) {
+          if (firstWord.charAt(0) == '@' && currentLine != null) {
+            switch (currentLine.getLineType()) {
+              case RELATION:
+              case RELATION_OPTION:
+                return LineType.RELATION_OPTION.createLine(this, offset);
+              case ATTRIBUTE:
+              case ATTRIBUTE_OPTION:
+                return LineType.ATTRIBUTE_OPTION.createLine(this, offset);
+              // default: syntax error -> fall into parsing error below
+            }
+          }
+          else {
             return LineType.ATTRIBUTE_OPTION.createLine(this, offset);
           }
-          // syntax error
         }
       }
 
       // parsing error.
       throw new ModelException("cannot determine line type @ " +
-                               getSourceInfo().add(getLineNumber(offset) - 1, 0));
+                               getSourceInfo().add(getLineNumber(offset) - 1, 0) +
+                               ": '" + lineText + "'");
     }
 
     return null;    // end of file

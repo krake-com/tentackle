@@ -63,6 +63,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   private String persistenceImplementation;
   private boolean remoteEnabled;
   private boolean cacheEnabled;
+  private String modelSource;
 
 
   /**
@@ -468,6 +469,24 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   @Bindable
   public void setCacheEnabled(boolean cacheEnabled) {
     this.cacheEnabled = cacheEnabled;
+  }
+
+  /**
+   * Sets the model source in batch mode.
+   *
+   * @param modelSource the model source, null if interactive mode
+   */
+  public void setModelSource(String modelSource) {
+    this.modelSource = modelSource;
+  }
+
+  /**
+   * Gets the model source in batch mode.
+   *
+   * @return the model source, null if interactive mode
+   */
+  public String getModelSource() {
+    return modelSource;
   }
 
 

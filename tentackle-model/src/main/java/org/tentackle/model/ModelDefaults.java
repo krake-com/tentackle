@@ -23,10 +23,11 @@ import java.util.StringTokenizer;
 /**
  * Defaults for model parsing.
  * <p>
- * Simply set a default attribute to a non-null value to be honored during model parsing.
+ * Set a default attribute to a non-null value to be honored during model parsing.
  * Only logically "higher" values will be copied to the model.
- * For example: fulltracked will overwrite tracked, but a default of tracked will not overwrite fulltracked if
- * already defined in the model. Accordingly, deletionCascaded will never clear the model setting to false if true.
+ * For example, {@code fulltracked} will overwrite {@code tracked}, but a default of {@code tracked}
+ * will not overwrite {@code fulltracked} if already defined in the model.
+ * Accordingly, {@code deletionCascaded} will never clear the model setting to false if true.
  *
  * @author harald
  */
@@ -43,17 +44,17 @@ public class ModelDefaults {
   private Boolean deletionCascaded;
 
   /**
-   * Automatically set ROOT global option.
+   * Automatically set {@code ROOT} global option.
    */
   private Boolean root;
 
   /**
-   * Automatically set ROOTID global option.
+   * Automatically set {@code ROOTID} global option.
    */
   private Boolean rootId;
 
   /**
-   * Automatically set ROOTCLASSID global option.
+   * Automatically set {@code ROOTCLASSID} global option.
    */
   private Boolean rootClassId;
 
@@ -106,42 +107,50 @@ public class ModelDefaults {
     StringTokenizer stok = new StringTokenizer(str, " ,\t\n\r");
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken().toLowerCase(Locale.ROOT);
+      boolean on = true;
+      if (token.startsWith("!")) {
+        token = token.substring(1);
+        on = false;
+      }
       switch(token) {
         case "tracked":
-          trackType = TrackType.TRACKED;
+          trackType = on ? TrackType.TRACKED : TrackType.UNTRACKED;
           break;
         case "attracked":
-          trackType = TrackType.ATTRACKED;
+          trackType = on ? TrackType.ATTRACKED : TrackType.UNTRACKED;
           break;
         case "fulltracked":
-          trackType = TrackType.FULLTRACKED;
+          trackType = on ? TrackType.FULLTRACKED : TrackType.UNTRACKED;
+          break;
+        case "untracked":
+          trackType = on ? TrackType.UNTRACKED : TrackType.UNTRACKED;
           break;
         case "deletioncascaded":
         case "cascadeddelete":
         case "cascaded":
         case "cascade":
-          deletionCascaded = true;
+          deletionCascaded = on;
           break;
         case "root":
-          root = true;
+          root = on;
           break;
         case "rootid":
-          rootId = true;
+          rootId = on;
           break;
         case "rootclassid":
-          rootClassId = true;
+          rootClassId = on;
           break;
         case "bind":
-          bind = true;
+          bind = on;
           break;
         case "size":
-          size = true;
+          size = on;
           break;
         case "autoselect":
-          autoSelect = true;
+          autoSelect = on;
           break;
         case "remote":
-          remote = true;
+          remote = on;
           break;
 
         default:
@@ -247,7 +256,7 @@ public class ModelDefaults {
   /**
    * Gets the root default.
    *
-   * @return true to determine root option according to model
+   * @return true to determine the {@code root} option according to model
    */
   public Boolean getRoot() {
     return root;
@@ -256,7 +265,7 @@ public class ModelDefaults {
   /**
    * Gets the rootid default.
    *
-   * @return true to determine rootid option according to model
+   * @return true to determine the {@code rootid} option according to model
    */
   public Boolean getRootId() {
     return rootId;
@@ -265,7 +274,7 @@ public class ModelDefaults {
   /**
    * Gets the rootclassid default.
    *
-   * @return true to determine rootclassid option according to model
+   * @return true to determine the {@code rootclassid} option according to model
    */
   public Boolean getRootClassId() {
     return rootClassId;
@@ -274,7 +283,7 @@ public class ModelDefaults {
   /**
    * Gets the [bind] default.
    *
-   * @return true to set [bind] option
+   * @return true to set the [bind] option
    */
   public Boolean getBind() {
     return bind;
@@ -283,7 +292,7 @@ public class ModelDefaults {
   /**
    * Gets the [size] default.
    *
-   * @return true to set [size] option
+   * @return true to set the [size] option
    */
   public Boolean getSize() {
     return size;
@@ -292,7 +301,7 @@ public class ModelDefaults {
   /**
    * Gets the [autoselect] default.
    *
-   * @return true to set [autoselect] option
+   * @return true to set the [autoselect] option
    */
   public Boolean getAutoSelect() {
     return autoSelect;
@@ -301,7 +310,7 @@ public class ModelDefaults {
   /**
    * Gets the [remote] default.
    *
-   * @return true to set [remote] option
+   * @return true to set the [remote] option
    */
   public Boolean getRemote() {
     return remote;

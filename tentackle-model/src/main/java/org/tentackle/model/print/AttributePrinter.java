@@ -18,6 +18,7 @@
 
 package org.tentackle.model.print;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.ModelException;
 
@@ -102,7 +103,9 @@ public class AttributePrinter {
   public String printComment() {
     if (printedComment == null) {
       StringBuilder buf = new StringBuilder();
-      buf.append(attribute.getOptions().getComment());
+      if (!StringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
+        buf.append(attribute.getOptions().getComment());
+      }
       String options = new AttributeOptionsPrinter(attribute, configuration).print();
       if (!options.isEmpty()) {
         buf.append(" [").append(options).append(']');

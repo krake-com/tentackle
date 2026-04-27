@@ -116,14 +116,6 @@ public class GlobalOptionsPrinter {
       buf.append(EntityOptionsImpl.OPTION_NORMTEXT).append(',');
     }
 
-    if (entity.getSuperEntityName() == null &&
-        options.isRoot() != entity.isRootEntityAccordingToModel()) {
-      if (!options.isRoot()) {
-        buf.append('!');
-      }
-      buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
-    }
-
     if (options.isProvided()) {
       buf.append(EntityOptionsImpl.OPTION_PROVIDED).append(',');
     }
@@ -134,6 +126,13 @@ public class GlobalOptionsPrinter {
     ModelDefaults modelDefaults = configuration.modelDefaults();
 
     if (options.noModelDefaults() || modelDefaults == null) {
+      if (entity.getSuperEntityName() == null &&
+          options.isRoot() != entity.isRootEntityAccordingToModel()) {
+        if (!options.isRoot()) {
+          buf.append('!');
+        }
+        buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
+      }
       if (options.isMaxCol()) {
         buf.append(CommonOptionsImpl.BIND_SIZE).append(',');
       }
@@ -165,13 +164,24 @@ public class GlobalOptionsPrinter {
     else {
       printBool(buf, CommonOptionsImpl.BIND_SIZE, options.isMaxCol(), modelDefaults.getSize());
       printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBindable(), modelDefaults.getBind());
+      printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), modelDefaults.getAutoSelect());
+      printBool(buf, EntityOptionsImpl.OPTION_REMOTE, options.isRemote(), modelDefaults.getRemote());
 
       if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.UNTRACKED ||
           !Objects.equals(modelDefaults.getTrackType(), options.getTrackType())) {
         buf.append(options.getTrackType()).append(',');
       }
 
-      printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), modelDefaults.getAutoSelect());
+      if (entity.getSuperEntityName() == null) {
+        if (modelDefaults.getRoot() != null) {
+          printBool(buf, EntityOptionsImpl.OPTION_ROOT, options.isRoot(),
+                    modelDefaults.getRoot() && entity.isRootEntityAccordingToModel());
+        }
+        else {
+          printBool(buf, EntityOptionsImpl.OPTION_ROOT, options.isRoot(), entity.isRootEntityAccordingToModel());
+        }
+      }
+
       if (modelDefaults.getRootId() != null) {
         printBool(buf, EntityOptionsImpl.OPTION_ROOTID, options.isRootIdProvided(),
                 modelDefaults.getRootId() && entity.isProvidingRootIdAccordingToModel());
@@ -180,6 +190,7 @@ public class GlobalOptionsPrinter {
         printBool(buf, EntityOptionsImpl.OPTION_ROOTID, options.isRootIdProvided(),
                 entity.isProvidingRootIdAccordingToModel());
       }
+
       if (modelDefaults.getRootClassId() != null) {
         printBool(buf, EntityOptionsImpl.OPTION_ROOTCLASSID, options.isRootClassIdProvided(),
                 modelDefaults.getRootClassId() && entity.isProvidingRootClassIdAccordingToModel());
@@ -188,7 +199,6 @@ public class GlobalOptionsPrinter {
         printBool(buf, EntityOptionsImpl.OPTION_ROOTCLASSID, options.isRootClassIdProvided(),
                 entity.isProvidingRootClassIdAccordingToModel());
       }
-      printBool(buf, EntityOptionsImpl.OPTION_REMOTE, options.isRemote(), modelDefaults.getRemote());
     }
 
     for (String stereotype: options.getStereotypes()) {

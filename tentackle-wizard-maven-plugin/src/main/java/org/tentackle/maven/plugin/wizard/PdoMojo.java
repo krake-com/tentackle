@@ -18,16 +18,26 @@
 
 package org.tentackle.maven.plugin.wizard;
 
+import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.shared.model.fileset.FileSet;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.PdoWizard;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelManager;
+import org.tentackle.model.print.EntityPrinter;
+import org.tentackle.model.print.PrintConfiguration;
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationUtilities;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -37,9 +47,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
@@ -51,6 +63,52 @@ import java.util.concurrent.CountDownLatch;
  */
 @Mojo(name = "pdo", aggregator = true)
 public class PdoMojo extends AbstractWizardMojo {
+
+  /**
+   * Filesets to read a secondary model from.<br>
+   * If set, the PDO wizard works in batch mode, and for each input file (i.e., entity)
+   * the corresponding Java code is generated.<br>
+   * The files must be in model-format, i.e., same as here-docs read by the wurbelizer or if dumped
+   * by the tentackle-sql plugin with {@code dumpAsComment} and {@code dumpVariables} both set to {@code false}.
+   * <p>
+   * If there is more than one {@link PdoProfile}, the name of the profile must be given
+   * as an entity stereotype (case-insensitive), for example {@code #MASTERDATA}.
+   */
+  @Parameter
+  private List<FileSet> batchFilesets;
+
+  /**
+   * The model defaults to use in batch mode.<br>
+   * Since the model to load is usually dumped with model defaults applied,
+   * we cannot apply them here again. However, some options such as {@code !ROOT},
+   * {@code !ROOTID}, {@code !ROOTCLASSID} or {@code UNTRACKED} should be set to
+   * avoid unwanted entity options.
+   */
+  @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, UNTRACKED")
+  private String batchModelDefaults;
+
+  /**
+   * Minimum number of spaces between columns in the attribute section (default = 2).
+   * <p>
+   * For generated model source in batch mode only.
+   */
+  @Parameter(defaultValue = "2")
+  private int dumpColumnGap;
+
+  /**
+   * List of annotations that should be printed as attribute options.<br>
+   * A comma separates multiple annotations.<br>
+   * If the annotation ends with a {@code |}, it matches only annotations without parameters.<br>
+   * The special annotation {@code @*} matches all annotations and {@code @*|}
+   * matches all annotations without parameters.
+   * <p>
+   * Example: {@code @NotNull|, @NotZero}
+   * <p>
+   * For generated model source in batch mode only.
+   */
+  @Parameter
+  private String dumpAnnotationsAsOptions;
+
 
   private List<PdoProfile> pdoProfiles;
 
@@ -70,33 +128,103 @@ public class PdoMojo extends AbstractWizardMojo {
     super.executeImpl();
     updateClassIDs();
 
-    CountDownLatch latch = new CountDownLatch(1);
+    if (batchFilesets != null) {
+      Model batchModel = ModelManager.getInstance().getModel("batch");
+      for (FileSet fileSet: batchFilesets) {
+        if (fileSet.getDirectory() == null) {
+          // relative to basedir if not given
+          fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
+        }
+        try {
+          batchModel.loadFromDirectory(fileSet.getDirectory(), true);
+        }
+        catch (ModelException e) {
+          throw new MojoFailureException("could not load model from " + fileSet.getDirectory(), e);
+        }
+      }
 
-    Platform.startup(() -> {
+      Map<String, PdoProfile> profileMap = new HashMap<>(); // stereotype -> profile
+      for (PdoProfile profile: pdoProfiles) {
+        profileMap.put(profile.getName().toUpperCase(), profile);
+      }
+
+      List<String> optionAnnotations = new ArrayList<>();
+      if (dumpAnnotationsAsOptions != null) {
+        StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
+        while (stok.hasMoreTokens()) {
+          optionAnnotations.add(stok.nextToken());
+        }
+      }
+
+      ModelDefaults genModelDefaults = null;
+      if (batchModelDefaults != null) {
+        try {
+          genModelDefaults = new ModelDefaults(batchModelDefaults);
+        }
+        catch (ModelException e) {
+          throw new RuntimeException(e);
+        }
+      }
+      PrintConfiguration sourceConfig = new PrintConfiguration(true, true, true,
+                                                               genModelDefaults, optionAnnotations, dumpColumnGap);
+
       try {
-        configureFx();
-        registerUncaughtExceptionHandler();
-        PdoWizard wizard = Fx.load(PdoWizard.class);
-        wizard.applyMojo(this);
-        stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
-        Scene scene = Fx.createScene(wizard.getView());
-        stage.setScene(scene);
-        stage.setTitle("PDO Wizard");
-        wizard.getContainer().updateView();
-        stage.setOnHidden(_ -> latch.countDown());
-        Fx.show(stage);
+        for (Entity entity : batchModel.getAllEntities()) {
+          Entity existingEntity = getModel().getByEntityName(entity.getName());
+          if (existingEntity != null) {
+            getLog().warn("entity " + entity + " already exists in model -> skipped");
+          }
+          else {
+            PdoProfile pdoProfile = null;
+            for (String stereotype : new ArrayList<>(entity.getOptions().getStereotypes())) {
+              PdoProfile profile = profileMap.get(stereotype);
+              if (profile != null) {
+                entity.getOptions().getStereotypes().remove(stereotype);
+                pdoProfile = profile;
+                break;
+              }
+            }
+            if (pdoProfile == null) {
+              getLog().error("no profile for entity " + entity + " -> skipped");
+            }
+            generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print());
+          }
+        }
       }
-      catch (Throwable t) {
-        getLog().error(t);
-        latch.countDown();
+      catch (ModelException mx) {
+        throw new MojoFailureException("generating code from model failed", mx);
       }
-    });
-
-    try {
-      latch.await();
     }
-    catch (InterruptedException e) {
-      throw new InterruptedRuntimeException(e);
+    else {
+      // interactive mode
+      CountDownLatch latch = new CountDownLatch(1);
+
+      Platform.startup(() -> {
+        try {
+          configureFx();
+          registerUncaughtExceptionHandler();
+          PdoWizard wizard = Fx.load(PdoWizard.class);
+          wizard.applyMojo(this);
+          stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
+          Scene scene = Fx.createScene(wizard.getView());
+          stage.setScene(scene);
+          stage.setTitle("PDO Wizard");
+          wizard.getContainer().updateView();
+          stage.setOnHidden(_ -> latch.countDown());
+          Fx.show(stage);
+        }
+        catch (Throwable t) {
+          getLog().error(t);
+          latch.countDown();
+        }
+      });
+
+      try {
+        latch.await();
+      }
+      catch (InterruptedException e) {
+        throw new InterruptedRuntimeException(e);
+      }
     }
   }
 
@@ -114,6 +242,41 @@ public class PdoMojo extends AbstractWizardMojo {
       return true;
     }
     return false;
+  }
+
+
+  /**
+   * Generates the code for the given entity.
+   *
+   * @param entity the entity
+   * @param pdoProfile the PDO profile
+   * @param modelSource the model source
+   */
+  private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource) {
+    getLog().info("generating code for " + entity);
+    PdoGenerator gen = new PdoGenerator(getModel());
+    gen.setProfile(pdoProfile);
+    gen.setTemplateDirectory(new File(getTemplateDir(), Constants.CATEGORY_PDO));
+    gen.setStatusDir(getStatusDir());
+    gen.setModelSource(modelSource);
+    gen.setEntityName(entity.getName());
+    gen.setShortDescription(entity.getOptions().getComment());
+    gen.setInheritanceType(entity.getInheritanceType());
+    gen.setSuperEntity(entity.getSuperEntity());
+    gen.setClassId(entity.getClassId() != 0 ? entity.getClassId() : null);
+    gen.setCacheEnabled(entity.getOptions().isCached());
+    gen.setTableName(entity.getTableName());
+    gen.setRemoteEnabled(entity.getOptions().isRemote());
+
+    try {
+      List<ValidationResult> results = gen.generate();
+      if (!results.isEmpty()) {
+        getLog().error(ValidationUtilities.getInstance().resultsToMessage(results));
+      }
+    }
+    catch (IOException | TemplateException ex) {
+      getLog().error("code generation failed for entity " + entity, ex);
+    }
   }
 
   /**
