@@ -156,6 +156,8 @@ public class PdoMojo extends AbstractWizardMojo {
         }
       }
 
+      ModelDefaults projectModelDefaults = getModelDefaults();
+
       ModelDefaults genModelDefaults = null;
       if (batchModelDefaults != null) {
         try {
@@ -187,7 +189,7 @@ public class PdoMojo extends AbstractWizardMojo {
             if (pdoProfile == null) {
               getLog().error("no profile for entity " + entity + " -> skipped");
             }
-            generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print());
+            generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print(), projectModelDefaults);
           }
         }
       }
@@ -251,8 +253,9 @@ public class PdoMojo extends AbstractWizardMojo {
    * @param entity the entity
    * @param pdoProfile the PDO profile
    * @param modelSource the model source
+   * @param projectModelDefaults the model defaults of the project (not the batch model defaults)
    */
-  private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource) {
+  private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource, ModelDefaults projectModelDefaults) {
     getLog().info("generating code for " + entity);
     PdoGenerator gen = new PdoGenerator(getModel());
     gen.setProfile(pdoProfile);
@@ -266,7 +269,7 @@ public class PdoMojo extends AbstractWizardMojo {
     gen.setClassId(entity.getClassId() != 0 ? entity.getClassId() : null);
     gen.setCacheEnabled(entity.getOptions().isCached());
     gen.setTableName(entity.getTableName());
-    gen.setRemoteEnabled(entity.getOptions().isRemote());
+    gen.setRemoteEnabled(projectModelDefaults.getRemote()); // this a project setting, not copied from the entity
 
     try {
       List<ValidationResult> results = gen.generate();
