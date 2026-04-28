@@ -22,7 +22,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
-import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 
@@ -146,7 +145,7 @@ public class ModelCommentSupport {
    */
   public static void printComponents(Set<Relation> allRelations,
                                      Collection<Relation> compositeRelations, Collection<Entity> subEntities,
-                                     String indent, PrintStream out) throws ModelException {
+                                     String indent, PrintStream out) {
 
     for (Relation relation: compositeRelations) {
 

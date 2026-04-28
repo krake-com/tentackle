@@ -108,7 +108,7 @@ public class ModelImpl implements Model {
   private final Map<String, ModelDirectory> modelDirs;   // <dirname, modeldir>
 
   /** the entity factory. */
-  private EntityFactory entityFactory;
+  private final EntityFactory entityFactory;
 
   /** application-specific model validators. */
   private final Collection<CustomModelValidator> customModelValidators;
@@ -1365,7 +1365,7 @@ public class ModelImpl implements Model {
    * @param compositePath the path that leads to the given entity so far
    * @param entity the entity
    */
-  protected void updateCompositePath(List<Relation> compositePath, Entity entity) throws ModelException {
+  protected void updateCompositePath(List<Relation> compositePath, Entity entity) {
     Relation lastRelation = compositePath.getLast();
     if (lastRelation.getForeignAttribute() != null) {
       // the attribute actually may belong to a superclass

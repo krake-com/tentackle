@@ -975,17 +975,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getInheritedRelations() throws ModelException {
-    return getInheritedRelations(null);
-  }
-
-  private List<Relation> getInheritedRelations(Entity parentEntity) throws ModelException {
+  public List<Relation> getInheritedRelations() {
     List<Relation> allRelations = new ArrayList<>();
     Entity se = getSuperEntity();
     while (se != null) {
-      if (parentEntity != null) {   // if including embedded
-        allRelations.addAll(0, se.getEmbeddedRelations(parentEntity));
-      }
       allRelations.addAll(0, se.getRelations());
       se = se.getSuperEntity();
     }
@@ -1002,12 +995,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getRelationsIncludingInherited() throws ModelException {
-    return getRelationsIncludingInherited(null);
-  }
-
-  private List<Relation> getRelationsIncludingInherited(Entity parentEntity) throws ModelException {
-    List<Relation> allRelations = new ArrayList<>(getInheritedRelations(parentEntity));
+  public List<Relation> getRelationsIncludingInherited() {
+    List<Relation> allRelations = new ArrayList<>(getInheritedRelations());
     allRelations.addAll(relations);
     return allRelations;
   }
@@ -1020,7 +1009,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getAllRelations() throws ModelException {
+  public List<Relation> getAllRelations() {
     List<Relation> allRelations = getRelationsIncludingInherited();
     allRelations.addAll(getSubEntityRelations());
     return allRelations;
@@ -1105,7 +1094,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public Set<Entity> getComponentsIncludingInherited() throws ModelException {
+  public Set<Entity> getComponentsIncludingInherited() {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelationsIncludingInherited()) {
       if (relation.isComposite()) {
@@ -1116,7 +1105,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public Set<Entity> getAllComponents() throws ModelException {
+  public Set<Entity> getAllComponents() {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelationsIncludingInherited()) {
       if (relation.isComposite()) {
@@ -1226,17 +1215,26 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param entity the entity to inspect
    */
   protected void getUniqueDomainKeyImpl(List<Attribute> uniqueDomainKeys, Entity entity) throws ModelException {
-    for (Attribute attribute : entity.getAttributesIncludingInherited()) {
-      if (attribute.getOptions().isDomainKey()) {
-        uniqueDomainKeys.add(attribute);
+    getUniqueDomainKeyImpl(uniqueDomainKeys, entity, new HashSet<>());
+  }
+
+  private void getUniqueDomainKeyImpl(List<Attribute> uniqueDomainKeys, Entity entity,
+                                      Set<Entity> processedEntities) throws ModelException {
+    if (processedEntities.add(entity)) {
+      for (Attribute attribute : entity.getAttributesIncludingInherited()) {
+        if (attribute.getOptions().isDomainKey()) {
+          uniqueDomainKeys.add(attribute);
+        }
       }
-    }
-    for (Entity component: entity.getComponentsIncludingInherited()) {
-      if (!component.isRootEntity() && !component.isEmbedded()) {   // stop at sub-roots!
-        getUniqueDomainKeyImpl(uniqueDomainKeys, component);
+      for (Entity component : entity.getComponentsIncludingInherited()) {
+        if (!component.isRootEntity() && !component.isEmbedded()) {   // stop at sub-roots!
+          getUniqueDomainKeyImpl(uniqueDomainKeys, component, processedEntities);
+        }
       }
     }
   }
+
+
 
   @Override
   public List<AttributeSorting> getSorting() {
