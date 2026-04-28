@@ -226,7 +226,7 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getInheritedRelations() throws ModelException;
+  List<Relation> getInheritedRelations();
 
   /**
    * Gets the relations from the sub entities.
@@ -240,7 +240,7 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getRelationsIncludingInherited() throws ModelException;
+  List<Relation> getRelationsIncludingInherited();
 
   /**
    * Gets all relations including the ones from the sub entities.
@@ -254,7 +254,7 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getAllRelations() throws ModelException;
+  List<Relation> getAllRelations();
 
   /**
    * Gets the relations of the table mapped by this entity.<br>
@@ -615,14 +615,14 @@ public interface Entity extends ModelElement {
    *
    * @return the components
    */
-  Set<Entity> getComponentsIncludingInherited() throws ModelException;
+  Set<Entity> getComponentsIncludingInherited();
 
   /**
    * Gets all direct and indirect components of this entity.
    *
    * @return the components
    */
-  Set<Entity> getAllComponents() throws ModelException;
+  Set<Entity> getAllComponents();
 
   /**
    * Returns whether this entity should provide a root class id according to model.
@@ -639,7 +639,7 @@ public interface Entity extends ModelElement {
   boolean isProvidingRootIdAccordingToModel();
 
   /**
-   * Returns whether this entity is a root entity, according to model.
+   * Returns whether this entity is a root entity, according to the model.
    *
    * @return true if root entity
    */

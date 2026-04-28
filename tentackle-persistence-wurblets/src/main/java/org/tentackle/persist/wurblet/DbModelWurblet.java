@@ -56,10 +56,10 @@ import java.util.StringTokenizer;
  * The following wurblet options are supported:
  * <ul>
  * <li><em>--context=&lt;key&gt;:</em> defines the context id (--context= turns off default context).</li>
- * <li><em>--tracked:</em> return a TrackedList instead of List (useful if [TRACKED] not given in model).</li>
+ * <li><em>--tracked:</em> return a TrackedList instead of List (useful if [TRACKED] not given in the model).</li>
  * <li><em>--attracked:</em> same as --tracked but generate is...Modified per attribute.</li>
  * <li><em>--fulltracked:</em> same as --attracked but keep last persisted values as well.</li>
- * <li><em>--untracked:</em> disable [TRACKED, ATTRACKED or FULLTRACKED] from model.</li>
+ * <li><em>--untracked:</em> disable [TRACKED, ATTRACKED, or FULLTRACKED] from the model.</li>
  * </ul>
  * For more options, see {@link ModelWurblet}.
  *
@@ -419,7 +419,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Returns whether there are load joins with filters.
    *
    * @param componentsOnly true if check component relations only
-   * @return true if result must be made immutable, false if no filters
+   * @return true if the result must be made immutable, false if no filters
    */
   public boolean isWithFilteredJoins(boolean componentsOnly) {
     for (JoinPath joinPath : getJoinPaths()) {
@@ -432,11 +432,11 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the relop code for prepared statements.<br>
+   * Creates the relational operation code for prepared statements.<br>
    * The code assumes a StringBuilder and begins with <code>".append("</code>.
    *
    * @param arg the wurblet argument
-   * @return the java code
+   * @return the Java code
    */
   public String createRelopCode(WurbletArgument arg) throws WurbelException {
 
@@ -570,7 +570,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the relop SQL for prepared statements.<br>
+   * Creates the relation operation SQL for prepared statements.<br>
    * Same as {@link #createRelopCode(WurbletArgument)}, but creates SQL code.
    *
    * @param arg the wurblet argument
@@ -815,7 +815,7 @@ public class DbModelWurblet extends ModelWurblet {
     boolean isAbstract = false;
     for (JoinPath path: paths) {
       if (!path.getElements().isEmpty()) {
-        Join join = path.getElements().get(0);  // normalized, i.e. only one (see above)
+        Join join = path.getElements().get(0);  // normalized, i.e., only one (see above)
         Relation relation = join.getWurbletRelation().getRelation();
         if (relation.getEntity().isAbstract() || relation.getForeignEntity().isAbstract()) {
           isAbstract = true;
@@ -834,7 +834,7 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * Creates the java code for {@code JoinedSelect}s.
    *
-   * @return the generated java code
+   * @return the generated Java code
    * @throws WurbelException if failed
    */
   public String createJoins() throws WurbelException {
@@ -855,7 +855,7 @@ public class DbModelWurblet extends ModelWurblet {
     for (JoinPath path: paths) {
       String lastJoinName = null;
       if (!path.getElements().isEmpty()) {
-        Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
+        Join join = path.getElements().get(0);    // normalized, i.e., only one (see above)
         Relation relation = join.getWurbletRelation().getRelation();
         lastJoinName = join.getName();
         String poImpl = deriveClassNameForEntity(relation.getEntity());
@@ -1007,9 +1007,9 @@ public class DbModelWurblet extends ModelWurblet {
    * Works for single- and multi-column data types.
    *
    * @param arg the wurblet argument
-   * @return the java code
+   * @return the Java code
    * @throws WurbelException if malformed or illegal wurblet argument
-   * @throws ModelException if getting the jdbc java code failed
+   * @throws ModelException if getting the JDBC Java code failed
    */
   public String createWhereSetPars(WurbletArgument arg) throws WurbelException, ModelException {
     Attribute attr = arg.getAttribute();
@@ -1067,7 +1067,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param attr the model attribute
    * @param argument the argument string
-   * @return the created java code
+   * @return the created Java code
    * @throws WurbelException if failed
    */
   public String createWhereSetPars(Attribute attr, String argument) throws WurbelException {
@@ -1127,7 +1127,7 @@ public class DbModelWurblet extends ModelWurblet {
 
   private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException, ModelException {
     if (!path.getElements().isEmpty()) {
-      Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
+      Join join = path.getElements().get(0);    // normalized, i.e., only one (see above)
       Relation relation = join.getWurbletRelation().getRelation();
       List<MethodArgument> methodArgs = relation.getMethodArgs();
       if (methodArgs.size() > 1) {
@@ -1150,7 +1150,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Because statement ids are final, the name is in uppercase.
    *
    * @return the id string
-   * @throws WurbelException if guardname could not be determined
+   * @throws WurbelException if guard name could not be determined
    */
   public String createStatementId() throws WurbelException {
     StringBuilder buf = new StringBuilder();
@@ -1267,7 +1267,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Determines whether one the wurblet arguments refer to a value returned by a PDO's method.
+   * Determines whether one of the wurblet arguments refers to a value returned by a PDO's method.
    *
    * @return true if at least one argument is something like "getBlah()"
    */
@@ -1296,7 +1296,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Adds a string to a comma separated list.
+   * Adds a string to a comma-separated list.
    *
    * @param str the string
    * @param appendStr the string to append
@@ -1309,7 +1309,7 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
   /**
-   * Prepends a string to a comma separated list.
+   * Prepends a string to a comma-separated list.
    *
    * @param str the string builder
    * @param prependStr the string to prepend
@@ -1324,7 +1324,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Utility method to generate argument list.
+   * Utility method to generate the argument list.
    *
    * @param str the argument string
    * @return comma + str if str not empty or null, the empty string otherwise
@@ -1377,7 +1377,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param attribute the model attribute
    * @return the method name
-   * @throws WurbelException if type is misconfigured
+   * @throws WurbelException if the type is misconfigured
    */
   public String createJdbcGetterName(Attribute attribute) throws WurbelException {
     StringBuilder buf = new StringBuilder("get");
@@ -1410,7 +1410,7 @@ public class DbModelWurblet extends ModelWurblet {
 
   /**
    * Creates java code applicable to the application model from JDBC variable access code.<br>
-   * Applies .toInternal() if attribute is an application-specific type.
+   * Applies .toInternal() if the attribute is an application-specific type.
    * Otherwise, jdbcCode is returned unchanged.
    *
    * @param attribute the attribute
@@ -1482,7 +1482,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the argument string for select or delete statement of a relation.
+   * Creates the argument string for the {@code select} or {@code delete} statement of a relation.
    *
    * @param relation the relation.
    * @return the arg string
@@ -1507,7 +1507,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the wurblet argument string for select or delete statement of a relation.
+   * Creates the wurblet argument string for {@code select} or {@code delete} statement of a relation.
    *
    * @param relation the relation.
    * @return the arg string
@@ -1529,7 +1529,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code to select a relation.
    *
    * @param relation the relation
-   * @return the java code
+   * @return the Java code
    */
   public String createRelationSelectCode(Relation relation) {
     StringBuilder text = new StringBuilder();
@@ -1537,7 +1537,7 @@ public class DbModelWurblet extends ModelWurblet {
         relation.getRelationType() == RelationType.OBJECT &&
         relation.getMethodName() == null) {
       /*
-       * we need a cast for object relations of type T and methods "select" or "selectCached" (i.e. from framework).
+       * we need a cast for object relations of type T and methods "select" or "selectCached" (i.e., from the framework).
        * Ex.:
        *
        * OrgUnit<?> ou = on(OrgUnit.class).select(id);    ERROR because on(OrgUnit.class) is of type OrgUnit and not OrgUnit<?>
@@ -1562,7 +1562,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @param relation the relation
    * @param pdo the PDO name
    * @param blunt use the blunt setter method, if provided
-   * @return the java code
+   * @return the Java code
    */
   public String createRelationUpdateReferenceCode(Relation relation, String pdo, boolean blunt) {
     Relation foreignRel = relation.getForeignRelation();
@@ -1591,7 +1591,7 @@ public class DbModelWurblet extends ModelWurblet {
    * The pdo name is fixed {@code "me()"}.
    *
    * @param relation the relation
-   * @return the java code
+   * @return the Java code
    */
   public String createRelationUpdateReferenceCode(Relation relation) {
     return createRelationUpdateReferenceCode(relation, "me()", false);
@@ -1636,7 +1636,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code to delete a relation.
    *
    * @param relation the relation
-   * @return the java code
+   * @return the Java code
    */
   public String createRelationDeleteCode(Relation relation) {
     return "on(" + relation.getClassName() + ".class)." +
@@ -1649,7 +1649,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code to set the link of a relation.
    *
    * @param relation the relation
-   * @return the java code
+   * @return the Java code
    */
   public String createRelationLinkCode(Relation relation) {
     if (relation.getLinkMethodName() != null) {
@@ -1667,11 +1667,11 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * The TT persistence layer provides an optimized select for a single eager relations via a LeftJoin.
+   * The TT persistence layer provides an optimized {@code select} for a single eager relation via a LeftJoin.
    *
    * @return the eager relations, empty list if no optimization possible or no eager relations at all
    */
-  public List<Relation> getEagerRelations() throws ModelException {
+  public List<Relation> getEagerRelations() {
     List<Relation> eagerRelations = new ArrayList<>();
     outer:
     for (Relation relation: getEntity().getRelations()) {
