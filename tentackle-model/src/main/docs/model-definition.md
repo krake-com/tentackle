@@ -540,7 +540,8 @@ args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]
 method = <MethodNamePart>
 ```
 
-Overrides the method-name fragment used in `selectBy<Name>`, `deleteBy<Name>`, `set<Name>`.
+Overrides part of the following method names: `select[By]<methodname>`, `delete[By]<methodname>`, `set<methodname>`.
+`[By]` is added for lists.
 
 #### `name`
 

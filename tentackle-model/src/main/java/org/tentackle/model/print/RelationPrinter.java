@@ -232,6 +232,15 @@ public class RelationPrinter {
       lead(buf).append(RelationImpl.COUNT).append(" = ").append(relation.getCountAttribute());
     }
 
+    if (relation.getMethodName() != null &&
+        (relation.getRelationType() == RelationType.OBJECT ||
+         !relation.getMethodName().equalsIgnoreCase(relation.getEntity().getName() + "Id"))) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.METHOD).append(" = ").append(relation.getMethodName());
+    }
+
     if (relation.getMethodArgs().size() > 1) {
       if (needComma) {
         buf.append(",\n");
