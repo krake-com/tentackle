@@ -14,15 +14,16 @@ For more options, see {\@link DbModelWurblet}.
     boolean multiInheritance = getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI;
     Entity superEntity = getEntity().getSuperEntity();
     List<Entity> subEntities = getEntity().getSubEntities();
-]@
-  /** Variables common to all instances of @(className)@. */
-@[
+
     if (getEntity().isAbstract() && getEntity().getInheritanceType().isMappingToNoTable()) {  // PLAIN
 ]@
-  /** no classvariables for @(getEntity().getInheritanceType())@ inheritance. */
+  // no class variables for @(getEntity().getInheritanceType())@ inheritance.
 @[
     }
     else  {
+]@
+  /** Variables common to all instances of @(className)@. */
+@[
       String cvType = "PersistentObjectClassVariables";
       if (!getEntity().isAbstract()) {
         cvType += "<" + pdoName + ", " + className + ">";
