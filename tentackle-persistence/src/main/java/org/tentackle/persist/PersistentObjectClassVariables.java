@@ -56,7 +56,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Creates a PDO class-variable.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
@@ -78,7 +78,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Creates a PDO class variable.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param <T> the PDO class type
@@ -91,7 +91,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * The associated PDO class (i.e. the interface)
+   * The associated PDO class (i.e., the interface)
    */
   public final Class<T> pdoClass;
 
@@ -116,7 +116,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final String tableAlias;
 
   /**
-   * The classvariables of the parent class.<br>
+   * The class variables of the parent class.<br>
    * null if not inherited.
    */
   public final PersistentObjectClassVariables<? super T, ? super P> superClassVariables;
@@ -193,7 +193,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * The classvariables of the topmost parent class.<br>
+   * The class variables of the topmost parent class.<br>
    * "this" if not inherited.
    */
   private PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
@@ -248,10 +248,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private Runnable foreignReferencesInitializer;
 
   /**
-   * Constructs a classvariable.<p>
+   * Constructs a class variable.<p>
    * Notice: the superPoClass is necessary only in SINGLE and MULTI table inheritance configurations.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
@@ -274,9 +274,9 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Constructs a classvariable.
+   * Constructs a class variable.
    *
-   * @param pdoClass the PDO's class (i.e. interface)
+   * @param pdoClass the PDO's class (i.e., interface)
    * @param poClass the class of the persistence implementation
    * @param tableAlias the table alias to be used in joined select statements
    */
@@ -328,8 +328,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public String getSqlClassIdCondition(List<Integer> classIds) {
     if (sqlClassIdCondition == null) {
-      // tableName is null for all sub-entities within single-table inheritance hierarchies.
-      // multi-table inherited provide their own tablename.
+      // tableName=null for all sub-entities within single-table inheritance hierarchies.
+      // multi-table inherited entities provide their own tablename.
       sqlClassIdCondition = tableName == null ? createSqlClassIdCondition(classIds, true) : "";
     }
     return sqlClassIdCondition;
@@ -404,7 +404,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Returns the tablename for this classvariable.
+   * Returns the tablename for this class variable.
    * <p>
    * If the class has no tablename, it is derived from its superclasses.
    *
@@ -488,7 +488,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Returns the topmost classvariables.<br>
+   * Returns the topmost class variables.<br>
    * Useful for multi-inheritance.
    *
    * @return the topmost variables, this if not inherited, never null
@@ -585,7 +585,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <p>
    * Notice that {@link SecurityPersistenceImpl} objects are always readable!
    *
-   * @param context the current domain context, null = all
+   * @param context the domain context, null = all
    * @return false if operation (select) is denied.
    */
   public boolean isReadAllowed(DomainContext context) {
@@ -610,8 +610,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * The implementation checks that the class rules will accept
    * and that no object rule denies.
    *
-   * @param context the current domain context, null = all
-   * @return false if operation (delete, update or insert) is denied.
+   * @param context the domain context, null = all
+   * @return false if operation (delete, update, or insert) is denied.
    */
   public boolean isWriteAllowed(DomainContext context) {
     return checkClassPermission(context, SecurityFactory.getInstance().getWritePermission());
@@ -620,7 +620,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Check the write-security for this class in all contexts.
    *
-   * @return false if operation (delete, update or insert) is denied.
+   * @return false if operation (delete, update, or insert) is denied.
    */
   public boolean isWriteAllowed() {
     return checkClassPermission(null, SecurityFactory.getInstance().getWritePermission());
@@ -788,7 +788,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <ol>
    *  <li>high: class provides a preloading cache (low-volume data, usually master data)</li>
    *  <li>medium: class provides a non-preloading cache (medium volume data)</li>
-   *  <li>low: class provides no cache (high-volume, usually transaction data)</li>
+   *  <li>low: class provides no cache (high volume; usually transaction data)</li>
    * </ol>
    */
   @Override
