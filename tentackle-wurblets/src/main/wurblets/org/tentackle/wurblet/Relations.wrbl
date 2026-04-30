@@ -29,6 +29,13 @@ For more options, see {\@link ModelWurblet}.
         createGetter &= !attr.getOptions().isWriteOnly() && !hidden;
         createSetter &= !attr.getOptions().isReadOnly() && !hidden;
       }
+      if (rel.getForeignRelation() != null) {
+        String linkMethodName = rel.getForeignRelation().getLinkMethodName();
+        if (linkMethodName != null && !rel.getSetterName().equals(linkMethodName)) {
+          // don't generate setter impl if linkmethodname is not default from model
+          createSetter = false;
+        }
+      }
 
       Relation nmRel = rel.getNmRelation();
       String nmName = null;
@@ -186,8 +193,9 @@ For more options, see {\@link ModelWurblet}.
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (rel.getRelationType() == RelationType.LIST) {
-        Attribute attribute = rel.getForeignAttribute();
-        if (attribute != null) {
+        if (rel.getForeignAttribute() != null ||  // standard 1:N relation
+            // or list relation with args=
+            rel.getMethodArgs() != null && rel.getMethodArgs().size() > 1) {
           String declaredArgs = createDeclaredArgsForSelectOrDeleteMethod(rel);
           if (declaredArgSet.add(declaredArgs)) {
 ]@

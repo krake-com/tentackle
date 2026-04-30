@@ -847,8 +847,17 @@ For more options, see {\@link DbModelWurblet}.
 @[
                 }
               }
+              if (rel.getRelationType() == RelationType.LIST) {
+]@
+      @(var)@.forEach(obj -> obj.@(createRelationUpdateReferenceCode(rel))@);
+@[
+              }
+              else {
 ]@
       @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+@[
+              }
+]@
     }
 @[
             }
@@ -1885,8 +1894,9 @@ For more options, see {\@link DbModelWurblet}.
       Set<String> wurbletArgSet = new HashSet<>();   // to avoid duplicates if args= is used
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (rel.getRelationType() == RelationType.LIST) {
-          Attribute attribute = rel.getForeignAttribute();
-          if (attribute != null) {
+          if (rel.getForeignAttribute() != null ||  // standard 1:N relation
+              // or list relation with args=
+              rel.getMethodArgs() != null && rel.getMethodArgs().size() > 1) {
             // force tracked even if related object is not tracked
             String trackedOption = rel.isTracked() ? "--tracked " : "";
             String joins = "";
