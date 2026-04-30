@@ -191,6 +191,17 @@ public class ModelTest {
       assertTrue(relation.isReferenced());
       assertEquals(relation.getLinkMethodName(), "setInvoice");
       assertEquals(relation.getLinkMethodIndex(), "position");
+      assertEquals(relation.getMethodName(), "Invoice");
+      assertNotNull(relation.getMethodArgs());
+      assertEquals(relation.getMethodArgs().size(), 2);
+      assertEquals(relation.getMethodArgs().get(0).getMethodArgument(), "getId()");
+      assertNull(relation.getMethodArgs().get(0).getForeignAttribute());
+      assertNotNull(relation.getMethodArgs().get(0).getAttribute());
+      assertEquals(relation.getMethodArgs().get(0).getAttribute().getName(), "id");
+      assertEquals(relation.getMethodArgs().get(1).getMethodArgument(), "me().getInvoiceNo()");
+      assertNull(relation.getMethodArgs().get(1).getForeignAttribute());
+      assertNull(relation.getMethodArgs().get(1).getAttribute());
+      assertEquals(relation.getMethodArgs().get(1).getForeignAttributeName(), "invoiceNo");
       assertEquals(relation.getSelectionType(), SelectionType.LAZY);
       assertEquals(relation.getAnnotations().size(), 1);
       assertEquals(relation.getAnnotations().get(0), "@NotNull");

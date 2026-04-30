@@ -85,6 +85,8 @@ public class EntityPrinterTest {
        * InvoiceLine:
        *     relation = component referenced list,
        *     link = setInvoice position,
+       *     method = Invoice,
+       *     args = invoiceNo[me().getInvoiceNo()],
        *     name = Lines,
        *     @NotNull
        *\s

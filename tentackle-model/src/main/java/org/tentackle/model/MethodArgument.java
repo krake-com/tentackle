@@ -109,6 +109,18 @@ public class MethodArgument {
   }
 
   /**
+   * Gets the name of the foreign attribute.
+   *
+   * @return the name of the foreign attribute, null not set and no foreign attribute
+   */
+  public String getForeignAttributeName() {
+    if (foreignAttributeName == null && foreignAttribute != null) {
+      foreignAttributeName = foreignAttribute.getName();
+    }
+    return foreignAttributeName;
+  }
+
+  /**
    * Gets the local attribute.
    *
    * @return the attribute of the local entity, null if fixed value
@@ -157,7 +169,16 @@ public class MethodArgument {
 
   @Override
   public String toString() {
-    return getForeignAttribute() + "=" + getMethodArgument();
+    StringBuilder buf = new StringBuilder();
+    Attribute fa = getForeignAttribute();
+    if (fa != null) {
+      buf.append(fa);
+    }
+    else {
+      buf.append('\'').append(foreignAttributeName).append('\'');
+    }
+    buf.append('=').append(getMethodArgument());
+    return buf.toString();
   }
 
 }
