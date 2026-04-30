@@ -249,7 +249,7 @@ public class RelationPrinter {
       boolean firstSkipped = false;
       for (MethodArgument arg : relation.getMethodArgs()) {
         if (firstSkipped) {
-          buf.append(' ').append(arg.getForeignAttribute()).append('[').append(arg.getMethodArgument()).append(']');
+          buf.append(' ').append(arg.getForeignAttributeName()).append('[').append(arg.getMethodArgument()).append(']');
         }
         firstSkipped = true;
       }

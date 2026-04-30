@@ -595,27 +595,30 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
             throw createModelException("invalid syntax: " + arg);
           }
           String foreignName = arg.substring(0, ndx).trim();
-          String attribName = arg.substring(ndx + 1);
-          if (attribName.endsWith("]")) {
-            attribName = attribName.substring(0, attribName.length() - 1);
+          String value = arg.substring(ndx + 1);
+          if (value.endsWith("]")) {
+            value = value.substring(0, value.length() - 1);
           }
-          if (attribName.endsWith("()")) {
+          if (value.endsWith("()") && !value.contains(".")) {
             // method name: determine attribute name
-            attribName = attribName.substring(0, attribName.length() - 2);
+            String attribName = value.substring(0, value.length() - 2);
             if (attribName.startsWith("is")) {
               attribName = attribName.substring(2);
             }
             else if (attribName.startsWith("get")) {
               attribName = attribName.substring(3);
             }
-            else {
-              throw createModelException("invalid method name: " + arg);
+            Attribute attrib = entity.getAttributeByJavaName(attribName, true);
+            if (attrib != null) {
+              methodArgs.add(new MethodArgument(this, foreignName, attrib));
             }
-            methodArgs.add(new MethodArgument(this, foreignName, entity.getAttributeByJavaName(attribName, true)));
+            else {
+              methodArgs.add(new MethodArgument(this, foreignName, value));
+            }
           }
           else {
             // fixed value
-            methodArgs.add(new MethodArgument(this, foreignName, attribName));
+            methodArgs.add(new MethodArgument(this, foreignName, value));
           }
         }
       }

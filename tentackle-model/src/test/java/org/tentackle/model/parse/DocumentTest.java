@@ -71,7 +71,9 @@ public class DocumentTest {
 "#relations\n" +
 "InvoiceLine:\n" +
 "     relation = component referenced list,\n" +
-"     link = setInvoice indexed,\n" +
+"     link = setInvoice position,\n" +
+"     method = Invoice,\n" +
+"     args = invoiceNo[getInvoiceNo()],\n" +
 "     select = lazy\n" +
 "\n   " +
 "Customer: select = cached,\n" +
@@ -252,7 +254,7 @@ public class DocumentTest {
       assertEquals(line.getLineType(), LineType.RELATION);
       RelationLine rl = (RelationLine) line;
       assertEquals(rl.getClassName(), "InvoiceLine");
-      assertEquals(rl.getProperties().size(), 3);
+      assertEquals(rl.getProperties().size(), 5);
       assertEquals(rl.getProperties().get("relation"), "component referenced list");
 
       //  "\n   " +
