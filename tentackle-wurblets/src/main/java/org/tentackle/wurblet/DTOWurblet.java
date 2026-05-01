@@ -374,13 +374,18 @@ public class DTOWurblet extends AbstractJavaWurblet {
           }
           else if (!line.isEmpty() && !line.startsWith("#")) {
             StringTokenizer stok = new StringTokenizer(line);
-            String type = null;
+            StringBuilder type = new StringBuilder(); // concat words for types like Map<Long, String>
+            int genericLevel = 0;   // open < ... >
             String name = null;
             StringBuilder comment = new StringBuilder();
             while (stok.hasMoreTokens()) {
               String token = stok.nextToken();
-              if (type == null) {
-                type = token;
+              if (type.isEmpty() || genericLevel > 0) {
+                if (!type.isEmpty()) {
+                  type.append(' ');
+                }
+                type.append(token);
+                genericLevel = updateGenericLevel(genericLevel, token);
               }
               else if (name == null) {
                 name = token;
@@ -392,10 +397,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
                 comment.append(token);
               }
             }
-            if (type == null || name == null) {
+            if (type.isEmpty() || name == null) {
               throw new WurbelException("property line too short: '" + line + "'");
             }
-            Property property = new Property(type, name, comment.toString(), modelSourceLine + lineNo);
+            Property property = new Property(type.toString(), name, comment.toString(), modelSourceLine + lineNo);
             if (!property.isMutable()) {
               needConstructor = true;
             }
@@ -480,6 +485,12 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
     }
     return new ParseResult(annos, scope);
+  }
+
+  private int updateGenericLevel(int oldLevel, String token) {
+    return oldLevel +
+           StringHelper.countOccurrences(token, '<') -
+           StringHelper.countOccurrences(token, '>');
   }
 
 }
