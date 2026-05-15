@@ -84,23 +84,23 @@
     <javac.lint>all,-processing,-this-escape,-module</javac.lint>
     <javac.version>25</javac.version>
 
-    <asm.version>9.9.1</asm.version>
+    <asm.version>9.10</asm.version>
     <atlantafx.version>2.1.0</atlantafx.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>5.0.4</groovy.version>
+    <groovy.version>5.0.6</groovy.version>
     <h2.version>2.4.240</h2.version>
     <ikonli.version>12.4.0</ikonli.version>
-    <javafx.version>26</javafx.version>
-    <jruby.version>10.0.4.0</jruby.version>
-    <junit.version>5.14.2</junit.version>
-    <kwik.version>0.10.8</kwik.version>
-    <log4j2.version>2.25.3</log4j2.version>
+    <javafx.version>26.0.1</javafx.version>
+    <jruby.version>10.1.0.0</jruby.version>
+    <junit.version>6.0.3</junit.version>
+    <kwik.version>0.10.9</kwik.version>
+    <log4j2.version>2.26.0</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.11.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
-    <postgresql.version>42.7.10</postgresql.version>
-    <slf4j.version>2.0.17</slf4j.version>
+    <postgresql.version>42.7.11</postgresql.version>
+    <slf4j.version>2.0.18</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
@@ -123,7 +123,7 @@
     <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
     <maven.keytool.plugin.version>2.0.2</maven.keytool.plugin.version>
-    <maven.owasp.plugin.version>12.2.0</maven.owasp.plugin.version>
+    <maven.owasp.plugin.version>12.2.2</maven.owasp.plugin.version>
     <maven.plugin.plugin.version>3.15.2</maven.plugin.plugin.version>
     <maven.plugin.report.plugin.version>3.15.2</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.6.2</maven.project.info.reports.plugin.version>
