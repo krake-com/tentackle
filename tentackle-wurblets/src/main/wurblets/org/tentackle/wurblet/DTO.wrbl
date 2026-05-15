@@ -15,6 +15,7 @@ usage:<br>
 <ul>
 <li><em>--builder:</em> generate code according to the builder pattern.</li>
 <li><em>--builder[\@someAnnotation]:</em> builder pattern with annotated builder class.</li>
+<li><em>--builderScope=&lt;scope&gt;:</em> scope of the builder's constructor. Implies --builder. Default is protected.</li>
 <li><em>--builderPrefix=&lt;prefix&gt;:</em> prefix builder methods with the given string. Implies --builder. Default is no prefix.</li>
 <li><em>--equals:</em> generate the equals method.</li>
 <li><em>--hashCode:</em> generate the hashCode method.</li>
@@ -644,12 +645,12 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
       }
 ]@
 
-    protected Builder() {}
+    @(builderScope)@ Builder() {}
 @[
       if (withFrom) {
 ]@
 
-    protected Builder(@(getClassName())@ template) {
+    @(builderScope)@ Builder(@(getClassName())@ template) {
 @[
         if (superClass != null) {
 ]@

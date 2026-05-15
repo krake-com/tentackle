@@ -245,6 +245,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
   protected String builderAnnotation;   // optional builder annotation
+  protected AccessScope builderScope;   // access scope for builder's constructor
   protected String builderPrefix;       // optional prefix for builder methods
   protected boolean withFrom;           // true if at least one property has the "from"-option set (or --from/--with forced)
   protected boolean asWithers;          // true if withFrom is set and from-methods should be generated as withers
@@ -305,6 +306,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
         builderPrefix = arg.substring(16);
         withBuilder = true;
       }
+      else if (lArg.startsWith("--builderscope=")) {
+        builderScope = AccessScope.valueOf(arg.substring(15).toUpperCase(Locale.ROOT));;
+        withBuilder = true;
+      }
       else if (lArg.startsWith("--builder")) {
         withBuilder = true;
         if (arg.length() > 10 && arg.charAt(9) == '[' && arg.charAt(10) == '@' &&
@@ -330,6 +335,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     if (nott && canonical) {
       throw new WurbelException("--nott cannot be used with --canonical");
+    }
+
+    if (builderScope == null) {
+      builderScope = AccessScope.PROTECTED;
     }
 
     properties = new ArrayList<>();
