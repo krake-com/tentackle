@@ -228,21 +228,6 @@ public class Db implements Session, Cloneable {
   public static final String IDSOURCE = "idsource";
 
   /**
-   * Property key for the socket factory.
-   */
-  public static final String SOCKET_FACTORY = "socketfactory";
-
-  /**
-   * Property key for the SSL cipher suites.
-   */
-  public static final String CIPHER_SUITES = "ciphersuites";
-
-  /**
-   * Property key for the SSL protocols.
-   */
-  public static final String PROTOCOLS = "protocols";
-
-  /**
    * Property key to enable batching for this session.
    */
   public static final String BATCHSIZE = "batchsize";
@@ -572,7 +557,7 @@ public class Db implements Session, Cloneable {
   private int sessionGroupId;                                 // ID of the session group, 0 = none
   private int exportedSessionGroupId;                         // session group exported to the remote client, 0 = none
   private Pool<Session> dbPool;                               // != null if this Db is managed by a SessionPool
-  private int poolId;                                         // the poolid if dbPool != null
+  private int poolId;                                         // the pool id if dbPool != null
   private SessionInfo sessionInfo;                            // session information
   private Db clonedFromDb;                                    // the original session if this session is cloned
   private volatile boolean autoCommit;                        // true if autocommit on, else false
@@ -580,7 +565,7 @@ public class Db implements Session, Cloneable {
   private boolean logModificationAllowed = true;              // allow modification log
   private boolean readOnly;                                   // true if the database is readonly
   private IdSource defaultIdSource;                           // default ID-Source (if not overridden in derivates)
-  private int fetchSize;                                      // default fetchsize, 0 = drivers default
+  private int fetchSize;                                      // default fetch size, 0 = driver's default
   private int maxRows;                                        // maximum rows per resultset, 0 = no limit
   private boolean logModificationTxEnabled;                   // true if log the transaction begin/commit in the modification log
   private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in the modification log
@@ -591,7 +576,7 @@ public class Db implements Session, Cloneable {
   private Map<Object, Object> transactionProperties;          // application-specific properties
   private Map<CommitKey, Consumer<Session>> postCommits;      // post commits
   private boolean postCommitsRunning;                         // flag to inhibit registering post-commits while running them
-  private Map<CommitKey, Consumer<Session>> preCommits;       // pre commits
+  private Map<CommitKey, Consumer<Session>> preCommits;       // pre-commits
   private boolean preCommitsRunning;                          // flag to inhibit registering pre-commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
   private volatile boolean alive;                             // true = connection is still in use, false = connection has timed out
@@ -671,9 +656,7 @@ public class Db implements Session, Cloneable {
       }
 
       if (backendInfo.isRemote()) {
-        conMgr = null;                         // no connection manager for remote connections
-//        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(backendProperties.getPropertyIgnoreCase(SOCKET_FACTORY));
-//        csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+        conMgr = null;  // no connection manager for remote connections
       }
       else  {
         if (conMgr == null) {
@@ -2334,7 +2317,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Detaches the session after exception.
+   * Detaches the session after the exception.
    */
   void detachSafely() {
     try {

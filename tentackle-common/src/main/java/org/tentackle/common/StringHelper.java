@@ -41,7 +41,7 @@ import java.util.function.Function;
 public final class StringHelper {
 
   /**
-   * Limit size of collection to be logged.<br>
+   * Limits the size of the collection to be logged.<br>
    * If an object is logged, and it is a collection
    * and the size exceeds {@code maxLogCollectionSize}, only the number
    * of items is logged in {@link #objectToLoggableString}
@@ -79,8 +79,8 @@ public final class StringHelper {
   /**
    * Null safe {@link String#equalsIgnoreCase(String)}.
    *
-   * @param a first string, may be null
-   * @param b second string, may be null
+   * @param a the first string, null if none
+   * @param b the second string, null if none
    * @return true if equal ignoring the case or both are null
    */
   public static boolean equalsIgnoreCase(String a, String b) {
@@ -170,11 +170,11 @@ public final class StringHelper {
 
 
   /**
-   * Checks whether given string introduces a continuation line.
+   * Checks whether the given string introduces a continuation line.
    * <p>
    * This is the case if the last character is an unquoted backslash.
    * @param line the source line
-   * @return null if line does not introduce a continuation line
+   * @return null if the line does not introduce a continuation line
    */
   public static String getContinuedLine(String line) {
     if (line != null) {
@@ -225,10 +225,10 @@ public final class StringHelper {
 
 
   /**
-   * Takes a string, surrounds it with double-quotes and escapes all double-quotes
-   * already in the string according to Unix rules. Formfeed, linefeed, carriage return
-   * and tab will be converted to their well-known escape sequence. All other ISO Controls
-   * are converted to spaces.
+   * Takes a string, surrounds it with double-quotes, and escapes all double-quotes
+   * already in the string according to Unix rules.<br>
+   * Formfeed, linefeed, carriage return, and tab will be converted to their
+   * well-known escape sequence. All other ISO Controls are converted to spaces.
    * <p>
    * Example:
    * <pre>
@@ -323,8 +323,8 @@ public final class StringHelper {
   /**
    * Parses a string.<br>
    * The string may be enclosed in double- or single quotes which
-   * will be removed. Those special characters may be escaped
-   * by a backslash. The backslash itself can be written as a double backslash.
+   * will be removed. A backslash may escape those special characters.
+   * The backslash itself can be written as a double backslash.
    * Special escapes are:<p>
    * \n = new line
    * \r = carriage return
@@ -408,8 +408,8 @@ public final class StringHelper {
   /**
    * Splits a string keeping strings together.<br>
    * The strings may be enclosed in double- or single quotes which
-   * will not be removed. Those special characters may be escaped
-   * by a backslash. The backslash itself can be written as a double backslash.
+   * will not be removed. A backslash may escape those special characters.
+   * The backslash itself can be written as a double backslash.
    * Special escapes are:<p>
    * \n = new line<br>
    * \r = carriage return<br>
@@ -492,7 +492,7 @@ public final class StringHelper {
 
 
   /**
-   * Checks whether given string is a fully qualified classname (FQCN).<br>
+   * Checks whether the given string is a fully qualified classname (FQCN).<br>
    * The class must belong to a package!
    *
    * @param className the classname
@@ -504,7 +504,7 @@ public final class StringHelper {
 
 
   /**
-   * Checks that given string is a valid Java classname.<br>
+   * Checks that the given string is a valid Java classname.<br>
    * Both classnames with a full classpath or without are validated.
    *
    * @param className the classname
@@ -538,7 +538,7 @@ public final class StringHelper {
 
 
   /**
-   * Checks that given string is a valid Java package name.<br>
+   * Checks that the given string is a valid Java package name.<br>
    * This is very restrictive verification. Package names
    * must be all lowercase alphabetic or digits and must contain only dots and underscores.
    *
@@ -562,7 +562,7 @@ public final class StringHelper {
         else  {
           if (!Character.isDigit(c) &&    // digit is ok if not at start of package name
               (Character.isUpperCase(c) || (!Character.isAlphabetic(c) && c != '_'))) {
-            // mus be lowercase alphabetic or underscore
+            // must be lowercase alphabetic or underscore
             return false;
           }
         }
@@ -623,10 +623,10 @@ public final class StringHelper {
 
 
   /**
-   * Checks if string contains only whitespaces.
+   * Checks if the string contains only whitespaces.
    *
-   * @param str the string to check, may be null
-   * @return true if null, empty or all whitespace, false if at least one non-whitespace-character found
+   * @param str the string to check, null if none
+   * @return true if null, empty, or all whitespace, false if at least one non-whitespace-character found
    */
   public static boolean isAllWhitespace(String str) {
     return str == null || str.isBlank();
@@ -695,7 +695,7 @@ public final class StringHelper {
 
 
   /**
-   * Returns whether given string is a reserved java keyword.
+   * Returns whether the given string is a reserved java keyword.
    *
    * @param word the string to test
    * @return true if java reserved word
@@ -915,7 +915,7 @@ public final class StringHelper {
 
 
   /**
-   * Checks if a string contains only digits or whitespaces, i.e.
+   * Checks if a string contains only digits or whitespaces, i.e.,
    * no illegal char in a number string.
    *
    * @param str the string to check
@@ -940,7 +940,7 @@ public final class StringHelper {
 
 
   /**
-   * checks if a string contains only digits, i.e.
+   * Checks if a string contains only digits, i.e.,
    * no non-number char in string, even no whitespace.
    *
    * @param str the string to check
@@ -956,7 +956,7 @@ public final class StringHelper {
    * Trims a string.<br>
    * The method is null-safe.
    *
-   * @param s the string, may be null
+   * @param s the string, null if none
    * @param max the maximum number of characters, 0 = minimum length
    * @return the trimmed string, null if s == null
    */
@@ -975,7 +975,7 @@ public final class StringHelper {
    * Trims a string.<br>
    * The method is null-safe.
    *
-   * @param s the string, may be null
+   * @param s the string, null if none
    * @return the trimmed string, null if s == null
    * @see #trim(java.lang.String, int)
    */
@@ -987,7 +987,7 @@ public final class StringHelper {
   /**
    * Cuts trailing characters.
    * <p>
-   * Removes all trailing characters of given value from the string.
+   * Removes all trailing characters of the given value from the string.
    * If the string consists of those characters only, the
    * returned string will empty.
    *
@@ -1016,7 +1016,7 @@ public final class StringHelper {
   /**
    * Cuts leading characters.
    * <p>
-   * Removes all leading characters of given value from the string.
+   * Removes all leading characters of the given value from the string.
    * If the string consists of those characters only, the
    * returned string will be empty.
    *
@@ -1137,10 +1137,11 @@ public final class StringHelper {
 
 
   /**
-   * Gets the first line from a multi-line string.
+   * Gets the first line from a multi-line string.<br>
    * Nice in tables.
+   *
    * @param str the multiline string
-   * @return the first line, null if str == null
+   * @return first line, null if str == null
    */
   public static String firstLine(String str) {
     return firstBefore(str, '\n');
@@ -1153,10 +1154,10 @@ public final class StringHelper {
   };
 
   /**
-   * Creates a human-readable hex-String out of a byte-array (e.g. from MessageDigest MD5sum).
+   * Creates a human-readable hex-String out of a byte-array (e.g., from MessageDigest MD5sum).
    *
-   * @param binaryData the data, may be null
-   * @return the formatted hex string , null if data was null
+   * @param binaryData the data, null if none
+   * @return the formatted hex string, null if data was null
    */
   public static String toHexString(byte[] binaryData)  {
     if (binaryData != null) {
@@ -1173,7 +1174,8 @@ public final class StringHelper {
 
 
   /**
-   * Converts a single (unicode) char to a byte-array.
+   * Converts a UNICODE character to a byte-array.
+   *
    * @param c the character
    * @return the byte[2] array
    */
@@ -1184,8 +1186,9 @@ public final class StringHelper {
 
   /**
    * Converts a char-array to a byte-array.
+   *
    * @param chars the character array
-   * @return the byte array, empty if chars is null
+   * @return the byte array, empty if {@code chars} is null
    */
   public static byte[] toBytes(char[] chars)  {
     if (chars != null) {
@@ -1206,7 +1209,7 @@ public final class StringHelper {
    * Note that this method converts the characters to bytes via {@link #toBytes(char[])}
    * before applying the hash.
    *
-   * @param algorithm the hashing algorithm (MD5, SHA-1, SHA-256 are supported by all java runtimes, at least)
+   * @param algorithm the hashing algorithm (all java runtimes support MD5, SHA-1, and SHA-256, at least)
    * @param salt the "salt", null if plain hash
    * @param input is the input array of chars
    * @return the hash as a string, null if input == null
@@ -1319,7 +1322,7 @@ public final class StringHelper {
   /**
    * Null-safe string to a char-array conversion.
    *
-   * @param str the string, may be null
+   * @param str the string, null if none
    * @return the character array, null if str was null
    * @see String#toCharArray()
    */
@@ -1330,7 +1333,7 @@ public final class StringHelper {
   /**
    * Null-safe char array filler.
    *
-   * @param buf the char buffer, may be null
+   * @param buf the char buffer, null if none
    * @param val the value to fill
    * @see Arrays#fill(char[], char)
    */
@@ -1344,7 +1347,7 @@ public final class StringHelper {
    * Null-safe char array filler.<br>
    * Fills with blanks.
    *
-   * @param buf the char buff, may be null
+   * @param buf the char buff, null if none
    * @see #fill(char[], char)
    */
   public static void blank(char[] buf) {
@@ -1353,8 +1356,8 @@ public final class StringHelper {
 
 
   /**
-   * Converts a multiline string to an HTML-string that
-   * can be displayed in a label.
+   * Converts a multiline string to an HTML string that
+   * can be displayed in a label.<br>
    * Useful to print multiline labels.
    *
    * @param text the input string
@@ -1513,7 +1516,7 @@ public final class StringHelper {
    *    &#64;{user.home!/tmp}/somedir
    * </pre>
    * Notice that <code>${...}</code> may lead to unexpected results, if the variable's value contains backslashes,
-   * as with windows path names, for example.
+   * as with Windows path names, for example.
    *
    * @param str the string
    * @param variableProvider the variables as properties
@@ -1621,7 +1624,7 @@ public final class StringHelper {
       }
     }
     if (variableName != null) {
-      // missing closing }
+      // missing closing '}'
       buf.append(varLead).append('{').append(variableName);
       if (defaultValue != null) {
         buf.append(defLead).append(defaultValue);

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.apt;
 
 import org.tentackle.apt.visitor.SuperTypeVisitor;
@@ -32,6 +31,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.NoType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -44,8 +44,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-
-
 
 /**
  * Processor for annotations annotated with {@code @Interception}.<br>
@@ -126,9 +124,10 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
               }
             }
             TypeMirror superType = classElement.getSuperclass();
-            if (superType == null ||
+            if (superType instanceof NoType ||
                 superType.getKind() == TypeKind.NONE ||
                 superType.getKind() == TypeKind.VOID ||
+                superType.getKind() == TypeKind.MODULE ||
                 superType.getKind() == TypeKind.PACKAGE) {
               break;  // end of chain
             }

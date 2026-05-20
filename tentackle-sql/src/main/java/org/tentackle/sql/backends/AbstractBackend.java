@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Cryptor;
@@ -52,7 +51,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
-
 
 /**
  * Abstract parent class for backends.
@@ -151,7 +149,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public Connection createConnection(String url, String username, char[] password) throws SQLException {
-    // DriverManager.getConnection() doesn't work in most containers,
+    // DriverManager.getConnection() doesn't work in most containers
     // unless the class is preloaded within the application's classloader.
     try {
       Class.forName(getDriverClassName());
@@ -192,7 +190,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   /**
-   * Checks whether given string is a reserved word.
+   * Checks whether the given string is a reserved word.
    *
    * @param word the word
    * @return true if reserved word
@@ -299,7 +297,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isCommunicationLinkException(SQLException ex) {
-    // initial connection failed or connection vanished or became unusable
+    // initial connection failed, or connection vanished or became unusable
     return isExceptionStateStartingWith(ex, "08", "57");
   }
 
@@ -829,13 +827,13 @@ public abstract class AbstractBackend implements Backend {
 
     StringBuilder buf = new StringBuilder();    // this is faster than inserts.
 
-    buf.append(select.substring(0, fromNdx));
+    buf.append(select, 0, fromNdx);
 
     if (addColumns) {
       buf.append(',').append(joinAlias).append(SQL_DOT_STAR);
     }
 
-    buf.append(select.substring(fromNdx, tailNdx)).
+    buf.append(select, fromNdx, tailNdx).
         append(' ').append(type).append(' ');
 
     if (joinSelectNeedsParentheses) {
@@ -1139,7 +1137,7 @@ public abstract class AbstractBackend implements Backend {
         pw = Cryptor.getInstanceSafely().decrypt64(new String(password, 1, password.length - 1));
       }
       else if (password.length > 1 && password[0] == '\\' && password[1] == '~') {
-        // unencrypted password with a leading ~
+        // unencrypted password with a leading tilde (~)
         pw = new String(password, 1, password.length - 1);
       }
       else {
@@ -1155,7 +1153,7 @@ public abstract class AbstractBackend implements Backend {
   /**
    * Normalize the default string to compare.
    *
-   * @param str the default value as a string, may be null
+   * @param str the default value as a string, null if none
    * @return the normalized value, never null
    */
   protected String normalizeDefault(String str) {
@@ -1178,7 +1176,7 @@ public abstract class AbstractBackend implements Backend {
    * Generates the attribute definition of a CREATE TABLE statement.
    *
    * @param columnName the database column name
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -1204,8 +1202,8 @@ public abstract class AbstractBackend implements Backend {
   /**
    * Extracts the where clause from a given sql.
    *
-   * @param sql the sql statement
-   * @param whereOffset the location of WHERE in sql
+   * @param sql the SQL statement
+   * @param whereOffset the location of WHERE in SQL
    * @return the where clause without the keyword WHERE
    */
   protected String extractWhereClause(String sql, int whereOffset) {
@@ -1278,7 +1276,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   /**
-   * Checks if the exception's error code equals given number(s).
+   * Checks if the exception's error code equals the given number(s).
    *
    * @param ex the exception
    * @param codes the error codes to check for

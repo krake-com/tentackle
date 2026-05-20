@@ -95,7 +95,7 @@ public class ModelException extends Exception {
   /**
    * Gets the related model element.
    *
-   * @return the element, may be null!
+   * @return the element, null if none
    */
   public ModelElement getElement() {
     return element;
@@ -105,8 +105,10 @@ public class ModelException extends Exception {
   public String getMessage() {
     String message = super.getMessage();
     if (element != null && (message == null || !message.contains(AT_ELEMENT)) && element.getSourceInfo() != null) {
-      String sourceInfo = element.getSourceInfo().toString();
-      if (!message.contains(sourceInfo)) {
+      if (message == null) {
+        return AT_ELEMENT + element.getSourceInfo();
+      }
+      if (!message.contains(element.getSourceInfo().toString())) {
         return message + AT_ELEMENT + element.getSourceInfo();
       }
     }
@@ -114,7 +116,7 @@ public class ModelException extends Exception {
   }
 
   /**
-   * Returns whether given element is related to this exception.
+   * Returns whether the given element is related to this exception.
    *
    * @param otherElement some other model element
    * @return true if related

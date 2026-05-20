@@ -91,19 +91,6 @@ public final class ReferenceTripType extends AbstractTripType<Reference<?>> {
       default -> throw new TripRuntimeException("what??" + opCode);
     };
     return new Reference<>(referenceId, (code & 0x4) != 0, false);
-
-    // slower version
-//    return switch (opCode) {
-//      case DefaultOpCode.REFERENCE -> new Reference<>(deserializer.deserializeInt(), false, false);
-//      case DefaultOpCode.REFERENCE3 -> new Reference<>(deserializer.deserializeInt3(), false, false);
-//      case DefaultOpCode.REFERENCE2 -> new Reference<>(deserializer.deserializeShort(), false, false);
-//      case DefaultOpCode.REFERENCE1 -> new Reference<>(deserializer.deserializeByte(), false, false);
-//      case DefaultOpCode.REFERENCE_SENT -> new Reference<>(deserializer.deserializeInt(), true, false);
-//      case DefaultOpCode.REFERENCE3_SENT -> new Reference<>(deserializer.deserializeInt3(), true, false);
-//      case DefaultOpCode.REFERENCE2_SENT -> new Reference<>(deserializer.deserializeShort(), true, false);
-//      case DefaultOpCode.REFERENCE1_SENT -> new Reference<>(deserializer.deserializeByte(), true, false);
-//      default -> throw new TripRuntimeException("invalid reference opcode: " + opCode);
-//    };
   }
 
 }

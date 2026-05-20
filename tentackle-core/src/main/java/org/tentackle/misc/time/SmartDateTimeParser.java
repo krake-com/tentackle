@@ -50,7 +50,7 @@ import java.util.function.Supplier;
  *   convert parts of the input or add missing data.</li>
  *   <li>The list of {@link Shortcut}s is applied, one after another. Shortcuts modify the current date- or time value
  *   according to the patterns found in the input string. Applied patterns are usually removed from the input string.</li>
- *   <li>If at least one shortcut was applied, the current value is returned. Otherwise the remaining input string is passed
+ *   <li>If at least one shortcut was applied, the current value is returned. Otherwise, the remaining input string is passed
  *   to the appropriate {@link DateTimeFormatter}.
  *   <li>If parsing fails with an exception, optional exception handlers will be invoked to fix the input.</li>
  * </ol>
@@ -219,7 +219,7 @@ public class SmartDateTimeParser<T extends Temporal> {
   }
 
   /**
-   * Gets the pattern that was used to initialize the formatter.
+   * Gets the pattern used to initialize the formatter.
    *
    * @return the pattern
    */
@@ -292,7 +292,7 @@ public class SmartDateTimeParser<T extends Temporal> {
 
 
   /**
-   * Converts a string to a temporal value of given type.
+   * Converts a string to a temporal value of the given type.
    *
    * @param currentValueSupplier the supplier of the current value, usually the method reference {@code type::now}
    * @param text the string to parse
@@ -383,30 +383,26 @@ public class SmartDateTimeParser<T extends Temporal> {
 
       if (temporalHolder != currentValueSupplier) {
         // none of the shortcuts matched: parse with full pattern
-        int retryCount = 0;
         Set<ErrorHandler> appliedHandlers = new HashSet<>();
-        for (;;) {   // retry once, if handlers apply
+        for (;;) {   // retry once if handlers apply
           try {
             temporalHolder.accept(getFormatter().parse(text, getTemporalQuery()));
             break;
           }
           catch (DateTimeParseException px) {
-            if (retryCount++ == 0) {
-              String fixedText = null;
-              for (ErrorHandler handler : getErrorHandlers()) {
-                fixedText = handler.apply(this, px, text);
-                if (fixedText != null) {
-                  if (appliedHandlers.add(handler)) {
-                    break;
-                  }
-                  fixedText = null;   // handler already applied
-                }
-              }
+            String fixedText = null;
+            for (ErrorHandler handler : getErrorHandlers()) {
+              fixedText = handler.apply(this, px, text);
               if (fixedText != null) {
-                text = fixedText;
-                retryCount = 0;
-                continue;
+                if (appliedHandlers.add(handler)) {
+                  break;
+                }
+                fixedText = null;   // handler already applied
               }
+            }
+            if (fixedText != null) {
+              text = fixedText;
+              continue;
             }
             throw px;   // no handler applied or exception remains after one retry
           }
@@ -429,4 +425,3 @@ public class SmartDateTimeParser<T extends Temporal> {
   }
 
 }
-
