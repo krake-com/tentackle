@@ -59,7 +59,7 @@ public class TransactionStatisticsResult extends StatisticsResult {
   }
 
   /**
-   * Counts the statements statistics.
+   * Counts the statement statistics.
    *
    * @param statements the number of statements executed
    */
@@ -103,15 +103,13 @@ public class TransactionStatisticsResult extends StatisticsResult {
   @Override
   public String toString() {
     if (isValid()) {
-      StringBuilder buf = new StringBuilder();
-      buf.append(getMinDuration().millisToString()).append(' ')
-         .append(getMaxDuration().millisToString()).append(' ')
-         .append(getTotalDuration().millisToString()).append(' ')
-         .append(minStatements).append(' ')
-         .append(maxStatements).append(' ')
-         .append(totalStatements)
-         .append(" ms:st / ").append(rollbackCount).append(" r ").append(getCount());
-      return buf.toString();
+      return getMinDuration().millisToString() + ' ' +
+             getMaxDuration().millisToString() + ' ' +
+             getTotalDuration().millisToString() + ' ' +
+             minStatements + ' ' +
+             maxStatements + ' ' +
+             totalStatements +
+             " ms:st / " + rollbackCount + " r " + getCount();
     }
     return "<invalid>";
   }

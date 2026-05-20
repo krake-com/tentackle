@@ -123,7 +123,7 @@ public class ModelDefaults {
           trackType = on ? TrackType.FULLTRACKED : TrackType.UNTRACKED;
           break;
         case "untracked":
-          trackType = on ? TrackType.UNTRACKED : TrackType.UNTRACKED;
+          trackType = TrackType.UNTRACKED;
           break;
         case "deletioncascaded":
         case "cascadeddelete":

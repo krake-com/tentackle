@@ -129,7 +129,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private T pdo;                                  // the pdo this is a delegate for
   private boolean persistable = true;             // true if persistable (default)
 
-  private long editedBy;                          // if != 0 : holds the userId of token holder
+  private long editedBy;                          // if != 0: holds the userId of token holder
   private Timestamp editedSince;                  // if editedBy!=0: time since token given to user, if 0: time since token released
   private Timestamp editedExpiry;                 // time when token expires
 
@@ -613,7 +613,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to provide detailed exception message.
+   * Overridden to provide a detailed exception message.
    */
   @Override
   protected void assertPersistable() {
@@ -1186,7 +1186,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Adds the components of a collection to a map.
    *
-   * @param components the components map
+   * @param components the component map
    * @param objects the collection of objects to add along with their components
    * @param onlyLoaded true if return only already loaded components (lazy composite relations)
    * @return the number of components added
@@ -1882,7 +1882,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
                   if (!sqlClassIdCondition.isEmpty() && forUpdate) {
                     sql = createSelectAllByIdInnerSql(b);
                     sql.append(sqlClassIdCondition);
-                    b.buildSelectSql(sql, forUpdate, 0, 0);
+                    b.buildSelectSql(sql, true, 0, 0);
                   }
                   else {
                     sql = new StringBuilder(createSelectSql(b, forUpdate));
@@ -1961,7 +1961,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         // shorthand for: invoice.on("anotherContext").select(invoice.getId())
         // this behaviour also avoids programming errors, since the developer would
         // expect it to work this way.
-        // Important: works only for reload...()-methods!
+        // Important: that works only for reload...()-methods!
       }
     }
     return reloadId;
@@ -2179,9 +2179,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *  "id FROM xytable WHERE 1=1"
    * </pre>
    *
-   * @param classVariables the classvariables
+   * @param classVariables the class variables
    * @param withAlias true if column name with table alias, else without
-   * @return the sql text
+   * @return the SQL text
    */
   public StringBuilder createSelectIdInnerSql(PersistentObjectClassVariables<? super T, ? super P> classVariables,
                                               boolean withAlias) {
@@ -2209,7 +2209,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * </pre>
    *
    * @param withAlias true if column name with table alias, else without
-   * @return the sql text
+   * @return the SQL text
    */
   public StringBuilder createSelectIdInnerSql(boolean withAlias) {
     return createSelectIdInnerSql(getClassVariables(), withAlias);
@@ -2920,7 +2920,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Classes with a cache must override this method!
    * The implementation with the PdoCache should look like this:
    * <pre>
-   *    super.expireCache(maxSerial);   // in case inherited cache overridden
+   *    super.expireCache(maxSerial); // in case the inherited cache overridden
    *    CacheHolder.CACHE.expire(getSession(), getTableName(), maxSerial);
    * </pre>
    * See the wurblet {@code PdoCache.wrbl}.
@@ -3995,7 +3995,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Applies the given token lock info to this PDO.
    *
-   * @param tokenLockInfo the editedBy info
+   * @param tokenLockInfo the token lock info
    */
   public void applyTokenLockInfo(TokenLockInfo tokenLockInfo) {
     if (tokenLockInfo != null) {

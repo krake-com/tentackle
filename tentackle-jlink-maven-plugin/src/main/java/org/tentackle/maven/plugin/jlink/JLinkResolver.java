@@ -525,7 +525,7 @@ public class JLinkResolver {
           }
         }
         if (failDueToAutomaticRequired) {
-          throw new MojoExecutionException("required automatic modules found (failOnAutomaticRequired=" + failOnAutomaticRequired + ")");
+          throw new MojoExecutionException("required automatic modules found");
         }
         mojo.getLog().warn("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);

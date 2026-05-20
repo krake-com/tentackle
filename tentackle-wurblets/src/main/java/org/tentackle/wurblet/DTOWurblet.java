@@ -307,7 +307,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
         withBuilder = true;
       }
       else if (lArg.startsWith("--builderscope=")) {
-        builderScope = AccessScope.valueOf(arg.substring(15).toUpperCase(Locale.ROOT));;
+        builderScope = AccessScope.valueOf(arg.substring(15).toUpperCase(Locale.ROOT));
         withBuilder = true;
       }
       else if (lArg.startsWith("--builder")) {

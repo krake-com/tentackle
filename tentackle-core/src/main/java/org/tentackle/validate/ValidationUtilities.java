@@ -83,7 +83,7 @@ public class ValidationUtilities {
   public record MapResult(Binder binder, String bindingPath) {
 
     public MapResult {
-      binder = Objects.requireNonNull(binder);
+      Objects.requireNonNull(binder);
       bindingPath = Objects.requireNonNull(bindingPath).startsWith(".") ? bindingPath.substring(1) : bindingPath;
     }
 
@@ -114,7 +114,7 @@ public class ValidationUtilities {
 
 
   /**
-   * special classloader if used in tools (for example tentackle-test maven plugin).
+   * Special classloader if used in tools (for example, tentackle-test maven plugin).
    */
   private ClassLoader validationBundleClassLoader;
 
@@ -134,7 +134,7 @@ public class ValidationUtilities {
   /**
    * Configures test mode.<p>
    * In test mode, all validators will be executed, regardless of scope or condition
-   * and logged in given LogLevel.<br>
+   * and logged in the given LogLevel.<br>
    * Useful to check whether validators work at all, scripts compile and run, etc...<br>
    * Notice that even the result is not used, the conditions and scopes will be executed/checked in test mode as well.<p>
    * Test mode is disabled by default.
@@ -169,7 +169,7 @@ public class ValidationUtilities {
    * with the first letter in lowercase (according to variable name rules).
    *
    * @param object the object to validate
-   * @return the default (root) validation path, null if object is null
+   * @return the default (root) validation path, null if the object is null
    */
   public String getDefaultValidationPath(Object object) {
     Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
@@ -216,7 +216,7 @@ public class ValidationUtilities {
   /**
    * Validates an object.<br>
    * The method first applies the field validators followed by the object validators.
-   * Objects simply refer to this method in order to implement {@link Validateable}.
+   * Objects simply refer to this method to implement {@link Validateable}.
    *
    * @param object the object to be validated
    * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object)}
@@ -265,7 +265,7 @@ public class ValidationUtilities {
   }
 
   /**
-   * Gets all validators for all annotated fields or methods of given class.<br>
+   * Gets all validators for all annotated fields or methods of the given class.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
    * the method gets precedence.
    *
@@ -282,7 +282,7 @@ public class ValidationUtilities {
   }
 
   /**
-   * Get validators for an annotated fields and/or method.<br>
+   * Get validators for an annotated field and/or method.<br>
    *
    * @param field the field, null if none
    * @param method the (getter-)method, null if none
@@ -298,7 +298,7 @@ public class ValidationUtilities {
   }
 
   /**
-   * Gets all validators for annotated class.
+   * Gets all validators for the annotated class.
    *
    * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
@@ -397,12 +397,12 @@ public class ValidationUtilities {
         }
 
         // check if scope applies
-        // runs condition check even if in testmode
+        // runs the condition check even if in testmode
         if (validator.isConditionValid(validationContext) &&
             (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
             ||
             inTest) {
-          // condition and scope applies
+          // condition and scope apply
           List<? extends ValidationResult> results = validator.validate(validationContext);
           if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
             allResults.addAll(results);
@@ -427,7 +427,7 @@ public class ValidationUtilities {
    *                       null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param parentObject the parent object the validated object is declared in
    * @param object the object to verify
-   * @param type the type of the object, null if derive from object
+   * @param type the type of the object, null if derive from the object
    * @return the list of validation results
    */
   public List<ValidationResult> validateObject(
@@ -460,7 +460,7 @@ public class ValidationUtilities {
               (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
               ||
               inTest) {
-            // condition and scope applies
+            // condition and scope apply
             try {
               List<? extends ValidationResult> results = validator.validate(validationContext);
               if (results != null && !results.isEmpty()) {    // should never be null, but who knows...
@@ -573,7 +573,7 @@ public class ValidationUtilities {
       Set<String> doneSet = new HashSet<>();  // to detect binder/mapper loops
       for (;;) {
         /*
-         * The binding path from the results is always longer than the bindingpath of the validation mapper,
+         * The binding path from the results is always longer than the binding path of the validation mapper,
          * hence lowerEntry.
          */
         ValidationMapper mapper = mappers.lower(new ValidationMapper(currentPath, currentBinder, null, null));
@@ -717,7 +717,7 @@ public class ValidationUtilities {
 
 
   /**
-   * Gets all validators for all annotated fields or methods of given class.<br>
+   * Gets all validators for all annotated fields or methods of the given class.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
    * the method gets precedence.
    *
@@ -747,7 +747,7 @@ public class ValidationUtilities {
   }
 
   /**
-   * Get validators for an annotated fields and/or method.<br>
+   * Get validators for an annotated field and/or method.<br>
    *
    * @param validatorMap the validator map (unique on attribute names)
    * @param field the field, null if none
@@ -779,7 +779,7 @@ public class ValidationUtilities {
 
   /**
    * Sorts validators by priority and validation index.<br>
-   * Lowest priority (0) comes last, highest first.
+   * The lowest priority (0) comes last, the highest first.
    *
    * @param validators the validators
    */
@@ -801,18 +801,12 @@ public class ValidationUtilities {
    * @return the element's name
    */
   protected String getAnnotatedElementName(AnnotatedElement element) {
-    if (element instanceof Field) {
-      return ((Field) element).getName();
-    }
-    else if (element instanceof Method) {
-      return ReflectionHelper.getGetterPathName((Method) element);
-    }
-    else if (element instanceof Class<?>) {
-      return ((Class<?>) element).getName();
-    }
-    else  {
-      throw new ValidationRuntimeException("cannot determine element name");
-    }
+    return switch (element) {
+      case Field field -> field.getName();
+      case Method method -> ReflectionHelper.getGetterPathName(method);
+      case Class<?> clazz -> clazz.getName();
+      case null, default -> throw new ValidationRuntimeException("cannot determine element name");
+    };
   }
 
   /**

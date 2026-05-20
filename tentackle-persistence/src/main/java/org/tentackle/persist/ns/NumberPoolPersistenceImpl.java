@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.ns;
 
 import org.tentackle.dbms.PreparedStatementWrapper;
@@ -34,7 +33,6 @@ import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.persist.ns.trip.NumberPoolRemoteDelegate;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.validate.ValidationFailedException;
@@ -45,8 +43,6 @@ import org.tentackle.validate.ValidationUtilities;
 import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
-
-
 
 /**
  * Number Space persistence implementation.
