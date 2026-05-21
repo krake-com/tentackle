@@ -1,7 +1,7 @@
 Since version 0.10.9, kwik illegally requires the automatic module `io.whitfin.siphash`.
 
 When using the tentackle-jlink-maven-plugin, make sure to move
-kwik and tentackle-quic to the module path. Otherwise, the _all_ modules
+kwik and tentackle-quic to the module path. Otherwise, _all_ modules
 would be moved to the module path.
 
       <plugin>
