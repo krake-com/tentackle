@@ -86,7 +86,8 @@ Used for client-server and server-server communication. Requires `opens` in `mod
 PDOs travel between JVMs and are serialized using TRIP.
 
 ### Wurbelizer Code Generation
-Wurblets are code generation templates processed at build time by `wurbelizer-maven-plugin`. They generate persistence mappings, SQL DDL, and entity classes. Generated code lands in `target/wurbel/`. The `tentackle-persistence-wurblets` module defines the persistence generation templates.
+Wurblets are code generation templates processed at build time by `wurbelizer-maven-plugin`. They generate persistence mappings, SQL DDL, and entity classes. 
+Generated code is woven into the source code within guarded code regions. Code analysis meta data lands in `target/wurbel/`. The `tentackle-persistence-wurblets` module defines the persistence generation templates.
 
 ### JPMS (Java Module System)
 Every module has an explicit `module-info.java`. Modules use `exports` for public API and `opens` for reflection-based access.
