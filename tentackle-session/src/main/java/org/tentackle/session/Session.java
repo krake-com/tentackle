@@ -528,7 +528,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    *
    * @param <T> the value's type
    * @param key the property key
-   * @param value the property value
+   * @param value the property value, null to remove the property
    * @return the old value, null if the key is new
    */
   <T extends Serializable> T setProperty(String key, T value);

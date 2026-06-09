@@ -1216,6 +1216,9 @@ public class Db implements Session, Cloneable {
     }
     // else: local session
     synchronized (this) {
+      if (value == null) {
+        return (T) getApplicationProperties().remove(key);
+      }
       return (T) getApplicationProperties().put(key, value);
     }
   }
