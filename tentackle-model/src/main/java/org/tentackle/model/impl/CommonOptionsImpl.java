@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static org.tentackle.common.Constants.BIND_COLS;
+import static org.tentackle.common.Constants.BIND_FILLER;
 import static org.tentackle.common.Constants.BIND_LINES;
 import static org.tentackle.common.Constants.BIND_MAXCOLS;
 import static org.tentackle.common.Constants.BIND_SCALE;
@@ -251,6 +252,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
       case BIND_MAXCOLS:
       case BIND_SCALE:
       case BIND_LINES:
+      case BIND_FILLER:
         processBindOption(fullopt, on);
         break;
 

@@ -1588,6 +1588,28 @@ public class FxUtilities {
                                    option + "\") in " + member + " not applicable to " + comp.getClass().getName());
       }
     }
+    else if (option.startsWith(Constants.BIND_FILLER + "=")) {
+      try {
+        String value = option.substring(Constants.BIND_FILLER.length() + 1);
+        if (value.isBlank()) {
+          comp.setFiller(' ');    // default
+        }
+        else {
+          if (value.charAt(0) == '\'' && value.length() == 3 && value.charAt(2) == '\'') {
+            comp.setFiller(value.charAt(1));
+          }
+          else {
+            int fillCode = Integer.decode(value);
+            comp.setFiller((char) fillCode);
+          }
+          processed = true;
+        }
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_FILLER + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
 
     return processed;
   }
@@ -1661,8 +1683,9 @@ public class FxUtilities {
       }
     }
     else if (option.startsWith(Constants.BIND_COLS + "=") ||
-             option.startsWith(Constants.BIND_LINES + "=")) {
-      // COLS= and LINES= not applicable to table cells: just ignore
+             option.startsWith(Constants.BIND_LINES + "=") ||
+             option.startsWith(Constants.BIND_FILLER + "=")) {
+      // COLS=, LINES= and FILLER= are not applicable to table cells: just ignore
       processed = true;
     }
 
