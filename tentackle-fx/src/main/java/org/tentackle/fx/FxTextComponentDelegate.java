@@ -353,7 +353,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       String transValidChars = ((ValueStringTranslator) getValueTranslator()).getValidChars();
       if (transValidChars != null) {
         StringBuilder buf = new StringBuilder();
-        for (int i=0; i < text.length(); i++) {
+        for (int i = 0; i < text.length(); i++) {
           char c = text.charAt(i);
           if (transValidChars.indexOf(c) >= 0) {
             buf.append(c);
@@ -365,7 +365,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
 
     if (validChars != null) {
       StringBuilder buf = new StringBuilder();
-      for (int i=0; i < text.length(); i++) {
+      for (int i = 0; i < text.length(); i++) {
         char c = text.charAt(i);
         if (c == filler || validChars.indexOf(c) >= 0) {
           buf.append(c);
@@ -376,13 +376,17 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
 
     if (invalidChars != null) {
       StringBuilder buf = new StringBuilder();
-      for (int i=0; i < text.length(); i++) {
+      for (int i = 0; i < text.length(); i++) {
         char c = text.charAt(i);
         if (invalidChars.indexOf(c) < 0) {
           buf.append(c);
         }
       }
       text = buf.toString();
+    }
+
+    if (filler != ' ') {
+      text = text.replace(' ', filler);
     }
 
     if (caseConversion == CaseConversion.UPPER_CASE) {
