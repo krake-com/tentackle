@@ -1206,6 +1206,17 @@ public class Db implements Session, Cloneable {
     }
   }
 
+  @Override
+  public void clearProperties() {
+    if (isRemote()) {
+      resources.rdel.clearProperties();
+    }
+    // else: local session
+    synchronized (this) {
+      applicationProperties = null;
+    }
+  }
+
   /**
    * Lazy getter for application properties.
    *
@@ -2657,6 +2668,7 @@ public class Db implements Session, Cloneable {
       logModificationDeferred = false;
       modificationLogList = null;
       immediatelyRolledBack = 0;
+      applicationProperties = null;
     }
 
     postCommits = null;

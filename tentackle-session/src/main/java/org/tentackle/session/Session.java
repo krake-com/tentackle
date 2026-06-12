@@ -544,6 +544,11 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   <T extends Serializable> T getProperty(String key);
 
   /**
+   * Removes all session properties.
+   */
+  void clearProperties();
+
+  /**
    * Registers a post-commit.<br>
    * Post-commits are invoked <em>after</em> the successful physical commit of a transaction.
    * They must be registered from within a transactional method, i.e., a transaction must be running.<br>

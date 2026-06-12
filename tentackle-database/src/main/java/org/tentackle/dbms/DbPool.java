@@ -154,6 +154,8 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
     } // else: not an error to return a db more than once
 
     db.setOwnerThread(null);    // unlink any owner thread
+    db.clearProperties();
+
     if (poolId > 0) {
       super.unusePoolable(db);
     }

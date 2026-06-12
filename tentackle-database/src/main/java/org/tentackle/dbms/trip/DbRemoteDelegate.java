@@ -85,4 +85,6 @@ public interface DbRemoteDelegate extends RemoteDbDelegate {
 
   <T extends Serializable> T getProperty(String key);
 
+  void clearProperties();
+
 }

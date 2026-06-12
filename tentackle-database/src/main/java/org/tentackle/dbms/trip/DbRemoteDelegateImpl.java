@@ -194,4 +194,9 @@ public class DbRemoteDelegateImpl extends RemoteDbDelegateImpl<Db>
     return getSession().getProperty(key);
   }
 
+  @Override
+  public void clearProperties() {
+    getSession().clearProperties();
+  }
+
 }
