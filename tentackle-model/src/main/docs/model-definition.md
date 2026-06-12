@@ -163,6 +163,7 @@ prefixed with `#`.
 | `bind`        | Annotate methods with `@Bindable` to enable binding.                         |
 | `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.      |
 | `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable. |
+| `..strip`     | All stripping options (nostrip, lstrip, rstrip, strip = default)             |
 | `#Name`       | Custom stereotype `Name`.                                                    |
 
 Case doesn't matter for the options.
@@ -302,16 +303,27 @@ Booleans: `default true`.
 
 The binding options are added to the `@Bindable` annotation.
 
-| Option        | Description                          |
-|---------------|--------------------------------------|
-| `maxcols=<n>` | override maximum columns.            |
-| `cols=<n>`    | explicit visible columns.            |
-| `lines=<n>`   | explicit visible rows.               |
-| `scale=<n>`   | override numeric scale.              |
-| `uc`          | Convert to uppercase.                |
-| `lc`          | Convert to lowercase.                |
-| `unsigned`    | Numeric field is unsigned.           |
-| `digits`      | field accepts only digit characters. |
+| Option        | Description                                                                  |
+|---------------|------------------------------------------------------------------------------|
+| `maxcols=<n>` | override maximum columns.                                                    |
+| `cols=<n>`    | explicit visible columns.                                                    |
+| `lines=<n>`   | explicit visible rows.                                                       |
+| `scale=<n>`   | override numeric scale.                                                      |
+| `filler=<n>`  | filler character. Default is blank. (<n> = 'x' or numeric)                   |
+| `uc`          | Convert to uppercase.                                                        |
+| `lc`          | Convert to lowercase.                                                        |
+| `unsigned`    | Numeric field is unsigned.                                                   |
+| `digits`      | field accepts only digit characters.                                         |
+| `strip`       | remove leading and trailing filler characters (default)                      |
+| `nostrip`     | no string stripping (filler trimming)                                        |
+| `lstrip`      | remove leading filler characters                                             |
+| `rstrip`      | remove trailing filler characters                                            |
+| `bind`        | Annotate methods with `@Bindable` to enable binding.                         |
+| `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.      |
+| `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable. |
+
+Options inherited from the entity's options can be overridden.
+To disable an option for an attribute, prepend a `-` to the option, for example, `-bind`.
 
 #### Annotation options
 
