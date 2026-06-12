@@ -19,6 +19,7 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.misc.SubString;
 import org.tentackle.reflect.ReflectionHelper;
@@ -88,6 +89,11 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
    * The filler character.
    */
   private char filler = ' ';
+
+  /**
+   * The input strip mode.
+   */
+  private StripMode stripMode = StripMode.BOTH;
 
   /**
    * Valid characters.
@@ -222,8 +228,8 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
     if (!viewModifiedTriggered) {
       // if not already propagated to parents
       super.triggerViewModified();
-      // don't trigger again when field is now changed (this is the usual case).
-      // But trigger on next keystroke, if field became unchanged due to this keystroke!
+      // don't trigger again when the field is now changed (this is the usual case).
+      // But trigger on the next keystroke if the field became unchanged due to this keystroke!
       viewModifiedTriggered = isViewModified();
     }
   }
@@ -241,8 +247,18 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
     if (!isUpdatingModel()) {
       viewModifiedTriggered = false;
       errorOffset = null;
-      if (getComponent() instanceof TextInputControl) {
-        if (((TextInputControl) getComponent()).isEditable()) {
+      if (getComponent() instanceof TextInputControl textInputControl) {
+        if (textInputControl.isEditable()) {
+          if (stripMode != null && stripMode != StripMode.NONE) {
+            String text = textInputControl.getText();
+            if (text != null) {
+              String strippedText = stripMode.strip(text, filler);
+              if (!text.equals(strippedText)) {
+                // don't trigger listeners if not really changed
+                textInputControl.setText(strippedText);
+              }
+            }
+          }
           super.updateModel();
         }
       }
@@ -509,6 +525,16 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   @Override
   public char getFiller() {
     return filler;
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return stripMode;
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    this.stripMode = stripMode == null ? StripMode.BOTH : stripMode;
   }
 
   @Override

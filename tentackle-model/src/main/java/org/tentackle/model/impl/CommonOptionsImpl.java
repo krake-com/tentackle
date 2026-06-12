@@ -19,6 +19,7 @@
 package org.tentackle.model.impl;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.StripMode;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.CommonOptions;
@@ -33,6 +34,10 @@ import static org.tentackle.common.Constants.BIND_COLS;
 import static org.tentackle.common.Constants.BIND_LINES;
 import static org.tentackle.common.Constants.BIND_MAXCOLS;
 import static org.tentackle.common.Constants.BIND_SCALE;
+import static org.tentackle.common.Constants.BIND_STRIP_BOTH;
+import static org.tentackle.common.Constants.BIND_STRIP_LEFT;
+import static org.tentackle.common.Constants.BIND_STRIP_NONE;
+import static org.tentackle.common.Constants.BIND_STRIP_RIGHT;
 
 /**
  * Implementation of common options.
@@ -62,13 +67,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   /** don't generate a get-method. */
   public static final String OPTION_WRITEONLY = "WRITEONLY";
 
-  /** trim string on read. */
+  /** trim string to size when reading from the database. */
   public static final String OPTION_TRIM_READ = "TRIMREAD";
 
-  /** trim string on write. */
+  /** trim string to size when writing to the database. */
   public static final String OPTION_TRIM_WRITE = "TRIMWRITE";
 
-  /** trim on read and write. */
+  /** trim string to size when reading from and writing to the database. */
   public static final String OPTION_TRIM = "TRIM";
 
   /** map null to non-null value. */
@@ -105,6 +110,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   private boolean lowerCase;
   private boolean autoSelect;
   private boolean maxCol;
+  private StripMode stripMode;
 
 
   /**
@@ -226,11 +232,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
       case Constants.BIND_UC:
         setUpperCase(on);
+        processBindOption(Constants.BIND_LC, false);
         processBindOption(uco, on);
         break;
 
       case Constants.BIND_LC:
         setLowerCase(on);
+        processBindOption(Constants.BIND_UC, false);
         processBindOption(uco, on);
         break;
 
@@ -248,6 +256,19 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
       case BIND_SIZE:
         setMaxCol(on);
+        processBindOption(uco, on);
+        break;
+
+      case BIND_STRIP_NONE:
+      case BIND_STRIP_BOTH:
+      case BIND_STRIP_LEFT:
+      case BIND_STRIP_RIGHT:
+        setStripMode(on ? StripMode.fromBindOption(uco) : null);
+        // remove old strip options, if any
+        processBindOption(BIND_STRIP_NONE, false);
+        processBindOption(BIND_STRIP_BOTH, false);
+        processBindOption(BIND_STRIP_LEFT, false);
+        processBindOption(BIND_STRIP_RIGHT, false);
         processBindOption(uco, on);
         break;
 
@@ -524,6 +545,15 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
   public void setUpperCase(boolean upperCase) {
     this.upperCase = upperCase;
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return stripMode;
+  }
+
+  public void setStripMode(StripMode stripMode) {
+    this.stripMode = stripMode;
   }
 
   @Override

@@ -192,12 +192,23 @@ public class Constants {
   /** bind option digits only. */
   public static final String BIND_DIGITS = "DIGITS";
 
-
   /** bind option uppercase. */
   public static final String BIND_UC = "UC";
 
   /** bind option lowercase. */
   public static final String BIND_LC = "LC";
+
+  /** bind option to turn off stripping. */
+  public static final String BIND_STRIP_NONE = "NOSTRIP";
+
+  /** bind option to remove leading filler characters. */
+  public static final String BIND_STRIP_LEFT = "LSTRIP";
+
+  /** bind option to remove trailing filler characters. */
+  public static final String BIND_STRIP_RIGHT = "RSTRIP";
+
+  /** bind option to remove leading and trailing filler characters (default for text components). */
+  public static final String BIND_STRIP_BOTH = "STRIP";
 
   /** bind option autoselect field. */
   public static final String BIND_AUTOSELECT = "AUTOSELECT";

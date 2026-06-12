@@ -66,6 +66,9 @@ public class GlobalOptionsPrinter {
     if (options.isUpperCase()) {
       buf.append(Constants.BIND_UC).append(',');
     }
+    if (options.getStripMode() != null) {
+      buf.append(options.getStripMode().getBindOption()).append(',');
+    }
     if (options.isNoDeclare()) {
       buf.append(CommonOptionsImpl.OPTION_NODECLARE).append(',');
     }

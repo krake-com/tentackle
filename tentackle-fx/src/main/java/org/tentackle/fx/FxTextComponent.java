@@ -19,6 +19,7 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.misc.SubString;
 
 import javafx.geometry.Pos;
@@ -38,7 +39,7 @@ public interface FxTextComponent extends FxComponent {
    * but can work in editable and non-editable mode.<br>
    * Not to be mixed up with {@link #isChangeable()}!
    *
-   * @return true if component is in text-editing mode
+   * @return true if the component is in text-editing mode
    */
   boolean isEditable();
 
@@ -58,7 +59,7 @@ public interface FxTextComponent extends FxComponent {
 
   /**
    * Sets the caret position according to the error offset.<br>
-   * Does nothing if error offset is null.
+   * Does nothing if the error offset is null.
    */
   void mapErrorOffsetToCaretPosition();
 
@@ -91,10 +92,9 @@ public interface FxTextComponent extends FxComponent {
    */
   int getColumns();
 
-
   /**
    * Sets the maximum number of columns.<br>
-   * The number of columns will be enforced by the model.
+   * The model will enforce the number of columns.
    *
    * @param maxColumns the maximum number of columns, 0 if unlimited (default)
    */
@@ -106,7 +106,6 @@ public interface FxTextComponent extends FxComponent {
    * @return the maximum number of columns, 0 if unlimited (default)
    */
   int getMaxColumns();
-
 
   /**
    * Sets the auto-select feature.<br>
@@ -124,7 +123,6 @@ public interface FxTextComponent extends FxComponent {
    * @return true if auto-select enabled, false if disabled (default)
    */
   boolean isAutoSelect();
-
 
   /**
    * Sets the format pattern.<br>
@@ -220,12 +218,26 @@ public interface FxTextComponent extends FxComponent {
   void setFiller(char filler);
 
   /**
-   * Gets the filler character.<br>
+   * Gets the filler character.
    *
    * @return the filler
    */
   char getFiller();
 
+  /**
+   * Sets the input strip mode.
+   *
+   * @param stripMode the trim mode, null for no trim (translates to {@link StripMode#NONE})
+   */
+  void setStripMode(StripMode stripMode);
+
+  /**
+   * Gets the input strip mode.<br>
+   * The default is {@link StripMode#BOTH}.
+   *
+   * @return the trim mode, never null
+   */
+  StripMode getStripMode();
 
   /**
    * Sets allowed characters.
@@ -241,7 +253,6 @@ public interface FxTextComponent extends FxComponent {
    */
   String getValidChars();
 
-
   /**
    * Sets invalid characters.
    *
@@ -255,7 +266,6 @@ public interface FxTextComponent extends FxComponent {
    * @return the invalid characters, null = none (default)
    */
   String getInvalidChars();
-
 
   /**
    * Sets a text converter.<br>
@@ -281,7 +291,7 @@ public interface FxTextComponent extends FxComponent {
 
   /**
    * Sets the auto-completion function.<br>
-   * The function get the input from the user and returns a list of
+   * The function gets the input from the user and returns a list of
    * matching items. Each item is represented as a list of matching
    * text segments.
    *

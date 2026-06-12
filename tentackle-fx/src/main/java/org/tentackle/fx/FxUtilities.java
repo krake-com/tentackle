@@ -29,6 +29,7 @@ import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -110,9 +111,11 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+
 interface FxUtilitiesHolder {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
 }
+
 
 /**
  * Utility methods for Fx.
@@ -146,7 +149,6 @@ public class FxUtilities {
    */
   private String helpURL;
 
-
   /**
    * Flag to avoid invoking Platform.exit() more than once
    */
@@ -171,7 +173,6 @@ public class FxUtilities {
   public void show(Stage stage) {
     stage.show();
   }
-
 
   /**
    * Gets the default cursor for the given node.
@@ -207,7 +208,6 @@ public class FxUtilities {
     return false;
   }
 
-
   /**
    * Gets the default column width for text areas if not set by the binding or the model's COLS= option.
    *
@@ -227,7 +227,6 @@ public class FxUtilities {
     return 750;
   }
 
-
   /**
    * Sets the help URL prefix.
    *
@@ -245,7 +244,6 @@ public class FxUtilities {
   public String getHelpURL() {
     return helpURL;
   }
-
 
   /**
    * Opens the online help for a given component.
@@ -282,7 +280,6 @@ public class FxUtilities {
     }
   }
 
-
   /**
    * Terminates the FX client.<br>
    * The default implementation invokes {@link Platform#exit()}.
@@ -313,7 +310,6 @@ public class FxUtilities {
     }
   }
 
-
   /**
    * Edits/opens a given file via the Desktop utilities.<br>
    * The corresponding application will be chosen according to the mime/file type.
@@ -339,7 +335,6 @@ public class FxUtilities {
     });
   }
 
-
   /**
    * Gets the stage for a node.
    *
@@ -361,7 +356,6 @@ public class FxUtilities {
     }
     return stage;
   }
-
 
   /**
    * Gets the window of an owner object.<br>
@@ -404,7 +398,6 @@ public class FxUtilities {
     throw new FxRuntimeException("cannot determine window of " + owner);
   }
 
-
   /**
    * Returns whether the stage is modal.
    *
@@ -419,7 +412,6 @@ public class FxUtilities {
     };
   }
 
-
   /**
    * Copies a text to the clipboard.
    *
@@ -430,7 +422,6 @@ public class FxUtilities {
     cbc.putString(text);
     Clipboard.getSystemClipboard().setContent(cbc);
   }
-
 
   /**
    * Closes the hierarchy of stages from the given node stopping at the given stage.
@@ -451,7 +442,6 @@ public class FxUtilities {
       }
     }
   }
-
 
   /**
    * Dumps the component hierarchy.
@@ -557,7 +547,6 @@ public class FxUtilities {
     return buf.toString();
   }
 
-
   /**
    * Runs a command on the FX application thread and waits for its execution to finish.
    *
@@ -571,7 +560,6 @@ public class FxUtilities {
     }
     blockingFxExecutor.execute(runnable);
   }
-
 
   /**
    * Runs a runnable in a separate thread.<br>
@@ -607,7 +595,6 @@ public class FxUtilities {
 
     service.start();
   }
-
 
   /**
    * Shows a notification popup.<br>
@@ -722,7 +709,6 @@ public class FxUtilities {
     showNotification(owner, popup, notification, () -> answer.accept(result.get()));
   }
 
-
   /**
    * Shows an error dialog.
    *
@@ -761,7 +747,6 @@ public class FxUtilities {
       throw rx;
     }
   }
-
 
   /**
    * Shows an error popup for a component.
@@ -802,7 +787,6 @@ public class FxUtilities {
     }
     return popup;
   }
-
 
   /**
    * Creates an interactive error from a validation result.
@@ -894,7 +878,6 @@ public class FxUtilities {
     return !errors.isEmpty();
   }
 
-
   /**
    * Adds focus handling to sync with the model.
    *
@@ -933,7 +916,6 @@ public class FxUtilities {
     }
   }
 
-
   /**
    * Performs all necessary operations on an FxComponent when it gained the focus.
    *
@@ -971,7 +953,6 @@ public class FxUtilities {
       }
     }
   }
-
 
   /**
    * Remaps certain keys.
@@ -1012,7 +993,6 @@ public class FxUtilities {
       }
     });
   }
-
 
   /**
    * Filters certain keys for special features.
@@ -1059,7 +1039,6 @@ public class FxUtilities {
       });
     }
   }
-
 
   /**
    * Registers event filters for windows.
@@ -1164,7 +1143,6 @@ public class FxUtilities {
     }
   }
 
-
   /**
    * Prints a node.<br>
    * The user selects the printer, and the node is scaled down if too large for the paper.
@@ -1184,25 +1162,10 @@ public class FxUtilities {
     }
   }
 
-  private static Scale getScale(Node node, PrinterJob job) {
-    PageLayout pageLayout = job.getJobSettings().getPageLayout();
-    double scaleX = 1.0;
-    if (pageLayout.getPrintableWidth() < node.getBoundsInParent().getWidth()) {
-      scaleX = pageLayout.getPrintableWidth() / node.getBoundsInParent().getWidth();
-    }
-    double scaleY = 1.0;
-    if (pageLayout.getPrintableHeight() < node.getBoundsInParent().getHeight()) {
-      scaleY = pageLayout.getPrintableHeight() / node.getBoundsInParent().getHeight();
-    }
-    double scaleXY = Double.min(scaleX, scaleY);
-    return new Scale(scaleXY, scaleXY);
-  }
-
-
   /**
-   * Gets a binding option from an options string.
+   * Gets a binding option from an option string.
    *
-   * @param options the binding options string
+   * @param options the binding option string
    * @param key the option key
    * @return the option, null if no such option
    */
@@ -1219,7 +1182,6 @@ public class FxUtilities {
     return option;
   }
 
-
   /**
    * Applies the bindable options to a text component.
    *
@@ -1230,7 +1192,6 @@ public class FxUtilities {
   public void applyBindingOptions(FxTextComponent comp, BindingMember member, String options) {
     applyBindingOptions(comp, null, member, options);
   }
-
 
   /**
    * Applies the bindable options to a table column.
@@ -1243,201 +1204,6 @@ public class FxUtilities {
   public void applyBindingOptions(TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     applyBindingOptions(null, columnConfiguration, member, options);
   }
-
-  @SuppressWarnings("rawtypes")
-  private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
-    if (options != null) {
-      StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
-      while (stok.hasMoreTokens()) {
-        String token = stok.nextToken().trim();
-        boolean processed;
-        if (comp != null) {
-          processed = applyBindingOption(comp, member, token);
-        }
-        else if (columnConfiguration != null) {
-          processed = applyBindingOption(columnConfiguration, member, token);
-        }
-        else {
-          throw new BindingException("unsupported @Bindable target " + member);
-        }
-        if (!processed) {
-          throw new BindingException("unsupported @Bindable option \"" + token + "\") in " + member);
-        }
-      }
-    }
-  }
-
-
-  /**
-   * Applies a single binding option to a text component.
-   *
-   * @param comp the component
-   * @param member the binding member
-   * @param option the option
-   * @return true if option known and applied, false if an unknown option
-   */
-  protected boolean applyBindingOption(FxTextComponent comp, BindingMember member, String option) {
-
-    boolean processed = false;
-
-    if      (Constants.BIND_UC.equals(option)) {
-      comp.setCaseConversion(CaseConversion.UPPER_CASE);
-      processed = true;
-    }
-    else if (Constants.BIND_LC.equals(option)) {
-      comp.setCaseConversion(CaseConversion.LOWER_CASE);
-      processed = true;
-    }
-    else if (Constants.BIND_AUTOSELECT.equals(option)) {
-      comp.setAutoSelect(true);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
-      comp.setAutoSelect(false);
-      processed = true;
-    }
-    else if (Constants.BIND_UTC.equals(option)) {
-      comp.setUTC(true);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_UTC).equals(option)) {
-      comp.setUTC(false);
-      processed = true;
-    }
-    else if (Constants.BIND_UNSIGNED.equals(option)) {
-      comp.setUnsigned(true);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
-      comp.setUnsigned(false);
-      processed = true;
-    }
-    else if (Constants.BIND_DIGITS.equals(option)) {
-      comp.setValidChars(Constants.DIGITS);
-      processed = true;
-    }
-    else if (option.startsWith(Constants.BIND_COLS + "=")) {
-      try {
-        comp.setColumns(Integer.parseInt(option.substring(Constants.BIND_COLS.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_COLS + " @Bindable option \"" +
-                                       option + "\") in " + member, ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
-      try {
-        comp.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
-      try {
-        comp.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_LINES + "=")) {
-      if (comp instanceof TextArea) {
-        try {
-          ((TextArea) comp).setPrefRowCount(Integer.parseInt(option.substring(Constants.BIND_LINES.length() + 1)));
-          processed = true;
-        }
-        catch (NumberFormatException ex) {
-          throw new BindingException("invalid " + Constants.BIND_LINES + " @Bindable option \"" +
-                                     option + "\") in " + member, ex);
-        }
-      }
-      else {
-        throw new BindingException(Constants.BIND_LINES + " @Bindable option \"" +
-                                   option + "\") in " + member + " not applicable to " + comp.getClass().getName());
-      }
-    }
-
-    return processed;
-  }
-
-
-  /**
-   * Processes an option for a table binding.
-   *
-   * @param columnConfiguration the column config
-   * @param member the binding member
-   * @param option the option
-   * @return true if option known and processed, false if an unknown option
-   */
-  @SuppressWarnings("rawtypes")
-  protected boolean applyBindingOption(TableColumnConfiguration columnConfiguration, BindingMember member, String option) {
-
-    boolean processed = false;
-
-    if      (Constants.BIND_UC.equals(option)) {
-      columnConfiguration.setCaseConversion(Boolean.TRUE);
-      processed = true;
-    }
-    else if (Constants.BIND_LC.equals(option)) {
-      columnConfiguration.setCaseConversion(Boolean.FALSE);
-      processed = true;
-    }
-    else if (Constants.BIND_AUTOSELECT.equals(option)) {
-      columnConfiguration.setAutoSelect(Boolean.TRUE);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
-      columnConfiguration.setAutoSelect(Boolean.FALSE);
-      processed = true;
-    }
-    else if (Constants.BIND_UNSIGNED.equals(option)) {
-      columnConfiguration.setUnsigned(true);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
-      columnConfiguration.setUnsigned(false);
-      processed = true;
-    }
-    else if (Constants.BIND_DIGITS.equals(option)) {
-      columnConfiguration.setValidChars(Constants.DIGITS);
-      processed = true;
-    }
-    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
-      try {
-        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                       option + "\") in " + member, ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
-      try {
-        columnConfiguration.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
-                                       option + "\") in " + member, ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_COLS + "=") ||
-                 option.startsWith(Constants.BIND_LINES + "=")) {
-      // COLS= and LINES= not applicable to table cells: just ignore
-      processed = true;
-    }
-
-    return processed;
-  }
-
-
 
   /**
    * Resizes the width of all columns of a table to fit the displayed content.<br>
@@ -1546,7 +1312,6 @@ public class FxUtilities {
     }
   }
 
-
   /**
    * Delivers a lis of all showing stages.
    *
@@ -1561,7 +1326,6 @@ public class FxUtilities {
     });
     return stages;
   }
-
 
   /**
    * Calculates the location of a window so that it will be centered on the screen.
@@ -1583,7 +1347,6 @@ public class FxUtilities {
     return new Point2D((screenSize.getWidth()  - windowWidth) / 2.0,
                        (screenSize.getHeight() - windowHeight) / 2.0);
   }
-
 
   /**
    * Calculates the position of a stage on the screen so that
@@ -1611,7 +1374,6 @@ public class FxUtilities {
 
     return determineAlignedStageLocation(stage, location);
   }
-
 
   /**
    * Calculates the location of a stage so that it
@@ -1653,7 +1415,6 @@ public class FxUtilities {
     return determineFreeStageLocation(stage, location);
   }
 
-
   /**
    * Gets the virtual flow for a given control.
    *
@@ -1677,7 +1438,6 @@ public class FxUtilities {
     }
     return flow;
   }
-
 
   /**
    * Computes the row number to scrollTo to position the given row in the middle of the viewport.
@@ -1707,7 +1467,6 @@ public class FxUtilities {
     return row;
   }
 
-
   /**
    * Creates an auto-completion controller for a text component.
    *
@@ -1720,12 +1479,204 @@ public class FxUtilities {
 
 
   /**
-   * Update the maximum column width.
+   * Applies a single binding option to a text component.
+   *
+   * @param comp the component
+   * @param member the binding member
+   * @param option the option
+   * @return true if option known and applied, false if an unknown option
+   */
+  protected boolean applyBindingOption(FxTextComponent comp, BindingMember member, String option) {
+
+    boolean processed = false;
+
+    if (Constants.BIND_UC.equals(option)) {
+      comp.setCaseConversion(CaseConversion.UPPER_CASE);
+      processed = true;
+    }
+    else if (Constants.BIND_LC.equals(option)) {
+      comp.setCaseConversion(CaseConversion.LOWER_CASE);
+      processed = true;
+    }
+    else if (Constants.BIND_AUTOSELECT.equals(option)) {
+      comp.setAutoSelect(true);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
+      comp.setAutoSelect(false);
+      processed = true;
+    }
+    else if (Constants.BIND_UTC.equals(option)) {
+      comp.setUTC(true);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_UTC).equals(option)) {
+      comp.setUTC(false);
+      processed = true;
+    }
+    else if (Constants.BIND_UNSIGNED.equals(option)) {
+      comp.setUnsigned(true);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
+      comp.setUnsigned(false);
+      processed = true;
+    }
+    else if (Constants.BIND_DIGITS.equals(option)) {
+      comp.setValidChars(Constants.DIGITS);
+      processed = true;
+    }
+    else if (Constants.BIND_STRIP_NONE.equals(option)) {
+      comp.setStripMode(StripMode.NONE);
+      processed = true;
+    }
+    else if (Constants.BIND_STRIP_LEFT.equals(option)) {
+      comp.setStripMode(StripMode.LEFT);
+      processed = true;
+    }
+    else if (Constants.BIND_STRIP_RIGHT.equals(option)) {
+      comp.setStripMode(StripMode.RIGHT);
+      processed = true;
+    }
+    else if (Constants.BIND_STRIP_BOTH.equals(option)) {
+      comp.setStripMode(StripMode.BOTH);
+      processed = true;
+    }
+    else if (option.startsWith(Constants.BIND_COLS + "=")) {
+      try {
+        comp.setColumns(Integer.parseInt(option.substring(Constants.BIND_COLS.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_COLS + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
+      try {
+        comp.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
+      try {
+        comp.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_LINES + "=")) {
+      if (comp instanceof TextArea) {
+        try {
+          ((TextArea) comp).setPrefRowCount(Integer.parseInt(option.substring(Constants.BIND_LINES.length() + 1)));
+          processed = true;
+        }
+        catch (NumberFormatException ex) {
+          throw new BindingException("invalid " + Constants.BIND_LINES + " @Bindable option \"" +
+                                     option + "\") in " + member, ex);
+        }
+      }
+      else {
+        throw new BindingException(Constants.BIND_LINES + " @Bindable option \"" +
+                                   option + "\") in " + member + " not applicable to " + comp.getClass().getName());
+      }
+    }
+
+    return processed;
+  }
+
+  /**
+   * Processes an option for a table binding.
+   *
+   * @param columnConfiguration the column config
+   * @param member the binding member
+   * @param option the option
+   * @return true if option known and processed, false if an unknown option
+   */
+  @SuppressWarnings("rawtypes")
+  protected boolean applyBindingOption(TableColumnConfiguration columnConfiguration, BindingMember member, String option) {
+
+    boolean processed = false;
+
+    if (Constants.BIND_UC.equals(option)) {
+      columnConfiguration.setCaseConversion(Boolean.TRUE);
+      processed = true;
+    }
+    else if (Constants.BIND_LC.equals(option)) {
+      columnConfiguration.setCaseConversion(Boolean.FALSE);
+      processed = true;
+    }
+    else if (Constants.BIND_AUTOSELECT.equals(option)) {
+      columnConfiguration.setAutoSelect(Boolean.TRUE);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
+      columnConfiguration.setAutoSelect(Boolean.FALSE);
+      processed = true;
+    }
+    else if (Constants.BIND_UNSIGNED.equals(option)) {
+      columnConfiguration.setUnsigned(true);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
+      columnConfiguration.setUnsigned(false);
+      processed = true;
+    }
+    else if (Constants.BIND_DIGITS.equals(option)) {
+      columnConfiguration.setValidChars(Constants.DIGITS);
+      processed = true;
+    }
+    else if (Constants.BIND_STRIP_NONE.equals(option) ||
+             Constants.BIND_STRIP_LEFT.equals(option) ||
+             Constants.BIND_STRIP_RIGHT.equals(option) ||
+             Constants.BIND_STRIP_BOTH.equals(option)) {
+      // ignored for tables
+      processed = true;
+    }
+    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
+      try {
+        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
+      try {
+        columnConfiguration.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
+                                   option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_COLS + "=") ||
+             option.startsWith(Constants.BIND_LINES + "=")) {
+      // COLS= and LINES= not applicable to table cells: just ignore
+      processed = true;
+    }
+
+    return processed;
+  }
+
+
+  /**
+   * Updates the maximum column width.
    *
    * @param maxWidth the current max width
    * @param cell the cell
    * @param tableSkin the skin
-   * @return the updates width
+   * @return the updated width
    */
   @SuppressWarnings("rawtypes")
   private double maxColumnWidth(double maxWidth, TableCell cell, TableViewSkin<?> tableSkin) {
@@ -1739,12 +1690,12 @@ public class FxUtilities {
   }
 
   /**
-   * Update the maximum column width.
+   * Updates the maximum column width.
    *
    * @param maxWidth the current max width
    * @param cell the cell
    * @param treeTableSkin the skin
-   * @return the updates width
+   * @return the updated width
    */
   @SuppressWarnings("rawtypes")
   private double maxColumnWidth(double maxWidth, TreeTableCell cell, TreeTableViewSkin<?> treeTableSkin) {
@@ -1846,7 +1797,6 @@ public class FxUtilities {
     return startLocation;
   }
 
-
   /**
    * Checks if a stage would overlay any other stage that belongs to the same owner.
    *
@@ -1875,6 +1825,58 @@ public class FxUtilities {
       }
     }
     return false;
+  }
+
+  /**
+   * Computes the scale factor to fit the node onto the paper.
+   *
+   * @param node the node to print
+   * @param job the printer job
+   * @return the scale factor
+   */
+  private static Scale getScale(Node node, PrinterJob job) {
+    PageLayout pageLayout = job.getJobSettings().getPageLayout();
+    double scaleX = 1.0;
+    if (pageLayout.getPrintableWidth() < node.getBoundsInParent().getWidth()) {
+      scaleX = pageLayout.getPrintableWidth() / node.getBoundsInParent().getWidth();
+    }
+    double scaleY = 1.0;
+    if (pageLayout.getPrintableHeight() < node.getBoundsInParent().getHeight()) {
+      scaleY = pageLayout.getPrintableHeight() / node.getBoundsInParent().getHeight();
+    }
+    double scaleXY = Double.min(scaleX, scaleY);
+    return new Scale(scaleXY, scaleXY);
+  }
+
+  /**
+   * Applies the binding options to a text component.
+   *
+   * @param comp the text component, null if not a text component
+   * @param columnConfiguration the table column configuration, null if not a table column
+   * @param member the binding member
+   * @param options the binding options
+   */
+  @SuppressWarnings("rawtypes")
+  private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
+    if (options != null) {
+      StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
+      while (stok.hasMoreTokens()) {
+        String token = stok.nextToken().trim();
+        boolean processed;
+        if (comp != null) {
+          processed = applyBindingOption(comp, member, token);
+        }
+        else if (columnConfiguration != null) {
+          processed = applyBindingOption(columnConfiguration, member, token);
+        }
+        else {
+          throw new BindingException("unsupported @Bindable target " + member);
+        }
+        if (!processed) {
+          throw new BindingException("unsupported @Bindable option \"" + token + "\") in " + member);
+        }
+      }
+    }
   }
 
 }

@@ -30,7 +30,6 @@ import javafx.scene.control.TextFormatter;
 import java.util.List;
 import java.util.function.Function;
 
-
 /**
  * Delegate for FxPasswordField.
  *

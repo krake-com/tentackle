@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.component;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -47,7 +48,7 @@ import java.util.function.Function;
 public class FxTextArea extends TextArea implements FxTextComponent {
 
   /**
-   * True if enter/shift-Enter navigates to next/previous component.
+   * True if enter/shift-Enter navigates to the next/previous component.
    */
   private boolean navigateViaEnterEnabled = true;
 
@@ -62,10 +63,10 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   /**
-   * By default, enter/shift-enter or tab navigates to next/previous component and
-   * ctrl-enter/tab inserts the character.<br>
+   * By default, enter/shift-enter or tab navigates to the next/previous component and
+   * ctrl-enter/tab inserts the character.
    *
-   * @param navigateViaEnterEnabled false to restore FX standard behaviour
+   * @param navigateViaEnterEnabled false to restore FX standard behavior
    */
   public void setNavigateViaEnterEnabled(boolean navigateViaEnterEnabled) {
     this.navigateViaEnterEnabled = navigateViaEnterEnabled;
@@ -547,6 +548,16 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   @Override
   public char getFiller() {
     return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
   }
 
   @Override

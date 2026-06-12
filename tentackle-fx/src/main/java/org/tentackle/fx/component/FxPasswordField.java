@@ -20,6 +20,7 @@
 package org.tentackle.fx.component;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.StripMode;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
@@ -48,13 +49,13 @@ import java.util.function.Function;
 /**
  * Extended PasswordField with enhanced security.<br>
  * The StringBuilder holding the text input is replaced with blanks when getPassword() is invoked.
- * The application is responsible to clear the returned char-array as well.<br>
- * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx", if application runs in modular mode.
+ * The application is responsible for clearing the returned char-array as well.<br>
+ * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx", if the application runs in modular mode.
  * Falls back to a less secure mode and logs a warning, if {@code javafx.controls} is not open.
  * <p>
  * Important: if you use the password character array methods, you must not use standard FX bindings,
  * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
- * maxColumns, filtering, etc... will be disabled and the internal character buffer is accessed
+ * maxColumns, filtering, etc... will be disabled, and the internal character buffer is accessed
  * directly bypassing the string-based operations.<br>
  *
  * @author harald
@@ -615,6 +616,16 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   @Override
   public char getFiller() {
     return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
   }
 
   @Override

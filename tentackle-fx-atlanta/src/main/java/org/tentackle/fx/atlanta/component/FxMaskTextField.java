@@ -21,6 +21,7 @@ package org.tentackle.fx.atlanta.component;
 
 import atlantafx.base.controls.MaskTextField;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -522,6 +523,16 @@ public class FxMaskTextField extends MaskTextField implements FxTextComponent {
   @Override
   public char getFiller() {
     return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
   }
 
   @Override
