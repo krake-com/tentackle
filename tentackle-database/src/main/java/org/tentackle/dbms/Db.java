@@ -1182,6 +1182,7 @@ public class Db implements Session, Cloneable {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Serializable> T setProperty(String key, T value) {
+    assertOpen();
     if (isRemote()) {
       return resources.rdel.setProperty(key, value);
     }
@@ -1197,6 +1198,7 @@ public class Db implements Session, Cloneable {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Serializable> T getProperty(String key) {
+    assertOpen();
     if (isRemote()) {
       return resources.rdel.getProperty(key);
     }
@@ -1209,6 +1211,7 @@ public class Db implements Session, Cloneable {
   @Override
   public void clearProperties() {
     if (isRemote()) {
+      assertOpen();
       resources.rdel.clearProperties();
     }
     // else: local session
@@ -1598,6 +1601,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public SavepointHandle setSavepoint() {
+    assertOpen();
     if (isRemote()) {
       return resources.rdel.setSavepoint();
     }
@@ -1626,6 +1630,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public SavepointHandle setSavepoint(String name) {
+    assertOpen();
     if (isRemote()) {
       return resources.rdel.setSavepoint(name);
     }
@@ -1652,6 +1657,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public void rollback(SavepointHandle handle) {
+    assertOpen();
     if (isRemote()) {
       resources.rdel.rollback(handle);
     }
@@ -1673,6 +1679,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public void releaseSavepoint(SavepointHandle handle) {
+    assertOpen();
     if (isRemote()) {
       resources.rdel.releaseSavepoint(handle);
     }
@@ -1747,6 +1754,7 @@ public class Db implements Session, Cloneable {
    * @see #isPersistenceOperationAllowed(AbstractDbObject, ModificationType)
    */
   public DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor) {
+    assertOpen();
     if (isRemote()) {
       return resources.rdel.registerPersistenceVisitor(visitor);
     }
@@ -1765,6 +1773,7 @@ public class Db implements Session, Cloneable {
    */
   public PersistenceVisitor unregisterPersistenceVisitor(DbTransactionHandle handle) {
     if (isRemote()) {
+      assertOpen();
       return resources.rdel.unregisterPersistenceVisitor(handle);
     }
     else {
@@ -1780,6 +1789,7 @@ public class Db implements Session, Cloneable {
    */
   public Collection<PersistenceVisitor> getPersistenceVisitors() {
     if (isRemote()) {
+      assertOpen();
       return resources.rdel.getPersistenceVisitors();
     }
     else {
