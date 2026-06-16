@@ -18,7 +18,6 @@
 
 package org.tentackle.fx.rdc.testng;
 
-import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
@@ -57,6 +56,9 @@ public abstract class ControllerTest extends FxRdcTestApplication {
     this.packagePrefix = packagePrefix;
   }
 
+  /**
+   * Creates the controller test w/o package prefix.
+   */
   public ControllerTest() {
     this(null);
   }
@@ -71,17 +73,14 @@ public abstract class ControllerTest extends FxRdcTestApplication {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {
         FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
         if (anno == null || anno.test()) {
-          Reporter.log("testing controller " + clazz.getName() + "<br>", true);
-          try {
+          runFx(clazz.getName(), () -> {
+            Reporter.log("testing controller " + clazz.getName() + "<br>", true);
             FxController controller = Fx.load(clazz);
             controller.validateInjections();
             if (anno == null || anno.binding() != FxControllerService.BINDING.NO) {
               controller.getBinder().assertAllBound();
             }
-          }
-          catch (RuntimeException rex) {
-            Assert.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
-          }
+          });
         }
         else {
           Reporter.log("controller " + clazz.getName() + " not tested!<br>", true);

@@ -66,6 +66,9 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
     classMapper = ClassMapper.create(getName(), GuiProvider.class);
   }
 
+  /**
+   * Creates the GUI provider test w/o package prefix.
+   */
   public GuiProviderTest() {
     this(null);
   }
@@ -80,16 +83,18 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
         if (packagePrefix == null || provider.getClass().getName().startsWith(packagePrefix)) {
           GuiProviderService anno = provider.getClass().getAnnotation(GuiProviderService.class);
           if (anno == null || anno.test()) {
-            LOGGER.info(() -> "testing gui provider " + provider.getClass().getName());
-            if (provider.isEditorAvailable()) {
-              provider.createEditor();
-            }
-            if (provider.isFinderAvailable()) {
-              provider.createFinder();
-            }
-            provider.createGraphic();
-            provider.createTableView();
-            provider.createTreeItem();
+            runFx(provider.getClass().getName(), () -> {
+              LOGGER.info(() -> "testing gui provider " + provider.getClass().getName());
+              if (provider.isEditorAvailable()) {
+                provider.createEditor();
+              }
+              if (provider.isFinderAvailable()) {
+                provider.createFinder();
+              }
+              provider.createGraphic();
+              provider.createTableView();
+              provider.createTreeItem();
+            });
           }
           else {
             LOGGER.info(() -> "gui provider " + provider.getClass().getName() + " not tested!");
