@@ -83,15 +83,15 @@
     <javac.version>17</javac.version>
 
     <javafx.version>21.0.2</javafx.version>
-    <ikonli.version>12.3.1</ikonli.version>
-    <ow2.asm.version>9.6</ow2.asm.version>
-    <groovy.version>4.0.17</groovy.version>
+    <ikonli.version>12.4.0</ikonli.version>
+    <ow2.asm.version>9.10</ow2.asm.version>
+    <groovy.version>4.0.32</groovy.version>
     <maven.version>3.9.0</maven.version>  <!-- only for build, apps can still use 3.8.5 -->
-    <postgresql.version>42.7.1</postgresql.version>
-    <h2.version>2.2.224</h2.version>
-    <testng.version>7.8.0</testng.version>
-    <slf4j.version>2.0.9</slf4j.version>
-    <log4j2.version>2.20.0</log4j2.version>
+    <postgresql.version>42.7.11</postgresql.version>
+    <h2.version>2.4.240</h2.version>
+    <testng.version>7.12.0</testng.version>
+    <slf4j.version>2.0.18</slf4j.version>
+    <log4j2.version>2.26.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
@@ -196,7 +196,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>5.2.5</version>
+        <version>5.5.1</version>
       </dependency>
 
       <dependency>
@@ -226,7 +226,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.4.5.0</version>
+        <version>9.4.15.0</version>
       </dependency>
 
       <dependency>
@@ -250,7 +250,7 @@
         <!-- for the Junit5 test classes -->
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.10.1</version>
+        <version>5.14.4</version>
       </dependency>
 
       <!-- test dependencies -->
