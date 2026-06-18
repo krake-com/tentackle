@@ -28,6 +28,7 @@ local.properties
 # IntelliJ
 *.iml
 .idea/
+.junie/
 *.ipr
 *.iws
 
