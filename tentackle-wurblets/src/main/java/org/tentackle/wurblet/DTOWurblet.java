@@ -252,7 +252,8 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withHashCode;       // true if generate hashCode method
   protected String validate;            // != null if validate after construction (java code)
   protected boolean withNames;          // true if generate name constants
-  protected boolean nott;               // true if don't use any Tentackle-specific dependencies
+  protected boolean nott;               // if true, don't use any Tentackle-specific dependencies
+  protected boolean noFinal;            // if true, generate serialization-friendly code (JEP-500)
   protected String superClass;          // != null if subclass: super classname
   protected String modelSourceName;     // the name of the file containing the model
   protected int modelSourceLine;        // the first line number of the model
@@ -292,6 +293,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--nott".equals(lArg)) {
         nott = true;
+      }
+      else if ("--nofinal".equals(lArg)) {
+        noFinal = true;
       }
       else if (lArg.startsWith("--builderPrefix=")) {
         builderPrefix = arg.substring(16);
