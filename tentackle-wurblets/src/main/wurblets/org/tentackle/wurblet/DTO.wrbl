@@ -31,10 +31,6 @@ In TT, the default is to use "frommers" instead of "withers", since builder impl
 that use withers for builder methods (which return the builder and not the object to be built!). This may be confusing.
 TT supports both, though.</li>
 <li><em>--nott:</em> generate generic code that does not need any Tentackle dependency (such as TentackleRuntimeException)</li>
-<li><em>--nofinal:</em> generate serialization-friendly code. With JEP-500 and JDK &gt;&gt; 26, serialization frameworks
- cannot modify final fields anymore without using special JDK-internal features. With this option, all fields are non-final
- and a protected no-args constructor is generated. This does not change the semantics of the DTO but
- makes serialization easier and usually faster.</li>
 <li><em>filename:</em> the file holding the DTO model. Obsolete if the class is a java record.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -75,11 +71,11 @@ This would create an instance method "fromName(String name)" that returns a new 
 <p>
 The comment may contain optional annotations or access scope enclosed in square brackets.
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno] [protected]
+String name   the name [&#64;Bindable(MAXCOLS=20)] [&#64;MyAnno] [protected]
 </pre>
 Can also be written as:
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20), &#64;MyAnno, protected]
+String name   the name [&#64;Bindable(MAXCOLS=20), &#64;MyAnno, protected]
 </pre>
 <p>
 Valid access scopes are: public (default), protected, package, private.
@@ -126,7 +122,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         if (!property.isInherited()) {
 ]@
   /** property name for @(property.getComment())@. */
-  public static@(noFinal?"":"final")@ String @(property.getConstant())@ = "@(property.getName())@";
+  public static final String @(property.getConstant())@ = "@(property.getName())@";
 
 @[
         }
@@ -138,7 +134,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
       for (Property property: properties) {
         if (!property.isInherited()) {
           String decl = "private";
-          if (!property.isMutable() && !noFinal) {
+          if (!property.isMutable()) {
             decl += " final";
           }
           else if (property.isTransient()) {
@@ -278,15 +274,6 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         }
 ]@
   }
-@[
-      }
-      if (noFinal) {
-]@
-
-  /**
-   * Protected no-args constructor for serialization.
-   */
-  protected @(getClassName())@() {}
 @[
       }
     }

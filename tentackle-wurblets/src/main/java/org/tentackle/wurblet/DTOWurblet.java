@@ -252,8 +252,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withHashCode;       // true if generate hashCode method
   protected String validate;            // != null if validate after construction (java code)
   protected boolean withNames;          // true if generate name constants
-  protected boolean nott;               // if true, don't use any Tentackle-specific dependencies
-  protected boolean noFinal;            // if true, generate serialization-friendly code (JEP-500)
+  protected boolean nott;               // true if don't use any Tentackle-specific dependencies
   protected String superClass;          // != null if subclass: super classname
   protected String modelSourceName;     // the name of the file containing the model
   protected int modelSourceLine;        // the first line number of the model
@@ -294,10 +293,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
       else if ("--nott".equals(lArg)) {
         nott = true;
       }
-      else if ("--nofinal".equals(lArg)) {
-        noFinal = true;
-      }
-      else if (lArg.startsWith("--builderprefix=")) {
+      else if (lArg.startsWith("--builderPrefix=")) {
         builderPrefix = arg.substring(16);
         withBuilder = true;
       }
@@ -379,13 +375,18 @@ public class DTOWurblet extends AbstractJavaWurblet {
           }
           else if (!line.isEmpty() && !line.startsWith("#")) {
             StringTokenizer stok = new StringTokenizer(line);
-            String type = null;
+            StringBuilder type = new StringBuilder(); // concat words for types like Map<Long, String>
+            int genericLevel = 0;   // open < ... >
             String name = null;
             StringBuilder comment = new StringBuilder();
             while (stok.hasMoreTokens()) {
               String token = stok.nextToken();
-              if (type == null) {
-                type = token;
+              if (type.isEmpty() || genericLevel > 0) {
+                if (!type.isEmpty()) {
+                  type.append(' ');
+                }
+                type.append(token);
+                genericLevel = updateGenericLevel(genericLevel, token);
               }
               else if (name == null) {
                 name = token;
@@ -397,10 +398,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
                 comment.append(token);
               }
             }
-            if (type == null || name == null) {
+            if (type.isEmpty() || name == null) {
               throw new WurbelException("property line too short: '" + line + "'");
             }
-            Property property = new Property(type, name, comment.toString(), modelSourceLine + lineNo);
+            Property property = new Property(type.toString(), name, comment.toString(), modelSourceLine + lineNo);
             if (!property.isMutable()) {
               needConstructor = true;
             }
@@ -485,6 +486,12 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
     }
     return new ParseResult(annos, scope);
+  }
+
+  private int updateGenericLevel(int oldLevel, String token) {
+    return oldLevel +
+           StringHelper.countOccurrences(token, '<') -
+           StringHelper.countOccurrences(token, '>');
   }
 
 }
