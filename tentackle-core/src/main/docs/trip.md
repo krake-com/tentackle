@@ -105,17 +105,19 @@ public interface MyService extends Remote {
 }
 ```
 
-The actual implementation lives on the server and is wrapped by a `RemoteDelegate`:
+The actual implementation lives on the server and is wrapped by a 
+`RemoteDelegate`. 
+The client creates a proxy to invoke methods on the remote object 
+over the wire.
+
 
 ```java
-MyService remote = TripFactory.getInstance()
-    .createRemoteProxy(
+MyService remote = TripFactory.getInstance().createRemoteProxy(
         myServiceUUID,           // server-side identity
         transport,               // the transport to use
         MyService.class          // the Remote interface
     );
 ```
-The client automatically creates a proxy to invoke methods on the remote object over the wire.
 
 When a method is called:
 
