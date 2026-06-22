@@ -5,7 +5,7 @@
 TRIP (Tentackle Remote Invocation Protocol) is Tentackle's binary serialization and remote procedure call (RPC) framework. 
 It supersedes both Java Object Serialization (JOS) and Java RMI as the transport layer for multi-tier Tentackle applications.
 
-TRIP allows [PDOs](pdo.md) (Persistent Domain Objects) and other framework types to travel between JVMs — from a JavaFX desktop client to a backend server, or between server nodes in a cluster — 
+TRIP allows [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) (Persistent Domain Objects) and other framework types to travel between JVMs — from a JavaFX desktop client to a backend server, or between server nodes in a cluster — 
 with full type information, and transparent proxying of remote objects.
 
 ### Why not RMI or JOS?

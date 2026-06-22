@@ -16,7 +16,7 @@ members. A concrete toolkit binds to it by providing implementations of a
 handful of interfaces. The reference implementation for JavaFX lives in
 `org.tentackle.fx.bind` (module `tentackle-fx`).
 
-Typical models are [PDOs](pdo.md) (Persistent Domain Objects) or controllers,
+Typical models are [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) (Persistent Domain Objects) or controllers,
 but any object will do — a bean, a record, an immutable value object, or a
 controller field holding a `char[]`. The binding works *by declaration*, never
 by keeping a reference to the bound object instance: the same binder can serve
@@ -609,5 +609,5 @@ configurations (order, etc.) are generated from the model.
 | `FxTableBinder` / `DefaultFxTableBinder` | binds table columns to row-type members |
 | `FxTableBinding` / `DefaultFxTableBinding` | binds one column to a row-type member |
 
-See also: [pdo.md](pdo.md) for the model objects most often bound, and
+See also: [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) for the model objects most often bound, and
 [trip.md](trip.md) for how those objects travel between JVMs.

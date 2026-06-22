@@ -18,7 +18,7 @@ layers plug into it:
 - the [binding layer](binding.md) discovers the same annotations to drive
   *mandatory* and *changeable* states of UI components and to surface validation
   messages next to the offending widget;
-- the persistence layer validates [PDOs](pdo.md) before they are saved;
+- the persistence layer validates [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) before they are saved;
 - the results travel between JVMs over [TRIP](trip.md) — `ValidationResult` is
   `Serializable`, so a server can validate and the client can display the
   messages.
@@ -588,6 +588,6 @@ The built-in constraints and their `…Impl`/`…Container` classes
 `AbstractValidationResult`, `FailedValidationResult`, `InfoValidationResult`.
 
 See also: [binding.md](binding.md) for how mandatory/changeable state and
-validation messages reach the UI, [pdo.md](pdo.md) for the domain objects most
+validation messages reach the UI, [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) for the domain objects most
 often validated, and [trip.md](trip.md) for how validation results travel between
 JVMs.

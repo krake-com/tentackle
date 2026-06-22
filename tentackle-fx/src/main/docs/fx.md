@@ -6,7 +6,7 @@
 JavaFX controls and containers in an *extended FX layer* that integrates
 seamlessly with the rest of the framework: the [binding](../../../../tentackle-core/src/main/docs/binding.md)
 API, [validation](../../../../tentackle-core/src/main/docs/validation.md),
-[PDOs](../../../../tentackle-core/src/main/docs/pdo.md), internationalization,
+[PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md), internationalization,
 theming and SPI-based service discovery.
 
 The module lives in package `org.tentackle.fx` (JPMS module `org.tentackle.fx`)
@@ -304,5 +304,5 @@ A typical screen comes to life like this:
 See also: [binding.md](../../../../tentackle-core/src/main/docs/binding.md) for
 the model↔view binding mechanics, [validation.md](../../../../tentackle-core/src/main/docs/validation.md)
 for how mandatory/changeable and validation messages reach the view, and
-[pdo.md](../../../../tentackle-core/src/main/docs/pdo.md) for the domain objects
+[pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) for the domain objects
 most often displayed and edited.
