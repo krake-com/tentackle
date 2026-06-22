@@ -16,19 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.prefs;
 
 import java.util.Objects;
 import java.util.prefs.BackingStoreException;
 
-
-
 /**
  * User- and System-Preferences combined.<br>
  *
  * Implements Preferences in such a way that
- * user-space overwrites system-space which is the default
+ * user-space overwrites system space, which is the default
  * for most applications.
  * Furthermore, some helper methods allow exporting and importing
  * with file-dialogs, etc...
@@ -57,9 +54,9 @@ public abstract class CompositePreferences {
 
 
   /**
-   * Returns whether preferences are system only or user space overrides system space.
+   * Returns whether preferences are system-only or user space overrides system space.
    *
-   * @return true if system, false user first with system default
+   * @return true if system-only, false user first with system default
    */
   public boolean isSystemOnly() {
     return systemOnly;
@@ -120,7 +117,7 @@ public abstract class CompositePreferences {
    * Gets the value for a key.
    * Userspace overwrites system space.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the value string or null if no such value
    */
   public String getString(String key) {
@@ -138,7 +135,7 @@ public abstract class CompositePreferences {
    * Gets the value for a key.
    * Userspace overwrites system space.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the value string
    */
@@ -152,7 +149,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setString(String key, String val) {
@@ -178,7 +175,7 @@ public abstract class CompositePreferences {
   /**
    * Gets an Integer.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the integer or null if no such value
    */
   public Integer getInteger(String key) {
@@ -189,7 +186,7 @@ public abstract class CompositePreferences {
   /**
    * Gets an int value.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the integer
    */
@@ -203,7 +200,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setInteger(String key, Integer val) {
@@ -212,9 +209,9 @@ public abstract class CompositePreferences {
 
 
   /**
-   * Gets a Long.
+   * Gets a {@code Long}.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the integer or null if no such value
    */
   public Long getALong(String key) {
@@ -225,7 +222,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a long value.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the integer
    */
@@ -235,11 +232,11 @@ public abstract class CompositePreferences {
   }
 
   /**
-   * Sets a Long.<br>
+   * Sets a {@code Long}.<br>
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setLong(String key, Long val) {
@@ -251,7 +248,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a Float.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the integer or null if no such value
    */
   public Float getAFloat(String key) {
@@ -262,7 +259,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a float value.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the integer
    */
@@ -276,7 +273,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setFloat(String key, Float val) {
@@ -288,7 +285,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a Double.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the integer or null if no such value
    */
   public Double getADouble(String key) {
@@ -299,7 +296,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a double value.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the integer
    */
@@ -313,7 +310,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setDouble(String key, Double val) {
@@ -325,7 +322,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a Boolean.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the integer or null if no such value
    */
   public Boolean getABoolean(String key) {
@@ -336,7 +333,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a boolean value.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default value
    * @return the integer
    */
@@ -350,7 +347,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the value
    */
   public void setBoolean(String key, Boolean val) {
@@ -361,7 +358,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a bytearray from the preferences.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @return the byte array or null if no such value
    */
   public byte[] getByteArray(String key) {
@@ -378,7 +375,7 @@ public abstract class CompositePreferences {
   /**
    * Gets a bytearray from the preferences.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param def the default values
    * @return the byte array
    */
@@ -393,7 +390,7 @@ public abstract class CompositePreferences {
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
-   * @param key the preferences key
+   * @param key the preference key
    * @param val the values
    */
   public void setByteArray(String key, byte[] val) {
