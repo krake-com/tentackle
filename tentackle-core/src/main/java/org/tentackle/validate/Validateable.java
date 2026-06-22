@@ -21,15 +21,33 @@ package org.tentackle.validate;
 import java.util.List;
 
 /**
- * An object that can be validated.
+ * An object that provides its own validation.
+ * <p>
+ * By default, all objects can be validated via {@link ValidationUtilities},
+ * which is driven by annotations alone.<br>
+ * In some cases, however, objects require a more fine-grained validation process,
+ * controlled by the object itself. In such cases, the object can implement this interface
+ * and optionally provide a custom validation method, which in turn
+ * invokes {@link Validateable#validate(String, ValidationScope)}.
+ * The default implementation invokes {@link ValidationUtilities#validate(Object, String, ValidationScope)}
+ * but can be overridden to do something else.
+ * <p>
+ * Another use case of implementing this interface without overriding the validation method
+ * is to hide the {@code ValidationUtilities.getInstances().validate()} call or to express
+ * that this object must be validated or just to enhance readability.
+ * <p>
+ * Important: those objects must be validated by their own validation method and
+ * not by the {@link ValidationUtilities} instance directly, since it does <em>not</em> check whether
+ * an object implements {@code Validateable} or not
+ * (except for {@link ValidationUtilities#validateCollection(java.util.Collection, String, ValidationScope)}).<br>
+ * For an example, see {@code org.tentackle.pdo.PersistentObject#validate()}.
  *
  * @author harald
  */
 public interface Validateable {
 
   /**
-   * Validates the object.<br>
-   * Applies all field- and object-validators.
+   * Validates the object.
    *
    * @param validationPath the validation path
    * @param scope the validation scope
