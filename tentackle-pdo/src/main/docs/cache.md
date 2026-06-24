@@ -1,0 +1,392 @@
+# PDO Caching
+
+## Overview and Motivation
+
+Most applications read the same **master data** over and over — currencies, units,
+organisational units, number pools, account types. These tables are small, change
+rarely, and are referenced by almost every transaction. Fetching them from the
+database each time is wasteful, so Tentackle provides a first-class, model-driven
+**PDO cache**.
+
+A `PdoCache` is a per-entity-type, in-memory store of
+[PDOs](pdo.md) keyed by their object ID and, optionally, by additional unique
+domain keys. It transparently:
+
+- serves PDOs by ID or unique key without a database round-trip,
+- can hold the **complete table** and answer `selectAll()` from memory,
+- keeps itself **coherent** as data changes — across transactions, across JVMs,
+  and across a middle-tier server — using the table's *tableserial*,
+- hands out **immutable, thread-shared** instances by default, so the same PDO can
+  be used concurrently by many threads with no locking and no copying.
+
+The whole subsystem lives in `tentackle-pdo`:
+
+| Class | Role |
+|-------|------|
+| [`PdoCache`](../java/org/tentackle/pdo/PdoCache.java) | The cache itself: indexes, lists, strategy, expiration. |
+| [`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java) | One unique-key → PDO mapping (ID index is mandatory). |
+| [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java) | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`. |
+| [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches. |
+| [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java) | Signals a cache inconsistency (triggers invalidation). |
+
+Application code rarely touches these directly. It calls the **generated
+`selectCached…` methods** on the PDO; the model declares the cache and the
+Wurbelizer wires everything up.
+
+---
+
+## Declaring a Cache
+
+Two things turn an entity into a cached entity.
+
+**1. The model `cached` option** marks a root entity as cacheable
+([model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md)). All other entities containing a relation to it
+automatically use the cache, if not declared otherwise in the model.
+
+**2. The [`PdoCache`](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
+wurblet** generates the cache holder, the indexes, and the `selectCached…`
+accessors into the persistence implementation:
+
+```java
+// @wurblet cache PdoCache --udk --strategy=LRU --maxsize=5000 code[codeIfUser]
+```
+
+| Option | Meaning                                                                                                                                                                                      |
+|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--mutable` | Generate a **non-shared, mutable** cache (default is a shared read-only cache).                                                                                                              |
+| `--udk` | Add an index for the entity's unique domain key.                                                                                                                                             |
+| `--strategy=PRELOAD\|LRU\|LFU\|FORGET` | Eviction strategy (default `PRELOAD`).                                                                                                                                                       |
+| `--maxsize=<n>` | Maximum number of cached PDOs (`0` = unlimited).                                                                                                                                             |
+| `--keepquota=<p>` | Percentage of entries kept when shrinking (default 50).                                                                                                                                      |
+| `--configure=<method>` | Call an application method to further configure the cache.                                                                                                                                   |
+| `[index …]` | Additional **unique** indexes by attribute; `attr[method]` extracts the key via `method` (allowing *filtered* indexes whose method returns `null` to exclude PDOs, forming a unique subset). |
+
+The generated code (see
+[`PdoCache.wrbl`](../../../../tentackle-persistence-wurblets/src/main/wurblets/org/tentackle/persist/wurblet/PdoCache.wrbl))
+follows this shape — here trimmed from `StoredBundlePersistenceImpl`:
+
+```java
+private static class CacheHolder {
+  private static final PdoCache<StoredBundle> CACHE = createCache();
+  private static final PdoCacheIndex<StoredBundle, StoredBundleUDK> UDK_INDEX = createUdkIndex();
+
+  private static PdoCache<StoredBundle> createCache() {
+    PdoCache<StoredBundle> cache = Pdo.createCache(StoredBundle.class, true /* readOnly */);
+    Pdo.listen(cache::expire, StoredBundle.class);   // subscribe to modification events
+    return cache;
+  }
+  ...
+}
+```
+
+The `CacheHolder` idiom gives a **lazily-initialised singleton per PDO class**
+(the cache is created on first use, in a thread-safe way courtesy of the JVM class
+loader). `Pdo.listen(cache::expire, …)` subscribes the cache to the global
+[`ModificationTracker`](../../../../tentackle-session/src/main/docs/session.md) so it
+hears about updates/inserts/deletes to the table — see *Expiration* below.
+
+> For an inheritance hierarchy, the **topmost super entity** normally provides the
+> cache for the whole hierarchy; a subclass may keep its own cache (e.g. to add
+> indexes the superclass doesn't have). For `MULTI`-table inheritance the cache
+> listens to all leaf classes.
+
+---
+
+## Indexes and Keys
+
+A cache is a collection of **unique indexes**, each a
+`TreeMap<CacheKey, PDO>` inside a
+[`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java):
+
+- The **ID index** is mandatory, created automatically, and cannot be removed.
+- Additional indexes (unique domain key, or any declared unique attribute) are
+  added — possibly lazily, on first use ("deferred index assignment"). Adding an
+  index to an already-populated cache back-fills it by walking the ID index.
+- Each index also keeps a **missing set**: keys that were looked up and found *not*
+  to exist in the database, so repeated lookups of an absent key don't keep hitting
+  storage.
+
+The map key is a `CacheKey` combining **the unique key value *and* the
+[`DomainContext`](pdo.md)** (plus the session instance number). This is essential:
+the same logical row may be cached simultaneously under different contexts —
+different tenants or different database sessions — and they must not collide. A
+`null` key or context throws a `PdoCacheException`.
+
+Each index is defined by two functions (supplied by the generated code): one to
+**select** a PDO by key from storage, and one to **extract** the key from a PDO.
+If `extract` returns `null` the PDO is simply not added to that index — the
+mechanism behind *filtered* indexes.
+
+---
+
+## Read-Only vs. Mutable Caches
+
+The `readOnly` flag chosen at creation time has far-reaching consequences.
+
+**Read-only cache (the default).** PDOs are made
+[**finally immutable**](../../../../tentackle-core/src/main/docs/immutable.md) and
+their session is detached, so a single shared instance is safe for any number of
+concurrent threads. On the way in, `PdoCacheIndex.processPdo()` does:
+
+```java
+pd.setDomainContextImmutable(false);
+pd.setDomainContext(processedContext);   // a thread-local-session context
+pd.setFinallyImmutable();
+pd.setDomainContextImmutable(true);
+pd.setSessionImmutable(true);
+```
+
+Because the session is thread-local, lazy-loading a relation off a cached PDO uses
+*the current thread's* session, which keeps the shared object usable everywhere.
+
+**Mutable cache (`--mutable`).** PDOs stay mutable and are therefore maintained
+**per session**, which costs significantly more memory and shifts the burden of
+avoiding multi-threading issues onto the application. Use it only when you really
+need to edit cached instances. Closing a session removes its objects and lists
+(`removeObjectsForSession`).
+
+---
+
+## Operating Modes (Strategies)
+
+The cache works in one of four [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)
+modes:
+
+| Strategy | Behaviour when `maxSize` is reached | Best for                                                     |
+|----------|-------------------------------------|--------------------------------------------------------------|
+| **PRELOAD** (default) | n/a — the first select loads the **whole table**, so subsequent selects never hit storage. | Small master-data tables; also **large or transactional tables** when a tableserial is configured (in-memory read model / CQRS — see below). |
+| **LRU** | Evicts the **least recently used** PDOs down to `keepQuota` %. | Large tables, keep hot subset.                               |
+| **LFU** | Evicts the **least frequently used** PDOs. | Large tables with skewed access.                             |
+| **FORGET** | **Clears the entire cache.** | Large tables, cheap to refill.                               |
+
+LRU/LFU ordering uses the per-PDO `cacheAccessTime` / `cacheAccessCount` that
+`markCacheAccess()` stamps on every hit. Shrinking (`shrinkCache`) either removes
+the surplus objects in place or, when more than half must go, invalidates and
+re-adds the survivors — whichever touches fewer entries. `keepQuota = 0` behaves
+like `FORGET`.
+
+> **`selectAll` overrides the strategy.** The first `selectAll()` loads the whole
+> table and, unless `maxSizeHardLimit` is set, **auto-enlarges** `maxSize` to fit
+> (size + 10 %). Once a `selectAll` list exists, eviction is effectively off and
+> the cache keeps the list coherent instead.
+
+---
+
+## Reading from the Cache
+
+### By ID or unique key — `select`
+
+The core `select(index, context, key, loadIfMissing)` flow
+([`PdoCache`](../java/org/tentackle/pdo/PdoCache.java)):
+
+1. If caching is globally or locally disabled → read straight from storage.
+2. Run any **delayed expiration** for the session (and `refreshList` if preloading
+   or a list exists for this context).
+3. Look the key up in the index.
+4. If the hit is **expired** (and not list-managed), drop it and treat as a miss.
+5. On a miss, if `loadIfMissing` and the key isn't in the **missing set**, select
+   from the database (or remote cache). A found PDO that `isCacheable()` is added
+   to **all** indexes; a non-existent key is recorded in the missing set.
+6. `markCacheAccess()` the returned PDO.
+
+A `PdoCacheException` thrown mid-operation (a detected unique violation or key
+change — usually because the application illegally mutated a cached object's key)
+triggers `emergencyInvalidate()` and **one** automatic retry; a second failure
+propagates, guarding against infinite loops.
+
+### Whole table — `selectAll`
+
+`selectAll(context)` returns a `CopyOnWriteList` wrapping the cached list, so
+callers may sort or filter it without disturbing the cache. The list is kept in a
+per-context `SelectAllList` that remembers which IDs need **refreshing** or
+**removing** on the next access; `refreshList` reloads only the changed PDOs and
+either patches the list in place or rebuilds it from the ID index, whichever is
+cheaper (`isDeleteBetterThanRebuild`).
+
+`selectAny(context, ids)` returns a specific subset, refreshing expired entries.
+
+---
+
+## Coherency: Expiration and Invalidation
+
+This is the heart of the cache — keeping it consistent when data changes. The
+strategy depends entirely on whether the table carries a **`tableserial`** column
+(`isTableSerialProvided()` / the model `[tableserial]` option), a monotonically
+increasing per-table modification counter.
+
+### No tableserial → invalidate everything
+
+Without a tableserial there is no way to know *which* rows changed, so any
+modification **invalidates the whole cache**. That is perfectly fine for a small
+preloading cache: reloading the entire table costs about the same as loading a
+single row.
+
+### With tableserial → surgical expiration
+
+Modifying a PDO calls `expireCache(maxSerial)`, which the cache wurblet overrides
+to call `cache.expire(session, tableName, maxSerial)`. Rather than reload
+immediately, the cache **remembers an upper bound** and defers the actual check to
+the next access (`expireDelayed` → `expireImpl` → `expireByExpirationInfo`). At
+that point it asks the database (or the remote cache) for the *expired tableserials*
+in the requested range and walks them:
+
+- a **positive** serial means update/insert → the matching cached PDO is marked
+  `expired` (reloaded on next access) or scheduled into list `refreshIds`;
+- a **negative** serial means delete → the PDO is removed and scheduled into list
+  `removeIds`;
+- an **id of 0** means a rolled-back insert/update.
+
+If a **gap** is detected in the serial sequence, the cache cannot trust its view
+and **invalidates** — logging a warning in middle-tier mode (where it shouldn't
+happen) or quietly in local-client mode (where it can).
+
+How gaps arise depends on the **operation mode**:
+
+- **Local client mode** — the app is directly connected to the database with few
+  users ([`ModificationTracker.isLocalClientMode()`](../../../../tentackle-session/src/main/docs/session.md)).
+  Modifications update the *modification table* inside the transaction (extra
+  locks, limited throughput). Updates can be detected via tableserials, but
+  **deletions cannot** — a gap appears and the cache invalidates.
+- **Middle-tier mode** — the preferred mode, scaling to thousands of users.
+  Modifications are recorded in an in-memory **tableserial history**
+  ([`TableSerialHistory`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/TableSerialHistory.java))
+  and flushed to the modification table after the transaction commits. Combining
+  the database serials with the history leaves **no gaps**, so the cache knows
+  exactly what to expire, remove, or append.
+
+The local JVM also calls `expire` directly while modifying a PDO, so the modifying
+JVM sees its own changes reflected immediately, without waiting for the
+`ModificationTracker` round-trip. Other JVMs are notified through the modification
+event delivered to `cache.expire(ModificationEvent)` (the `Pdo.listen`
+subscription).
+
+### PRELOAD for large tables — an in-memory read model (CQRS)
+
+It is a common misconception that `PRELOAD` is only for small master-data tables.
+The decisive enabler is the **in-memory tableserial history**: with a tableserial
+configured *and* the application running in **middle-tier mode**, expiration is
+surgical and gap-free, so a preloaded cache **never reloads the whole table to stay
+coherent**. After the one-time initial load, every commit anywhere in the cluster
+expires only the **rows that actually changed** — `selectAll`'s `refreshList`
+reloads just the inserted/updated PDOs and drops the deleted ones
+(`refreshIds` / `removeIds`), touching a handful of entries no matter how many rows
+the table holds.
+
+That changes the economics completely: `PRELOAD` becomes viable — and attractive —
+for **large tables, including transaction data**, not just small lookup tables. The
+fully-populated, continuously-coherent cache is effectively a **read model in the
+[CQRS](https://martinfowler.com/bliki/CQRS.html) sense**. The write side mutates
+rows through the normal persistence path and stamps the tableserial; the read side
+answers `selectAllCached()` / `selectCached…` **entirely from memory**, kept in sync
+incrementally and automatically across all JVMs. Reads never touch the database and
+never contend with writers.
+
+The price is memory — the whole table lives on the heap — and the **middle-tier
+requirement**: local-client mode cannot detect deletions without a serial gap (see
+above) and therefore falls back to whole-cache invalidation, which is impractical
+for a large table. Size the heap accordingly and keep the cache **read-only** so a
+single shared, immutable instance set serves every thread. When the table is simply
+too large to hold in RAM, fall back to `LRU` instead.
+
+### Cache-pollution prevention inside a transaction
+
+It is legal to modify another instance of a cached PDO inside a transaction, but **selecting it back
+from the cache within that same uncommitted transaction** would poison the cache
+if the transaction later rolls back. The cache tracks the tableserials expired per
+running transaction (`SerialInfo.TxIdSet`) and, on such an attempt, throws a
+`PdoCacheException` that **rolls the transaction back** rather than corrupting the
+shared cache.
+
+---
+
+## Domain Context and Multi-Tenancy
+
+Before any lookup the cache normalises the context (`processContext`):
+
+- a **root context** is replaced by its corresponding **non-root** context, so all
+  callers share one cache slot regardless of which root they came from;
+- a **read-only** cache replaces it with a **thread-local-session** context, which
+  is what lets a single immutable PDO serve every thread.
+
+Because the `CacheKey` includes the context, PDOs of different tenants/sessions
+coexist without interfering — the cache is multi-tenant-safe by construction.
+
+---
+
+## Remoting
+
+For remote clients or servers the cache always pulls updates **from the upstream
+remote cache**, never the local database — the `selectForCache` /
+`selectAllForCache` / `getExpiredTableSerials` calls transparently dispatch to the
+remote delegate when the session is remote (see
+[`AbstractPersistentObject`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java)
+and [TRIP](../../../../tentackle-core/src/main/docs/trip.md)). This keeps a chain of
+caches (client → middle-tier → database) coherent.
+
+---
+
+## Security
+
+Cache persistence operations run on behalf of the **current thread's user**, so
+restrictive `ReadPermission` rules on a cached entity would make the cache behave
+differently per user — which is almost never intended. Prefer `ViewPermission`
+rules for cached entities; see
+[session.md](../../../../tentackle-session/src/main/docs/session.md).
+
+---
+
+## Generated Accessors
+
+The `PdoCache` wurblet adds these methods to the persistence interface (`<Key>` is
+each declared index / unique domain key):
+
+| Method | Effect |
+|--------|--------|
+| `selectCached(id)` | By ID via cache; load from storage if missing. |
+| `selectCachedOnly(id)` | By ID; **don't** load if missing (cache-only peek). |
+| `selectCachedBy<Key>(key)` | By unique key via cache; load if missing. |
+| `selectCachedOnlyBy<Key>(key)` | By unique key; cache-only. |
+| `selectAllCached()` | The whole table via cache. |
+| `selectAnyCached(ids)` | A subset by IDs via cache. |
+| `select…ForCache(…)` | Internal: load for the cache, dispatching to the remote cache when remote. |
+
+When an entity is **not** cached, `AbstractPersistentObject` provides default
+implementations of `selectCached…` that simply delegate to the non-cached
+`select…`, so calling code can use the cached variants uniformly.
+
+You can also reach the cache directly via
+[`Pdo.getCache(Class)`](../java/org/tentackle/pdo/Pdo.java) for statistics,
+`invalidate()`, strategy changes, or to add/remove indexes at runtime.
+`PdoCache.setAllEnabled(false)` disables **all** caches globally (useful for
+debugging or batch jobs).
+
+---
+
+## Rules of Thumb
+
+- **Small table → default.** A read-only `PRELOAD` cache without a tableserial is
+  ideal for the majority of master-data entities.
+- **Large table that fits in RAM → tableserial + `PRELOAD` (CQRS read model).** In
+  middle-tier mode the in-memory tableserial history keeps a fully preloaded cache
+  coherent by reloading only the changed rows, so `PRELOAD` works even for large and
+  **transactional** tables — an in-memory query side that never hits the database.
+- **Large table that doesn't fit in RAM → tableserial + LRU.** Add the
+  `[tableserial]` option and use a reasonably sized read-only `LRU` cache.
+- **Run a middle tier for write-heavy / multi-user setups.** Deletion- and
+  rollback-detection without whole-cache invalidation needs the tableserial
+  history, which only middle-tier mode maintains.
+- **Never mutate a cached key.** Changing the value behind an index on a shared
+  (immutable) cached PDO is what triggers emergency invalidation — let the cache
+  hand out immutable instances and copy if you must edit.
+- **Don't select a just-modified PDO from the cache in the same transaction** — the
+  cache deliberately rejects this to avoid pollution.
+- **Use `ViewPermission`, not `ReadPermission`, on cached entities.**
+
+## See Also
+
+- [pdo.md](pdo.md) — the PDO model and `DomainContext` the cache is keyed on.
+- [immutable.md](../../../../tentackle-core/src/main/docs/immutable.md) — why and how cached PDOs are made immutable.
+- [snapshot.md](snapshot.md) — `copy()` a cached PDO to get an editable instance.
+- [session.md](../../../../tentackle-session/src/main/docs/session.md) — the `ModificationTracker`, tableserial and operation modes.
+- [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) — the `cached` / `tableserial` model options.
+- [persistence-wurblets.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — the `PdoCache` wurblet that generates the cache.
