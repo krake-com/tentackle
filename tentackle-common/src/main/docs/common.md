@@ -92,7 +92,8 @@ timezones** and optional immutability. Most are usable directly as model attribu
   as a model attribute (`org.tentackle.sql.datatypes.I18NTextType`); implements `CharSequence`/`Comparable` for
   the current locale.
 - [`Freezable`](../java/org/tentackle/common/Freezable.java) — the interface behind the "frozen" (made-immutable)
-  capability of the money, date/time and binary types.
+  capability of the date/time and binary types. See [freezable.md](freezable.md) for why it exists and how it
+  makes old-school mutable types like `java.util.Date` safe as entity attributes.
 
 ### Object serialization
 
@@ -214,6 +215,7 @@ service API; higher-level utilities (e.g. the reflection-based class mappers) ad
 ## Related Documentation
 
 - [Services / ServiceFinder](services.md) — the in-depth guide to the service and configuration API summarized above.
+- [Freezable](freezable.md) — why the date/time and binary value types are freezable, and how that protects entity attributes from aliasing mutation.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — maps the data types here (`BMoney`, `DMoney`, `Date`, `Timestamp`, `I18NText`, …) to database columns.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — uses `EncryptedProperties`/`Cryptor` for connection configuration and credentials.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the PDO pattern wired together by the service API.

@@ -322,7 +322,7 @@ pool.setName("oops");                        // logged with stack trace, change 
 - [`Immutable`](../java/org/tentackle/misc/Immutable.java),
   [`ImmutableCollection`](../java/org/tentackle/misc/ImmutableCollection.java),
   [`ImmutableArrayList`](../java/org/tentackle/misc/ImmutableArrayList.java) — the core contracts and base impls.
-- [`Freezable`](../../../../tentackle-common/src/main/java/org/tentackle/common/Freezable.java) — the one-way value-object counterpart.
+- [`Freezable`](../../../../tentackle-common/src/main/java/org/tentackle/common/Freezable.java) — the one-way value-object counterpart ([freezable.md](../../../../tentackle-common/src/main/docs/freezable.md) explains why it exists and how it relates to mutable JDK types like `java.util.Date`).
 - [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md) — snapshots are immutable; copies are mutable.
 - [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) — the aggregate model immutability cascades over.
 - [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) — the `immutable` relation option.
