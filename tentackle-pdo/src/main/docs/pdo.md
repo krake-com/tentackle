@@ -508,6 +508,32 @@ persistence implementation, which runs the query close to the database.
 
 ## Creating and Using PDOs
 
+### Scaffolding a PDO with the wizard
+
+A PDO is several coordinated files across the `-pdo`, `-persistence`, and
+`-domain` modules — the PDO interface, its persistence- and domain interfaces, and
+the two implementation classes, each with the right SPI annotations and model
+comment block. Rather than create them by hand, the usual starting point is the
+**PDO wizard** of the
+[`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin):
+
+```bash
+mvn tentackle-wizard:pdo
+```
+
+Run from the aggregator (parent) directory so the wizard can place files into all
+modules. It asks for the entity name, the short/long description, the table name
+and class id, and generates the interfaces and implementations in the right
+modules, including the SPI annotations and an empty model comment block ready for
+you to fill in. The normal build (`tentackle:analyze` → Wurbelizer → compiler)
+then turns that model into the persistence mappings and DDL described above. New
+projects created from the [project archetype](../../../../tentackle-project-archetype)
+ship with the same templates under `templates/pdo`. (Table-less *services* are
+scaffolded the same way with `mvn tentackle-wizard:operation` — see
+[operation.md](operation.md).)
+
+### Creating PDOs in code
+
 The [`Pdo`](../java/org/tentackle/pdo/Pdo.java) class collects the factory
 methods for PDOs, operations, caches, sessions, and domain contexts.
 
@@ -537,7 +563,8 @@ Within domain/persistence implementations you normally use the context-aware
 shorthands instead of `Pdo.create(...)`:
 
 - `on(SomeEntity.class)` — a new PDO of another type in *this* context;
-- `me().on()` — a new PDO of the *same* type in this context;
+- `on(SomeEntity.class, String contextName)` — a new PDO of another type in a named sub context;
+- `on()` — a new PDO of the *same* type in this context;
 - `me()` — the full PDO from inside a delegate.
 
 ### Transactions and validation
