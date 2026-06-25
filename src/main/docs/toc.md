@@ -1,0 +1,116 @@
+# Table of Contents
+
+The complete Tentackle documentation, grouped by topic. New to the framework?
+Start with the [Quickstart](./quickstart.md). Looking for a specific term? Use
+the [Index](./index.md).
+
+## Getting Started
+
+- [Quickstart](./quickstart.md) — generate, build and run a multi-tier application in minutes.
+- [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
+- [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
+- [Migrate from RMI to TRIP](./migrate_rmi_trip.md) — upgrading an existing RMI-based application to the TRIP protocol.
+
+## Concepts & Architecture
+
+- [Tentackle Modules](./modules.md) — the build-time, runtime and common modules, and how they layer.
+- [Multi-Tier Cascade](./tiers.md) — nested servers and clients; how the same artifact runs at any tier.
+- [Correctness First](./correctness-first.md) — the design philosophy: refuse to be wrong quietly.
+- [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — where location transparency shines.
+- [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
+- [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modelling tool.
+
+## Persistent Domain Objects (PDO)
+
+- [PDO — Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the central programming model.
+- [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md) — creating PDOs and operations in context.
+- [Operation — Behavior Without an Entity](../../../tentackle-pdo/src/main/docs/operation.md) — business logic that is not tied to one entity.
+- [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md) — the optional, coherent object cache.
+- [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md) — exact, atomic aggregate undo.
+- [Security — Permissions, Rules, and Grantees](../../../tentackle-pdo/src/main/docs/security.md) — the PDO security model.
+- [The rootId and rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md) — how components find their aggregate root.
+
+## Model & Code Generation
+
+- [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the model API module.
+- [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL embedded in a PDO interface.
+- [Wurblets — Interface-Level Code Generation](../../../tentackle-wurblets/src/main/docs/wurblets.md) — generating the PDO/operation interfaces.
+- [Persistence Wurblets — Implementation-Level Code Generation](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generating the persistence implementation.
+- [PdoSelectList and PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) — generating query methods.
+- [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — fetching related entities via outer joins.
+
+## Persistence & Database
+
+- [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md) — the PDO-aware persistence layer.
+- [Locking — Token Locks and the Optimistic `serial` Column](../../../tentackle-persistence/src/main/docs/locking.md) — concurrency control.
+- [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
+- [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
+- [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
+- [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
+
+## Remoting
+
+- [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — binary serialization and RPC.
+- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport.
+
+## Core Foundations
+
+- [Tentackle Core](../../../tentackle-core/src/main/docs/core.md) — the runtime foundation.
+- [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
+- [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — the ServiceFinder SPI.
+- [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
+- [Validation — Annotation-Driven, Scope-Aware Validation](../../../tentackle-core/src/main/docs/validation.md) — declarative constraints.
+- [Interceptors — Annotation-Driven Method Interception](../../../tentackle-core/src/main/docs/interceptors.md) — cross-cutting concerns.
+- [Immutable — Switchable Read-Only Objects](../../../tentackle-core/src/main/docs/immutable.md) — controlled immutability.
+- [Freezable — Making Old-School Mutable Value Types Safe](../../../tentackle-common/src/main/docs/freezable.md) — taming legacy mutable values.
+- [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md) — the pluggable logging API.
+- [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting-language API.
+
+## Internationalization
+
+- [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md) — the i18n overview: bundles, `I18NText` and locale handling.
+- [Internationalization (i18n)](../../../tentackle-common/src/main/docs/internationalization.md) — companion overview of the i18n story.
+- [Tentackle I18N — Database-backed Resource Bundles](../../../tentackle-i18n/src/main/docs/i18n.md) — managing translations in the database.
+
+## User Interface (JavaFX)
+
+- [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers and binding.
+- [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
+- [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.
+- [FX RDC Update — Auto-Update for the Rich Desktop Client](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the client-side update UI.
+
+## Logging Providers
+
+- [SLF4J Provider](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md) — pluggable SLF4J backend.
+- [Log4J 2 Provider](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md) — pluggable Log4J 2 backend.
+
+## Scripting Providers
+
+- [Groovy Provider](../../../tentackle-script-groovy/src/main/docs/groovy.md) — Groovy scripting backend.
+- [JRuby Provider](../../../tentackle-script-ruby/src/main/docs/ruby.md) — JRuby scripting backend.
+- [JSR-223 Provider](../../../tentackle-script-jsr/src/main/docs/jsr.md) — JSR-223 / GraalVM scripting backend.
+
+## Application Lifecycle & Integration
+
+- [Tentackle Update — The Application Self-Update Service](../../../tentackle-update/src/main/docs/update.md) — client auto-update.
+- [Tentackle Web — Bridging Web Frameworks to a Tentackle Tier](../../../tentackle-web/src/main/docs/web.md) — exposing a Tentackle tier to web frameworks.
+
+## Build Tooling (Maven Plugins)
+
+- [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the main plugin driving annotation analysis.
+- [Tentackle Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md) — the shared Mojo foundation.
+- [Tentackle Build Support](../../../tentackle-build-support/src/main/docs/build-support.md) — the annotation analyze phase, independent of Maven.
+- [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) — validates bundles and validation annotations.
+- [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and database migrations.
+- [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) — syncs database-backed bundles with resource bundles.
+- [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — builds self-contained application images.
+- [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — interactive PDO/operation wizard.
+
+## Testing
+
+- [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — TestNG support for the PDO layer.
+- [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support for the rich desktop client.
+
+---
+
+See also the [Index](./index.md) for an alphabetical, concept-oriented entry point.

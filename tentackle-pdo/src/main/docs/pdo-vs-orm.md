@@ -286,13 +286,13 @@ deliveryService.deliverIfPossible(em, ingot, calloff);
 A cluster of JPA practices exists purely to work around managed/detached entities;
 none of them have a Tentackle counterpart:
 
-| JPA mechanism | Why it exists in JPA | Tentackle equivalent |
-|---------------|----------------------|----------------------|
+| JPA mechanism | Why it exists in JPA | Tentackle equivalent                                                                                                                                                 |
+|---------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **DTOs** | Detached entities are unsafe to expose to the view/remote tier (lazy relations throw), so you copy data into transport objects | None. The PDO *is* the transport object — it travels between JVMs over [TRIP](../../../../tentackle-core/src/main/docs/trip.md) and stays fully functional on arrival |
-| **`merge()` / re-attach** | A detached entity must be merged back into a context before it can be saved | None. A PDO is never detached; `persist()` always works |
-| **Fetch joins / `@EntityGraph` / fetch plans** | You must predict, before the context closes, every relation the caller will touch | None. Any relation can be fetched on demand at any time, on any tier |
-| **`OpenSessionInView`** | Keep the context open through rendering so the view can lazy-load | None. The view holds real objects |
-| **`em.clear()` in batches** | Stop the identity map from exhausting the heap | None. PDOs are GC'd as they go out of scope |
+| **`merge()` / re-attach** | A detached entity must be merged back into a context before it can be saved | None. A PDO is never detached; `persist()` always works                                                                                                              |
+| **Fetch joins / `@EntityGraph` / fetch plans** | You must predict, before the context closes, every relation the caller will touch | Any relation can be fetched on demand at any time, on any tier. Fetch joins are domain-driven, not framework-driven!                                           |
+| **`OpenSessionInView`** | Keep the context open through rendering so the view can lazy-load | None. The view holds real objects                                                                                                                                    |
+| **`em.clear()` in batches** | Stop the identity map from exhausting the heap | None. PDOs are GC'd as they go out of scope                                                                                                                          |
 
 Writing once and running anywhere — client, middle tier, or server — falls out of
 the same property: the domain logic is on the object, the object works everywhere,

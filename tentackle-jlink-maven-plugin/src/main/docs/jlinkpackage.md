@@ -258,7 +258,7 @@ Example for package-installer.ftl:
 ```
 
 For a complete multi-module JPMS example please run the Tentackle maven archetype according to 
-the project's [README](https://bitbucket.org/krake-oss/tentackle/src/master/README.md).
+the project's [Quickstart](../../../../src/main/docs/quickstart.md).
  
 ### How The Jlink Goal Basically Works
 
@@ -302,7 +302,7 @@ In phase 4 `package-installer.ftl` is used.
 
 ### "Unrequired" Dependencies
 
-When running the example in this [README](https://bitbucket.org/krake-oss/tentackle/src/master/README.md) you
+When running the example in this [Quickstart](../../../../src/main/docs/quickstart.md) you
 may have stumbled upon the following console output:
 
 ```
@@ -435,7 +435,7 @@ which is based on [JavaFX](https://openjfx.io/) and the [Tentackle](https://tent
 framework. As such, it cannot be used by any other kind of application. But it may well serve as a blueprint
 for Swing or FX applications to implement your own solution.
 
-Again, for a working example please see this [README](https://bitbucket.org/krake-oss/tentackle/src/master/README.md).
+Again, for a working example please see this [Quickstart](../../../../src/main/docs/quickstart.md).
 
 
 ### Further Reading
