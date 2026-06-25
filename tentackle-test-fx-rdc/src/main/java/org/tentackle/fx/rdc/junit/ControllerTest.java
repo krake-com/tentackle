@@ -18,7 +18,6 @@
 
 package org.tentackle.fx.rdc.junit;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
@@ -57,28 +56,27 @@ public abstract class ControllerTest extends FxRdcTestApplication {
     this.packagePrefix = packagePrefix;
   }
 
+  /**
+   * Creates the controller test w/o package prefix.
+   */
   public ControllerTest() {
     this(null);
   }
 
   @Test
   public void testControllers() {
-
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {
         FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
         if (anno == null || anno.test()) {
-          LOGGER.info(() -> "testing controller " + clazz.getName());
-          try {
+          runFx(clazz.getName(), () -> {
+            LOGGER.info(() -> "testing controller " + clazz.getName());
             FxController controller = Fx.load(clazz);
             controller.validateInjections();
             if (anno == null || anno.binding() != FxControllerService.BINDING.NO) {
               controller.getBinder().assertAllBound();
             }
-          }
-          catch (RuntimeException rex) {
-            Assertions.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
-          }
+          });
         }
         else {
           LOGGER.info(() -> "controller " + clazz.getName() + " not tested!");

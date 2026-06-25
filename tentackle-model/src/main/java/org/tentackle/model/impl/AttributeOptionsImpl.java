@@ -171,6 +171,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     setUpperCase(options.isUpperCase());
     setLowerCase(options.isLowerCase());
     setMaxCol(options.isMaxCol());
+    setStripMode(options.getStripMode());
     setBindOptions(options.getBindOptions());
     if (dataType.isNumeric() || dataType.isDateOrTime()) {
       setAutoSelect(options.isAutoSelect());

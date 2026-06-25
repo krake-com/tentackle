@@ -1,6 +1,6 @@
 <#-- template to update the application -->
 <#-- assumed to be unzipped into a folder named "update", where this script is located in subfolder "bin" -->
-<#-- invoked with the PID of the running client as the only argument (necessary to wait for termination) -->
+<#-- invoked with the PID of the running client as the only argument (necessary for windows to wait for termination) -->
 <#if osName?upper_case?contains("WIN")>
 @echo off
 set script_file=%~nx0
@@ -44,7 +44,7 @@ cd "$(dirname "$(dirname "$(dirname "$(abs_path "$0")")")")"
   <#else>
 cd "$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")"
   </#if>
-<#-- wait for termination (lockfile must be unlocked first) -->
+<#-- necessary only if running on NFS -->
 if [ "$1" != "" ]; then
   while kill -0 $1 2>/dev/null
   do
@@ -53,10 +53,18 @@ if [ "$1" != "" ]; then
 fi
 if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d update/legal ] && [ -d update/lib ]; then
   if [ -f update/bin/$(basename "$0") ]; then
-    rm -fr bin conf include legal lib mp cp
-    mv -f update/* .
+    for sd in bin conf include legal lib man mp cp
+    do
+      rm -fr $sd
+      mv -f update/$sd .
+    done
+    mv -f update/release .
     rm -fr update
+<#if osName?upper_case?contains("MAC")>
+    chmod +x bin/* lib/jspawnhelper
+<#else>
     chmod +x bin/* lib/jexec lib/jspawnhelper
+</#if>
     # bin/${runScript}<#-- uncomment if restart desired -->
   else
     echo this is not the correct update script

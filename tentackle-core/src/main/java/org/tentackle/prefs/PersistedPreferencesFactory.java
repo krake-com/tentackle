@@ -75,7 +75,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * Returns whether preferences are readonly.
    * <p>
    * If readonly all modifications to the preferences will be silently ignored.
-   * Default is read-write.
+   * The default is read-write.
    *
    * @return true readonly
    */
@@ -94,7 +94,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * This feature is nice to configure a system for all users.
    * The default is user and system scope.
    *
-   * @return true if system only
+   * @return true if system-only
    */
   boolean isSystemOnly();
 

@@ -63,6 +63,9 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
     classMapper = ClassMapper.create(getName(), TableConfigurationProvider.class);
   }
 
+  /**
+   * Creates the table configuration provider test w/o package prefix.
+   */
   public TableConfigurationProviderTest() {
     this(null);
   }
@@ -80,8 +83,10 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
         else if (packagePrefix == null || provider.getClass().getName().startsWith(packagePrefix)) {
           TableConfigurationProviderService anno = provider.getClass().getAnnotation(TableConfigurationProviderService.class);
           if (anno == null || anno.test()) {
-            LOGGER.info(() -> "testing table configuration provider " + provider.getClass().getName());
-            provider.createTableConfiguration();
+            runFx(provider.getClass().getName(), () -> {
+              LOGGER.info(() -> "testing table configuration provider " + provider.getClass().getName());
+              provider.createTableConfiguration();
+            });
           }
           else {
             LOGGER.info(() -> "table configuration provider " + provider.getClass().getName() + " not tested");

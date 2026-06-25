@@ -199,7 +199,7 @@ public class ValidationUtilities {
    *
    * @param object the validateable object
    */
-  public void validate(Validateable object) {
+  public void validate(Object object) {
     List<ValidationResult> results;
     try {
       results = validate(object, getDefaultValidationPath(object),
@@ -216,14 +216,13 @@ public class ValidationUtilities {
   /**
    * Validates an object.<br>
    * The method first applies the field validators followed by the object validators.
-   * Objects simply refer to this method to implement {@link Validateable}.
    *
    * @param object the object to be validated
    * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object)}
    * @param scope the validation scope
    * @return the validation results, empty if okay, never null
    */
-  public List<ValidationResult> validate(Validateable object, String validationPath, ValidationScope scope) {
+  public List<ValidationResult> validate(Object object, String validationPath, ValidationScope scope) {
     Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
     List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(clazz);
     List<ValidationResult> results = validateFields(validators, scope, validationPath, object);
@@ -239,21 +238,31 @@ public class ValidationUtilities {
 
   /**
    * Validates a collection of objects.<br>
+   * Elements of the collection implementing {@link Validateable} will be validated
+   * by calling the {@link Validateable#validate(String, ValidationScope)} method.
+   * All other objects will be validated by calling {@link #validate(Object, String, ValidationScope)}
    *
    * @param collection the objects to validate
    * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param scope the validation scope
    * @return the validation results, empty if okay, never null
    */
-  public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection,
+  public List<ValidationResult> validateCollection(Collection<?> collection,
                                                    String validationPath, ValidationScope scope)  {
     List<ValidationResult> results = new ArrayList<>();
     if (collection != null && !collection.isEmpty()) {
       try {
         int ndx = 0;
-        for (Validateable obj : collection) {
+        for (Object obj : collection) {
           if (obj != null) {
-            results.addAll(obj.validate(validationPath + "[" + (ndx++) + "]", scope));
+            String path = validationPath + "[" + (ndx++) + "]";
+            if (obj instanceof Validateable validateable) {
+              // redirect to the object in case the validate-method is overridden
+              results.addAll(validateable.validate(path, scope));
+            }
+            else {
+              results.addAll(validate(obj, path, scope));
+            }
           }
         }
       }

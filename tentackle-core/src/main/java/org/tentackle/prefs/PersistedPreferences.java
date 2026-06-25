@@ -17,21 +17,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.prefs;
 
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
 
-
-
-
 /**
  * Persisted Preferences.
  * <p>
  * Resembles the JDK's {@link java.util.prefs.Preferences}, but is just an interface.
- * Allows to switch implementations at runtime.
+ * Allows switching implementations at runtime.
  */
 public interface PersistedPreferences {
 
@@ -153,11 +149,11 @@ public interface PersistedPreferences {
    * Removes all the preferences (key-value associations) in this preference node. This call has no effect on any
    * descendants of this node.
    * <p>
-   * If this implementation supports <i>stored defaults</i>, and this node in the preferences hierarchy contains any
+   * If this implementation supports <i>stored defaults</i>, and this node in the preference hierarchy contains any
    * such defaults, the stored defaults will be "exposed" by this call, in the sense that they will be returned by
    * succeeding calls to <code>get</code>.
    * <p>
-   * @throws BackingStoreException if this operation cannot be completed due to a failure in the backing store, or
+   * @throws BackingStoreException if this operation cannot be completed due to failure in the backing store, or
    *                               inability to communicate with it.
    * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode()} method.
    * @see #removeNode()
@@ -170,7 +166,7 @@ public interface PersistedPreferences {
    * This method is intended for use in conjunction with {@link #getInt}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if <code>key</code> is <code>null</code>.
    * @throws IllegalArgumentException if <code>key.length()</code> exceeds
@@ -214,7 +210,7 @@ public interface PersistedPreferences {
    * This method is intended for use in conjunction with {@link #getLong}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if <code>key</code> is <code>null</code>.
    * @throws IllegalArgumentException if <code>key.length()</code> exceeds
@@ -236,14 +232,14 @@ public interface PersistedPreferences {
    * If the implementation supports <i>stored defaults</i> and such a default exists, is accessible, and could be
    * converted to a long with <code>Long.parseLong</code>, this long is returned in preference to the specified default.
    * <p>
-   * @param key key whose associated value is to be returned as a long.
+   * @param key key whose associated value is to be returned as a long value.
    * @param def the value to be returned in the event that this preference node has no value associated with
    *            <code>key</code>
-   * or the associated value cannot be interpreted as a long, or the backing store is inaccessible.
+   * or the associated value cannot be interpreted as a long value, or the backing store is inaccessible.
    * <p>
    * @return the long value represented by the string associated with
    * <code>key</code> in this preference node, or <code>def</code> if the associated value does not exist or cannot be
-   * interpreted as a long.
+   * interpreted as a long value.
    * <p>
    * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode()} method.
    * @throws NullPointerException  if <code>key</code> is <code>null</code>.
@@ -259,7 +255,7 @@ public interface PersistedPreferences {
    * conjunction with {@link #getBoolean}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if <code>key</code> is <code>null</code>.
    * @throws IllegalArgumentException if <code>key.length()</code> exceeds
@@ -279,11 +275,11 @@ public interface PersistedPreferences {
    * <p>
    * Returns the specified default if there is no value associated with the key, the backing store is inaccessible, or
    * if the associated value is something other than <code>"true"</code> or
-   * <code>"false"</code>, ignoring case.
+   * <code>"false"</code>, ignoring the case.
    * <p>
    * If the implementation supports <i>stored defaults</i> and such a default exists and is accessible, it is used in
    * preference to the specified default, unless the stored default is something other than
-   * <code>"true"</code> or <code>"false"</code>, ignoring case, in which case the specified default is used.
+   * <code>"true"</code> or <code>"false"</code>, ignoring the case, in which case the specified default is used.
    * <p>
    * @param key key whose associated value is to be returned as a boolean.
    * @param def the value to be returned in the event that this preference node has no value associated with
@@ -307,7 +303,7 @@ public interface PersistedPreferences {
    * {@link Float#toString(float)}. This method is intended for use in conjunction with {@link #getFloat}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if <code>key</code> is <code>null</code>.
    * @throws IllegalArgumentException if <code>key.length()</code> exceeds
@@ -350,7 +346,7 @@ public interface PersistedPreferences {
    * {@link Double#toString(double)}. This method is intended for use in conjunction with {@link #getDouble}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if <code>key</code> is <code>null</code>.
    * @throws IllegalArgumentException if <code>key.length()</code> exceeds
@@ -398,7 +394,7 @@ public interface PersistedPreferences {
    * with {@link #getByteArray}.
    * <p>
    * @param key   key with which the string form of value is to be associated.
-   * @param value value whose string form is to be associated with key.
+   * @param value value whose string form is to be associated with the key.
    * <p>
    * @throws NullPointerException     if key or value is <code>null</code>.
    * @throws IllegalArgumentException if {@code key.length()} exceeds MAX_KEY_LENGTH or if {@code value.length} exceeds
@@ -493,7 +489,7 @@ public interface PersistedPreferences {
    * @return the specified preference node.
    * <p>
    * @throws IllegalArgumentException if the path name is invalid (i.e., it contains multiple consecutive slash
-   *                                  characters, or ends with a slash character and is more than one character long).
+   *                                  characters or ends with a slash character and is more than one character long).
    * @throws NullPointerException     if path name is <code>null</code>.
    * @throws IllegalStateException    if this node (or an ancestor) has been removed with the {@link #removeNode()}
    *                                  method.
@@ -516,7 +512,7 @@ public interface PersistedPreferences {
    * @throws BackingStoreException    if this operation cannot be completed due to a failure in the backing store, or
    *                                  inability to communicate with it.
    * @throws IllegalArgumentException if the path name is invalid (i.e., it contains multiple consecutive slash
-   *                                  characters, or ends with a slash character and is more than one character long).
+   *                                  characters or ends with a slash character and is more than one character long).
    * @throws NullPointerException     if path name is <code>null</code>.
    * @throws IllegalStateException    if this node (or an ancestor) has been removed with the {@link #removeNode()}
    *                                  method and
@@ -582,7 +578,7 @@ public interface PersistedPreferences {
    * method to be called.
    * <p>
    * When a flush occurs on a newly created node, it is made persistent, as are any ancestors (and descendants) that
-   * have yet to be made persistent. Note however that any preference value changes in ancestors are <i>not</i>
+   * have yet to be made persistent. Please notice that any preference value changes in ancestors are <i>not</i>
    * guaranteed to be made persistent.
    * <p>
    * If this method is invoked on a node that has been removed with the {@link #removeNode()} method, flushSpi() is

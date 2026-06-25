@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 /**
@@ -177,13 +176,13 @@ public class Constants {
   public static final String AN_NORMTEXT = "normText";
 
 
-  /** bind option MAXCOLS = ... */
+  /** bind option MAXCOLS=... */
   public static final String BIND_MAXCOLS = "MAXCOLS";
 
-  /** bind option COLS = ... */
+  /** bind option COLS=... */
   public static final String BIND_COLS = "COLS";
 
-  /** bind option SCALE = ... */
+  /** bind option SCALE=... */
   public static final String BIND_SCALE = "SCALE";
 
   /** bind option UNSIGNED. */
@@ -192,12 +191,23 @@ public class Constants {
   /** bind option digits only. */
   public static final String BIND_DIGITS = "DIGITS";
 
-
   /** bind option uppercase. */
   public static final String BIND_UC = "UC";
 
   /** bind option lowercase. */
   public static final String BIND_LC = "LC";
+
+  /** bind option to turn off stripping. */
+  public static final String BIND_STRIP_NONE = "NOSTRIP";
+
+  /** bind option to remove leading filler characters. */
+  public static final String BIND_STRIP_LEFT = "LSTRIP";
+
+  /** bind option to remove trailing filler characters. */
+  public static final String BIND_STRIP_RIGHT = "RSTRIP";
+
+  /** bind option to remove leading and trailing filler characters (default for text components). */
+  public static final String BIND_STRIP_BOTH = "STRIP";
 
   /** bind option autoselect field. */
   public static final String BIND_AUTOSELECT = "AUTOSELECT";
@@ -205,8 +215,11 @@ public class Constants {
   /** bind timestamp with UTC option. */
   public static final String BIND_UTC = "UTC";
 
-  /** bind option LINES = ... */
+  /** bind option LINES=... */
   public static final String BIND_LINES = "LINES";
+
+  /** bind option FILLER='...' or FILLER=0x... (see {@link Integer#decode(String)}). */
+  public static final String BIND_FILLER = "FILLER";
 
 
   /** maximum number of significant digits for BMoney. */

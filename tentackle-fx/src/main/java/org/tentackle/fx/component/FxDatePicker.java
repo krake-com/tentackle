@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.component;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -195,6 +196,16 @@ public class FxDatePicker extends DatePicker implements FxTextComponent {
   @Override
   public char getFiller() {
     return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
   }
 
   @Override

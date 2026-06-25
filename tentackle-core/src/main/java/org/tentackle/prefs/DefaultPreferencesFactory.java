@@ -26,8 +26,8 @@ import java.util.prefs.Preferences;
  * Use case is to map invocations of PersistedPreferences by the framework or applications back to the standard java util prefs.
  * The preferences will then no more be persisted in the database.<br>
  * To activate, extend this class and annotate with <code>@Service(PersistedPreferencesFactory.class)</code>.<br>
- * You may also override the methods isSystemOnly, systemRoot and systemNodeForPackage since system root is usually not writable by normal users.<br>
- * Furthermore, consider to override userRoot/systemRoot as well to prepend a sub node for non-class preferences such as table settings.
+ * You may also override the methods isSystemOnly, systemRoot, and systemNodeForPackage since system root is usually not writable by normal users.<br>
+ * Furthermore, consider overriding userRoot/systemRoot as well to prepend a sub node for non-class preferences such as table settings.
  * <p>
  * Example:
  * <pre>
@@ -165,7 +165,7 @@ public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
    *
    * @param clazz the class
    * @return the path name
-   * @throws IllegalArgumentException if the package has no preferences node associated with it
+   * @throws IllegalArgumentException if the package has no preference node associated with it
    */
   protected String nodeName(Class<?> clazz) {
     if (clazz.isArray()) {
@@ -173,7 +173,7 @@ public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
     }
     String pkgName = ReflectionHelper.getPackagePathName(clazz);
     return "/".equals(pkgName) ?
-           "/<unnamed>" :    // conforms to Preferences#nodeName !
+           "/<unnamed>" :    // conforms to Preferences#nodeName
            pkgName;
   }
 

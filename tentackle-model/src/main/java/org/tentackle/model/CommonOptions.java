@@ -18,6 +18,8 @@
 
 package org.tentackle.model;
 
+import org.tentackle.common.StripMode;
+
 import java.util.List;
 
 /**
@@ -152,6 +154,13 @@ public interface CommonOptions extends Commented {
    * @return true if uppercase
    */
   boolean isUpperCase();
+
+  /**
+   * Gets the strip mode.
+   *
+   * @return the strip mode, null if default
+   */
+  StripMode getStripMode();
 
   /**
    * Validates the options.

@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.component;
 
+import org.tentackle.common.StripMode;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -59,7 +60,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
 
   /**
-   * Returns whether deselect is allowed via delete or backspace key.<br>
+   * Returns whether deselect is allowed via the delete or backspace key.<br>
    * If null, it is determined according to type and/or mandatory property.
    * If the type is a primitive or the component is mandatory, deselect is not allowed.
    * Otherwise, it is allowed by default.
@@ -71,7 +72,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   }
 
   /**
-   * Sets whether deselect is allowed via delete or backspace key.
+   * Sets whether deselect is allowed via the delete or backspace key.
    *
    * @param deselectAllowed true if allowed, null if determined from type and/or mandatory property
    */
@@ -319,6 +320,16 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   @Override
   public char getFiller() {
     return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
   }
 
   @Override

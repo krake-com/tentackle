@@ -99,6 +99,16 @@
   }
 
   @Override
+  public void setStripMode(StripMode stripMode) {
+    getDelegate().setStripMode(stripMode);
+  }
+
+  @Override
+  public StripMode getStripMode() {
+    return getDelegate().getStripMode();
+  }
+
+  @Override
   public void setTextAlignment(Pos textAlignment) {
     getDelegate().setTextAlignment(textAlignment);
   }

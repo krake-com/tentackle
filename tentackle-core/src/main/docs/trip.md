@@ -1,0 +1,795 @@
+# TRIP — Tentackle Remote Invocation Protocol
+
+## Overview and Motivation
+
+TRIP (Tentackle Remote Invocation Protocol) is Tentackle's binary serialization and remote procedure call (RPC) framework. 
+It supersedes both Java Object Serialization (JOS) and Java RMI as the transport layer for multi-tier Tentackle applications.
+
+TRIP allows [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) (Persistent Domain Objects) and other framework types to travel between JVMs — from a JavaFX desktop client to a backend server, or between server nodes in a cluster — 
+with full type information, and transparent proxying of remote objects.
+
+### Why not RMI or JOS?
+
+Java Object Serialization is verbose on the wire, slow, brittle across class
+versions, and a recurring source of security advisories. RMI layers a rigid,
+JOS-based remoting model on top of it, and each remote method must declare `throws RemoteException`, 
+polluting domain interfaces with infrastructure concerns. TRIP replaces both with a single,
+compact, pluggable protocol (see [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md)
+for the upgrade path of an existing application):
+
+- **Compact wire format** — variable-length numeric values,
+  skip codes for default values, optimizations for sparse arrays/matrices/tensors/collections,
+  a *type dictionary* so each class' shape is transmitted only once, and both
+  reference- and value-based deduplication of repeated objects. The dictionary
+  is shared not only between messages but also among all connections of the same
+  same client. This significantly reduces bandwidth for applications that repeatedly transfer objects of the same class.
+- **Reflection-driven, annotation-tunable** — by default every non-`static`,
+  non-`transient` field is serialized; annotations let you
+  deviate where needed without writing serialization code.
+- **Pluggable transports** — the serialization layer produces and consumes byte
+  streams; the network layer below it (`Transport`) is swappable. TCP, TLS,
+  compressed, loopback, and [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) (RFC-9000) transports ship with the framework.
+  Applications can implement custom transports to support other protocols.
+- **Transparent RPC**: Client code obtains a dynamic proxy to a `Remote` interface, which is only a marker interface. 
+  The framework routes calls to the server-side `RemoteDelegate` transparently.
+  There is no need to explicitly export or unexport remote objects since
+  the remote delegates and client proxies are automatically managed.
+- **SD-WAN compatible**: unlike RMI, TRIP does not send IP addresses, host names, or port numbers back to the client
+  when exposing remote objects.
+  This allows NAT and also saves one network round-trip for each new remote proxy.
+
+
+
+### Design principles
+
+- TRIP is a **framework-level** protocol, not meant as a general-purpose serialization library or internet protocol. 
+- Its top-down design solves the task of transferring
+  directed cyclic graphs between JVMs, which is an essential requirement for distributed object-oriented applications that
+  are usually **not exposed** to the public internet.
+- The wire format is **binary and opaque** — applications should not try to parse or construct TRIP payloads by hand.
+- Type safety is **compile-time checked** via Java interfaces (the `Remote` pattern) and generics, not runtime duck typing.
+
+---
+
+## Key Concepts
+
+### Transport
+
+The `Transport` interface (`org.tentackle.trip.Transport`) is the central abstraction. It manages network connectivity in two roles:
+
+| Role | What it does                                                                                                                                        |
+|------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Client** | Maintains a connection pool to a single remote endpoint. Each client transport owns one dictionary for types transmitted between server and client. |
+| **Server** | Accepts incoming connections from multiple clients. Maintains one dictionary per client (to isolate type definitions between clients).              |
+
+Creating a transport does **not** start any threads or open connections. 
+Activity begins only when the first connection is requested. 
+Please keep in mind that a TRIP **client** is just a JVM talking to another JVM and may well be 
+another **server** since a distributed Tentackle application can build up any kind of network topology.
+
+```java
+// Client side — request a transport for a remote endpoint
+Transport transport = TransportManager.getInstance().requestTransport(
+    URI.create("trip://remotehost.example.site:9090"));
+
+// Server side — create and start accepting
+Transport serverTransport = TransportManager.getInstance().requestTransport(
+    URI.create("trip://0.0.0.0:9090"));
+serverTransport.accept();
+```
+
+`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host, and port returns the same `Transport` instance. Transports are reference-counted via a lease pattern — they close automatically when the last lease is released.
+The server uses virtual threads to handle multiple connections concurrently.
+
+**Built-in transports:**
+
+| Scheme   | Description                                             |
+|----------|---------------------------------------------------------|
+| `trip`   | Plain TCP sockets                                       |
+| `trips`  | TCP with SSL/TLS encryption                             |
+| `tripe`  | TCP with pre-shared key (PSK) encryption                |
+| `tripc`  | TCP with deflate compression                            |
+| `tripcs` | TCP with both SSL and compression                       |
+| `tripce` | TCP with both PSK and compression                       |
+| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module) |
+| `tripcq` | UDP QUIC protocol with compression                      |
+
+### Remote and RemoteDelegate
+
+The `Remote` interface (`org.tentackle.trip.Remote`) is a **marker interface** — it has no methods. Any object whose methods should be invocable from another JVM must implement this interface (indirectly, through its interface hierarchy).
+
+```java
+public interface MyService extends Remote {
+    String greet(String name);
+    Customer lookupCustomer(long id);  // Customer can also implement Remote!
+    void updateCustomer(Customer c);
+}
+```
+
+The actual implementation lives on the server and is wrapped by a 
+`RemoteDelegate`. 
+The client creates a proxy to invoke methods on the remote object 
+over the wire.
+
+
+```java
+MyService remote = TripFactory.getInstance().createRemoteProxy(
+        myServiceUUID,           // server-side identity
+        transport,               // the transport to use
+        MyService.class          // the Remote interface
+    );
+```
+
+When a method is called:
+
+1. **First call** to a method — the proxy sends an `InitialRemoteCall` containing the method name and parameter types along with the serialized arguments.
+2. **Subsequent calls** — the server returns a method index with the first response. The proxy then sends compact `IdentifiedRemoteCall` messages using the method index instead of the name.
+3. **Remote results** — if a method returns another `Remote` object, the server registers it as a new delegate and returns a `DelegateDescriptor`. The client automatically wraps it in another proxy.
+4. **Result deduplication** — if the result contains deduplicatable objects that were already seen in the call, 
+   the server sends back only a reference instead of the full object.
+
+On the server, `DefaultRemoteDelegate` handles the dispatch: 
+it looks up the method by name (or index) via reflection, 
+invokes it on the target object, and serializes the result. 
+If the result itself is a `Remote` object, the delegate registers it and returns a `DelegateDescriptor`,
+which in turn automatically creates a proxy in the client.
+This creates a tree of remote objects, and when the root of
+the tree is removed from the registry, all remote objects 
+belonging to the tree are unregistered as well.
+The Tentackle's [Session API](../../../../tentackle-session/src/main/docs/session.md) makes use of this mechanism.
+When a session is closed, the remote session delegate is unregistered
+together with all other remote objects of the session.
+
+### Registry and RemoteLookup
+
+The `Registry` (`org.tentackle.trip.Registry`) is the server-side name/address lookup service. It maps:
+
+| Map | Purpose |
+|-----|---------|
+| `UUID → RemoteDelegate` | Fast lookup by remote object identity |
+| `String → UUID` | Named registration for human-readable lookup |
+| `Remote object → UUID` | Reverse lookup for already-registered objects |
+
+The registry has a fixed identity (`REGISTRY_ID = new UUID(0, 0)`) and registers itself. Clients access it through a `RemoteLookup` proxy:
+
+```java
+// Look up a named service on the server
+MyService service = transport.lookup(MyService.class, "myService");
+```
+
+### TripStream
+
+The `TripStream` (`org.tentackle.trip.TripStream`) is the high-level I/O context that wraps three components:
+
+- A `Dictionary` — for type compression
+- A `Serializer` — low-level primitive byte writer
+- A `Deserializer` — low-level primitive byte reader
+
+It manages object identity tracking (reference maps), dictionary management, and opcode dispatch. Applications typically interact with `TripStream` only when writing custom transports or custom `TripType` implementations.
+
+### TripType, TripComponent, and Dictionary
+
+#### TripType
+
+A `TripType<T>` (`org.tentackle.trip.TripType`) is a type descriptor that knows how to serialize and deserialize a specific Java type to and from a `TripStream`. TripTypes are **stateless singletons** — they describe *how* to serialize a type, not the data itself.
+
+```java
+TripType<Customer> customerType = TripFactory.getInstance().getType(Customer.class);
+```
+
+TripTypes are categorized by `TripTypeCategory` (`CLASS`, `INTERFACE`, `RECORD`, `ENUM`, `PRIMITIVE`, `ARRAY`, `PROXY`). Each TripType knows:
+
+- Its components (`TripComponent[]`) — the fields/properties that make up the type
+- Whether it is referenceable (can use back-references)
+- Whether it is deduplicatable (equal objects share a single wire representation)
+- Whether it is final (cannot be assigned to a supertype on the wire)
+
+#### TripComponent
+
+A `TripComponent<P, T>` (`org.tentackle.trip.TripComponent`) describes one serializable member of a parent type. It provides:
+
+- `getValue(parent)` / `setValue(parent, value)` — read/write access
+- `getType()` — the `TripType` for this component
+- `getOrdinal()` — position in the serialized dictionary
+- `hasDefaultValue()` / `getDefaultValue()` — components with default values are omitted during serialization
+
+Component implementations:
+
+| Type | Implementation | Access mechanism |
+|------|---------------|-----------------|
+| Fields | `FieldTripComponent` | `VarHandle` (fast) or `Field.set` (final fields) |
+| Getters/setters | `MethodTripComponent` | Reflection methods |
+| Record components | `RecordTripComponent` | `RecordComponent` |
+
+#### Dictionary
+
+The `Dictionary` (`org.tentackle.trip.Dictionary`) is a type registry shared across connections. It maps class names to `DictionaryEntry` objects, each with a unique ordinal.
+
+When an object is first serialized:
+
+1. The full type definition (class name + component names) is sent over the wire
+2. The dictionary assigns an ordinal to this type
+3. All future uses of the same type send only the ordinal
+4. When a type is encountered for the first time at the client side, the
+   client sends a temporary dictionary entry which is eventually
+   confirmed by the server by sending back a permanent entry. As a result, the server
+   is the main source of truth for type definitions.
+
+This compression is maintained separately per client on the server side and as a single dictionary on the client side.
+
+#### OpCode
+
+Every serialized block starts with a single-byte `OpCode` (`org.tentackle.trip.OpCode`) that tells the deserializer what type of data follows:
+
+| Range | Meaning |
+|-------|---------|
+| `0x00` – `0x7F` | Reserved for Tentackle core types |
+| `0x80` – `0xFF` | Available for application-specific opcodes |
+
+Key opcode categories:
+
+| Category | Examples | Description |
+|----------|----------|-------------|
+| Fixed type | Primitives, `String`, dates | The opcode alone determines the type |
+| Dictionary-based | Objects, records, enums, collections | Opcode + dictionary entry ordinal |
+| Predefined array | `int[]`, `byte[]`, `String[]` | Type code + size + elements |
+| Reference | Back-reference | 1–4 byte compact index |
+| Error | Various | Serialization/deserialization error codes |
+
+#### TripFactory
+
+```
+org.tentackle.trip.TripFactory
+```
+
+`TripFactory` is the central singleton factory for all TRIP infrastructure objects. Key methods:
+
+```java
+TripFactory factory = TripFactory.getInstance();
+
+TripType<T>    type      = factory.getType(MyClass.class);
+TripStream     stream    = factory.createStream(dictionary, serializer, deserializer);
+Serializer     ser       = factory.createSerializer(outputStream);
+Deserializer   deser     = factory.createDeserializer(inputStream);
+Dictionary     dict      = factory.createDictionary(transportId, isServer);
+Registry       registry  = factory.createRegistry();
+Transport      transport = factory.createTransport(uri);
+TransportManager manager = factory.createTransportManager();
+```
+
+---
+
+## Serialization Deep Dive
+
+### How default serialization works
+
+The serialization flow is driven by `TripFactory.getType(Class)`:
+
+1. **Lookup**: The factory checks a cached `ConcurrentHashMap` of known `TripType` instances.
+2. **Predefined mapper**: If no cached type exists, the factory checks `@TripTypeService` annotations to find a user-provided `TripType` for the class.
+3. **Builder fallback**: If no predefined type is found, a `TripTypeBuilder` generates one at runtime:
+    - Classes annotated with `@TripViaJOS` → serialized via Java's built-in serialization
+    - Classes containing lambda fields (without `@TripSerializeLambda`) → error
+    - Regular classes → `ObjectTripType`
+    - Records → `RecordTripType`
+    - Enums → `EnumTripType`
+    - Collections/Maps → `CollectionTypeBuilder` / `MapTypeBuilder`
+
+4. **Component construction**: For `ObjectTripType`, the builder scans the class for serializable fields:
+    - Skips `transient`, `static`, and fields annotated with `@TripIgnore`
+    - Uses either direct field access (`FieldTripComponent`) or getter/setter pairs (`MethodTripComponent`)
+
+5. **Serialization (write)**:
+   ```
+   send OpCode (e.g., 0x38 for OBJECT)
+   if first time for this type:
+       send Dictionary entry (class name + component names)
+   if object is null:
+       send NULL (0x00)
+       return
+   if object is referencable and already seen:
+       send Reference opcode + back-reference index
+       return
+   if object is deduplicatable and already seen:
+       send Reference opcode + back-reference index
+       return
+   send instance (via canonical constructor or no-arg constructor)
+   for each component:
+       send component value (recursively)
+   ```
+
+6. **Deserialization (read)**:
+   ```
+   read OpCode
+   if fixed type:
+       read the value directly
+   if dictionary-based:
+       read dictionary entry
+       resolve TripType from DictionaryEntry
+       if REFERENCE:
+           look up back-reference index
+           return cached object
+   if object is referencable and not yet seen:
+       cache a placeholder
+   create instance (canonical constructor or no-arg constructor)
+   for each component (in dictionary order):
+       read component value (recursively)
+   invoke validate() method if TripSerializable.validate() is set
+   return instance
+   ```
+
+### Annotation-driven customization
+
+TRIP's annotations let you tweak serialization behavior without writing custom `TripType` code.
+
+#### `@TripIgnore`
+
+Marks a field or getter/setter method to be skipped during serialization. 
+Useful for computed fields, security-sensitive data, or fields that can be reconstructed on 
+the other side.
+
+```java
+@TripIgnore
+private byte[] internalBuffer;
+
+```
+
+#### `@TripSerializable`
+
+Set `value = false` to disable serialization entirely:
+
+```java
+@TripSerializable(false)
+public class AuditLog {
+    // This type will never be serialized via TRIP
+}
+```
+
+Controls lifecycle hooks applied during serialization:
+
+```java
+@TripSerializable(
+    prepare = "prepareForWire",   // called before serialization
+    validate = "validateFromWire" // called after deserialization
+)
+public class CustomerOrders implements DomainContextProvider {
+    
+    private long customerId;
+    private List<Order> orders;
+    
+    public void prepareForWire() {
+        if (orders == null) {
+            orders = on(Order.class).findByCustomerId(customerId);
+        }
+    }
+    
+    public void validateFromWire() {
+        if (orders != null) {
+            orders.forEach(Order::validate);
+        }
+    }
+}
+```
+
+#### `@TripDeduplicatable`
+
+Opts a type into value-based deduplication (only Strings and records are
+deduplicated by default). The type **must** honor the `equals`/`hashCode`
+contract! The value is a method name or `TripDeduplicatable.NEVER` /
+`TripDeduplicatable.ALWAYS` (default method: `isDeduplicatable`).
+
+```java
+@TripDeduplicatable  // explicitly enable on a class
+public class Address {
+    private final String street;
+    private final String city;
+    // equals/hashCode must be implemented!
+}
+
+// disable deduplication since benefits would be minimal
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+public record Point(double x, double y) {
+}
+```
+
+The annotation accepts three forms:
+- **No argument or `"ALWAYS"`** — always deduplicate
+- **`"NEVER"`** — never deduplicate
+- **Method name** — call this method at runtime to decide (e.g., `"isDeduplicatable"`)
+
+#### `@TripReferencable`
+
+Controls whether an object uses back-references. Referencable objects are tracked by identity: 
+if the same instance appears multiple times, subsequent appearances send a reference index instead of the full data.
+
+```java
+// Default: most objects are referencable
+public class GraphNode {
+    // Safe — identity tracking prevents infinite loops
+    private GraphNode parent;
+}
+
+// value objects usually don't benefit from back-references 
+// and speed up serialization if reference tracking is disabled
+@TripReferencable(TripReferencable.NEVER)
+public class Point {
+  private final int x;
+  private final int y;
+
+  public Point(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+// if not all objects are referencable
+@TripReferencable("isShared")
+public class SharedConfig {
+    private final boolean shared;
+  
+    public void isShared() {
+        return shared;
+    }
+}
+```
+
+#### `@TripSerializeLambda`
+
+By default, TRIP rejects to serialize lambdas, because serializing them would drag in the entire
+enclosing instance and all its referenced objects, which is usually not what the developer expects.
+This annotation enables capturing and recreating lambdas:
+
+```java
+@TripSerializeLambda
+public class EventHandler implements Serializable {
+    // This lambda will be captured and recreated on the other side
+    Supplier<String> lambda = (Supplier<String> & Serializable) () -> "some string";
+}
+```
+Notice that both the enclosing instance and the lambda must implement `Serializable`, since
+otherwise the compiler won't create serialization-capable byte code.
+Notice further that non-static inner classes are rejected for the same reason.
+Providing a `@CanonicalConstructor` or `@TripInstanceCreator` enables serialization again.
+
+#### `@TripInstanceCreator`
+
+When a class has no usable public no-arg constructor, supply a
+`TripInstanceCreator` and register it with `@TripInstanceCreatorService(TheClass.class)`.
+It can create a bare instance, and — by overriding `isCreationFromValuesSupported`
+— build the object from the already-deserialized component values:
+
+```java
+@TripInstanceCreatorService(SQLException.class)
+public class SQLExceptionInstanceCreator implements TripInstanceCreator<SQLException> {
+
+  @Override
+  public SQLException create(Class<SQLException> clazz) {
+    return new SQLException();
+  }
+
+  @Override
+  public SQLException create(Class<SQLException> clazz,
+                             Map<TripComponent<SQLException, ?>, Object> values) {
+    // map "message", "errorCode", "sQLState", "nextException", "stackTrace" → constructor
+    ...
+  }
+
+  @Override
+  public boolean isCreationFromValuesSupported(Class<SQLException> clazz) {
+    return true;
+  }
+}
+```
+
+#### `@TripComponentProvider`
+
+To control exactly which members are serialized, in what order, and through which
+accessors, implement `TripComponentProvider` and register it with
+`@TripComponentProviderService(TheClass.class)`. This is how `Throwable` is
+handled: its message, cause, and stack trace are read and written through their
+getters/setters rather than raw fields.
+
+```java
+@TripComponentProviderService(Throwable.class)
+public class ThrowableComponentProvider<T extends Throwable>
+       implements TripComponentProvider<T> {
+  @Override
+  public TripComponent<T, ?>[] getComponents(TripType<T> type) {
+    // getMessage(), getCause(), getStackTrace()/setStackTrace(), honouring @TripIgnore
+    ...
+  }
+}
+```
+
+#### Custom TripType
+
+For types that need a bespoke wire format (e.g., binary packing, protocol-specific encoding,
+should not be covered by the dictionary mechanism), create a custom `TripType`:
+
+```java
+@TripTypeService(Point2D.class)
+public class MoneyTripType extends AbstractTripType<Point2D> {
+
+  @Override
+  public void write(TripStream stream, Point2D value) {
+    if (value == null) {
+      serializer.serializeOpCode(DefaultOpCode.NULL);
+    }
+    else {
+      Serializer serializer = stream.getSerializer();
+      serializer.serializeOpCode(MyOpCode.POINT2D);
+      serializer.serializeInt(value.getX());
+      serializer.serializeInt(value.getY());
+    }
+  }
+
+  @Override
+  public Point2D read(TripStream stream) {
+    Deserializer deserializer = stream.getDeserializer();
+    if (opCode == MyOpCode.POINT2D) {
+      return new Point2D(deserializer.deserializeInt(), 
+                         deserializer.deserializeInt());
+    }
+    else {
+      return super.read(stream, opCode);
+    }
+  }
+}
+```
+
+The `@TripTypeService(Point2D.class)` annotation registers this type for the `Point2D` class.
+TRIP will discover and use it automatically.
+Notice that this needs an application-specific opcode!
+
+#### `@TripViaJOS`
+
+Forces TRIP to fall back to Java Object Serialization for the annotated class. 
+The class must implement `Serializable`.
+
+```java
+@TripViaJOS
+public class ThirdPartyValue implements Serializable { ... }
+```
+
+**This is a last resort.** Before reaching for `@TripViaJOS`, consider the following alternatives in decreasing order of preference:
+
+1. **add a @CanonicalConstructor or no-arg constructor**: adding one is usually trivial and makes TRIP work without any annotation.
+2. **`TripInstanceCreator`**: implement and register a `@TripInstanceCreatorService` to instantiate objects that have no suitable constructor
+3. **`TripComponentProvider`**: implement and register a `@TripComponentProviderService` to explicitly describe which components to serialize without relying on field reflection (useful for third-party classes).
+4. **Custom `TripType`**: implement `TripType<T>` directly and register it via a `@TripTypeBuilderService` for full control over the wire format.
+5. **Replace `TripFactory` or `ObjectTypeBuilder`**: for global policy changes that affect many types at once.
+
+
+---
+
+## Writing a Custom Transport
+
+TRIP's transport layer is fully pluggable. 
+You can add support for any protocol — HTTP/2, HTTP/3, gRPC, WebSocket, or a proprietary protocol — 
+by implementing the `Transport` interface or extending one of the provided base classes.
+
+### The Transport contract
+
+The `Transport` interface defines the core contract:
+
+| Method | Purpose                                                        |
+|--------|----------------------------------------------------------------|
+| `getUri()` / `getTransportKey()` | Identity — how this transport is uniquely identified           |
+| `getId()` | A `UUID` assigned to this transport instance                   |
+| `getConnection()` / `putConnection(Connection)` | Client-side connection pool access                             |
+| `accept()` | Server-side: start listening for incoming connections          |
+| `isAccepting()` / `isClosed()` / `close()` | Lifecycle state                                                |
+| `getClientDictionary()` | The client's dictionary                                        |
+| `getServerDictionary(UUID)` | Per-client dictionaries                                        |
+| `getRegistry()` / `getRemoteLookup()` | Access to the server's registry and client's lookup proxy      |
+| `lookup(Class, String)` | Look up a named remote object                                  |
+| `createConnectionHandler(String, InputStream, OutputStream)` | Create a handler for an incoming connection                    |
+| `createCallHandler(TripStream, TransportClientInfo, RemoteCall)` | Create a handler for an incoming call                          |
+| `getConnectionThreadPool()` | Server-side virtual thread pool to handle incoming connections |
+| `getCallThreadPool()` | Server-side thread pool to run the calls                       |
+
+### Base classes
+
+Three base classes handle different levels of boilerplate:
+
+| Class | What it provides | Best for |
+|-------|-----------------|----------|
+| `AbstractTransport` | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC) |
+| `TcpTransport` | Socket-based client connections and server listening | Adding a layer on top of TCP (SSL, compression) |
+| `EncryptedTransport` / `CompressedTransport` | Decorators extending `TcpTransport` | Adding encryption or compression to TCP |
+
+The only abstract method in `AbstractTransport` is:
+
+```java
+protected abstract Pool<Connection> createClientConnectionPool();
+```
+
+### Transport discovery
+
+Transports are discovered via the `@TransportService` annotation. During compilation, the `MappedServiceAnalyzeHandler` annotation processor writes an entry to `META-INF/mapped-services/org.tentackle.trip.Transport`:
+
+```
+org.tentackle.quic.QuicTripTransport = tripq
+```
+
+At runtime, `DefaultTripFactory` reads these entries and builds a map from protocol scheme to transport class. When you create a transport via `TransportManager.requestTransport(URI)`, the factory looks up `uri.getScheme()` in this map and instantiates the corresponding class via its `getDeclaredConstructor(URI.class).newInstance(uri)` constructor.
+
+### Step-by-step: creating a custom transport
+
+Here is the checklist for adding a new transport:
+
+#### 1. Create the Transport subclass
+
+```java
+@TransportService("myproto")
+public class MyTripTransport extends AbstractTransport {
+    
+    public static final String PROTOCOL = "myproto";
+    private boolean accepting;
+    
+    public MyTripTransport(URI uri) {
+        super(uri);
+    }
+    
+    @Override
+    public synchronized void accept() {
+        super.accept();
+        // Start your server (open socket, start QUIC connector, etc.)
+        accepting = true;
+    }
+    
+    @Override
+    public boolean isAccepting() {
+        return accepting;
+    }
+    
+    @Override
+    protected Pool<Connection> createClientConnectionPool() {
+        return new MyTripConnectionPool(this, getClientDictionary());
+    }
+}
+```
+
+#### 2. Create the ConnectionPool
+
+```java
+public class MyTripConnectionPool extends AbstractConnectionPool {
+    
+    public MyTripConnectionPool(Transport transport, Dictionary dictionary) {
+        super(transport, dictionary);
+    }
+    
+    @Override
+    protected PoolSlot<Connection> createSlot(int slotNumber) {
+        // Open a connection to the remote endpoint
+        MyConnection myConnection = new MyConnection(this, slotNumber);
+        return new AbstractPoolSlot<>(myConnection);
+    }
+}
+```
+
+The pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`) are read from the URI query string and control dynamic sizing.
+
+#### 3. Create the Connection
+
+```java
+public class MyTripConnection extends AbstractConnection {
+    
+    public MyTripConnection(MyTripConnectionPool pool, int slotNumber) {
+        super(pool, createTripStream(pool.transport, pool.dictionary, slotNumber));
+    }
+    
+    @Override
+    public boolean isOpen() {
+        return /* your connection is open */;
+    }
+    
+    @Override
+    public void close() {
+        // Close your connection
+    }
+    
+    private static TripStream createTripStream(MyTripTransport transport, 
+                                                Dictionary dictionary, 
+                                                int slotNumber) {
+        TripFactory factory = TripFactory.getInstance();
+        return factory.createStream(dictionary,
+            factory.createSerializer(/* your output stream */),
+            factory.createDeserializer(/* your input stream */));
+    }
+}
+```
+
+#### 4. Handle incoming connections (server side)
+
+Override `accept()` to start your server listener. When a connection arrives, create the handler:
+
+```java
+Runnable handler = transport.createConnectionHandler(
+    "my-client-connection",
+    inputStream,    // from your protocol's connection
+    outputStream    // from your protocol's connection
+);
+transport.getConnectionThreadPool().execute(handler);
+```
+
+For each call within a connection, the connection handler delegates to `createCallHandler()`, which runs on a thread from `getCallThreadPool()`.
+
+### QUIC transport example
+
+The [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) module (`/tentackle-quic/src/main/java/org/tentackle/quic/`) provides a complete reference implementation using the KWIC library. Here is how it maps to the steps above:
+
+#### Transport class
+
+```java
+@TransportService("tripq")
+public class QuicTripTransport extends AbstractTransport {
+    
+    public static final String PROTOCOL = "tripq";
+    private boolean accepting;
+    
+    public QuicTripTransport(URI uri) {
+        super(uri);
+    }
+    
+    @Override
+    public synchronized void accept() {
+        super.accept();  // sets up thread pools, registry
+        
+        // Configure and start the KWIC QUIC server connector
+        ServerConnector serverConnector = ServerConnector.builder()
+            .withConfiguration(...)
+            .withKeyStore(keyStore, alias, password)
+            .withLogger(log)
+            .withPort(port)
+            .build();
+        
+        // Register an application protocol handler
+        serverConnector.registerApplicationProtocol(alpnId,
+            new QuicProtocolConnectionFactory(this));
+        serverConnector.start();
+        accepting = true;
+    }
+    
+    @Override
+    protected Pool<Connection> createClientConnectionPool() {
+        return new QuicTripConnectionPool(this, getClientDictionary());
+    }
+}
+```
+
+Key details:
+
+- **Keystore configuration**: The QUIC transport reads keystore parameters from the URI query string:
+    - `kspass` — keystore password
+    - `ksfile` — keystore file path
+    - `ksalias` — certificate alias
+    - `kstype` — keystore type (defaults to JDK default)
+    - `alpnid` — ALPN protocol identifier (defaults to the URI scheme)
+    - `maxstreams` — maximum concurrent bidirectional streams (default: 128)
+
+- **`createStream()`** method wraps a QUIC stream's I/O in a TRIP `TripStream`:
+  ```java
+  public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
+      TripFactory factory = TripFactory.getInstance();
+      return factory.createStream(dictionary,
+          factory.createSerializer(quicStream.getOutputStream()),
+          factory.createDeserializer(quicStream.getInputStream()));
+  }
+  ```
+
+- **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`.
+
+- **Server-side streams**: `QuicProtocolConnectionFactory` accepts incoming `QuicStream`s from peer-initiated bidirectional streams and hands them to `transport.createConnectionHandler()` on a virtual thread.
+
+---
+
+## Related Documentation
+
+- [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel over TRIP; location transparency depends on this protocol.
+- [QUIC Transport](../../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) reference transport and how it plugs in.
+- [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions are remoted as a tree of `RemoteDelegate`s over TRIP.
+- [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md) — step-by-step migration of an existing RMI-based application.
+- [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
+- [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — where `tentackle-core` (TRIP) sits among the framework modules.

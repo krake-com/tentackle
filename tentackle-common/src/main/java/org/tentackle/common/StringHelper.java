@@ -41,6 +41,78 @@ import java.util.function.Function;
 public final class StringHelper {
 
   /**
+   * The empty byte array.
+   */
+  private static final byte[] EMPTY_BYTES = new byte[0];
+
+  /**
+   * All hex digits.
+   */
+  private static final char[] HEX_DIGITS = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    'a', 'b', 'c', 'd', 'e', 'f'
+  };
+
+  /**
+   * All java reserved words.
+   */
+  private static final String[] JAVA_RESERVED_WORDS = {
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "double",
+    "do",
+    "else",
+    "enum",
+    "extends",
+    "false",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "null",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "true",
+    "try",
+    "void",
+    "volatile",
+    "while"
+  };
+
+  /**
    * Limits the size of the collection to be logged.<br>
    * If an object is logged, and it is a collection
    * and the size exceeds {@code maxLogCollectionSize}, only the number
@@ -71,11 +143,6 @@ public final class StringHelper {
     return maxLogCollectionSize;
   }
 
-
-
-  private static final byte[] EMPTY_BYTES = new byte[0];
-
-
   /**
    * Null safe {@link String#equalsIgnoreCase(String)}.
    *
@@ -87,6 +154,33 @@ public final class StringHelper {
     return (a == b) || (a != null && a.equalsIgnoreCase(b));      // == is ok!
   }
 
+  /**
+   * Null safe {@link String#contains(CharSequence)}.
+   *
+   * @param str the string to search in, null if none
+   * @param subSeq the sub char sequence to search for, null if none
+   * @return true if the string contains the sub char sequence, false if not or both are null
+   */
+  public static boolean contains(String str, CharSequence subSeq) {
+    if (str == null || subSeq == null) {
+      return false;
+    }
+    return str.contains(subSeq);
+  }
+
+  /**
+   * Same as {@link #contains(String, CharSequence)} but ignores the case.
+   *
+   * @param str the string to search in, null if none
+   * @param subStr the sub char sequence to search for, null if none
+   * @return true if the string contains the sub char sequence, false if not or both are null
+   */
+  public static boolean containsIgnoreCase(String str, CharSequence subStr) {
+    if (str == null || subStr == null) {
+      return false;
+    }
+    return str.toLowerCase(Locale.ROOT).contains(subStr.toString().toLowerCase(Locale.ROOT));
+  }
 
   /**
    * Converts a string to uppercase allowing null values.<br>
@@ -102,7 +196,6 @@ public final class StringHelper {
     return str;
   }
 
-
   /**
    * Converts a string to lowercase allowing null values.<br>
    * The conversion is done with {@link Locale#ROOT}.
@@ -116,7 +209,6 @@ public final class StringHelper {
     }
     return str;
   }
-
 
   /**
    * Converts the first character of string to uppercase.
@@ -134,7 +226,6 @@ public final class StringHelper {
     return null;
   }
 
-
   /**
    * Converts the first character of string to uppercase.
    *
@@ -151,7 +242,6 @@ public final class StringHelper {
     return null;
   }
 
-
   /**
    * Gets a classname without any optional generics.
    *
@@ -167,7 +257,6 @@ public final class StringHelper {
       return className;
     }
   }
-
 
   /**
    * Checks whether the given string introduces a continuation line.
@@ -200,7 +289,6 @@ public final class StringHelper {
     return null;
   }
 
-
   /**
    * Returns the first index of the given characters.
    *
@@ -222,7 +310,6 @@ public final class StringHelper {
     }
     return index;
   }
-
 
   /**
    * Takes a string, surrounds it with double-quotes, and escapes all double-quotes
@@ -275,7 +362,6 @@ public final class StringHelper {
     return buf.toString();
   }
 
-
   /**
    * Converts a character that followed a backslash to an escaped character.<br>
    * The special escapes are:<p>
@@ -297,7 +383,6 @@ public final class StringHelper {
     };
   }
 
-
   /**
    * Converts an escape character to a parsable string.<br>
    * The special escapes are:<p>
@@ -318,7 +403,6 @@ public final class StringHelper {
       default -> String.valueOf(c);
     };
   }
-
 
   /**
    * Parses a string.<br>
@@ -371,7 +455,6 @@ public final class StringHelper {
     return buf.toString();
   }
 
-
   /**
    * Converts a string to a string parsable by {@link #parseString(java.lang.String)}.
    *
@@ -403,7 +486,6 @@ public final class StringHelper {
     }
     return buf.toString();
   }
-
 
   /**
    * Splits a string keeping strings together.<br>
@@ -490,7 +572,6 @@ public final class StringHelper {
     return parts;
   }
 
-
   /**
    * Checks whether the given string is a fully qualified classname (FQCN).<br>
    * The class must belong to a package!
@@ -501,7 +582,6 @@ public final class StringHelper {
   public static boolean isFQCN(String className) {
     return className.contains(".") && isValidJavaClassName(className);
   }
-
 
   /**
    * Checks that the given string is a valid Java classname.<br>
@@ -535,7 +615,6 @@ public final class StringHelper {
     }
     return true;
   }
-
 
   /**
    * Checks that the given string is a valid Java package name.<br>
@@ -571,7 +650,6 @@ public final class StringHelper {
     return true;
   }
 
-
   /**
    * Returns whether the given string is a valid java identifier.
    *
@@ -593,7 +671,6 @@ public final class StringHelper {
     }
     return true;
   }
-
 
   /**
    * Reads a textfile from a resource.
@@ -621,7 +698,6 @@ public final class StringHelper {
     }
   }
 
-
   /**
    * Checks if the string contains only whitespaces.
    *
@@ -631,68 +707,6 @@ public final class StringHelper {
   public static boolean isAllWhitespace(String str) {
     return str == null || str.isBlank();
   }
-
-
-
-  /**
-   * All java reserved words.
-   */
-  private static final String[] JAVA_RESERVED_WORDS = {
-    "abstract",
-    "assert",
-    "boolean",
-    "break",
-    "byte",
-    "case",
-    "catch",
-    "char",
-    "class",
-    "const",
-    "continue",
-    "default",
-    "double",
-    "do",
-    "else",
-    "enum",
-    "extends",
-    "false",
-    "final",
-    "finally",
-    "float",
-    "for",
-    "goto",
-    "if",
-    "implements",
-    "import",
-    "instanceof",
-    "int",
-    "interface",
-    "long",
-    "native",
-    "new",
-    "null",
-    "package",
-    "private",
-    "protected",
-    "public",
-    "return",
-    "short",
-    "static",
-    "strictfp",
-    "super",
-    "switch",
-    "synchronized",
-    "this",
-    "throw",
-    "throws",
-    "transient",
-    "true",
-    "try",
-    "void",
-    "volatile",
-    "while"
-  };
-
 
   /**
    * Returns whether the given string is a reserved java keyword.
@@ -711,7 +725,6 @@ public final class StringHelper {
     return false;
   }
 
-
   /**
    * Gets the word-string for a digit.<br>
    * Example:
@@ -725,9 +738,6 @@ public final class StringHelper {
   public static String digitToString(Character digit) {
     return CommonCommonBundle.getString(String.valueOf(digit));
   }
-
-
-
 
   /**
    * Strips enclosing double quotes.
@@ -748,10 +758,9 @@ public final class StringHelper {
     return str;
   }
 
-
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with fillchars, whatever appropriate.
+   * filling up with a fill character, whatever appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -790,10 +799,9 @@ public final class StringHelper {
     return toFixedLength(str, length, ' ');
   }
 
-
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with fillchars from the left, whatever appropriate.
+   * filling up with a fill character from the left, whatever appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -832,7 +840,6 @@ public final class StringHelper {
     return toFixedLengthLeftFill(str, length, ' ');
   }
 
-
   /**
    * Filters illegal chars for Java variable names.
    *
@@ -858,7 +865,6 @@ public final class StringHelper {
     }
     return str;
   }
-
 
   /**
    * Converts a dotted path to camelCase.<br>
@@ -887,7 +893,6 @@ public final class StringHelper {
     return buf.toString();
   }
 
-
   /**
    * Converts a camelCase string to a string with delimiters.
    * <p>
@@ -913,7 +918,6 @@ public final class StringHelper {
     return buf.toString();
   }
 
-
   /**
    * Checks if a string contains only digits or whitespaces, i.e.,
    * no illegal char in a number string.
@@ -938,7 +942,6 @@ public final class StringHelper {
     return true;    // null string is the same as empty string
   }
 
-
   /**
    * Checks if a string contains only digits, i.e.,
    * no non-number char in string, even no whitespace.
@@ -950,7 +953,6 @@ public final class StringHelper {
   public static boolean isAllDigits(String str) {
     return isAllDigits(str, false);
   }
-
 
   /**
    * Trims a string.<br>
@@ -970,7 +972,6 @@ public final class StringHelper {
     return s;
   }
 
-
   /**
    * Trims a string.<br>
    * The method is null-safe.
@@ -982,7 +983,6 @@ public final class StringHelper {
   public static String trim(String s) {
     return trim(s, 0);
   }
-
 
   /**
    * Cuts trailing characters.
@@ -1043,7 +1043,6 @@ public final class StringHelper {
     return str;
   }
 
-
   /**
    * Fills up a string from the left with a filler character to match a given length.<br>
    * If the string is already longer, nothing happens.
@@ -1098,8 +1097,6 @@ public final class StringHelper {
     return str;
   }
 
-
-
   /**
    * Gets the part of a string before a given delimiter.
    *
@@ -1116,7 +1113,6 @@ public final class StringHelper {
     }
     return str;
   }
-
 
   /**
    * Gets the part of a string after a given delimiter.
@@ -1135,7 +1131,6 @@ public final class StringHelper {
     return str;
   }
 
-
   /**
    * Gets the first line from a multi-line string.<br>
    * Nice in tables.
@@ -1146,12 +1141,6 @@ public final class StringHelper {
   public static String firstLine(String str) {
     return firstBefore(str, '\n');
   }
-
-
-  private static final char[] HEX_DIGITS = {
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-      'a', 'b', 'c', 'd', 'e', 'f'
-  };
 
   /**
    * Creates a human-readable hex-String out of a byte-array (e.g., from MessageDigest MD5sum).
@@ -1172,7 +1161,6 @@ public final class StringHelper {
     return null;
   }
 
-
   /**
    * Converts a UNICODE character to a byte-array.
    *
@@ -1182,7 +1170,6 @@ public final class StringHelper {
   public static byte[] toBytes(char c)  {
     return new byte[] { (byte)(c & 0xff), (byte)((c >> 8) & 0xff) };
   }
-
 
   /**
    * Converts a char-array to a byte-array.
@@ -1202,7 +1189,6 @@ public final class StringHelper {
     }
     return EMPTY_BYTES;
   }
-
 
   /**
    * Builds a hash from an array of chars.<br>
@@ -1234,7 +1220,6 @@ public final class StringHelper {
     }
     return null;
   }
-
 
   /**
    * Converts a value to a loggable string.
@@ -1271,7 +1256,6 @@ public final class StringHelper {
     }
   }
 
-
   /**
    * Counts the number of occurrences of a given character in a string.
    *
@@ -1292,7 +1276,6 @@ public final class StringHelper {
     }
     return count;
   }
-
 
   /**
    * Creates a string from an object array.
@@ -1317,7 +1300,6 @@ public final class StringHelper {
     }
     return buf.toString();
   }
-
 
   /**
    * Null-safe string to a char-array conversion.
@@ -1354,7 +1336,6 @@ public final class StringHelper {
     fill(buf,' ');
   }
 
-
   /**
    * Converts a multiline string to an HTML string that
    * can be displayed in a label.<br>
@@ -1371,7 +1352,6 @@ public final class StringHelper {
     buf.append("</HTML>");
     return buf.toString();
   }
-
 
   /**
    * Removes a trailing text from a string.<br>
@@ -1393,8 +1373,6 @@ public final class StringHelper {
     return str;
   }
 
-
-
   /**
    * Converts to string containing only the letters A-z or digits.<br>
    * All other characters will be converted to an underscore.
@@ -1408,23 +1386,22 @@ public final class StringHelper {
    */
   public static String toAsciiLetterOrDigit(String str) {
     if (str != null) {
-      StringBuilder buf = new StringBuilder(StringNormalizer.getInstance().unDiacrit(str, false));  // translate all diacrits
+      StringBuilder buf = new StringBuilder(StringNormalizer.getInstance().unDiacrit(str, false));
       // convert everything that is not a digit or [a-z][A-Z] to an underscore
       // avoiding more than one underscore in a row.
       boolean wasUnderscore = false;
-      for (int i=0; i < buf.length(); i++) {
+      for (int i = 0; i < buf.length(); i++) {
         char c = buf.charAt(i);
-        if (c == '_' ||
-            ((c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9'))) {
+        if ((c < 'A' || c > 'Z') && (c < 'a' || c > 'z') && (c < '0' || c > '9')) {
           if (wasUnderscore) {
             buf.deleteCharAt(i--);
           }
-          else  {
+          else {
             buf.setCharAt(i, '_');
             wasUnderscore = true;
           }
         }
-        else  {
+        else {
           wasUnderscore = false;
         }
       }
@@ -1432,7 +1409,6 @@ public final class StringHelper {
     }
     return null;
   }
-
 
   /**
    * Gets the name of the operating system from the system properties.
@@ -1457,9 +1433,7 @@ public final class StringHelper {
       }
     }
     return buf.toString();
-
   }
-
 
   /**
    * Gets the name of the architecture from the system properties.
@@ -1473,7 +1447,6 @@ public final class StringHelper {
     }
     return osArch.trim().toLowerCase(Locale.ROOT);
   }
-
 
   /**
    * Gets the uppercase letters only.<br>
@@ -1496,6 +1469,88 @@ public final class StringHelper {
     return null;
   }
 
+  /**
+   * Determines the Levenshtein distance of two strings.<br>
+   * Notice that for s1 and s2 null values are treated as empty strings.
+   *
+   * @param s1 the first string
+   * @param s2 the second string
+   * @return the distance
+   */
+  public static int levenshteinDistance(String s1, String s2) {
+    if (s1 == null) {
+      s1 = "";
+    }
+    if (s2 == null) {
+      s2 = "";
+    }
+    int[][] d = new int[s1.length() + 1][s2.length() + 1];
+
+    for (int i1 = 0; i1 <= s1.length(); i1++) {
+      for (int i2 = 0; i2 <= s2.length(); i2++) {
+        if (i1 == 0) {
+          d[i1][i2] = i2;
+        }
+        else if (i2 == 0) {
+          d[i1][i2] = i1;
+        }
+        else {
+          d[i1][i2] = Math.min(d[i1 - 1][i2 - 1] + (s1.charAt(i1 - 1) == s2.charAt(i2 - 1) ? 0 : 1),
+                               Math.min(d[i1 - 1][i2] + 1, d[i1][i2 - 1] + 1));
+        }
+      }
+    }
+
+    return d[s1.length()][s2.length()];
+  }
+
+  /**
+   * Same as {@link String#startsWith(String, int)}, but for more multiple prefixes.
+   *
+   * @param str the string to check
+   * @param offset where to begin looking in {@code str}
+   * @param prefixes the prefixes
+   * @return the prefix, null if no match
+   */
+  public static String startsWithAnyOf(String str, int offset, String... prefixes) {
+    if (str != null) {
+      for (String prefix : prefixes) {
+        if (str.startsWith(prefix, offset)) {
+          return prefix;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Same as {@link String#startsWith(String)}, but for more multiple prefixes.
+   *
+   * @param str the string to check
+   * @param prefixes the prefixes
+   * @return the prefix, null if no match
+   */
+  public static String startsWithAnyOf(String str, String... prefixes) {
+    return startsWithAnyOf(str, 0, prefixes);
+  }
+
+  /**
+   * Same as {@link String#endsWith(String)}, but for more multiple suffixes.
+   *
+   * @param str the string to check
+   * @param suffixes the suffixes
+   * @return the suffix, null if no match
+   */
+  public static String endsWithAnyOf(String str, String... suffixes) {
+    if (str != null) {
+      for (String suffix : suffixes) {
+        if (str.endsWith(suffix)) {
+          return suffix;
+        }
+      }
+    }
+    return null;
+  }
 
   /**
    * Evaluates a string replacing variables.<br>
@@ -1632,94 +1687,6 @@ public final class StringHelper {
     }
     return buf.toString();
   }
-
-
-  /**
-   * Determines the Levenshtein distance of two strings.<br>
-   * Notice that for s1 and s2 null values are treated as empty strings.
-   *
-   * @param s1 the first string
-   * @param s2 the second string
-   * @return the distance
-   */
-  public static int levenshteinDistance(String s1, String s2) {
-    if (s1 == null) {
-      s1 = "";
-    }
-    if (s2 == null) {
-      s2 = "";
-    }
-    int[][] d = new int[s1.length() + 1][s2.length() + 1];
-
-    for (int i1 = 0; i1 <= s1.length(); i1++) {
-      for (int i2 = 0; i2 <= s2.length(); i2++) {
-        if (i1 == 0) {
-          d[i1][i2] = i2;
-        }
-        else if (i2 == 0) {
-          d[i1][i2] = i1;
-        }
-        else {
-          d[i1][i2] = Math.min(d[i1 - 1][i2 - 1] + (s1.charAt(i1 - 1) == s2.charAt(i2 - 1) ? 0 : 1),
-                               Math.min(d[i1 - 1][i2] + 1, d[i1][i2 - 1] + 1));
-        }
-      }
-    }
-
-    return d[s1.length()][s2.length()];
-  }
-
-
-  /**
-   * Same as {@link String#startsWith(String, int)}, but for more multiple prefixes.
-   *
-   * @param str the string to check
-   * @param offset where to begin looking in {@code str}
-   * @param prefixes the prefixes
-   * @return the prefix, null if no match
-   */
-  public static String startsWithAnyOf(String str, int offset, String... prefixes) {
-    if (str != null) {
-      for (String prefix : prefixes) {
-        if (str.startsWith(prefix, offset)) {
-          return prefix;
-        }
-      }
-    }
-    return null;
-  }
-
-
-  /**
-   * Same as {@link String#startsWith(String)}, but for more multiple prefixes.
-   *
-   * @param str the string to check
-   * @param prefixes the prefixes
-   * @return the prefix, null if no match
-   */
-  public static String startsWithAnyOf(String str, String... prefixes) {
-    return startsWithAnyOf(str, 0, prefixes);
-  }
-
-
-  /**
-   * Same as {@link String#endsWith(String)}, but for more multiple suffixes.
-   *
-   * @param str the string to check
-   * @param suffixes the suffixes
-   * @return the suffix, null if no match
-   */
-  public static String endsWithAnyOf(String str, String... suffixes) {
-    if (str != null) {
-      for (String suffix : suffixes) {
-        if (str.endsWith(suffix)) {
-          return suffix;
-        }
-      }
-    }
-    return null;
-  }
-
 
   /**
    * prevent instantiation.

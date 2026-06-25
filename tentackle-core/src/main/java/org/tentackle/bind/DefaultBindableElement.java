@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import java.lang.reflect.Field;
@@ -230,7 +229,7 @@ public class DefaultBindableElement implements BindableElement {
           field.set(parent, value);
         }
       }
-      // it is okay that there's no setter, no from-method and no field (for example read-only methods)
+      // it is okay that there's no setter, no from-method and no field (for example, read-only methods)
       return updatedParent;
     }
     catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {

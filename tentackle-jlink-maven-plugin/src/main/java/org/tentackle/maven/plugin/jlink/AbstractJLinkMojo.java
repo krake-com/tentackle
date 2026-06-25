@@ -181,10 +181,13 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * List of full-blown modules that should be moved to the module path explicitly.<br>
    * By default, all full-blown modules are passed to the jlink tool. If a module is listed
-   * for the module path only, the module it will be moved to the <code>mp</code> folder instead.<br>
+   * for the module path only, the module will be moved to the <code>mp</code> folder instead.<br>
    * This may become necessary if a 3rd-party full-blown module (illegally!) requires automatic modules, which
    * would cause all artifacts to be moved to the module path by this plugin automatically, since the
    * jlink tool can only handle full-blown modules.
+   * <p>
+   * Please notice that this workaround is only available for non-required modules, i.e., modules
+   * that "plug in" via the ServiceFinder or some other dependency injection mechanism.
    * <p>
    * If all modules must be moved to the <code>mp</code> folder, the single values <code>true</code>,
    * <code>all</code> or <code>*</code> can be used as a shortcut.
@@ -192,8 +195,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Examples:
    * <pre>
    *    &lt;modulePathOnly&gt;
-   *        &lt;module&gt;tentackle.log.log4j2v&lt;/module&gt;
-   *        &lt;module&gt;org.apache.logging.log4j&lt;/module&gt;
+   *        &lt;!-- kwik 0.10.9 illegally requires automatic module io.whitfin:siphash --&gt;
+   *        &lt;module&gt;org.tentackle.quic&lt;/module&gt;
+   *        &lt;module&gt;tech.kwik.core&lt;/module&gt;
    *    &lt;/modulePathOnly&gt;
    * </pre>
    * or
