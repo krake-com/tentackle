@@ -289,7 +289,7 @@ components are its pickups, movements, transports, and loadings.
 Every PDO is bound to a
 [`DomainContext`](../java/org/tentackle/pdo/DomainContext.java). The
 domain context is the single most important concept for understanding how PDOs
-relate to Domain-Driven Design. It answers three questions for an object at all
+relate to Domain-Driven Design. It answers four questions for an object at all
 times:
 
 1. **In which session does it live?** A `DomainContext` is a `SessionHolder`, so
@@ -299,6 +299,8 @@ times:
    component to its root entity.
 3. **Which logical data space (tenant) does it belong to?** Through optional
    application-specific extensions it scopes queries to the current tenant.
+4. **which sub-domain does it belong to?** A `DomainContext` can be **extended**
+   to hold additional information or cloned to create a named sub-context.
 
 ### Aggregates and the root context
 
@@ -328,6 +330,7 @@ whole aggregate is persisted as one consistent unit — the root and its compone
 together. The root context is what the
 [`SecurityManager`](../java/org/tentackle/security/SecurityManager.java)
 and the optional `rootId` column rely on to reason about the aggregate as a whole.
+The persistence layer takes care of the rest and updates the database where necessary.
 
 ### Aggregates prevent whole classes of bugs
 
@@ -618,7 +621,7 @@ public Ingot move(Stockyard fromYard, Stockyard toYard, boolean rotate,
 What to notice:
 
 - The method is declared `@Transaction` on `IngotDomain`, so everything here runs
-  in one transaction and rolls back on any `PlsblRuntimeException`.
+  in one transaction and rolls back on any exception.
 - `me()` is the complete `Ingot`, so the domain code freely calls persistence
   methods (`reloadTokenLocked()`, `persist()`) and other domain methods
   (`isOnTop()`, `completeLoading()`) on itself.
