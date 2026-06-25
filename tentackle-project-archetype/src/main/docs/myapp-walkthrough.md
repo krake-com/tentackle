@@ -127,10 +127,7 @@ base interface:
 
 ```java
 public interface Message extends TransactionData<Message>, MessagePersistence, MessageDomain {
-  // @wurblet modelComment ModelComment
-  // @wurblet uniqueDomainKey UniqueDomainKey
-  String POOL_NAME = "MSG";
-  static Message log(MessageType messageType, Object refersTo, String text, OrgUnit<?> owner) { … }
+  ...
 }
 ```
 
@@ -149,7 +146,6 @@ You never call a constructor. You ask the factory:
 
 ```java
 Message m = Pdo.create(Message.class, context);   // a live, empty PDO bound to a domain context
-Message m2 = Message.log(MessageType.LOGIN, user, "hello", user);   // a convenience static on the interface
 ```
 
 `Pdo.create` returns a proxy implementing `Message`. Calls that belong to the persistence facet are routed to a
@@ -495,7 +491,7 @@ framework's pieces compose.
 > Reference: [FX RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) and
 > [tentackle-fx](../../../../tentackle-fx/src/main/docs/fx.md).
 
-The desktop UI is built with **RDC (Rich Data Components)**. For each entity the `myapp-gui` module follows a small,
+The desktop UI is built with **RDC (Rich Desktop Client)**. For each entity the `myapp-gui` module follows a small,
 repeatable trio of artifacts (look at the `user`, `usergroup` and `message` sub-packages):
 
 1. A **`…GuiProvider`** annotated `@GuiProviderService(Entity.class)` — the framework's per-entity UI service. It says
@@ -528,7 +524,7 @@ Every module that emits user-facing text ships a `*Bundle.java` accessor and `*B
 per-view `.properties`). The `MessageType` enum even localises itself via `PdoBundle.getString(name())`.
 
 Completeness is **enforced at build time**: the `tentackle-check-maven-plugin` `bundles` goal checks that the
-`en_US, de_DE` locales are in sync, and the i18n plugin handles German resources. `MyAppLocaleProvider` narrows the
+`en_US, de_DE` locales are in sync, and the i18n plugin handles the resources. `MyAppLocaleProvider` narrows the
 runtime to those two languages with English as fallback. The classes deliberately avoid stray string constants that
 would trip the i18n checker (see the comment in `Version.java`).
 
@@ -634,9 +630,8 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
   and add a `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
-- **Add a module hook**: copy the one-class `service/Hook.java` + `provides org.tentackle.common.ModuleHook` pattern.
-- **Tune the schema**: edit the column-size and `modelDefaults` properties in the root POM; add migration hints under
-  `src/main/migrate/postgres`.
+- **Tune the schema**: add an attribute
+- **add an entity**: use the PDO wizard
 
 ---
 
