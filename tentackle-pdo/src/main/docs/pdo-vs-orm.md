@@ -281,6 +281,108 @@ deliveryService.deliverIfPossible(em, ingot, calloff);
 
 ---
 
+## Aggregates: Validated as a Whole, or Not Written at All
+
+DDD's central tactical pattern is the **aggregate**: a cluster of objects with a
+single *root* that owns the cluster's invariants. The defining rule is that the
+aggregate is the **unit of consistency** — you may only change its internals
+through the root, and the root validates the *whole* cluster before any of it is
+allowed to persist. The PDO pattern is a uniquely natural fit for this rule,
+because Tentackle makes the aggregate a first-class structural fact rather than a
+convention you have to remember.
+
+### JPA: the aggregate is a convention, and the database is one setter away
+
+JPA has no notion of an aggregate. The unit it knows about is the single
+`@Entity`. Whether several entities form an aggregate, and which one is the root,
+lives only in your head and your discipline — nothing in the mapping enforces it.
+Two consequences follow, and both let invalid data reach the database:
+
+1. **A child can be persisted on its own, behind the root's back.** Because every
+   entity is independently persistable, you can create a child, point it at its
+   parent through the foreign key (or a `@ManyToOne`), and flush it directly. JPA
+   is happy; the row is well-formed in isolation; the aggregate as a whole may now
+   be globally invalid.
+
+   ```java
+   // JPA: nothing stops this. One INSERT, no aggregate in sight.
+   InvoiceLine line = new InvoiceLine();
+   line.setInvoiceId(125889L);     // just set the FK…
+   line.setAmount(-500);
+   em.persist(line);               // …and it's in the database.
+   // The invoice's "sum of lines must be positive" rule was never consulted —
+   // there was no code path on which it *could* run.
+   ```
+
+2. **Bean Validation validates an entity, not an aggregate.** JSR-380
+   (`@NotNull`, `@Valid`, …) checks a single object's field constraints when an
+   entity is flushed, and `@Valid` can cascade down a graph — but it still only
+   checks *per-object field* constraints. A cross-entity invariant like *"the sum
+   of all line amounts must be positive"* is not expressible as a field
+   annotation; it has to be hand-coded in a service, and it only runs if that
+   service is on the path. Persist the child directly and there is no path. The
+   validation and the write are **decoupled**: it is entirely possible — and
+   common — for a write to reach the database having been validated *as a row* but
+   never *as an aggregate*.
+
+Cascading (`CascadeType.PERSIST`) is opt-in and orthogonal: it controls *which
+rows* are written when you save the parent, not *whether* the aggregate was
+validated as a whole, and it does nothing to stop the standalone child insert
+above.
+
+### Tentackle: the root is the only door, and it always validates the whole
+
+In Tentackle the aggregate is structural. The persistence layer knows which PDO is
+a **root entity** and which are its **components**, and each component knows its
+root *without a database query* (see
+[pdo.md → Aggregates and the root context](pdo.md#aggregates-and-the-root-context)).
+From that one fact the DDD rule is enforced mechanically rather than by convention:
+
+- **You cannot persist a component by setting a parent id.** There is no
+  "create a line, set `invoiceId`, save the line" path. A component may only be
+  persisted within the **root context of its own root entity**; attempt it through
+  any other context and the persistence layer throws, fail-fast. The orphaned
+  write that JPA waves through simply has no API in Tentackle.
+- **The only way in is through the root.** You attach the component to its
+  aggregate and persist the *root*, which validates the whole cluster as a unit
+  before a single row is touched:
+
+  ```java
+  // Tentackle: the line can only enter via its aggregate root.
+  InvoiceLine line = invoice.on(InvoiceLine.class);  // born into the invoice's root context
+  line.setAmount(-500);
+  invoice.getLines().add(line);
+  invoice.persist();        // validates the ENTIRE aggregate; rejects the negative total
+                            // → nothing is written. The bad state never reaches the DB.
+  ```
+
+The contrast is exact: in JPA, validation is something a service *may* run on the
+way to a write that can also happen without it; in Tentackle, **whole-aggregate
+validation is the write** — there is no door into the database that bypasses it.
+The same structural knowledge yields two further guarantees that JPA leaves to
+discipline: a component read outside its root context becomes **immutable** (you
+cannot mutate an aggregate's internals while its root is absent to validate the
+change), and the root's **security rules** govern its components automatically. All
+three safeguards, with the mechanics, are detailed in
+[pdo.md → Aggregates prevent whole classes of bugs](pdo.md#aggregates-prevent-whole-classes-of-bugs).
+
+| Concern | JPA / Hibernate | Tentackle PDO |
+|---------|-----------------|---------------|
+| What is the unit of persistence? | The single `@Entity` | The aggregate, through its root |
+| Is "aggregate" enforced or convention? | Convention (in your head) | Structural (the layer knows root vs. component) |
+| Can a child be written without its root? | Yes — set the FK and `persist()` | No — throws unless in the root's context |
+| What validation runs on a write? | The row's field constraints (`@Valid`) | The whole aggregate, via the root |
+| Cross-entity invariant ("sum > 0") | Hand-coded in a service, runs only if on the path | Owned by the root, runs on every persist |
+| Mutating a component out of context | Allowed (silently) | Immutable, fail-fast |
+
+> The throughline mirrors the rest of this document: JPA can be *used* in a
+> DDD-correct way if every developer is disciplined on every path; Tentackle makes
+> the DDD-correct way the *only* way, because the aggregate is a real thing the
+> framework knows about rather than a pattern you superimpose on a flat set of
+> independently-persistable rows.
+
+---
+
 ## No DTOs, No Merge, No Fetch Plans
 
 A cluster of JPA practices exists purely to work around managed/detached entities;
@@ -361,6 +463,8 @@ behave like objects.
 | Cross-tier transfer | DTOs + merge + fetch plans | the PDO itself, fully functional |
 | Transaction ↔ object | intertwined | cleanly separated |
 | Identity map | always on, implicit | opt-in via [`PdoCache`](cache.md) |
+| DDD aggregate | convention; child writable via its FK alone | structural; child writable only through its root |
+| Validation on write | per-row field constraints, decoupled from the write | whole aggregate, *is* the write |
 
 The throughline: **a JPA entity is only fully itself while an `EntityManager` is
 holding it; a PDO is fully itself for as long as any reference does — which is the
