@@ -9,7 +9,6 @@ the [Index](./index.md).
 - [Quickstart](./quickstart.md) — generate, build and run a multi-tier application in minutes.
 - [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
 - [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
-- [Migrate from RMI to TRIP](./migrate_rmi_trip.md) — upgrading an existing RMI-based application to the TRIP protocol.
 
 ## Concepts & Architecture
 
@@ -110,6 +109,10 @@ the [Index](./index.md).
 
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — TestNG support for the PDO layer.
 - [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support for the rich desktop client.
+
+## Legacy
+- [Migrate from RMI to TRIP](./migrate_rmi_trip.md) — upgrading an existing RMI-based application to the TRIP protocol.
+
 
 ---
 

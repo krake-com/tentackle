@@ -66,7 +66,6 @@ runtime.
 ```java
 public interface UserPersistence {
 
-  @Persistent(ordinal = 10, comment = "true if login is allowed")
   @Bindable
   boolean isLoginAllowed();
 
@@ -74,7 +73,6 @@ public interface UserPersistence {
   void setLoginAllowed(boolean loginAllowed);
 
   @Bindable
-  @Persistent(ordinal = 0, comment = "the userGroups", component = false)
   TrackedList<UserGroup> getUserGroups();
 }
 ```
@@ -107,15 +105,17 @@ it. `DefaultBindableElement` implements the actual access logic:
 including inherited), so the relatively expensive reflection scan happens once
 per class.
 
-### From-method — binding immutable members
+### From- or with-method — binding immutable members
 
-When a member belongs to an immutable object, there is no setter. Instead the
-member may expose a *from-method* that takes the new value and returns a **new**
-immutable instance. On a to-model transfer the binding calls the from-method,
+When a member belongs to an immutable object, there is no setter. Instead, the
+member may expose a *from-method* or a *with-method* that takes the new value and returns a **new**
+immutable instance. On a to-model transfer the binding calls that method,
 gets the replacement object, and then walks **up** the parent chain writing the
 replacement into each parent until it finds a parent with a setter or field
 (`AbstractBinding.setModelValue`). If the chain cannot absorb the replacement, a
 `BindingException` is thrown.
+This feature is essential for application-specific DataTypes, for example a
+Position3D that is immutable but can be constructed from a 3-tuple of doubles.
 
 ### BindingMember and the binding path
 

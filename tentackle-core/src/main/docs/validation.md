@@ -8,7 +8,11 @@ checks the *members* and the *state* of plain Java objects against a set of
 `@NotNull`, `@Greater("0")` or `@Pattern("[A-Z]{2}\\d+")` is attached to a field
 or getter; at validation time the framework discovers the constraint, evaluates
 it and collects a list of [`ValidationResult`](#validationresult--the-outcome)s
-describing what passed and what failed.
+describing what passed and what failed. The same API also drives **object
+validators** that check an aggregate as a whole — an annotation such as
+`@IngotValidator` placed on the [`Ingot`](../../../../tentackle-pdo/src/main/docs/pdo.md)
+PDO interface validates the entity and its components against cross-member rules,
+not just a single field.
 
 The API is deliberately UI- and persistence-agnostic. It knows nothing about
 JavaFX or JDBC — it works purely by reflection over annotated members and by
@@ -17,7 +21,7 @@ layers plug into it:
 
 - the [binding layer](binding.md) discovers the same annotations to drive
   *mandatory* and *changeable* states of UI components and to surface validation
-  messages next to the offending widget;
+  messages next to the offending widget (a `@NotNull` field is obviously mandatory, for example);
 - the persistence layer validates [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) before they are saved;
 - the results travel between JVMs over [TRIP](trip.md) — `ValidationResult` is
   `Serializable`, so a server can validate and the client can display the
