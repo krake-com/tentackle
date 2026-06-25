@@ -27,7 +27,7 @@ every build.
 |---|---|---|
 | **Generates into** | PDO / operation *interfaces*, DTOs | PDO / operation *implementation* classes (and some interface anchors) |
 | **Typical output** | `CN_*`/`AN_*` constants, getter/setter declarations, relation method declarations, unique-domain-key types | field declarations, `SELECT`/`INSERT`/`UPDATE`/`DELETE` code, class variables, caches, remote delegates |
-| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet-the-shared-base) | [`DbModelWurblet`](#dbmodelwurblet-the-shared-base) (extends `ModelWurblet`) |
+| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base) | [`DbModelWurblet`](#dbmodelwurblet-the-shared-base) (extends `ModelWurblet`) |
 
 Because this module depends on `tentackle-wurblets`, every helper available to the interface wurblets is also
 available here, extended with persistence-specific machinery — most importantly the translation of the
@@ -63,7 +63,7 @@ genuinely custom logic outside the guarded regions.
 ## DbModelWurblet — the shared base
 
 [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java) extends
-[`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet-the-shared-base) and is the
+[`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base) and is the
 base class for every wurblet in this module (pulled in via
 [`header.incl`](../wurblets/org/tentackle/persist/wurblet/header.incl)'s `@{extends DbModelWurblet}`). On top of
 the model loading and target resolution it inherits, it adds:

@@ -566,7 +566,7 @@ the application.
 
 ## Related Documentation
 
-- [Framework Overview](../../../../src/main/docs/overview.md) — the map of the whole framework.
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — the map of the whole framework.
 - [Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — nodes, roles, pooling and caching across tiers; the
   context a web node lives in.
 - [Tentackle Session](../../../../tentackle-session/src/main/docs/session.md) — the location-transparent `Session`
@@ -577,5 +577,3 @@ the application.
   base (`AbstractServerApplication`) and pools `WebApplication` builds on.
 - [Service API](../../../../tentackle-common/src/main/docs/services.md) — the `@Service` mechanism used to plug in
   the web-specific pool, session-info and modification-tracker implementations.
-</content>
-</invoke>

@@ -325,5 +325,3 @@ object that throws only in production — structurally hard to reach. For techni
 - [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md) — declarative, ordered, compile-time-verified cross-cutting concerns.
 - [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md) — the single source the persistence layer is generated from.
 - [TRIP](../../../tentackle-core/src/main/docs/trip.md) — versioned, evolution-tolerant remoting.
-</content>
-</invoke>

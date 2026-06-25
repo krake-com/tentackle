@@ -25,7 +25,7 @@ This document explains each mechanism and then how they interlock.
 ## Optimistic Locking — the `serial` Column
 
 Every PDO carries a `serial` (declared on
-[`PersistentObject.getSerial()`](../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java),
+[`PersistentObject.getSerial()`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java),
 column [`CN_SERIAL = "serial"`](../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java),
 Javadoc *"object version"*). Its contract is simple:
 
@@ -84,7 +84,7 @@ nothing on the happy path and requires no held database locks — ideal for the 
 - `tableserial` (model option `tableserial`,
   [`CN_TABLESERIAL`](../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java)) is a
   *table-wide* version advanced on every write, used by the
-  [`ModificationTracker`](persistence.md#change-tracking) to drive **cache expiry** and
+  [`ModificationTracker`](persistence.md#modification-tracking) to drive **cache expiry** and
   cross-client change notification. It is a coherence/notification counter, not a
   per-row conflict guard — do not confuse it with `serial`.
 - `serial` is **per object**; `tableserial` is **per table**.
@@ -101,7 +101,7 @@ A token lock is a **cooperative, persisted lock** expressing *"this object is cu
 being edited by user X until time Y"*. Unlike a database row lock it **survives across
 transactions** and is **visible to other users**. It is opt-in: an entity gets it by
 declaring the `tokenlock` option in its model, which adds three columns
-([model-definition → option flags](../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags)):
+([model-definition → option flags](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags)):
 
 | Attribute | Column | Meaning |
 |-----------|--------|---------|
@@ -114,7 +114,7 @@ declaring the `tokenlock` option in its model, which adds three columns
 ### Acquiring, releasing, checking
 
 The PDO API
-([`PersistentObject`](../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java)):
+([`PersistentObject`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java)):
 
 ```java
 invoice.requestTokenLock();      // grab the token (LockException if held by another user)
@@ -253,5 +253,5 @@ itself serial-checked, the two reinforce rather than duplicate each other.
 ### See also
 
 - [persistence.md → Token locking](persistence.md#token-locking)
-- [pdo.md](../../../tentackle-pdo/src/main/docs/pdo.md) — the token-lock family on the PDO API
-- [model-definition.md → Entity-level option flags](../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags) — the `tokenlock` and `tableserial` options
+- [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) — the token-lock family on the PDO API
+- [model-definition.md → Entity-level option flags](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags) — the `tokenlock` and `tableserial` options

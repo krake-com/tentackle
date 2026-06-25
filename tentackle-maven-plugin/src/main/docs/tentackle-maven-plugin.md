@@ -2,10 +2,10 @@
 
 The `tentackle-maven-plugin` is the central build-time helper of the Tentackle framework.
 It bridges the gap between the Java sources of an application and the metadata Tentackle needs at
-runtime. Most importantly it drives the [Service and Configuration API](services.md):
+runtime. Most importantly it drives the [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md):
 it scans the sources for Tentackle annotations and generates the `META-INF` service descriptors
 that make services discoverable in both modular (JPMS) and classpath environments
-(see [Service and Configuration API](services.md)).
+(see [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)).
 
 Besides this core duty the plugin provides a handful of convenience goals to manage dependency
 versions, derive computed maven properties, and generate `BeanInfo` manifests.
@@ -52,7 +52,7 @@ that are themselves annotated with `org.tentackle.common.Analyze` — most promi
 For each such annotation the corresponding handler either:
 
 - writes a service descriptor under `META-INF/services` (or a Tentackle-specific subdirectory of
-  `META-INF`), so that the [`ServiceFinder`](services.md) can
+  `META-INF`), so that the [`ServiceFinder`](../../../../tentackle-common/src/main/docs/services.md) can
   locate the implementation at runtime, both in modular and classpath mode, or
 - writes its analysis result to the `analyze` directory and/or places it on the heap to be picked up
   later by a wurblet during code generation.
@@ -238,8 +238,6 @@ metadata the second consumes.
 
 ### Further Reading
 
-- [Service and Configuration API](services.md)
+- [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)
 - [Wurbelizer](https://wurbelizer.org/) — the code generation engine
 - [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html)
-</content>
-</invoke>

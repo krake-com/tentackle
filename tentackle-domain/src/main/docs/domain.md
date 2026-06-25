@@ -190,4 +190,3 @@ extending the base classes here.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — the session/context the domain object reaches through the PDO.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where PDO interfaces and their domain method signatures are declared.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind `@DomainObjectService` and the delegate linker.
-</content>

@@ -251,5 +251,3 @@ fastest way to see all of [`tentackle-pdo`](../../../../tentackle-pdo/src/main/d
   [i18n](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) ·
   [wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 - [Common / Services & Configuration](../../../../tentackle-common/src/main/docs/common.md)
-</content>
-</invoke>

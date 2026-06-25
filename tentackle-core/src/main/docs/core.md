@@ -270,4 +270,3 @@ service API from `tentackle-common`.
 - [Validation](validation.md) — annotation-driven, scope-aware validation.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI that makes every core subsystem pluggable.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — builds tasks, dispatchers and remoting on top of core.
-</content>

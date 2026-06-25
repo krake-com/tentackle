@@ -336,4 +336,3 @@ plug into.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol behind the `*.trip` delegates.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where the entities whose persistence code extends this module are declared.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the `@Service`-replaced singletons and delegate discovery.
-</content>

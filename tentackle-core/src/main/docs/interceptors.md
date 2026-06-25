@@ -352,5 +352,3 @@ therefore reported as a compilation error.
 - [TRIP](trip.md) — remoting, relevant to remote-aware interceptors.
 - [Services](../../../../tentackle-common/src/main/docs/services.md) — the SPI
   used for `implementedByService` binding.
-</content>
-</invoke>

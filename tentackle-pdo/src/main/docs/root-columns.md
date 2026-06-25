@@ -12,7 +12,7 @@ only when — they are actually needed:
 
 Both belong exclusively to **components** — PDOs that live inside another PDO's
 [aggregate](pdo.md#aggregates-and-the-root-context). A root entity never carries
-them (it *is* the root), and an [embedded](pdo-select.md#embedded-entities) entity
+them (it *is* the root), and an [embedded](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#embedded-entities) entity
 never carries them (it has no table of its own). Their single purpose is to let any
 component name its aggregate root **directly**, by id and type, without walking back
 up through every intermediate aggregate level and without a database query.

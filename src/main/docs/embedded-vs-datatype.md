@@ -366,4 +366,3 @@ Ask these in order; the first "yes" usually settles it.
   entity's attributes (run with the owner's scope) or on a value as a whole.
 - [Immutable](../../../tentackle-core/src/main/docs/immutable.md) — how an embedded entity inherits its owner's
   immutability as part of the aggregate.
-</content>

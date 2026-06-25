@@ -14,7 +14,8 @@ Java Object Serialization is verbose on the wire, slow, brittle across class
 versions, and a recurring source of security advisories. RMI layers a rigid,
 JOS-based remoting model on top of it, and each remote method must declare `throws RemoteException`, 
 polluting domain interfaces with infrastructure concerns. TRIP replaces both with a single,
-compact, pluggable protocol:
+compact, pluggable protocol (see [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md)
+for the upgrade path of an existing application):
 
 - **Compact wire format** — variable-length numeric values,
   skip codes for default values, optimizations for sparse arrays/matrices/tensors/collections,
@@ -27,7 +28,7 @@ compact, pluggable protocol:
   deviate where needed without writing serialization code.
 - **Pluggable transports** — the serialization layer produces and consumes byte
   streams; the network layer below it (`Transport`) is swappable. TCP, TLS,
-  compressed, loopback, and QUIC (RFC-9000) transports ship with the framework.
+  compressed, loopback, and [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) (RFC-9000) transports ship with the framework.
   Applications can implement custom transports to support other protocols.
 - **Transparent RPC**: Client code obtains a dynamic proxy to a `Remote` interface, which is only a marker interface. 
   The framework routes calls to the server-side `RemoteDelegate` transparently.
@@ -135,7 +136,7 @@ which in turn automatically creates a proxy in the client.
 This creates a tree of remote objects, and when the root of
 the tree is removed from the registry, all remote objects 
 belonging to the tree are unregistered as well.
-The Tentackle's Session API makes use of this mechanism.
+The Tentackle's [Session API](../../../../tentackle-session/src/main/docs/session.md) makes use of this mechanism.
 When a session is closed, the remote session delegate is unregistered
 together with all other remote objects of the session.
 
@@ -716,7 +717,7 @@ For each call within a connection, the connection handler delegates to `createCa
 
 ### QUIC transport example
 
-The `tentackle-quic` module (`/tentackle-quic/src/main/java/org/tentackle/quic/`) provides a complete reference implementation using the KWIC library. Here is how it maps to the steps above:
+The [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) module (`/tentackle-quic/src/main/java/org/tentackle/quic/`) provides a complete reference implementation using the KWIC library. Here is how it maps to the steps above:
 
 #### Transport class
 
@@ -780,3 +781,15 @@ Key details:
 - **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`.
 
 - **Server-side streams**: `QuicProtocolConnectionFactory` accepts incoming `QuicStream`s from peer-initiated bidirectional streams and hands them to `transport.createConnectionHandler()` on a virtual thread.
+
+---
+
+## Related Documentation
+
+- [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel over TRIP; location transparency depends on this protocol.
+- [QUIC Transport](../../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) reference transport and how it plugs in.
+- [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions are remoted as a tree of `RemoteDelegate`s over TRIP.
+- [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md) — step-by-step migration of an existing RMI-based application.
+- [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
+- [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — where `tentackle-core` (TRIP) sits among the framework modules.

@@ -143,4 +143,3 @@ the framework was designed for.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the location-transparent session every tier programs against.
 - [PDO / Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) and [Operations](../../../tentackle-pdo/src/main/docs/operation.md) — entities and the verb-like services that drive hardware and external systems.
 - [Modules](./modules.md) — the JPMS module structure underpinning modular, non-modular, OSGi and embedded deployments.
-</content>

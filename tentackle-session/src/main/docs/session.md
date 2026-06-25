@@ -17,7 +17,7 @@ framework programs against free of any JDBC, SQL-dialect or wire-protocol detail
 
 A central design goal is **location transparency**. The same `Session` API is used whether persistence runs
 locally or on a middle-tier server. A session knows whether it is *local* (the physical database connection lives
-in this JVM) or *remote* (calls are routed via TRIP to a server), and application code does not have to care —
+in this JVM) or *remote* (calls are routed via [TRIP](../../../../tentackle-core/src/main/docs/trip.md) to a server), and application code does not have to care —
 there is no `LazyInitializationException`, because a PDO can always reach a working session in any JVM.
 
 ### Design principles
@@ -313,5 +313,6 @@ another.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the session, info and tracker factories.
-</content>
-</invoke>
+- [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol that carries a remote session's calls and its `SessionInfo` between JVMs.
+- [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — token locks, whose `lockLingerEnabled` flag is carried on the `SessionInfo`.
+- [Database](../../../../tentackle-database/src/main/docs/database.md) — the module providing the concrete local `Session` implementation.

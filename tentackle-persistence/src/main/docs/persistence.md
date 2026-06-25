@@ -274,4 +274,3 @@ entities, relations and attributes are declared.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — the session/transaction/tracking context the persistence layer runs in.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the dialect-aware backend that builds the executed SQL.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the `@Service`-replaced singletons and delegate discovery.
-</content>

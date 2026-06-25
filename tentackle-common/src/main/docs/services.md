@@ -37,7 +37,8 @@ annotation processing and Java's compiler API. More and more of the newer micros
 are using this technique to minimize startup times.
 
 There are pros and cons for either approach. Tentackle uses the second
-one. The [tentackle-maven-plugin](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html)
+one. The [tentackle-maven-plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
+([plugin reference](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html))
 analyzes the source code for annotations directly or indirectly annotated
 with [@Analyze](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/Analyze.html). This is a so-called meta annotation that causes the invocation
 of an [AnalyzeHandler](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-build-support/apidocs/org/tentackle/buildsupport/AnalyzeHandler.html) which is defined by the specific annotation. This handler
@@ -183,7 +184,7 @@ to classes, that's another motivation why Tentackle's mapping isn't based on jig
 `uses` / `provides` declarations in `module-info` and on `java.util.ServiceLoader`, but on `META-INF`. 
 However, for reasons how the JPMS works, especially when it comes to jlink'd applications loaded from a jimage file, we need a `hook` 
 into the modules that provide service configurations to determine the module dependencies.
-Another reason is the resource bundle handling, which works differently in modular than in classpath mode.
+Another reason is the [resource bundle handling](./bundle.md), which works differently in modular than in classpath mode.
 
 Therefore, each such module needs a [ModuleHook](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/ModuleHook.html)
 and a `provides` declaration in `module-info`:
@@ -258,3 +259,14 @@ public class Activator implements BundleActivator {
 ```
 
 We don't provide a public P2 repository yet, but that might change in the future.
+
+---
+
+## Related Documentation
+
+- [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the build-time tool that analyzes `@Analyze` annotations and writes the `META-INF` service configurations.
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — how the framework is split into build-time, runtime and common modules, each contributing services.
+- [Resource Bundles](./bundle.md) — bundle handling, which (like services) differs between classpath and modular mode.
+- [Internationalization](./internationalization.md) — database-backed I18N built on top of the bundle and service infrastructure.
+- [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — PDOs and operations are interfaces whose implementations are located via these services.
+- [Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — code generators that consume the analysis results (e.g. the `RemoteMethod` wurblet).

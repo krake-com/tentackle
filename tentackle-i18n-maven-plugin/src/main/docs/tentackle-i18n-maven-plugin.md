@@ -175,5 +175,3 @@ mvn tentackle-i18n:cleanup
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —
   the `analyze` goal that records the `@Bundle` annotations this plugin relies on
 - [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-i18n-maven-plugin/plugin-info.html)
-</content>
-</invoke>

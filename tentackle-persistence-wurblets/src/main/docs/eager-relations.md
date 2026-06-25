@@ -143,5 +143,3 @@ inflating every select of a central entity.
   relation `select` strategies (`lazy`, `eager`, `always`, `embedded`).
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — aggregates, components,
   immutability and the `JoinedSelect` machinery these loads build on.
-</content>
-</invoke>

@@ -191,4 +191,3 @@ the deployed application.
   read the analyze info files (e.g. the `RemoteMethod` wurblet).
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol whose delegates are generated
   from `@RemoteMethod` analyze info.
-</content>

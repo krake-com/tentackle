@@ -1,9 +1,11 @@
 # Tentackle Model Definition Syntax
 
-The Tentackle model definition is a DSL embedded as a Java comment block in a PDO interface source file.
-The model (`tentackle-model`) is parsed at build time to drive the code generation (persistence interfaces
+The Tentackle model definition is a DSL embedded as a Java comment block in a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) interface source file.
+The model (`tentackle-model`, see the [module overview](./tentackle-model.md)) is parsed at build time to drive the code generation (persistence interfaces
 and implementations, documentation), DDL generation, database migration and code analysis tools. 
-It is primarily used by the Wurbelizer code generator, the Tentackle SQL-, the PDO-wizard- and the PDO-browser 
+It is primarily used by the [Wurbelizer code generator](../../../../tentackle-wurblets/src/main/docs/wurblets.md), the
+[Tentackle SQL-](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), the
+[PDO-wizard-](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) and the PDO-browser 
 maven plugins.
 
 ---
@@ -372,7 +374,7 @@ Position3D                     stockPosition   stock_position  x, y, z position 
 ## 6. Attribute Option Lines (Validation Section)
 
 Used in the `## validations` section to attach annotations to attributes (typically
-validation constraints). The syntax is:
+[validation](../../../../tentackle-core/src/main/docs/validation.md) constraints). The syntax is:
 
 ```
 attributeName: @Anno1, @Anno2(param=value), ...
@@ -495,14 +497,14 @@ select = [<strategy>] [cached] [| wurbletArgs]
 |------------|----------------------------------------------------------------------------|
 | `lazy`     | Fetched on first access only. Default if not `cached`.                     |
 | `always`   | Fetched on every get (for very special cases, not recommended)             |
-| `eager`    | Fetched together with the parent entity via left outer join.               |
+| `eager`    | Fetched together with the parent entity via left outer join (see [eager relations](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)). |
 | `embedded` | Default for embedded related entities (only used when printing the model). |
 
 - `cached` — use caching select methods. Default if the related entity's `cached` option is set
  and the strategy is missing. Notice that "lazy cached" is allowed but won't update the loaded reference even if
  the cached object is modified!
 
-- `| wurbletArgs` — extra arguments passed to the `PdoSelectList` wurblet (list relations only):
+- `| wurbletArgs` — extra arguments passed to the [`PdoSelectList`](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) wurblet (list relations only):
 
 ```
 select = lazy | -pilePosition
@@ -796,3 +798,20 @@ the `<wurbletProperties>` section in the project's parent pom.
  * @<
  */
 ```
+
+---
+
+## Related Documentation
+
+- [Tentackle Model](./tentackle-model.md) — the model API module that parses and represents this DSL.
+- [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects whose persistence layer is generated from the model.
+- [Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) and [Persistence Wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — the code generators driven by the model.
+- [Pdo Select](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) and [Eager Relations](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — how `select` strategies in the `## relations` section turn into generated queries.
+- [Validation](../../../../tentackle-core/src/main/docs/validation.md) — the annotations attached in the `## validations` section.
+- [Embedded vs. Datatype](../../../../src/main/docs/embedded-vs-datatype.md) — choosing between an `embedded` entity and a custom attribute type.
+- [Root Columns](../../../../tentackle-pdo/src/main/docs/root-columns.md) — the `rootid` / `rootclassid` options and how components find their root.
+- [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — the `tokenlock` and `serial` options for optimistic and token locking.
+- [Snapshots and Copies](../../../../tentackle-pdo/src/main/docs/snapshot.md) — what the `shallow` option excludes.
+- [Cache](../../../../tentackle-pdo/src/main/docs/cache.md) — the `cached` entity option.
+- [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migrations from the model.
+- [Tentackle Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — the interactive PDO/operation wizard.

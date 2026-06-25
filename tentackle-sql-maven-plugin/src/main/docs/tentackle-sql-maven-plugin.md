@@ -280,5 +280,3 @@ For a typical Tentackle application the database tooling builds on the output of
   the companion plugin for service- and Java metadata generation
 - [Wurbelizer](https://wurbelizer.org/) — the code generation engine that produces the model
 - [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-sql-maven-plugin/plugin-info.html)
-</content>
-</invoke>

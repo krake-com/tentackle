@@ -609,5 +609,3 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
 | Packaging | [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) |
 | The architecture in the large | [modules.md](../../../../src/main/docs/modules.md) · [tiers.md](../../../../src/main/docs/tiers.md) |
 | The archetype itself | [tentackle-project-archetype.md](tentackle-project-archetype.md) |
-</content>
-</invoke>

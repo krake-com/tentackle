@@ -377,5 +377,3 @@ relation-generated ones.
   consume.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol behind the generated remote
   delegates.
-</content>
-</invoke>

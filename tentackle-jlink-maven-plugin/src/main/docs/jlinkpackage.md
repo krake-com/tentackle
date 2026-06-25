@@ -342,7 +342,7 @@ module in a `required` clause.
 All those modules are just _wired_ at runtime. For example, the JDBC driver is loaded by the
 `DriverManager`. Throughout the whole application there is no import statement that refers to 
 a Postgres specific class. The same applies to Groovy scripting and the logging implementation,
-which are both loaded via Tentackle's [Service and Configuration API](services.md).
+which are both loaded via Tentackle's [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md).
 
 When the plugin detects such "unrequired" automatic modules, they are moved to the `mp` folder
 and added to the `modulePath`. The full-blown modules still go into the modular runtime image as usual.

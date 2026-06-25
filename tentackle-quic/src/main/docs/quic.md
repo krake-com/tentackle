@@ -306,5 +306,3 @@ its own optional module.
 - [KWIK](https://github.com/ptrd/kwik) — the underlying QUIC implementation
   (`tech.kwik.core`).
 - RFC 9000 — QUIC: A UDP-Based Multiplexed and Secure Transport.
-</content>
-</invoke>

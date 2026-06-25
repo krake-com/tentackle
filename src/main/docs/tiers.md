@@ -418,5 +418,3 @@ tier. The cascade depth is limited only by latency budget, not by the framework.
 - [PDO Cache](../../../tentackle-pdo/src/main/docs/cache.md) — the cache internals (indexes, strategies, tableserial expiry) behind the stacked, per-tier caches described above.
 - [Modules](./modules.md) — where the server, session and database modules sit in the overall module graph.
 - [Migrating from RMI to TRIP](./migrate_rmi_trip.md).
-</content>
-</invoke>

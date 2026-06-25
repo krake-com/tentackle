@@ -1,8 +1,9 @@
 # Migrate Tentackle Application from RMI to TRIP
 
 With the major release 25.18.0.0, the remoting API was refactored to use
-the new TRIP protocol instead of RMI. This document describes how to
-migrate your application from RMI to TRIP.
+the new [TRIP protocol](../../../tentackle-core/src/main/docs/trip.md) instead of RMI. This document describes how to
+migrate your application from RMI to TRIP. For the rationale and a full
+description of the protocol, see the [TRIP documentation](../../../tentackle-core/src/main/docs/trip.md).
 
 ### modify the parent pom.xml
 Modify the file pattern in the wurbelizer-maven-plugin configuration from `rmi` to `trip`
@@ -48,3 +49,11 @@ Check that `public DomainContext create()` is overridden.
 
 ### Edit the backend.properties
 Change the `rmi` protocol to `trip` or `trips`.
+
+---
+
+## Related Documentation
+
+- [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — the protocol you are migrating to, including its transport schemes (`trip`, `trips`, …).
+- [Session](../../../tentackle-session/src/main/docs/session.md) — session and connection handling affected by the migration.
+- [PDO / Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel between client and server.

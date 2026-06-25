@@ -219,4 +219,3 @@ service API; higher-level utilities (e.g. the reflection-based class mappers) ad
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — maps the data types here (`BMoney`, `DMoney`, `Date`, `Timestamp`, `I18NText`, …) to database columns.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — uses `EncryptedProperties`/`Cryptor` for connection configuration and credentials.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the PDO pattern wired together by the service API.
-</content>

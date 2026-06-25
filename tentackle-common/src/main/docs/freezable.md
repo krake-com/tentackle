@@ -189,4 +189,3 @@ side, including its three-state model and aggregate cascading.
   `isMutable()` flag drives freeze-on-assignment.
 - [Snapshots](../../../../tentackle-pdo/src/main/docs/snapshot.md) — dirty tracking that aliasing mutation would
   otherwise defeat.
-</content>

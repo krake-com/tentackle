@@ -159,4 +159,3 @@ The client-side half of the end-to-end update flow (the server side is set up vi
 - [FX RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the Rich Desktop Client framework providing `DesktopApplication` and the login-handling extension points.
 - [FX](../../../../tentackle-fx/src/main/docs/fx.md) — the JavaFX binding layer beneath the RDC.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — `VersionIncompatibleException` and `SessionInfo`, the credentials carried into the relaunched process.
-</content>

@@ -265,5 +265,3 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
 - [tentackle-fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the JavaFX desktop layer that orchestrates the update UI, download and restart.
 - [Common](../../../../tentackle-common/src/main/docs/common.md) — `Cryptor`, `FileHelper`, `StringHelper` and the `ModuleHook` mechanism.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI behind the `ServerUpdateUtilities`/`ClientUpdateUtilities` singletons.
-</content>
-</invoke>
