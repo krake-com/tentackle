@@ -165,10 +165,14 @@ the surplus objects in place or, when more than half must go, invalidates and
 re-adds the survivors — whichever touches fewer entries. `keepQuota = 0` behaves
 like `FORGET`.
 
-> **`selectAll` overrides the strategy.** The first `selectAll()` loads the whole
-> table and, unless `maxSizeHardLimit` is set, **auto-enlarges** `maxSize` to fit
-> (size + 10 %). Once a `selectAll` list exists, eviction is effectively off and
-> the cache keeps the list coherent instead.
+> **`selectAll` puts the cache into PRELOAD.** The first `selectAll()` loads the
+> whole table and, unless `maxSizeHardLimit` is set, **auto-enlarges** `maxSize` to
+> fit (size + 10 %). From then on the cache behaves exactly as if `PRELOAD` had been
+> declared: eviction is off and the cache keeps the full list coherent instead.
+> Crucially, with a tableserial configured this coherency is **additive** — new
+> inserts are appended as they happen — so the cache **always holds every object**
+> and stays **fully searchable** from memory (see *PRELOAD for large tables* below).
+
 
 ---
 
@@ -230,8 +234,10 @@ the next access (`expireDelayed` → `expireImpl` → `expireByExpirationInfo`).
 that point it asks the database (or the remote cache) for the *expired tableserials*
 in the requested range and walks them:
 
-- a **positive** serial means update/insert → the matching cached PDO is marked
-  `expired` (reloaded on next access) or scheduled into list `refreshIds`;
+- a **positive** serial means update/insert → an already-cached PDO is marked
+  `expired` (reloaded on next access) or scheduled into list `refreshIds`; an
+  **id not yet in the cache is a new insert** and is scheduled into `refreshIds`
+  too, so `refreshList` **adds the new PDO** to the preloaded list;
 - a **negative** serial means delete → the PDO is removed and scheduled into list
   `removeIds`;
 - an **id of 0** means a rolled-back insert/update.
@@ -271,6 +277,30 @@ expires only the **rows that actually changed** — `selectAll`'s `refreshList`
 reloads just the inserted/updated PDOs and drops the deleted ones
 (`refreshIds` / `removeIds`), touching a handful of entries no matter how many rows
 the table holds.
+
+The key consequence is **completeness**. As soon as the cache is in `PRELOAD` —
+whether declared with `--strategy=PRELOAD` or entered implicitly by the first
+`selectAll` — it does not merely keep the rows it already holds up to date: **newly
+inserted PDOs are added to the cache** as their tableserials arrive. The cache
+therefore **mirrors the whole table** and is **fully searchable in memory**:
+application code can iterate, filter or index the complete object set instead of
+issuing a query — no row silently absent because it was inserted after the preload.
+
+**But search it as an *eventually consistent* view, not a transactional one.**
+A cache is, by its nature, eventually consistent: changes committed by *other* JVMs
+become visible only once their modification event has propagated through the
+[`ModificationTracker`](../../../../tentackle-session/src/main/docs/session.md) and
+the deferred expiration has run on the next access. There is an inherent — usually
+small — propagation window during which a remote insert, update or delete is not yet
+reflected locally. (Your *own* committed changes are applied immediately, because the
+modifying JVM calls `expire` directly.) So an in-memory search over a preloaded cache
+can momentarily return a slightly stale set: a just-inserted row may be missing, a
+just-deleted row may still appear, an updated row may carry an older value. This is
+fine for the overwhelming majority of reads — reporting, lookups, populating choosers,
+read models — but **whenever a decision must be made against the guaranteed-current
+state** (uniqueness checks, balance/limit enforcement, anything used to gate a write),
+do not rely on a cache scan: re-read or re-validate inside the transaction, where
+optimistic locking and the database give you the authoritative answer.
 
 That changes the economics completely: `PRELOAD` becomes viable — and attractive —
 for **large tables, including transaction data**, not just small lookup tables. The
@@ -380,6 +410,9 @@ debugging or batch jobs).
   hand out immutable instances and copy if you must edit.
 - **Don't select a just-modified PDO from the cache in the same transaction** — the
   cache deliberately rejects this to avoid pollution.
+- **Treat cache searches as eventually consistent.** Other JVMs' changes appear only
+  after a small propagation delay, so a cache scan may be momentarily stale. Read or
+  re-validate inside the transaction when gating a write on the current state.
 - **Use `ViewPermission`, not `ReadPermission`, on cached entities.**
 
 ## See Also
