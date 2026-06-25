@@ -26,6 +26,8 @@ eliminate. They are the ones that do not announce themselves:
 - **Silent data corruption** — a lost update, a half-written aggregate, a stale read that a user acts on.
 - **Latent invalidity** — an object that violates a business rule but was persisted anyway because the rule lived
   in a UI handler that this particular code path never went through.
+- **Broken aggregate boundaries** — a child written or mutated on its own, behind the root that owns the cluster's
+  invariants, so the aggregate is invalid *as a whole* even though every individual row is well-formed in isolation.
 - **Shared-state aliasing** — one caller mutating an object another caller is relying on, because they happen to
   hold the same cached instance.
 - **Lifecycle hazards** — an object that is valid here and throws there, depending on an ambient scope the caller
@@ -190,7 +192,56 @@ Snapshots are immutable by construction (mutating one would corrupt the parallel
 and a `copy()` — the operation you use when you *do* want a usable second object — is always mutable and new. The
 two are kept distinct precisely so neither can be misused as the other.
 
-### 5. Objects that are never in a degraded state — the PDO model
+### 5. Aggregates that change only as a whole — enforced DDD boundaries
+
+Correctness is not only a property of individual objects; it is a property of the **aggregate**. In Domain-Driven
+Design the aggregate root *owns the cluster's invariants*: the aggregate is the **unit of consistency**, its internals
+may be changed only through the root, and the root validates the *whole* cluster before any of it is allowed to
+persist. In most frameworks that rule is a **convention** — true only as long as every developer remembers it on every
+code path, and silently broken the moment one does not (the well-formed child row written behind its parent's back).
+Tentackle does not leave it to discipline: the aggregate boundary is a **structural fact the persistence layer knows
+about and enforces**, so the DDD-correct way is the *only* way.
+
+The layer knows which PDO is a **root entity** and which are its **components**, and each component names its root
+directly — by id and type, through the [`rootId`/`rootClassId`](../../../tentackle-pdo/src/main/docs/root-columns.md)
+columns — *without a database query*. From that one structural fact, four boundary guarantees follow, each a **refusal
+by the framework** rather than a recommendation to the programmer:
+
+- **A component cannot be persisted on its own.** There is no "create a child, set its parent id, save the child" path.
+  A component may be persisted only within the **root context of its own root entity**; attempt it through any other
+  context and the persistence layer throws, fail-fast. The orphaned write that a flat ORM waves through simply has *no
+  API* in Tentackle.
+
+  ```java
+  InvoiceLine line = invoice.on(InvoiceLine.class);  // born into the invoice's root context
+  line.setAmount(-500);
+  invoice.getLines().add(line);
+  invoice.persist();        // validates the ENTIRE aggregate, rejects the negative total
+                            // → nothing is written; the bad state never reaches the database
+  ```
+
+- **The only door is the root, and it always validates the whole.** Persisting the root validates the *entire* cluster
+  (§2) as a unit before a single row is touched — including cross-entity invariants such as *"the sum of the lines must
+  be positive"* that no per-row field annotation can express. Whole-aggregate validation **is** the write; there is no
+  door into the database that bypasses it.
+- **A component out of context is read-only.** A component loaded outside its own root context — reached through a deep
+  reference without its owning root — is made **finally immutable** (§3), so you cannot mutate an aggregate's internals
+  while its root is absent to validate the change.
+- **Visibility is aggregate-scoped.** Authorization is enforced at aggregate granularity: a component is visible only if
+  its root is. If you may not read the `Invoice`, its `InvoiceLine`s behave as if they did not exist — the root's read
+  permission is evaluated from the two coordinates carried on the component row, at no extra query.
+
+And because undo is aggregate-scoped too, a [snapshot](../../../tentackle-pdo/src/main/docs/snapshot.md) (§4) reverts
+the *entire* aggregate atomically. The unit of consistency in the code is exactly the unit of consistency in the
+domain.
+
+> The aggregate is a real thing the framework knows about, not a pattern superimposed on a flat set of
+> independently-persistable rows. That is what turns "honour the aggregate boundary" from advice into an invariant. The
+> full mechanics are in
+> [pdo-vs-orm.md → Aggregates: Validated as a Whole, or Not Written at All](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md#aggregates-validated-as-a-whole-or-not-written-at-all)
+> and [root-columns.md](../../../tentackle-pdo/src/main/docs/root-columns.md).
+
+### 6. Objects that are never in a degraded state — the PDO model
 
 A large class of "valid here, broken there" bugs comes from objects whose usability depends on an ambient,
 invisible scope. The canonical example is the JPA detached entity that throws `LazyInitializationException` the
@@ -214,11 +265,10 @@ separated from object lifetime: a
 [`@Transaction`](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md#transactions-demarcation-vs-object-lifecycle)
 controls *the database*, not *your objects*, so there is no "now it's detached" moment to reason about.
 
-Aggregates are first-class here too: a root entity and its components know each other without a query, and DDD
-boundaries are enforced by the framework — a component cannot be persisted on its own. The unit of consistency in
-the code is the same as the unit of consistency in the domain.
+Aggregates build directly on this: because a root and its components know each other without a query, rich behaviour
+can live on the aggregate as a whole — and the boundary around it is enforced, not merely documented, as §5 details.
 
-### 6. Cross-cutting rules that cannot be forgotten — interceptors
+### 7. Cross-cutting rules that cannot be forgotten — interceptors
 
 Transactions, permission checks and pre/post-commit hooks are exactly the concerns that, written by hand, get
 omitted on the one method that needed them. Tentackle's
@@ -243,7 +293,7 @@ For correctness the important details are:
   any interceptor on a non-`Interceptable` method) is a **compilation error**, not a runtime surprise. The mistake
   is caught before the code ever runs.
 
-### 7. One source of truth, generated — the model
+### 8. One source of truth, generated — the model
 
 The shape of an entity, its columns, its relations, its validations and its indexes are defined **once**, in the
 [model](../../../tentackle-model/src/main/docs/model-definition.md) embedded in the PDO interface. The persistence
@@ -254,7 +304,7 @@ cannot disagree, because they share an origin. Generated code is woven into guar
 annotation processors check usage at compile time, so a malformed model fails the build rather than producing
 plausible-looking wrong output.
 
-### 8. Correctness across a version-skewed fleet — TRIP
+### 9. Correctness across a version-skewed fleet — TRIP
 
 When PDOs travel between JVMs that may run different versions, a naïve serializer fails *late* and *cryptically*.
 [TRIP](../../../tentackle-core/src/main/docs/trip.md) carries built-in client/server **version checking**
@@ -279,6 +329,7 @@ the safe behaviour the default, and fail loudly when the safe path is violated.
 | Rule enforced on only some code paths | [Validation](../../../tentackle-core/src/main/docs/validation.md) | Declared on the member, run before persist, scope/severity-aware, travels over TRIP |
 | Shared cached object mutated by one caller | [`Immutable`](../../../tentackle-core/src/main/docs/immutable.md) | `assertMutable()` guard in every setter; cached PDOs finally immutable; immutable ⇒ not persistable |
 | Half-applied undo leaving an impossible state | [Snapshots](../../../tentackle-pdo/src/main/docs/snapshot.md) | Whole aggregate reverts atomically; identity never reverted; stale snapshot throws |
+| Child written or mutated behind its aggregate root | [Aggregate boundaries](../../../tentackle-pdo/src/main/docs/root-columns.md) | Component persistable only in its root's context; root validates the whole aggregate; out-of-context component immutable |
 | Object valid here, broken there | [PDO model](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) | No lifecycle states; no `LazyInitializationException`; behaviour safe on the object |
 | Forgotten transaction / permission check | [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md) | Declarative, deterministically ordered, compile-time-verified placement |
 | Mapping drifts from schema | [Model + Wurbelizer](../../../tentackle-model/src/main/docs/model-definition.md) | Single definition generates classes, DDL and migrations together |
@@ -321,7 +372,8 @@ object that throws only in production — structurally hard to reach. For techni
 - [Validation](../../../tentackle-core/src/main/docs/validation.md) — annotation-driven, scope- and severity-aware checks.
 - [Immutable](../../../tentackle-core/src/main/docs/immutable.md) — switchable read-only objects and aggregate cascading.
 - [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md) — exact, atomic aggregate undo.
-- [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
+- [Root Columns (`rootId`/`rootClassId`)](../../../tentackle-pdo/src/main/docs/root-columns.md) — how the aggregate boundary is made physical and enforced.
+- [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state, and why the aggregate is validated as a whole or not written at all.
 - [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md) — declarative, ordered, compile-time-verified cross-cutting concerns.
 - [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md) — the single source the persistence layer is generated from.
 - [TRIP](../../../tentackle-core/src/main/docs/trip.md) — versioned, evolution-tolerant remoting.

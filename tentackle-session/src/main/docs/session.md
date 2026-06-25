@@ -17,8 +17,7 @@ framework programs against free of any JDBC, SQL-dialect or wire-protocol detail
 
 A central design goal is **location transparency**. The same `Session` API is used whether persistence runs
 locally or on a middle-tier server. A session knows whether it is *local* (the physical database connection lives
-in this JVM) or *remote* (calls are routed via [TRIP](../../../../tentackle-core/src/main/docs/trip.md) to a server), and application code does not have to care —
-there is no `LazyInitializationException`, because a PDO can always reach a working session in any JVM.
+in this JVM) or *remote* (calls are routed via [TRIP](../../../../tentackle-core/src/main/docs/trip.md) to a server), and application code does not have to care.
 
 ### Design principles
 
