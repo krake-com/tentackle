@@ -440,6 +440,95 @@ public class PlsblRestSessionInfoFactory extends PlsblSessionInfoFactory {
 A single `application.properties` therefore configures the web port and timeouts *and* the Tentackle backend URL,
 credentials and pool sizing — the two stacks stay in one place without colliding.
 
+### 6. The controllers: PDO access via `DomainContextProvider`
+
+Everything so far exists to make the last step trivial: an ordinary Spring `@RestController` whose methods call
+PDOs directly and run as the authenticated user. The bridge is a single interface,
+[`DomainContextProvider`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/DomainContextProvider.java).
+A controller *implements* it, and in return inherits the same `on(...)` / `op(...)` shorthand that domain code
+uses everywhere else in the framework — no `Pdo.create(...)`, no session plumbing, no DTO/entity coupling leaking
+into the persistence layer.
+
+A thin base class holds a per-controller [`DomainContext`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/DomainContext.java)
+and satisfies the interface's single abstract method:
+
+```java
+public abstract class RestControllerBase implements DomainContextProvider {
+
+  private final DomainContext context = Pdo.createDomainContext();   // thread-local domain context
+
+  @Override
+  public DomainContext getDomainContext() {
+    return context;
+  }
+}
+```
+
+`Pdo.createDomainContext()` returns a context bound to the *current* session — and the current session is exactly
+what `TentackleDispatcherServlet` attached to the worker thread via `makeCurrent()` (step 2). So although a single
+`@RestController` bean is shared across all requests, every method invocation resolves to the session — and thus
+the identity — of the client that triggered it. The controller stays a plain Spring singleton; the request-scoped
+state lives on the thread, not in the bean.
+
+Implementing `DomainContextProvider` unlocks the convenience methods from the interface:
+
+| Method | Equivalent to | Use |
+|--------|---------------|-----|
+| `on(Ingot.class)` | `Pdo.create(Ingot.class, getDomainContext())` | create a PDO to run finders/factories on |
+| `on(Ingot.class, "name")` | same, in a fresh named sub-context | isolate a unit of work |
+| `op(SomeOp.class)` | `OperationFactory…create(…, getDomainContext())` | invoke a remotable operation |
+| `getDomainContext()` | — | reach the session for explicit transactions |
+
+A concrete controller then extends the base and reads as ordinary PDO code:
+
+```java
+@RestController
+@RequestMapping("/ingot")
+public class IngotController extends RestControllerBase {
+
+  @GetMapping("showAll")
+  public List<IngotDTO> showAll() {
+    return on(Ingot.class).findAllInStock().stream().map(IngotDTO::create).toList();   // runs as the logged-in user
+  }
+
+  @GetMapping("/show")
+  public IngotDTO show(@RequestParam String number) {
+    return IngotDTO.create(getIngotInStock(number));
+  }
+
+  @GetMapping("/update")
+  public IngotDTO update(@RequestParam String number, @RequestParam(required = false) Boolean scrap) {
+    return getDomainContext().getSession().transaction(() -> {     // wrap writes in a Tentackle transaction
+      Ingot ingot = getIngotInStock(number);
+      if (scrap != null) {
+        ingot.requestTokenLock();                                  // domain rule: must not be in motion
+        ingot.setScrap(scrap);
+        ingot = ingot.persist();
+      }
+      return IngotDTO.create(ingot);
+    });
+  }
+}
+```
+
+Three conventions worth copying from the `IngotController` example:
+
+- **Reads are a one-liner; writes go through a transaction.** Finder calls like `on(Ingot.class).findAllInStock()`
+  need no ceremony. Mutations are wrapped in `getDomainContext().getSession().transaction(() -> …)` so the whole
+  unit of work commits or rolls back atomically — and domain rules (`requestTokenLock()`, validation in
+  `persist()`) are enforced exactly as they are for a desktop client.
+- **Map PDOs to DTOs at the boundary.** Endpoints return small `…DTO` records built with a static `create(pdo)`
+  factory, never the live PDO. This keeps the JSON contract stable and avoids serialising persistence internals.
+  Use the DTO-wurblet to create the DTOs.
+- **Translate failures to HTTP status.** Invalid input or missing/locked entities throw a Spring
+  `ResponseStatusException` (`BAD_REQUEST`, `NOT_FOUND`, `NOT_ACCEPTABLE`, …), turning domain-level outcomes into
+  meaningful HTTP responses. Because each PDO call already runs as the authenticated user, Tentackle's own
+  permission checks apply on top, with no extra code in the controller.
+
+The result is that adding an endpoint is just adding a method: the boot order, per-request session attach, pooling
+and authentication from the previous steps are invisible here — the controller only ever sees "a PDO in the current
+user's context".
+
 ### Module dependencies
 
 The example module depends on `tentackle-web` plus the application's domain/persistence and the usual pluggable
