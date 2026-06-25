@@ -25,8 +25,9 @@ Five things set Tentackle apart from other Java frameworks:
    [TRIP](tentackle-core/src/main/docs/trip.md) protocol. See the
    [Multi-Tier Cascade](src/main/docs/tiers.md).
 
-3. **Correctness is the default, not an add-on.** Optimistic (`serial`) and token
-   locking are always on, validation is declarative and travels with the object,
+3. **Correctness is the default, not an add-on.** Aggregates as first citizens
+   enforcing DDD rules, optimistic (`serial`) locking always on, 
+   validation is declarative and travels with the object,
    shared objects can be made immutable, and aggregates revert atomically via
    snapshots. See [Correctness First](src/main/docs/correctness-first.md).
 
