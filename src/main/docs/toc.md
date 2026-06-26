@@ -9,6 +9,7 @@ the [Index](./index.md).
 - [Quickstart](./quickstart.md) — generate, build, and run a multi-tier application in minutes.
 - [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
 - [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
+- [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md) — the Bill of Materials for pinning Tentackle module versions in downstream projects.
 
 ## Concepts & Architecture
 
@@ -62,6 +63,8 @@ the [Index](./index.md).
 - [Interceptors — Annotation-Driven Method Interception](../../../tentackle-core/src/main/docs/interceptors.md) — cross-cutting concerns.
 - [Immutable — Switchable Read-Only Objects](../../../tentackle-core/src/main/docs/immutable.md) — controlled immutability.
 - [Freezable — Making Old-School Mutable Value Types Safe](../../../tentackle-common/src/main/docs/freezable.md) — taming legacy mutable values.
+- [Preferences — Persistable, Database-Backed Settings](../../../tentackle-core/src/main/docs/preferences.md) — settings that roam with the user.
+- [Tasks and Daemons — Background Execution](../../../tentackle-core/src/main/docs/tasks-daemon.md) — the task dispatcher and daemon supervisor.
 - [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md) — the pluggable logging API.
 - [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting-language API.
 
@@ -76,6 +79,7 @@ the [Index](./index.md).
 - [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers, and binding.
 - [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
 - [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.
+- [tentackle-fx-rdc-poi — Spreadsheet (XLS) Export](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) — Excel export for RDC tables via Apache POI.
 - [FX RDC Update — Auto-Update for the Rich Desktop Client](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the client-side update UI.
 
 ## Logging Providers
