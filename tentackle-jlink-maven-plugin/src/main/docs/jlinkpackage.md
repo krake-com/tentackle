@@ -1,26 +1,39 @@
 ## Tentackle Maven Plugin for Jlink and Jpackage
 
 Tentackle provides a maven plugin to create self-contained applications using the `jlink` or `jpackage` tools of the JDK.
-Although part of the framework, the plugin can be used for any kind of java application, whether modular, non-modular
-or even mixed. It does so by analyzing the application and all its dependencies to determine the best strategy.
+A self-contained image bundles a *custom, trimmed-down Java runtime* together with the application, so the target
+machine needs no pre-installed JDK or JRE: unpack a ZIP or run an installer, and the application launches.
+
+Although part of the framework, the plugin can be used for any kind of java application, whether modular, non-modular,
+or even mixed (see [Application Categories and Jigsaw Myths](#application-categories-and-jigsaw-myths) below). It does
+so by *analyzing the application and all its dependencies* — reading `module-info` for real modules and falling back
+to `jdeps` for the rest — to determine the best packaging strategy automatically. The result is a runtime image that
+contains only the modules the application actually needs, which keeps it small and reduces the attack surface.
 Only minimum configuration is required, since the maven project model already provides most of the
-necessary information.
+necessary information; platform-specific details are kept out of the poms and live in editable
+[Freemarker templates](#adding-the-plugin-to-your-maven-project) instead.
 
 The plugin provides 3 maven goals:
 
-1. jlink: creates a ZIP archive containing a self-contained image of the application with a modular java runtime created by jlink, including a script
-to launch the application.
-2. jpackage: creates native executables to run the application with a modular java runtime and an installer. Supports per-user or per-system installations, depending
-on the platform.
-3. init: (re-)installs the defaults of the project-specific templates to generate the scripts or
-tool option files.
+1. **jlink** — creates a ZIP archive containing a self-contained image of the application: the trimmed modular Java
+   runtime, the application's own artifacts, its (optionally filtered) configuration resources, and a generated,
+   platform-specific launch script. The result is a portable, unpack-and-run distribution.
+2. **jpackage** — goes one step further and produces a *native* executable plus a platform installer
+   (`.deb`/`.rpm` on Linux, `.msi`/`.exe` on Windows, `.pkg`/`.dmg` on macOS), with menu entries, shortcuts, and
+   icons. It supports per-user or per-system installations, depending on the platform. Internally, it still uses
+   jlink to build the runtime first (see [How The Jpackage Goal Works](#how-the-jpackage-goal-works)).
+3. **init** — (re-)installs the defaults of the project-specific templates used to generate the scripts and
+   tool-option files, so you can start from a known-good baseline and then customize.
 
-For per-user installations an optional update feature is available that enables a running application to download
-an image and update itself to a newer version. This is especially useful for desktop applications, 
-since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed in Java 11.
+For per-user installations an optional [auto-update feature](#auto-update-feature) is available that enables a running
+application to download a new image and update itself in place. This is especially useful for desktop applications,
+since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed in Java 11 and the jlink/jpackage
+toolset makes it unnecessary.
 
 Notice that the plugin must be executed on the target platform, because `jlink` and `jpackage` are 
-platform-specific tools.
+platform-specific tools (a Windows installer can only be built on Windows, and so on). The
+[Maven toolchain support](#using-the-maven-toolchain) lets you decouple the JDK that *runs the build* from the JDK
+that *builds the image*.
 
 ### Prerequisites
 
@@ -374,7 +387,7 @@ With toolchains you can instruct a toolchain-aware plugin to use a different JDK
 of the current maven build. The Tentackle maven plugin for jlink and jpackage even allows you
 to select two different toolchains:
 
-- `<jdkToolchain>`: selects the java version for the jlink, jdeps and jpackage tools. For example, if
+- `<jdkToolchain>`: selects the java version for the jlink, jdeps, and jpackage tools. For example, if
   your maven build runs on Java 11 LTS, but you want to use the latest Java in production, add
   the following lines (provided `toolchains.xml` is configured properly):
 ```xml
@@ -389,9 +402,12 @@ to select two different toolchains:
 
 ### Extending the Plugin
 
-If you have special requirements, such as creating different variants of your application at the same time,
-you can do so by extending the plugin with your own implementation of an 
-[ArtifactCreator](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/ArtifactCreator.html).
+The plugin delegates the actual creation of an artifact to an
+[ArtifactCreator](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/ArtifactCreator.html),
+so if you have special requirements — building several variants of your application in one run (e.g., a full client
+and a view-only client), emitting an additional archive format, or post-processing the image — you can supply your
+own implementation instead of the built-in one. Because the rest of the pipeline (dependency analysis, runtime
+assembly, template model) stays in place, an extension only has to override the step that differs.
 
 ### Auto Update Feature
 
@@ -411,7 +427,7 @@ The feature is based on 3 components:
 1. The Tentackle jlink/jpackage plugin configured with: `<withUpdater>true</withUpdater>`. 
    This creates an additional platform-specific update script (from template `update.ftl`) 
    that takes an unpacked archive containing the new application,
-   ensures that the old application is no more running, updates the existing installation
+   ensures that the old application is no more running, updates the existing installation,
    and finally restarts the application. For the jpackage goal the template for the
    update script is `package-update.ftl` and an additional ZIP archive
    is created as well.
@@ -422,18 +438,17 @@ The feature is based on 3 components:
    replies with a URL pointing to an archive containing the necessary files.
 
 3. The client UI part. It handles the exception, asks the user whether to update or abort,
-   downloads the archive, verifies the checksum, unpacks it, invokes the update script and terminates itself.
+   downloads the archive, verifies the checksum, unpacks it, invokes the update script, and terminates itself.
    
 The API to implement the server- and client update service is located in the module
 [tentackle-update](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-update/apidocs/org.tentackle.update/org/tentackle/update/package-summary.html).
-It is based on [RMI](https://en.wikipedia.org/wiki/Java_remote_method_invocation) which is part
-of the JDK. Although made for Tentackle applications, it should be applicable to other applications
+Although made for Tentackle applications, it can be used as a blueprint to other applications
 as well.
 
 The UI part is implemented in [tentackle-fx-rdc-update](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-fx-rdc-update/apidocs/org.tentackle.fx.rdc.update/org/tentackle/fx/rdc/update/package-summary.html),
 which is based on [JavaFX](https://openjfx.io/) and the [Tentackle](https://tentackle.org)
-framework. As such, it cannot be used by any other kind of application. But it may well serve as a blueprint
-for Swing or FX applications to implement your own solution.
+framework. As such, it cannot be used by any other kind of application. 
+But it's a good starting point for your own update service.
 
 Again, for a working example, please see this [Quickstart](../../../../src/main/docs/quickstart.md).
 
