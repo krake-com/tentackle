@@ -16,6 +16,7 @@ topic-grouped listing of every document, see the
 ## B
 
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
+- **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
 - **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md)
 
 ## C
@@ -29,6 +30,7 @@ topic-grouped listing of every document, see the
 ## D
 
 - **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -89,6 +91,7 @@ topic-grouped listing of every document, see the
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (sessions)** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
 
 ## Q
 
@@ -110,11 +113,13 @@ topic-grouped listing of every document, see the
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
+- **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 
 ## T
 
 - **Technical & scientific applications** — [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)
+- **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)
 - **Token locks** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
