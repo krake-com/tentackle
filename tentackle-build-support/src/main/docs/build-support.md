@@ -5,13 +5,13 @@
 `tentackle-build-support` is a small, **build-time-only** module that provides the infrastructure for
 Tentackle's *analyze phase*: a Java annotation-processing pass that runs over an application's sources
 **before** they are wurbeled and compiled. During this pass it inspects the Tentackle annotations in the code
-and turns them into two kinds of artefacts:
+and turns them into two kinds of artifacts:
 
 - **service descriptors** under `META-INF` (so the [`ServiceFinder`](../../../../tentackle-common/src/main/docs/services.md)
   can discover implementations in both modular (JPMS) and classpath runtimes), and
 - **analyze info files** under a `target` subdirectory that later build steps — most importantly the
   [wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — read to
-  generate code (for example the remote-delegate code for `@RemoteMethod`).
+  generate code (for example, the remote-delegate code for `@RemoteMethod`).
 
 The module is never shipped inside, nor used by, the running application; its `package-info` states plainly
 *"Build support only. Not used at runtime."* It is packaged with an `Automatic-Module-Name` of
@@ -76,7 +76,7 @@ handlers:
 public @interface Service { ... }
 ```
 
-Because the scan is recursive, an annotation only has to be marked `@Analyze` once; any annotation that is
+Because the scan is recursive, an annotation only has to be marked `@Analyze` once; any annotation 
 itself meta-annotated with it (directly or through several levels) is routed to the same handler. Loops are
 guarded by depth and handler-count limits. For every match the processor loads the named handler class,
 instantiates it, injects itself, and calls `processAnnotation(...)`.
@@ -98,7 +98,7 @@ needed, using the project's configured encoding). Each processor keeps one `Reso
 directory, so handlers simply ask for `getResourceManager(serviceDir)` or `getResourceManager(analyzeDir)` and
 append to the right file. The Maven layer later collects the service-directory resource names to build the
 optional `RESOURCE-INDEX.LIST`, and writes an `error.log` marker (`AnalyzeProcessor.COMPILE_ERROR_LOG`) when the
-analyze compilation reported errors, signalling downstream phases that the analyze info may be incomplete.
+analyze compilation reported errors, signaling downstream phases that the analyze info may be incomplete.
 
 ---
 
@@ -106,18 +106,18 @@ analyze compilation reported errors, signalling downstream phases that the analy
 
 Each handler reacts to one family of annotations and emits the appropriate descriptor and/or analyze file.
 
-| Handler | Reacts to | Produces |
-|---------|-----------|----------|
-| [`ServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/ServiceAnalyzeHandler.java) | `@Service` / `@ServiceName` (direct or as meta-annotations; honours `value`, `meta`, `method`) | a `META-INF/services/<servicedClass>` descriptor in the services dir, plus a `service.log` under the servicing class in the analyze dir |
-| [`MappedServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/MappedServiceAnalyzeHandler.java) | `@MappedService` | a mapped-service descriptor (interface → implementation) for the `ServiceFinder` |
-| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java) | `@TableName` | a mapped-service-style descriptor; needs its own handler to deal with `mapSchema` and the table prefix |
-| [`BundleAnalyzeHandler`](../java/org/tentackle/buildsupport/BundleAnalyzeHandler.java) | `@Bundle` | the resource-bundle name associated with a class (for i18n) |
-| [`FxControllerBundleAnalyzeHandler`](../java/org/tentackle/buildsupport/FxControllerBundleAnalyzeHandler.java) | `@FxControllerService` | the bundle name for an FX controller, resolving an overridden `resources` value (or none); subclass of `BundleAnalyzeHandler` |
-| [`InterceptionAnalyzeHandler`](../java/org/tentackle/buildsupport/InterceptionAnalyzeHandler.java) | `org.tentackle.reflect.Interception` (on annotations) | registers the matching interceptor annotation processor for the interception type (`ALL` / `PUBLIC` / `HIDDEN`) |
-| [`RemoteMethodAnalyzeHandler`](../java/org/tentackle/buildsupport/RemoteMethodAnalyzeHandler.java) | `@RemoteMethod` | a `.remote` info file ([`RemoteMethodInfo`](#info-files--the-bridge-to-wurblets)) describing the method, later consumed by the `RemoteMethod` wurblet |
-| [`RecordDTOAnalyzeHandler`](../java/org/tentackle/buildsupport/RecordDTOAnalyzeHandler.java) | `@RecordDTO` | a `record.info` file ([`RecordDTOInfo`](#info-files--the-bridge-to-wurblets)) describing a record DTO, used for DTO generation |
+| Handler                                                                                                        | Reacts to                                                                                      | Produces                                                                                                                                              |
+|----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/ServiceAnalyzeHandler.java)                       | `@Service` / `@ServiceName` (direct or as meta-annotations; honours `value`, `meta`, `method`) | a `META-INF/services/<servicedClass>` descriptor in the services dir, plus a `service.log` under the servicing class in the analyze dir               |
+| [`MappedServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/MappedServiceAnalyzeHandler.java)           | `@MappedService`                                                                               | a mapped-service descriptor (interface → implementation) for the `ServiceFinder`                                                                      |
+| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java)                   | `@TableName`                                                                                   | a mapped-service-style descriptor; needs its own handler to deal with `mapSchema` and the table prefix                                                |
+| [`BundleAnalyzeHandler`](../java/org/tentackle/buildsupport/BundleAnalyzeHandler.java)                         | `@Bundle`                                                                                      | the resource-bundle name associated with a class (for i18n)                                                                                           |
+| [`FxControllerBundleAnalyzeHandler`](../java/org/tentackle/buildsupport/FxControllerBundleAnalyzeHandler.java) | `@FxControllerService`                                                                         | the bundle name for an FX controller, resolving an overridden `resources` value (or none); subclass of `BundleAnalyzeHandler`                         |
+| [`InterceptionAnalyzeHandler`](../java/org/tentackle/buildsupport/InterceptionAnalyzeHandler.java)             | `org.tentackle.reflect.Interception` (on annotations)                                          | registers the matching interceptor annotation processor for the interception type (`ALL` / `PUBLIC` / `HIDDEN`)                                       |
+| [`RemoteMethodAnalyzeHandler`](../java/org/tentackle/buildsupport/RemoteMethodAnalyzeHandler.java)             | `@RemoteMethod`                                                                                | a `.remote` info file ([`RemoteMethodInfo`](#info-files--the-bridge-to-wurblets)) describing the method, later consumed by the `RemoteMethod` wurblet |
+| [`RecordDTOAnalyzeHandler`](../java/org/tentackle/buildsupport/RecordDTOAnalyzeHandler.java)                   | `@RecordDTO`                                                                                   | a `record.info` file ([`RecordDTOInfo`](#info-files--the-bridge-to-wurblets)) describing a record DTO, used for DTO generation                        |
 
-> **Dependency discipline.** Handlers reference other Tentackle layers only by string (e.g.
+> **Dependency discipline.** Handlers reference other Tentackle layers only by string (e.g.,
 > `InterceptionAnalyzeHandler` names `org.tentackle.reflect.Interception` and its APT classes as literals, and
 > `AnnotationProcessingHelper` re-implements a couple of `StringHelper` methods locally) so that this module
 > stays free of dependencies on `tentackle-core` and the rest of the stack.
@@ -138,7 +138,7 @@ small record into an info file that a wurblet deserializes in a later build step
   [`RecordDTOInfoParameter`](../java/org/tentackle/buildsupport/RecordDTOInfoParameter.java)) — captures a record
   DTO's components into a `record.info` file used for DTO generation.
 
-Each info type defines its own `INFO_FILE_VERSION`, writes itself through a `PrintWriter` and reads itself back
+Each info type defines its own `INFO_FILE_VERSION`, writes itself through a, and reads itself back
 from a `LineNumberReader`, so the write side (this module, during analyze) and the read side (the wurblets) agree
 on a stable on-disk format.
 
@@ -150,12 +150,12 @@ The [`org.tentackle.buildsupport.codegen`](../java/org/tentackle/buildsupport/co
 wrapper over [FreeMarker](https://freemarker.apache.org/) used by build-time code generators (for instance the
 generation of TRIP remote interfaces/implementations):
 
-| Class | Role |
-|-------|------|
-| [`AbstractGenerator`](../java/org/tentackle/buildsupport/codegen/AbstractGenerator.java) | Holds the template directory and builds a configured FreeMarker `Configuration` (UTF-8, rethrowing exception handler). |
-| [`TemplateModel`](../java/org/tentackle/buildsupport/codegen/TemplateModel.java) | A `Map<String,Object>` template model that camel-cases keys when adding `Properties`/maps and null-safely stringifies values. |
-| [`GeneratedFile`](../java/org/tentackle/buildsupport/codegen/GeneratedFile.java) | Renders a named template with a model to an output **file**. |
-| [`GeneratedString`](../java/org/tentackle/buildsupport/codegen/GeneratedString.java) | Renders a named template with a model to a **string**. |
+| Class                                                                                    | Role                                                                                                                          |
+|------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| [`AbstractGenerator`](../java/org/tentackle/buildsupport/codegen/AbstractGenerator.java) | Holds the template directory and builds a configured FreeMarker `Configuration` (UTF-8, rethrowing exception handler).        |
+| [`TemplateModel`](../java/org/tentackle/buildsupport/codegen/TemplateModel.java)         | A `Map<String,Object>` template model that camel-cases keys when adding `Properties`/maps and null-safely stringifies values. |
+| [`GeneratedFile`](../java/org/tentackle/buildsupport/codegen/GeneratedFile.java)         | Renders a named template with a model to an output **file**.                                                                  |
+| [`GeneratedString`](../java/org/tentackle/buildsupport/codegen/GeneratedString.java)     | Renders a named template with a model to a **string**.                                                                        |
 
 ---
 
@@ -188,6 +188,6 @@ the deployed application.
   `analyze` / `test-analyze` goals that drive the `AnalyzeProcessor` and configure its output directories.
 - [Tentackle Persistence Wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
   and [Tentackle Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — the code generators that
-  read the analyze info files (e.g. the `RemoteMethod` wurblet).
+  read the analyze info files (e.g., the `RemoteMethod` wurblet).
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol whose delegates are generated
   from `@RemoteMethod` analyze info.

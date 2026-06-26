@@ -7,7 +7,7 @@ checks the *members* and the *state* of plain Java objects against a set of
 **constraints declared as annotations**. A constraint such as
 `@NotNull`, `@Greater("0")` or `@Pattern("[A-Z]{2}\\d+")` is attached to a field
 or getter; at validation time the framework discovers the constraint, evaluates
-it and collects a list of [`ValidationResult`](#validationresult--the-outcome)s
+it, and collects a list of [`ValidationResult`](#validationresult--the-outcome)s
 describing what passed and what failed. The same API also drives **object
 validators** that check an aggregate as a whole — an annotation such as
 `@IngotValidator` placed on the [`Ingot`](../../../../tentackle-pdo/src/main/docs/pdo.md)
@@ -65,7 +65,7 @@ layers plug into it:
 - **Two levels of validation.** *Field validators* check individual members;
   *object validators* check the object as a whole (cross-field rules). Fields
   run first, then the object.
-- **Pluggable everywhere.** Scopes, severities, the context, the utilities and
+- **Pluggable everywhere.** Scopes, severities, the context, the utilities, and
   the compound-value factory are all resolved as services and can be replaced or
   extended by an application.
 
@@ -95,7 +95,7 @@ public @interface NotNull {
 }
 ```
 
-When the framework scans a class it walks every annotation of every field, getter
+When the framework scans a class, it walks every annotation of every field, getter,
 and the class itself. For each annotation it inspects *that annotation's* own
 annotations: a `@Validation` means "create one validator of this class", a
 [`@RepeatableValidation`](#repeatable-constraints-and-lists) means "unwrap the
@@ -108,16 +108,16 @@ container and create one validator per repeated element"
 annotation's parameters (`getValue`, `getMessage`, `getCondition`, `getErrorCode`,
 `getSeverity`, `getPriority`, `getScope`) and the two runtime methods:
 
-| Method | Role |
-|--------|------|
-| `isConditionValid(ctx)` | evaluates the optional `condition` script — does the constraint apply at all? |
-| `validate(ctx)` | performs the check, returns an immutable list of `ValidationResult` (empty = passed) |
+| Method                  | Role                                                                                 |
+|-------------------------|--------------------------------------------------------------------------------------|
+| `isConditionValid(ctx)` | evaluates the optional `condition` script — does the constraint apply at all?        |
+| `validate(ctx)`         | performs the check, returns an immutable list of `ValidationResult` (empty = passed) |
 
 `AbstractValidator<T extends Annotation>` is the base class. It implements the
 script-backed `condition`, `value` and `message` parameters as lazily compiled,
 cached [`CompoundValue`](#conditions-values-and-message-scripts)s, the default
 `isConditionValid` (true unless the condition evaluates to a `Boolean false`),
-result-list construction and the script-variable set. A concrete validator such
+result-list construction, and the script-variable set. A concrete validator such
 as `NotNullImpl` only adds the annotation accessors and the actual `validate`
 logic.
 
@@ -142,20 +142,20 @@ first (via `validateFields`) and then the object validators (`validateObject`).
 Since validators are stateless, every call receives a `ValidationContext`
 carrying all per-validation information:
 
-| Accessor | Meaning |
-|----------|---------|
-| `getObject()` | the element under test (a field's value, or the object for an object validator). May be lazily supplied. |
-| `getParentObject()` | the object that declares the element |
-| `getType()` | declared type of the element (null → derive from the value) |
-| `getValidationPath()` | dotted path of the element, e.g. `invoice.customer.name` |
-| `getEffectiveScope()` | the scope this run was launched with |
-| `getValidationResults()` | results collected for the current object so far (so `@Fail` can inspect them) |
-| `put/get(key)` , `get(Class)` | scratch map to pass data between validators of the same field/object |
+| Accessor                      | Meaning                                                                                                  |
+|-------------------------------|----------------------------------------------------------------------------------------------------------|
+| `getObject()`                 | the element under test (a field's value, or the object for an object validator). May be lazily supplied. |
+| `getParentObject()`           | the object that declares the element                                                                     |
+| `getType()`                   | declared type of the element (null → derive from the value)                                              |
+| `getValidationPath()`         | dotted path of the element, e.g. `invoice.customer.name`                                                 |
+| `getEffectiveScope()`         | the scope this run was launched with                                                                     |
+| `getValidationResults()`      | results collected for the current object so far (so `@Fail` can inspect them)                            |
+| `put/get(key)` , `get(Class)` | scratch map to pass data between validators of the same field/object                                     |
 
 `DefaultValidationContext` is the default implementation (replaceable through
 `ValidationContextFactory`). It supports a **lazy object supplier**: the element's
 value is fetched only if the constraint actually runs, so a failing pre-condition
-can spare an expensive getter (e.g. a lazily loaded list relation).
+can spare an expensive getter (e.g., a lazily loaded list relation).
 
 The context also names the variables exposed to scripts: `context`, `scope`,
 `path`, `object` (= parent object), `value` (= the element) and `clazz`.
@@ -201,7 +201,7 @@ if (validator.isConditionValid(ctx) &&
 }
 ```
 
-A scope is modelled as an **interface** extending `ValidationScope` (so scopes can
+A scope is modeled as an **interface** extending `ValidationScope` (so scopes can
 form hierarchies through interface inheritance) plus an implementation registered
 as a service. `AbstractScope.appliesTo` matches by interface assignability and
 treats `AllScope` as a wildcard that matches everything.
@@ -213,7 +213,7 @@ implementation; it is a placeholder meaning *"ask the object"*. When a constrain
 is configured with only the default scope and the parent object implements
 [`ScopeConfigurator`](#scopeconfigurator), the object's `getDefaultScopes()`
 supplies the effective scopes (`AbstractValidator.getConfiguredScopes`). Objects
-that don't implement `ScopeConfigurator` fall back to `AllScope` — i.e. the
+that don't implement `ScopeConfigurator` fall back to `AllScope` — i.e., the
 constraint applies always. This lets an entity declare, once, the scopes its
 default-scoped constraints should use.
 
@@ -225,10 +225,10 @@ constraint declares `severity()`; the validator hands it to
 `ValidationSeverity` singleton (via `ValidationSeverityFactory`) and asks it to
 build the result. The two built-in severities:
 
-| Severity | Result produced | `hasFailed()` |
-|----------|-----------------|---------------|
-| `MajorSeverity` (and `DefaultSeverity`) | `FailedValidationResult` | `true` |
-| `MinorSeverity` | `InfoValidationResult` | `false` (warning only) |
+| Severity                                | Result produced          | `hasFailed()`          |
+|-----------------------------------------|--------------------------|------------------------|
+| `MajorSeverity` (and `DefaultSeverity`) | `FailedValidationResult` | `true`                 |
+| `MinorSeverity`                         | `InfoValidationResult`   | `false` (warning only) |
 
 `DefaultSeverity` extends `MajorSeverity`, so by default a failed constraint is a
 hard failure. An application can define its own severities (see
@@ -351,7 +351,7 @@ validation path), as opposed to a logical validation failure.
 `validateCollection(coll, path, scope)` validates each element, appending
 `[index]` to the path. Elements implementing
 [`Validateable`](#validateable--objects-that-validate-themselves) are validated
-through their own `validate` method (honouring any override); other elements go
+through their own `validate` method (honoring any override); other elements go
 through the annotation-driven `validate`. The `@Validate` constraint ties this
 into the field/object flow: annotated on a member, it descends into a
 `Validateable` value or a `Collection`, letting an application-specific datatype
@@ -368,23 +368,23 @@ All live in `org.tentackle.validate.validator`. Each is `@Repeatable` (via a
 considered **valid** (use `@NotNull`/`@Mandatory` to require presence), except
 where stated.
 
-| Annotation | Checks |
-|------------|--------|
-| `@NotNull` | element is not `null` (also a *mandatory* evaluator) |
-| `@Null` | element is `null` |
-| `@NotZero` | element ≠ 0; implies mandatory (like `@NotNull` + `@NotEqual("0")`) |
-| `@Zero` | element == 0; `null` is **invalid** |
-| `@NotEmpty` | `String`/`Collection`/`Map`/array is not empty |
-| `@Size(min=, max=)` | length/size of `String`/`Collection`/`Map`/array within bounds |
-| `@Pattern(value, flag=, ignoreNulls=)` | `String` matches a regular expression |
-| `@Greater` / `@GreaterOrEqual` | `Comparable` element > / ≥ `value` |
-| `@Less` / `@LessOrEqual` | `Comparable` element < / ≤ `value` |
-| `@Equal` / `@NotEqual` | element equals / differs from `value` |
-| `@True` / `@False` | `boolean`/`Boolean` element is true / false; usable as an *object* validator with a `value` script |
-| `@Mandatory` | marks a field mandatory for the binding (no actual check) — when `@NotNull`/`@NotZero` don't fit |
-| `@Changeable` | marks a field changeable for the binding (a *changeable* evaluator) |
-| `@Validate` | descends into a `Validateable` component or `Collection`; reorders/guards component validation |
-| `@Fail` | aborts validation with a `ValidationFailedException` based on results so far |
+| Annotation                             | Checks                                                                                             |
+|----------------------------------------|----------------------------------------------------------------------------------------------------|
+| `@NotNull`                             | element is not `null` (also a *mandatory* evaluator)                                               |
+| `@Null`                                | element is `null`                                                                                  |
+| `@NotZero`                             | element ≠ 0; implies mandatory (like `@NotNull` + `@NotEqual("0")`)                                |
+| `@Zero`                                | element == 0; `null` is **invalid**                                                                |
+| `@NotEmpty`                            | `String`/`Collection`/`Map`/array is not empty                                                     |
+| `@Size(min=, max=)`                    | length/size of `String`/`Collection`/`Map`/array within bounds                                     |
+| `@Pattern(value, flag=, ignoreNulls=)` | `String` matches a regular expression                                                              |
+| `@Greater` / `@GreaterOrEqual`         | `Comparable` element > / ≥ `value`                                                                 |
+| `@Less` / `@LessOrEqual`               | `Comparable` element < / ≤ `value`                                                                 |
+| `@Equal` / `@NotEqual`                 | element equals / differs from `value`                                                              |
+| `@True` / `@False`                     | `boolean`/`Boolean` element is true / false; usable as an *object* validator with a `value` script |
+| `@Mandatory`                           | marks a field mandatory for the binding (no actual check) — when `@NotNull`/`@NotZero` don't fit   |
+| `@Changeable`                          | marks a field changeable for the binding (a *changeable* evaluator)                                |
+| `@Validate`                            | descends into a `Validateable` component or `Collection`; reorders/guards component validation     |
+| `@Fail`                                | aborts validation with a `ValidationFailedException` based on results so far                       |
 
 The comparison validators (`@Greater`, `@Equal`, …) carry an `ignoreNulls` flag
 controlling how `null` operands compare. Example from a real model:
@@ -422,13 +422,13 @@ invoiceDate: @NotNull(scope=AllScope.class, message="{ @('please_enter_the_invoi
 Predefined scopes live in `org.tentackle.validate.scope` (interface + `…Impl`
 service). Each has a stable `NAME`.
 
-| Scope | Purpose |
-|-------|---------|
-| `AllScope` (`ALL`) | matches every scope — a wildcard; used as the default when no `ScopeConfigurator` applies |
-| `PersistenceScope` (`PERSISTENCE`) | constraints enforced before an object is persisted |
-| `InteractiveScope` (`INTERACTIVE`) | constraints relevant only during interactive editing |
-| `MandatoryScope` (`MANDATORY`) | drives the *mandatory* state of bound components |
-| `ChangeableScope` (`CHANGEABLE`) | drives the *changeable* state of bound components |
+| Scope                              | Purpose                                                                                   |
+|------------------------------------|-------------------------------------------------------------------------------------------|
+| `AllScope` (`ALL`)                 | matches every scope — a wildcard; used as the default when no `ScopeConfigurator` applies |
+| `PersistenceScope` (`PERSISTENCE`) | constraints enforced before an object is persisted                                        |
+| `InteractiveScope` (`INTERACTIVE`) | constraints relevant only during interactive editing                                      |
+| `MandatoryScope` (`MANDATORY`)     | drives the *mandatory* state of bound components                                          |
+| `ChangeableScope` (`CHANGEABLE`)   | drives the *changeable* state of bound components                                         |
 
 `DefaultScope` (in the root package) is the placeholder default resolved per
 object through `ScopeConfigurator`. Applications add their own scopes by declaring
@@ -449,7 +449,7 @@ public @interface NotEmptyContainer {
 }
 ```
 
-When the scanner meets a container it unwraps it via
+When the scanner meets a container, it unwraps it via
 `getAnnotationsByType` and creates one validator per repeated element, each with
 its own `validationIndex`. This lets the same member carry, say, two `@Greater`
 constraints with different scopes or conditions. `ValidatorList` /
@@ -460,7 +460,7 @@ themselves wrap a list of sub-annotations.
 
 ## `Validateable` — objects that validate themselves
 
-By default any object is validated purely by its annotations through
+By default, any object is validated purely by its annotations through
 `ValidationUtilities`. An object that needs *control* over its own validation
 implements `Validateable`:
 
@@ -493,7 +493,7 @@ method.
 
 Because validators are immutable after configuration, sharing them across all
 instances and threads is safe — and the reflection scan plus script compilation
-happens once. `invalidate()` clears the cache (e.g. for tooling that reloads
+happens once. `invalidate()` clears the cache (e.g., for tooling that reloads
 classes). The matching rule for caching state: **a validator must never store a
 per-validation value in a field**; the `ValidationContext` is the only legitimate
 carrier of runtime state.
@@ -555,25 +555,25 @@ they work in both modular and non-modular deployments. The module exports
 
 ### `org.tentackle.validate` (tentackle-core)
 
-| Type | Role |
-|------|------|
-| `Validation` | meta-annotation linking a constraint annotation to its `Validator` |
-| `RepeatableValidation` | meta-annotation marking a `@Repeatable` container |
-| `Validator` / `AbstractValidator` | the constraint contract and base implementation |
-| `ValidatorList` | a validator wrapping a list of sub-annotations |
-| `ValidationContext` / `DefaultValidationContext` | per-validation runtime state |
-| `ValidationResult` | the (serializable) outcome of a check |
-| `ValidationScope` / `DefaultScope` | when a constraint applies; the per-object default placeholder |
-| `ScopeConfigurator` | object-supplied default scopes |
-| `ValidationSeverity` | turns a failure into a concrete result |
-| `Validateable` | objects that drive their own validation |
-| `ValidationUtilities` | the engine: scan, filter by scope/condition, run, collect |
-| `ValidatorCache` | per-class cache of discovered validators |
-| `MandatoryBindingEvaluator` / `ChangeableBindingEvaluator` | feed mandatory/changeable state to the binding layer |
-| `ValidationMapper` | maps validation paths to binding paths/binders |
-| `ValidationFailedException` | unchecked, carries results, used by `@Fail` to abort |
-| `ValidationRuntimeException` | unchecked, signals configuration/runtime errors |
-| `*Factory`, `*Service` | service hooks for context, scope, severity, compound values |
+| Type                                                       | Role                                                               |
+|------------------------------------------------------------|--------------------------------------------------------------------|
+| `Validation`                                               | meta-annotation linking a constraint annotation to its `Validator` |
+| `RepeatableValidation`                                     | meta-annotation marking a `@Repeatable` container                  |
+| `Validator` / `AbstractValidator`                          | the constraint contract and base implementation                    |
+| `ValidatorList`                                            | a validator wrapping a list of sub-annotations                     |
+| `ValidationContext` / `DefaultValidationContext`           | per-validation runtime state                                       |
+| `ValidationResult`                                         | the (serializable) outcome of a check                              |
+| `ValidationScope` / `DefaultScope`                         | when a constraint applies; the per-object default placeholder      |
+| `ScopeConfigurator`                                        | object-supplied default scopes                                     |
+| `ValidationSeverity`                                       | turns a failure into a concrete result                             |
+| `Validateable`                                             | objects that drive their own validation                            |
+| `ValidationUtilities`                                      | the engine: scan, filter by scope/condition, run, collect          |
+| `ValidatorCache`                                           | per-class cache of discovered validators                           |
+| `MandatoryBindingEvaluator` / `ChangeableBindingEvaluator` | feed mandatory/changeable state to the binding layer               |
+| `ValidationMapper`                                         | maps validation paths to binding paths/binders                     |
+| `ValidationFailedException`                                | unchecked, carries results, used by `@Fail` to abort               |
+| `ValidationRuntimeException`                               | unchecked, signals configuration/runtime errors                    |
+| `*Factory`, `*Service`                                     | service hooks for context, scope, severity, compound values        |
 
 ### `org.tentackle.validate.validator`
 

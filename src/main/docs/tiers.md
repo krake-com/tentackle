@@ -39,7 +39,7 @@ clients further up the chain. There is no architectural limit to how many tiers 
                         └───────────┘
 ```
 
-Each arrow is a Tentackle session. Whether it carries JDBC, JNDI or [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+Each arrow is a Tentackle session. Whether it carries JDBC, JNDI, or [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 is decided entirely by the connection **URL**, never by the application code.
 
 ---
@@ -49,15 +49,15 @@ is decided entirely by the connection **URL**, never by the application code.
 A node's role is determined by the URL of the session it opens to its backend
 (see the class documentation of [`Db`](../../../tentackle-database/src/main/java/org/tentackle/dbms/Db.java)):
 
-| URL form | Meaning | Resulting node |
-|----------|---------|----------------|
-| `jdbc:…` (driver) | Direct JDBC connection | **local** — terminal, talks to the DB |
-| `jndi:name[\|backend-type]` | Connection from a JNDI/container pool | **local** — terminal, talks to the DB |
-| `trip://host:port/service` | Remote session over TRIP/TCP | **remote** — forwards upstream |
-| `trips://…` | TRIP + SSL | remote |
-| `tripcs://…` | TRIP + compression + SSL | remote |
-| `tripe://…` / `tripce://…` | TRIP + pre-shared-key encryption (+ compression) | remote |
-| `tripq://…` / `tripcq://…` | TRIP over QUIC (RFC-9000) (+ compression) | remote |
+| URL form                    | Meaning                                          | Resulting node                        |
+|-----------------------------|--------------------------------------------------|---------------------------------------|
+| `jdbc:…` (driver)           | Direct JDBC connection                           | **local** — terminal, talks to the DB |
+| `jndi:name[\|backend-type]` | Connection from a JNDI/container pool            | **local** — terminal, talks to the DB |
+| `trip://host:port/service`  | Remote session over TRIP/TCP                     | **remote** — forwards upstream        |
+| `trips://…`                 | TRIP + SSL                                       | remote                                |
+| `tripcs://…`                | TRIP + compression + SSL                         | remote                                |
+| `tripe://…` / `tripce://…`  | TRIP + pre-shared-key encryption (+ compression) | remote                                |
+| `tripq://…` / `tripcq://…`  | TRIP over QUIC (RFC-9000) (+ compression)        | remote                                |
 
 [`Session.isRemote()`](../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) reports the result.
 A *local* session executes JDBC directly in this JVM; a *remote* session routes every `begin`/`commit`/query/PDO
@@ -73,7 +73,7 @@ tiers separate the PDO from the physical database.
 
 A desktop ([JavaFX](../../../tentackle-fx/src/main/docs/fx.md)) or [web](../../../tentackle-web) application built on
 [`AbstractClientApplication`](../../../tentackle-pdo/src/main/java/org/tentackle/app/AbstractClientApplication.java).
-It opens a single remote session upstream and never accepts inbound connections. After login it copies the
+It opens a single remote session upstream and never accepts inbound connections. After login, it copies the
 server-resolved user id back into its own `SessionInfo`
 (`AbstractClientApplication.updateSessionInfoAfterLogin()` via `session.getRemoteSession().getClientSessionInfo()`).
 
@@ -90,7 +90,7 @@ This is the node that makes the cascade possible: it is **a server and a client 
 
 ### 3. Two-tier / local client
 
-A node that *is* a leaf client but connects with a `jdbc`/`jndi` URL — i.e. it talks to the database directly with
+A node that *is* a leaf client but connects with a `jdbc`/`jndi` URL — i.e., it talks to the database directly with
 no middle tier. This is **local client mode**
 ([`ModificationTracker.isLocalClientMode()`](../../../tentackle-session/src/main/java/org/tentackle/session/ModificationTracker.java)),
 intended for simple desktop deployments with one or very few concurrent users. Token locking is disabled in this
@@ -118,7 +118,7 @@ else {
   multiplexing many logical sessions onto fewer physical JDBC connections, plus a
   [`DbPool`](../../../tentackle-database/src/main/java/org/tentackle/dbms/DbPool.java) `SessionPool` that hands a clean
   session (credentials wiped) to each logging-in client.
-- **Proxy server.** It has no `ConnectionManager`. Instead it builds a
+- **Proxy server.** It has no `ConnectionManager`. Instead, it builds a
   [`MultiUserSessionPool`](../../../tentackle-session/src/main/java/org/tentackle/session/MultiUserSessionPool.java)
   (`"remote-pool"`, default max 100) of *upstream* sessions — one logical session per downstream client, each
   itself a remote session to the next tier up. The pool is deliberately capped below the DB-connected server's pool
@@ -164,7 +164,7 @@ Consider a leaf client three tiers below the database invoking a PDO method:
 3. **Core server.** Receives the call on *its* TRIP endpoint, binds it to a pooled session backed by the
    `MpxConnectionManager`, and executes the actual JDBC against the database.
 4. **Return.** Results (PDOs, with their `DomainContext` and serialized via TRIP) flow back down the same chain.
-   TRIP is **SD-WAN compatible**: it never leaks a tier's host/IP/port back downstream, so NAT and relays work and
+   TRIP is **SD-WAN compatible**: it never leaks a tier's host/IP/port back downstream, so NAT and relays work, and
    each new remote proxy costs no extra round-trip.
 
 Server-side sessions are cleaned up automatically: each `TripServer` runs a cleanup thread
@@ -185,7 +185,7 @@ if (getSession().getSessionGroupId() == 0) {
 }
 ```
 
-All pooled upstream sessions join that group, so if the proxy's main session dies (e.g. its
+All pooled upstream sessions join that group, so if the proxy's main session dies (e.g., its
 [`ModificationTracker`](../../../tentackle-session/src/main/java/org/tentackle/session/ModificationTracker.java) loses
 contact with the upstream server) the whole group is torn down rather than leaving orphaned half-open chains.
 
@@ -288,7 +288,7 @@ notification, propagating from the database tier outward:
   cache then performs **surgical expiration**: positive serials mark PDOs expired (reloaded on next access),
   negative serials remove deleted PDOs, and `selectAll` lists are patched in place — no wholesale flush.
 
-So data climbs on a miss and invalidation descends on a change, each hop touching only one tier's cache. A row
+So data climbs on a miss, and invalidation descends on a change, each hop touching only one tier's cache. A row
 edited by one client under one proxy is invalidated at the core, rippled down through every proxy, and re-fetched
 lazily on next access by every other client — keeping the entire chain of caches coherent.
 
@@ -300,7 +300,7 @@ nodes maintain ("connected to the database **or to another middle-tier server**"
 scheme: modifications hit the modification table inside the transaction, updates are detected via tableserials, but
 deletions show up only as a gap and force a **full cache invalidation**. This is the deliberate trade-off that
 makes local-client mode simple for small deployments and middle-tier mode scale to thousands of users — and it is
-yet another behaviour selected automatically by a node's position in the cascade, with no application code change.
+yet another behavior selected automatically by a node's position in the cascade, with no application code change.
 
 ---
 
@@ -313,12 +313,12 @@ yourself, and it works for *transaction data*, not just slow-moving master data.
 
 ### Mapping CQRS onto the cascade
 
-| CQRS concept | Tentackle building block |
-|--------------|--------------------------|
-| **Command** (state change) | A `READ_WRITE` ([`TransactionWritability`](../../../tentackle-session/src/main/java/org/tentackle/session/TransactionWritability.java)) PDO `save`/`delete`, or an [`Operation`](../../../tentackle-pdo/src/main/docs/operation.md), routed up the cascade to the **DB-connected write tier**. |
-| **Write model** | The authoritative entities at the write tier; it advances the `tableserial`/master serial on every commit. |
-| **Query** | A `READ_ONLY` read, served from a cache via `selectCached…` / `selectAllCached`. |
-| **Read model / materialized view** | The per-tier [`PdoCache`](../../../tentackle-pdo/src/main/docs/cache.md) and its `selectAll` lists — a denormalised, query-optimised projection held in RAM close to the reader. |
+| CQRS concept                         | Tentackle building block                                                                                                                                                                                                                                                                                        |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Command** (state change)           | A `READ_WRITE` ([`TransactionWritability`](../../../tentackle-session/src/main/java/org/tentackle/session/TransactionWritability.java)) PDO `save`/`delete`, or an [`Operation`](../../../tentackle-pdo/src/main/docs/operation.md), routed up the cascade to the **DB-connected write tier**.                  |
+| **Write model**                      | The authoritative entities at the write tier; it advances the `tableserial`/master serial on every commit.                                                                                                                                                                                                      |
+| **Query**                            | A `READ_ONLY` read, served from a cache via `selectCached…` / `selectAllCached`.                                                                                                                                                                                                                                |
+| **Read model / materialized view**   | The per-tier [`PdoCache`](../../../tentackle-pdo/src/main/docs/cache.md) and its `selectAll` lists — a denormalised, query-optimised projection held in RAM close to the reader.                                                                                                                                |
 | **Change feed / projection updater** | The `tableserial`-driven [modification events](../../../tentackle-session/src/main/docs/session.md) and application-defined [`MasterSerialEvent`](../../../tentackle-session/src/main/java/org/tentackle/session/MasterSerialEvent.java)s that ripple down the cascade and patch each read model incrementally. |
 
 ```
@@ -363,7 +363,7 @@ configuration:
   tier's connection pool; they scale horizontally as more read tiers are added.
 
 Mark query transactions `READ_ONLY` and command transactions `READ_WRITE` so the backend (and any replica routing)
-can optimise each accordingly.
+can optimize each accordingly.
 
 ### Honest constraints
 
@@ -413,8 +413,7 @@ tier. The cascade depth is limited only by latency budget, not by the framework.
 ## Related Documentation
 
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the location-transparent session abstraction every tier programs against.
-- [TRIP](../../../tentackle-core/src/main/docs/trip.md) — the wire protocol that carries remote sessions, delegates and PDOs between JVMs.
+- [TRIP](../../../tentackle-core/src/main/docs/trip.md) — the wire protocol that carries remote sessions, delegates, and PDOs between JVMs.
 - [PDO / Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel the cascade.
 - [PDO Cache](../../../tentackle-pdo/src/main/docs/cache.md) — the cache internals (indexes, strategies, tableserial expiry) behind the stacked, per-tier caches described above.
-- [Modules](./modules.md) — where the server, session and database modules sit in the overall module graph.
-- [Migrating from RMI to TRIP](./migrate_rmi_trip.md).
+- [Modules](./modules.md) — where the server, session, and database modules sit in the overall module graph.

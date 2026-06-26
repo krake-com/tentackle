@@ -5,10 +5,10 @@
 Two columns are quietly added to entity tables by the Tentackle model when — and
 only when — they are actually needed:
 
-| Attribute     | Column        | Java type | Holds                                                  |
-|---------------|---------------|-----------|--------------------------------------------------------|
-| `rootId`      | `rootid`      | `long`    | the **id** of the aggregate root this component belongs to       |
-| `rootClassId` | `rootclassid` | `int`     | the **class id** of that aggregate root (its type)               |
+| Attribute     | Column        | Java type | Holds                                                      |
+|---------------|---------------|-----------|------------------------------------------------------------|
+| `rootId`      | `rootid`      | `long`    | the **id** of the aggregate root this component belongs to |
+| `rootClassId` | `rootclassid` | `int`     | the **class id** of that aggregate root (its type)         |
 
 Both belong exclusively to **components** — PDOs that live inside another PDO's
 [aggregate](pdo.md#aggregates-and-the-root-context). A root entity never carries
@@ -170,7 +170,7 @@ may be modified — protecting the DDD invariant that **an aggregate is responsi
 its own consistency, and nothing may write to it behind its back**.
 
 When a component is loaded through a path that is **not** its own root context — for
-example via a [deep reference](pdo.md) that pulls lines without their owning root, or
+example, via a [deep reference](pdo.md) that pulls lines without their owning root, or
 from within a *different* aggregate's context — the framework marks it
 **finally immutable**
 ([`setFinallyImmutable()`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java)):
@@ -184,7 +184,7 @@ if (poRootId != 0 && poRootId != context.getRootId() ||
 ```
 
 This prevents a subtle and otherwise silent class of bug: editing a component that you
-happened to reach through the wrong aggregate, and persisting it where it does not
+happened to reach through the wrong aggregate and persisting it where it does not
 belong. The object is still perfectly usable for **reading**; it simply refuses to be
 changed or saved outside the aggregate that owns it. The dual root/component case
 (an entity that is programmatically sometimes a root and sometimes a component) uses
@@ -212,7 +212,7 @@ integers instead of strings.
   root.<id> = component.<rootId>        -- plus  root.<classId> = component.<rootClassId>  for multi-homed components
   ```
 
-  Only relations *after* the compacted component prefix (e.g. a link out to a foreign
+  Only relations *after* the compacted component prefix (e.g., a link out to a foreign
   PDO) still need their full join conditions.
   [`ComponentInfo`](../../../../tentackle-wurblets/src/main/java/org/tentackle/wurblet/ComponentInfo.java)
   resolves which column actually supplies the root id: the component's own
@@ -241,12 +241,12 @@ queries on every read.
 
 ## Summary
 
-| Concern        | What `rootId` / `rootClassId` provide                                                |
-|----------------|--------------------------------------------------------------------------------------|
-| **DDD**        | A component names its aggregate root directly; the aggregate boundary becomes physical and enforceable. |
-| **Security**   | Read access is checked against the *root*; an unreadable root hides all its components, at no extra query. |
-| **Immutability** | A component loaded outside its own root context is made read-only, preventing cross-aggregate writes.  |
-| **Performance** | Aggregate-traversal join chains collapse to one indexed equality; type comparison is an int, refactor-safe. |
+| Concern          | What `rootId` / `rootClassId` provide                                                                       |
+|------------------|-------------------------------------------------------------------------------------------------------------|
+| **DDD**          | A component names its aggregate root directly; the aggregate boundary becomes physical and enforceable.     |
+| **Security**     | Read access is checked against the *root*; an unreadable root hides all its components, at no extra query.  |
+| **Immutability** | A component loaded outside its own root context is made read-only, preventing cross-aggregate writes.       |
+| **Performance**  | Aggregate-traversal join chains collapse to one indexed equality; type comparison is an int, refactor-safe. |
 
 The columns appear only where the model topology requires them — components without an
 existing path to their root get `rootId`; components shared across root classes also

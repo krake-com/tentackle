@@ -49,7 +49,7 @@ entity (`selectByXxx`). Concretely:
   in the relation select as well.
 
 In other words, "eager" is a property of how the entity is *generically* read. It is **not** a cascade
-instruction and it does not magically change hand-written queries.
+instruction, and it does not magically change handwritten queries.
 
 ### Eager never cascades — and why
 
@@ -102,22 +102,22 @@ The second mechanism lives entirely in the **domain layer**. When you write a fi
 
 This is **domain-related, not model-related.** Key differences from model eager:
 
-| Aspect            | Model `select = eager`                          | Load join `*relation`                                   |
-|-------------------|-------------------------------------------------|----------------------------------------------------------|
-| Where declared    | In the model (relation line)                    | In a finder anchor in the persistence implementation     |
-| Scope             | Global — affects **every** generic read         | Local — affects **only that one finder**                 |
-| Cascading         | **Never** — capped at one level                 | **Explicit** — you chain `*a*b*c` to whatever depth you need |
-| Filtering         | No                                              | Yes — `*lines|no:<:10` loads a subset                    |
-| Granularity       | All-or-nothing for the entity                   | Tuned per access path                                    |
+| Aspect         | Model `select = eager`                  | Load join `*relation`                                        |
+|----------------|-----------------------------------------|--------------------------------------------------------------|
+| Where declared | In the model (relation line)            | In a finder anchor in the persistence implementation         |
+| Scope          | Global — affects **every** generic read | Local — affects **only that one finder**                     |
+| Cascading      | **Never** — capped at one level         | **Explicit** — you chain `*a*b*c` to whatever depth you need |
+| Filtering      | No                                      | Yes — `*lines                                                |no:<:10` loads a subset                    |
+| Granularity    | All-or-nothing for the entity           | Tuned per access path                                        |
 
 Because a load join is scoped to a single finder, it lets a particular domain operation say "for *this* use
-case I need the invoice, its lines and their currencies in one round-trip" without imposing that cost on every
+case I need the invoice, its lines, and their currencies in one round-trip" without imposing that cost on every
 other reader of the entity. Filtered joins additionally let you load only part of an aggregate (which forces
 the result [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md) unless you pass `--mutable`, since a
 partial aggregate must not be saved back).
 
 See [`PdoSelectList` and `PdoSelectUnique` → Load joins](pdo-select.md#load-joins-eager-loading) for the full
-grammar, join consolidation, immutability rules and the `--cursor` constraint.
+grammar, join consolidation, immutability rules, and the `--cursor` constraint.
 
 ---
 
@@ -142,4 +142,4 @@ inflating every select of a central entity.
 - [Model Definition → `select`](../../../../tentackle-model/src/main/docs/model-definition.md#select) — the
   relation `select` strategies (`lazy`, `eager`, `always`, `embedded`).
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — aggregates, components,
-  immutability and the `JoinedSelect` machinery these loads build on.
+  immutability, and the `JoinedSelect` machinery these loads build on.

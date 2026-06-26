@@ -40,15 +40,15 @@ interface; the two concrete implementations that matter in practice are
 
 Any type that supports snapshots implements `Snapshotable<T>`:
 
-| Method | Purpose |
-|--------|---------|
-| `T createSnapshot()` | Take a snapshot of the current state and register it. |
-| `void revertToSnapshot(T snapshot)` | Restore the object to a previously taken snapshot. |
-| `boolean isSnapshot()` | True if *this* object is itself a snapshot (snapshots are immutable). |
-| `List<? extends T> getSnapshots()` | All snapshots still reachable, oldest first. |
-| `void discardSnapshot(T)` / `discardSnapshots()` | Drop one / all snapshots. |
-| `T copy()` | Produce an independent copy (implemented *via* snapshot+revert). |
-| `boolean isCopy()` / `setCopy(boolean)` | Mark / query the "is a copy" state. |
+| Method                                           | Purpose                                                               |
+|--------------------------------------------------|-----------------------------------------------------------------------|
+| `T createSnapshot()`                             | Take a snapshot of the current state and register it.                 |
+| `void revertToSnapshot(T snapshot)`              | Restore the object to a previously taken snapshot.                    |
+| `boolean isSnapshot()`                           | True if *this* object is itself a snapshot (snapshots are immutable). |
+| `List<? extends T> getSnapshots()`               | All snapshots still reachable, oldest first.                          |
+| `void discardSnapshot(T)` / `discardSnapshots()` | Drop one / all snapshots.                                             |
+| `T copy()`                                       | Produce an independent copy (implemented *via* snapshot+revert).      |
+| `boolean isCopy()` / `setCopy(boolean)`          | Mark / query the "is a copy" state.                                   |
 
 Two properties hold across all implementations:
 
@@ -84,7 +84,7 @@ It is `Snapshotable`, and its snapshot semantics are the model for everything el
 3. Snapshots the **structure**: the set of removed objects and the modification
    flags (`modified`, `added`, `removed`, `immutable`, …).
 4. Snapshots the **elements**. For every element:
-   - if the element is itself `Snapshotable` (e.g. a component PDO), the list
+   - if the element is itself `Snapshotable` (e.g., a component PDO), the list
      recursively calls `element.createSnapshot()` and stores that *element
      snapshot* in a parallel list (`elementSnapshots`);
    - otherwise only the **reference** to the element is stored.
@@ -170,7 +170,7 @@ a different object) throws a `PersistenceException` with `"not my snapshot"`.
 
 > `id`, `serial` and `tableSerial` are deliberately **not** reverted — they can
 > only change through an actual persistence operation, so rolling them back would
-> desynchronise the object from the database row it represents.
+> desynchronize the object from the database row it represents.
 
 ### What gets reverted
 

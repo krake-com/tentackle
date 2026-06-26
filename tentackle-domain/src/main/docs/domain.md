@@ -16,20 +16,20 @@ is a dynamic proxy that emulates multiple inheritance by combining **two injecte
 This module supplies the abstract base every *domain delegate* extends:
 [`AbstractDomainObject`](../java/org/tentackle/domain/AbstractDomainObject.java) for entities and
 [`AbstractDomainOperation`](../java/org/tentackle/domain/AbstractDomainOperation.java) for operations. The
-application's hand-written business classes extend these to add behaviour, validation rules, domain keys and
+application's handwritten business classes extend these to add behavior, validation rules, domain keys and
 derived values — the part of an application that expresses *what the business means*, kept rigorously separate
 from *how it is stored*.
 
 The cleanest way to see the symmetry is side by side:
 
-| Concern | Domain half (this module) | Persistence half                                           |
-|---------|---------------------------|------------------------------------------------------------|
-| Entity base | `AbstractDomainObject` | `AbstractPersistentObject`                                 |
-| Operation base | `AbstractDomainOperation` | `AbstractPersistentOperation`                              |
+| Concern              | Domain half (this module)                          | Persistence half                                           |
+|----------------------|----------------------------------------------------|------------------------------------------------------------|
+| Entity base          | `AbstractDomainObject`                             | `AbstractPersistentObject`                                 |
+| Operation base       | `AbstractDomainOperation`                          | `AbstractPersistentOperation`                              |
 | Discovery annotation | `@DomainObjectService` / `@DomainOperationService` | `@PersistentObjectService` / `@PersistentOperationService` |
-| Module dependency | only `tentackle-pdo` | `tentackle-pdo` **and** `tentackle-database`               |
+| Module dependency    | only `tentackle-pdo`                               | `tentackle-pdo` **and** `tentackle-database`               |
 
-The asymmetry in dependencies is the whole point: **the domain layer knows nothing about JDBC, SQL or
+The asymmetry in dependencies is the whole point: **the domain layer knows nothing about JDBC, SQL, or
 remoting.** It depends only on [`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md) (the contracts and
 the `DomainContext`). The persistence layer is agnostic of the domain layer and vice versa; they meet only at the
 PDO proxy. This is what lets the persistence layer be remoting-capable and dialect-aware without the business code
@@ -108,11 +108,11 @@ discovered as the domain delegate of the corresponding PDO interface:
 - **Number sources** (`org.tentackle.domain.ns`) —
   [`NumberPoolDomainImpl`](../java/org/tentackle/domain/ns/NumberPoolDomainImpl.java) and
   [`NumberRangeDomainImpl`](../java/org/tentackle/domain/ns/NumberRangeDomainImpl.java) provide the business
-  behaviour for unique-number allocation; their persistence counterparts live in `tentackle-persistence`'s
+  behavior for unique-number allocation; their persistence counterparts live in `tentackle-persistence`'s
   `ns` package.
 - **Security rules** (`org.tentackle.domain.security`) —
   [`SecurityDomainImpl`](../java/org/tentackle/domain/security/SecurityDomainImpl.java) provides the domain
-  behaviour for access-control rules, paired with `SecurityPersistenceImpl`.
+  behavior for access-control rules, paired with `SecurityPersistenceImpl`.
 
 These are the canonical examples of how an application's own domain classes are structured: extend
 `AbstractDomainObject<Pdo, Impl>`, implement the PDO's domain interface, and annotate with
@@ -122,12 +122,12 @@ These are the canonical examples of how an application's own domain classes are 
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.domain` | The core: `AbstractDomainObject`, `AbstractDomainOperation` and the `DefaultDomainDelegateLinker`. |
-| `org.tentackle.domain.ns` | Domain implementations for number sources (number pool / range). |
-| `org.tentackle.domain.security` | Domain implementation for security rules. |
-| `org.tentackle.domain.service` | The [`Hook`](../java/org/tentackle/domain/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
+| Package                         | Contents                                                                                                |
+|---------------------------------|---------------------------------------------------------------------------------------------------------|
+| `org.tentackle.domain`          | The core: `AbstractDomainObject`, `AbstractDomainOperation` and the `DefaultDomainDelegateLinker`.      |
+| `org.tentackle.domain.ns`       | Domain implementations for number sources (number pool / range).                                        |
+| `org.tentackle.domain.security` | Domain implementation for security rules.                                                               |
+| `org.tentackle.domain.service`  | The [`Hook`](../java/org/tentackle/domain/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
 
 ---
 
@@ -164,7 +164,7 @@ Because the domain object never holds a connection or SQL and reaches everything
 business code runs unchanged in a 2-tier client, an n-tier client, or inside the application server.
 
 The PDO interfaces and the per-entity domain method signatures are declared in the
-[model](../../../../tentackle-model/src/main/docs/model-definition.md); the application fills in the behaviour by
+[model](../../../../tentackle-model/src/main/docs/model-definition.md); the application fills in the behavior by
 extending the base classes here.
 
 ---

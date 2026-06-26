@@ -10,7 +10,7 @@ actually is at runtime**.
 A JPA entity is a *managed POJO*. It only behaves like a persistent object while
 it is attached to an `EntityManager` and that `EntityManager`'s **persistence
 context** is alive. Outside that window it is a plain — and dangerous — bag of
-fields: half-initialised, throwing `LazyInitializationException` the moment you
+fields: half-initialized, throwing `LazyInitializationException` the moment you
 touch a relation that was never fetched.
 
 A **PDO is a real object**. It carries everything it needs to fulfil its contract
@@ -128,12 +128,12 @@ try (ScrollableResource<Customer> cursor =
 
 The mental model is the one you already have for ordinary Java:
 
-| Question | Plain Java object | JPA managed entity | Tentackle PDO |
-|----------|-------------------|--------------------|---------------|
-| What keeps it alive? | A reference to it | A reference **or** the open persistence context | A reference to it |
-| When is it collected? | When unreferenced | When unreferenced **and** detached/context closed | When unreferenced |
-| Can a framework pin it in memory? | No | Yes (identity map) | No |
-| Do you ever "evict" it manually? | No | Yes (`em.clear()`) | No |
+| Question                          | Plain Java object | JPA managed entity                                | Tentackle PDO     |
+|-----------------------------------|-------------------|---------------------------------------------------|-------------------|
+| What keeps it alive?              | A reference to it | A reference **or** the open persistence context   | A reference to it |
+| When is it collected?             | When unreferenced | When unreferenced **and** detached/context closed | When unreferenced |
+| Can a framework pin it in memory? | No                | Yes (identity map)                                | No                |
+| Do you ever "evict" it manually?  | No                | Yes (`em.clear()`)                                | No                |
 
 ---
 
@@ -144,12 +144,12 @@ The mental model is the one you already have for ordinary Java:
 A JPA entity is always in one of four states, and most JPA bugs are really
 *state* bugs:
 
-| State | Meaning | Touching a lazy relation… |
-|-------|---------|---------------------------|
-| **Transient** / new | Created with `new`, unknown to any context | works (nothing lazy yet) |
-| **Managed** / persistent | Attached to an open persistence context | works — context fetches on demand |
-| **Detached** | Was managed, but the context closed | **throws `LazyInitializationException`** |
-| **Removed** | Scheduled for deletion on flush | undefined |
+| State                    | Meaning                                    | Touching a lazy relation…                |
+|--------------------------|--------------------------------------------|------------------------------------------|
+| **Transient** / new      | Created with `new`, unknown to any context | works (nothing lazy yet)                 |
+| **Managed** / persistent | Attached to an open persistence context    | works — context fetches on demand        |
+| **Detached**             | Was managed, but the context closed        | **throws `LazyInitializationException`** |
+| **Removed**              | Scheduled for deletion on flush            | undefined                                |
 
 The same object reference means different things at different times. A `Customer`
 returned from a service method may be managed or detached depending on *where the
@@ -159,7 +159,7 @@ the root cause of the most infamous JPA error.
 ### Tentackle has no entity states
 
 A PDO is simply an object. There is no "managed" vs. "detached"; the question
-never arises, because the PDO's persistence delegate always knows how to obtain
+never arises because the PDO's persistence delegate always knows how to obtain
 missing data — from a local JDBC connection or, transparently, from a middle-tier
 server over [TRIP](../../../../tentackle-core/src/main/docs/trip.md). The PDO's
 ability to load a relation does not depend on being inside some open scope.
@@ -190,7 +190,7 @@ boundary:
   unusable.
 - **Transaction** — the cleanest scope, but then anything that escapes the
   transaction (returned to a controller, put on a queue, cached) is detached and
-  must be re-attached (`merge`) or pre-initialised with fetch joins / DTOs.
+  must be re-attached (`merge`) or pre-initialized with fetch joins / DTOs.
 - **Conversation / extended persistence context** — frameworks add stateful scopes
   (`@ConversationScoped`, extended `@PersistenceContext`) to stretch the context
   across multiple requests, with their own concurrency and memory hazards.
@@ -217,25 +217,25 @@ Persistent **Domain** Object earns its name.
 
 ### JPA entities tend toward the Anemic Domain Model
 
-A JPA entity is *data*. Behaviour lives elsewhere — in stateless `@Service` beans,
+A JPA entity is *data*. Behavior lives elsewhere — in stateless `@Service` beans,
 `@Repository` classes, and transaction scripts that fetch entities, mutate their
 fields through setters, and flush them. Martin Fowler named this the
 [Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html): an
-object graph with getters and setters but no behaviour, which "is contrary to the
+object graph with getters and setters but no behavior, which "is contrary to the
 basic idea of object-oriented design, which is to combine data and process
 together." The reasons are partly cultural but partly structural:
 
 - An entity that is only safe to use while *managed* can't reliably offer rich
-  behaviour, because its own methods might hit a lazy relation and throw when
-  detached. So behaviour migrates out, to services that run inside a transaction.
+  behavior because its own methods might hit a lazy relation and throw when
+  detached. So behavior migrates out to services that run inside a transaction.
 - Java's **single inheritance** forces the persistence concern (the mapping, the
   `@Id`, the lifecycle callbacks) and the business concern into the *same* class
   hierarchy, so they fight over the one extends slot. Most teams resolve the fight
   by keeping the entity thin and pushing logic into services.
 
-### PDOs put behaviour back on the object
+### PDOs put behavior back on the object
 
-A PDO is an object in the full OOP sense: it owns its data **and** its behaviour.
+A PDO is an object in the full OOP sense: it owns its data **and** its behavior.
 `ingot.move(fromYard, toYard, …)`, `invoice.approve()`, `customer.creditLimit()`
 are methods *on the entity*, not procedures in a service that take the entity as an
 argument. The domain logic reads as messages sent to objects, which is what
@@ -248,12 +248,12 @@ Two pieces of the architecture make this possible where JPA makes it hard:
    one object via a dynamic proxy (see
    [pdo.md → Anatomy of a PDO](pdo.md#anatomy-of-a-pdo)). The domain class is free
    to extend whatever domain base it likes; it never competes with the persistence
-   base for the inheritance slot. Rich behaviour and clean mapping coexist instead
+   base for the inheritance slot. Rich behavior and clean mapping coexist instead
    of crowding each other out.
 
 2. **The object is always usable.** Because a PDO never detaches, its methods can
    freely navigate relations and call persistence operations on `me()` — the whole
-   PDO — from inside domain code. Behaviour can safely live *on* the entity because
+   PDO — from inside domain code. Behavior can safely live *on* the entity because
    the entity is never in a degraded state.
 
 ### The "real object" test
@@ -287,7 +287,7 @@ DDD's central tactical pattern is the **aggregate**: a cluster of objects with a
 single *root* that owns the cluster's invariants. The defining rule is that the
 aggregate is the **unit of consistency** — you may only change its internals
 through the root, and the root validates the *whole* cluster before any of it is
-allowed to persist. The PDO pattern is a uniquely natural fit for this rule,
+allowed to persist. The PDO pattern is a uniquely natural fit for this rule
 because Tentackle makes the aggregate a first-class structural fact rather than a
 convention you have to remember.
 
@@ -341,7 +341,7 @@ From that one fact the DDD rule is enforced mechanically rather than by conventi
 - **You cannot persist a component by setting a parent id.** There is no
   "create a line, set `invoiceId`, save the line" path. A component may only be
   persisted within the **root context of its own root entity**; attempt it through
-  any other context and the persistence layer throws, fail-fast. The orphaned
+  any other context, and the persistence layer throws, fail-fast. The orphaned
   write that JPA waves through simply has no API in Tentackle.
 - **The only way in is through the root.** You attach the component to its
   aggregate and persist the *root*, which validates the whole cluster as a unit
@@ -366,14 +366,14 @@ change), and the root's **security rules** govern its components automatically. 
 three safeguards, with the mechanics, are detailed in
 [pdo.md → Aggregates prevent whole classes of bugs](pdo.md#aggregates-prevent-whole-classes-of-bugs).
 
-| Concern | JPA / Hibernate | Tentackle PDO |
-|---------|-----------------|---------------|
-| What is the unit of persistence? | The single `@Entity` | The aggregate, through its root |
-| Is "aggregate" enforced or convention? | Convention (in your head) | Structural (the layer knows root vs. component) |
-| Can a child be written without its root? | Yes — set the FK and `persist()` | No — throws unless in the root's context |
-| What validation runs on a write? | The row's field constraints (`@Valid`) | The whole aggregate, via the root |
-| Cross-entity invariant ("sum > 0") | Hand-coded in a service, runs only if on the path | Owned by the root, runs on every persist |
-| Mutating a component out of context | Allowed (silently) | Immutable, fail-fast |
+| Concern                                  | JPA / Hibernate                                   | Tentackle PDO                                   |
+|------------------------------------------|---------------------------------------------------|-------------------------------------------------|
+| What is the unit of persistence?         | The single `@Entity`                              | The aggregate, through its root                 |
+| Is "aggregate" enforced or convention?   | Convention (in your head)                         | Structural (the layer knows root vs. component) |
+| Can a child be written without its root? | Yes — set the FK and `persist()`                  | No — throws unless in the root's context        |
+| What validation runs on a write?         | The row's field constraints (`@Valid`)            | The whole aggregate, via the root               |
+| Cross-entity invariant ("sum > 0")       | Hand-coded in a service, runs only if on the path | Owned by the root, runs on every persist        |
+| Mutating a component out of context      | Allowed (silently)                                | Immutable, fail-fast                            |
 
 > The throughline mirrors the rest of this document: JPA can be *used* in a
 > DDD-correct way if every developer is disciplined on every path; Tentackle makes
@@ -388,13 +388,13 @@ three safeguards, with the mechanics, are detailed in
 A cluster of JPA practices exists purely to work around managed/detached entities;
 none of them have a Tentackle counterpart:
 
-| JPA mechanism | Why it exists in JPA | Tentackle equivalent                                                                                                                                                 |
-|---------------|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **DTOs** | Detached entities are unsafe to expose to the view/remote tier (lazy relations throw), so you copy data into transport objects | None. The PDO *is* the transport object — it travels between JVMs over [TRIP](../../../../tentackle-core/src/main/docs/trip.md) and stays fully functional on arrival |
-| **`merge()` / re-attach** | A detached entity must be merged back into a context before it can be saved | None. A PDO is never detached; `persist()` always works                                                                                                              |
-| **Fetch joins / `@EntityGraph` / fetch plans** | You must predict, before the context closes, every relation the caller will touch | Any relation can be fetched on demand at any time, on any tier. Fetch joins are domain-driven, not framework-driven!                                           |
-| **`OpenSessionInView`** | Keep the context open through rendering so the view can lazy-load | None. The view holds real objects                                                                                                                                    |
-| **`em.clear()` in batches** | Stop the identity map from exhausting the heap | None. PDOs are GC'd as they go out of scope                                                                                                                          |
+| JPA mechanism                                  | Why it exists in JPA                                                                                                           | Tentackle equivalent                                                                                                                                                  |
+|------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **DTOs**                                       | Detached entities are unsafe to expose to the view/remote tier (lazy relations throw), so you copy data into transport objects | None. The PDO *is* the transport object — it travels between JVMs over [TRIP](../../../../tentackle-core/src/main/docs/trip.md) and stays fully functional on arrival |
+| **`merge()` / re-attach**                      | A detached entity must be merged back into a context before it can be saved                                                    | None. A PDO is never detached; `persist()` always works                                                                                                               |
+| **Fetch joins / `@EntityGraph` / fetch plans** | You must predict, before the context closes, every relation the caller will touch                                              | Any relation can be fetched on demand at any time, on any tier. Fetch joins are domain-driven, not framework-driven!                                                  |
+| **`OpenSessionInView`**                        | Keep the context open through rendering so the view can lazy-load                                                              | None. The view holds real objects                                                                                                                                     |
+| **`em.clear()` in batches**                    | Stop the identity map from exhausting the heap                                                                                 | None. PDOs are GC'd as they go out of scope                                                                                                                           |
 
 Writing once and running anywhere — client, middle tier, or server — falls out of
 the same property: the domain logic is on the object, the object works everywhere,
@@ -450,21 +450,21 @@ behave like objects.
 
 ## Summary
 
-| Dimension | JPA / Hibernate entity | Tentackle PDO |
-|-----------|------------------------|---------------|
-| What is it at runtime? | A POJO managed by an `EntityManager` | A self-contained real object |
-| Who keeps it alive? | A reference **or** the open persistence context (identity map) | Only your references to it |
-| Garbage collection | Pinned by the context until detached/cleared | Collected when unreferenced, like any object |
-| Lifecycle states | transient / managed / detached / removed | none — it just exists |
-| Lazy relation after scope ends | `LazyInitializationException` | always works (no such exception exists) |
-| Lifecycle scope to manage | transaction / web request / conversation | none |
-| Behaviour location | services (anemic entity) | on the object (rich domain) |
-| Inheritance | single slot shared by mapping + logic | multiple inheritance emulated via proxy |
-| Cross-tier transfer | DTOs + merge + fetch plans | the PDO itself, fully functional |
-| Transaction ↔ object | intertwined | cleanly separated |
-| Identity map | always on, implicit | opt-in via [`PdoCache`](cache.md) |
-| DDD aggregate | convention; child writable via its FK alone | structural; child writable only through its root |
-| Validation on write | per-row field constraints, decoupled from the write | whole aggregate, *is* the write |
+| Dimension                      | JPA / Hibernate entity                                         | Tentackle PDO                                    |
+|--------------------------------|----------------------------------------------------------------|--------------------------------------------------|
+| What is it at runtime?         | A POJO managed by an `EntityManager`                           | A self-contained real object                     |
+| Who keeps it alive?            | A reference **or** the open persistence context (identity map) | Only your references to it                       |
+| Garbage collection             | Pinned by the context until detached/cleared                   | Collected when unreferenced, like any object     |
+| Lifecycle states               | transient / managed / detached / removed                       | none — it just exists                            |
+| Lazy relation after scope ends | `LazyInitializationException`                                  | always works (no such exception exists)          |
+| Lifecycle scope to manage      | transaction / web request / conversation                       | none                                             |
+| Behaviour location             | services (anemic entity)                                       | on the object (rich domain)                      |
+| Inheritance                    | single slot shared by mapping + logic                          | multiple inheritance emulated via proxy          |
+| Cross-tier transfer            | DTOs + merge + fetch plans                                     | the PDO itself, fully functional                 |
+| Transaction ↔ object           | intertwined                                                    | cleanly separated                                |
+| Identity map                   | always on, implicit                                            | opt-in via [`PdoCache`](cache.md)                |
+| DDD aggregate                  | convention; child writable via its FK alone                    | structural; child writable only through its root |
+| Validation on write            | per-row field constraints, decoupled from the write            | whole aggregate, *is* the write                  |
 
 The throughline: **a JPA entity is only fully itself while an `EntityManager` is
 holding it; a PDO is fully itself for as long as any reference does — which is the

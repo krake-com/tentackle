@@ -3,14 +3,14 @@
 ## Overview and Motivation
 
 Tentackle's interception API (`org.tentackle.reflect`, module `tentackle-core`)
-lets you wrap the invocation of a method with additional behaviour — a
+lets you wrap the invocation of a method with additional behavior — a
 *cross-cutting concern* such as starting a transaction, checking a permission,
-logging the duration of a call or transforming arguments and return values —
+logging the duration of a call, or transforming arguments and return values —
 **without touching the method's body**.
 
 An interceptor is declared as an **annotation on the method** it should guard.
 At runtime the framework discovers the annotation, looks up the paired
-interceptor implementation and weaves it around the actual call. Because the
+interceptor implementation, and weaves it around the actual call. Because the
 [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) layer is built on dynamic
 proxies, interception is the natural extension point for everything that has to
 happen *around* a domain- or persistence method:
@@ -34,7 +34,7 @@ visible in the implementing code.
   annotation next to the method it applies to, not buried in imperative
   boilerplate repeated across every method.
 - **Separation of concerns** — the domain- and persistence implementations stay
-  free of plumbing. Transactions, security and logging live in their own
+  free of plumbing. Transactions, security, and logging live in their own
   interceptor classes.
 - **Composable** — several annotations on one method form an ordered *chain* of
   interceptors, each able to run code before and after the next.
@@ -50,7 +50,7 @@ visible in the implementing code.
 
 - **Interceptors are stateless and cached.** An `Interceptor` is created **once
   per class and annotation occurrence** and reused for every invocation.
-  Therefore an interceptor **MUST NOT hold per-invocation state** — all runtime
+  Therefore, an interceptor **MUST NOT hold per-invocation state** — all runtime
   context is passed in through the `invoke`/`proceed` parameters.
 - **Annotation and implementation are separated.** The annotation (e.g.
   `@Transaction`) is pure metadata; the logic lives in a paired `Interceptor`
@@ -66,19 +66,19 @@ visible in the implementing code.
 
 The mechanism rests on five types in `org.tentackle.reflect`:
 
-| Type | Role |
-|------|------|
-| `@Interception` | Meta-annotation that marks another annotation as an interceptor and names its implementation. |
-| `Interceptor` | The runtime contract — an `InvocationHandler` that can be chained and carries its annotation. |
-| `AbstractInterceptor` | Convenience base class; you implement a single `proceed(...)` method. |
-| `Interceptable` | Marker interface; only interfaces extending it can carry interceptors. |
-| `InterceptableMethod` / `InterceptableMethodCache` | Runtime wiring that resolves and caches the interceptor chain per method. |
+| Type                                               | Role                                                                                          |
+|----------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `@Interception`                                    | Meta-annotation that marks another annotation as an interceptor and names its implementation. |
+| `Interceptor`                                      | The runtime contract — an `InvocationHandler` that can be chained and carries its annotation. |
+| `AbstractInterceptor`                              | Convenience base class; you implement a single `proceed(...)` method.                         |
+| `Interceptable`                                    | Marker interface; only interfaces extending it can carry interceptors.                        |
+| `InterceptableMethod` / `InterceptableMethodCache` | Runtime wiring that resolves and caches the interceptor chain per method.                     |
 
 ### The `@Interception` meta-annotation
 
-You never implement `Interceptor` discovery yourself. Instead you write an
+You never implement `Interceptor` discovery yourself. Instead, you write an
 ordinary annotation and meta-annotate it with `@Interception`, telling the
-framework which class implements the behaviour:
+framework which class implements the behavior:
 
 ```java
 @Documented
@@ -103,20 +103,20 @@ order of decoupling:
    service registered under the *annotation's* fully-qualified name (the
    implementation is annotated with `@Service` referencing the annotation).
 
-Options 2–4 let the annotation live in one module (e.g. the model/API) while the
+Options 2–4 let the annotation live in one module (e.g., the model/API) while the
 interceptor implementation lives in another, without a hard dependency between
 them.
 
-### The `type` parameter — PUBLIC, HIDDEN and ALL
+### The `type` parameter — PUBLIC, HIDDEN, and ALL
 
 An interception has a *visibility* that controls **where** the annotation may
 appear:
 
-- **`PUBLIC`** — the annotation belongs on **interface methods** only, i.e. it is
+- **`PUBLIC`** — the annotation belongs on **interface methods** only, i.e., it is
   part of the model and visible to API consumers. `@Transaction` and `@Secured`
   are public interceptors.
 - **`HIDDEN`** — the annotation belongs on **implementing class methods** only,
-  i.e. an internal concern invisible in the model interfaces (e.g.
+  i.e., an internal concern invisible in the model interfaces (e.g.
   `@InvokeInBuddyDelegate`).
 - **`ALL`** *(default)* — no restriction; the annotation may appear on either.
 
@@ -160,16 +160,16 @@ public class LogItInterceptor extends AbstractInterceptor {
 
 The call `method.invoke(proxy, args)` is what **continues the chain**. Whatever
 you do before it runs *before* the method; whatever you do after it runs *after*
-the method returns. To suppress the call entirely (e.g. a failed security check)
+the method returns. To suppress the call entirely (e.g., a failed security check)
 simply throw instead of invoking.
 
 ### The `proceed` parameters
 
 `AbstractInterceptor` passes two triplets:
 
-| Parameter | Meaning |
-|-----------|---------|
-| `proxy`, `method`, `args` | The target to invoke **next** in the chain. Always call `method.invoke(proxy, args)` to proceed. |
+| Parameter                          | Meaning                                                                                                                               |
+|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `proxy`, `method`, `args`          | The target to invoke **next** in the chain. Always call `method.invoke(proxy, args)` to proceed.                                      |
 | `orgProxy`, `orgMethod`, `orgArgs` | The **original** proxy, interface method and arguments of the outermost call. Use these for diagnostics and to inspect the real call. |
 
 When interceptors are not chained, both triplets are identical. In a chain the
@@ -289,16 +289,16 @@ discovery code.
 Tentackle ships a number of interceptors. The most important ones, all in
 `tentackle-pdo` unless noted:
 
-| Annotation | Type | Purpose |
-|------------|------|---------|
-| `@Transaction` | PUBLIC | Wrap the method in a transaction — begin/commit, rollback on exception, optional retry, isolation and writability. |
-| `@NoTransaction` | PUBLIC | Assert that the method runs *without* a (new) transaction; useful for cached PDOs. |
-| `@Secured` | PUBLIC | Evaluate one or more `Permission`s against the domain context before proceeding (`org.tentackle.security`). |
-| `@PreCommit` / `@PostCommit` | PUBLIC | Register the method to run as part of the pre-/post-commit phase of the surrounding transaction. |
-| `@WithinContext` / `@NotWithinContext` | PUBLIC | Require that named objects are (not) present in the current domain context. |
-| `@LocalSessionOnly` | ALL | Restrict the method to a local (non-remote) session. |
-| `@InvokeInBuddyDelegate` | HIDDEN | Internal redirection of an implementation method to a buddy delegate. |
-| `@Log` | ALL | Measure and log the execution time of the method (`tentackle-core`, `org.tentackle.log`). |
+| Annotation                             | Type   | Purpose                                                                                                            |
+|----------------------------------------|--------|--------------------------------------------------------------------------------------------------------------------|
+| `@Transaction`                         | PUBLIC | Wrap the method in a transaction — begin/commit, rollback on exception, optional retry, isolation and writability. |
+| `@NoTransaction`                       | PUBLIC | Assert that the method runs *without* a (new) transaction; useful for cached PDOs.                                 |
+| `@Secured`                             | PUBLIC | Evaluate one or more `Permission`s against the domain context before proceeding (`org.tentackle.security`).        |
+| `@PreCommit` / `@PostCommit`           | PUBLIC | Register the method to run as part of the pre-/post-commit phase of the surrounding transaction.                   |
+| `@WithinContext` / `@NotWithinContext` | PUBLIC | Require that named objects are (not) present in the current domain context.                                        |
+| `@LocalSessionOnly`                    | ALL    | Restrict the method to a local (non-remote) session.                                                               |
+| `@InvokeInBuddyDelegate`               | HIDDEN | Internal redirection of an implementation method to a buddy delegate.                                              |
+| `@Log`                                 | ALL    | Measure and log the execution time of the method (`tentackle-core`, `org.tentackle.log`).                          |
 
 `@Transaction` is a good illustration of a **remote-aware** interceptor: when the
 session is remote and the implementation is a `@RemoteMethod`, it forwards the
@@ -321,7 +321,7 @@ a matching processor enforces correct usage:
 - `HiddenInterceptorAnnotationProcessor` — additionally requires the annotation
   to sit on an **implementing method** (`type = HIDDEN`).
 
-Misplacing an interceptor annotation — e.g. putting a `PUBLIC` interceptor on a
+Misplacing an interceptor annotation — e.g., putting a `PUBLIC` interceptor on a
 class method, or any interceptor on a method outside an `Interceptable` — is
 therefore reported as a compilation error.
 
@@ -331,7 +331,7 @@ therefore reported as a compilation error.
 
 1. **Create the annotation.** `@Retention(RUNTIME)`, an appropriate `@Target`
    (`METHOD`), and meta-annotate with `@Interception(implementedBy = ...,
-   type = ...)`. Add attributes if the behaviour is configurable.
+   type = ...)`. Add attributes if the behavior is configurable.
 2. **Implement the interceptor.** Extend `AbstractInterceptor`, override
    `proceed(...)`, and call `method.invoke(proxy, args)` to continue the chain.
 3. **Read configuration in `setAnnotation()`** and cache it in fields. Keep the

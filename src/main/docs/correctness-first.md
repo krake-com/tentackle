@@ -7,13 +7,13 @@ usable in any JVM (see [the multi-tier cascade](./tiers.md) and
 [why it fits technical and scientific applications](./technical-scientific.md)). But location transparency is
 only the *second* design commitment. The first one, the one the rest of the framework is bent around, is this:
 
-> **A Tentackle application should be hard to make subtly wrong, and when something *is* wrong it should fail
+> **A Tentackle application should be hard to make subtly wrong, and when something *is* wrong, it should fail
 > loudly and early rather than corrupt data quietly.**
 
 This document is about that commitment — what "correctness first" means, why it matters disproportionately for
 *technical and scientific* software, and which concrete mechanisms in the architecture deliver it. None of these
 mechanisms is a bolt-on or an optional best practice you have to remember to apply; each is wired into the place
-where the relevant mistake would otherwise be made, so the *default* behaviour is the correct one and the unsafe
+where the relevant mistake would otherwise be made, so the *default* behavior is the correct one, and the unsafe
 path is the one you have to go out of your way to take.
 
 ---
@@ -28,12 +28,12 @@ eliminate. They are the ones that do not announce themselves:
   in a UI handler that this particular code path never went through.
 - **Broken aggregate boundaries** — a child written or mutated on its own, behind the root that owns the cluster's
   invariants, so the aggregate is invalid *as a whole* even though every individual row is well-formed in isolation.
-- **Shared-state aliasing** — one caller mutating an object another caller is relying on, because they happen to
+- **Shared-state aliasing** — one caller mutating an object another caller is relying on because they happen to
   hold the same cached instance.
 - **Lifecycle hazards** — an object that is valid here and throws there, depending on an ambient scope the caller
   cannot see (the classic detached-entity bug).
 - **Skew across a fleet** — two nodes that disagree about the shape of the data because they run different
-  versions, and discover it only when a deserialization goes wrong in production.
+   versions and discover it only when a deserialization goes wrong in production.
 
 A framework that is "correct first" is one that makes each of these failures either **impossible by
 construction** or **loud and immediate** when it is attempted. Tentackle aims for one of those two outcomes in
@@ -53,12 +53,12 @@ about how much anyone cares — it is structural.
   A wrong row in an order table can be reconciled against an invoice; a wrong row in an acquisition table may be a
   destroyed experiment.
 - **Wrong is worse than down.** In a plant- or laboratory context, an application that *stops* is a nuisance; an
-  application that keeps running while writing subtly wrong setpoints, measurements or interlocks is a hazard. The
+  application that keeps running while writing subtly wrong setpoints, measurements, or interlocks is a hazard. The
   correct response to an inconsistency is to refuse the operation and say so — not to do its best and carry on.
 - **Provenance and reproducibility are requirements, not nice-to-haves.** Regulated and scientific work has to be
   able to say *exactly* what state an object was in and why. That demands aggregates that move as a unit, edits
   that can be reverted exactly, and shared snapshots that cannot drift.
-- **Concurrency is real and adversarial.** Multiple operators, automated controllers and batch jobs touch the same
+- **Concurrency is real and adversarial.** Multiple operators, automated controllers, and batch jobs touch the same
   entities at once, often across [constrained links and many tiers](./technical-scientific.md). A lost-update
   window that is "rare enough to ignore" in a small office app is a daily occurrence on a busy line.
 - **Fleets are long-lived and version-skewed.** Instruments outlive software cycles; nodes run mixed versions for
@@ -85,7 +85,7 @@ UPDATE invoice SET ... , serial = serial + 1   WHERE id = ? AND serial = ?
 DELETE FROM  invoice                            WHERE id = ? AND serial = ?
 ```
 
-If another transaction changed the row in the meantime, zero rows match and the write is rejected — Tentackle
+If another transaction changed the row in the meantime, zero rows match, and the write is rejected — Tentackle
 re-reads the row to distinguish "changed under me" (a temporary failure a `@Transaction` may retry) from "deleted
 under me" (permanent). This is *optimistic locking*, and the crucial property is that it **cannot be turned off**:
 it is a side effect of the normal write path, costs nothing on the happy path, and holds no database locks. A
@@ -120,7 +120,7 @@ Three properties matter for correctness specifically:
 
 - **Scope-aware.** The *same* object is validated differently depending on the situation — a
   `PersistenceScope` constraint is enforced before persisting, an `InteractiveScope` one only during editing — so
-  one annotated class serves every context without duplicating (and desynchronising) the rules.
+  one annotated class serves every context without duplicating (and desynchronizing) the rules.
 - **Severity-aware.** A failed check is not automatically an error; `MinorSeverity` yields an informational
   warning, `MajorSeverity` a hard failure. The model decides which is which, explicitly.
 - **Remoting-ready.** A `ValidationResult` is serializable and carries a *validation path*
@@ -182,7 +182,7 @@ assertEquals(numberPool.getNumberRangeList().size(), 2);   // component list res
 Two deliberate refusals keep this honest:
 
 - **Identity is never reverted.** `id`, `serial` and `tableSerial` are *not* rolled back, because they can only
-  change through a real persistence operation — rolling them back would desynchronise the object from its database
+  change through a real persistence operation — rolling them back would desynchronize the object from its database
   row.
 - **A stale snapshot is rejected, not silently misapplied.** Once you persist after reverting, the old snapshot
   belongs to a superseded version; reverting to it throws `"not my snapshot"` rather than quietly restoring a
@@ -209,7 +209,7 @@ by the framework** rather than a recommendation to the programmer:
 
 - **A component cannot be persisted on its own.** There is no "create a child, set its parent id, save the child" path.
   A component may be persisted only within the **root context of its own root entity**; attempt it through any other
-  context and the persistence layer throws, fail-fast. The orphaned write that a flat ORM waves through simply has *no
+  context, and the persistence layer throws, fail-fast. The orphaned write that a flat ORM waves through simply has *no
   API* in Tentackle.
 
   ```java
@@ -236,7 +236,7 @@ the *entire* aggregate atomically. The unit of consistency in the code is exactl
 domain.
 
 > The aggregate is a real thing the framework knows about, not a pattern superimposed on a flat set of
-> independently-persistable rows. That is what turns "honour the aggregate boundary" from advice into an invariant. The
+> independently-persistable rows. That is what turns "honor the aggregate boundary" from advice into an invariant. The
 > full mechanics are in
 > [pdo-vs-orm.md → Aggregates: Validated as a Whole, or Not Written at All](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md#aggregates-validated-as-a-whole-or-not-written-at-all)
 > and [root-columns.md](../../../tentackle-pdo/src/main/docs/root-columns.md).
@@ -257,20 +257,20 @@ List<Invoice> invoices = c.getInvoices(); // just works — fetched on demand, n
 
 > **There is no `LazyInitializationException` in Tentackle — the exception type does not exist.**
 
-This is a correctness property, not just a convenience: behaviour can safely live *on* the entity (rich domain
-objects, not anaemic data bags) because the entity is never in a degraded state from which its own methods would
-throw. The full comparison, including why this also removes DTOs, `merge()`, fetch plans and manual `em.clear()`,
+This is a correctness property, not just a convenience: behavior can safely live *on* the entity (rich domain
+objects, not anemic data bags) because the entity is never in a degraded state from which its own methods would
+throw. The full comparison, including why this also removes DTOs, `merge()`, fetch plans, and manual `em.clear()`,
 is in [pdo-vs-orm.md](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md). Transaction demarcation is cleanly
 separated from object lifetime: a
 [`@Transaction`](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md#transactions-demarcation-vs-object-lifecycle)
 controls *the database*, not *your objects*, so there is no "now it's detached" moment to reason about.
 
-Aggregates build directly on this: because a root and its components know each other without a query, rich behaviour
+Aggregates build directly on this: because a root and its components know each other without a query, rich behavior
 can live on the aggregate as a whole — and the boundary around it is enforced, not merely documented, as §5 details.
 
 ### 7. Cross-cutting rules that cannot be forgotten — interceptors
 
-Transactions, permission checks and pre/post-commit hooks are exactly the concerns that, written by hand, get
+Transactions, permission checks, and pre/post-commit hooks are exactly the concerns that, written by hand, get
 omitted on the one method that needed them. Tentackle's
 [interceptors](../../../tentackle-core/src/main/docs/interceptors.md) make them **declarative annotations on the
 method**, woven in by the proxy so they apply uniformly, locally or across [TRIP](../../../tentackle-core/src/main/docs/trip.md):
@@ -295,11 +295,11 @@ For correctness the important details are:
 
 ### 8. One source of truth, generated — the model
 
-The shape of an entity, its columns, its relations, its validations and its indexes are defined **once**, in the
+The shape of an entity, its columns, its relations, its validations, and its indexes are defined **once**, in the
 [model](../../../tentackle-model/src/main/docs/model-definition.md) embedded in the PDO interface. The persistence
 interfaces and implementations, the SQL DDL, and the migration scripts are all *generated* from that single
 definition by the [Wurbelizer](../../../tentackle-wurblets/src/main/docs/wurblets.md). There is no second place
-where the mapping is restated and could drift out of step with the first — the class, the table and the migration
+where the mapping is restated and could drift out of step with the first — the class, the table, and the migration
 cannot disagree, because they share an origin. Generated code is woven into guarded regions, and the build's
 annotation processors check usage at compile time, so a malformed model fails the build rather than producing
 plausible-looking wrong output.
@@ -311,7 +311,7 @@ When PDOs travel between JVMs that may run different versions, a naïve serializ
 (`checkServerVersion` / `VersionIncompatibleException`) and a **type dictionary** tolerant of class evolution, so
 incompatibility is reported as a clear, immediate error at connect time rather than as a corrupt object three
 calls later. Combined with explicit [JPMS](./modules.md) encapsulation, the `ServiceFinder` SPI that works
-identically in modular and non-modular deployments, deterministic interceptor ordering and immutable thread-shared
+identically in modular and non-modular deployments, deterministic interceptor ordering, and immutable thread-shared
 cached PDOs, the whole stack behaves **reproducibly** — the same inputs produce the same result regardless of how
 the application happens to be packaged or how many tiers separate it from the database.
 
@@ -320,20 +320,20 @@ the application happens to be packaged or how many tiers separate it from the da
 ## The pattern, in one table
 
 Every mechanism above follows the same shape: put the check at the boundary where the mistake would be made, make
-the safe behaviour the default, and fail loudly when the safe path is violated.
+the safe behavior the default, and fail loudly when the safe path is violated.
 
-| Failure mode it would otherwise allow | Mechanism | What makes it fail-fast, not fail-quiet |
-|---------------------------------------|-----------|------------------------------------------|
-| Lost update / stale write | [`serial` optimistic locking](../../../tentackle-persistence/src/main/docs/locking.md) | Always on; a stale `UPDATE` matches zero rows and is rejected — no DB locks, no opt-out |
-| Editing collision discovered too late | [Token lock](../../../tentackle-persistence/src/main/docs/locking.md) | Atomic, serial-checked, auto-expiring reservation; names the holder on conflict |
-| Rule enforced on only some code paths | [Validation](../../../tentackle-core/src/main/docs/validation.md) | Declared on the member, run before persist, scope/severity-aware, travels over TRIP |
-| Shared cached object mutated by one caller | [`Immutable`](../../../tentackle-core/src/main/docs/immutable.md) | `assertMutable()` guard in every setter; cached PDOs finally immutable; immutable ⇒ not persistable |
-| Half-applied undo leaving an impossible state | [Snapshots](../../../tentackle-pdo/src/main/docs/snapshot.md) | Whole aggregate reverts atomically; identity never reverted; stale snapshot throws |
-| Child written or mutated behind its aggregate root | [Aggregate boundaries](../../../tentackle-pdo/src/main/docs/root-columns.md) | Component persistable only in its root's context; root validates the whole aggregate; out-of-context component immutable |
-| Object valid here, broken there | [PDO model](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) | No lifecycle states; no `LazyInitializationException`; behaviour safe on the object |
-| Forgotten transaction / permission check | [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md) | Declarative, deterministically ordered, compile-time-verified placement |
-| Mapping drifts from schema | [Model + Wurbelizer](../../../tentackle-model/src/main/docs/model-definition.md) | Single definition generates classes, DDL and migrations together |
-| Silent corruption across versions | [TRIP](../../../tentackle-core/src/main/docs/trip.md) | Version check + type dictionary fail clearly at connect, not mid-stream |
+| Failure mode it would otherwise allow              | Mechanism                                                                              | What makes it fail-fast, not fail-quiet                                                                                  |
+|----------------------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| Lost update / stale write                          | [`serial` optimistic locking](../../../tentackle-persistence/src/main/docs/locking.md) | Always on; a stale `UPDATE` matches zero rows and is rejected — no DB locks, no opt-out                                  |
+| Editing collision discovered too late              | [Token lock](../../../tentackle-persistence/src/main/docs/locking.md)                  | Atomic, serial-checked, auto-expiring reservation; names the holder on conflict                                          |
+| Rule enforced on only some code paths              | [Validation](../../../tentackle-core/src/main/docs/validation.md)                      | Declared on the member, run before persist, scope/severity-aware, travels over TRIP                                      |
+| Shared cached object mutated by one caller         | [`Immutable`](../../../tentackle-core/src/main/docs/immutable.md)                      | `assertMutable()` guard in every setter; cached PDOs finally immutable; immutable ⇒ not persistable                      |
+| Half-applied undo leaving an impossible state      | [Snapshots](../../../tentackle-pdo/src/main/docs/snapshot.md)                          | Whole aggregate reverts atomically; identity never reverted; stale snapshot throws                                       |
+| Child written or mutated behind its aggregate root | [Aggregate boundaries](../../../tentackle-pdo/src/main/docs/root-columns.md)           | Component persistable only in its root's context; root validates the whole aggregate; out-of-context component immutable |
+| Object valid here, broken there                    | [PDO model](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)                        | No lifecycle states; no `LazyInitializationException`; behaviour safe on the object                                      |
+| Forgotten transaction / permission check           | [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)                  | Declarative, deterministically ordered, compile-time-verified placement                                                  |
+| Mapping drifts from schema                         | [Model + Wurbelizer](../../../tentackle-model/src/main/docs/model-definition.md)       | Single definition generates classes, DDL and migrations together                                                         |
+| Silent corruption across versions                  | [TRIP](../../../tentackle-core/src/main/docs/trip.md)                                  | Version check + type dictionary fail clearly at connect, not mid-stream                                                  |
 
 ---
 

@@ -53,11 +53,11 @@ public interface Immutable {
 
 Every implementor moves between **three states**:
 
-| State | `isImmutable()` | `isFinallyImmutable()` | Can change back? |
-|-------|:---:|:---:|---|
-| **mutable** (default) | `false` | `false` | — |
-| **immutable** | `true` | `false` | yes — `setImmutable(false)` |
-| **finally immutable** | `true` | `true` | **no** — throws `ImmutableException` |
+| State                 | `isImmutable()` | `isFinallyImmutable()` | Can change back?                     |
+|-----------------------|:---------------:|:----------------------:|--------------------------------------|
+| **mutable** (default) |     `false`     |        `false`         | —                                    |
+| **immutable**         |     `true`      |        `false`         | yes — `setImmutable(false)`          |
+| **finally immutable** |     `true`      |         `true`         | **no** — throws `ImmutableException` |
 
 - Objects are **mutable by default**.
 - `setImmutable(true)` / `setImmutable(false)` toggles the middle state.
@@ -214,7 +214,7 @@ Immutability follows DDD aggregate boundaries: making a root immutable makes its
 **composite components** immutable too. The
 [`PdoRelations`](../../../../tentackle-persistence-wurblets/src/main/wurblets/org/tentackle/persist/wurblet/PdoRelations.wrbl)
 wurblet generates a `setImmutable` override that walks each composite relation —
-for example in `NumberPoolPersistenceImpl`:
+for example, in `NumberPoolPersistenceImpl`:
 
 ```java
 public void setImmutable(boolean immutable) {

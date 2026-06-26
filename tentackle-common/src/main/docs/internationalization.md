@@ -10,11 +10,11 @@ serves many clients each in their own language at the same time.
 The framework's i18n story has three parts, and this document is the map of all
 three:
 
-| Layer | Where | What it does |
-|-------|-------|--------------|
-| **Foundation** | `tentackle-common` | The bundle convention, the module-aware `BundleFactory`, the `LocaleProvider`, and the multilingual `I18NText` value type. |
-| **Database-backed bundles** | `tentackle-i18n` | Serve and live-edit translations from the database instead of `*.properties` files — see [i18n.md](../../../../tentackle-i18n/src/main/docs/i18n.md). |
-| **Build-time tooling** | `tentackle-i18n-maven-plugin`, `tentackle-check-maven-plugin` | Sync property files ↔ database, and verify that every key used in the code actually resolves. |
+| Layer                       | Where                                                         | What it does                                                                                                                                          |
+|-----------------------------|---------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Foundation**              | `tentackle-common`                                            | The bundle convention, the module-aware `BundleFactory`, the `LocaleProvider`, and the multilingual `I18NText` value type.                            |
+| **Database-backed bundles** | `tentackle-i18n`                                              | Serve and live-edit translations from the database instead of `*.properties` files — see [i18n.md](../../../../tentackle-i18n/src/main/docs/i18n.md). |
+| **Build-time tooling**      | `tentackle-i18n-maven-plugin`, `tentackle-check-maven-plugin` | Sync property files ↔ database, and verify that every key used in the code actually resolves.                                                         |
 
 This page focuses on the **foundation** in `tentackle-common`, on which the other
 two build.
@@ -23,7 +23,7 @@ two build.
 
 ## The Bundle Convention
 
-Application code never calls `ResourceBundle.getBundle(...)` directly. Instead each
+Application code never calls `ResourceBundle.getBundle(...)` directly. Instead, each
 package that needs texts has a small **bundle class** annotated with
 [`@Bundle`](../java/org/tentackle/common/Bundle.java), exposing a static
 `getString(key)`. The pattern (from
@@ -134,7 +134,7 @@ application can override its policies.
   or the JVM default if none is set. `setCurrentLocale(locale)` sets it for the
   current thread. This thread-local design is what lets a **multi-tier server**
   serve every client in its own language: each remote request sets the locale from
-  the caller's `SessionInfo` and clears it afterwards —
+  the caller's `SessionInfo` and clears it afterward —
 
   ```java
   // RemoteDbDelegateInvocationHandler, per invocation
@@ -182,7 +182,7 @@ Key properties:
 
 - It is a **model attribute type**, persisted via the SQL data type
   [`I18NTextType`](../../../../tentackle-sql/src/main/java/org/tentackle/sql/datatypes/I18NTextType.java)
-  (one wide column where the backend supports it, e.g. Postgres `TEXT`, otherwise a
+  (one wide column where the backend supports it, e.g., Postgres `TEXT`, otherwise a
   `VARCHAR` + overflow `CLOB`). In a model:
 
   ```
@@ -191,7 +191,7 @@ Key properties:
 
 - It implements **`CharSequence` and `Comparable` for the current locale only**
   (so it can be used like a `String` in the UI), but **`equals`/`hashCode` cover all
-  translations** — so beware in sorted sets.
+  translations** — so beware of sorted sets.
 - `get(locale)` resolves a translation, falling back to the text's **default locale**
   (the first one set, if the fallback language wasn't provided) and then to the
   `LocaleProvider`'s fallback locale. Translations narrow to *language only*.

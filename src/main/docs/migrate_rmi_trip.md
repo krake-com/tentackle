@@ -1,8 +1,7 @@
 # Migrate Tentackle Application from RMI to TRIP
 
-With the major release 25.18.0.0, the remoting API was refactored to use
-the new [TRIP protocol](../../../tentackle-core/src/main/docs/trip.md) instead of RMI. This document describes how to
-migrate your application from RMI to TRIP. For the rationale and a full
+This document describes how to migrate an older Tentackle application from RMI 
+to the new TRIP protocol. For the rationale and a full
 description of the protocol, see the [TRIP documentation](../../../tentackle-core/src/main/docs/trip.md).
 
 ### modify the parent pom.xml

@@ -12,7 +12,7 @@ abstraction.
 Its two central classes are:
 
 - [`Db`](../java/org/tentackle/dbms/Db.java) — *a persistence session*: the implementation of `Session` that owns
-  transactions, connections, prepared statements, id-sources and statistics.
+  transactions, connections, prepared statements, id-sources, and statistics.
 - [`AbstractDbObject`](../java/org/tentackle/dbms/AbstractDbObject.java) — *a persistent low-level database
   object*: the base class every persistence implementation extends, providing generic insert/update/delete/select
   machinery driven by entity-specific code that the Wurbelizer generates from the model.
@@ -31,7 +31,7 @@ deployment **by changing a config file, not the source code**.
 ### Design principles
 
 - **Session over connection, not session = connection.** A `Db` does not own a JDBC connection directly; it asks a
-  `ConnectionManager` to *attach* one for the duration of a task and *detach* it afterwards. This decoupling is
+  `ConnectionManager` to *attach* one for the duration of a task and *detach* it afterward. This decoupling is
   what enables connection multiplexing in servers.
 - **Generated specialization, generic engine.** `AbstractDbObject`/`AbstractDbOperation` hold all the generic
   persistence logic; the per-entity SQL and column mapping are generated (by wurblets) into the application's
@@ -41,7 +41,7 @@ deployment **by changing a config file, not the source code**.
 - **SQLExceptions never leak.** Statement/result wrappers and the session utilities translate vendor
   `SQLException`s into Tentackle's [`PersistenceException`](../../../../tentackle-session/src/main/docs/session.md)
   hierarchy, classified via the `Backend`, so upper layers never see raw JDBC errors.
-- **Replaceable singletons via SPI.** Utilities, factories and the modification tracker are `@Service`-registered
+- **Replaceable singletons via SPI.** Utilities, factories, and the modification tracker are `@Service`-registered
   so the PDO layer above can swap in PDO-aware versions transparently.
 
 ---
@@ -125,7 +125,7 @@ Connection managers are **not** used by remote sessions (those go over TRIP inst
 session). Two implementations ship:
 
 - [`ObjectId`](../java/org/tentackle/dbms/ObjectId.java) — used when the backend has **no sequences**; updates a
-  counter table, optimized to write only once at end of transaction.
+  counter table, optimized to write only once at the end of transaction.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
   by a configurable factor with an in-range counter to cut round-trips.
 
@@ -142,7 +142,7 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
   `ResultSet`; [`ResultSetSection`](../java/org/tentackle/dbms/ResultSetSection.java) /
   [`ResultSetSkipBlock`](../java/org/tentackle/dbms/ResultSetSkipBlock.java) support joines (due to inheritance or for load joins).
 - [`Query`](../java/org/tentackle/dbms/Query.java) — builds the SQL string + parameter set for a one-off query
-  (e.g. user-entered), adding the backend-specific `SELECT`/`LIMIT`/`OFFSET` automatically.
+  (e.g., user-entered), adding the backend-specific `SELECT`/`LIMIT`/`OFFSET` automatically.
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
   integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
@@ -162,7 +162,7 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
 This layer implements the change-tracking contracts from `tentackle-session`:
 
 - [`DbModificationTracker`](../java/org/tentackle/dbms/DbModificationTracker.java) (`@Service(ModificationTracker.class)`)
-  — the concrete tracker; advances serials when data changes and notifies listeners (e.g. caches).
+  — the concrete tracker; advances serials when data changes and notifies listeners (e.g., caches).
 - [`DbModification`](../java/org/tentackle/dbms/DbModification.java) (table `modification`) and
   [`ModificationTally`](../java/org/tentackle/dbms/ModificationTally.java) — the persisted per-table modification
   serial and its in-memory counter (local sessions only).
@@ -299,7 +299,7 @@ A persistence operation flows through the layers as follows:
 
 For a **local** `Db`, `AbstractDbObject` builds SQL via the
 [`Backend`](../../../../tentackle-sql/src/main/docs/sql.md), borrows a `ManagedConnection` from the
-`ConnectionManager`, executes through the statement wrappers and maps the `ResultSetWrapper` back to objects. For a
+`ConnectionManager`, executes through the statement wrappers, and maps the `ResultSetWrapper` back to objects. For a
 **remote** `Db`, the call is routed by the delegate locator to a `…RemoteDelegate`; on the server the matching
 `…RemoteDelegateImpl` runs the very same `AbstractDbObject` logic against its own local `Db` and returns the
 results over TRIP. Either way every write advances a table serial in the `DbModificationTracker`, which caches and

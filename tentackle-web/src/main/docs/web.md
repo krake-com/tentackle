@@ -35,7 +35,7 @@ example: a Spring Boot REST daemon acting as a Tentackle tier.
 ## Where a Web Node Sits in the Cascade
 
 A web application is a [leaf-style node](../../../../src/main/docs/tiers.md) that happens to expose HTTP instead
-of, or in addition to, a desktop UI. Like every other node its role is decided purely by its backend **URL**
+of, or in addition to, a desktop UI. Like every other node, its role is decided purely by its backend **URL**
 (see [Multi-Tier Cascade](../../../../src/main/docs/tiers.md)):
 
 ```
@@ -68,7 +68,7 @@ Because `WebApplication` extends `AbstractServerApplication`, **both deployment 
 ## `WebApplication<T>` — the Tentackle side of the bridge
 
 [`WebApplication<T>`](../java/org/tentackle/web/app/WebApplication.java) is an abstract server application
-parameterised by the **web session key type** `T`. `T` is whatever the web framework uses to identify a client
+parameterized by the **web session key type** `T`. `T` is whatever the web framework uses to identify a client
 session — most commonly a `String` (the servlet session id), but it can be any key you can hand back to the cache.
 
 Its lifecycle hooks slot into the standard application startup/shutdown sequence:
@@ -79,18 +79,18 @@ Its lifecycle hooks slot into the standard application startup/shutdown sequence
 @Override protected void cleanup()        { sessionInfoCache.terminate(); super.cleanup(); }
 ```
 
-So the key cache is created before the server endpoint comes up and its cleanup thread (see below) is started with
+So the key cache is created before the server endpoint comes up, and its cleanup thread (see below) is started with
 a 5-minute eviction interval once startup has finished.
 
 The public API is four methods that the web layer calls, plus the inherited server machinery:
 
-| Method | Called from | Purpose |
-|--------|-------------|---------|
-| `addWebSession(T key, SessionInfo info)` | login controller / auth filter | Register a web session key → `SessionInfo` mapping (replaces any existing one). |
-| `removeWebSession(T key)` | logout / session-expired listener | Drop the mapping (no-op if absent). |
-| `getSession(T key)` | per request | Borrow a pooled persistence [`Session`](../../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) attached to that user's `SessionInfo`; `null` if the key is unknown/expired. |
-| `putSession(Session)` | after the response | Return the session to its pool. |
-| `getSessionKeys(SessionInfo)` | app code | Reverse-lookup all web keys currently bound to a `SessionInfo`. |
+| Method                                   | Called from                       | Purpose                                                                                                                                                                                              |
+|------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `addWebSession(T key, SessionInfo info)` | login controller / auth filter    | Register a web session key → `SessionInfo` mapping (replaces any existing one).                                                                                                                      |
+| `removeWebSession(T key)`                | logout / session-expired listener | Drop the mapping (no-op if absent).                                                                                                                                                                  |
+| `getSession(T key)`                      | per request                       | Borrow a pooled persistence [`Session`](../../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) attached to that user's `SessionInfo`; `null` if the key is unknown/expired. |
+| `putSession(Session)`                    | after the response                | Return the session to its pool.                                                                                                                                                                      |
+| `getSessionKeys(SessionInfo)`            | app code                          | Reverse-lookup all web keys currently bound to a `SessionInfo`.                                                                                                                                      |
 
 ### How `getSession` resolves a pooled session
 
@@ -149,7 +149,7 @@ is kept.
 - **Soft references.** Each `SessionInfo` is held via a
   [`SoftReference`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ref/SoftReference.html).
   The web framework owns the authoritative session lifecycle; this cache is only an *accelerator* that avoids a
-  re-login on every request. If the JVM runs low on memory it can clear these references, bounding the cache's
+  re-login on every request. If the JVM runs low on memory, it can clear these references, bounding the cache's
   footprint automatically. A lookup whose referent was cleared transparently removes the dead entry and returns
   `null`, so the caller falls back to creating a fresh `SessionInfo`.
 
@@ -197,7 +197,7 @@ PDO code (which reaches for the *current* session) run correctly without threadi
 
 The cleanest way to use `tentackle-web` is to start the Tentackle application first, and once it is fully up,
 launch the web framework *inside* it. Below is a complete Spring Boot REST daemon built this way. 
-It authenticates with HTTP Basic against the user table, and serves
+It authenticates with HTTP Basic against the user table and serves
 REST endpoints that run as the authenticated Tentackle user.
 (changing to JWT is a matter of a few lines of code and covered by Spring, not Tentackle).
 
@@ -346,7 +346,7 @@ public class RestSessionPoolFactory extends DbPoolFactory {
 
 Two web-specific rules:
 
-- **All sessions are cloned.** In a desktop scenario the pool can recognise a returning "host client" and reuse
+- **All sessions are cloned.** In a desktop scenario the pool can recognize a returning "host client" and reuse
   its session. On the web there is no such stable identity, so every session beyond the first is treated as a
   clone.
 - **Idle timeout instead of keep-alive.** Web clients send no keep-alive pings, so sessions must **time out** after
@@ -438,7 +438,7 @@ public class PlsblRestSessionInfoFactory extends PlsblSessionInfoFactory {
 ```
 
 A single `application.properties` therefore configures the web port and timeouts *and* the Tentackle backend URL,
-credentials and pool sizing — the two stacks stay in one place without colliding.
+credentials, and pool sizing — the two stacks stay in one place without colliding.
 
 ### 6. The controllers: PDO access via `DomainContextProvider`
 
@@ -472,12 +472,12 @@ state lives on the thread, not in the bean.
 
 Implementing `DomainContextProvider` unlocks the convenience methods from the interface:
 
-| Method | Equivalent to | Use |
-|--------|---------------|-----|
-| `on(Ingot.class)` | `Pdo.create(Ingot.class, getDomainContext())` | create a PDO to run finders/factories on |
-| `on(Ingot.class, "name")` | same, in a fresh named sub-context | isolate a unit of work |
-| `op(SomeOp.class)` | `OperationFactory…create(…, getDomainContext())` | invoke a remotable operation |
-| `getDomainContext()` | — | reach the session for explicit transactions |
+| Method                    | Equivalent to                                    | Use                                         |
+|---------------------------|--------------------------------------------------|---------------------------------------------|
+| `on(Ingot.class)`         | `Pdo.create(Ingot.class, getDomainContext())`    | create a PDO to run finders/factories on    |
+| `on(Ingot.class, "name")` | same, in a fresh named sub-context               | isolate a unit of work                      |
+| `op(SomeOp.class)`        | `OperationFactory…create(…, getDomainContext())` | invoke a remotable operation                |
+| `getDomainContext()`      | —                                                | reach the session for explicit transactions |
 
 A concrete controller then extends the base and reads as ordinary PDO code:
 
@@ -518,14 +518,14 @@ Three conventions worth copying from the `IngotController` example:
   unit of work commits or rolls back atomically — and domain rules (`requestTokenLock()`, validation in
   `persist()`) are enforced exactly as they are for a desktop client.
 - **Map PDOs to DTOs at the boundary.** Endpoints return small `…DTO` records built with a static `create(pdo)`
-  factory, never the live PDO. This keeps the JSON contract stable and avoids serialising persistence internals.
+  factory, never the live PDO. This keeps the JSON contract stable and avoids serializing persistence internals.
   Use the DTO-wurblet to create the DTOs.
 - **Translate failures to HTTP status.** Invalid input or missing/locked entities throw a Spring
   `ResponseStatusException` (`BAD_REQUEST`, `NOT_FOUND`, `NOT_ACCEPTABLE`, …), turning domain-level outcomes into
   meaningful HTTP responses. Because each PDO call already runs as the authenticated user, Tentackle's own
   permission checks apply on top, with no extra code in the controller.
 
-The result is that adding an endpoint is just adding a method: the boot order, per-request session attach, pooling
+The result is that adding an endpoint is just adding a method: the boot order, per-request session attach, pooling,
 and authentication from the previous steps are invisible here — the controller only ever sees "a PDO in the current
 user's context".
 
@@ -576,4 +576,4 @@ the application.
 - [tentackle-persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) — the server-application
   base (`AbstractServerApplication`) and pools `WebApplication` builds on.
 - [Service API](../../../../tentackle-common/src/main/docs/services.md) — the `@Service` mechanism used to plug in
-  the web-specific pool, session-info and modification-tracker implementations.
+  the web-specific pool, session-info, and modification-tracker implementations.

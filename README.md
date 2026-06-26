@@ -47,7 +47,7 @@ Five things set Tentackle apart from other Java frameworks:
 
 ## Where to go next
 
-- 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build and run a
+- 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build, and run a
   complete multi-tier application in minutes.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
@@ -60,7 +60,7 @@ For a sense of where Tentackle excels, read
 - Java (JDK) ≥ 25
 - Maven ≥ 3.9.0
 
-_Notice: for older LTS-versions see the branches java21, java17, java11 and java8.
+_Notice: for older LTS versions see the branches java21, java17, java11, and java8.
 Java21 still receives bugfixes, java17, java11, and java8 reached end-of-life._
 
 ## License

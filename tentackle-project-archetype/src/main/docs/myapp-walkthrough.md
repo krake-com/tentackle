@@ -10,8 +10,8 @@ The companion document [`tentackle-project-archetype.md`](tentackle-project-arch
 reference application** and reads it like production code.
 
 > The walkthrough follows the project generated with
-> `-DartifactId=myapp -Dpackage=com.example.myapp -Dapplication=MyApp`, i.e. the one the archetype's own
-> integration test materialises under
+> `-DartifactId=myapp -Dpackage=com.example.myapp -Dapplication=MyApp`, i.e., the one the archetype's own
+> integration test materializes under
 > `tentackle-project-archetype/target/test-classes/projects/myapp/project/myapp`. Throughout, file paths are given
 > relative to that generated project root (e.g. `myapp-pdo/src/main/java/com/example/myapp/pdo/md/User.java`).
 
@@ -24,7 +24,7 @@ MyApp is a small but complete multi-tier business application. Out of the box it
 - a domain of **Users**, **User Groups**, a **User↔Group** N:M link, an **Organizational Unit** base entity, and a
   **Message** log;
 - a **JavaFX desktop client** with login, CRUD editors, search/finders, preferences, theming, an about box, an
-  auto-updater and a security-administration UI;
+  auto-updater, and a security-administration UI;
 - a **middle-tier server** speaking [TRIP](../../../../tentackle-core/src/main/docs/trip.md) (Tentackle's
   RMI/JOS replacement) that also hosts the software auto-update service;
 - a headless **console daemon** that listens for new `Message`s and logs them;
@@ -33,7 +33,7 @@ MyApp is a small but complete multi-tier business application. Out of the box it
   suite running against an in-memory H2 database.
 
 It demonstrates the framework's central idea — the **Persistent Domain Object (PDO)** — together with the code
-generation, remoting, UI and build machinery that surround it.
+generation, remoting, UI, and build machinery that surround it.
 
 ---
 
@@ -65,18 +65,18 @@ myapp (root pom — aggregator + pluginManagement + model defaults)
 Every module has an explicit `module-info.java`. The dependency edges encode Tentackle's architecture and, crucially,
 **keep the persistence and domain layers from knowing about each other** — they only share the PDO *interfaces*.
 
-| Module | key `requires` | `open`? | Role |
-|--------|----------------|:------:|------|
-| `…common` | `transitive org.tentackle.pdo` | no | base types shared by everything |
-| `…pdo` | `transitive …common` | no | the PDO **interfaces** that define the model; exports `…pdo`, `…pdo.md`, `…pdo.td`, the `.domain`/`.persist` facet packages, and `…pdo.security` |
-| `…domain` | `transitive …pdo`, `transitive org.tentackle.domain` | **yes** | domain-logic implementations (`UserDomainImpl`, `MessageDomainImpl`, …) |
-| `…persist` | `transitive …pdo`, `transitive org.tentackle.persistence` | **yes** | persistence implementations + TRIP remote delegates |
-| `…gui` | `transitive …pdo`, `transitive org.tentackle.fx.rdc`, `org.tentackle.fx.atlanta` | **yes** | FX controllers, editors, providers, FXML/CSS |
-| `…client` | `transitive …gui`, `…persist`, `…domain`, `transitive org.tentackle.fx.rdc.update` | no | the desktop application |
-| `…server` | `transitive …persist`, `…domain`, `transitive org.tentackle.update` | no | the middle-tier server |
-| `…daemon` | `transitive …persist`, `…domain` | no | a headless console client |
+| Module     | key `requires`                                                                     | `open`? | Role                                                                                                                                             |
+|------------|------------------------------------------------------------------------------------|:-------:|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `…common`  | `transitive org.tentackle.pdo`                                                     |   no    | base types shared by everything                                                                                                                  |
+| `…pdo`     | `transitive …common`                                                               |   no    | the PDO **interfaces** that define the model; exports `…pdo`, `…pdo.md`, `…pdo.td`, the `.domain`/`.persist` facet packages, and `…pdo.security` |
+| `…domain`  | `transitive …pdo`, `transitive org.tentackle.domain`                               | **yes** | domain-logic implementations (`UserDomainImpl`, `MessageDomainImpl`, …)                                                                          |
+| `…persist` | `transitive …pdo`, `transitive org.tentackle.persistence`                          | **yes** | persistence implementations + TRIP remote delegates                                                                                              |
+| `…gui`     | `transitive …pdo`, `transitive org.tentackle.fx.rdc`, `org.tentackle.fx.atlanta`   | **yes** | FX controllers, editors, providers, FXML/CSS                                                                                                     |
+| `…client`  | `transitive …gui`, `…persist`, `…domain`, `transitive org.tentackle.fx.rdc.update` |   no    | the desktop application                                                                                                                          |
+| `…server`  | `transitive …persist`, `…domain`, `transitive org.tentackle.update`                |   no    | the middle-tier server                                                                                                                           |
+| `…daemon`  | `transitive …persist`, `…domain`                                                   |   no    | a headless console client                                                                                                                        |
 
-The domain, persistence and gui modules are **`open module`** because the framework reflects into them: TRIP
+The domain, persistence, and gui modules are **`open module`** because the framework reflects into them: TRIP
 serialises PDO state, JavaFX/FXML instantiates controllers, and the proxy-based PDO assembly (below) needs reflective
 access to the implementation classes.
 
@@ -95,7 +95,7 @@ provides org.tentackle.common.ModuleHook with com.example.myapp.<module>.service
 
 `service/Hook.java` is a minimal class implementing `ModuleHook` (it forwards `getBundle(...)` to
 `ResourceBundle.getBundle`). This is the SPI entry point through which the framework's
-[`ServiceFinder`](../../../../tentackle-common/src/main/docs/services.md) discovers and initialises each module —
+[`ServiceFinder`](../../../../tentackle-common/src/main/docs/services.md) discovers and initializes each module —
 the mechanism that lets the same code run **modular or non-modular** without change. When you add a module, copy this
 one-class pattern.
 
@@ -112,17 +112,17 @@ inheritance with a **dynamic proxy** that fronts a `PersistentObject` and a `Dom
 
 For each entity there are (at least) five Java types, plus generated SQL. Take **`Message`**:
 
-| Artifact | File | Hand-written? |
-|----------|------|:----:|
-| **PDO interface** | `myapp-pdo/.../pdo/td/Message.java` | yes — and carries the *model* |
-| **Persistence facet** | `myapp-pdo/.../pdo/td/persist/MessagePersistence.java` | partly — generated accessors woven in |
-| **Domain facet** | `myapp-pdo/.../pdo/td/domain/MessageDomain.java` | yes — extra business methods |
-| **Persistence impl** | `myapp-persistence/.../persist/td/MessagePersistenceImpl.java` | yes + generated regions |
-| **Domain impl** | `myapp-domain/.../domain/td/MessageDomainImpl.java` | yes |
-| **Remote delegate (+impl)** | `myapp-persistence/.../persist/td/trip/MessageRemoteDelegate*.java` | generated |
-| **SQL/DDL & mapping** | under `target/wurbel/model` | generated |
+| Artifact                    | File                                                                |             Hand-written?             |
+|-----------------------------|---------------------------------------------------------------------|:-------------------------------------:|
+| **PDO interface**           | `myapp-pdo/.../pdo/td/Message.java`                                 |     yes — and carries the *model*     |
+| **Persistence facet**       | `myapp-pdo/.../pdo/td/persist/MessagePersistence.java`              | partly — generated accessors woven in |
+| **Domain facet**            | `myapp-pdo/.../pdo/td/domain/MessageDomain.java`                    |     yes — extra business methods      |
+| **Persistence impl**        | `myapp-persistence/.../persist/td/MessagePersistenceImpl.java`      |        yes + generated regions        |
+| **Domain impl**             | `myapp-domain/.../domain/td/MessageDomainImpl.java`                 |                  yes                  |
+| **Remote delegate (+impl)** | `myapp-persistence/.../persist/td/trip/MessageRemoteDelegate*.java` |               generated               |
+| **SQL/DDL & mapping**       | under `target/wurbel/model`                                         |               generated               |
 
-The PDO interface is where you, the developer, *live*. It extends its persistence facet, its domain facet and a shared
+The PDO interface is where you, the developer, *live*. It extends its persistence facet, its domain facet, and a shared
 base interface:
 
 ```java
@@ -137,7 +137,7 @@ public interface Message extends TransactionData<Message>, MessagePersistence, M
 - `MessageDomain` (extends `DomainObject`) declares business operations: `create(...)`, `getRefersToPdo()`,
   `getFormattedRefersTo()`, `toDiagnosticString()`.
 - `TransactionData<T>` / `MasterData<T>` (in `myapp-pdo`) are thin project-wide marker bases extending
-  `PersistentDomainObject<T>`. They let you attach behaviour or constraints to whole *categories* of entity. The split
+  `PersistentDomainObject<T>`. They let you attach behavior or constraints to whole *categories* of entity. The split
   mirrors the two **wizard profiles** (`masterdata`, class ids ≥ 1000; `transactiondata`, class ids ≥ 2000).
 
 ### How an instance is assembled
@@ -234,7 +234,7 @@ There are two kinds of block, both visible at the top of `OrgUnit.java`:
 Things to note for a newcomer:
 
 - **`attributes`** are declared as `JavaType(size) attributeName column_name description [modifiers]`. Modifiers in
-  brackets drive generation: `key` (part of the domain key), `uc`/`normtext` (uppercase / normalised search text),
+  brackets drive generation: `key` (part of the domain key), `uc`/`normtext` (uppercase / normalized search text),
   `cached`, `tableserial`, `trimwrite`, `@NotNull` (a bean-validation constraint), `[MUTE]` (excluded from the PDO —
   see the password below), etc.
 - **`$ou_name`, `$ou_comment`, `$msg_text`…** are *column sizes* defined centrally in the root `pom.xml`
@@ -293,7 +293,7 @@ public interface OrgUnit<T extends OrgUnit<T>> extends MasterData<T>, OrgUnitPer
 ```
 
 This block is **generated**, not authored: the Wurbelizer resolves the *whole* model — including relations declared in
-*other* files — and reflects each entity's incoming references, root/aggregate status, outgoing references and
+*other* files — and reflects each entity's incoming references, root/aggregate status, outgoing references, and
 inheritance back into its own source. Here it tells you, at a glance, that `OrgUnit` is referenced by `Message`'s
 `orgUnit`, is an aggregate root referenced by nothing further, references nothing itself, and is the multi-table base
 of `User` and `UserGroup` (the `^` arrows). Because it lives right where you read the code, it keeps the model's
@@ -328,7 +328,7 @@ typed `getXxx/setXxx` and `AN_*`/`CN_*` constant names from `AttributeNames`/`Me
 by hand, using framework helpers like `Query`, `NormText` and `NumberSourceFactory`.
 
 The generators are selected per file-type by the `<filesets>` in the root `pom.xml`'s
-`wurbelizer-maven-plugin` configuration: entity interfaces, facet interfaces, implementations and `trip` delegates each
+`wurbelizer-maven-plugin` configuration: entity interfaces, facet interfaces, implementations, and `trip` delegates each
 get their appropriate wurblets. The build order that makes this work is:
 
 1. **tentackle-maven-plugin** `analyze`/`test-analyze` — emit service descriptors and analysis metadata.
@@ -342,7 +342,7 @@ get their appropriate wurblets. The build order that makes this work is:
    (`tentackle-core`, `tentackle-pdo`, `tentackle-fx`, `tentackle-fx-rdc`) on the processor path.
 7. **tentackle-jlink-maven-plugin** — build native images under the `jlink` profile.
 
-The same pipeline, with each step's own document, is summarised in
+The same pipeline, with each step's own document, is summarized in
 [`tentackle-project-archetype.md` §"The Generated Build Pipeline"](tentackle-project-archetype.md).
 
 ---
@@ -352,19 +352,19 @@ The same pipeline, with each step's own document, is summarised in
 `myapp-common` holds the small classes every layer needs. Most are **thin subclasses of framework defaults registered
 as services** (`@Service(...)`), so the framework picks them up automatically:
 
-| Class | Extends / implements | Why it exists |
-|-------|----------------------|---------------|
-| `MyAppSessionInfo` | `DefaultSessionInfo` | login credentials + connection params; here it forces usernames to **uppercase** |
-| `MyAppSessionInfoFactory` | `@Service(SessionInfoFactory)` | builds `MyAppSessionInfo` from username/password/properties |
-| `MyAppDomainContext` | `DefaultDomainContext` | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo` |
-| `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext` |
-| `MyAppCryptor` | `@Service(Cryptor.class)` | app-specific symmetric encryption (salt + passphrase) for stored secrets |
-| `MyAppLocaleProvider` | `@Service(LocaleProvider.class)` | restricts supported locales to `en` (default) and `de` |
-| `MyAppPreferences` | — | typed access to persisted system/user preferences (e.g. the help URL) |
-| `Version` | — | reads `version`/`date` from a *filtered* `Version.properties` baked at build time |
-| `Constants` | — | app constants such as the number-pool realm `"MyApp"` |
+| Class                       | Extends / implements             | Why it exists                                                                     |
+|-----------------------------|----------------------------------|-----------------------------------------------------------------------------------|
+| `MyAppSessionInfo`          | `DefaultSessionInfo`             | login credentials + connection params; here it forces usernames to **uppercase**  |
+| `MyAppSessionInfoFactory`   | `@Service(SessionInfoFactory)`   | builds `MyAppSessionInfo` from username/password/properties                       |
+| `MyAppDomainContext`        | `DefaultDomainContext`           | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo`            |
+| `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext`                                                       |
+| `MyAppCryptor`              | `@Service(Cryptor.class)`        | app-specific symmetric encryption (salt + passphrase) for stored secrets          |
+| `MyAppLocaleProvider`       | `@Service(LocaleProvider.class)` | restricts supported locales to `en` (default) and `de`                            |
+| `MyAppPreferences`          | —                                | typed access to persisted system/user preferences (e.g. the help URL)             |
+| `Version`                   | —                                | reads `version`/`date` from a *filtered* `Version.properties` baked at build time |
+| `Constants`                 | —                                | app constants such as the number-pool realm `"MyApp"`                             |
 
-The **`SessionInfo` / `DomainContext`** pair is worth internalising early:
+The **`SessionInfo` / `DomainContext`** pair is worth internalizing early:
 
 - A **`SessionInfo`** describes *who is connecting and how* (user, password, backend properties). `MyAppSessionInfo`
   uppercases usernames because the model declares the `OrgUnit.name` key as `uc` — the two must agree.
@@ -378,7 +378,7 @@ passwords into the jlink images (§11).
 
 ---
 
-## 7. Security — users, groups and permissions
+## 7. Security — users, groups, and permissions
 
 > Reference: [Security](../../../../tentackle-pdo/src/main/docs/security.md).
 
@@ -426,7 +426,7 @@ server's update service on startup.
 
 `MainController` (`myapp-gui`) is the menu-driven shell: it opens CRUD editors via
 `Rdc.displayCrudStage(on(clazz), …)`, search dialogs via `Rdc.displaySearchStage(...)`, the preferences dialog, theme
-switcher, password change, the security-administration dialog and a server-sessions view. `on(clazz)` is the controller
+switcher, password change, the security-administration dialog, and a server-sessions view. `on(clazz)` is the controller
 helper that creates a PDO bound to the controller's domain context.
 
 ### 8.2 Middle-tier server — `MyAppServer`
@@ -459,7 +459,6 @@ new messages. It illustrates that PDO change events, like PDO methods, cross the
 ## 9. Remoting and the login lifecycle (TRIP)
 
 > Reference: [TRIP](../../../../tentackle-core/src/main/docs/trip.md),
-> [migrating RMI→TRIP](../../../../src/main/docs/migrate_rmi_trip.md),
 > [session](../../../../tentackle-session/src/main/docs/session.md).
 
 The `trip` packages contain the connection/session classes that make remoting concrete:
@@ -509,7 +508,7 @@ repeatable trio of artifacts (look at the `user`, `usergroup` and `message` sub-
 `MainController` ties it together: menu items call `edit(clazz)` / `search(clazz)`, which delegate to
 `Rdc.displayCrudStage(...)` / `Rdc.displaySearchStage(...)`; the RDC layer then looks up the right `GuiProvider`,
 builds the editor or finder, and manages the stage. Theming (light/dark via `org.tentackle.fx.atlanta`), the about box,
-preferences dialog and password-change view round out the shell.
+preferences dialog, and password-change view round out the shell.
 
 ---
 
@@ -521,7 +520,7 @@ preferences dialog and password-change view round out the shell.
 
 Every module that emits user-facing text ships a `*Bundle.java` accessor and `*Bundle.properties` /
 `*Bundle_de.properties` pairs (`PdoBundle`, `DomainBundle`, `PersistenceBundle`, `ServerBundle`, `GuiBundle`, plus the
-per-view `.properties`). The `MessageType` enum even localises itself via `PdoBundle.getString(name())`.
+per-view `.properties`). The `MessageType` enum even localizes itself via `PdoBundle.getString(name())`.
 
 Completeness is **enforced at build time**: the `tentackle-check-maven-plugin` `bundles` goal checks that the
 `en_US, de_DE` locales are in sync, and the i18n plugin handles the resources. `MyAppLocaleProvider` narrows the
@@ -617,7 +616,7 @@ mvn -Dtest=MessageTest test        # the no-DB domain unit test
 
 A typical **first run** is: build (`mvn install`), point `server.properties` at a real PostgreSQL, generate the schema
 DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), start `MyAppServer`, then start
-`MyAppFxClient` against `trip://localhost:8888/MyAppServer` and log in as one of the seed users.
+`MyAppFxClient` against, and log in as one of the seed users.
 
 ---
 
@@ -626,7 +625,7 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
 - **Add an entity.** The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
   is pre-configured in the root POM with `masterdata` / `transactiondata` / `operation` profiles (package conventions
   and class-id ranges) and FreeMarker templates under `templates/`. It scaffolds the PDO interface, facets,
-  implementations and remote delegate consistently with the examples. Then author the model block, run `mvn install`,
+  implementations, and remote delegate consistently with the examples. Then author the model block, run `mvn install`,
   and add a `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
@@ -637,18 +636,18 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
 
 ## 17. Where to read next
 
-| Topic in MyApp | Framework document |
-|----------------|--------------------|
-| The PDO concept, proxies, `Pdo.create` | [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) · [pdo-vs-orm.md](../../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) |
-| The model comment language | [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) · [tentackle-model.md](../../../../tentackle-model/src/main/docs/tentackle-model.md) |
-| Code generation / guarded regions | [wurblets.md](../../../../tentackle-wurblets/src/main/docs/wurblets.md) · [persistence-wurblets.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) · [pdo-select.md](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) |
-| Persistence impls, queries, relations | [persistence.md](../../../../tentackle-persistence/src/main/docs/persistence.md) · [database.md](../../../../tentackle-database/src/main/docs/database.md) · [sql.md](../../../../tentackle-sql/src/main/docs/sql.md) |
-| Domain impls | [domain.md](../../../../tentackle-domain/src/main/docs/domain.md) |
-| Remoting / TRIP | [trip.md](../../../../tentackle-core/src/main/docs/trip.md) · [session.md](../../../../tentackle-session/src/main/docs/session.md) · [migrate_rmi_trip.md](../../../../src/main/docs/migrate_rmi_trip.md) |
-| The FX desktop UI | [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) · [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) · [atlanta.md](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) |
-| Auto-update | [update.md](../../../../tentackle-update/src/main/docs/update.md) · [fx-rdc-update.md](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) |
-| Security | [security.md](../../../../tentackle-pdo/src/main/docs/security.md) |
-| Services / config / bundles | [common.md](../../../../tentackle-common/src/main/docs/common.md) · [services.md](../../../../tentackle-common/src/main/docs/services.md) · [i18n.md](../../../../tentackle-i18n/src/main/docs/i18n.md) |
-| Packaging | [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) |
-| The architecture in the large | [modules.md](../../../../src/main/docs/modules.md) · [tiers.md](../../../../src/main/docs/tiers.md) |
-| The archetype itself | [tentackle-project-archetype.md](tentackle-project-archetype.md) |
+| Topic in MyApp                         | Framework document                                                                                                                                                                                                                                                              |
+|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| The PDO concept, proxies, `Pdo.create` | [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) · [pdo-vs-orm.md](../../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)                                                                                                                                               |
+| The model comment language             | [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) · [tentackle-model.md](../../../../tentackle-model/src/main/docs/tentackle-model.md)                                                                                                       |
+| Code generation / guarded regions      | [wurblets.md](../../../../tentackle-wurblets/src/main/docs/wurblets.md) · [persistence-wurblets.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) · [pdo-select.md](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) |
+| Persistence impls, queries, relations  | [persistence.md](../../../../tentackle-persistence/src/main/docs/persistence.md) · [database.md](../../../../tentackle-database/src/main/docs/database.md) · [sql.md](../../../../tentackle-sql/src/main/docs/sql.md)                                                           |
+| Domain impls                           | [domain.md](../../../../tentackle-domain/src/main/docs/domain.md)                                                                                                                                                                                                               |
+| Remoting / TRIP                        | [trip.md](../../../../tentackle-core/src/main/docs/trip.md) · [session.md](../../../../tentackle-session/src/main/docs/session.md)                                                                                                                                              |
+| The FX desktop UI                      | [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) · [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) · [atlanta.md](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)                                                                                   |
+| Auto-update                            | [update.md](../../../../tentackle-update/src/main/docs/update.md) · [fx-rdc-update.md](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)                                                                                                                      |
+| Security                               | [security.md](../../../../tentackle-pdo/src/main/docs/security.md)                                                                                                                                                                                                              |
+| Services / config / bundles            | [common.md](../../../../tentackle-common/src/main/docs/common.md) · [services.md](../../../../tentackle-common/src/main/docs/services.md) · [i18n.md](../../../../tentackle-i18n/src/main/docs/i18n.md)                                                                         |
+| Packaging                              | [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)                                                                                                                                                                                       |
+| The architecture in the large          | [modules.md](../../../../src/main/docs/modules.md) · [tiers.md](../../../../src/main/docs/tiers.md)                                                                                                                                                                             |
+| The archetype itself                   | [tentackle-project-archetype.md](tentackle-project-archetype.md)                                                                                                                                                                                                                |

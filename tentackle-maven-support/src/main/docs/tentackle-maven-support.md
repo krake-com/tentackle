@@ -4,7 +4,7 @@
 
 `tentackle-maven-support` is a small, **build-time-only** library that provides the common base classes and
 helpers shared by every Tentackle Maven plugin. It is not a plugin itself and defines no goals; instead it supplies
-the `AbstractMojo` subclasses, the toolchain/tool-location plumbing, the annotation-processing harness and the
+the `AbstractMojo` subclasses, the toolchain/tool-location plumbing, the annotation-processing harness, and the
 assorted utilities that the actual plugins extend.
 
 Six plugins build on it:
@@ -63,17 +63,17 @@ public final void execute() throws MojoExecutionException, MojoFailureException 
 
 ### Shared mojo parameters
 
-All injected by Maven and exposed via getters, so every plugin inherits them for free:
+All are injected by Maven and exposed via getters, so every plugin inherits them for free:
 
-| Parameter | Purpose |
-|-----------|---------|
-| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution |
-| `${settings}` + `SettingsDecrypter` | `settings.xml` plus credential decryption (e.g. for servers) |
-| `jdkToolchain` + `ToolchainManager` | per-plugin selection (or deselection) of the `"jdk"` toolchain |
-| `tentackle.verbosity` | `default` / `info` / `debug` (debug also implied by Maven's `-X`) |
-| `skip` | skip the goal; defaults to skipping when packaging is `pom` |
-| `charset` (`${project.build.sourceEncoding}`) | encoding for reading/writing files |
-| `minLogLevel` (default `WARNING`) | threshold for the JUL→Maven log bridge |
+| Parameter                                      | Purpose                                                           |
+|------------------------------------------------|-------------------------------------------------------------------|
+| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution                    |
+| `${settings}` + `SettingsDecrypter`            | `settings.xml` plus credential decryption (e.g. for servers)      |
+| `jdkToolchain` + `ToolchainManager`            | per-plugin selection (or deselection) of the `"jdk"` toolchain    |
+| `tentackle.verbosity`                          | `default` / `info` / `debug` (debug also implied by Maven's `-X`) |
+| `skip`                                         | skip the goal; defaults to skipping when packaging is `pom`       |
+| `charset` (`${project.build.sourceEncoding}`)  | encoding for reading/writing files                                |
+| `minLogLevel` (default `WARNING`)              | threshold for the JUL→Maven log bridge                            |
 
 ### Skip and validation logic
 
@@ -109,7 +109,7 @@ A grab-bag of helpers the plugins rely on:
 
 `createPackageMap(boolean resourceRoots)` walks the compile-source roots (or non-filtered resource roots) of the
 project — recursively across the reactor's collected projects when run non-recursively — and builds a
-`Map<String, PackageInfo>`. While doing so it enforces a JPMS rule: **a package containing files must not appear in
+`Map<String, PackageInfo>`. While doing so, it enforces a JPMS rule: **a package containing files must not appear in
 more than one module**. A genuine split (two modules both contributing files to the same package) throws a
 `MojoExecutionException`; empty package directories are tolerated and tracked as "empty duplicates" so a
 non-empty occurrence can win.
@@ -176,7 +176,7 @@ inspect classes from the project being built. It exposes `addURL` publicly.
 ### `PackageInfo`
 
 [`PackageInfo`](../java/org/tentackle/maven/PackageInfo.java) is the value object produced by the base mojo's
-package scan: the package name, the owning `MavenProject` and the directory path. `isContainingFiles()` underpins
+package scan: the package name, the owning, and the directory path. `isContainingFiles()` underpins
 split-package detection, and `getEmptyDuplicates()`/`setEmptyDuplicates(...)` track empty package directories that
 occur in several modules (which cannot be used in profiles, since the generator could not decide which to pick).
 

@@ -5,7 +5,7 @@
 `tentackle-model` is the **build-time model API** of Tentackle. It turns the entity
 [model definitions](model-definition.md) — the DSL embedded in PDO interface sources — into a navigable,
 validated, in-memory object graph (`Entity`, `Attribute`, `Relation`, `Index`, `ForeignKey`, …) and offers the
-services that read, validate, pretty-print and migrate that graph.
+services that read, validate, pretty-print, and migrate that graph.
 
 It is the **single source of truth** every code- and schema generator reads from. The
 [wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) (interface side) and
@@ -13,8 +13,8 @@ It is the **single source of truth** every code- and schema generator reads from
 (implementation side) consume it to generate Java; the
 [SQL Maven plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) consumes it
 to generate and migrate DDL; the PDO-wizard and PDO-browser plugins consume it to display and edit entities.
-Because they all read the same model, the generated interfaces, implementations and the database schema can never
-disagree about names, sizes or types.
+Because they all read the same model, the generated interfaces, implementations, and the database schema can never
+disagree about names, sizes, or types.
 
 > This module is primarily a **build-time** dependency. It is on the classpath of the Wurbelizer and Tentackle
 > Maven plugins, not normally inside the running application. It `requires transitive org.tentackle.sql` for the
@@ -50,14 +50,14 @@ directory, a single URL, a jar, or classpath resources) and builds the object gr
 
 ## Package Layout
 
-| Package | Role |
-|---------|------|
-| `org.tentackle.model` | The public model **API**: interfaces (`Model`, `ModelManager`, `Entity`, `Attribute`, `Relation`, `Index`, `ForeignKey`, `EntityFactory`, `EntityInfo`, `ModelDirectory`), value/config types (`ModelDefaults`, `EntityAliases`, `SourceInfo`), enums (`Integrity`, `InheritanceType`, `RelationType`, `SelectionType`, `TrackType`, `SortType`, `AccessScope`), SPI hooks (`CustomModelValidator`, `NameVerifier`, `CodeFactory`) and exceptions (`ModelException`, `ModelError`). |
-| `org.tentackle.model.impl` | The default implementation of the API (`ModelImpl`, `EntityImpl`, `AttributeImpl`, `RelationImpl`, `ModelManagerImpl`, `EntityFactoryImpl`, …). Selected via the `@Service`/`@MappedService` SPI; replaceable. |
-| `org.tentackle.model.parse` | The DSL **parser**: `Document`, `LineParser`, `OptionParser`, `LineType` and the concrete `*Line` classes (one per [line type](model-definition.md)). Turns model source text into a `Document` of typed lines that the `EntityFactory` assembles into an `Entity`. |
-| `org.tentackle.model.print` | The **pretty-printer**: `EntityPrinter` and its helpers (`AttributePrinter`, `RelationPrinter`, `IndexPrinter`, `GlobalOptionsPrinter`, `AnnotationPrinter`, `PrintConfiguration`). Renders an `Entity` back into canonical model-definition text. The inverse of `parse`. |
-| `org.tentackle.model.migrate` | **Database migration** support: `TableMigrator`, `ColumnMigrator`, `IndexMigrator`, `ForeignKeyMigrator`, `ColumnMigration`, `CustomMigrationValidator`. Diff the model against live database metadata (from `tentackle-sql`) and emit the `ALTER`/`CREATE`/`DROP` statements to reconcile them. |
-| `org.tentackle.model.service` | `Hook` — the `ModuleHook` SPI service for resource-bundle lookup. |
+| Package                       | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.model`         | The public model **API**: interfaces (`Model`, `ModelManager`, `Entity`, `Attribute`, `Relation`, `Index`, `ForeignKey`, `EntityFactory`, `EntityInfo`, `ModelDirectory`), value/config types (`ModelDefaults`, `EntityAliases`, `SourceInfo`), enums (`Integrity`, `InheritanceType`, `RelationType`, `SelectionType`, `TrackType`, `SortType`, `AccessScope`), SPI hooks (`CustomModelValidator`, `NameVerifier`, `CodeFactory`) and exceptions (`ModelException`, `ModelError`). |
+| `org.tentackle.model.impl`    | The default implementation of the API (`ModelImpl`, `EntityImpl`, `AttributeImpl`, `RelationImpl`, `ModelManagerImpl`, `EntityFactoryImpl`, …). Selected via the `@Service`/`@MappedService` SPI; replaceable.                                                                                                                                                                                                                                                                      |
+| `org.tentackle.model.parse`   | The DSL **parser**: `Document`, `LineParser`, `OptionParser`, `LineType` and the concrete `*Line` classes (one per [line type](model-definition.md)). Turns model source text into a `Document` of typed lines that the `EntityFactory` assembles into an `Entity`.                                                                                                                                                                                                                 |
+| `org.tentackle.model.print`   | The **pretty-printer**: `EntityPrinter` and its helpers (`AttributePrinter`, `RelationPrinter`, `IndexPrinter`, `GlobalOptionsPrinter`, `AnnotationPrinter`, `PrintConfiguration`). Renders an `Entity` back into canonical model-definition text. The inverse of `parse`.                                                                                                                                                                                                          |
+| `org.tentackle.model.migrate` | **Database migration** support: `TableMigrator`, `ColumnMigrator`, `IndexMigrator`, `ForeignKeyMigrator`, `ColumnMigration`, `CustomMigrationValidator`. Diff the model against live database metadata (from `tentackle-sql`) and emit the `ALTER`/`CREATE`/`DROP` statements to reconcile them.                                                                                                                                                                                    |
+| `org.tentackle.model.service` | `Hook` — the `ModuleHook` SPI service for resource-bundle lookup.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 The `module-info` exports `org.tentackle.model`, `.impl`, `.migrate`, `.parse` and `.print`, and provides
 `org.tentackle.common.ModuleHook` via the `service.Hook`.
@@ -81,10 +81,10 @@ Model ──► Entity ──┬─► Attribute (one per logical field; maps to
 The top-level element and the richest part of the API. Besides identity (`getClassId`, `getTableName`,
 `getSchemaName`, `getTableAlias`, `getIntegrity`, `getOptions`) it exposes the full **derived** view of an entity:
 
-- **Attributes** in many flavours — own, inherited, embedded, sub-entity, mapped, table, all-combined — plus
+- **Attributes** in many flavors — own, inherited, embedded, sub-entity, mapped, table, all-combined — plus
   lookups by Java or column name (`getAttributeByJavaName`, `getAttributeByColumnName`), the unique domain key
-  (`getUniqueDomainKey`), the context-id attribute and the default `getSorting()`.
-- **Relations** in the same flavours, plus the *reverse* direction: `getReferencingRelations()` and its
+  (`getUniqueDomainKey`), the context-id attribute, and the default `getSorting()`.
+- **Relations** in the same flavors, plus the *reverse* direction: `getReferencingRelations()` and its
   inherited/sub-entity variants tell an entity who points *at* it — essential for cascade and integrity logic.
 - **Inheritance** — `getSuperEntity`, `getSuperEntities`, `getSubEntities`, `getLeafEntities`,
   `getInheritanceType`/`getHierarchyInheritanceType`, `getTableProvidingEntity`, `isAbstract`.
@@ -135,7 +135,7 @@ the typed counterpart of an option documented in [model-definition.md](model-def
 
 `ModelManager` (singleton via `ServiceFactory`) creates and caches named `Model` instances. There is normally one
 model per build — the `"default"` model (`ModelManager.DEFAULT_MODEL_NAME`), reachable directly via
-`Model.getInstance()`. Additional named models can be created, e.g. to generate PDOs from *another* project's
+`Model.getInstance()`. Additional named models can be created, e.g., to generate PDOs from *another* project's
 model alongside your own.
 
 `Model` is the façade for one model. Its lifecycle:
@@ -147,7 +147,7 @@ model alongside your own.
    - `loadFromDirectory(dir, updateRelations)` — a model directory (the usual case during a build).
    - `loadFromURL(url, updateRelations)` — a single model file.
    - `loadFromJar(file, updateRelations)` / `loadFromResources(updateRelations)` — from `MODEL-INDEX.LIST`.
-3. **Resolve relations** — pass `updateRelations = false` while the model is still incomplete (e.g. when loading
+3. **Resolve relations** — pass `updateRelations = false` while the model is still incomplete (e.g., when loading
    dependency models first), then call `updateRelations()` once everything is present. This second pass is what
    wires `Relation` objects to their foreign entities and computes the derived views (referencing relations,
    composite paths, root inference, deep references). Loading with `updateRelations = true` does both at once.
@@ -171,7 +171,7 @@ creates an empty entity for programmatic construction (used by the wizard/printe
 ### `ModelDefaults` and `EntityAliases`
 
 `ModelDefaults` carries the project-wide defaults (track type, root/rootId/rootClassId auto-flags, bind/size/
-autoselect, deletionCascaded, remote, …). It is applied during parsing and only ever *raises* a setting — e.g. a
+autoselect, deletionCascaded, remote, …). It is applied during parsing and only ever *raises* a setting — e.g., a
 default of `tracked` will not downgrade an entity already declared `fulltracked`. It is typically passed from the
 parent POM (the `modelDefaults` configuration of the wurbelizer/SQL plugins). `EntityAliases` supplies fixed table
 aliases for relations between entities. Both are documented from the user's side in
@@ -183,12 +183,12 @@ aliases for relations between entities. Both are documented from the user's side
 
 The module is open for application-specific customization through `ServiceFactory`/`@Service` lookups:
 
-| SPI | Purpose |
-|-----|---------|
+| SPI                    | Purpose                                                                                                                                                                                           |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `CustomModelValidator` | Applications register `@Service(CustomModelValidator.class)` implementations to enforce extra rules on the whole model; `validate(Model)` is called after loading and may throw `ModelException`. |
-| `NameVerifier` | Enforces application naming conventions for entity/table/alias/attribute names, on top of backend rules. Returns a diagnostic message (or `null` if OK). |
-| `CodeFactory` | Produces reusable Java code snippets (e.g. the `@Bindable` annotation text) for generators such as wurblets. Defaults to itself; override via `@Service`. |
-| `Model` impl | The whole `Model`/`ModelManager` implementation is itself an SPI — the wurblets substitute their own `TentackleWurbletsModel` (see below). |
+| `NameVerifier`         | Enforces application naming conventions for entity/table/alias/attribute names, on top of backend rules. Returns a diagnostic message (or `null` if OK).                                          |
+| `CodeFactory`          | Produces reusable Java code snippets (e.g. the `@Bindable` annotation text) for generators such as wurblets. Defaults to itself; override via `@Service`.                                         |
+| `Model` impl           | The whole `Model`/`ModelManager` implementation is itself an SPI — the wurblets substitute their own `TentackleWurbletsModel` (see below).                                                        |
 
 ---
 
@@ -247,14 +247,14 @@ The model is loaded and cached **once** per build; subsequent wurblets on other 
 
 Each generator walks the `Entity` it was given and emits Java from the typed graph:
 
-| Wurblet | Reads from the model | Emits |
-|---------|----------------------|-------|
-| `AttributeNames` / `ColumnNames` / `ColumnLengths` | `getAttributes`/`getMappedAttributes`, `getColumnName(Backend,i)`, `getSize` | `AN_*` / `RN_*` / `CN_*` / `CL_*` constants |
-| `Methods` | attribute getters/setters, options, `getUniqueDomainKey` | accessor declarations + UDK select |
-| `Relations` | `getRelations`, relation type/scope/read-write/nm | navigation methods |
-| `UniqueDomainKey` / `DomainMethods` | `getUniqueDomainKey`, root inference | the UDK record + domain key methods |
-| `ModelComment` | referencing/composite/inheritance views (`getReferencingRelations`, `getCompositePaths`, super/sub entities) | the entity's Javadoc, via the `print`-package helpers |
-| persistence-side select/update/delete | attributes, relations, `DataType`, eager-load joins | SQL and the persistence implementation |
+| Wurblet                                            | Reads from the model                                                                                         | Emits                                                 |
+|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `AttributeNames` / `ColumnNames` / `ColumnLengths` | `getAttributes`/`getMappedAttributes`, `getColumnName(Backend,i)`, `getSize`                                 | `AN_*` / `RN_*` / `CN_*` / `CL_*` constants           |
+| `Methods`                                          | attribute getters/setters, options, `getUniqueDomainKey`                                                     | accessor declarations + UDK select                    |
+| `Relations`                                        | `getRelations`, relation type/scope/read-write/nm                                                            | navigation methods                                    |
+| `UniqueDomainKey` / `DomainMethods`                | `getUniqueDomainKey`, root inference                                                                         | the UDK record + domain key methods                   |
+| `ModelComment`                                     | referencing/composite/inheritance views (`getReferencingRelations`, `getCompositePaths`, super/sub entities) | the entity's Javadoc, via the `print`-package helpers |
+| persistence-side select/update/delete              | attributes, relations, `DataType`, eager-load joins                                                          | SQL and the persistence implementation                |
 
 `ModelWurblet` also provides helpers built on the model API — `getColumnNameConstant`, `getEffectiveDataType`,
 `createAccessorCode`, relation method-name builders and `assertSupportedByBackends(...)` (which fails the build if a

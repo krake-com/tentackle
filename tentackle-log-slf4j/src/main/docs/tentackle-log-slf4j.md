@@ -11,7 +11,7 @@ whatever SLF4J itself is bound to at runtime (Logback, `slf4j-simple`, `log4j-sl
 > back-end is discovered and bound — see the **[logging deep-dive](../../../../tentackle-core/src/main/docs/logging.md)**.
 > This page documents only the SLF4J-specific provider.
 
-Selecting SLF4J is purely a matter of dependencies: put this module (plus an SLF4J binding) on the path and
+Selecting SLF4J is purely a matter of dependencies: put this module (plus an SLF4J binding) on the path, and
 Tentackle routes all of its logging through SLF4J. With no provider module present, Tentackle falls back to plain
 `java.util.logging`.
 
@@ -51,8 +51,8 @@ is the convention the factory prefers for per-name logger caching.
 
 The five Tentackle levels map onto the SLF4J scale as follows:
 
-| Tentackle | SLF4J |
-|-----------|-------|
+| Tentackle | SLF4J   |
+|-----------|---------|
 | `FINER`   | `TRACE` |
 | `FINE`    | `DEBUG` |
 | `INFO`    | `INFO`  |
@@ -123,11 +123,11 @@ module. For **OSGi**, a dedicated SLF4J activator bundle exists under
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
-| `SLF4JLogger` (the `@Service(Logger.class)` provider) | `org.tentackle.log.slf4j` |
-| `SLF4JMappedDiagnosticContext` | `org.tentackle.log.slf4j` |
-| `Hook` (`ModuleHook` service) | `org.tentackle.log.slf4j.service` |
+| Type                                                  | Location                          |
+|-------------------------------------------------------|-----------------------------------|
+| `SLF4JLogger` (the `@Service(Logger.class)` provider) | `org.tentackle.log.slf4j`         |
+| `SLF4JMappedDiagnosticContext`                        | `org.tentackle.log.slf4j`         |
+| `Hook` (`ModuleHook` service)                         | `org.tentackle.log.slf4j.service` |
 
 ## See Also
 

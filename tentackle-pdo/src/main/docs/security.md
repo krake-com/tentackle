@@ -27,16 +27,16 @@ The whole subsystem lives in `org.tentackle.security` (in `tentackle-pdo`), with
 generated persistence/domain halves of the rule entity in `tentackle-persistence`
 and `tentackle-domain`, and the editing UI in `tentackle-fx-rdc`.
 
-| Artifact | Role |
-|----------|------|
-| [`Permission`](../java/org/tentackle/security/Permission.java) | An action that can be granted or denied (an interface; permissions imply each other by extension). |
-| [`SecurityManager`](../java/org/tentackle/security/SecurityManager.java) | Evaluates a permission request against the rules and returns a `SecurityResult`. |
-| [`SecurityResult`](../java/org/tentackle/security/SecurityResult.java) | The verdict: `isAccepted()`, `isDefault()`, and a human-readable `explain(...)`. |
-| [`Security`](../java/org/tentackle/security/pdo/Security.java) | One ACL rule, stored as a PDO in `secrules`. |
-| [`GranteeDescriptor`](../java/org/tentackle/security/GranteeDescriptor.java) | Identifies *who* a rule applies to (a user or group entity, or "all"). |
-| [`SecurityFactory`](../java/org/tentackle/security/SecurityFactory.java) | SPI entry point: the singleton `SecurityManager` and the predefined permissions. |
-| [`@Secured`](../java/org/tentackle/security/Secured.java) | Method annotation that enforces permissions via an interceptor. |
-| [`@PermissionService`](../java/org/tentackle/security/PermissionService.java) | SPI annotation registering a permission implementation. |
+| Artifact                                                                      | Role                                                                                               |
+|-------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| [`Permission`](../java/org/tentackle/security/Permission.java)                | An action that can be granted or denied (an interface; permissions imply each other by extension). |
+| [`SecurityManager`](../java/org/tentackle/security/SecurityManager.java)      | Evaluates a permission request against the rules and returns a `SecurityResult`.                   |
+| [`SecurityResult`](../java/org/tentackle/security/SecurityResult.java)        | The verdict: `isAccepted()`, `isDefault()`, and a human-readable `explain(...)`.                   |
+| [`Security`](../java/org/tentackle/security/pdo/Security.java)                | One ACL rule, stored as a PDO in `secrules`.                                                       |
+| [`GranteeDescriptor`](../java/org/tentackle/security/GranteeDescriptor.java)  | Identifies *who* a rule applies to (a user or group entity, or "all").                             |
+| [`SecurityFactory`](../java/org/tentackle/security/SecurityFactory.java)      | SPI entry point: the singleton `SecurityManager` and the predefined permissions.                   |
+| [`@Secured`](../java/org/tentackle/security/Secured.java)                     | Method annotation that enforces permissions via an interceptor.                                    |
+| [`@PermissionService`](../java/org/tentackle/security/PermissionService.java) | SPI annotation registering a permission implementation.                                            |
 
 ---
 
@@ -68,14 +68,14 @@ fires.
 The split between the *business* permissions and the *presentation* permissions is
 deliberate and important:
 
-| Permission | Governs | Checked by |
-|------------|---------|------------|
-| **READ** | whether the *business logic*, acting for the user, may load the data at all | persistence layer, during `select` |
-| **WRITE** | whether the business logic may insert/update/delete | persistence layer, during `persist`/`delete` |
-| **VIEW** | whether the *user* may **see** the data in the UI (READ alone is not enough) | UI, via `isViewAllowed()` |
-| **EDIT** | whether the *user* may **change** the data in the UI intentionally | UI, via `isEditAllowed()` |
-| **EXEC** | whether a service/operation method may be invoked | `@Secured`, remote dispatch |
-| **ALL** | shorthand standing in for every permission | rule authoring |
+| Permission | Governs                                                                      | Checked by                                   |
+|------------|------------------------------------------------------------------------------|----------------------------------------------|
+| **READ**   | whether the *business logic*, acting for the user, may load the data at all  | persistence layer, during `select`           |
+| **WRITE**  | whether the business logic may insert/update/delete                          | persistence layer, during `persist`/`delete` |
+| **VIEW**   | whether the *user* may **see** the data in the UI (READ alone is not enough) | UI, via `isViewAllowed()`                    |
+| **EDIT**   | whether the *user* may **change** the data in the UI intentionally           | UI, via `isEditAllowed()`                    |
+| **EXEC**   | whether a service/operation method may be invoked                            | `@Secured`, remote dispatch                  |
+| **ALL**    | shorthand standing in for every permission                                   | rule authoring                               |
 
 > A back-end batch job may legitimately need to **READ/WRITE** rows the interactive
 > user is not allowed to **VIEW/EDIT**. Separating the two lets the same data be
@@ -142,10 +142,10 @@ public interface InvoiceDomain extends DomainObject<Invoice> {
 
 Annotation options:
 
-| Element | Meaning |
-|---------|---------|
-| `value()` | The required permission interfaces. |
-| `ored` | `false` (default) → **all** must be accepted (AND); `true` → **at least one** (OR). |
+| Element    | Meaning                                                                                                                                                                   |
+|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `value()`  | The required permission interfaces.                                                                                                                                       |
+| `ored`     | `false` (default) → **all** must be accepted (AND); `true` → **at least one** (OR).                                                                                       |
 | `explicit` | `false` (default) → accepted unless a rule *denies*; `true` → a rule must *explicitly* grant it (a defaulted accept counts as denial — see `SecurityResult.isDefault()`). |
 
 For [Operations](operation.md) (table-less services), the interceptor evaluates the
@@ -175,12 +175,12 @@ A [`Security`](../java/org/tentackle/security/pdo/Security.java) rule (table
 `secrules`, class id `5`) is an ACL entry. Its fields answer *who*, *on what*,
 *where*, and *what*:
 
-| Field group | Columns | Meaning |
-|-------------|---------|---------|
-| **Secured object** | `objectClassName`, `objectClassId`, `objectId` | The protected target. A non-PDO class (by name), a PDO class (`objectClassId`, `objectId = 0` → *all instances*), or one PDO instance (`objectId ≠ 0`). |
-| **Grantee** | `granteeClassId`, `granteeId` | The user/group entity the rule applies to. `0/0` means **all grantees**. |
-| **Context** | `domainContextClassId`, `domainContextId` | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g. a tenant). `0/0` → any context. |
-| **Decision** | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional i18n explanation, and the evaluation order. |
+| Field group        | Columns                                         | Meaning                                                                                                                                                 |
+|--------------------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Secured object** | `objectClassName`, `objectClassId`, `objectId`  | The protected target. A non-PDO class (by name), a PDO class (`objectClassId`, `objectId = 0` → *all instances*), or one PDO instance (`objectId ≠ 0`). |
+| **Grantee**        | `granteeClassId`, `granteeId`                   | The user/group entity the rule applies to. `0/0` means **all grantees**.                                                                                |
+| **Context**        | `domainContextClassId`, `domainContextId`       | Optional restriction to a [domain context](pdo.md#the-domaincontext-and-ddd) entity (e.g. a tenant). `0/0` → any context.                               |
+| **Decision**       | `permissions`, `allowed`, `message`, `priority` | A comma-separated permission list, the allow/deny flag, an optional i18n explanation, and the evaluation order.                                         |
 
 ### How a request is evaluated
 
@@ -346,38 +346,38 @@ Treating rules as PDOs has concrete operational consequences:
 
 ## Use Cases at a Glance
 
-| Goal | How |
-|------|-----|
-| Hide a whole entity type from a user | Deny `READ` (or `VIEW`) rule on the PDO **class** for that grantee. |
-| Hide one record | Deny rule on the PDO **instance** (`objectId ≠ 0`). |
-| Read-only screen for some users | Grant `VIEW` but not `EDIT`; the UI renders fields read-only via `isEditAllowed()`. |
-| Let a batch process data users can't see | Grant `READ`/`WRITE` to the batch user, withhold `VIEW`/`EDIT`. |
-| Protect a business operation | `@Secured(...)` on the domain/operation method. |
-| "At least one of" several rights | `@Secured({A.class, B.class}, ored = true)`. |
-| Require an explicit grant (whitelist a method) | `@Secured(value = …, explicit = true)` and/or deny-by-default. |
-| Per-tenant authorization | Scope rules to a `domainContext` target. |
-| Roles/groups | Override `determineGranteesToCheck(...)`. |
-| App-specific right | Custom `Permission` interface + `@PermissionService` impl. |
-| Change policy without redeploy | Edit `Security` rules (e.g. via the RDC `SecurityEditor`); caches invalidate automatically. |
-| Swap the whole mechanism | Provide an alternative `SecurityManager` via `SecurityFactory`. |
-| Lock everything down by default | `setAcceptByDefault(false)` and grant explicitly. |
-| Grant system/superuser access | Run under a session whose `userId ≤ 0`. |
+| Goal                                           | How                                                                                         |
+|------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Hide a whole entity type from a user           | Deny `READ` (or `VIEW`) rule on the PDO **class** for that grantee.                         |
+| Hide one record                                | Deny rule on the PDO **instance** (`objectId ≠ 0`).                                         |
+| Read-only screen for some users                | Grant `VIEW` but not `EDIT`; the UI renders fields read-only via `isEditAllowed()`.         |
+| Let a batch process data users can't see       | Grant `READ`/`WRITE` to the batch user, withhold `VIEW`/`EDIT`.                             |
+| Protect a business operation                   | `@Secured(...)` on the domain/operation method.                                             |
+| "At least one of" several rights               | `@Secured({A.class, B.class}, ored = true)`.                                                |
+| Require an explicit grant (whitelist a method) | `@Secured(value = …, explicit = true)` and/or deny-by-default.                              |
+| Per-tenant authorization                       | Scope rules to a `domainContext` target.                                                    |
+| Roles/groups                                   | Override `determineGranteesToCheck(...)`.                                                   |
+| App-specific right                             | Custom `Permission` interface + `@PermissionService` impl.                                  |
+| Change policy without redeploy                 | Edit `Security` rules (e.g. via the RDC `SecurityEditor`); caches invalidate automatically. |
+| Swap the whole mechanism                       | Provide an alternative `SecurityManager` via `SecurityFactory`.                             |
+| Lock everything down by default                | `setAcceptByDefault(false)` and grant explicitly.                                           |
+| Grant system/superuser access                  | Run under a session whose `userId ≤ 0`.                                                     |
 
 ---
 
 ## Summary
 
-| Concept | What it gives you |
-|---------|-------------------|
-| Permissions as extensible interfaces | Implication for free (`EDIT` ⇒ `WRITE`/`VIEW`/`READ`); add your own. |
-| Read/Write vs. View/Edit split | Business-logic access decoupled from UI presentation. |
-| Rules as PDOs (`secrules`) | Authorization is editable data — cached, coherent across JVMs, no redeploy. |
-| Automatic persistence-layer checks | Unauthorized rows are never loaded or written; nothing for the app to wire. |
-| Aggregate-aware enforcement | One rule on the root governs its whole component tree, with no extra query. |
-| `@Secured` interceptor | Declarative method-level guards with AND/OR and explicit-grant modes. |
-| Context-scoped rules | Per-tenant / per-data-space authorization. |
-| Grantee expansion hook | Users, groups, and roles. |
-| `SecurityManager` SPI | Replace or extend the entire mechanism (LDAP, IAM, custom). |
+| Concept                              | What it gives you                                                           |
+|--------------------------------------|-----------------------------------------------------------------------------|
+| Permissions as extensible interfaces | Implication for free (`EDIT` ⇒ `WRITE`/`VIEW`/`READ`); add your own.        |
+| Read/Write vs. View/Edit split       | Business-logic access decoupled from UI presentation.                       |
+| Rules as PDOs (`secrules`)           | Authorization is editable data — cached, coherent across JVMs, no redeploy. |
+| Automatic persistence-layer checks   | Unauthorized rows are never loaded or written; nothing for the app to wire. |
+| Aggregate-aware enforcement          | One rule on the root governs its whole component tree, with no extra query. |
+| `@Secured` interceptor               | Declarative method-level guards with AND/OR and explicit-grant modes.       |
+| Context-scoped rules                 | Per-tenant / per-data-space authorization.                                  |
+| Grantee expansion hook               | Users, groups, and roles.                                                   |
+| `SecurityManager` SPI                | Replace or extend the entire mechanism (LDAP, IAM, custom).                 |
 
 ## See Also
 

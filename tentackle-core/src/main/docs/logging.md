@@ -47,7 +47,7 @@ named (by class name) and cached per name, so repeated lookups return the same i
 
 ## The `Logger` API
 
-[`Logger`](../java/org/tentackle/log/Logger.java) is the facade interface. Its surface is deliberately rich so
+[`Logger`](../java/org/tentackle/log/Logger.java) is the facade interface. Its surface is deliberately rich, so
 call sites stay terse and efficient.
 
 ### Levels
@@ -112,7 +112,7 @@ finally {
 Crucially, the abstraction is **uniform even where the backend lacks MDC**. SLF4J and Log4J 2 delegate to their
 native MDC; for `java.util.logging` (which has none),
 [`DefaultMappedDiagnosticContext`](../java/org/tentackle/log/DefaultMappedDiagnosticContext.java) keeps its own
-`InheritableThreadLocal` map — so application behaviour does not depend on the chosen provider.
+`InheritableThreadLocal` map — so application behavior does not depend on the chosen provider.
 [`AbstractMappedDiagnosticContext`](../java/org/tentackle/log/AbstractMappedDiagnosticContext.java) supplies the
 shared logic (key set, `toString()` rendering, pattern matching).
 
@@ -124,7 +124,7 @@ These build on the facade and are reasons the abstraction exists beyond mere bac
 
 ### `@Log` — declarative method-call logging
 
-Annotate a method of an `Interceptable` (e.g. a PDO or any interceptable proxy) and every call is logged with its
+Annotate a method of an `Interceptable` (e.g., a PDO or any interceptable proxy) and every call is logged with its
 elapsed time:
 
 ```java
@@ -152,7 +152,7 @@ min/max/total durations** — used, for instance, to profile remote-delegate cal
 - [`LoggerOutputStream`](../java/org/tentackle/log/LoggerOutputStream.java) — an `OutputStream` that funnels
   writes into a logger; handy to capture `e.printStackTrace(stream)` output.
 - [`Loggable`](../java/org/tentackle/log/Loggable.java) — an interface objects (notably exceptions) implement to
-  declare *how* they want to be logged (level, with/without stacktrace); honoured e.g. by the remote-invocation
+  declare *how* they want to be logged (level, with/without stacktrace); honored e.g. by the remote-invocation
   handler.
 
 ---
@@ -180,16 +180,16 @@ dependencies — **put exactly one provider module on the path**.
 
 ## The Implementations
 
-| Module | Backend | Registered as |
-|--------|---------|---------------|
-| *(built into `tentackle-core`)* | `java.util.logging` | fallback — no `@Service` |
-| `tentackle-log-slf4j` | SLF4J (and whatever SLF4J binds to) | `@Service(Logger.class)` |
-| `tentackle-log-log4j2v` | Apache Log4J 2 | `@Service(Logger.class)` |
+| Module                          | Backend                             | Registered as            |
+|---------------------------------|-------------------------------------|--------------------------|
+| *(built into `tentackle-core`)* | `java.util.logging`                 | fallback — no `@Service` |
+| `tentackle-log-slf4j`           | SLF4J (and whatever SLF4J binds to) | `@Service(Logger.class)` |
+| `tentackle-log-log4j2v`         | Apache Log4J 2                      | `@Service(Logger.class)` |
 
 All providers translate the Tentackle `Level` onto the backend scale identically:
 
-| Tentackle | `java.util.logging` | SLF4J | Log4J 2 |
-|-----------|---------------------|-------|---------|
+| Tentackle | `java.util.logging` | SLF4J   | Log4J 2 |
+|-----------|---------------------|---------|---------|
 | `FINER`   | `FINER`/`FINE`      | `TRACE` | `TRACE` |
 | `FINE`    | `FINE`              | `DEBUG` | `DEBUG` |
 | `INFO`    | `INFO`              | `INFO`  | `INFO`  |
@@ -267,12 +267,12 @@ Implement [`Logger`](../java/org/tentackle/log/Logger.java) (extending nothing i
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
-| `Logger`, `LoggerFactory`, `MappedDiagnosticContext` | `tentackle-core` · `org.tentackle.log` |
-| `DefaultLoggerFactory`, `DefaultLogger`, `DefaultMappedDiagnosticContext`, `AbstractMappedDiagnosticContext` | `tentackle-core` · `org.tentackle.log` |
-| `@Log`, `LogInterceptor`, `Loggable`, `LoggingRunnable`, `LoggerOutputStream` | `tentackle-core` · `org.tentackle.log` |
-| `MethodStatistics`, `MethodStatisticsKey`, `StatisticsResult` | `tentackle-core` · `org.tentackle.log` |
-| SLF4J provider | `tentackle-log-slf4j` · `org.tentackle.log.slf4j` |
-| Log4J 2 provider | `tentackle-log-log4j2v` · `org.tentackle.log.log4j2v` |
-| OSGi activators | `tentackle-osgi/tentackle-osgi-activators/` |
+| Type                                                                                                         | Location                                              |
+|--------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `Logger`, `LoggerFactory`, `MappedDiagnosticContext`                                                         | `tentackle-core` · `org.tentackle.log`                |
+| `DefaultLoggerFactory`, `DefaultLogger`, `DefaultMappedDiagnosticContext`, `AbstractMappedDiagnosticContext` | `tentackle-core` · `org.tentackle.log`                |
+| `@Log`, `LogInterceptor`, `Loggable`, `LoggingRunnable`, `LoggerOutputStream`                                | `tentackle-core` · `org.tentackle.log`                |
+| `MethodStatistics`, `MethodStatisticsKey`, `StatisticsResult`                                                | `tentackle-core` · `org.tentackle.log`                |
+| SLF4J provider                                                                                               | `tentackle-log-slf4j` · `org.tentackle.log.slf4j`     |
+| Log4J 2 provider                                                                                             | `tentackle-log-log4j2v` · `org.tentackle.log.log4j2v` |
+| OSGi activators                                                                                              | `tentackle-osgi/tentackle-osgi-activators/`           |

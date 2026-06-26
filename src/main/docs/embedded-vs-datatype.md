@@ -16,13 +16,13 @@ They look superficially similar — both let a sub-structure ride along inside a
 same *kind of thing* at all, and the single sharpest way to see the difference is this:
 
 > An **embedded entity is `DomainContext`-aware: it is a real domain object that knows its session, its aggregate
-> root, its tenant and its security scope.** An **application-specific DataType is just a value** — an inert lump
+> root, its tenant, and its security scope.** An **application-specific DataType is just a value** — an inert lump
 > of data with conversion rules, that knows nothing about who is asking, which tenant it belongs to, or where it
 > lives.
 
 Everything else — how they are declared, how they are stored, when to pick one — follows from that distinction.
 The rest of this document develops it, shows how each is declared, and gives a decision procedure with worked
-examples, including the *same* concept (a product number) modelled both ways.
+examples, including the *same* concept (a product number) modeled both ways.
 
 ---
 
@@ -42,7 +42,7 @@ An **embedded entity is a PDO**, so it carries a `DomainContext` and inherits *a
 participant in the framework's correctness machinery:
 
 - **It belongs to an aggregate.** An embedded `Address` inside a `Customer` shares the customer's **root context**,
-  so it is saved, validated, snapshotted and made [immutable](../../../tentackle-core/src/main/docs/immutable.md)
+  so it is saved, validated, snapshotted, and made [immutable](../../../tentackle-core/src/main/docs/immutable.md)
   *as part of the customer*, as one consistent unit.
 - **It is security- and tenant-scoped.** The `SecurityManager` and tenant scoping apply to it through the same
   context that governs its owner — a permission expressed on the aggregate root governs the embedded value too,
@@ -55,20 +55,20 @@ participant in the framework's correctness machinery:
 
 An **application-specific DataType is none of this.** It is *just a value*. It has:
 
-- **no session** — it cannot load, save, navigate or query anything; it is read and written as column data by the
+- **no session** — it cannot load, save, navigate, or query anything; it is read and written as column data by the
   entity that owns it;
 - **no aggregate membership** — it is not a component, has no root context, and plays no part in
   aggregate-consistency rules;
 - **no tenant or security scope** — it does not know who is asking or which logical data space it lives in; any
   such rules belong to the *entity* that holds it, never to the value;
-- **no identity or lifecycle** — it is created, converted and discarded like an `Integer` or a `String`.
+- **no identity or lifecycle** — it is created, converted, and discarded like an `Integer` or a `String`.
 
 In fact the `DataType` *service* itself is a **stateless singleton** that merely describes how to convert a Java
 value to and from column(s). The value it maps is inert by design. This is not a limitation to work around — it is
 the whole point: a DataType is the right tool *precisely when* the thing you are storing is a pure value that
 should carry no context.
 
-> **One sentence to remember:** if the thing needs to know *its session, its aggregate, its tenant or its
+> **One sentence to remember:** if the thing needs to know *its session, its aggregate, its tenant, or its
 > permissions*, it must be a (possibly embedded) **entity**; if it is a self-contained **value** that is the same
 > regardless of who holds it or where, it is a **DataType**.
 
@@ -79,11 +79,11 @@ should carry no context.
 ### What they are
 
 An embedded entity is an ordinary entity in the [model](../../../tentackle-model/src/main/docs/model-definition.md)
-— it has a model definition, attributes, validations and (optionally) its own domain behaviour — but its
+— it has a model definition, attributes, validations, and (optionally) its own domain behavior — but its
 **inheritance mapping strategy is `embedded`**, so it does not get a table of its own. (Because it has no table,
 it declares **no indexes** and owns **no components** of its own. It *may*, however, embed further embedded
 entities and hold **outgoing relations** — references/associations to other entities.) Instead, the owning entity
-declares a relation to it and the embedded entity's columns are written **into the owner's table**, each prefixed
+declares a relation to it, and the embedded entity's columns are written **into the owner's table**, each prefixed
 to keep names unique:
 
 ```
@@ -95,7 +95,7 @@ to keep names unique:
 The owner references it as a normal `object` relation; the column prefix defaults to `<relationName>_`
 (lowercase), and **prefixes concatenate for nested embedded entities**. There is no separate row and no separate
 `id`, but — and this is the point — there *is* a `DomainContext`: the embedded entity shares the owner's root
-context and is, in every behavioural sense, a member of the owner's aggregate.
+context and is, in every behavioral sense, a member of the owner's aggregate.
 
 ### How it is declared (sketch)
 
@@ -132,7 +132,7 @@ index billing_zip := billing.zip   # the OWNER indexes an embedded attribute by 
 
 The generated `Customer` then has `getBillingAddress()` / `getShippingAddress()` returning real `Address` objects,
 each sharing the customer's domain context, and the `customer` table carries `billing_street`, `billing_zip`, …,
-`shipping_street`, … as ordinary columns the owner can index, filter and sort by.
+`shipping_street`, … as ordinary columns the owner can index, filter, and sort by.
 
 ### What you get
 
@@ -143,9 +143,9 @@ each sharing the customer's domain context, and the `customer` table carries `bi
 - **Individually-mapped columns.** Every attribute is its own real column with its own name in the owner's table.
   The **owner** can declare an **index** over it (by a path such as `billing.zip`), and you can write a `WHERE`
   clause on it and sort by it — backend-agnostically.
-- **A real domain object.** It can carry behaviour, per-attribute, scope/severity-aware
+- **A real domain object.** It can carry behavior, per-attribute, scope/severity-aware
   [validations](../../../tentackle-core/src/main/docs/validation.md), and **outgoing relations** — it may reference
-  or associate to other entities (e.g. an embedded `Address` pointing to a `Country`).
+  or associate to other entities (e.g., an embedded `Address` pointing to a `Country`).
 - **Reuse across owners.** The same `Address` type embeds into `Customer`, `Supplier`, `Site`, each with its own
   prefix — define once, embed many times.
 - **Nesting and references, but no owned components.** Embedded entities compose: a `GeoLocation` can embed inside
@@ -182,13 +182,13 @@ application type, which tells the wurblets to emit **generic** read/write code r
 type-specific methods exist.
 
 Once registered, the type is usable in any attribute line of any entity — and notably, it is *the same value*
-whatever entity, tenant or session happens to hold it:
+whatever entity, tenant, or session happens to hold it:
 
 ```
 ProductNumber  productNumber  product_number   the coil identifier
 ```
 
-### Two flavours, by column count
+### Two flavors, by column count
 
 The model-definition guide states the rule directly:
 
@@ -224,17 +224,17 @@ The model-definition guide states the rule directly:
   same regardless of who holds it. When the concept genuinely *is* context-free, this is a feature, not a gap.
 - **A reusable *type*, not a relation.** Once registered, it is available to *every* attribute of *every* entity,
   exactly like `String`. No per-owner wiring.
-- **Atomic value semantics.** Parsing, formatting, range checks and domain rules live inside the Java class, and
+- **Atomic value semantics.** Parsing, formatting, range checks, and domain rules live inside the Java class, and
   the UI can teach a field to edit it through a [`ValueTranslator`](../../../tentackle-core/src/main/docs/binding.md).
 - **Opaque, efficient storage.** Even a multi-column type is, to the model, a single attribute — no relation
   overhead, no extra object identity.
 
 ### What it costs
 
-- **No context-awareness at all.** It cannot be tenant-scoped, security-governed, validated-in-aggregate or
+- **No context-awareness at all.** It cannot be tenant-scoped, security-governed, validated-in-aggregate, or
   navigated. Any such logic must live on the *entity* that holds the value. If you find yourself wishing the value
   knew its tenant or its aggregate, that is the signal you actually want an (embedded) entity.
-- **The sub-structure is invisible to the database (mostly).** You generally do **not** query, index or sort by
+- **The sub-structure is invisible to the database (mostly).** You generally do **not** query, index, or sort by
   the *internal parts*. (A multi-column type whose `isColumnCountBackendSpecific()` is true is explicitly barred
   from per-column `CN_…` constants and from being a wurblet `WHERE`-clause argument.)
 - **Cross-module setup for the heavyweight path**, and **statelessness/freezing rules**: the singleton holds no
@@ -246,30 +246,30 @@ The model-definition guide states the rule directly:
 
 ## The core distinction, side by side
 
-| Dimension | Embedded entity | Application-specific DataType |
-|-----------|-----------------|-------------------------------|
-| **What is it?** | A full, **`DomainContext`-aware** entity with no table of its own | A bare Java **value** + its column-mapping rules |
-| **Knows its session?** | **Yes** — it is a PDO bound to a session | No |
-| **Aggregate / root context?** | **Yes** — shares the owner's root context as part of its aggregate | No — it stands outside any aggregate |
-| **Tenant & security scope?** | **Yes** — governed by the owner's context and `SecurityManager` | No — any scoping lives on the holding entity |
-| **Validated in aggregate context?** | **Yes** — with the owner's scope and fail-fast aggregate rules | As a standalone value only |
-| **Unit of meaning** | The individual **attributes** | The **whole value** |
-| **Storage** | One real column **per attribute**, prefixed into the owner's table | One or more columns the model treats as one opaque attribute |
-| **Query/index/sort by internal parts?** | **Yes** — each part is a real column the **owner** can index (by path), filter and sort | **Normally no** |
-| **Domain behaviour** | Rich: methods, per-attribute validation, outgoing relations, may nest further **embedded** entities (but no owned components, no own indexes) | Conversion/parsing/formatting on the value class |
-| **Reuse** | Embedded into owners via a **relation** (per-owner prefix) | Available to **any attribute of any entity**, like `String` |
-| **Identity / lifecycle** | None of its own; lives in the owner's row, shares the aggregate | None; it *is* a value |
-| **How declared** | A model with `inheritance := embedded` + an `object` relation | `@Service(DataType.class)` (multi-column) or `Convertible<T>` (single-column) |
-| **Defining cost** | A whole entity (model + generated classes) | A value class; plus a module + plugin wiring for a full `DataType` |
+| Dimension                               | Embedded entity                                                                                                                               | Application-specific DataType                                                 |
+|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| **What is it?**                         | A full, **`DomainContext`-aware** entity with no table of its own                                                                             | A bare Java **value** + its column-mapping rules                              |
+| **Knows its session?**                  | **Yes** — it is a PDO bound to a session                                                                                                      | No                                                                            |
+| **Aggregate / root context?**           | **Yes** — shares the owner's root context as part of its aggregate                                                                            | No — it stands outside any aggregate                                          |
+| **Tenant & security scope?**            | **Yes** — governed by the owner's context and `SecurityManager`                                                                               | No — any scoping lives on the holding entity                                  |
+| **Validated in aggregate context?**     | **Yes** — with the owner's scope and fail-fast aggregate rules                                                                                | As a standalone value only                                                    |
+| **Unit of meaning**                     | The individual **attributes**                                                                                                                 | The **whole value**                                                           |
+| **Storage**                             | One real column **per attribute**, prefixed into the owner's table                                                                            | One or more columns the model treats as one opaque attribute                  |
+| **Query/index/sort by internal parts?** | **Yes** — each part is a real column the **owner** can index (by path), filter and sort                                                       | **Normally no**                                                               |
+| **Domain behaviour**                    | Rich: methods, per-attribute validation, outgoing relations, may nest further **embedded** entities (but no owned components, no own indexes) | Conversion/parsing/formatting on the value class                              |
+| **Reuse**                               | Embedded into owners via a **relation** (per-owner prefix)                                                                                    | Available to **any attribute of any entity**, like `String`                   |
+| **Identity / lifecycle**                | None of its own; lives in the owner's row, shares the aggregate                                                                               | None; it *is* a value                                                         |
+| **How declared**                        | A model with `inheritance := embedded` + an `object` relation                                                                                 | `@Service(DataType.class)` (multi-column) or `Convertible<T>` (single-column) |
+| **Defining cost**                       | A whole entity (model + generated classes)                                                                                                    | A value class; plus a module + plugin wiring for a full `DataType`            |
 
 Two complementary one-line tests:
 
-- **Context test:** *does the thing need to know its session, aggregate, tenant or permissions?* Yes → **embedded
+- **Context test:** *does the thing need to know its session, aggregate, tenant, or permissions?* Yes → **embedded
   entity**. No → **DataType**.
 - **Parts test:** *do you ever want the database to see the inside* — index a postal code, filter by a currency,
   sort by a "valid-from" date? Yes → **embedded entity** (each part is a real column). No → **DataType** (opaque).
 
-The two usually agree, because they are two faces of the same nature: a context-aware object is one the framework
+The two usually agree because they are two faces of the same nature: a context-aware object is one the framework
 must reason about structurally (so its parts are real columns), whereas a bare value is one the framework only
 stores (so its structure stays inside Java).
 
@@ -278,12 +278,12 @@ stores (so its structure stays inside Java).
 ## A worked contrast: a product number, both ways
 
 The [binding documentation](../../../tentackle-core/src/main/docs/binding.md#a-worked-example-a-domain-value-type-with-live-input-assistance)
-uses an industrial **product number** — an aluminium-coil identifier with a fixed composite layout
+uses an industrial **product number** — an aluminum-coil identifier with a fixed composite layout
 `AAAA-QQQ-TTT-WWWW-LLLL-XXX` (alloy, quality, thickness, width, length, optional test segment). The *same* concept
-can be modelled either way, and which you pick is dictated entirely by how you need to *use* it.
+can be modeled either way, and which you pick is dictated entirely by how you need to *use* it.
 
 **As a DataType (a context-free, atomic identifier).** If the product number is, to the business, a single code
-you store, display, parse and validate as a unit — the *same* code no matter which order, tenant or session
+you store, display, parse, and validate as a unit — the *same* code no matter which order, tenant, or session
 references it, and you never need the database to filter by "all coils of alloy 5083" — model it as
 `ProductNumber`, a value type stored in **one** `product_number` column. The segment layout is a Java concern: the
 value class parses and formats `AAAA-QQQ-…`, and a `ProductNumberTranslator` gives the text field live input
@@ -306,13 +306,13 @@ the database can do the filtering and sorting, and the embedded number shares th
 
 Ask these in order; the first "yes" usually settles it.
 
-1. **Does the thing need to know its session, aggregate, tenant or permissions** — i.e. must it be governed by a
+1. **Does the thing need to know its session, aggregate, tenant, or permissions** — i.e., must it be governed by a
    `DomainContext`? → **Embedded entity.** Only an entity is context-aware.
 
-2. **Do you need to index, filter, sort or join on its *internal fields*, backend-agnostically?**
+2. **Do you need to index, filter, sort, or join on its *internal fields*, backend-agnostically?**
    → **Embedded entity.** Only it gives every part a real, named column.
 
-3. **Does the sub-structure carry meaningful domain *behaviour* or per-field validation you want to reuse, and
+3. **Does the sub-structure carry meaningful domain *behavior* or per-field validation you want to reuse, and
    possibly nest?** → **Embedded entity.**
 
 4. **Is it a self-contained, context-free *value* whose internal structure is purely a Java concern (parse/format/
@@ -341,7 +341,7 @@ Ask these in order; the first "yes" usually settles it.
 - **Prefer `Convertible` over a full `DataType`** whenever a single column suffices — far less wiring.
 - **A mutable DataType value must implement `Freezable`** so it freezes once stored.
 - **Embedded ≠ component-with-its-own-table.** Embedded means *folded into the owner's row*; if it needs its own
-  table, identity and lifecycle, it is a component or root entity instead.
+  table, identity, and lifecycle, it is a component or root entity instead.
 
 ---
 
@@ -351,7 +351,7 @@ Ask these in order; the first "yes" usually settles it.
   [`DomainContext` and DDD](../../../tentackle-pdo/src/main/docs/pdo.md#the-domaincontext-and-ddd) section that an
   embedded entity participates in, and when a thing should be a root/component entity instead.
 - [`DomainContext`](../../../tentackle-pdo/src/main/java/org/tentackle/pdo/DomainContext.java) — session, root
-  context and tenant scoping in one object; what makes an entity context-aware and a value not.
+  context, and tenant scoping in one object; what makes an entity context-aware and a value not.
 - [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md) — attribute lines, the `embedded`
   inheritance/relation strategy, column prefixes, and where DataTypes plug into the attribute grammar.
 - [`DataType`](../../../tentackle-sql/src/main/java/org/tentackle/sql/DataType.java) — the stateless SPI for an

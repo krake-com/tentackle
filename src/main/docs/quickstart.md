@@ -28,7 +28,7 @@ Verify with:
 mvn --version
 psql --version
 ```
-_Notice: for older LTS-versions see the branches java17, java11 and java8.
+_Notice: for older LTS versions see the branches java17, java11 and java8.
 Java17 still receives bugfixes. Java11 and java8 reached end-of-life._
 
 ## Project Setup
@@ -41,13 +41,13 @@ mvn archetype:generate \
     -DarchetypeVersion=25.18.1.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
-you will be prompted for:
+you will be asked for:
 
 * **groupId**: the group-ID of your project.
 * **artifactId**: the root artifact-ID. All module artifact-IDs will be prefixed by this name, separated by a hyphen (e.g. `myapp-gui`).
 * **version**: the project's version.
 * **package**: the Java base package.
-* **application**: the application's name. It is used as a prefix in several Java classnames (i.e. no spaces, first letter in uppercase, etc...)
+* **application**: the application's name. It is used as a prefix in several Java classnames (i.e., no spaces, first letter in uppercase, etc...)
 and in various other places.
 
 Example:
@@ -72,7 +72,7 @@ Notes:
 
 ## Database Setup
 Log into postgres and create a user with the same name and password as the `artifactId`. 
-Then, create a database with the same name, belonging to that user.
+Then, create a database with the same name belonging to that user.
 
 Example:
 ```
@@ -88,7 +88,7 @@ Next, change to the server directory and populate the database:
 cd myapp-server
 mvn -Pinitdb test
 ```
-This runs a special test, that persists some essential data, 
+This runs a special test that persists some essential data, 
 particularly users allowed to connect to the middle-tier server.
 
 ## Run

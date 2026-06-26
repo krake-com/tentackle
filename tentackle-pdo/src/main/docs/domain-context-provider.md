@@ -41,12 +41,12 @@ public interface DomainContextProvider {
 inherited by the abstractions you already work with, so the methods are simply
 *there*:
 
-| Provider | Why it has a context |
-|----------|----------------------|
-| [`DomainObject`](../java/org/tentackle/pdo/DomainObject.java) (the domain half of every PDO) | `extends ... DomainContextProvider, SessionProvider` — so domain code on any entity can reach others. |
-| [`DomainOperation`](../java/org/tentackle/pdo/DomainOperation.java) (the domain half of every [`Operation`](operation.md)) | `extends ... DomainContextProvider, SessionProvider` — operations create PDOs in their own context too. |
-| [`Application`](../java/org/tentackle/app/Application.java) | `extends SessionProvider, DomainContextProvider` — the application's *entry* context, the root of propagation. |
-| UI / RDC components (`PdoEditor`, `GuiProvider`, `PdoFinder`, …) | carry the context of what the user is currently editing. |
+| Provider                                                                                                                   | Why it has a context                                                                                           |
+|----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+| [`DomainObject`](../java/org/tentackle/pdo/DomainObject.java) (the domain half of every PDO)                               | `extends ... DomainContextProvider, SessionProvider` — so domain code on any entity can reach others.          |
+| [`DomainOperation`](../java/org/tentackle/pdo/DomainOperation.java) (the domain half of every [`Operation`](operation.md)) | `extends ... DomainContextProvider, SessionProvider` — operations create PDOs in their own context too.        |
+| [`Application`](../java/org/tentackle/app/Application.java)                                                                | `extends SessionProvider, DomainContextProvider` — the application's *entry* context, the root of propagation. |
+| UI / RDC components (`PdoEditor`, `GuiProvider`, `PdoFinder`, …)                                                           | carry the context of what the user is currently editing.                                                       |
 
 Because `getDomainContext()` is the single abstract method, every one of these gains
 `on(...)`, `op(...)`, and `isWithinContext(...)` for free as `default` methods.
@@ -224,14 +224,14 @@ aggregate, and permission scope.
 
 ## Summary
 
-| Member | Purpose |
-|--------|---------|
-| `getDomainContext()` | The single abstract method — the ambient context of this object. |
-| `on(Class<T>)` | Create a PDO of another type in **this** context (sugar for `Pdo.create(clazz, getDomainContext())`). |
-| `on(Class<T>, String)` | Same, but in a fresh **named** sub-context. |
-| `op(Class<T>)` | Create an [`Operation`](operation.md) in this context. |
-| `op(Class<T>, String)` | Same, but in a named sub-context. |
-| `isWithinContext(...)` | Test the current named/object context — the basis of `@WithinContext` gating. |
+| Member                 | Purpose                                                                                               |
+|------------------------|-------------------------------------------------------------------------------------------------------|
+| `getDomainContext()`   | The single abstract method — the ambient context of this object.                                      |
+| `on(Class<T>)`         | Create a PDO of another type in **this** context (sugar for `Pdo.create(clazz, getDomainContext())`). |
+| `on(Class<T>, String)` | Same, but in a fresh **named** sub-context.                                                           |
+| `op(Class<T>)`         | Create an [`Operation`](operation.md) in this context.                                                |
+| `op(Class<T>, String)` | Same, but in a named sub-context.                                                                     |
+| `isWithinContext(...)` | Test the current named/object context — the basis of `@WithinContext` gating.                         |
 
 ### See also
 

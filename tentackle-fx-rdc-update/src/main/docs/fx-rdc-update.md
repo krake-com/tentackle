@@ -30,9 +30,9 @@ consumes them.
   *login-failure* path: a [`VersionIncompatibleException`](../../../../tentackle-session/src/main/docs/session.md)
   (or an SSL handshake error caused by a new server certificate) becomes the trigger to check for an update.
 - **Only self-update when self-update is possible.** Everything is gated on
-  `ClientUpdateUtilities.determineInstallationType()` returning non-null — i.e. the client really runs from an
-  updatable, writable jlink/jpackage image. Otherwise the user is told to contact their administrator.
-- **User in control, with an unattended escape hatch.** By default the user is asked before installing, with a
+  `ClientUpdateUtilities.determineInstallationType()` returning non-null — i.e., the client really runs from an
+  updatable, writable jlink/jpackage image. Otherwise, the user is told to contact their administrator.
+- **User in control, with an unattended escape hatch.** By default, the user is asked before installing, with a
   short countdown that auto-confirms — convenient for kiosks/dashboards — but the relevant methods are `protected`
   so an application can update silently.
 - **Seamless restart.** Where a `Cryptor` is available, the current (encrypted) credentials are passed to the
@@ -52,7 +52,7 @@ RDC `DesktopApplication<C>` (where `C` is the main controller type) and adds two
    instead of the plain RDC handler.
 2. **It enforces a single running instance** (`assertNotAlreadyRunning()`, called from `initialize()`). An in-place
    update must not race a second instance writing the same image, so when the application runs from an updatable
-   directory it acquires an exclusive lock on a per-application lockfile (`<appname>.lck`) and writes its PID into
+   directory, it acquires an exclusive lock on a per-application lockfile (`<appname>.lck`) and writes its PID into
    it. If the lock is already held, it reads and reports the offending PID and refuses to start. The `FileChannel`
    is kept open (and referenced) for the whole lifetime of the process so the lock survives.
 
@@ -71,7 +71,7 @@ out-of-date client:
 - It reacts only to a `VersionIncompatibleException` or an `SSLHandshakeException` (extracted from the exception
   chain) — the latter because a server upgrade may rotate its TLS certificate.
 - It proceeds only if `determineInstallationType()` reports an updatable image **and** a remote `UpdateService` is
-  configured (via the application's `updateService` property). Otherwise it either delegates to the standard
+  configured (via the application's `updateService` property). Otherwise, it either delegates to the standard
   handler or, when the image is not updatable, terminates with a localized "outdated, call your administrator"
   message.
 - It builds a [`ClientInfo`](../../../../tentackle-update/src/main/docs/update.md) from the application name,
@@ -80,24 +80,24 @@ out-of-date client:
 
 Its responsibilities, all overridable, are:
 
-| Method | Purpose |
-|--------|---------|
-| `handle(Exception)` | Recognize the outdated-client situation and kick off the flow. |
-| `createUpdateService()` | Look up the remote `UpdateService` from the `updateService` application property (null if none). |
-| `createUpdateRunnable(...)` | Decide whether to install — by default asks the user; override for silent updates. |
-| `showUpdateDialog(...)` | Show the "install version X?" notification with Yes/No buttons. |
-| `createCountdownTimeline(...)` | A 3-second countdown that auto-confirms the install; return `null` to disable. |
-| `createUpdateDirectory(...)` | Choose where to download/unzip — the package root for jpackage, `./update` for jlink. |
-| `update(...)` | Download, verify, unzip, launch the update script and exit. |
-| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login. |
-| `terminate(...)` | Show an error/info and close the window. |
+| Method                               | Purpose                                                                                          |
+|--------------------------------------|--------------------------------------------------------------------------------------------------|
+| `handle(Exception)`                  | Recognize the outdated-client situation and kick off the flow.                                   |
+| `createUpdateService()`              | Look up the remote `UpdateService` from the `updateService` application property (null if none). |
+| `createUpdateRunnable(...)`          | Decide whether to install — by default asks the user; override for silent updates.               |
+| `showUpdateDialog(...)`              | Show the "install version X?" notification with Yes/No buttons.                                  |
+| `createCountdownTimeline(...)`       | A 3-second countdown that auto-confirms the install; return `null` to disable.                   |
+| `createUpdateDirectory(...)`         | Choose where to download/unzip — the package root for jpackage, `./update` for jlink.            |
+| `update(...)`                        | Download, verify, unzip, launch the update script and exit.                                      |
+| `passSessionInfoViaEnvironment(...)` | Hand the encrypted credentials to the restarted process for auto-login.                          |
+| `terminate(...)`                     | Show an error/info and close the window.                                                         |
 
 The `update(...)` method is where the hand-off happens: it calls
 [`ClientUpdateUtilities.downloadZip(...)`](../../../../tentackle-update/src/main/docs/update.md) (reporting
 progress through `showApplicationStatus`), unzips the archive with `FileHelper.unzip(...)`, makes the
 `updateExecutor` script (`update.sh`/`update.cmd` in the archive's `bin` directory) executable and launches it with
 `ProcessBuilder`. It passes the current PID (so the script can wait for this process to exit before overwriting its
-files — required on Windows) and, for jpackage, the path of the executable to restart. Finally it
+files — required on Windows) and, for jpackage, the path of the executable to restart. Finally, it
 `System.exit(0)`s so the script can replace the running image.
 
 ### UpdateFxRdcBundle and localization
@@ -128,16 +128,16 @@ The client-side half of the end-to-end update flow (the server side is set up vi
 5. **Install.** `ClientUpdateUtilities.downloadZip(...)` downloads and SHA-256-verifies the ZIP into the update
    directory; the handler unzips it and launches the bundled update script with the current PID (and credentials
    for auto-login), then exits so the script can overwrite the image and restart it.
-6. **Not updatable.** If the client is outdated but cannot self-update (e.g. a plain jar launch), it shows the
+6. **Not updatable.** If the client is outdated but cannot self-update (e.g., a plain jar launch), it shows the
    "contact your administrator" message and stops.
 
 ---
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.fx.rdc.update` | The public API: `UpdatableDesktopApplication`, `LoginFailedWithUpdateHandler` and the `UpdateFxRdcBundle` message accessor. |
+| Package                               | Contents                                                                                                                                 |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.fx.rdc.update`         | The public API: `UpdatableDesktopApplication`, `LoginFailedWithUpdateHandler` and the `UpdateFxRdcBundle` message accessor.              |
 | `org.tentackle.fx.rdc.update.service` | The [`Hook`](../java/org/tentackle/fx/rdc/update/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module. |
 
 ---

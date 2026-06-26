@@ -91,7 +91,7 @@ class and is responsible for instantiating it per execution. It scans the class'
 - otherwise falls back to the no-arg constructor plus `setBinding(...)`, logging a warning that asks for the
   missing `Binding` constructor.
 
-This fallback exists so a developer may supply a **custom `groovy.lang.Script` subclass** as the script body, not
+This fallback exists, so a developer may supply a **custom `groovy.lang.Script` subclass** as the script body, not
 just a bare expression. If neither constructor is present, instantiation fails with a `ScriptRuntimeException`.
 
 ---
@@ -124,12 +124,12 @@ automatic module.
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
+| Type                                                                | Location                      |
+|---------------------------------------------------------------------|-------------------------------|
 | `GroovyLanguage` (the `@Service(ScriptingLanguage.class)` provider) | `org.tentackle.script.groovy` |
-| `GroovyScript` (lazy compile, caching, execution) | `org.tentackle.script.groovy` |
-| `CompiledGroovyScript` (parsed class + per-run instantiation) | `org.tentackle.script.groovy` |
-| `GroovyValidationMessageConverter` (`@MessageScriptConverter`) | `org.tentackle.script.groovy` |
+| `GroovyScript` (lazy compile, caching, execution)                   | `org.tentackle.script.groovy` |
+| `CompiledGroovyScript` (parsed class + per-run instantiation)       | `org.tentackle.script.groovy` |
+| `GroovyValidationMessageConverter` (`@MessageScriptConverter`)      | `org.tentackle.script.groovy` |
 
 ## See Also
 

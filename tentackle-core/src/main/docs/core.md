@@ -13,7 +13,7 @@ the first genuinely *runtime* layer. It is where the framework's defining mechan
 
 - **TRIP** — the custom serialization/RPC protocol that replaces RMI and Java Object Serialization and makes PDOs
   travel transparently between JVMs.
-- **Interceptable proxies** — the dynamic-proxy + interceptor machinery that lets a PDO combine its domain and
+- **Interceptable proxies** — the dynamic-proxy and interceptor machinery that lets a PDO combine its domain and
   persistence delegates and that implements `@Transaction`, `@Log` and friends.
 - **Binding** and **Validation** — the model↔view binding engine and the annotation-driven, scope-aware
   validation framework.
@@ -30,9 +30,9 @@ whole module** and links to them where they exist.
   [service API](../../../../tentackle-common/src/main/docs/services.md) (`Logger`, `ScriptingLanguage`,
   `ClassMapperFactory`, `PersistedPreferencesFactory`, the TRIP providers, …), so an application can replace any of
   them by registering its own `@Service`.
-- **Annotation-driven behaviour.** Cross-cutting concerns (interception, logging, validation, TRIP type handling)
+- **Annotation-driven behavior.** Cross-cutting concerns (interception, logging, validation, TRIP type handling)
   are attached declaratively via annotations and woven in through proxies and build-time annotation processors,
-  not hand-written boilerplate.
+  not handwritten boilerplate.
 - **Modular and classpath parity.** Like the rest of the framework, everything works identically under JPMS and on
   the classpath; the module even contains workarounds (the `uses` clauses for `Logger`/`ScriptingLanguage`) for
   non-modularized providers loaded from jimage files.
@@ -59,7 +59,7 @@ server and server↔server). The subdivision is:
 - `trip.impl` / `trip.provider` — default implementations and component providers (including the default
   `ObjectSerializer` that `TBinary` uses).
 - `trip.remote` — the remote-invocation protocol layer (transport-independent RPC).
-- `trip.transport` — the concrete transports (e.g. SSL sockets) that carry the protocol.
+- `trip.transport` — the concrete transports (e.g., SSL sockets) that carry the protocol.
 
 See **[trip.md](trip.md)** for the full treatment.
 
@@ -80,7 +80,7 @@ This package provides two intertwined capabilities:
    [`InterceptableInvocationHandler`](../java/org/tentackle/reflect/InterceptableInvocationHandler.java),
    [`Interceptor`](../java/org/tentackle/reflect/Interceptor.java) and the
    [`@Interception`](../java/org/tentackle/reflect/Interception.java) meta-annotation form the dynamic-proxy engine
-   that lets a PDO weave domain + persistence delegates together and apply cross-cutting interceptors around method
+   that lets a PDO weave domain and persistence delegates together and apply cross-cutting interceptors around method
    calls. [`Mixin`](../java/org/tentackle/reflect/Mixin.java),
    [`PropertyMap`](../java/org/tentackle/reflect/PropertyMap.java),
    [`ReflectionHelper`](../java/org/tentackle/reflect/ReflectionHelper.java),
@@ -102,7 +102,7 @@ Packages `org.tentackle.validate`, `validate.scope`, `validate.validator`, `vali
 
 An annotation-driven, **scope-aware** validation framework: validators (`validate.validator` ships ~65 predefined
 ones) are attached to model fields/methods and run within a [`ValidationScope`](../java/org/tentackle/validate)
-(e.g. mandatory vs. save vs. delete), producing results at graded severities. See **[validation.md](validation.md)**.
+(e.g., mandatory vs. save vs. delete), producing results at graded severities. See **[validation.md](validation.md)**.
 
 ### Logging
 
@@ -135,7 +135,7 @@ Package `org.tentackle.script`.
 
 A **scripting abstraction layer**: [`ScriptingLanguage`](../java/org/tentackle/script/ScriptingLanguage.java) /
 [`Script`](../java/org/tentackle/script/Script.java) / [`ScriptFactory`](../java/org/tentackle/script/ScriptFactory.java)
-let the framework evaluate scripts (e.g. in validators or the model) independently of the concrete engine; the
+let the framework evaluate scripts (e.g., in validators or the model) independently of the concrete engine; the
 module `uses Logger`/`ScriptingLanguage` so providers can be plugged in.
 
 ### I/O and networking
@@ -156,7 +156,7 @@ Package `org.tentackle.prefs`.
 
 [`PersistedPreferences`](../java/org/tentackle/prefs/PersistedPreferences.java) /
 [`PersistedPreferencesFactory`](../java/org/tentackle/prefs/PersistedPreferencesFactory.java) abstract the standard
-`java.util.prefs` API so it can be backed by different stores (e.g. the database-backed implementation in
+`java.util.prefs` API so it can be backed by different stores (e.g., the database-backed implementation in
 [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md)), with
 [`CompositePreferences`](../java/org/tentackle/prefs/CompositePreferences.java) combining user and system nodes.
 
@@ -207,21 +207,21 @@ and emit the `META-INF` configuration consumed at runtime.
 
 ## Package Layout
 
-| Package(s) | Subsystem | Reference |
-|------------|-----------|-----------|
-| `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization | [trip.md](trip.md) |
-| `org.tentackle.reflect` | Class mapping, interceptable proxies, reflection helpers | [interceptors.md](interceptors.md) |
-| `org.tentackle.bind` | Model↔view binding | [binding.md](binding.md) |
-| `org.tentackle.validate` (+ `scope`, `validator`, `severity`) | Validation framework | [validation.md](validation.md) |
-| `org.tentackle.log` | Pluggable logging, MDC, `@Log`, method statistics | — |
-| `org.tentackle.task` | Serialized task dispatchers | — |
-| `org.tentackle.script` | Scripting abstraction | — |
-| `org.tentackle.io` | Streams, sockets, reconnection (TRIP transport building blocks) | — |
-| `org.tentackle.prefs` | Pluggable persisted preferences | — |
-| `org.tentackle.daemon` | Background-thread supervision | — |
-| `org.tentackle.misc` (+ `misc.time`) | General-purpose utilities, pooling, smart date/time parsing | — |
-| `org.tentackle.apt` (+ `apt.visitor`) | Build-time annotation processors | — |
-| `org.tentackle.service` | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | — |
+| Package(s)                                                                                         | Subsystem                                                            | Reference                          |
+|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------------------------------|
+| `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization                                          | [trip.md](trip.md)                 |
+| `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [interceptors.md](interceptors.md) |
+| `org.tentackle.bind`                                                                               | Model↔view binding                                                   | [binding.md](binding.md)           |
+| `org.tentackle.validate` (+ `scope`, `validator`, `severity`)                                      | Validation framework                                                 | [validation.md](validation.md)     |
+| `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | —                                  |
+| `org.tentackle.task`                                                                               | Serialized task dispatchers                                          | —                                  |
+| `org.tentackle.script`                                                                             | Scripting abstraction                                                | —                                  |
+| `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | —                                  |
+| `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | —                                  |
+| `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | —                                  |
+| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | —                                  |
+| `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | —                                  |
+| `org.tentackle.service`                                                                            | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | —                                  |
 
 ---
 
@@ -244,7 +244,7 @@ consumes one or more of its subsystems:
 ```
 
 For example, a PDO is an `Interceptable` proxy (reflect) whose `@Transaction`/`@Log` methods are wrapped by
-interceptors; when it travels to a server it is serialized with TRIP; its fields are validated through the
+interceptors; when it travels to a server, it is serialized with TRIP; its fields are validated through the
 validation framework and bound to FX controls through the binding engine; the server's background work runs on
 `task` dispatchers supervised by the `daemon` package over `io` transports. All of this is configured through the
 service API from `tentackle-common`.

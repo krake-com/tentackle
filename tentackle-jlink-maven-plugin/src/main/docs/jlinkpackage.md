@@ -8,11 +8,11 @@ necessary information.
 
 The plugin provides 3 maven goals:
 
-0. jlink: creates a ZIP archive containing a self-contained image of the application with a modular java runtime created by jlink, including a script
+1. jlink: creates a ZIP archive containing a self-contained image of the application with a modular java runtime created by jlink, including a script
 to launch the application.
-0. jpackage: creates native executables to run the application with a modular java runtime and an installer. Supports per-user or per-system installations, depending
+2. jpackage: creates native executables to run the application with a modular java runtime and an installer. Supports per-user or per-system installations, depending
 on the platform.
-0. init: (re-)installs the defaults of the project-specific templates to generate the scripts or
+3. init: (re-)installs the defaults of the project-specific templates to generate the scripts or
 tool option files.
 
 For per-user installations an optional update feature is available that enables a running application to download
@@ -20,7 +20,7 @@ an image and update itself to a newer version. This is especially useful for des
 since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed in Java 11.
 
 Notice that the plugin must be executed on the target platform, because `jlink` and `jpackage` are 
-platform specific tools.
+platform-specific tools.
 
 ### Prerequisites
 
@@ -31,12 +31,12 @@ with jpackage by using maven toolchains (see below).
 
 ### Application Categories and Jigsaw Myths
 
-Regardless whether the jlink- or jpackage-goal is used, the created application image falls into one of
+Regardless of whether the jlink- or jpackage-goal is used, the created application image falls into one of
 3 categories:
 
-0. full-blown modular (JPMS/Jigsaw) applications running on the module path.
-0. modular applications that require non-modularized dependencies (so-called _automatic modules_)
-0. traditional applications running on the classpath.
+1. full-blown modular (JPMS/Jigsaw) applications running on the module path.
+2. modular applications that require non-modularized dependencies (so-called _automatic modules_)
+3. traditional applications running on the classpath.
 
 Many Java developers still think that only applications of the first category can be packaged with jlink or jpackage,
 because it is required that all artifacts are fully modularized according to the JPMS. 
@@ -54,7 +54,7 @@ In short: if your application runs on Java 11 or newer, you can package it in on
 ### Adding the Plugin to Your Maven Project
 
 There are several ways to use the plugin in your project. If the project is already a multi-module
-maven project, simply add another submodule and let this submodule build the jlink or jpackage image,
+maven project, add another submodule and let this submodule build the jlink or jpackage image,
 like so:
 
 ```xml
@@ -103,7 +103,7 @@ like so:
 </project>
 ```
 
-Otherwise create a new maven project and add your existing project's artifact to the dependencies,
+Otherwise, create a new maven project and add your existing project's artifact to the dependencies,
 like so:
 
 ```xml
@@ -204,16 +204,16 @@ Or if you used the packaging type `jpackage`, it looks like this:
 
 When the plugin is invoked the first time, it creates a template directory and installs some default
 templates. The plugin uses [Freemarker](https://freemarker.apache.org/) as its template engine. 
-The templates can and should be modified according to your project specific needs. 
+The templates can and should be modified according to your project-specific needs. 
 The defaults, however, already work for the most basic scenarios.
  
 The templates refer to a _model_ that provides variables. One of the variables is `osName`.
 It is used to derive the platform. For more details, names of the variables, how to define
 your own, etc... please refer to the [plugin docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/plugin-info.html). 
-By using templates, we keep the maven poms free from platform specific stuff and don't need 
+By using templates, we keep the maven poms free from platform-specific stuff and don't need 
 to fiddle with maven profiles.
 
-In case of jlink the following templates are used:
+In the case of jlink the following templates are used:
 
 - `name.ftl`: determines the name of the run script
 - `run.ftl`: generates the run script
@@ -257,14 +257,14 @@ Example for package-installer.ftl:
 --license-file src/pkg/license.txt
 ```
 
-For a complete multi-module JPMS example please run the Tentackle maven archetype according to 
+For a complete multi-module JPMS example, please run the Tentackle maven archetype according to 
 the project's [Quickstart](../../../../src/main/docs/quickstart.md).
  
 ### How The Jlink Goal Basically Works
 
 The jlink goal first analyzes all dependencies of the application. For modular dependencies
 it reads their `module-info` to determine the requirements. For traditional
-dependencies it uses the `jdeps` tool. When all has been collected it knows the relationships between all 
+dependencies it uses the `jdeps` tool. When all has been collected, it knows the relationships between all 
 modules of the application, including the modules of the java runtime necessary to run
 the application.
 
@@ -272,32 +272,32 @@ For classpath applications the jlink tool is used to create a modular java runti
 from the runtime modules only. The application's artifacts are copied to the `cp` subfolder
 and will be added to the `classPath` variable of the freemarker model.
 
-For modular applications, it depends whether all modules are full-blown modular dependencies
-or some of the modules refer to dependencies which are not modularized yet.
+For modular applications, it depends on whether all modules are full-blown modular dependencies
+or some modules refer to dependencies which are not modularized yet.
 In the first case all modular modules are passed to jlink, which creates a plain modular application.
-Otherwise only the necessary runtime modules are passed to jlink, the application's modules
+Otherwise, only the necessary runtime modules are passed to jlink, the application's modules
 are copied to the `mp` subfolder and added to the `modulePath` variable of the freemarker model.
 
 Next, filtered and non-filtered resources, if any, are copied to the `conf` subfolder by default.
 
-Finally, the launch script is generated and all files are packaged within a single ZIP archive.
+Finally, the launch script is generated, and all files are packaged within a single ZIP archive.
 
 ### How The Jpackage Goal Works
 
-Despite its name the jpackage goal uses the jlink _and_ jpackage tools in combination to create an installer.
+Despite its name, the jpackage goal uses the jlink _and_ jpackage tools in combination to create an installer.
 It works in 4 steps:
 
-0. The first step basically does the same as what the jlink goal does, except that no launch 
+1. The first step basically does the same as what the jlink goal does, except that no launch 
    script and no ZIP archive is created. This results in a folder containing the so-called _runtime image_.
-0. Next, the jpackage tool is invoked to add the generated native executables to launch the application
+2. Next, the jpackage tool is invoked to add the generated native executables to launch the application
    along with their configuration files. This is called the _application image_.
-0. Depending on the results of the analysis of the maven project model in phase 1 
+3. Depending on the results of the analysis of the maven project model in phase 1,  
    the configuration files are modified appropriately.
    This is necessary because jpackage as a commandline tool has no clue about the maven project model and 
    makes assumptions that may be wrong for some application setups.
-0. Finally, the jpackage tool is invoked again to create the installer from the modified application image.
+4. Finally, the jpackage tool is invoked again to create the installer from the modified application image.
 
-In phase 2 the template `package-image.ftl` is used to generate the platform specific jpackage options.
+In phase 2 the template `package-image.ftl` is used to generate the platform-specific jpackage options.
 In phase 4 `package-installer.ftl` is used.
 
 ### "Unrequired" Dependencies
@@ -340,7 +340,7 @@ Well, it is possible because those automatic modules are not _required_.
 In other words: there is no module-info that explicitly refers to an automatic 
 module in a `required` clause.
 All those modules are just _wired_ at runtime. For example, the JDBC driver is loaded by the
-`DriverManager`. Throughout the whole application there is no import statement that refers to 
+`DriverManager`. Throughout the whole application, there is no import statement that refers to 
 a Postgres specific class. The same applies to Groovy scripting and the logging implementation,
 which are both loaded via Tentackle's [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md).
 
@@ -348,16 +348,16 @@ When the plugin detects such "unrequired" automatic modules, they are moved to t
 and added to the `modulePath`. The full-blown modules still go into the modular runtime image as usual.
 
 This is a nice trick if you have to use 3rd-party dependencies that are not modularized yet
-and probably never will. Simply create an abstraction layer of the features
+and probably never will. Create an abstraction layer of the features
 you need and _inject_ an implementation wrapper of those dependencies at runtime. 
 
 ### Adding Extra Modules
 
 By default, the plugin adds only those modules to the runtime that are absolutely necessary
-to run the application in order to keep the size of the image as small as possible. 
+to run the application to keep the size of the image as small as possible. 
 Sometimes, however, you may want to add some extra JDK modules
-for monitoring or other purposes. This can be accomplished with the `addModules` option.
-Supposed you want to add tools like `jcmd` to the `bin` folder, simply add this to the configuration section:
+for monitoring or other purposes. This can be achieved with the `addModules` option.
+Supposed you want to add tools like `jcmd` to the `bin` folder, add this to the configuration section:
 
 ```xml
   <addModules>
@@ -375,7 +375,7 @@ of the current maven build. The Tentackle maven plugin for jlink and jpackage ev
 to select two different toolchains:
 
 - `<jdkToolchain>`: selects the java version for the jlink, jdeps and jpackage tools. For example, if
-  your maven build runs on Java 11 LTS, but you want to use the latest Java in production, just add
+  your maven build runs on Java 11 LTS, but you want to use the latest Java in production, add
   the following lines (provided `toolchains.xml` is configured properly):
 ```xml
         <jdkToolchain>
@@ -383,7 +383,7 @@ to select two different toolchains:
         </jdkToolchain>
 ```
  
-- `<jpackageToolchain>`: selects the java version for the jpackage tool only. This allows to use
+- `<jpackageToolchain>`: selects the java version for the jpackage tool only. This allows using
   the plugin's jpackage goal, for example, with Java 11 LTS, even though the jpackage tool was first released 
   with Java 14. The generated runtime will still be based on Java 11 LTS in this case.
 
@@ -395,33 +395,33 @@ you can do so by extending the plugin with your own implementation of an
 
 ### Auto Update Feature
 
-Since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed from the JDK with Java 11
-the question arised how to keep applications up-to-date, especially desktop applications.
+Since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed from the JDK with Java 11, 
+the question arose how to keep applications up to date, especially desktop applications.
 In the meantime a few alternatives are available, most to mention [OpenWebstart](https://openwebstart.com/),
 which provides a kind of drop-in replacement.
 
 However, the new JPMS with tools like jlink or jpackage is a real game changer when it comes to
 application deployment, because you don't need a Java runtime already installed on your target
-machine anymore. Simply unpack a ZIP archive or run an installer and you're done!
+machine anymore. Unpack a ZIP archive or run an installer, and you're done!
 Couldn't we use the same toolset to update an already installed application?
 This is the idea behind Tentackle's update feature.
 
 The feature is based on 3 components:
 
-0. The Tentackle jlink/jpackage plugin configured with: `<withUpdater>true</withUpdater>`. 
-   This creates an additional platform specific update script (from template `update.ftl`) 
+1. The Tentackle jlink/jpackage plugin configured with: `<withUpdater>true</withUpdater>`. 
+   This creates an additional platform-specific update script (from template `update.ftl`) 
    that takes an unpacked archive containing the new application,
    ensures that the old application is no more running, updates the existing installation
    and finally restarts the application. For the jpackage goal the template for the
    update script is `package-update.ftl` and an additional ZIP archive
    is created as well.
 
-0. An update server. Whenever a client tries to connect to a server already running
+2. An update server. Whenever a client tries to connect to a server already running
    a newer version, it receives a `VersionIncompatibleException`. It then talks to
    an update server, sending its platform, architecture, version, etc... and the server
    replies with a URL pointing to an archive containing the necessary files.
 
-0. The client UI part. It handles the exception, asks the user whether to update or abort,
+3. The client UI part. It handles the exception, asks the user whether to update or abort,
    downloads the archive, verifies the checksum, unpacks it, invokes the update script and terminates itself.
    
 The API to implement the server- and client update service is located in the module
@@ -435,7 +435,7 @@ which is based on [JavaFX](https://openjfx.io/) and the [Tentackle](https://tent
 framework. As such, it cannot be used by any other kind of application. But it may well serve as a blueprint
 for Swing or FX applications to implement your own solution.
 
-Again, for a working example please see this [Quickstart](../../../../src/main/docs/quickstart.md).
+Again, for a working example, please see this [Quickstart](../../../../src/main/docs/quickstart.md).
 
 
 ### Further Reading

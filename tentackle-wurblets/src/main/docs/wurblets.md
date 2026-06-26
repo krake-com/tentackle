@@ -4,7 +4,7 @@
 
 `tentackle-wurblets` is the build-time **code generation** module that produces the *interface side* of a
 Tentackle application: the constants, accessor declarations, relation methods, unique-domain-key types, model
-documentation and Data Transfer Objects that belong to a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md)
+documentation, and Data Transfer Objects that belong to a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md)
 interface or operation interface. Together with its sibling
 [`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets) — which generates the matching
 *implementation* side — it turns the application
@@ -13,7 +13,7 @@ interface or operation interface. Together with its sibling
 The generators are **wurblets**: templates written for the [Wurbelizer](https://wurbelizer.org/how-it-works/)
 engine. A wurblet is a `.wrbl` file mixing literal output with embedded Java; at build time the
 `wurbelizer-maven-plugin` runs each wurblet (the compiled templates; "wurbiled" in Wurbelizer lingo), weaving the generated text into
-**guarded regions** of your hand-written source files. The author keeps full control of the surrounding class; the
+**guarded regions** of your handwritten source files. The author keeps full control of the surrounding class; the
 wurblet owns only the fenced block between its anchors, which it regenerates on every build.
 
 A wurblet is invoked from an *anchor comment* inside the source file. The generated text is written into the
@@ -56,8 +56,8 @@ guarded regions.
 
 - **Single source of truth.** Everything a wurblet emits is derived from the
   [model](../../../../tentackle-model/src/main/docs/model-definition.md) (and the data-type / backend information
-  from [`tentackle-sql`](../../../../tentackle-sql/src/main/docs/sql.md)), so generated and hand-written code can
-  never disagree about column names, sizes or types.
+  from [`tentackle-sql`](../../../../tentackle-sql/src/main/docs/sql.md)), so generated and handwritten code can
+  never disagree about column names, sizes, or types.
 - **Woven, not owned.** Generated code lives inside the developer's own files within guarded regions, so a class
   can freely mix generated and bespoke members. The build re-derives only the fenced blocks.
 - **Interface vs. implementation split.** This module generates declarations that go into PDO/operation
@@ -99,19 +99,19 @@ same file.
 All templates live under `src/main/wurblets/org/tentackle/wurblet`. Each carries its own usage documentation in
 its leading `@{comment ...}@` block.
 
-| Wurblet | Generates | Notable options |
-|---------|-----------|-----------------|
-| [`AttributeNames`](../wurblets/org/tentackle/wurblet/AttributeNames.wrbl) | `AN_*` attribute-name and `RN_*` relation-name constants for the entity. | `--noif` (add `public static final` when not inside an interface) |
-| [`ColumnNames`](../wurblets/org/tentackle/wurblet/ColumnNames.wrbl) | `CN_*` database column-name constants, handling multi-column and backend-specific data types and single-table inheritance. | |
-| [`ColumnLengths`](../wurblets/org/tentackle/wurblet/ColumnLengths.wrbl) | `CL_*` constants giving the maximum character length of sized `String` columns. | `--noif` |
-| [`Methods`](../wurblets/org/tentackle/wurblet/Methods.wrbl) | Getter/setter declarations for every (non-muted, non-hidden) attribute, plus the `selectByUniqueDomainKey` declaration. | `--noudk` (omit the UDK select method) |
-| [`Relations`](../wurblets/org/tentackle/wurblet/Relations.wrbl) | Relation navigation methods (getters/setters, n:m link methods) according to each relation's type, scope and read/write rules. | |
-| [`DomainMethods`](../wurblets/org/tentackle/wurblet/DomainMethods.wrbl) | Domain-side unique-domain-key methods (`isUniqueDomainKeyProvided`, `getUniqueDomainKeyType`, `findByUniqueDomainKey`). | `--noif` |
-| [`UniqueDomainKey`](../wurblets/org/tentackle/wurblet/UniqueDomainKey.wrbl) | The unique-domain-key type (a nested record) for root entities that define one. *(phase 2)* | |
-| [`ModelComment`](../wurblets/org/tentackle/wurblet/ModelComment.wrbl) | A Javadoc comment documenting the entity's referencing, composite and inheritance relationships. *(phase 2)* | |
-| [`DTO`](../wurblets/org/tentackle/wurblet/DTO.wrbl) | A complete Data Transfer Object from a property model. | see [DTO](#the-dto-wurblet) below |
-| [`Include`](../wurblets/org/tentackle/wurblet/Include.wrbl) | Inlines another file into the source. | `--comment`, `--missingok`, `--translate` (expand `$variables`), `--delete` |
-| [`Inject`](../wurblets/org/tentackle/wurblet/Inject.wrbl) | Injects literal text from the argument list — a *tag-less* wurblet that fills the gap between two empty `/**/.../**/` comment markers. | `--string` (wrap in double quotes) |
+| Wurblet                                                                     | Generates                                                                                                                              | Notable options                                                             |
+|-----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`AttributeNames`](../wurblets/org/tentackle/wurblet/AttributeNames.wrbl)   | `AN_*` attribute-name and `RN_*` relation-name constants for the entity.                                                               | `--noif` (add `public static final` when not inside an interface)           |
+| [`ColumnNames`](../wurblets/org/tentackle/wurblet/ColumnNames.wrbl)         | `CN_*` database column-name constants, handling multi-column and backend-specific data types and single-table inheritance.             |                                                                             |
+| [`ColumnLengths`](../wurblets/org/tentackle/wurblet/ColumnLengths.wrbl)     | `CL_*` constants giving the maximum character length of sized `String` columns.                                                        | `--noif`                                                                    |
+| [`Methods`](../wurblets/org/tentackle/wurblet/Methods.wrbl)                 | Getter/setter declarations for every (non-muted, non-hidden) attribute, plus the `selectByUniqueDomainKey` declaration.                | `--noudk` (omit the UDK select method)                                      |
+| [`Relations`](../wurblets/org/tentackle/wurblet/Relations.wrbl)             | Relation navigation methods (getters/setters, n:m link methods) according to each relation's type, scope and read/write rules.         |                                                                             |
+| [`DomainMethods`](../wurblets/org/tentackle/wurblet/DomainMethods.wrbl)     | Domain-side unique-domain-key methods (`isUniqueDomainKeyProvided`, `getUniqueDomainKeyType`, `findByUniqueDomainKey`).                | `--noif`                                                                    |
+| [`UniqueDomainKey`](../wurblets/org/tentackle/wurblet/UniqueDomainKey.wrbl) | The unique-domain-key type (a nested record) for root entities that define one. *(phase 2)*                                            |                                                                             |
+| [`ModelComment`](../wurblets/org/tentackle/wurblet/ModelComment.wrbl)       | A Javadoc comment documenting the entity's referencing, composite and inheritance relationships. *(phase 2)*                           |                                                                             |
+| [`DTO`](../wurblets/org/tentackle/wurblet/DTO.wrbl)                         | A complete Data Transfer Object from a property model.                                                                                 | see [DTO](#the-dto-wurblet) below                                           |
+| [`Include`](../wurblets/org/tentackle/wurblet/Include.wrbl)                 | Inlines another file into the source.                                                                                                  | `--comment`, `--missingok`, `--translate` (expand `$variables`), `--delete` |
+| [`Inject`](../wurblets/org/tentackle/wurblet/Inject.wrbl)                   | Injects literal text from the argument list — a *tag-less* wurblet that fills the gap between two empty `/**/.../**/` comment markers. | `--string` (wrap in double quotes)                                          |
 
 ### The DTO wurblet
 
@@ -119,15 +119,15 @@ its leading `@{comment ...}@` block.
 to a persistent entity. It produces a Data Transfer Object from a small *property model*, usually written as a
 here-document (a "heap file" named `.<filename>`) inside the leading comment block of the DTO source file, or
 inferred directly from a Java `record`. Each model line is `<type> <name> <comment>`, with single-character
-prefixes selecting per-property behaviour:
+prefixes selecting per-property behavior:
 
-| Prefix | Meaning |
-|--------|---------|
-| `^` | property is passed up to the super entity's constructor (non-builder mode) |
-| `=` | mutable property — a setter is generated |
-| `~` | mutable **and** transient |
-| `!` | builder mode: required property — `build()` throws if it was never set (implies immutable) |
-| `+` | generate a `from<Name>(...)` method returning a modified copy (a "frommer"; "wither" with `--with`) |
+| Prefix | Meaning                                                                                             |
+|--------|-----------------------------------------------------------------------------------------------------|
+| `^`    | property is passed up to the super entity's constructor (non-builder mode)                          |
+| `=`    | mutable property — a setter is generated                                                            |
+| `~`    | mutable **and** transient                                                                           |
+| `!`    | builder mode: required property — `build()` throws if it was never set (implies immutable)          |
+| `+`    | generate a `from<Name>(...)` method returning a modified copy (a "frommer"; "wither" with `--with`) |
 
 Comments may carry per-property annotations or an access scope in square brackets (`[@Bindable(...)] [protected]`),
 and a leading `[...]` line defines global annotations applied to all properties (removable per property with
@@ -149,7 +149,7 @@ and is the workhorse behind every model-driven wurblet. Its responsibilities:
 - **Locate the target.** From the source file it figures out whether the anchor sits in a PDO or an operation, an
   interface or an (abstract) class, by inspecting service annotations
   (`@DomainObjectService`, `@PersistentObjectService`, `@DomainOperationService`, `@PersistentOperationService`),
-  interface `extends` clauses and class definitions — exposed via `getPdoClassName()`, `isPdo()`, `isOperation()`,
+  interface `extends` clauses, and class definitions — exposed via `getPdoClassName()`, `isPdo()`, `isOperation()`,
   `isInterface()`, `isGenerified()`, `isPartOfInheritanceHierarchy()`.
 - **Load the model.** In `run()` it reads the current module's model directory plus any dependency models
   (`otherModels`), applies the shared `modelDefaults` and `entityAliases`, registers the target
@@ -167,7 +167,7 @@ and is the workhorse behind every model-driven wurblet. Its responsibilities:
 ### Wurblet arguments — the query mini-language
 
 Several generators (above all the persistence-side select/update/delete wurblets, but the grammar is defined
-here) take a compact expression describing a `WHERE` clause, sorting, attribute updates and eager-loading joins.
+here) take a compact expression describing a `WHERE` clause, sorting, attribute updates, and eager-loading joins.
 The parsing lives in [`WurbletArgumentParser`](../java/org/tentackle/wurblet/WurbletArgumentParser.java) and
 [`WurbletArgument`](../java/org/tentackle/wurblet/WurbletArgument.java). An expression is a tree of operands joined
 by `AND` (the default), `OR` and `NOT`, with parentheses for grouping, followed by optional sorting and load-join
@@ -199,14 +199,14 @@ joins reaching into aggregate components, described by
 
 ### Supporting classes
 
-| Class | Role |
-|-------|------|
-| [`DTOWurblet`](../java/org/tentackle/wurblet/DTOWurblet.java) | Base class for the `DTO` wurblet — parses the property model and options. |
-| [`IncludeWurblet`](../java/org/tentackle/wurblet/IncludeWurblet.java) | Base class for the `Include` wurblet (overrides `run()`). |
+| Class                                                                                 | Role                                                                                                                              |
+|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [`DTOWurblet`](../java/org/tentackle/wurblet/DTOWurblet.java)                         | Base class for the `DTO` wurblet — parses the property model and options.                                                         |
+| [`IncludeWurblet`](../java/org/tentackle/wurblet/IncludeWurblet.java)                 | Base class for the `Include` wurblet (overrides `run()`).                                                                         |
 | [`TentackleWurbletsModel`](../java/org/tentackle/wurblet/TentackleWurbletsModel.java) | `@Service(Model.class)` replacement that understands heap files and defers model-loading exceptions to the entity they relate to. |
-| [`ModelCommentSupport`](../java/org/tentackle/wurblet/ModelCommentSupport.java) | Helper logic for the `ModelComment` wurblet. |
-| [`AnnotationOption`](../java/org/tentackle/wurblet/AnnotationOption.java) | Parses the annotation modifiers carried by model attributes. |
-| [`CodeGenerator`](../java/org/tentackle/wurblet/CodeGenerator.java) | Functional interface for emitting nested structures. |
+| [`ModelCommentSupport`](../java/org/tentackle/wurblet/ModelCommentSupport.java)       | Helper logic for the `ModelComment` wurblet.                                                                                      |
+| [`AnnotationOption`](../java/org/tentackle/wurblet/AnnotationOption.java)             | Parses the annotation modifiers carried by model attributes.                                                                      |
+| [`CodeGenerator`](../java/org/tentackle/wurblet/CodeGenerator.java)                   | Functional interface for emitting nested structures.                                                                              |
 
 ---
 
@@ -228,7 +228,7 @@ joins reaching into aggregate components, described by
 During an application build the [Tentackle Maven plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 arranges for the wurbelizer plugin to run both wurblet sets over the sources. Because both read the same model and
 the same [`DataType`/`Backend`](../../../../tentackle-sql/src/main/docs/sql.md) definitions, the generated
-interfaces, implementations and the DDL produced by the
+interfaces, implementations, and the DDL produced by the
 [SQL Maven plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) all agree on
 the schema.
 
@@ -242,7 +242,7 @@ the schema.
   (`Entity`, `Attribute`, `Relation`, `ModelDefaults`, …) every model wurblet reads.
 - **`tentackle-build-support`** — shared build-time utilities.
 - Transitively, **[`tentackle-sql`](../../../../tentackle-sql/src/main/docs/sql.md)** for `DataType` and `Backend`,
-  used to resolve column types, sizes and backend capabilities.
+  used to resolve column types, sizes, and backend capabilities.
 
 This is a **build-time only** module — it is on the wurbelizer plugin's classpath and is never shipped inside the
 running application.

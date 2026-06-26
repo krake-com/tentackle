@@ -6,7 +6,7 @@
 [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) counterpart of
 [`tentackle-test-pdo`](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md): where that module gives
 you base classes to test *persistent domain objects* against a database, this one gives you base classes to
-**smoke-test the JavaFX front end** — controllers, GUI providers and table-configuration providers — on a real FX
+**smoke-test the JavaFX front end** — controllers, GUI providers, and table-configuration providers — on a real FX
 toolkit, with a live session underneath.
 
 Its central idea is the **generic coverage test**. Rather than write one test per screen, you extend one of three
@@ -14,10 +14,10 @@ abstract base classes and the test automatically discovers *every*
 [`@FxControllerService`](../../../../tentackle-fx/src/main/docs/fx.md) controller,
 [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) or `TableConfigurationProvider` registered via the
 [ServiceFinder SPI](../../../../tentackle-common/src/main/docs/common.md), instantiates each one on the FX thread,
-and asserts it loads, binds and renders without error. A single one-line subclass thus guards your whole UI against
-broken FXML, unbound fields, missing resources or refactoring drift.
+and asserts it loads, binds, and renders without error. A single one-line subclass thus guards your whole UI against
+broken FXML, unbound fields, missing resources, or refactoring drift.
 
-> **Test scope only.** Like its PDO sibling, this artifact pulls in TestNG, JUnit, Groovy and PostgreSQL and is
+> **Test scope only.** Like its PDO sibling, this artifact pulls in TestNG, JUnit, Groovy, and PostgreSQL and is
 > meant to be declared `<scope>test</scope>` in downstream projects — never as a compile/runtime dependency.
 
 The module is **not** a JPMS module: it has no `module-info.java`; the jar carries
@@ -51,10 +51,10 @@ So an FX-RDC test is a fully bootstrapped Tentackle application *plus* a started
 
 ## Package Layout
 
-| Package | Role |
-|---------|------|
+| Package                       | Role                                                                                                                                       |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | `org.tentackle.fx.rdc.testng` | TestNG base classes: `FxRdcTestApplication`, `ControllerTest`, `GuiProviderTest`, `TableConfigurationProviderTest`. The default framework. |
-| `org.tentackle.fx.rdc.junit` | JUnit 5 equivalents of the same four classes, for projects that prefer Jupiter. |
+| `org.tentackle.fx.rdc.junit`  | JUnit 5 equivalents of the same four classes, for projects that prefer Jupiter.                                                            |
 
 The two packages are mirror images; pick the one matching your test runner. The descriptions below use the TestNG
 names.
@@ -73,7 +73,7 @@ The abstract base of all three test types. It adds the JavaFX dimension to the i
   so controllers that touch persistence from the UI thread work correctly. It also installs an uncaught-exception
   handler on the FX thread so exceptions thrown asynchronously during rendering are captured and reported.
 - **`runFx(name, runnable)`** — the core helper. It runs the test body, then posts a `CountDownLatch` countdown to
-  the FX thread and **waits** (default 30 s, see `setFxTimeout`) until the FX event queue has drained — guaranteeing
+  the FX thread, and **waits** (default 30 s, see `setFxTimeout`) until the FX event queue has drained — guaranteeing
   all FX processing triggered by the test has completed. Any captured FX-thread exception fails the test. This is
   how a synchronous TestNG/JUnit assertion can reliably wait for asynchronous FX work.
 - **`unregister()` override** — closes the FX-thread session on teardown.
@@ -85,7 +85,7 @@ The FX timeout is configurable per test via `setFxTimeout(seconds)`.
 ## The Three Generic Tests
 
 Each test iterates the relevant SPI registry, filters by an optional **package prefix** (so a project can restrict
-the run to its own classes), honours a per-service **opt-out**, and exercises each implementation inside `runFx`.
+the run to its own classes), honors a per-service **opt-out**, and exercises each implementation inside `runFx`.
 
 ### `ControllerTest`
 
@@ -117,12 +117,12 @@ calls `createTableConfiguration()` on the FX thread.
 
 ### Common conventions
 
-| Feature | Behaviour |
-|---------|-----------|
-| **Package prefix** | Each base class takes an optional `packagePrefix` constructor argument; only matching classes are tested. `null`/empty = all. |
-| **Opt-out** | The matching `@*Service(test=false)` annotation excludes an implementation; it is logged as "not tested" rather than run. |
-| **Discovery** | Implementations are found through the SPI registries (`FxFactory`, `ClassMapper`, the provider factories), so nothing has to be listed by hand. |
-| **Reporting** | Every step is written to the TestNG `Reporter` / JUnit log for a readable per-class trace. |
+| Feature            | Behaviour                                                                                                                                       |
+|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Package prefix** | Each base class takes an optional `packagePrefix` constructor argument; only matching classes are tested. `null`/empty = all.                   |
+| **Opt-out**        | The matching `@*Service(test=false)` annotation excludes an implementation; it is logged as "not tested" rather than run.                       |
+| **Discovery**      | Implementations are found through the SPI registries (`FxFactory`, `ClassMapper`, the provider factories), so nothing has to be listed by hand. |
+| **Reporting**      | Every step is written to the TestNG `Reporter` / JUnit log for a readable per-class trace.                                                      |
 
 ---
 
@@ -162,7 +162,7 @@ which double as the canonical usage reference. Database connection parameters co
 `backend.properties` (`dbUrl`/`dbUser`/`dbPasswd` build properties), inherited from the
 [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) session machinery.
 
-> Because the tests start a real JavaFX toolkit, they **self-skip on headless build agents**. To run them in CI you
+> Because the tests start a real JavaFX toolkit, they **self-skip on headless build agents**. To run them in CI, you
 > need a display (or a virtual one such as `Xvfb`); otherwise the suite reports as skipped, not failed.
 
 ---

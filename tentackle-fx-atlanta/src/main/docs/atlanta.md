@@ -7,7 +7,7 @@ into Tentackle's desktop UI stack. It provides two things:
 
 1. **A modern look and feel** — a `ThemeUtilities` implementation that drives the
    AtlantaFX user-agent stylesheets (Primer, Cupertino, Nord, each in a light and
-   a dark variant) plus the Tentackle-specific CSS that colours mandatory, error
+   a dark variant) plus the Tentackle-specific CSS that colors mandatory, error,
    and info states.
 2. **Extended AtlantaFX controls** — a handful of AtlantaFX controls and
    containers wrapped as first-class Tentackle FX components, so they bind to the
@@ -37,16 +37,16 @@ its own module means:
 
 The module follows the exact conventions of `tentackle-fx` — read
 [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) first; everything there
-about components, delegates, builders, configurators, value translators and SPI
+about components, delegates, builders, configurators, value translators, and SPI
 discovery applies here unchanged. This module only adds new instances of those
 patterns for the AtlantaFX controls:
 
 - **Wrap, don't replace.** Each component *extends* its AtlantaFX control
   (`FxToggleSwitch extends ToggleSwitch`), adding the `FxComponent`/`FxContainer`
   contract on top.
-- **Delegate over inheritance.** The cross-cutting behaviour lives in a delegate;
+- **Delegate over inheritance.** The cross-cutting behavior lives in a delegate;
   the component is a thin wurblet-generated shell forwarding to it.
-- **Configure by convention, override by service.** Builders, configurators and
+- **Configure by convention, override by service.** Builders, configurators, and
   value translators are all SPI services discovered by `FxFactory`.
 
 ---
@@ -55,30 +55,30 @@ patterns for the AtlantaFX controls:
 
 `AtlantaThemeUtilities` is the heart of the module. It is registered as
 `@Service(ThemeUtilities.class)` and extends `RdcThemeUtilities`, so it inherits
-the RDC theming behaviour and overrides the AtlantaFX-specific parts.
+the RDC theming behavior and overrides the AtlantaFX-specific parts.
 
-| Aspect | Behaviour |
-|--------|-----------|
-| Supported themes | `Primer`, `Cupertino`, `Nord` (`getSupportedThemes()`) |
-| Default theme | `Cupertino` on macOS, otherwise `Primer` (chosen in the constructor) |
-| Default font size | 14 |
-| User-agent stylesheet | `applyUserAgentStylesheet()` selects `/atlantafx/base/theme/<theme>-light.css` or `-dark.css` according to `isDarkMode()` |
-| Scene stylesheets | `applyStylesheets(scene)` sets `tentackle.css` (or `tentackle-dark.css` in dark mode) plus `pdo-style.css` |
-| Resource redirection | `getResourceURL(...)` redirects the CSS lookups of `NotificationBuilder`, `Note` and `TotalsTableView` to this module, so they pick up the AtlantaFX-tuned stylesheets |
-| Auto-adjust padding | `getAutoAdjustPadding()` returns 16 |
+| Aspect                | Behaviour                                                                                                                                                              |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Supported themes      | `Primer`, `Cupertino`, `Nord` (`getSupportedThemes()`)                                                                                                                 |
+| Default theme         | `Cupertino` on macOS, otherwise `Primer` (chosen in the constructor)                                                                                                   |
+| Default font size     | 14                                                                                                                                                                     |
+| User-agent stylesheet | `applyUserAgentStylesheet()` selects `/atlantafx/base/theme/<theme>-light.css` or `-dark.css` according to `isDarkMode()`                                              |
+| Scene stylesheets     | `applyStylesheets(scene)` sets `tentackle.css` (or `tentackle-dark.css` in dark mode) plus `pdo-style.css`                                                             |
+| Resource redirection  | `getResourceURL(...)` redirects the CSS lookups of `NotificationBuilder`, `Note` and `TotalsTableView` to this module, so they pick up the AtlantaFX-tuned stylesheets |
+| Auto-adjust padding   | `getAutoAdjustPadding()` returns 16                                                                                                                                    |
 
 ### Bundled stylesheets and assets
 
 The CSS and image resources live in `src/main/resources/org/tentackle/fx/atlanta`:
 
-| Resource | Role |
-|----------|------|
+| Resource                               | Role                                                                                                                                                                                                                                                            |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `tentackle.css` / `tentackle-dark.css` | Tentackle extensions on top of the AtlantaFX theme: defines the `-tt-mandatory-color`, `-tt-error-color` and `-tt-info-color` variables (mapped to the AtlantaFX warning/danger/success palette) and the `.tt-mandatory`, `.tt-error`, `.tt-info` style classes |
-| `pdo-style.css` / `pdo-style.png` | The `.tt-pdo-style` decoration marking a field that references a PDO |
-| `note.css` / `note-dark.css` | Styling for the `Note` speech-bubble component |
-| `notification.css` | Styling for the toast/notification overlay built by `DefaultNotificationBuilder` |
-| `totalstable.css` | Styling for `TotalsTableView` (fixed row height, hidden header and scrollbars) |
-| `i18n-style.png` | Icon marking an internationalised field |
+| `pdo-style.css` / `pdo-style.png`      | The `.tt-pdo-style` decoration marking a field that references a PDO                                                                                                                                                                                            |
+| `note.css` / `note-dark.css`           | Styling for the `Note` speech-bubble component                                                                                                                                                                                                                  |
+| `notification.css`                     | Styling for the toast/notification overlay built by `DefaultNotificationBuilder`                                                                                                                                                                                |
+| `totalstable.css`                      | Styling for `TotalsTableView` (fixed row height, hidden header and scrollbars)                                                                                                                                                                                  |
+| `i18n-style.png`                       | Icon marking an internationalised field                                                                                                                                                                                                                         |
 
 ---
 
@@ -89,12 +89,12 @@ contract through a delegate, with the forwarding methods generated by the
 `delegate`/`component`/`textcomponent` wurblets (see the delegate pattern in
 [fx.md](../../../../tentackle-fx/src/main/docs/fx.md)).
 
-| Component | Extends (AtlantaFX) | View type | Notes |
-|-----------|---------------------|-----------|-------|
-| `FxCalendar` | `Calendar` | `LocalDate` | A pop-up calendar/date picker. Its delegate auto-creates a `ValueTranslator` from the model type to `LocalDate`. |
-| `FxToggleSwitch` | `ToggleSwitch` | `Boolean` | A modern on/off switch; translates the model type to/from `Boolean`. |
-| `FxCustomTextField` | `CustomTextField` | `String` | A text field that can carry leading/trailing nodes (icons, buttons). Full `FxTextComponent` feature set (columns, pattern, case conversion, auto-completion, …). |
-| `FxMaskTextField` | `MaskTextField` | `String` | A text field with an input mask, otherwise identical to `FxCustomTextField`. |
+| Component           | Extends (AtlantaFX) | View type   | Notes                                                                                                                                                            |
+|---------------------|---------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `FxCalendar`        | `Calendar`          | `LocalDate` | A pop-up calendar/date picker. Its delegate auto-creates a `ValueTranslator` from the model type to `LocalDate`.                                                 |
+| `FxToggleSwitch`    | `ToggleSwitch`      | `Boolean`   | A modern on/off switch; translates the model type to/from `Boolean`.                                                                                             |
+| `FxCustomTextField` | `CustomTextField`   | `String`    | A text field that can carry leading/trailing nodes (icons, buttons). Full `FxTextComponent` feature set (columns, pattern, case conversion, auto-completion, …). |
+| `FxMaskTextField`   | `MaskTextField`     | `String`    | A text field with an input mask, otherwise identical to `FxCustomTextField`.                                                                                     |
 
 ### Component delegates
 
@@ -137,13 +137,13 @@ becomes an `FxCalendar` automatically.
 ## Extended Containers
 
 Three AtlantaFX layout controls are wrapped as `FxContainer`s, with the
-container behaviour supplied by a delegate (`fxcontainer` wurblet):
+container behavior supplied by a delegate (`fxcontainer` wurblet):
 
-| Container | Extends (AtlantaFX) | Role |
-|-----------|---------------------|------|
-| `FxCard` | `Card` | A card with header, subheader, body and footer regions |
-| `FxTile` | `Tile` | A titled row with description, optional graphic and an action node |
-| `FxInputGroup` | `InputGroup` | Glues several inputs together into one visually-joined control group |
+| Container      | Extends (AtlantaFX) | Role                                                                 |
+|----------------|---------------------|----------------------------------------------------------------------|
+| `FxCard`       | `Card`              | A card with header, subheader, body and footer regions               |
+| `FxTile`       | `Tile`              | A titled row with description, optional graphic and an action node   |
+| `FxInputGroup` | `InputGroup`        | Glues several inputs together into one visually-joined control group |
 
 `FxCard` and `FxTile` expose `getChildren()` so they participate in the container
 hierarchy. Their configurators (`CardConfigurator`, `TileConfigurator`,
@@ -199,17 +199,17 @@ translators of `tentackle-fx`; the delegate picks the right one via
 
 ## Package Reference
 
-| Package | Role |
-|---------|------|
-| `org.tentackle.fx.atlanta` | `AtlantaThemeUtilities` — the AtlantaFX `ThemeUtilities` and bundled stylesheets/assets |
-| `org.tentackle.fx.atlanta.component` | Extended components: `FxCalendar`, `FxToggleSwitch`, `FxCustomTextField`, `FxMaskTextField` |
-| `org.tentackle.fx.atlanta.component.delegate` | Component delegates holding the behaviour |
-| `org.tentackle.fx.atlanta.component.config` | Per-component `Configurator`s |
-| `org.tentackle.fx.atlanta.component.build` | Component builders used by the FXML builder factory |
-| `org.tentackle.fx.atlanta.container` | Extended containers: `FxCard`, `FxTile`, `FxInputGroup` |
-| `org.tentackle.fx.atlanta.container.delegate` / `.config` / `.build` | Container delegates, configurators and builders |
-| `org.tentackle.fx.atlanta.translate` | `LocalDateLocalDateTranslator`, `DateLocalDateTranslator` for the `Calendar` control |
-| `org.tentackle.fx.atlanta.service` | Module hook (`Hook`) registered as a `ModuleHook` |
+| Package                                                              | Role                                                                                        |
+|----------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `org.tentackle.fx.atlanta`                                           | `AtlantaThemeUtilities` — the AtlantaFX `ThemeUtilities` and bundled stylesheets/assets     |
+| `org.tentackle.fx.atlanta.component`                                 | Extended components: `FxCalendar`, `FxToggleSwitch`, `FxCustomTextField`, `FxMaskTextField` |
+| `org.tentackle.fx.atlanta.component.delegate`                        | Component delegates holding the behaviour                                                   |
+| `org.tentackle.fx.atlanta.component.config`                          | Per-component `Configurator`s                                                               |
+| `org.tentackle.fx.atlanta.component.build`                           | Component builders used by the FXML builder factory                                         |
+| `org.tentackle.fx.atlanta.container`                                 | Extended containers: `FxCard`, `FxTile`, `FxInputGroup`                                     |
+| `org.tentackle.fx.atlanta.container.delegate` / `.config` / `.build` | Container delegates, configurators and builders                                             |
+| `org.tentackle.fx.atlanta.translate`                                 | `LocalDateLocalDateTranslator`, `DateLocalDateTranslator` for the `Calendar` control        |
+| `org.tentackle.fx.atlanta.service`                                   | Module hook (`Hook`) registered as a `ModuleHook`                                           |
 
 See also: [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) for the extended
 FX layer this module builds on, and
