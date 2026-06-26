@@ -36,35 +36,59 @@ by most of the popular frameworks.
 annotation processing and Java's compiler API. More and more of the newer microservice frameworks
 are using this technique to minimize startup times.
 
-There are pros and cons for either approach. Tentackle uses the second
-one. The [tentackle-maven-plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
+There are pros and cons for either approach.
+
+*Classpath scanning* is dynamic and requires no build step, but it pays for that at startup: the framework
+must open every jar, read the bytecode of every candidate class, and load the annotated classes (and their
+annotation types) into the JVM just to inspect their parameters. On a large application this can add seconds
+to startup, it defeats lazy class loading, and it does not sit well with ahead-of-time deployment formats such
+as jlink images or GraalVM native images, where the set of classes is meant to be known in advance.
+
+*Build-time analysis* moves all of that to the compiler. Tentackle uses this approach. The
+[tentackle-maven-plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 ([plugin reference](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html))
 analyzes the source code for annotations directly or indirectly annotated
 with [@Analyze](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/Analyze.html). 
-This is a so-called meta-annotation that causes the invocation
-of an [AnalyzeHandler](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-build-support/apidocs/org/tentackle/buildsupport/AnalyzeHandler.html) which is defined by the specific annotation. This handler
+This is a so-called *meta-annotation*: putting `@Analyze` on an annotation type turns that annotation into a
+build-time marker. Whenever the plugin finds a type carrying such an annotation, it invokes the
+[AnalyzeHandler](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-build-support/apidocs/org/tentackle/buildsupport/AnalyzeHandler.html)
+named by that annotation. The handler
 can do whatever is appropriate, and its purpose is not limited to services. 
-However, in most cases it will create some configuration
-files in a subdirectory of `target`. This information is
+In most cases it writes one or more configuration
+files into a subdirectory of `target`. These are
 processed in subsequent maven build phases and the result stored in the generated
-artifacts, usually somewhere in `META-INF`. Or it is picked up by wurblets
+artifact, usually somewhere in `META-INF`. Alternatively, the analysis result is picked up by wurblets
 to generate source code, such as the [RemoteMethod](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-persistence-wurblets/apidocs/org/tentackle/persist/wurblet/RemoteMethod.html)
 wurblet.
 
-One of the biggest advantages of this approach as opposed to classpath scanning is that it's no more necessary
-to load the classes with their annotations at runtime to examine their parameters. 
-This already happened at build-time!
+The decisive advantage is that the *parameters* of an annotation are captured at build time and written to
+`META-INF` as plain data, so the framework never has to load the annotated class — or even the annotation type —
+to read them at runtime.
 For example, the [@ClassId](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-session/apidocs/org.tentackle.session/org/tentackle/session/ClassId.html)
-annotation assigns a unique integer to a PDO class, and we can obtain this information at runtime without
-loading the annotated classes.
+annotation assigns a unique integer to a PDO class. At runtime Tentackle can resolve "class id 2001 ⇄
+`com.example.tracker.pdo.Message`" purely from the `META-INF` map, without touching the `Message` class. The
+upshot is fast, deterministic startup, a smaller runtime footprint (the build-support and handler code is not a
+runtime dependency), and a service model that is friendly to jlink and native-image deployments.
 
 ### Features of the ServiceFinder
 
-- can be used as a replacement for `java.util.ServiceLoader`
-- works in traditional classpath and in new modulepath (JPMS) mode
-- no restrictions on the kind of configurations, not only for loading classes
-- each configuration type gets its own subfolder in `META-INF`
-- easy to extend by application-specific annotations
+- **A drop-in for `java.util.ServiceLoader`.** It locates and instantiates service implementations the same way,
+  but is fed by Tentackle's own `META-INF` entries rather than `module-info` `provides` clauses, so it is not
+  confined to the one-interface-to-implementations model the JDK loader imposes.
+- **Works identically in classpath and modulepath (JPMS) mode.** The same `META-INF` data drives both; the only
+  difference is how resources are discovered, which the framework hides behind the finder (see
+  [the ModuleHook](#the-modulehook) for the modular case).
+- **Not limited to loading classes.** A "service" entry is just a key/value record, so a configuration may map to
+  a class, but equally to a literal value — an integer class id, a flag, a name. The same machinery that wires
+  implementations also carries pure metadata.
+- **One subfolder in `META-INF` per configuration type.** Each annotation/handler owns its own namespace
+  (`META-INF/services`, `META-INF/mapped-services`, …), so unrelated configurations never collide and a finder can
+  be obtained for exactly one kind of entry.
+- **Ordered results.** Implementations are returned in a stable order along the class- or modulepath, which lets
+  an application override or prepend its own provider deterministically (see `findServiceProviders` below).
+- **Open for extension by application-specific annotations.** Any application can define its own annotation,
+  meta-annotate it with `@Service` (or another `@Analyze`-backed annotation), and immediately get its own
+  build-time-populated finder — no change to the framework, and no runtime scanning.
 
 ### Service API
 
@@ -77,7 +101,7 @@ There can be as many finders as needed.
 
 #### Simple services
 
-One of them is for `META-INF/services' and is associated with the annotation
+One of them is for `META-INF/services` and is associated with the annotation
 [@Service](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/Service.html):
 ```java
 @Analyze("org.tentackle.buildsupport.ServiceAnalyzeHandler")
@@ -239,7 +263,7 @@ INFO  o.tentackle.app.AbstractApplication.initialize - no module hooks found
 
 Although the artifacts hosted on maven central are not OSGi compatible, you can easily create
 the OSGi bundles on your own. Simply git clone the [tentackle repo](https://bitbucket.org/krake-oss/tentackle/src/master/)
-, build it and run another build
+, build it, and run another build
 in the `tentackle-osgi` subfolder. This will create the bundles along with
 their OSGi activators and the sources, which are especially useful for the Eclipse-IDE.
 The activators tell the service factory which classloader to use and for which resources in `META-INF`:
@@ -266,7 +290,7 @@ We don't provide a public P2 repository yet, but that might change in the future
 ## Related Documentation
 
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the build-time tool that analyzes `@Analyze` annotations and writes the `META-INF` service configurations.
-- [Tentackle Modules](../../../../src/main/docs/modules.md) — how the framework is split into build-time, runtime and common modules, each contributing services.
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — how the framework is split into build-time, runtime, and common modules, each contributing services.
 - [Resource Bundles](./bundle.md) — bundle handling, which (like services) differs between classpath and modular mode.
 - [Internationalization](./internationalization.md) — database-backed I18N built on top of the bundle and service infrastructure.
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — PDOs and operations are interfaces whose implementations are located via these services.
