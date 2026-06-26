@@ -115,7 +115,7 @@ String(64)  city     city
 > An embedded entity declares **no `## indexes` section of its own** — it has no table to index. Indexes over its
 > columns are declared on the **owning** entity, which references the embedded attribute by a path (see below).
 
-An owner embeds it through a relation, which controls the column prefix, and may index the embedded columns:
+An owner embeds it through a relation, which controls the column prefix and may index the embedded columns:
 
 ```
 ## relations
@@ -217,6 +217,100 @@ The model-definition guide states the rule directly:
    backends, implement the full `DataType<T>` interface. This is more work and comes with deployment rules: the
    type should live in **its own module** (so the PDO modules don't drag in `tentackle-sql`), and that module must
    be registered with the wurbelizer plugin (`wurbletDependency`) and the tentackle-sql plugin.
+
+### A worked example: a three-column `Position3D`
+
+A real multi-column DataType from an industrial Tentackle application: a gripper's `X/Y/Z` position, where the
+three coordinates always travel together as one value but each must reach its own integer column.
+
+The **value** is a plain immutable record — a pure value with no `DomainContext`. It knows how to parse and format
+itself (`valueOf` / `toString` over an `"x/y/z"` string), offers a little behavior (`midPoint`, copy-`with`
+helpers), and carries TRIP hints, but it is the *same* position regardless of who holds it:
+
+```java
+@RecordDTO
+public record Position3D(int x, int y, int z) implements Serializable {
+
+  public static final Position3D ORIGIN = new Position3D(0, 0, 0);
+
+  /** Parse "x/y/z" — also recognises the model literal "Position3D.ORIGIN". */
+  public static Position3D valueOf(String str) { /* tokenize on '/' */ }
+
+  /** Parsable "x/y/z" form. */
+  @Override public String toString() { return x + "/" + y + "/" + z; }
+
+  public Position3D midPoint(Position3D other) { /* ... */ }
+}
+```
+
+The **mapping** is a separate, stateless `@Service(DataType.class)` singleton that teaches the persistence layer
+how to spread that one value across three columns. The essentials:
+
+```java
+@Service(DataType.class)
+public class Position3DType extends AbstractDataType<Position3D> {
+
+  @Override public String  getJavaType()                 { return "Position3D"; }
+  @Override public boolean isPredefined()                { return false; }       // emit generic read/write code
+  @Override public int     getColumnCount(Backend b)     { return 3; }
+
+  // one INTEGER column per coordinate, suffixed _x / _y / _z onto the attribute name
+  @Override public SqlType getSqlType(Backend b, int i)  { return SqlType.INTEGER; }
+  @Override public Optional<String> getColumnSuffix(Backend b, int i) {
+    return Optional.of(switch (i) { case 0 -> "_x"; case 1 -> "_y"; case 2 -> "_z";
+                                    default -> throw new IndexOutOfBoundsException(i); });
+  }
+
+  // value -> columns
+  @Override public Object[] set(Backend b, PreparedStatement ps, int pos,
+                                Position3D v, boolean mapNull, Integer size) throws SQLException {
+    if (v == null) { /* setNull x3 */ return new Object[] { null, null, null }; }
+    ps.setInt(pos, v.x()); ps.setInt(pos + 1, v.y()); ps.setInt(pos + 2, v.z());
+    return new Object[] { v.x(), v.y(), v.z() };
+  }
+
+  // columns -> value (a null first column means the whole value is null)
+  @Override public Position3D get(Backend b, ResultSet rs, int[] pos,
+                                  boolean mapNull, Integer size) throws SQLException {
+    int x = rs.getInt(pos[0]);
+    return rs.wasNull() ? null : new Position3D(x, rs.getInt(pos[1]), rs.getInt(pos[2]));
+  }
+}
+```
+
+In the model an attribute then uses it like any other type, and the three columns appear automatically:
+
+```
+Position3D  pickupPosition  pickup_position   where the gripper picks up
+# stored as pickup_position_x, pickup_position_y, pickup_position_z (all INTEGER)
+```
+
+Finally, the **UI** teaches a text field how to edit the value, by registering a
+[`ValueTranslator`](../../../tentackle-core/src/main/docs/binding.md) — a third, presentation-side service that is
+again a *pure value* conversion (`Position3D` ⇄ `String`), reusing the value class's own `toString` / `valueOf`:
+
+```java
+@ValueTranslatorService(modelClass = Position3D.class, viewClass = String.class)
+public class Position3DTranslator extends ValueStringTranslator<Position3D> {
+
+  public Position3DTranslator(FxTextComponent component) { super(component); }
+
+  @Override public Function<Position3D, String> toViewFunction()  { return m -> m == null ? null : m.toString(); }
+  @Override public Function<String, Position3D> toModelFunction() { return v -> v == null ? null : Position3D.valueOf(v); }
+}
+```
+
+Notice what this example makes concrete:
+
+- **Three single-responsibility services across three modules.** The value (`Position3D`) lives in the shared
+  `…-common` DTO module; the persistence mapping (`Position3DType`) lives in a dedicated `…-types` module so the
+  PDO modules don't pull in `tentackle-sql`; and the UI editing (`Position3DTranslator`) lives in the `…-gui`
+  module so the lower tiers stay free of any JavaFX dependency. The same context-free value flows through all three.
+- **The whole is the unit, not the parts.** `getSortableColumns()` returns `null` — a position is *not* meaningfully
+  ordered by the database as a value (only each raw column is). You store and retrieve it whole; you do not
+  `WHERE`/`ORDER BY` on "positions". If you *did* need to filter by `y >= 1000` with an index, that would be the
+  signal to model it as an **embedded entity** instead — exactly the trade-off this document is about.
+- **No context, by design.** Nothing in either class touches a session, a tenant, an aggregate, or a permission.
 
 ### What you get
 
