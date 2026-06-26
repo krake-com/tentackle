@@ -29,6 +29,8 @@ Conceptual deep-dives worth knowing: [`correctness-first.md`](src/main/docs/corr
 
 When adding or changing a concept, keep the relevant module doc, `toc.md`, and `index.md` in sync.
 
+Use American English spelling for all code comments and documentation (e.g. "behavior", "serialize", "color").
+
 ## Build Commands
 
 ```bash
