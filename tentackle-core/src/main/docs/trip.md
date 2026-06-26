@@ -14,15 +14,14 @@ Java Object Serialization is verbose on the wire, slow, brittle across class
 versions, and a recurring source of security advisories. RMI layers a rigid,
 JOS-based remoting model on top of it, and each remote method must declare `throws RemoteException`, 
 polluting domain interfaces with infrastructure concerns. TRIP replaces both with a single,
-compact, pluggable protocol (see [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md)
-for the upgrade path of an existing application):
+compact, pluggable protocol:
 
 - **Compact wire format** — variable-length numeric values,
   skip codes for default values, optimizations for sparse arrays/matrices/tensors/collections,
   a *type dictionary* so each class' shape is transmitted only once, and both
   reference- and value-based deduplication of repeated objects. The dictionary
-  is shared not only between messages but also among all connections of the same
-  same client. This significantly reduces bandwidth for applications that repeatedly transfer objects of the same class.
+  is shared not only between messages but also among all connections of the same 
+  client. This significantly reduces bandwidth for applications that repeatedly transfer objects of the same class.
 - **Reflection-driven, annotation-tunable** — by default every non-`static`,
   non-`transient` field is serialized; annotations let you
   deviate where needed without writing serialization code.
@@ -57,8 +56,8 @@ for the upgrade path of an existing application):
 
 The `Transport` interface (`org.tentackle.trip.Transport`) is the central abstraction. It manages network connectivity in two roles:
 
-| Role | What it does                                                                                                                                        |
-|------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| Role       | What it does                                                                                                                                        |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Client** | Maintains a connection pool to a single remote endpoint. Each client transport owns one dictionary for types transmitted between server and client. |
 | **Server** | Accepts incoming connections from multiple clients. Maintains one dictionary per client (to isolate type definitions between clients).              |
 
@@ -125,7 +124,7 @@ When a method is called:
 1. **First call** to a method — the proxy sends an `InitialRemoteCall` containing the method name and parameter types along with the serialized arguments.
 2. **Subsequent calls** — the server returns a method index with the first response. The proxy then sends compact `IdentifiedRemoteCall` messages using the method index instead of the name.
 3. **Remote results** — if a method returns another `Remote` object, the server registers it as a new delegate and returns a `DelegateDescriptor`. The client automatically wraps it in another proxy.
-4. **Result deduplication** — if the result contains deduplicatable objects that were already seen in the call, 
+4. **Result deduplication** — if the result contains deduplicatable objects already seen in the call, 
    the server sends back only a reference instead of the full object.
 
 On the server, `DefaultRemoteDelegate` handles the dispatch: 
@@ -144,11 +143,11 @@ together with all other remote objects of the session.
 
 The `Registry` (`org.tentackle.trip.Registry`) is the server-side name/address lookup service. It maps:
 
-| Map | Purpose |
-|-----|---------|
-| `UUID → RemoteDelegate` | Fast lookup by remote object identity |
-| `String → UUID` | Named registration for human-readable lookup |
-| `Remote object → UUID` | Reverse lookup for already-registered objects |
+| Map                     | Purpose                                       |
+|-------------------------|-----------------------------------------------|
+| `UUID → RemoteDelegate` | Fast lookup by remote object identity         |
+| `String → UUID`         | Named registration for human-readable lookup  |
+| `Remote object → UUID`  | Reverse lookup for already-registered objects |
 
 The registry has a fixed identity (`REGISTRY_ID = new UUID(0, 0)`) and registers itself. Clients access it through a `RemoteLookup` proxy:
 
@@ -195,11 +194,11 @@ A `TripComponent<P, T>` (`org.tentackle.trip.TripComponent`) describes one seria
 
 Component implementations:
 
-| Type | Implementation | Access mechanism |
-|------|---------------|-----------------|
-| Fields | `FieldTripComponent` | `VarHandle` (fast) or `Field.set` (final fields) |
-| Getters/setters | `MethodTripComponent` | Reflection methods |
-| Record components | `RecordTripComponent` | `RecordComponent` |
+| Type              | Implementation        | Access mechanism                                 |
+|-------------------|-----------------------|--------------------------------------------------|
+| Fields            | `FieldTripComponent`  | `VarHandle` (fast) or `Field.set` (final fields) |
+| Getters/setters   | `MethodTripComponent` | Reflection methods                               |
+| Record components | `RecordTripComponent` | `RecordComponent`                                |
 
 #### Dictionary
 
@@ -221,20 +220,20 @@ This compression is maintained separately per client on the server side and as a
 
 Every serialized block starts with a single-byte `OpCode` (`org.tentackle.trip.OpCode`) that tells the deserializer what type of data follows:
 
-| Range | Meaning |
-|-------|---------|
-| `0x00` – `0x7F` | Reserved for Tentackle core types |
+| Range           | Meaning                                    |
+|-----------------|--------------------------------------------|
+| `0x00` – `0x7F` | Reserved for Tentackle core types          |
 | `0x80` – `0xFF` | Available for application-specific opcodes |
 
 Key opcode categories:
 
-| Category | Examples | Description |
-|----------|----------|-------------|
-| Fixed type | Primitives, `String`, dates | The opcode alone determines the type |
-| Dictionary-based | Objects, records, enums, collections | Opcode + dictionary entry ordinal |
-| Predefined array | `int[]`, `byte[]`, `String[]` | Type code + size + elements |
-| Reference | Back-reference | 1–4 byte compact index |
-| Error | Various | Serialization/deserialization error codes |
+| Category         | Examples                             | Description                               |
+|------------------|--------------------------------------|-------------------------------------------|
+| Fixed type       | Primitives, `String`, dates          | The opcode alone determines the type      |
+| Dictionary-based | Objects, records, enums, collections | Opcode + dictionary entry ordinal         |
+| Predefined array | `int[]`, `byte[]`, `String[]`        | Type code + size + elements               |
+| Reference        | Back-reference                       | 1–4 byte compact index                    |
+| Error            | Various                              | Serialization/deserialization error codes |
 
 #### TripFactory
 
@@ -572,31 +571,31 @@ by implementing the `Transport` interface or extending one of the provided base 
 
 The `Transport` interface defines the core contract:
 
-| Method | Purpose                                                        |
-|--------|----------------------------------------------------------------|
-| `getUri()` / `getTransportKey()` | Identity — how this transport is uniquely identified           |
-| `getId()` | A `UUID` assigned to this transport instance                   |
-| `getConnection()` / `putConnection(Connection)` | Client-side connection pool access                             |
-| `accept()` | Server-side: start listening for incoming connections          |
-| `isAccepting()` / `isClosed()` / `close()` | Lifecycle state                                                |
-| `getClientDictionary()` | The client's dictionary                                        |
-| `getServerDictionary(UUID)` | Per-client dictionaries                                        |
-| `getRegistry()` / `getRemoteLookup()` | Access to the server's registry and client's lookup proxy      |
-| `lookup(Class, String)` | Look up a named remote object                                  |
-| `createConnectionHandler(String, InputStream, OutputStream)` | Create a handler for an incoming connection                    |
+| Method                                                           | Purpose                                                        |
+|------------------------------------------------------------------|----------------------------------------------------------------|
+| `getUri()` / `getTransportKey()`                                 | Identity — how this transport is uniquely identified           |
+| `getId()`                                                        | A `UUID` assigned to this transport instance                   |
+| `getConnection()` / `putConnection(Connection)`                  | Client-side connection pool access                             |
+| `accept()`                                                       | Server-side: start listening for incoming connections          |
+| `isAccepting()` / `isClosed()` / `close()`                       | Lifecycle state                                                |
+| `getClientDictionary()`                                          | The client's dictionary                                        |
+| `getServerDictionary(UUID)`                                      | Per-client dictionaries                                        |
+| `getRegistry()` / `getRemoteLookup()`                            | Access to the server's registry and client's lookup proxy      |
+| `lookup(Class, String)`                                          | Look up a named remote object                                  |
+| `createConnectionHandler(String, InputStream, OutputStream)`     | Create a handler for an incoming connection                    |
 | `createCallHandler(TripStream, TransportClientInfo, RemoteCall)` | Create a handler for an incoming call                          |
-| `getConnectionThreadPool()` | Server-side virtual thread pool to handle incoming connections |
-| `getCallThreadPool()` | Server-side thread pool to run the calls                       |
+| `getConnectionThreadPool()`                                      | Server-side virtual thread pool to handle incoming connections |
+| `getCallThreadPool()`                                            | Server-side thread pool to run the calls                       |
 
 ### Base classes
 
 Three base classes handle different levels of boilerplate:
 
-| Class | What it provides | Best for |
-|-------|-----------------|----------|
-| `AbstractTransport` | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC) |
-| `TcpTransport` | Socket-based client connections and server listening | Adding a layer on top of TCP (SSL, compression) |
-| `EncryptedTransport` / `CompressedTransport` | Decorators extending `TcpTransport` | Adding encryption or compression to TCP |
+| Class                                        | What it provides                                                     | Best for                                        |
+|----------------------------------------------|----------------------------------------------------------------------|-------------------------------------------------|
+| `AbstractTransport`                          | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)          |
+| `TcpTransport`                               | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression) |
+| `EncryptedTransport` / `CompressedTransport` | Decorators extending `TcpTransport`                                  | Adding encryption or compression to TCP         |
 
 The only abstract method in `AbstractTransport` is:
 
@@ -789,7 +788,6 @@ Key details:
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel over TRIP; location transparency depends on this protocol.
 - [QUIC Transport](../../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) reference transport and how it plugs in.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions are remoted as a tree of `RemoteDelegate`s over TRIP.
-- [Migrate from RMI to TRIP](../../../../src/main/docs/migrate_rmi_trip.md) — step-by-step migration of an existing RMI-based application.
 - [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
 - [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
 - [Tentackle Modules](../../../../src/main/docs/modules.md) — where `tentackle-core` (TRIP) sits among the framework modules.

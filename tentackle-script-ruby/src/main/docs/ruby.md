@@ -37,7 +37,7 @@ The dependency on `tentackle-core` is declared `optional` in the POM so that add
 
 > **Two routes to Ruby.** JRuby can also be reached through `tentackle-script-jsr` via its `jruby` JSR-223 engine.
 > Prefer **this** dedicated module: it uses the native embed API directly, and the JSR path treats JRuby as
-> *not* thread-safe (it advertises thread isolation it does not reliably honour). See the
+> *not* thread-safe (it advertises thread isolation it does not reliably honor). See the
 > [JSR-223 section](../../../../tentackle-core/src/main/docs/scripting.md#the-implementations) of the scripting doc.
 
 ---
@@ -93,7 +93,7 @@ sequence; without the flag it runs unsynchronized (appropriate for single-thread
 
 Each run binds the supplied variables into the container under their `@`-prefixed names (via the language's
 `createLocalVariableReference`), calls `EmbedEvalUnit.run()`, and converts the resulting `IRubyObject` back to Java
-with `toJava(...)`; a `null` Ruby result maps to a Java `null`. The threading behaviour is exercised by
+with `toJava(...)`; a `null` Ruby result maps to a Java `null`. The threading behavior is exercised by
 `RubyThreadingTest`.
 
 > **Performance note.** The native embed path is correct and fully cached, but Ruby evaluation is markedly slower
@@ -128,12 +128,12 @@ automatic module.
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
+| Type                                                                                    | Location                    |
+|-----------------------------------------------------------------------------------------|-----------------------------|
 | `RubyLanguage` (the `@Service(ScriptingLanguage.class)` provider, `@`-variable mapping) | `org.tentackle.script.ruby` |
-| `RubyScript` (lazy compile, caching, synchronized execution) | `org.tentackle.script.ruby` |
-| `CompiledRubyScript` (container + parsed `EmbedEvalUnit`) | `org.tentackle.script.ruby` |
-| `RubyValidationMessageConverter` (`@MessageScriptConverter`) | `org.tentackle.script.ruby` |
+| `RubyScript` (lazy compile, caching, synchronized execution)                            | `org.tentackle.script.ruby` |
+| `CompiledRubyScript` (container + parsed `EmbedEvalUnit`)                               | `org.tentackle.script.ruby` |
+| `RubyValidationMessageConverter` (`@MessageScriptConverter`)                            | `org.tentackle.script.ruby` |
 
 ## See Also
 

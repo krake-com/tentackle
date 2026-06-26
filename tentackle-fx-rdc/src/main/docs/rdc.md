@@ -63,11 +63,11 @@ tentackle-fx-rdc   ── knows PDOs *and* JavaFX ──────────
 
 The companion modules build on top of it:
 
-| Module | Purpose |
-|--------|---------|
-| `tentackle-fx-rdc-poi` | Excel (Apache POI) export of RDC tables. |
-| `tentackle-fx-rdc-update` | Application self-update / deployment support. |
-| `tentackle-test-fx-rdc` | JUnit 5 / TestNG base classes for testing GuiProviders, controllers and table configurations. |
+| Module                    | Purpose                                                                                       |
+|---------------------------|-----------------------------------------------------------------------------------------------|
+| `tentackle-fx-rdc-poi`    | Excel (Apache POI) export of RDC tables.                                                      |
+| `tentackle-fx-rdc-update` | Application self-update / deployment support.                                                 |
+| `tentackle-test-fx-rdc`   | JUnit 5 / TestNG base classes for testing GuiProviders, controllers and table configurations. |
 
 ---
 
@@ -77,7 +77,7 @@ The companion modules build on top of it:
 
 The [`GuiProvider<T>`](../java/org/tentackle/fx/rdc/GuiProvider.java) is the
 central abstraction of the module. One `GuiProvider` exists per PDO type and
-encapsulates *all* of the UI behaviour for that entity. Its responsibilities fall
+encapsulates *all* the UI behavior for that entity. Its responsibilities fall
 into a few groups:
 
 - **Identity / appearance** — `createGraphic()` for an icon, the resource bundle
@@ -170,13 +170,13 @@ TreeItem<Invoice> item = Rdc.createTreeItem(invoice);
 
 The generic editing machinery is layered:
 
-| Type | Role |
-|------|------|
-| [`PdoController<T>`](../java/org/tentackle/fx/rdc/PdoController.java) | Base FX controller bound to a single PDO (`setPdo`). |
-| [`PdoEditor<T>`](../java/org/tentackle/fx/rdc/PdoEditor.java) | A controller that edits a PDO; supplied by the `GuiProvider`. |
-| [`PdoFinder<T>`](../java/org/tentackle/fx/rdc/PdoFinder.java) | Holds the search-criteria view and runs the query. |
-| [`PdoCrud<T>`](../java/org/tentackle/fx/rdc/crud/PdoCrud.java) | The full create/read/update/delete controller wrapping an editor with toolbar, navigation and persistence actions. |
-| [`PdoSearch<T>`](../java/org/tentackle/fx/rdc/search/PdoSearch.java) | The search controller wrapping a finder with a result table that opens CRUD on selection. |
+| Type                                                                  | Role                                                                                                               |
+|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| [`PdoController<T>`](../java/org/tentackle/fx/rdc/PdoController.java) | Base FX controller bound to a single PDO (`setPdo`).                                                               |
+| [`PdoEditor<T>`](../java/org/tentackle/fx/rdc/PdoEditor.java)         | A controller that edits a PDO; supplied by the `GuiProvider`.                                                      |
+| [`PdoFinder<T>`](../java/org/tentackle/fx/rdc/PdoFinder.java)         | Holds the search-criteria view and runs the query.                                                                 |
+| [`PdoCrud<T>`](../java/org/tentackle/fx/rdc/crud/PdoCrud.java)        | The full create/read/update/delete controller wrapping an editor with toolbar, navigation and persistence actions. |
+| [`PdoSearch<T>`](../java/org/tentackle/fx/rdc/search/PdoSearch.java)  | The search controller wrapping a finder with a result table that opens CRUD on selection.                          |
 
 The default finder,
 [`DefaultPdoFinder`](../java/org/tentackle/fx/rdc/search/DefaultPdoFinder.java),
@@ -227,7 +227,7 @@ Right-clicking a PDO in a table or tree raises a context menu assembled by a
 [`PdoContextMenuFactory`](../java/org/tentackle/fx/rdc/PdoContextMenuFactory.java)
 (default
 [`DefaultPdoContextMenuFactory`](../java/org/tentackle/fx/rdc/DefaultPdoContextMenuFactory.java)).
-Menu items are themselves discoverable services so an application can add its own
+Menu items are themselves discoverable services, so an application can add its own
 without touching the framework:
 
 - Items implement `PdoTableContextMenuItem`, `PdoTreeContextMenuItem` or
@@ -278,7 +278,7 @@ launchable application.
   usually the application that is launched *first*. It shows the login view and
   spawns the login handler; on success it hands over to the real application.
 - [`DesktopApplication<C>`](../java/org/tentackle/fx/rdc/app/DesktopApplication.java)
-  — the main desktop application, parameterised by its main controller type.
+  — the main desktop application, parameterized by its main controller type.
 - [`LoginFailedHandler`](../java/org/tentackle/fx/rdc/app/LoginFailedHandler.java)
   and [`LogoutEventHandler`](../java/org/tentackle/fx/rdc/app/LogoutEventHandler.java)
   — pluggable handlers for the corresponding lifecycle events.
@@ -357,21 +357,21 @@ and a `GuiProvider`; everything else came from the framework.
 
 ## Package Reference
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.fx.rdc` | Core: `Rdc`, `RdcFactory`, `GuiProvider`, CRUD controllers, table/tree cells, events, utilities. |
-| `org.tentackle.fx.rdc.app` | Application lifecycle: `FxApplication`, `LoginApplication`, `DesktopApplication`, lifecycle handlers. |
-| `org.tentackle.fx.rdc.login` | Login view, controller and backend management. |
-| `org.tentackle.fx.rdc.crud` | The generic `PdoCrud` create/read/update/delete controller. |
-| `org.tentackle.fx.rdc.search` | `PdoSearch` and the default finder. |
-| `org.tentackle.fx.rdc.table` | RDC table configuration, column popup, printing, table utilities. |
-| `org.tentackle.fx.rdc.component(.delegate/.build)` | PDO-aware combo/choice boxes with their delegates and builders. |
-| `org.tentackle.fx.rdc.translate` | Predefined PDO value translators. |
-| `org.tentackle.fx.rdc.contextmenu` | Built-in context-menu items (edit, view, expand, collapse). |
-| `org.tentackle.fx.rdc.security` | Security-rules editing UI. |
-| `org.tentackle.fx.rdc.admin` | Administrative views (e.g. live sessions). |
-| `org.tentackle.fx.rdc.apt` | Annotation processors for service registration. |
-| `org.tentackle.fx.rdc.service` | Module hook / runtime registration. |
+| Package                                            | Contents                                                                                              |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `org.tentackle.fx.rdc`                             | Core: `Rdc`, `RdcFactory`, `GuiProvider`, CRUD controllers, table/tree cells, events, utilities.      |
+| `org.tentackle.fx.rdc.app`                         | Application lifecycle: `FxApplication`, `LoginApplication`, `DesktopApplication`, lifecycle handlers. |
+| `org.tentackle.fx.rdc.login`                       | Login view, controller and backend management.                                                        |
+| `org.tentackle.fx.rdc.crud`                        | The generic `PdoCrud` create/read/update/delete controller.                                           |
+| `org.tentackle.fx.rdc.search`                      | `PdoSearch` and the default finder.                                                                   |
+| `org.tentackle.fx.rdc.table`                       | RDC table configuration, column popup, printing, table utilities.                                     |
+| `org.tentackle.fx.rdc.component(.delegate/.build)` | PDO-aware combo/choice boxes with their delegates and builders.                                       |
+| `org.tentackle.fx.rdc.translate`                   | Predefined PDO value translators.                                                                     |
+| `org.tentackle.fx.rdc.contextmenu`                 | Built-in context-menu items (edit, view, expand, collapse).                                           |
+| `org.tentackle.fx.rdc.security`                    | Security-rules editing UI.                                                                            |
+| `org.tentackle.fx.rdc.admin`                       | Administrative views (e.g. live sessions).                                                            |
+| `org.tentackle.fx.rdc.apt`                         | Annotation processors for service registration.                                                       |
+| `org.tentackle.fx.rdc.service`                     | Module hook / runtime registration.                                                                   |
 
 ## See also
 

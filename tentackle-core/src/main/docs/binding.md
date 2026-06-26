@@ -6,11 +6,11 @@ The Tentackle binding API connects the *members* of plain Java objects (the
 **model**) to the *components* of a user interface (the **view**), keeping the
 two synchronized in both directions. A binding moves a value from the model into
 the view (*to-view*) and writes an edited value back from the view into the
-model (*to-model*), running validation, mandatory/changeable evaluation and
+model (*to-model*), running validation, mandatory/changeable evaluation, and
 veto-capable listeners along the way.
 
 The model side is deliberately UI-agnostic. The base API in
-`org.tentackle.bind` (module `tentackle-core`) knows nothing about JavaFX, Swing
+`org.tentackle.bind` (module `tentackle-core`) knows nothing about JavaFX, Swing,
 or any concrete widget toolkit — it works purely by reflection over annotated
 members. A concrete toolkit binds to it by providing implementations of a
 handful of interfaces. The reference implementation for JavaFX lives in
@@ -50,7 +50,7 @@ many model instances over its lifetime.
   the terminal values.
 - A binder is a **scanner and registry**, not a data holder. It discovers
   eligible components and bindable members and pairs them up.
-- The base layer is **abstract**; concrete behaviour (how to read/write a widget,
+- The base layer is **abstract**; concrete behavior (how to read/write a widget,
   what the root object is) is supplied by toolkit subclasses.
 
 ---
@@ -79,13 +79,13 @@ public interface UserPersistence {
 
 It carries two attributes:
 
-| Attribute | Meaning |
-|-----------|---------|
+| Attribute | Meaning                                                                                                                                                                    |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `options` | UI binding options as a comma-separated string, e.g. `@Bindable(options = "UC,MAXCOLS=5")`. Interpreted by the concrete binding (see [Binding options](#binding-options)). |
-| `ordinal` | Sort key. The binder processes members ordered by `ordinal` then name. Useful when configurations (e.g. table column order) are generated from the binding. |
+| `ordinal` | Sort key. The binder processes members ordered by `ordinal` then name. Useful when configurations (e.g. table column order) are generated from the binding.                |
 
 An annotated *object* member may itself contain annotated members; only the leaf
-values are bound. The class need not be a bean — getters, setters, fields and
+values are bound. The class need not be a bean — getters, setters, fields, and
 from-methods are all discovered.
 
 ### BindableElement — the reflective descriptor
@@ -98,7 +98,7 @@ it. `DefaultBindableElement` implements the actual access logic:
 - **Reading** (`getObject`): getter takes precedence over field.
 - **Writing** (`setObject`): setter → from-method → field, in that order.
   Primitive targets receive a safe default when the incoming value is `null`.
-- **Read-only** when there is no field, no setter and no from-method.
+- **Read-only** when there is no field, no setter, and no from-method.
 - **Type** is derived lazily from the getter return type or field type.
 
 `BindableCache` caches the sorted `BindableElement`s per class (declared-only or
@@ -114,7 +114,7 @@ gets the replacement object, and then walks **up** the parent chain writing the
 replacement into each parent until it finds a parent with a setter or field
 (`AbstractBinding.setModelValue`). If the chain cannot absorb the replacement, a
 `BindingException` is thrown.
-This feature is essential for application-specific DataTypes, for example a
+This feature is essential for application-specific DataTypes, for example, a
 Position3D that is immutable but can be constructed from a 3-tuple of doubles.
 
 ### BindingMember and the binding path
@@ -135,12 +135,12 @@ results in the view being cleared rather than an exception.
 `Binding` is the link between a single bound member and a single view component.
 It exposes the four fundamental transfer operations:
 
-| Method | Direction |
-|--------|-----------|
-| `getModelValue()` | reads the value out of the model |
-| `setViewValue(Object)` | pushes a value into the view |
-| `getViewValue()` | reads the current value from the view |
-| `setModelValue(Object)` | writes a value back into the model |
+| Method                  | Direction                             |
+|-------------------------|---------------------------------------|
+| `getModelValue()`       | reads the value out of the model      |
+| `setViewValue(Object)`  | pushes a value into the view          |
+| `getViewValue()`        | reads the current value from the view |
+| `setModelValue(Object)` | writes a value back into the model    |
 
 `AbstractBinding` implements the model-side logic (path walking, listener firing,
 veto handling, validation) and leaves the toolkit-specific parts abstract:
@@ -215,7 +215,7 @@ The concrete factory adds the toolkit pieces and is discovered as a service.
 3. `member.setObject(parent, value)` writes the value (setter → from-method →
    field). If a from-method returned a new object, the binding propagates the
    replacement up the parent chain.
-4. The binder flags that mandatory/changeable state may have changed and needs a
+4. The binder flags that mandatory/changeable state may have changed and need a
    refresh.
 
 ### Vetoes and resync
@@ -224,7 +224,7 @@ A listener throws `BindingVetoException` to stop a transfer. The exception
 carries two flags:
 
 - `resyncRequested` — re-push the *other* side's current value so model and view
-  stay consistent (e.g. on a rejected to-model write, refresh the view from the
+  stay consistent (e.g., on a rejected to-model write, refresh the view from the
   model).
 - `rethrowEnabled` — after processing, rethrow as an unchecked `BindingException`
   rather than swallowing silently.
@@ -240,7 +240,7 @@ always includes the mandatory and changeable scopes plus the binder's active
 scope. `Binding.validate()` runs them and fires `ValidationListener`s.
 
 Mandatory and changeable state can be **fixed** (constant for the binding) or
-**dynamic** (recomputed as the model changes — e.g. a field becomes mandatory
+**dynamic** (recomputed as the model changes — e.g., a field becomes mandatory
 only when another field has a certain value). Fixed evaluators are applied by the
 binding on each to-view transfer; dynamic evaluators are collected by the binder
 and refreshed via `requestMandatoryUpdate()` / `requestChangeableUpdate()` after
@@ -256,15 +256,15 @@ annotated `@Service(FxBindingFactory.class)` and obtained as a singleton via
 `FxBindingFactory.getInstance()` (resolved through `ServiceFactory`, so it works
 both modular and non-modular).
 
-| Base interface | FX interface | FX default implementation |
-|----------------|--------------|---------------------------|
-| `BindingFactory` | `FxBindingFactory` | `DefaultFxBindingFactory` |
-| `Binder` | `FxComponentBinder` | `DefaultFxComponentBinder` |
-| `Binding` | `FxComponentBinding` | `DefaultFxComponentBinding` |
-| `Binder` | `FxTableBinder<S>` | `DefaultFxTableBinder` |
-| `Binding` | `FxTableBinding<S,T>` | `DefaultFxTableBinding` |
+| Base interface   | FX interface          | FX default implementation   |
+|------------------|-----------------------|-----------------------------|
+| `BindingFactory` | `FxBindingFactory`    | `DefaultFxBindingFactory`   |
+| `Binder`         | `FxComponentBinder`   | `DefaultFxComponentBinder`  |
+| `Binding`        | `FxComponentBinding`  | `DefaultFxComponentBinding` |
+| `Binder`         | `FxTableBinder<S>`    | `DefaultFxTableBinder`      |
+| `Binding`        | `FxTableBinding<S,T>` | `DefaultFxTableBinding`     |
 
-### Controllers, components and matching by name
+### Controllers, components, and matching by name
 
 A `FxController` owns its binder lazily (`AbstractFxController.getBinder()` →
 `FxBindingFactory.createComponentBinder(this)`). The controller *is* the root
@@ -357,11 +357,11 @@ view type. It exposes two functions — `toViewFunction()` (M → V) and
 *converters* so they are not confused with JavaFX `StringConverter`s.
 
 **Why this matters: the view and the controller carry no type-specific code.**
-Because the translator encapsulates *all* parsing, formatting and conversion, the
+Because the translator encapsulates *all* parsing, formatting, and conversion, the
 view and the controller never deal with model data types:
 
 - The **view** (FXML, CSS, widget choice) describes only the *look* — which
-  component, its layout and styling. It is completely independent of the model's
+  component, its layout, and styling. It is completely independent of the model's
   data types. An `FxTextField` is just a text field; it does not know or care
   whether it ultimately edits a number, a date or a string.
 - The **controller** only declares `@Bindable` model members and `@FXML`
@@ -410,18 +410,18 @@ registry: `FxTableCell` and `FxTreeTableCell` call
 editor)`, then use `translator.toView(...)` to render the cell and
 `translator.toModel(...)` to commit an edit (see
 [Table binding](#table-binding)). A type therefore needs **one** translator to be
-displayed and edited everywhere — in form fields, in table columns and in
+displayed and edited everywhere — in form fields, in table columns, and in
 tree-table columns alike — with no per-cell formatting code and no duplicate
 registration.
 
-**Advanced behaviour** the translator interface also supports:
+**Advanced behavior** the translator interface also supports:
 
 - `isLenient()` — parse partial/loose input to the model without throwing.
 - `isMappingIncomplete()` with `saveModelValue` / `isModelModified` — for types
   like `I18NText` where the view may look unchanged while the model has actually
   changed; lets the binding still detect a modification.
 - `needsToModelTwice()` — forces a second to-model round-trip when formatting can
-  alter the value (e.g. a `Double` shown with scale 2 must re-read `1.21` after
+  alter the value (e.g., a `Double` shown with scale 2 must re-read `1.21` after
   the view reformats `1.211111`).
 - `bindingPropertiesUpdated()` — invoked by the binder's
   `bindingPropertiesUpdated()` for every bound component's translator whenever a
@@ -434,7 +434,7 @@ registration.
 The built-in translators cover the common scalar types, but the real strength of
 the mechanism shows when an application teaches the framework one of its own
 domain types. The following translator, taken from a production project, binds an
-industrial *product number* — an aluminium-coil identifier with a fixed composite
+industrial *product number* — an aluminum-coil identifier with a fixed composite
 layout `AAAA-QQQ-TTT-WWWW-LLLL-XXX` (alloy, quality, thickness, width, length and
 an optional test segment, each of a fixed width defined as a constant on the
 model class). The model type `ProductNumber` is a domain value object; the view
@@ -514,14 +514,14 @@ otherwise have to live:
   inserted automatically and the caret advanced. The user types only the
   significant characters (`AA12010…`) and the field fills in the canonical
   `AAAA-QQQ-TTT-WWWW-LLLL-XXX` skeleton (`AA12-010-…`) as they go, and the 
-  matching product numbers automatically pop up as well. Because this behaviour is part of how the *type* is
+  matching product numbers automatically pop up as well. Because this behavior is part of how the *type* is
   edited, it lives with the type — not duplicated in every view that shows a
   product number, and it works identically in a form field or a table cell.
 - **It owns error reporting.** On malformed input it sets a localized, positioned
   error directly on the component (`setError` / `setErrorOffset` /
   `setErrorTemporary`) and aborts the parse with an `FxRuntimeException`. The
   binding surfaces the marker; the controller writes no validation code.
-- **It honours lenient mode.** Both parsing (`new ProductNumber(text,
+- **It honors lenient mode.** Both parsing (`new ProductNumber(text,
   isLenient())`) and the separator autocompletion consult the inherited
   `isLenient()` flag, so the same translator serves strict entry forms and relaxed
   search fields without change.
@@ -539,14 +539,14 @@ otherwise have to live:
 The payoff restated: the FXML for a product-number field is just an
 `TextField`, and the controller just declares `@Bindable ProductNumber product`
 (or binds a PDO whose member is a `ProductNumber`). All knowledge of the type —
-its format, parsing, validation, error positioning and separator autocompletion —
+its format, parsing, validation, error positioning, and separator autocompletion —
 is concentrated in one place and reused everywhere the type appears, whether the
-product number is shown in a form field, a table column or a tree-table column.
+product number is shown in a form field, a table column, or a tree-table column.
 
 ### Binding options
 
 For text components, `@Bindable(options = "...")` (or options set on the
-component) tune input behaviour. 
+component) tune input behavior. 
 See [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md#binding-options)
 for details.
 
@@ -584,30 +584,30 @@ configurations (order, etc.) are generated from the model.
 
 ### `org.tentackle.bind` (tentackle-core)
 
-| Type | Role |
-|------|------|
-| `Bindable` | annotation marking a bindable member (`options`, `ordinal`) |
-| `BindableElement` / `DefaultBindableElement` | reflective descriptor and access logic for a member |
-| `BindableCache` / `DefaultBindableCache` | per-class cache of sorted bindable elements |
-| `BindingMember` / `DefaultBindingMember` | one node in the declaration chain (the binding path) |
-| `Binding` / `AbstractBinding` | one model-member ↔ view-component link; transfer, veto, validation |
-| `Binder` / `AbstractBinder` | scans a view, registers and manages bindings |
-| `BindingFactory` / `AbstractBindingFactory` | creates members/elements, owns the cache and class maps |
-| `BindingEvent` | event carrying type, parent and value across a transfer |
-| `ToViewListener` / `ToModelListener` | veto-capable transfer listeners |
-| `ValidationListener` / `ValidationEvent` | validation result notification |
-| `BindingVetoException` | thrown by listeners to suppress (and optionally resync/rethrow) a transfer |
-| `BindingException` | unchecked runtime exception for binding failures |
+| Type                                         | Role                                                                       |
+|----------------------------------------------|----------------------------------------------------------------------------|
+| `Bindable`                                   | annotation marking a bindable member (`options`, `ordinal`)                |
+| `BindableElement` / `DefaultBindableElement` | reflective descriptor and access logic for a member                        |
+| `BindableCache` / `DefaultBindableCache`     | per-class cache of sorted bindable elements                                |
+| `BindingMember` / `DefaultBindingMember`     | one node in the declaration chain (the binding path)                       |
+| `Binding` / `AbstractBinding`                | one model-member ↔ view-component link; transfer, veto, validation         |
+| `Binder` / `AbstractBinder`                  | scans a view, registers and manages bindings                               |
+| `BindingFactory` / `AbstractBindingFactory`  | creates members/elements, owns the cache and class maps                    |
+| `BindingEvent`                               | event carrying type, parent and value across a transfer                    |
+| `ToViewListener` / `ToModelListener`         | veto-capable transfer listeners                                            |
+| `ValidationListener` / `ValidationEvent`     | validation result notification                                             |
+| `BindingVetoException`                       | thrown by listeners to suppress (and optionally resync/rethrow) a transfer |
+| `BindingException`                           | unchecked runtime exception for binding failures                           |
 
 ### `org.tentackle.fx.bind` (tentackle-fx)
 
-| Type | Role |
-|------|------|
-| `FxBindingFactory` / `DefaultFxBindingFactory` | `@Service` singleton factory for FX |
-| `FxComponentBinder` / `DefaultFxComponentBinder` | binds a controller's `FxComponent`s by name |
-| `FxComponentBinding` / `DefaultFxComponentBinding` | binds one member to one `FxComponent` |
-| `FxTableBinder` / `DefaultFxTableBinder` | binds table columns to row-type members |
-| `FxTableBinding` / `DefaultFxTableBinding` | binds one column to a row-type member |
+| Type                                               | Role                                        |
+|----------------------------------------------------|---------------------------------------------|
+| `FxBindingFactory` / `DefaultFxBindingFactory`     | `@Service` singleton factory for FX         |
+| `FxComponentBinder` / `DefaultFxComponentBinder`   | binds a controller's `FxComponent`s by name |
+| `FxComponentBinding` / `DefaultFxComponentBinding` | binds one member to one `FxComponent`       |
+| `FxTableBinder` / `DefaultFxTableBinder`           | binds table columns to row-type members     |
+| `FxTableBinding` / `DefaultFxTableBinding`         | binds one column to a row-type member       |
 
 See also: [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) for the model objects most often bound, and
 [trip.md](trip.md) for how those objects travel between JVMs.

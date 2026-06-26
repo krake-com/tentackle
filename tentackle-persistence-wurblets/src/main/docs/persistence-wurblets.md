@@ -4,10 +4,10 @@
 
 `tentackle-persistence-wurblets` is the build-time **code generation** module that produces the *implementation
 side* of a Tentackle application's persistence: the executable SQL, the `PreparedStatement` plumbing, the caches,
-the class variables and the remote-delegate glue that make [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md)
-actually load, store, update and delete rows. It is the counterpart to
+the class variables, and the remote-delegate glue that make [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md)
+actually load, store, update, and delete rows. It is the counterpart to
 [`tentackle-wurblets`](../../../../tentackle-wurblets/src/main/docs/wurblets.md), which generates the *interface
-side* (constants, accessor declarations, DTOs and model documentation). Both read the same application
+side* (constants, accessor declarations, DTOs, and model documentation). Both read the same application
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) and the same
 [`DataType`/`Backend`](../../../../tentackle-sql/src/main/docs/sql.md) definitions, so the interfaces, the
 implementations, and the DDL produced by the
@@ -23,11 +23,11 @@ every build.
 
 ### Interface side vs. implementation side
 
-| | [`tentackle-wurblets`](../../../../tentackle-wurblets/src/main/docs/wurblets.md) | `tentackle-persistence-wurblets` (this module) |
-|---|---|---|
-| **Generates into** | PDO / operation *interfaces*, DTOs | PDO / operation *implementation* classes (and some interface anchors) |
-| **Typical output** | `CN_*`/`AN_*` constants, getter/setter declarations, relation method declarations, unique-domain-key types | field declarations, `SELECT`/`INSERT`/`UPDATE`/`DELETE` code, class variables, caches, remote delegates |
-| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base) | [`DbModelWurblet`](#dbmodelwurblet-the-shared-base) (extends `ModelWurblet`) |
+|                        | [`tentackle-wurblets`](../../../../tentackle-wurblets/src/main/docs/wurblets.md)                           | `tentackle-persistence-wurblets` (this module)                                                          |
+|------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| **Generates into**     | PDO / operation *interfaces*, DTOs                                                                         | PDO / operation *implementation* classes (and some interface anchors)                                   |
+| **Typical output**     | `CN_*`/`AN_*` constants, getter/setter declarations, relation method declarations, unique-domain-key types | field declarations, `SELECT`/`INSERT`/`UPDATE`/`DELETE` code, class variables, caches, remote delegates |
+| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base)   | [`DbModelWurblet`](#dbmodelwurblet-the-shared-base) (extends `ModelWurblet`)                            |
 
 Because this module depends on `tentackle-wurblets`, every helper available to the interface wurblets is also
 available here, extended with persistence-specific machinery — most importantly the translation of the
@@ -51,7 +51,7 @@ genuinely custom logic outside the guarded regions.
   template emits correct SQL for PostgreSQL, Oracle, DB2, etc., and refuses to generate features a target backend
   doesn't support.
 - **Woven into the developer's classes.** Generated implementation code lives in guarded regions, so a persistence
-  class can freely mix generated queries with hand-written methods.
+  class can freely mix generated queries with handwritten methods.
 - **Statement caching by construction.** Generated queries register prepared-statement ids in the entity's class
   variables, so the runtime reuses statements without per-call string building.
 - **Transparent remoting.** When an entity or method is remote-enabled, the wurblets generate both the local
@@ -95,42 +95,42 @@ follow relation paths) and `groupArgs` (the update wurblets accept a second grou
 All templates live under `src/main/wurblets/org/tentackle/persist/wurblet` and carry their own usage
 documentation in their leading `@{comment ...}@` block. They fall into four groups.
 
-### Structural — declarations, class variables and accessors
+### Structural — declarations, class variables, and accessors
 
-| Wurblet | Generates |
-|---------|-----------|
-| [`Declare`](../wurblets/org/tentackle/persist/wurblet/Declare.wrbl) | Field declarations for the entity's attributes. Options: `--protected`, `--annotations`, `--mock`. |
+| Wurblet                                                                           | Generates                                                                                                                                                                  |
+|-----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Declare`](../wurblets/org/tentackle/persist/wurblet/Declare.wrbl)               | Field declarations for the entity's attributes. Options: `--protected`, `--annotations`, `--mock`.                                                                         |
 | [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl) | The per-class `PersistentObjectClassVariables` holder (table alias, statement-id registry, super/sub-class wiring, eager relations) shared by all instances of the entity. |
-| [`MethodsImpl`](../wurblets/org/tentackle/persist/wurblet/MethodsImpl.wrbl) | Getter/setter and other method *implementations*. Options: `--noif` (no interface ⇒ no `@Override`), `--noudk`, `--noisroot`, `--mock`. |
-| [`MethodCache`](../wurblets/org/tentackle/persist/wurblet/MethodCache.wrbl) | The `PdoMethodCache` for an embedded entity. |
+| [`MethodsImpl`](../wurblets/org/tentackle/persist/wurblet/MethodsImpl.wrbl)       | Getter/setter and other method *implementations*. Options: `--noif` (no interface ⇒ no `@Override`), `--noudk`, `--noisroot`, `--mock`.                                    |
+| [`MethodCache`](../wurblets/org/tentackle/persist/wurblet/MethodCache.wrbl)       | The `PdoMethodCache` for an embedded entity.                                                                                                                               |
 
 ### Query — select, update, delete, reference checks
 
-These come in a **`Db…`** (low-level persistent object) flavour and a **`Pdo…`** (full PDO) flavour. All take a
+These come in a **`Db…`** (low-level persistent object) flavor and a **`Pdo…`** (full PDO) flavor. All take a
 [wurblet-argument `<expression>`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#wurblet-arguments--the-query-mini-language)
 and share the options `--private`, `--append=<sqltext>` and `--classvar=<classvariables>`; the `Pdo…` variants add
 `--noif`.
 
-| Wurblet | Generates | Notable extra options |
-|---------|-----------|------------------------|
-| [`DbSelectList`](../wurblets/org/tentackle/persist/wurblet/DbSelectList.wrbl) / [`PdoSelectList`](../wurblets/org/tentackle/persist/wurblet/PdoSelectList.wrbl) | A method selecting a list of objects. | `--sort`, `--lock`, `--limit`, `--offset`, `--resultset`, `--bounded`; PDO adds `--cursor`, `--immutable`, `--finallyImmutable`, `--mutable` |
-| [`DbSelectUnique`](../wurblets/org/tentackle/persist/wurblet/DbSelectUnique.wrbl) / [`PdoSelectUnique`](../wurblets/org/tentackle/persist/wurblet/PdoSelectUnique.wrbl) | A method selecting a single object. | `--sort`, `--lock`; PDO adds `--tokenlock`, `--immutable`, `--finallyImmutable`, `--mutable` |
-| [`DbUpdateBy`](../wurblets/org/tentackle/persist/wurblet/DbUpdateBy.wrbl) / [`PdoUpdateBy`](../wurblets/org/tentackle/persist/wurblet/PdoUpdateBy.wrbl) | A bulk-update method. Takes `<expression> | <values>` (the `groupArgs` config). | |
-| [`DbDeleteBy`](../wurblets/org/tentackle/persist/wurblet/DbDeleteBy.wrbl) / [`PdoDeleteBy`](../wurblets/org/tentackle/persist/wurblet/PdoDeleteBy.wrbl) | A bulk-delete method. | |
-| [`DbIsReferencing`](../wurblets/org/tentackle/persist/wurblet/DbIsReferencing.wrbl) / [`PdoIsReferencing`](../wurblets/org/tentackle/persist/wurblet/PdoIsReferencing.wrbl) | A method checking whether an object is referenced by others (referential-integrity guard). | |
+| Wurblet                                                                                                                                                                     | Generates                                                                                  | Notable extra options                                                                                                                        |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DbSelectList`](../wurblets/org/tentackle/persist/wurblet/DbSelectList.wrbl) / [`PdoSelectList`](../wurblets/org/tentackle/persist/wurblet/PdoSelectList.wrbl)             | A method selecting a list of objects.                                                      | `--sort`, `--lock`, `--limit`, `--offset`, `--resultset`, `--bounded`; PDO adds `--cursor`, `--immutable`, `--finallyImmutable`, `--mutable` |
+| [`DbSelectUnique`](../wurblets/org/tentackle/persist/wurblet/DbSelectUnique.wrbl) / [`PdoSelectUnique`](../wurblets/org/tentackle/persist/wurblet/PdoSelectUnique.wrbl)     | A method selecting a single object.                                                        | `--sort`, `--lock`; PDO adds `--tokenlock`, `--immutable`, `--finallyImmutable`, `--mutable`                                                 |
+| [`DbUpdateBy`](../wurblets/org/tentackle/persist/wurblet/DbUpdateBy.wrbl) / [`PdoUpdateBy`](../wurblets/org/tentackle/persist/wurblet/PdoUpdateBy.wrbl)                     | A bulk-update method. Takes `<expression>                                                  | <values>` (the `groupArgs` config).                                                                                                          | |
+| [`DbDeleteBy`](../wurblets/org/tentackle/persist/wurblet/DbDeleteBy.wrbl) / [`PdoDeleteBy`](../wurblets/org/tentackle/persist/wurblet/PdoDeleteBy.wrbl)                     | A bulk-delete method.                                                                      |                                                                                                                                              |
+| [`DbIsReferencing`](../wurblets/org/tentackle/persist/wurblet/DbIsReferencing.wrbl) / [`PdoIsReferencing`](../wurblets/org/tentackle/persist/wurblet/PdoIsReferencing.wrbl) | A method checking whether an object is referenced by others (referential-integrity guard). |                                                                                                                                              |
 
 ### Relations and caching
 
-| Wurblet | Generates |
-|---------|-----------|
+| Wurblet                                                                       | Generates                                                                                                                                                                                                                                                                                                                                                                                                           |
+|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`PdoRelations`](../wurblets/org/tentackle/persist/wurblet/PdoRelations.wrbl) | The relation handling for an entity: `loadComponents()`, `insertPlainWithComponents()`, `deletePlainWithComponents()`, the referencing-class registration, and anchors for the per-relation `PdoSelect…`/`PdoDelete…`/`PdoIsReferencing` wurblets. Toggle blocks with `--[no]loadcomponents`, `--[no]insertcomponents`, `--[no]deletecomponents`, `--nori`, `--noselects`, `--nodeletes`, `--novalidate`, `--mock`. |
-| [`PdoCache`](../wurblets/org/tentackle/persist/wurblet/PdoCache.wrbl) | A `PdoCache` for the entity. Options select the strategy (`--strategy=PRELOAD\|LRU\|LFU\|FORGET`), `--maxsize`, `--keepquota`, `--mutable`, `--udk` and additional unique (optionally filtered, method-extracted) indexes. |
+| [`PdoCache`](../wurblets/org/tentackle/persist/wurblet/PdoCache.wrbl)         | A `PdoCache` for the entity. Options select the strategy (`--strategy=PRELOAD\|LRU\|LFU\|FORGET`), `--maxsize`, `--keepquota`, `--mutable`, `--udk` and additional unique (optionally filtered, method-extracted) indexes.                                                                                                                                                                                          |
 
 ### Remoting
 
-| Wurblet | Generates |
-|---------|-----------|
-| [`AssertRemote`](../wurblets/org/tentackle/persist/wurblet/AssertRemote.wrbl) | Verifies the entity's remote delegate interface/implementation exist, generating them from templates if missing (a no-op when remoting is disabled). |
+| Wurblet                                                                       | Generates                                                                                                                                                                                                           |
+|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`AssertRemote`](../wurblets/org/tentackle/persist/wurblet/AssertRemote.wrbl) | Verifies the entity's remote delegate interface/implementation exist, generating them from templates if missing (a no-op when remoting is disabled).                                                                |
 | [`RemoteMethod`](../wurblets/org/tentackle/persist/wurblet/RemoteMethod.wrbl) | The remote-delegate invocation code for a method annotated `@RemoteMethod`. Options: `--this` (pass the PDO itself), `--nocontext` (omit the `DomainContext`), `--instance=<object>` (target object on the server). |
 
 ### Shared template fragments
@@ -147,13 +147,13 @@ the shared preamble with the imports and `@{extends DbModelWurblet}`.
 
 ## Supporting Java Classes
 
-| Class | Role |
-|-------|------|
-| [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java) | Base class for all persistence wurblets (see [above](#dbmodelwurblet-the-shared-base)). |
+| Class                                                                                     | Role                                                                                                                                                                           |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)             | Base class for all persistence wurblets (see [above](#dbmodelwurblet-the-shared-base)).                                                                                        |
 | [`WhereClauseGenerator`](../java/org/tentackle/persist/wurblet/WhereClauseGenerator.java) | A [`CodeGenerator`](../../../../tentackle-wurblets/src/main/docs/wurblets.md) that walks the parsed argument expression and emits the Java that builds the SQL `WHERE` clause. |
-| [`JoinClauseGenerator`](../java/org/tentackle/persist/wurblet/JoinClauseGenerator.java) | Emits the SQL for eager-loading joins, including filtered joins. |
-| [`RemoteIncludes`](../java/org/tentackle/persist/wurblet/RemoteIncludes.java) | Creates and updates the generated TRIP remote interface/implementation files (from FreeMarker templates) used by `AssertRemote`. |
-| [`RemoteMethodHelper`](../java/org/tentackle/persist/wurblet/RemoteMethodHelper.java) | Extracts the wurblet tags for a `@RemoteMethod` from the compiled class file. |
+| [`JoinClauseGenerator`](../java/org/tentackle/persist/wurblet/JoinClauseGenerator.java)   | Emits the SQL for eager-loading joins, including filtered joins.                                                                                                               |
+| [`RemoteIncludes`](../java/org/tentackle/persist/wurblet/RemoteIncludes.java)             | Creates and updates the generated TRIP remote interface/implementation files (from FreeMarker templates) used by `AssertRemote`.                                               |
+| [`RemoteMethodHelper`](../java/org/tentackle/persist/wurblet/RemoteMethodHelper.java)     | Extracts the wurblet tags for a `@RemoteMethod` from the compiled class file.                                                                                                  |
 
 ---
 
@@ -174,7 +174,7 @@ the shared preamble with the imports and `@{extends DbModelWurblet}`.
                                          remote delegates (TRIP)
 ```
 
-During an application build the
+During an application build, the
 [Tentackle Maven plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) arranges for
 the wurbelizer plugin to run both wurblet sets over the sources, in phases, so the interface anchors are filled
 before the implementation anchors that reference them. A typical generated persistence class therefore contains a

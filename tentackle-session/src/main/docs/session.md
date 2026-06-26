@@ -3,17 +3,17 @@
 ## Overview and Motivation
 
 The `tentackle-session` module defines the **session abstraction**: the runtime context that ties a user, a
-connection target and a transaction together. A [`Session`](../java/org/tentackle/session/Session.java) is the
-single object every higher layer talks to in order to start transactions, run database work, share state and be
+connection target, and a transaction together. A [`Session`](../java/org/tentackle/session/Session.java) is the
+single object every higher layer talks to in order to start transactions, run database work, share state, and be
 notified about changes — regardless of whether the database is connected directly to the current JVM or reached
 through a remote Tentackle server (or even a chain of middle-tiers).
 
 The module sits between [`tentackle-core`](../../../../tentackle-core) (its only dependency) and the persistence
 stack ([`tentackle-database`](../../../../tentackle-database), [`tentackle-persistence`](../../../../tentackle-persistence),
 [`tentackle-pdo`](../../../../tentackle-pdo)). It deliberately contains **only interfaces, abstract bases,
-annotations, events and a handful of small helper classes** — the concrete `Session` implementation lives in
+annotations, events, and a handful of small helper classes** — the concrete `Session` implementation lives in
 `tentackle-database` (local) and in the remoting modules (remote). This keeps the contract that the whole
-framework programs against free of any JDBC, SQL-dialect or wire-protocol detail.
+framework programs against free of any JDBC, SQL-dialect, or wire-protocol detail.
 
 A central design goal is **location transparency**. The same `Session` API is used whether persistence runs
 locally or on a middle-tier server. A session knows whether it is *local* (the physical database connection lives
@@ -30,7 +30,7 @@ in this JVM) or *remote* (calls are routed via [TRIP](../../../../tentackle-core
   `tentackle-database`, so UI and configuration code can manipulate connection settings without dragging in the
   backend machinery.
 - **Location transparency.** `isRemote()`/`getRemoteSession()` expose locality when needed, but the transaction,
-  property and change-notification APIs behave identically for local and remote sessions.
+  property, and change-notification APIs behave identically for local and remote sessions.
 - **Thread affinity via thread-locals.** The "current" session is held in a `ThreadLocal`, so domain and
   persistence code can reach it without threading it through every method signature.
 
@@ -43,18 +43,18 @@ in this JVM) or *remote* (calls are routed via [TRIP](../../../../tentackle-core
 [`Session`](../java/org/tentackle/session/Session.java) is the heart of the module — a *persistence and security
 context*. Its responsibilities group into:
 
-| Group | Methods | Purpose                                                                                                    |
-|-------|---------|------------------------------------------------------------------------------------------------------------|
-| **Current-session management** | `getCurrentSession`, `setCurrentSession`, `getSession`, `makeCurrent`, `isCurrent`, `clearCurrent` | Maintain and reach the thread-local "current" session.                                                     |
-| **Lifecycle** | `close`, `reOpen`, `clone`, `registerCloseHandler`, `isPooled` | Open/close/clone sessions and react to closing.                                                            |
-| **Transactions** | `begin`, `commit`, `rollback`, `rollbackSilently`, `transaction(...)`, `isTxRunning`, `getTxName`, `getTxNumber`, `getTxLevel` | Start and finish (possibly nested) transactions.                                                           |
-| **Savepoints** | `setSavepoint`, `rollback(SavepointHandle)`, `releaseSavepoint` | Fine-grained rollback within a transaction.                                                                |
-| **Pre/post-commit hooks** | `preCommit`, `postCommit` | Run logic immediately before, or right after, the physical commit (e.g. firing events post-commit).        |
-| **Grouping** | `groupWith`, `getSessionId`, `getSessionGroupId` | Tie several sessions of the same URL into a group that shares e.g. "same user".                            |
-| **Locality** | `isRemote`, `getRemoteSession`, `getUrl` | Discover whether the backend is local or reached via a server.                                             |
-| **Keep-alive** | `setAlive`, `isAlive`, `setKeepAliveInterval`, `getKeepAliveInterval` | Prevent idle remote sessions from being timed out by the server.                                           |
-| **State sharing** | `setProperty`, `getProperty`, `clearProperties` | Application state that, for remote sessions, is mirrored to the server-side session.                       |
-| **Misc** | `getDispatcher`, `setOwnerThread`, `getInstanceNumber`, `applyTo(...)` | Async task dispatch, accidental-cross-thread detection, propagating the session onto `SessionDependable`s. |
+| Group                          | Methods                                                                                                                        | Purpose                                                                                                    |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| **Current-session management** | `getCurrentSession`, `setCurrentSession`, `getSession`, `makeCurrent`, `isCurrent`, `clearCurrent`                             | Maintain and reach the thread-local "current" session.                                                     |
+| **Lifecycle**                  | `close`, `reOpen`, `clone`, `registerCloseHandler`, `isPooled`                                                                 | Open/close/clone sessions and react to closing.                                                            |
+| **Transactions**               | `begin`, `commit`, `rollback`, `rollbackSilently`, `transaction(...)`, `isTxRunning`, `getTxName`, `getTxNumber`, `getTxLevel` | Start and finish (possibly nested) transactions.                                                           |
+| **Savepoints**                 | `setSavepoint`, `rollback(SavepointHandle)`, `releaseSavepoint`                                                                | Fine-grained rollback within a transaction.                                                                |
+| **Pre/post-commit hooks**      | `preCommit`, `postCommit`                                                                                                      | Run logic immediately before, or right after, the physical commit (e.g. firing events post-commit).        |
+| **Grouping**                   | `groupWith`, `getSessionId`, `getSessionGroupId`                                                                               | Tie several sessions of the same URL into a group that shares e.g. "same user".                            |
+| **Locality**                   | `isRemote`, `getRemoteSession`, `getUrl`                                                                                       | Discover whether the backend is local or reached via a server.                                             |
+| **Keep-alive**                 | `setAlive`, `isAlive`, `setKeepAliveInterval`, `getKeepAliveInterval`                                                          | Prevent idle remote sessions from being timed out by the server.                                           |
+| **State sharing**              | `setProperty`, `getProperty`, `clearProperties`                                                                                | Application state that, for remote sessions, is mirrored to the server-side session.                       |
+| **Misc**                       | `getDispatcher`, `setOwnerThread`, `getInstanceNumber`, `applyTo(...)`                                                         | Async task dispatch, accidental-cross-thread detection, propagating the session onto `SessionDependable`s. |
 
 The static `getCurrentSession()`/`setCurrentSession()` pair backs the thread-local model; `getSession()` asserts
 one is present and throws a [`PersistenceException`](../java/org/tentackle/session/PersistenceException.java)
@@ -80,7 +80,7 @@ other than the default.
 *who* and *what* a session represents: user id/name/class-id, password (held in `char[]`, wipeable via
 `clearPassword()`), application name/id, locale, timezone, client version, host/OS/VM info, and the connection
 `properties`/`propertiesName`. It travels to the server via TRIP when a remote session logs
-in, and the server may write values back (e.g. the resolved user-id) for the client to read.
+in, and the server may write values back (e.g., the resolved user-id) for the client to read.
 
 `SessionInfo`s are created by the [`SessionInfoFactory`](../java/org/tentackle/session/SessionInfoFactory.java)
 singleton (default implementation
@@ -91,7 +91,7 @@ username/password, from a properties name, or from an
 carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and `checkServerVersion`
 for client/server version validation (`VersionIncompatibleException`).
 
-### Session creation, factory and pooling
+### Session creation, factory, and pooling
 
 - [`SessionFactory`](../java/org/tentackle/session/SessionFactory.java) — the singleton that creates open
   sessions from a `SessionInfo` (`create()`, `create(info)`), plus a pool-internal `create(pool, info)`. It also
@@ -142,7 +142,7 @@ server to client:
   `MappedService` that maps an event type to its handler. This means the **server need not know the handlers at
   all**, and different clients can react differently to the same server-side event.
 - [`MasterSerialListEvent`](../java/org/tentackle/session/MasterSerialListEvent.java) bundles several pending
-  events for a client (always add via `add(...)` so the override-older-events rule is honoured).
+  events for a client (always add via `add(...)` so the override-older-events rule is honored).
 - [`MasterSerialEventHandlerFactory`](../java/org/tentackle/session/MasterSerialEventHandlerFactory.java) (default
   [`DefaultMasterSerialEventHandlerFactory`](../java/org/tentackle/session/DefaultMasterSerialEventHandlerFactory.java))
   resolves handlers. The annotation is processed at build time by
@@ -159,7 +159,7 @@ server to client:
   dispatcher's session (it is a `SessionDependable`).
 - [`SessionKeepAliveDaemon`](../java/org/tentackle/session/SessionKeepAliveDaemon.java) /
   [`SessionKeepAliveTask`](../java/org/tentackle/session/SessionKeepAliveTask.java) — periodically `setAlive()` a
-  session (pinging asynchronously so a slow remote line cannot block the dispatcher), honouring each session's
+  session (pinging asynchronously so a slow remote line cannot block the dispatcher), honoring each session's
   `keepAliveInterval`.
 
 ### Session providers and dependables
@@ -178,7 +178,7 @@ server to client:
 ### Connection configuration
 
 These two classes describe *how to connect* and are persisted through the standard `java.util.prefs.Preferences`
-API. Importantly they depend on **neither** `tentackle-sql` nor `tentackle-database`, so configuration UIs (e.g.
+API. Importantly, they depend on **neither** `tentackle-sql` nor `tentackle-database`, so configuration UIs (e.g.,
 in `tentackle-fx-rdc`) can edit them without the backend on the classpath.
 
 - [`AbstractSessionConfiguration`](../java/org/tentackle/session/AbstractSessionConfiguration.java) — shared base;
@@ -226,11 +226,11 @@ A family of (mostly persistence-related) exceptions is defined here so the upper
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.session` | The whole public API: `Session`, `SessionInfo`, the factories and pools, the modification-tracking and master-serial types, the task-dispatcher types, the configuration classes, the model annotations, the `Default*` helper implementations and the exceptions. |
-| `org.tentackle.session.service` | The [`Hook`](../java/org/tentackle/session/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module. |
-| `org.tentackle.session.apt` | The annotation processor [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java) for `@MasterSerialEventService`. |
+| Package                         | Contents                                                                                                                                                                                                                                                           |
+|---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.session`         | The whole public API: `Session`, `SessionInfo`, the factories and pools, the modification-tracking and master-serial types, the task-dispatcher types, the configuration classes, the model annotations, the `Default*` helper implementations and the exceptions. |
+| `org.tentackle.session.service` | The [`Hook`](../java/org/tentackle/session/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module.                                                                                                                                 |
+| `org.tentackle.session.apt`     | The annotation processor [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java) for `@MasterSerialEventService`.                                                                      |
 
 ---
 
@@ -271,7 +271,7 @@ session.transaction("doStuff", () -> {
 
 The very same code runs unchanged whether `session.isRemote()` is true or false. For a remote session, the
 `SessionFactory` binds a remoting implementation that routes `begin`/`commit`/query calls over TRIP to the server,
-where a mirror session does the actual JDBC work; `getRemoteSession()` exposes server-side helpers (e.g.
+where a mirror session does the actual JDBC work; `getRemoteSession()` exposes server-side helpers (e.g.,
 server-side logging). For a local session, the implementation in `tentackle-database` talks to JDBC directly.
 
 ### Reacting to changes across clients
@@ -311,7 +311,7 @@ another.
 
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
-- [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the session, info and tracker factories.
+- [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the session, info, and tracker factories.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol that carries a remote session's calls and its `SessionInfo` between JVMs.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — token locks, whose `lockLingerEnabled` flag is carried on the `SessionInfo`.
 - [Database](../../../../tentackle-database/src/main/docs/database.md) — the module providing the concrete local `Session` implementation.

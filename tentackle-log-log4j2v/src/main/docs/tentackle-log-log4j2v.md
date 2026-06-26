@@ -12,7 +12,7 @@ The artifact name reads *"log4j2v"* — **Log4J version 2**, deliberately distin
 > back-end is discovered and bound — see the **[logging deep-dive](../../../../tentackle-core/src/main/docs/logging.md)**.
 > This page documents only the Log4J 2-specific provider.
 
-Selecting Log4J 2 is purely a matter of dependencies: put this module on the path and Tentackle routes all of its
+Selecting Log4J 2 is purely a matter of dependencies: put this module on the path, and Tentackle routes all of its
 logging through Log4J 2. With no provider module present, Tentackle falls back to plain `java.util.logging`.
 
 ```xml
@@ -112,17 +112,17 @@ The [`Hook`](../java/org/tentackle/log/log4j2v/service/Hook.java) `ModuleHook` p
 the module. For **OSGi**, a dedicated Log4J 2 activator bundle exists under
 `tentackle-osgi/tentackle-osgi-activators/`.
 
-Log4J itself is configured the usual way (e.g. a `log4j2.xml` on the classpath); Tentackle adds nothing to that.
+Log4J itself is configured the usual way (e.g., a `log4j2.xml` on the classpath); Tentackle adds nothing to that.
 
 ---
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
-| `Log4J2Logger` (the `@Service(Logger.class)` provider) | `org.tentackle.log.log4j2v` |
-| `Log4J2MappedDiagnosticContext` | `org.tentackle.log.log4j2v` |
-| `Hook` (`ModuleHook` service) | `org.tentackle.log.log4j2v.service` |
+| Type                                                   | Location                            |
+|--------------------------------------------------------|-------------------------------------|
+| `Log4J2Logger` (the `@Service(Logger.class)` provider) | `org.tentackle.log.log4j2v`         |
+| `Log4J2MappedDiagnosticContext`                        | `org.tentackle.log.log4j2v`         |
+| `Hook` (`ModuleHook` service)                          | `org.tentackle.log.log4j2v.service` |
 
 ## See Also
 

@@ -8,19 +8,19 @@ other module, `tentackle-common` is used in **two completely different contexts*
 
 1. **At runtime**, by every Tentackle application, as the lowest-level utility and SPI layer.
 2. **At build time**, by the Tentackle Maven plugins and the Wurbelizer, which need the same annotations, naming
-   rules, money/date types and the service-discovery primitives while generating code and analyzing annotations.
+   rules, money/date types, and the service-discovery primitives while generating code and analyzing annotations.
 
 Because it must work everywhere, `tentackle-common` is deliberately **dependency-free**: it requires only
 `java.sql` and `java.compiler` from the JDK and nothing else from Tentackle. Everything else in the framework
 depends, directly or transitively, on this module.
 
 Its single most important responsibility is the **Service and Configuration API** — Tentackle's replacement for
-`java.util.ServiceLoader` that powers dependency injection, component replacement and build-time annotation
+`java.util.ServiceLoader` that powers dependency injection, component replacement, and build-time annotation
 analysis throughout the framework. That subsystem is large enough to have its own document; this page gives the
 whole-module picture and points to it.
 
 > **See also:** [services.md](services.md) — the in-depth guide to the `@Service` / `@MappedService` annotations,
-> the `ServiceFinder`/`ServiceFactory`, build-time `@Analyze` processing, the `ModuleHook` mechanism and OSGi.
+> the `ServiceFinder`/`ServiceFactory`, build-time `@Analyze` processing, the `ModuleHook` mechanism, and OSGi.
 
 ### Design principles
 
@@ -50,7 +50,7 @@ This is the heart of the module and is documented fully in [services.md](service
   [`ServiceFinderKey`](../java/org/tentackle/common/ServiceFinderKey.java) — locate service configurations,
   preserving module-dependency order (the first URL belongs to the topmost module; the classpath comes last).
 - [`ServiceFactory`](../java/org/tentackle/common/ServiceFactory.java) — creates services and finders; a richer
-  replacement for `ServiceLoader` (any configuration type, per-service classloaders, modular + non-modular). It is
+  replacement for `ServiceLoader` (any configuration type, per-service classloaders, modular plus non-modular). It is
   itself loadable via `ServiceLoader` and therefore replaceable.
 - [`Analyze`](../java/org/tentackle/common/Analyze.java) / [`AnnotationProcessor`](../java/org/tentackle/common/AnnotationProcessor.java)
   — the *meta-annotation* that ties an annotation to a build-time `AnalyzeHandler` (named by string, so the
@@ -62,7 +62,7 @@ This is the heart of the module and is documented fully in [services.md](service
 - [`ClasspathFirst`](../java/org/tentackle/common/ClasspathFirst.java) — override a module-path service from the
   classpath.
 - [`RemoteMethod`](../java/org/tentackle/common/RemoteMethod.java) / [`RecordDTO`](../java/org/tentackle/common/RecordDTO.java)
-  — annotations consumed by wurblets/analysis to make hand-written methods remoting-capable and to mark records
+  — annotations consumed by wurblets/analysis to make handwritten methods remoting-capable and to mark records
   for code generation.
 
 ### Database-aware data types
@@ -136,7 +136,7 @@ A set of `final` static-method helpers and small utilities used throughout build
 - [`StringHelper`](../java/org/tentackle/common/StringHelper.java) — string manipulation helpers.
 - [`StringNormalizer`](../java/org/tentackle/common/StringNormalizer.java) /
   [`DefaultStringNormalizer`](../java/org/tentackle/common/DefaultStringNormalizer.java) — reduce strings to a
-  restricted character set (e.g. for normtext search); works for most Western languages by default.
+  restricted character set (e.g., for normtext search); works for most Western languages by default.
 - [`DateHelper`](../java/org/tentackle/common/DateHelper.java) — date/time helpers around `java.util.Date`.
 - [`FileHelper`](../java/org/tentackle/common/FileHelper.java) — file-handling helpers.
 - [`ExceptionHelper`](../java/org/tentackle/common/ExceptionHelper.java) — exception helpers.
@@ -144,14 +144,14 @@ A set of `final` static-method helpers and small utilities used throughout build
 - [`ParameterString`](../java/org/tentackle/common/ParameterString.java) — parses/builds `name='value', …`
   parameter strings (used in model options and elsewhere).
 - [`NamingRules`](../java/org/tentackle/common/NamingRules.java) — class-naming conventions.
-- [`StripMode`](../java/org/tentackle/common/StripMode.java) — enum for string-stripping behaviour.
+- [`StripMode`](../java/org/tentackle/common/StripMode.java) — enum for string-stripping behavior.
 - [`Path`](../java/org/tentackle/common/Path.java) / [`PathFactory`](../java/org/tentackle/common/PathFactory.java)
   — a generic path abstraction and its factory.
 
 ### External tools
 
 - [`ToolFinder`](../java/org/tentackle/common/ToolFinder.java) — locates external executables.
-- [`ToolRunner`](../java/org/tentackle/common/ToolRunner.java) — runs external tools (used by build tooling, e.g.
+- [`ToolRunner`](../java/org/tentackle/common/ToolRunner.java) — runs external tools (used by build tooling, e.g.,
   jlink/jpackage style invocations).
 
 ### Exceptions
@@ -165,10 +165,10 @@ A set of `final` static-method helpers and small utilities used throughout build
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.common` | Everything: the service/configuration API, the database-aware data types, object serialization, the `Cryptor`/`EncryptedProperties` security layer, i18n/bundle support, the helper utilities, external-tool support and the base exceptions. |
-| `org.tentackle.common.service` | The [`Hook`](../java/org/tentackle/common/service/Hook.java) (`ModuleHook`) for this module. |
+| Package                        | Contents                                                                                                                                                                                                                                      |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.common`         | Everything: the service/configuration API, the database-aware data types, object serialization, the `Cryptor`/`EncryptedProperties` security layer, i18n/bundle support, the helper utilities, external-tool support and the base exceptions. |
+| `org.tentackle.common.service` | The [`Hook`](../java/org/tentackle/common/service/Hook.java) (`ModuleHook`) for this module.                                                                                                                                                  |
 
 ---
 
@@ -190,13 +190,13 @@ A set of `final` static-method helpers and small utilities used throughout build
 
 - At **build time**, the Maven plugins read the `@Analyze`-meta-annotated annotations (`@Service`, `@ClassId`,
   `@TableName`, …) from source, run their `AnalyzeHandler`s, and emit configuration files under `META-INF`. The
-  same money/date/naming types are available so generated code is consistent.
+  same money/date/naming types are available, so the generated code is consistent.
 - At **runtime**, application code obtains implementations through `ServiceFactory.createService(...)` /
   `ServiceFactory.getServiceFinder()`, which read those `META-INF` files in module-dependency order — working in
   both classpath and modular mode thanks to the `ModuleHook`s every module provides.
 
 A minimal application only needs a dependency on `tentackle-common` plus the `tentackle-maven-plugin` to use the
-service API; higher-level utilities (e.g. the reflection-based class mappers) additionally require
+service API; higher-level utilities (e.g., the reflection-based class mappers) additionally require
 `tentackle-core`.
 
 ---

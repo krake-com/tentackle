@@ -1,7 +1,7 @@
 ## Tentackle Service and Configuration API
 
 In Tentackle the implementations of interfaces and most other components
-are created by factories. PDOs and operations, for example, are interfaces and
+are created by factories. PDOs and operations, for example, are interfaces, and
 the implementing classes are not known by the application code. Instead, they are
 injected at runtime by a factory. This also applies to most other components
 of the framework, such as singletons. 
@@ -14,7 +14,7 @@ easily replace components by simply adding a properly annotated class.
 Here is an example from the Tentackle tutorial:
 ```java
 /**
- * Application specific session info factory.
+ * Application-specific session info factory.
  */
 @Service(SessionInfoFactory.class)
 public class TrackerSessionInfoFactory implements SessionInfoFactory {
@@ -22,7 +22,7 @@ public class TrackerSessionInfoFactory implements SessionInfoFactory {
 }
 ```
 
-This replaces the default factory of the framework by an application-specific
+This replaces the default factory of the framework with an application-specific
 implementation.
 
 ### How does it work?
@@ -32,7 +32,7 @@ Basically, there are two ways to locate the implementations:
 1. Parsing the bytecode for the annotations at runtime, usually at 
 application startup. This is also known as classpath scanning and is used
 by most of the popular frameworks.
-1. Parsing the source code for the annotations at build time. This is based on
+2. Parsing the source code for the annotations at build time. This is based on
 annotation processing and Java's compiler API. More and more of the newer microservice frameworks
 are using this technique to minimize startup times.
 
@@ -40,9 +40,10 @@ There are pros and cons for either approach. Tentackle uses the second
 one. The [tentackle-maven-plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 ([plugin reference](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html))
 analyzes the source code for annotations directly or indirectly annotated
-with [@Analyze](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/Analyze.html). This is a so-called meta annotation that causes the invocation
+with [@Analyze](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-common/apidocs/org.tentackle.common/org/tentackle/common/Analyze.html). 
+This is a so-called meta-annotation that causes the invocation
 of an [AnalyzeHandler](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-build-support/apidocs/org/tentackle/buildsupport/AnalyzeHandler.html) which is defined by the specific annotation. This handler
-can do whatever is appropriate and its purpose is not limited to services. 
+can do whatever is appropriate, and its purpose is not limited to services. 
 However, in most cases it will create some configuration
 files in a subdirectory of `target`. This information is
 processed in subsequent maven build phases and the result stored in the generated
@@ -54,7 +55,7 @@ One of the biggest advantages of this approach as opposed to classpath scanning 
 to load the classes with their annotations at runtime to examine their parameters. 
 This already happened at build-time!
 For example, the [@ClassId](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-session/apidocs/org.tentackle.session/org/tentackle/session/ClassId.html)
-annotation assigns a unique integer to a PDO class and we can obtain this information at runtime without
+annotation assigns a unique integer to a PDO class, and we can obtain this information at runtime without
 loading the annotated classes.
 
 ### Features of the ServiceFinder
@@ -63,7 +64,7 @@ loading the annotated classes.
 - works in traditional classpath and in new modulepath (JPMS) mode
 - no restrictions on the kind of configurations, not only for loading classes
 - each configuration type gets its own subfolder in `META-INF`
-- easy to extend by application specific annotations
+- easy to extend by application-specific annotations
 
 ### Service API
 
@@ -102,7 +103,7 @@ The implementation can be obtained by the application with:
 My impl = ServiceFactory.createService(My.class);
 ```
 
-This creates an application specific annotation by annotating it with @Service:
+This creates an application-specific annotation by annotating it with @Service:
 ```java
 @Service(ReferenceRegistryProvider.class)
 public @interface ReferenceRegistryService {
@@ -130,14 +131,14 @@ for (Class<ReferenceRegistryProvider> clazz :
 
 Mapped services are designed to describe relations between 3 elements such as:
 
-- a property, for example some datatype or an interface
+- a property, for example, some datatype or an interface
 - a class related to that property
-- the value of the property, for example the concrete integer 6 or an implementation of the service
+- the value of the property, for example, the concrete integer 6 or an implementation of the service
 
 Mapped services are stored in `META-INF/mapped-services`.
 
 As an example, consider the [DomainObjectService](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-pdo/apidocs/org.tentackle.pdo/org/tentackle/pdo/DomainObjectService.html).
-This annotation associates the domain implementation to its entity. Example from the tutorial:
+This annotation associates the domain implementation with its entity. Example from the tutorial:
 ```java
 /**
  * Domain implementation for Message.

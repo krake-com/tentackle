@@ -6,7 +6,7 @@ the [Index](./index.md).
 
 ## Getting Started
 
-- [Quickstart](./quickstart.md) — generate, build and run a multi-tier application in minutes.
+- [Quickstart](./quickstart.md) — generate, build, and run a multi-tier application in minutes.
 - [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
 - [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
 
@@ -17,7 +17,7 @@ the [Index](./index.md).
 - [Correctness First](./correctness-first.md) — the design philosophy: refuse to be wrong quietly.
 - [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — where location transparency shines.
 - [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
-- [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modelling tool.
+- [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modeling tool.
 
 ## Persistent Domain Objects (PDO)
 
@@ -73,7 +73,7 @@ the [Index](./index.md).
 
 ## User Interface (JavaFX)
 
-- [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers and binding.
+- [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers, and binding.
 - [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
 - [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.
 - [FX RDC Update — Auto-Update for the Rich Desktop Client](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the client-side update UI.

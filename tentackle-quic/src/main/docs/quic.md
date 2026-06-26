@@ -20,7 +20,7 @@ to assemble from several layers:
 - **Faster connection establishment** — the TLS handshake is folded into the
   transport handshake, saving round-trips compared to TCP+TLS.
 - **Connection migration** — a QUIC connection survives the client changing its
-  IP address or port (e.g. switching networks).
+  IP address or port (e.g., switching networks).
 
 The module is a thin adapter: it wires the [KWIK](https://github.com/ptrd/kwik)
 QUIC library (`tech.kwik.core`) into TRIP's pluggable transport SPI. No
@@ -93,16 +93,16 @@ contract. Server and client responsibilities are clearly separated.
         QuicStream -> createConnectionHandler   (wraps a TripStream)
 ```
 
-| Class | Role | Side |
-|-------|------|------|
-| `QuicTripTransport` | The `Transport` implementation; scheme `tripq`. Starts the KWIK server connector and creates the client pool. | both |
-| `CompressedQuicTripTransport` | Subclass adding deflate compression; scheme `tripcq`. | both |
-| `QuicTripConnectionPool` | Opens one `QuicClientConnection` and creates a pooled `QuicTripConnection` (one QUIC stream) per slot. | client |
-| `QuicTripConnection` | An `AbstractConnection` wrapping a single bidirectional `QuicStream` as a `TripStream`. | client |
-| `QuicProtocolConnectionFactory` | KWIK `ApplicationProtocolConnectionFactory`; creates a protocol connection per incoming QUIC connection. | server |
-| `QuicProtocolConnection` | Accepts peer-initiated QUIC streams and dispatches each to a TRIP connection handler on a virtual thread. | server |
-| `QuicLogger` | Bridges KWIK's logging API onto Tentackle's `Logger`. | both |
-| `service.Hook` | `ModuleHook` for resource-bundle resolution within the module. | both |
+| Class                           | Role                                                                                                          | Side   |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------|--------|
+| `QuicTripTransport`             | The `Transport` implementation; scheme `tripq`. Starts the KWIK server connector and creates the client pool. | both   |
+| `CompressedQuicTripTransport`   | Subclass adding deflate compression; scheme `tripcq`.                                                         | both   |
+| `QuicTripConnectionPool`        | Opens one `QuicClientConnection` and creates a pooled `QuicTripConnection` (one QUIC stream) per slot.        | client |
+| `QuicTripConnection`            | An `AbstractConnection` wrapping a single bidirectional `QuicStream` as a `TripStream`.                       | client |
+| `QuicProtocolConnectionFactory` | KWIK `ApplicationProtocolConnectionFactory`; creates a protocol connection per incoming QUIC connection.      | server |
+| `QuicProtocolConnection`        | Accepts peer-initiated QUIC streams and dispatches each to a TRIP connection handler on a virtual thread.     | server |
+| `QuicLogger`                    | Bridges KWIK's logging API onto Tentackle's `Logger`.                                                         | both   |
+| `service.Hook`                  | `ModuleHook` for resource-bundle resolution within the module.                                                | both   |
 
 ### Server side
 
@@ -141,7 +141,7 @@ bidirectional streams (`Integer.MAX_VALUE`), with the real cap enforced by the
 
 1. It opens a single `QuicClientConnection` to the URI's host and port, using the
    ALPN id (`alpnid`, default = scheme).
-2. By default server-certificate checking is **disabled**
+2. By default, server-certificate checking is **disabled**
    (`noServerCertificateCheck()`), matching TRIP's design assumption that the
    transport runs on a trusted, non-public network. Set `certcheck=true` to
    enforce certificate validation.
@@ -207,16 +207,16 @@ tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
-| Parameter | Side | Default | Description |
-|-----------|------|---------|-------------|
-| `ksfile` | server | `javax.net.ssl.keyStore` system property | Path to the TLS keystore file. **Required** (here or via the system property). |
-| `kspass` | server | `javax.net.ssl.keyStorePassword` system property | Keystore (and key) password. **Required**. |
-| `ksalias` | server | — | Alias of the server certificate within the keystore. **Required**. |
-| `kstype` | server | JDK default (`KeyStore.getDefaultType()`) | Keystore type, e.g. `PKCS12` or `JKS`. |
-| `alpnid` | both | the URI scheme (`tripq` / `tripcq`) | ALPN application-protocol identifier. Client and server must match. |
-| `maxstreams` | server | `128` | Maximum concurrent peer-initiated bidirectional streams per connection. |
-| `certcheck` | client | `false` | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
-| `mincompress` | both (`tripcq`) | `1024` | Minimum block size in bytes before deflate compression is applied. |
+| Parameter     | Side            | Default                                          | Description                                                                                    |
+|---------------|-----------------|--------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `ksfile`      | server          | `javax.net.ssl.keyStore` system property         | Path to the TLS keystore file. **Required** (here or via the system property).                 |
+| `kspass`      | server          | `javax.net.ssl.keyStorePassword` system property | Keystore (and key) password. **Required**.                                                     |
+| `ksalias`     | server          | —                                                | Alias of the server certificate within the keystore. **Required**.                             |
+| `kstype`      | server          | JDK default (`KeyStore.getDefaultType()`)        | Keystore type, e.g. `PKCS12` or `JKS`.                                                         |
+| `alpnid`      | both            | the URI scheme (`tripq` / `tripcq`)              | ALPN application-protocol identifier. Client and server must match.                            |
+| `maxstreams`  | server          | `128`                                            | Maximum concurrent peer-initiated bidirectional streams per connection.                        |
+| `certcheck`   | client          | `false`                                          | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
+| `mincompress` | both (`tripcq`) | `1024`                                           | Minimum block size in bytes before deflate compression is applied.                             |
 
 > On the server, if `kspass`, `ksfile`, or `ksalias` resolve to `null`, `accept()`
 > throws a `TripRuntimeException`. The port must be in the range `0..65535`.
@@ -285,10 +285,10 @@ scheme.
 
 ## Choosing a QUIC scheme
 
-| Scheme | Transport | Encryption | Compression | When to use |
-|--------|-----------|------------|-------------|-------------|
-| `tripq` | UDP / QUIC | TLS 1.3 (built in) | no | Lossy or high-latency networks; many concurrent streams; mobile clients that change networks. |
-| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate | As `tripq`, when payloads are large and bandwidth-bound. |
+| Scheme   | Transport  | Encryption         | Compression | When to use                                                                                   |
+|----------|------------|--------------------|-------------|-----------------------------------------------------------------------------------------------|
+| `tripq`  | UDP / QUIC | TLS 1.3 (built in) | no          | Lossy or high-latency networks; many concurrent streams; mobile clients that change networks. |
+| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate     | As `tripq`, when payloads are large and bandwidth-bound.                                      |
 
 Compared with the TCP-based schemes (`trip`, `trips`, `tripe`, `tripc`, …), QUIC
 provides TLS without a separate handshake layer and avoids TCP head-of-line

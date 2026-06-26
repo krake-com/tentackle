@@ -31,12 +31,12 @@ module descriptor.
 
 ## Package Layout
 
-| Package | Role |
-|---------|------|
-| `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`). |
-| `org.tentackle.pdo.junit` | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter. |
-| `org.tentackle.pdo.test` | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes. |
-| `org.tentackle.pdo.mock` | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests. |
+| Package                    | Role                                                                                                                                                          |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`).  |
+| `org.tentackle.pdo.junit`  | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter.                                                                           |
+| `org.tentackle.pdo.test`   | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes. |
+| `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests.                  |
 
 ---
 
@@ -47,18 +47,18 @@ project's test runner; the TestNG variant is the default in Tentackle.
 
 ### `AbstractPdoTest`
 
-The base class for tests **on PDO level** — i.e. tests that talk to a live (usually in-memory) database through the
+The base class for tests **on PDO level** — i.e., tests that talk to a live (usually in-memory) database through the
 PDO API. It implements `DomainContextProvider`, so the running test *is* the context source for the PDOs it
 creates.
 
 **Transaction handling** is declared per test class through the `TransactionType` enum, chosen via the
 constructors:
 
-| Constructor | Transaction | Commit/rollback |
-|-------------|-------------|-----------------|
-| `AbstractPdoTest()` | `CLASS` (one transaction per test class) | rollback |
-| `AbstractPdoTest(TransactionType)` | as given | rollback |
-| `AbstractPdoTest(TransactionType, boolean commit)` | as given | commit if `true` |
+| Constructor                                        | Transaction                              | Commit/rollback  |
+|----------------------------------------------------|------------------------------------------|------------------|
+| `AbstractPdoTest()`                                | `CLASS` (one transaction per test class) | rollback         |
+| `AbstractPdoTest(TransactionType)`                 | as given                                 | rollback         |
+| `AbstractPdoTest(TransactionType, boolean commit)` | as given                                 | commit if `true` |
 
 `TransactionType` is `CLASS` (transaction spans the whole class), `METHOD` (one per test method) or `NONE` (no
 automatic transaction). Tests **roll back by default** so they leave no trace; pass `commit = true` only for the
@@ -77,12 +77,12 @@ rare scenario that must persist.
 
 **Extension points** a concrete test can override:
 
-| Method | Purpose |
-|--------|---------|
-| `createDatabaseTables(Db)` | Build the schema. The default loads the model from the classpath via `DbTestUtilities` and runs the generated script. Override to add extra model sources. |
-| `populateDatabase()` | Insert test fixtures after the tables exist. Default does nothing. |
-| `createDomainContext()` | Supply the (thread-local) `DomainContext`. Default `Pdo.createDomainContext()`. |
-| `openSession()` | Open the session; default throws TestNG `SkipException` (JUnit: aborts) when no backend is reachable, so the suite is **skipped, not failed**, in an incomplete environment. |
+| Method                     | Purpose                                                                                                                                                                      |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `createDatabaseTables(Db)` | Build the schema. The default loads the model from the classpath via `DbTestUtilities` and runs the generated script. Override to add extra model sources.                   |
+| `populateDatabase()`       | Insert test fixtures after the tables exist. Default does nothing.                                                                                                           |
+| `createDomainContext()`    | Supply the (thread-local) `DomainContext`. Default `Pdo.createDomainContext()`.                                                                                              |
+| `openSession()`            | Open the session; default throws TestNG `SkipException` (JUnit: aborts) when no backend is reachable, so the suite is **skipped, not failed**, in an incomplete environment. |
 
 **Helpers** for richer scenarios: `runPreCommits()`/`runPostCommits()` force the pre/post-commit callbacks even
 though the test will roll back; `setRollbackLogged(true)` logs the SQL even on success; `runClass(...)`,
@@ -92,7 +92,7 @@ tests — see `testng.xml`'s `remote1`/`remote2` groups).
 ### `TestApplication`
 
 The base class for tests that must run as a full
-[`AbstractApplication`](../../../../tentackle-pdo/src/main/docs/pdo.md) — i.e. with the complete application
+[`AbstractApplication`](../../../../tentackle-pdo/src/main/docs/pdo.md) — i.e., with the complete application
 bootstrap (`SessionInfo`, property application, registration) rather than just a bare session. Same in-memory
 table creation/population, but driven through the application lifecycle. The JUnit variant keeps a static reference
 to the running application because JUnit's `@AfterAll` must be static, and guards against two `TestApplication`s
@@ -123,12 +123,12 @@ The `org.tentackle.pdo.mock` package lets a **unit** test work with PDOs and ope
 backend. Recall the [PDO pattern](../../../../tentackle-pdo/src/main/docs/pdo.md): a PDO is a dynamic proxy backed
 by a *domain* delegate and a *persistence* delegate. The mocks supply trivial stand-ins for those delegates:
 
-| Mock | Stands in for |
-|------|---------------|
-| `MockDomainObject<T,D>` | the domain delegate of a `PersistentDomainObject` |
-| `MockPersistentObject<T,P>` | the persistence delegate of a `PersistentDomainObject` (also a `PdoMethodCacheProvider`) |
-| `MockDomainOperation<T,D>` | the domain delegate of an `Operation` |
-| `MockPersistentOperation<T>` | the persistence delegate of an `Operation` (also an `OperationMethodCacheProvider`) |
+| Mock                         | Stands in for                                                                            |
+|------------------------------|------------------------------------------------------------------------------------------|
+| `MockDomainObject<T,D>`      | the domain delegate of a `PersistentDomainObject`                                        |
+| `MockPersistentObject<T,P>`  | the persistence delegate of a `PersistentDomainObject` (also a `PdoMethodCacheProvider`) |
+| `MockDomainOperation<T,D>`   | the domain delegate of an `Operation`                                                    |
+| `MockPersistentOperation<T>` | the persistence delegate of an `Operation` (also an `OperationMethodCacheProvider`)      |
 
 Most methods throw "not implemented" — the mocks deliberately implement only what a no-database test touches (id,
 session/context wiring, method caches), so you can exercise *domain logic* in isolation and get a loud failure the
@@ -172,17 +172,17 @@ Although primarily a *support* library, the module also **contains PDO tests** (
 the framework end-to-end against H2 (in-memory) and PostgreSQL (multi-process). They double as worked examples of
 the base classes above. Coverage spans, among others:
 
-| Area | Example test(s) |
-|------|-----------------|
-| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest` |
-| Snapshots | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md)) |
-| Model | `ModelTest` |
-| Database / DBMS | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest` |
-| Sessions & remoting | `SessionPoolExecutorTest`, `RemoteTransactionTest`, plus the out-of-JVM server in `persist/server` |
-| Security & number sources | `SecurityTest`, `NumberSourceTest` |
-| Preferences | `RemotePreferencesTest` |
+| Area                       | Example test(s)                                                                                    |
+|----------------------------|----------------------------------------------------------------------------------------------------|
+| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest`                 |
+| Snapshots                  | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md))            |
+| Model                      | `ModelTest`                                                                                        |
+| Database / DBMS            | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest`                               |
+| Sessions & remoting        | `SessionPoolExecutorTest`, `RemoteTransactionTest`, plus the out-of-JVM server in `persist/server` |
+| Security & number sources  | `SecurityTest`, `NumberSourceTest`                                                                 |
+| Preferences                | `RemotePreferencesTest`                                                                            |
 
-The `pdofactory` test package (`Invoice`/`SingleInvoice`/`CollectiveInvoice` with hand-written domain and
+The `pdofactory` test package (`Invoice`/`SingleInvoice`/`CollectiveInvoice` with handwritten domain and
 persistence impls, an `Operation` and a `LogIt` interceptor) is a self-contained miniature PDO model used to test
 the factory and [interceptor](../../../../tentackle-core/src/main/docs/interceptors.md) machinery directly, without
 running the code generator.

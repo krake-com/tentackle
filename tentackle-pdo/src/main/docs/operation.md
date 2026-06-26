@@ -7,7 +7,7 @@ A **PDO** ([pdo.md](pdo.md)) models a *noun* — a `Customer`, an `Invoice`, an
 and domain logic. But not everything an application does belongs to a single
 entity. Sending a mail, importing a file, running a month-end batch, dispatching a
 command to a PLC, recalculating statistics across thousands of rows — these are
-*verbs*. They operate over many PDOs (or over no PDO at all, e.g. external
+*verbs*. They operate over many PDOs (or over no PDO at all, e.g., external
 resources), and there is no table that would naturally own them.
 
 An **`Operation`** ([`Operation`](../java/org/tentackle/pdo/Operation.java)) is
@@ -32,7 +32,7 @@ difference is what it *is for* and what it *lacks*.
 The framework's own Javadoc names the two defining differences
 ([`Operation.java`](../java/org/tentackle/pdo/Operation.java)):
 
-> 1. there is no model, i.e. they are not related to database tables
+> 1. there is no model, i.e., they are not related to database tables
 > 2. either the persistence- or the domain-part is optional (but not both)
 
 ### 1. No model, no table
@@ -63,7 +63,7 @@ Operation may have:
 - **only a domain part** (`DomainOperation`) — typical for orchestration logic with
   no direct database access of its own (e.g. `MoveOperation`, which dispatches a
   crane command);
-- **both** — when an operation needs hand-written logic on each tier.
+- **both** — when an operation needs handwritten logic on each tier.
 
 It may **never have neither**. The
 [`OperationInvocationHandler`](../java/org/tentackle/pdo/OperationInvocationHandler.java)
@@ -98,24 +98,24 @@ Everything that makes PDOs pleasant to work with still applies:
 
 ### At a glance
 
-| | **PDO** | **Operation** |
-|---|---|---|
-| Represents | a persistent entity / aggregate (a *noun*) | a service or transaction (a *verb*) |
-| Model comment + generated code | yes | **no** |
-| Backing table & identity | yes | **none** |
-| CRUD / locks / cache (`PersistentObject`) | yes | **no** |
-| Delegates | domain **and** persistence (both required) | domain and/or persistence (**at least one**) |
-| Bound to a `DomainContext` | yes | yes |
-| Remoting over TRIP | yes | yes |
-| Base classes | `AbstractPersistentObject` / `AbstractDomainObject` | `AbstractPersistentOperation` / `AbstractDomainOperation` |
-| SPI annotations | `@PersistentObjectService` / `@DomainObjectService` | `@PersistentOperationService` / `@DomainOperationService` |
-| Factory entry point | `Pdo.create(...)` | `Pdo.createOperation(...)` |
+|                                           | **PDO**                                             | **Operation**                                             |
+|-------------------------------------------|-----------------------------------------------------|-----------------------------------------------------------|
+| Represents                                | a persistent entity / aggregate (a *noun*)          | a service or transaction (a *verb*)                       |
+| Model comment + generated code            | yes                                                 | **no**                                                    |
+| Backing table & identity                  | yes                                                 | **none**                                                  |
+| CRUD / locks / cache (`PersistentObject`) | yes                                                 | **no**                                                    |
+| Delegates                                 | domain **and** persistence (both required)          | domain and/or persistence (**at least one**)              |
+| Bound to a `DomainContext`                | yes                                                 | yes                                                       |
+| Remoting over TRIP                        | yes                                                 | yes                                                       |
+| Base classes                              | `AbstractPersistentObject` / `AbstractDomainObject` | `AbstractPersistentOperation` / `AbstractDomainOperation` |
+| SPI annotations                           | `@PersistentObjectService` / `@DomainObjectService` | `@PersistentOperationService` / `@DomainOperationService` |
+| Factory entry point                       | `Pdo.create(...)`                                   | `Pdo.createOperation(...)`                                |
 
 ---
 
 ## Anatomy of an Operation
 
-Like a PDO, an Operation is described by **interfaces** and backed by **hand-written
+Like a PDO, an Operation is described by **interfaces** and backed by **handwritten
 implementation classes**, tied together by a runtime proxy. The difference is that
 one of the two implementation sides may be absent.
 
@@ -156,7 +156,7 @@ public interface MoveOperationDomain extends DomainOperation<MoveOperation> {
   void runMove(CommandType commandType, Ingot ingot, Stockyard toYard) throws PlsblException;
 }
 
-// plsbl-domain : the hand-written implementation, bound by SPI
+// plsbl-domain : the handwritten implementation, bound by SPI
 @DomainOperationService(MoveOperation.class)
 public class MoveOperationDomainImpl
        extends AbstractDomainOperation<MoveOperation, MoveOperationDomainImpl>
@@ -244,10 +244,10 @@ Two details worth noting for the persistence side:
 
 ### The implementations and their base classes
 
-| Side | Implements | Extends |
-|------|------------|---------|
+| Side        | Implements               | Extends                                                                                                                                      |
+|-------------|--------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | Persistence | `PersistentOperation<T>` | [`AbstractPersistentOperation<T,P>`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentOperation.java) |
-| Domain | `DomainOperation<T>` | [`AbstractDomainOperation<T,D>`](../../../../tentackle-domain/src/main/java/org/tentackle/domain/AbstractDomainOperation.java) |
+| Domain      | `DomainOperation<T>`     | [`AbstractDomainOperation<T,D>`](../../../../tentackle-domain/src/main/java/org/tentackle/domain/AbstractDomainOperation.java)               |
 
 Both base classes provide `me()` (the whole Operation proxy), `getOperation()`,
 `getDomainContext()`, and `getSession()`, so an implementation can freely call the
@@ -290,10 +290,10 @@ forms:
 MailOperation mail = Pdo.createOperation(MailOperation.class, context);
 mail.send("plsbl", recipient, "test", "hello");
 
-// for a session only — the application must set the context afterwards
+// for a session only — the application must set the context afterward
 MoveOperation move = Pdo.createOperation(MoveOperation.class, session);
 
-// without context or session — the application must set the context afterwards
+// without context or session — the application must set the context afterward
 SawToStockOperation op = Pdo.createOperation(SawToStockOperation.class);
 ```
 
@@ -381,16 +381,16 @@ actually concern *that* entity's own data, it probably wants to be an Operation.
 
 ## Summary
 
-| Concept | What it gives you |
-|---------|-------------------|
-| `Operation` = PDO machinery minus the model | Proxy, `DomainContext`, SPI injection, and TRIP remoting for table-less logic. |
-| No model / no table / no CRUD | Pure behavior; an operation acts on rows, it is not a row. |
-| One delegate may be absent | Persistence-only, domain-only, or both — but never neither. |
-| `AbstractPersistentOperation` / `AbstractDomainOperation` | Hand-written base classes with `me()`, `on(...)`, context, and session. |
-| `@PersistentOperationService` / `@DomainOperationService` | Bind an implementation to its operation interface for runtime discovery. |
-| `Pdo.createOperation(...)` / `op()` | Create operations the way you create PDOs. |
-| `@Transaction`, `@Secured`, `@RemoteMethod` | Same declarative cross-cutting concerns as PDOs. |
-| Operation wizard | Generates the multi-module skeleton from a short questionnaire. |
+| Concept                                                   | What it gives you                                                              |
+|-----------------------------------------------------------|--------------------------------------------------------------------------------|
+| `Operation` = PDO machinery minus the model               | Proxy, `DomainContext`, SPI injection, and TRIP remoting for table-less logic. |
+| No model / no table / no CRUD                             | Pure behavior; an operation acts on rows, it is not a row.                     |
+| One delegate may be absent                                | Persistence-only, domain-only, or both — but never neither.                    |
+| `AbstractPersistentOperation` / `AbstractDomainOperation` | Hand-written base classes with `me()`, `on(...)`, context, and session.        |
+| `@PersistentOperationService` / `@DomainOperationService` | Bind an implementation to its operation interface for runtime discovery.       |
+| `Pdo.createOperation(...)` / `op()`                       | Create operations the way you create PDOs.                                     |
+| `@Transaction`, `@Secured`, `@RemoteMethod`               | Same declarative cross-cutting concerns as PDOs.                               |
+| Operation wizard                                          | Generates the multi-module skeleton from a short questionnaire.                |
 
 See also: [pdo.md](pdo.md) for the entity counterpart and the shared
 `DomainContext`/proxy/SPI foundations,

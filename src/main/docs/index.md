@@ -98,7 +98,7 @@ topic-grouped listing of every document, see the
 ## R
 
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
-- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
+- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
 ## S

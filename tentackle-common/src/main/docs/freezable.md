@@ -3,7 +3,7 @@
 ## The problem: value objects that aren't immutable
 
 A *value object* is defined by its value, not its identity: two dates representing the same day are
-interchangeable, and once an entity says "the invoice date is 2026-06-25" that value should not silently change
+interchangeable, and once an entity says "the invoice date is 2026-06-25," that value should not silently change
 underneath it. Conceptually such objects ought to be **immutable**, like `String`, `BigDecimal` or the
 `java.time` types.
 
@@ -69,12 +69,12 @@ Two rules define its semantics:
 Because you cannot retrofit `freeze()` onto `java.util.Date`, Tentackle ships drop-in **subclasses** that add
 the capability. They are the types you use as model attributes instead of the raw JDK ones:
 
-| Tentackle type | Extends / base | Adds |
-|----------------|----------------|------|
-| [`Date`](../java/org/tentackle/common/Date.java) | `java.sql.Date` | freezability **+** timezone-stable `YYYYMMDD` serialization |
-| [`Time`](../java/org/tentackle/common/Time.java) | `java.sql.Time` | freezability + database time semantics |
-| [`Timestamp`](../java/org/tentackle/common/Timestamp.java) | `java.sql.Timestamp` | freezability + optional UTC flag |
-| [`Binary`](../java/org/tentackle/common/Binary.java) / [`TBinary`](../java/org/tentackle/common/TBinary.java) | [`AbstractBinary`](../java/org/tentackle/common/AbstractBinary.java) | freezability over a serialized byte buffer |
+| Tentackle type                                                                                                | Extends / base                                                       | Adds                                                        |
+|---------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|-------------------------------------------------------------|
+| [`Date`](../java/org/tentackle/common/Date.java)                                                              | `java.sql.Date`                                                      | freezability **+** timezone-stable `YYYYMMDD` serialization |
+| [`Time`](../java/org/tentackle/common/Time.java)                                                              | `java.sql.Time`                                                      | freezability + database time semantics                      |
+| [`Timestamp`](../java/org/tentackle/common/Timestamp.java)                                                    | `java.sql.Timestamp`                                                 | freezability + optional UTC flag                            |
+| [`Binary`](../java/org/tentackle/common/Binary.java) / [`TBinary`](../java/org/tentackle/common/TBinary.java) | [`AbstractBinary`](../java/org/tentackle/common/AbstractBinary.java) | freezability over a serialized byte buffer                  |
 
 Each carries a private `frozen` flag and overrides every state-changing method to check it first. From
 [`Date`](../java/org/tentackle/common/Date.java):
@@ -140,7 +140,7 @@ void setInvoiceDate(Date invoiceDate) {
 
 The effect: **the instant a value object is stored in an entity attribute, it is frozen.** The caller may keep
 its reference, but can no longer mutate the stored value — the aliasing bug from the opening example becomes a
-loud `TentackleRuntimeException` instead of silent corruption. To change the value you must call the setter with
+loud `TentackleRuntimeException` instead of silent corruption. To change the value, you must call the setter with
 a *different* (or cloned-and-edited) instance, which routes through dirty tracking, the immutability check
 (`assertMutable()`) and property-change notification as intended.
 
@@ -149,14 +149,14 @@ a *different* (or cloned-and-edited) instance, which routes through dirty tracki
 ## Relationship to `Immutable`
 
 `Freezable` and [`Immutable`](../../../../tentackle-core/src/main/docs/immutable.md) are deliberately different
-mechanisms for two different kinds of object, and they **cooperate**:
+mechanisms for two different kinds of objects, and they **cooperate**:
 
-| | `Freezable` | `Immutable` |
-|---|---|---|
-| Applies to | mutable **value objects** in entity fields (`Date`, `Timestamp`, `Binary`, …) | **entities / containers** (PDOs, `ImmutableArrayList`) |
-| Direction | **one-way and final** — never unfrozen | **switchable** back and forth (until `setFinallyImmutable()`) |
-| Granularity | a single scalar value | an object and, cascading, its whole aggregate |
-| Lives in | `tentackle-common` | `tentackle-core` (`org.tentackle.misc`) |
+|             | `Freezable`                                                                   | `Immutable`                                                   |
+|-------------|-------------------------------------------------------------------------------|---------------------------------------------------------------|
+| Applies to  | mutable **value objects** in entity fields (`Date`, `Timestamp`, `Binary`, …) | **entities / containers** (PDOs, `ImmutableArrayList`)        |
+| Direction   | **one-way and final** — never unfrozen                                        | **switchable** back and forth (until `setFinallyImmutable()`) |
+| Granularity | a single scalar value                                                         | an object and, cascading, its whole aggregate                 |
+| Lives in    | `tentackle-common`                                                            | `tentackle-core` (`org.tentackle.misc`)                       |
 
 A PDO's scalar attributes are **frozen value objects**, while the PDO itself is **`Immutable`**. Freezing the
 field values closes the aliasing hole that `Immutable` alone cannot — `assertMutable()` stops you from *calling
@@ -172,7 +172,7 @@ side, including its three-state model and aggregate cascading.
 
 - **Use Tentackle's value types** (`Date`, `Time`, `Timestamp`, `Binary`/`TBinary`) for model attributes, not
   the raw `java.util` / `java.sql` types — you get freezability *and* timezone-stable serialization.
-- **Don't hold on to a stored value expecting to mutate it.** Once assigned to an entity it is frozen. To change
+- **Don't hold on to a stored value expecting to mutate it.** Once assigned to an entity, it is frozen. To change
   it, build/clone a new instance and call the setter.
 - **Clone to edit.** `clone()`/`copy()` of a frozen value returns a mutable one.
 - **Freezing is permanent.** There is no unfreeze; a value's only path back to mutability is a fresh clone.

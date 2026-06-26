@@ -5,15 +5,15 @@
 The `tentackle-update` module provides the building blocks for **auto-updating a deployed desktop client**. A
 Tentackle application that is shipped as a per-user [jlink](https://docs.oracle.com/en/java/javase/25/docs/specs/man/jlink.html)
 or [jpackage](https://docs.oracle.com/en/java/javase/25/docs/specs/man/jpackage.html) image can ask its server
-whether a newer version is available, download it, verify it and replace itself in place — without an installer,
-admin rights or a separate update tool.
+whether a newer version is available, download it, verify it, and replace itself in place — without an installer,
+admin rights, or a separate update tool.
 
 The module is intentionally small and split into a **server side** and a **client side** that talk to each other
 over [TRIP](../../../../tentackle-core/src/main/docs/trip.md):
 
 - The **server** publishes an [`UpdateService`](../java/org/tentackle/update/UpdateService.java) — a TRIP remote
   service that, given the calling client's [`ClientInfo`](../java/org/tentackle/update/ClientInfo.java), answers
-  with an [`UpdateInfo`](../java/org/tentackle/update/UpdateInfo.java) describing the download URL, checksum, size
+  with an [`UpdateInfo`](../java/org/tentackle/update/UpdateInfo.java) describing the download URL, checksum, size,
   and the script to run.
 - The **client** uses [`ClientUpdateUtilities`](../java/org/tentackle/update/ClientUpdateUtilities.java) to detect
   whether it runs from an updatable image, look up the remote service, download and checksum-verify the ZIP, and
@@ -31,8 +31,8 @@ is essential: the lightweight `UpdateService` call still travels over the secure
 download is steered onto whatever fast, geographically close, cacheable HTTP(S) endpoint the operator chooses.
 
 The module deliberately contains **only the transport-neutral mechanics** (service contract, the data records, the
-download/verification helpers and the server-side service registration). The actual user-facing orchestration — the
-"a new version is available, install it?" dialog, the unzip and the process hand-off — lives one layer up in
+download/verification helpers, and the server-side service registration). The actual user-facing orchestration — the
+"a new version is available, install it?" dialog, the unzip, and the process hand-off — lives one layer up in
 [`tentackle-fx-rdc-update`](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md), which is where the JavaFX desktop application
 plugs everything together.
 
@@ -41,7 +41,7 @@ plugs everything together.
 - **Server-authoritative updates.** The server decides everything: the target image/version, the download URL and
   the update script to execute. The client contributes only its `ClientInfo` and then trusts the returned
   `UpdateInfo` verbatim. Because the URL is chosen by the server per request, the actual bytes can be served from a
-  CDN, a regional mirror or a customer-local cache — decoupling the (heavy) download from the (light) control
+  CDN, a regional mirror, or a customer-local cache — decoupling the (heavy) download from the (light) control
   channel and keeping bulk traffic off bandwidth-constrained SD-WAN/VPN uplinks.
 - **Remoting over TRIP.** `UpdateService` is a plain `Remote` interface, so the same call works whether the client
   is connected directly or through a middle-tier server. The reply (`UpdateInfo`) implements
@@ -53,7 +53,7 @@ plugs everything together.
 - **Convention-based artifact layout.** The server derives the download URLs purely from a naming convention
   (`<artifact>-<version>-<platform>-<arch>[-pkg].zip` plus a matching `.sha256` file) under a configurable base
   URL, so adding a new platform/architecture is a matter of publishing the right files — no server code changes.
-  That base URL is exactly where CDN/mirror steering happens: point it at the edge instead of the data center and
+  That base URL is exactly where CDN/mirror steering happens: point it at the edge instead of the data center, and
   every client is served locally without touching any other code.
 - **In-place, per-user install.** Because the images are per-user and writable, the client can overwrite its own
   files. There is no shared installation and no privilege escalation.
@@ -80,16 +80,16 @@ precisely so TRIP can serialize the records that cross the wire.
 
 [`ClientInfo`](../java/org/tentackle/update/ClientInfo.java) is the request record sent to the server:
 
-| Field | Meaning |
-|-------|---------|
-| `application` | the client application name |
-| `version` | the currently installed client version |
-| `platform` | the operating system (e.g. `win`, `mac`, `linux`) |
-| `architecture` | the hardware architecture (e.g. `amd64`, `aarch64`) |
+| Field              | Meaning                                                                     |
+|--------------------|-----------------------------------------------------------------------------|
+| `application`      | the client application name                                                 |
+| `version`          | the currently installed client version                                      |
+| `platform`         | the operating system (e.g. `win`, `mac`, `linux`)                           |
+| `architecture`     | the hardware architecture (e.g. `amd64`, `aarch64`)                         |
 | `installationType` | [`JLINK`](../java/org/tentackle/update/InstallationType.java) or `JPACKAGE` |
 
 A convenience constructor fills `platform` and `architecture` from the running JVM via
-`StringHelper.getPlatform()`/`getArchitecture()`, so callers normally only pass application, version and
+`StringHelper.getPlatform()`/`getArchitecture()`, so callers normally only pass application, version, and
 installation type. The record is annotated `@TripReferencable(NEVER)`/`@TripDeduplicatable(NEVER)` — it is a tiny
 one-shot value, so TRIP serializes it directly without reference bookkeeping.
 
@@ -97,13 +97,13 @@ one-shot value, so TRIP serializes it directly without reference bookkeeping.
 
 [`UpdateInfo`](../java/org/tentackle/update/UpdateInfo.java) is the reply record:
 
-| Field | Meaning |
-|-------|---------|
-| `version` | the new application version offered by the server |
-| `urlStr` | the URL of the downloadable ZIP (stored as a string, exposed via `getUrl()`) |
-| `checksum` | the SHA-256 hash used to verify the download |
-| `size` | the expected ZIP size in bytes (`-1` if the server could not determine it), used to drive a progress bar |
-| `updateExecutor` | the file name of the script to run to perform the swap (`update.sh` / `update.cmd`) |
+| Field            | Meaning                                                                                                  |
+|------------------|----------------------------------------------------------------------------------------------------------|
+| `version`        | the new application version offered by the server                                                        |
+| `urlStr`         | the URL of the downloadable ZIP (stored as a string, exposed via `getUrl()`)                             |
+| `checksum`       | the SHA-256 hash used to verify the download                                                             |
+| `size`           | the expected ZIP size in bytes (`-1` if the server could not determine it), used to drive a progress bar |
+| `updateExecutor` | the file name of the script to run to perform the swap (`update.sh` / `update.cmd`)                      |
 
 Every field here is the server's decision, not the client's. The `urlStr` in particular need not point at the
 application server at all — it can name any HTTP(S) endpoint (CDN, mirror, local cache), so the heavy download is
@@ -173,7 +173,7 @@ with a sibling `.sha256` file. (`-pkg` is appended for `JPACKAGE` installations.
 4. returns the assembled `UpdateInfo` (always reporting `getVersion()` as the new version).
 
 Both the checksum hashes and download sizes are cached in `ConcurrentHashMap`s keyed by URL, so repeated client
-requests for the same artifact do not re-fetch the metadata. Every URL-building, executor-naming and
+requests for the same artifact do not re-fetch the metadata. Every URL-building, executor-naming, and
 `UpdateInfo`-construction step is a `protected` method, so subclasses can customize the layout (different file
 extensions, per-customer artifacts, signed executors, …) without rewriting the flow.
 
@@ -199,14 +199,14 @@ gathering everything the client needs:
 - **Downloading and verifying.** `downloadZip(updateInfo, updateDir, progressConsumer)` (re)creates an empty
   update directory, streams the ZIP into it through a
   [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) (so progress can
-  be reported), then recomputes the **SHA-256** digest and compares it against `updateInfo.checksum()`, throwing if
+  be reported), then recomputes the **SHA-256** digest, and compares it against `updateInfo.checksum()`, throwing if
   they differ. Only a verified file is returned.
 
 ### CallbackReadableByteChannel
 
 [`CallbackReadableByteChannel`](../java/org/tentackle/update/CallbackReadableByteChannel.java) is a thin
 `ReadableByteChannel` wrapper that, on every read, feeds a `Consumer<Double>` the fraction `bytesRead /
-expectedSize` (0.0–1.0). This is what drives the download progress bar; with a negative expected size it simply
+expectedSize` (0.0–1.0). This is what drives the download progress bar; with a negative expected size, it simply
 reports indefinite progress.
 
 ---
@@ -232,7 +232,7 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
    SHA-256 checksum.
 6. **Swap & restart.** The ZIP is unzipped, and the `updateExecutor` script (`update.sh`/`update.cmd`) from its
    `bin` directory is launched with the current PID (and, for jpackage, the path of the executable to restart).
-   The script waits for this process to exit, overwrites the image files and relaunches the application. The client
+   The script waits for this process to exit, overwrites the image files, and relaunches the application. The client
    then `System.exit(0)`s. Optionally, the encrypted username/password are handed to the new process via
    environment variables so the user does not have to log in again.
 
@@ -240,10 +240,10 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
 
 ## Package Layout
 
-| Package | Contents |
-|---------|----------|
-| `org.tentackle.update` | The public API: the `UpdateService` contract, the `ClientInfo`/`UpdateInfo` records, `InstallationType`, the server-side `ServerUpdateUtilities` + `AbstractUpdateServiceImpl`, the client-side `ClientUpdateUtilities` and the `CallbackReadableByteChannel` download helper. |
-| `org.tentackle.update.service` | The [`Hook`](../java/org/tentackle/update/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module. |
+| Package                        | Contents                                                                                                                                                                                                                                                                       |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.update`         | The public API: the `UpdateService` contract, the `ClientInfo`/`UpdateInfo` records, `InstallationType`, the server-side `ServerUpdateUtilities` + `AbstractUpdateServiceImpl`, the client-side `ClientUpdateUtilities` and the `CallbackReadableByteChannel` download helper. |
+| `org.tentackle.update.service` | The [`Hook`](../java/org/tentackle/update/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module.                                                                                                                                              |
 
 ---
 
@@ -262,6 +262,6 @@ The end-to-end flow, as wired up by [`tentackle-fx-rdc-update`](../../../../tent
 ## Related Documentation
 
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remote invocation protocol carrying the update service calls.
-- [tentackle-fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the JavaFX desktop layer that orchestrates the update UI, download and restart.
+- [tentackle-fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the JavaFX desktop layer that orchestrates the update UI, download, and restart.
 - [Common](../../../../tentackle-common/src/main/docs/common.md) — `Cryptor`, `FileHelper`, `StringHelper` and the `ModuleHook` mechanism.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI behind the `ServerUpdateUtilities`/`ClientUpdateUtilities` singletons.

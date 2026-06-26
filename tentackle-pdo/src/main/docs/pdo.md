@@ -22,13 +22,13 @@ other.
 ### Why split persistence and domain?
 
 - **The persistence layer is agnostic of the domain layer, and vice versa.**
-  The generated persistence code never depends on hand-written business rules, and
+  The generated persistence code never depends on handwritten business rules, and
   business code never depends on JDBC, SQL, or wire formats. Each can evolve
   independently.
 - **The implementations are injected at runtime.** The PDO interface does not know
   its concrete implementation classes; they are discovered via the SPI mechanism
   (`@PersistentObjectService` / `@DomainObjectService`) and instantiated by a
-  factory. A persistence implementation can be replaced — e.g. a JDBC one swapped
+  factory. A persistence implementation can be replaced — e.g., a JDBC one swapped
   for an in-memory or remote one — without touching a single line of application
   code.
 - **Aggregates are first-class citizens.** The persistence layer knows which
@@ -60,17 +60,16 @@ other.
 
 A single entity is described by **three interfaces** and backed by **two
 implementation classes**, tied together by a runtime proxy. Using the aluminum
-`Ingot` entity from the
-[`plsbl`](../../../../../../../hydro/plsbl/develop) reference application
+`Ingot` entity from a sample application
 (modules `plsbl-pdo`, `plsbl-domain`, `plsbl-persistence`):
 
-| Layer | Artifact | Module | Role |
-|-------|----------|--------|------|
-| PDO interface | `Ingot` | `plsbl-pdo` | The public entity type; what application code uses. |
-| Persistence interface | `IngotPersistence` | `plsbl-pdo` | Attributes, relations, finders, `persist`/`select`/`delete`. |
-| Domain interface | `IngotDomain` | `plsbl-pdo` | Business methods (`move`, `deliver`, `isDeliverable`, …). |
-| Persistence impl | `IngotPersistenceImpl` | `plsbl-persistence` | Generated + hand-written SQL mapping. |
-| Domain impl | `IngotDomainImpl` | `plsbl-domain` | Hand-written business logic. |
+| Layer                 | Artifact               | Module              | Role                                                         |
+|-----------------------|------------------------|---------------------|--------------------------------------------------------------|
+| PDO interface         | `Ingot`                | `plsbl-pdo`         | The public entity type; what application code uses.          |
+| Persistence interface | `IngotPersistence`     | `plsbl-pdo`         | Attributes, relations, finders, `persist`/`select`/`delete`. |
+| Domain interface      | `IngotDomain`          | `plsbl-pdo`         | Business methods (`move`, `deliver`, `isDeliverable`, …).    |
+| Persistence impl      | `IngotPersistenceImpl` | `plsbl-persistence` | Generated + hand-written SQL mapping.                        |
+| Domain impl           | `IngotDomainImpl`      | `plsbl-domain`      | Hand-written business logic.                                 |
 
 ### The PDO interface
 
@@ -118,7 +117,7 @@ as `persist()` or `reload()` return the precise type (`Ingot`) rather than a raw
 - attribute-name and column-length constants;
 - finders (`selectByStockyardId(...)`).
 
-Hand-written persistence-flavored methods can be added too. In `IngotPersistence`,
+Handwritten persistence-flavored methods can be added too. In `IngotPersistence`,
 the generic CRUD methods are overridden only to attach interceptors:
 
 ```java
@@ -276,7 +275,7 @@ At build time the **Wurbelizer** (`wurbelizer-maven-plugin`, with the templates 
 - DDL and other persistence artifacts.
 
 The generated code is woven into the existing source between
-`//GEN-BEGIN`/`//GEN-END` markers, so hand-written and generated code coexist in
+`//GEN-BEGIN`/`//GEN-END` markers, so handwritten and generated code coexist in
 the same file. The relations declared here are what make `getPickups()`,
 `getMovements()`, etc. return live, context-aware collections — and what tells the
 persistence layer that an `Ingot` is the **root entity** of an aggregate whose
@@ -299,7 +298,7 @@ times:
    component to its root entity.
 3. **Which logical data space (tenant) does it belong to?** Through optional
    application-specific extensions it scopes queries to the current tenant.
-4. **which sub-domain does it belong to?** A `DomainContext` can be **extended**
+4. **which subdomain does it belong to?** A `DomainContext` can be **extended**
    to hold additional information or cloned to create a named sub-context.
 
 ### Aggregates and the root context
@@ -389,7 +388,7 @@ including its components.
 #### 3. Components read outside their root context become immutable
 
 Sometimes a component is loaded directly, in a context that is *not* the root
-context of its aggregate — for example a finder that selects `InvoiceLine`s across
+context of its aggregate — for example, a finder that selects `InvoiceLine`s across
 many invoices. In DDD terms this is a **deep reference** (reaching into another
 aggregate's internals), which is a design smell. Tentackle does not forbid it, but
 it makes such components **automatically immutable**: any attempt to change their
@@ -431,7 +430,7 @@ It is recommended to provide an application-specific context via a
 
 ### Named (sub) contexts
 
-By default contexts are unnamed. Creating a **named clone** (`context.clone("edit")`,
+By default, contexts are unnamed. Creating a **named clone** (`context.clone("edit")`,
 or `on(Ingot.class, "edit")`) opens a sub-context that describes a distinct part of
 the application — a module, task, or purpose. Named contexts can, for example,
 inhibit or allow certain methods, and they guarantee that a PDO locked in one named
@@ -525,7 +524,7 @@ mvn tentackle-wizard:pdo
 ```
 
 Run from the aggregator (parent) directory so the wizard can place files into all
-modules. It asks for the entity name, the short/long description, the table name
+modules. It asks for the entity name, the short/long description, the table name,
 and class id, and generates the interfaces and implementations in the right
 modules, including the SPI annotations and an empty model comment block ready for
 you to fill in. The normal build (`tentackle:analyze` → Wurbelizer → compiler)
@@ -575,7 +574,7 @@ shorthands instead of `Pdo.create(...)`:
 `@Transaction` (see
 [`Transaction`](../java/org/tentackle/pdo/Transaction.java)) wraps a method
 in a database transaction: if none is running, one is started before the call and
-committed afterwards; any exception rolls it back. If a transaction is already
+committed afterward; any exception rolls it back. If a transaction is already
 running, the method joins it. This is why `move(...)` and `deliver(...)` — which
 touch many rows across the aggregate and beyond — are annotated `@Transaction`.
 
@@ -606,7 +605,7 @@ public Ingot move(Stockyard fromYard, Stockyard toYard, boolean rotate,
   movement.setToStockyard(toYard);
   ingot.getMovements().add(movement);               // component list of the Ingot aggregate
 
-  // ... pure domain rules: pile heights, neighbours, on-top checks, statistics ...
+  // ... pure domain rules: pile heights, neighbors, on-top checks, statistics ...
 
   Ingot it = ingot.completeLoading();               // another domain method on the same PDO
   ingot = (it != null) ? it : ingot.persist();      // persist the whole aggregate atomically
@@ -638,16 +637,16 @@ What to notice:
 
 ## Summary
 
-| Concept | What it gives you |
-|---------|-------------------|
-| Three interfaces + two impls + proxy | Emulated multiple inheritance; persistence and domain stay independent. |
-| Runtime injection via SPI | Implementations are replaceable without touching application code. |
-| Model comment + Wurbelizer | Persistence interface, mapping, and DDL generated from one declaration. |
-| `DomainContext` | Session, aggregate root context, and tenant scoping in one object — the DDD backbone. |
-| Root context & components | Aggregates enforced structurally; components know their root with no query. |
-| Location transparency over TRIP | Domain logic written once, runs on any tier; **no `LazyInitializationException`**. |
-| `me()` / `on(...)` | Readable access to the whole PDO and to context-bound related PDOs. |
-| `@Transaction`, validation, token locks | Cross-cutting concerns applied declaratively via interceptors. |
+| Concept                                 | What it gives you                                                                     |
+|-----------------------------------------|---------------------------------------------------------------------------------------|
+| Three interfaces + two impls + proxy    | Emulated multiple inheritance; persistence and domain stay independent.               |
+| Runtime injection via SPI               | Implementations are replaceable without touching application code.                    |
+| Model comment + Wurbelizer              | Persistence interface, mapping, and DDL generated from one declaration.               |
+| `DomainContext`                         | Session, aggregate root context, and tenant scoping in one object — the DDD backbone. |
+| Root context & components               | Aggregates enforced structurally; components know their root with no query.           |
+| Location transparency over TRIP         | Domain logic written once, runs on any tier; **no `LazyInitializationException`**.    |
+| `me()` / `on(...)`                      | Readable access to the whole PDO and to context-bound related PDOs.                   |
+| `@Transaction`, validation, token locks | Cross-cutting concerns applied declaratively via interceptors.                        |
 
 See also: [trip.md](../../../../tentackle-core/src/main/docs/trip.md) for the
 remoting that makes location transparency possible,

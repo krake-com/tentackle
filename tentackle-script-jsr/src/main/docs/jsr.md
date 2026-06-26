@@ -21,7 +21,7 @@ factory**. With it on the path, a single application can mix JSR-223 engines and
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-script-jsr</artifactId>
 </dependency>
-<!-- plus at least one JSR-223 engine of your choosing, e.g. Groovy -->
+<!-- plus at least one JSR-223 engine of your choosing, e.g., Groovy -->
 <dependency>
   <groupId>org.apache.groovy</groupId>
   <artifactId>groovy-jsr223</artifactId>
@@ -74,15 +74,15 @@ so `JSR223Language` installs a translator that prepends `@` when the engine name
 
 `isEngineThreadSafe(engineFactory)` decides per engine whether parallel execution is safe:
 
-- The **`jruby`** engine is treated as **not** thread-safe — it advertises `THREAD_ISOLATED` but does not honour it
+- The **`jruby`** engine is treated as **not** thread-safe — it advertises `THREAD_ISOLATED` but does not honor it
   reliably, so parallel scripts fail intermittently.
 - **Nashorn** (`Nashorn` in the engine name) is treated as thread-safe even though it reports no `THREADING`
   parameter, because each `eval` is passed fresh `Bindings`.
-- Otherwise the engine is thread-safe if it declares the `THREADING` parameter.
+- Otherwise, the engine is thread-safe if it declares the `THREADING` parameter.
 
 ---
 
-## Compilation, Caching and Execution
+## Compilation, Caching, and Execution
 
 [`JSR223Script`](../java/org/tentackle/script/jsr/JSR223Script.java) is the `AbstractScript` subclass returned by
 the language. It follows the API's uniform *create → (lazily compile) → execute* lifecycle:
@@ -110,7 +110,7 @@ Validator messages may use the i18n shortcut `@('key', args…)`, which the scri
 method call before compilation via a [`ScriptConverter`](../../../../tentackle-core/src/main/java/org/tentackle/script/ScriptConverter.java).
 This module registers [`ECMAScriptValidationMessageConverter`](../java/org/tentackle/script/jsr/ECMAScriptValidationMessageConverter.java),
 annotated `@MessageScriptConverter("ECMAScript")`, for the JavaScript case. Like the other providers' converters it
-extends `AbstractScriptValidationMessageConverter` with no behavioural change — the base converter expresses the
+extends `AbstractScriptValidationMessageConverter` with no behavioral change — the base converter expresses the
 validated object through the language's own `createLocalVariableReference`. (For Groovy and Ruby reached *through*
 JSR-223, their respective native converters still apply by language name.)
 
@@ -142,14 +142,14 @@ so the factory replacement also works on the plain classpath.
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
-| `JSR223ScriptFactory` (the `@Service(ScriptFactory.class)` replacement) | `org.tentackle.script.jsr` |
-| `JSR223Language` (per-engine adapter, thread-safety inference, variable translation) | `org.tentackle.script.jsr` |
-| `JSR223Script` (lazy compile, caching, synchronized compile/eval) | `org.tentackle.script.jsr` |
-| `CompiledJSR223Script` (code + `javax.script.CompiledScript`) | `org.tentackle.script.jsr` |
-| `ECMAScriptValidationMessageConverter` (`@MessageScriptConverter`) | `org.tentackle.script.jsr` |
-| `Hook` (`ModuleHook` service) | `org.tentackle.script.jsr.service` |
+| Type                                                                                 | Location                           |
+|--------------------------------------------------------------------------------------|------------------------------------|
+| `JSR223ScriptFactory` (the `@Service(ScriptFactory.class)` replacement)              | `org.tentackle.script.jsr`         |
+| `JSR223Language` (per-engine adapter, thread-safety inference, variable translation) | `org.tentackle.script.jsr`         |
+| `JSR223Script` (lazy compile, caching, synchronized compile/eval)                    | `org.tentackle.script.jsr`         |
+| `CompiledJSR223Script` (code + `javax.script.CompiledScript`)                        | `org.tentackle.script.jsr`         |
+| `ECMAScriptValidationMessageConverter` (`@MessageScriptConverter`)                   | `org.tentackle.script.jsr`         |
+| `Hook` (`ModuleHook` service)                                                        | `org.tentackle.script.jsr.service` |
 
 ## See Also
 

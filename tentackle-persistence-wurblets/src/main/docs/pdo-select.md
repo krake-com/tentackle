@@ -9,10 +9,10 @@ implementation class. Both read the same
 [wurblet-argument query mini-language](../../../../tentackle-wurblets/src/main/docs/wurblets.md#wurblet-arguments--the-query-mini-language)
 and differ only in their result cardinality:
 
-| Wurblet | Returns | Generated body terminates in |
-|---------|---------|------------------------------|
-| [`PdoSelectUnique`](../wurblets/org/tentackle/persist/wurblet/PdoSelectUnique.wrbl) | a **single** PDO (or `null`) | `executeFirstPdoQuery(st)` |
-| [`PdoSelectList`](../wurblets/org/tentackle/persist/wurblet/PdoSelectList.wrbl) | a **list** of PDOs (or a `ResultSetWrapper` / cursor) | `executeListQuery(st)` / `executeTrackedListQuery(st)` |
+| Wurblet                                                                             | Returns                                               | Generated body terminates in                           |
+|-------------------------------------------------------------------------------------|-------------------------------------------------------|--------------------------------------------------------|
+| [`PdoSelectUnique`](../wurblets/org/tentackle/persist/wurblet/PdoSelectUnique.wrbl) | a **single** PDO (or `null`)                          | `executeFirstPdoQuery(st)`                             |
+| [`PdoSelectList`](../wurblets/org/tentackle/persist/wurblet/PdoSelectList.wrbl)     | a **list** of PDOs (or a `ResultSetWrapper` / cursor) | `executeListQuery(st)` / `executeTrackedListQuery(st)` |
 
 Each is placed behind a `// @wurblet <methodName> PdoSelect… <options> <expression>` anchor inside a guarded
 region of the entity's persistence implementation. On every build the wurblet regenerates the method —
@@ -141,7 +141,7 @@ expressions.
 
 ---
 
-## Selecting across relations, components and embedded entities
+## Selecting across relations, components, and embedded entities
 
 A condition does not have to name an attribute of the entity the wurblet sits on — it can reach **through a
 relation path** into a related entity, an aggregate **component**, or an **embedded** value type. How that path is
@@ -195,7 +195,7 @@ root.<id>  =  component.<rootId>      -- plus  root.<classId> = component.<rootC
 ```
 
 collapsing the entire intermediate aggregate path into one comparison. Only relations *after* the compacted
-component prefix (e.g. a link out to a foreign PDO) still get their full join conditions in the subquery.
+component prefix (e.g., a link out to a foreign PDO) still get their full join conditions in the subquery.
 
 The mechanics live in
 [`ComponentInfo`](../../../../tentackle-wurblets/src/main/java/org/tentackle/wurblet/ComponentInfo.java), which
@@ -259,17 +259,17 @@ into a single joined statement, and the generated body therefore returns `execut
 
 ### Common to both
 
-| Option | Effect |
-|--------|--------|
-| `--private` | Makes the method `private` (default `public`). Implies `--noif` and disables remoting. |
-| `--noif` | There is no interface for the method ⇒ no `@Override` is generated. |
-| `--sort` | Append `ORDER BY` using the model's default sorting (`orderBy()`). Mutually exclusive with explicit `+/-` sort terms in the expression, and requires a default sorting to be configured on the entity. |
-| `--lock` | Generate `SELECT … FOR UPDATE`; asserts a running transaction. |
-| `--append=<sqltext>` | Append a literal SQL fragment to the generated statement. |
-| `--classvar=<classvariables>` | Take the cached `StatementId` from the referenced class-variables holder instead of emitting a local `private static final StatementId`. |
-| `--immutable` | Mark the returned PDO / list [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md). |
-| `--finallyImmutable` | Mark the result *finally* immutable (can never become mutable again). |
-| `--mutable` | Force a mutable result, overriding the automatic immutability that filtered joins otherwise impose. |
+| Option                        | Effect                                                                                                                                                                                                 |
+|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--private`                   | Makes the method `private` (default `public`). Implies `--noif` and disables remoting.                                                                                                                 |
+| `--noif`                      | There is no interface for the method ⇒ no `@Override` is generated.                                                                                                                                    |
+| `--sort`                      | Append `ORDER BY` using the model's default sorting (`orderBy()`). Mutually exclusive with explicit `+/-` sort terms in the expression, and requires a default sorting to be configured on the entity. |
+| `--lock`                      | Generate `SELECT … FOR UPDATE`; asserts a running transaction.                                                                                                                                         |
+| `--append=<sqltext>`          | Append a literal SQL fragment to the generated statement.                                                                                                                                              |
+| `--classvar=<classvariables>` | Take the cached `StatementId` from the referenced class-variables holder instead of emitting a local `private static final StatementId`.                                                               |
+| `--immutable`                 | Mark the returned PDO / list [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md).                                                                                                              |
+| `--finallyImmutable`          | Mark the result *finally* immutable (can never become mutable again).                                                                                                                                  |
+| `--mutable`                   | Force a mutable result, overriding the automatic immutability that filtered joins otherwise impose.                                                                                                    |
 
 > **Automatic immutability:** if the query uses filtered joins, the result is forced immutable unless
 > `--mutable` is given, because a filtered eager-load returns only a subset of an aggregate's components and
@@ -277,18 +277,18 @@ into a single joined statement, and the generated body therefore returns `execut
 
 ### `PdoSelectList` only
 
-| Option | Effect |
-|--------|--------|
-| `--limit` | Add a parameter limiting the number of returned rows (dialect-aware paging). |
-| `--offset` | Add a parameter skipping the first rows. |
-| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability). |
-| `--cursor` | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results. Incompatible with `--resultset`, immutability and tracking; with joins the query must be sorted by `id`. |
-| `--bounded` | Return `List<? extends MainClass>` instead of `List<MainClass>`. |
+| Option        | Effect                                                                                                                                                                                                                              |
+|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--limit`     | Add a parameter limiting the number of returned rows (dialect-aware paging).                                                                                                                                                        |
+| `--offset`    | Add a parameter skipping the first rows.                                                                                                                                                                                            |
+| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability).                                                                                                                          |
+| `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results. Incompatible with `--resultset`, immutability and tracking; with joins the query must be sorted by `id`. |
+| `--bounded`   | Return `List<? extends MainClass>` instead of `List<MainClass>`.                                                                                                                                                                    |
 
 ### `PdoSelectUnique` only
 
-| Option | Effect |
-|--------|--------|
+| Option        | Effect                                                                  |
+|---------------|-------------------------------------------------------------------------|
 | `--tokenlock` | Request a token lock on the returned object (`obj.requestTokenLock()`). |
 
 `PdoSelectUnique` requires at least one of: an expression, a sorting, an `--append`, or a context attribute —
@@ -300,15 +300,15 @@ otherwise it fails with *"no keys given"*. When the result could match more than
 
 ## Result handling
 
-| Situation | `PdoSelectList` | `PdoSelectUnique` |
-|-----------|-----------------|-------------------|
-| plain | `executeListQuery(st)` | `executeFirstPdoQuery(st)` |
-| with eager joins | `executeListQuery(st, js)` | `executeFirstPdoQuery(st, js)` |
-| [tracked](persistence-wurblets.md) (`--tracked` on the entity) | `executeTrackedListQuery(st[, js])`, return type `TrackedList` | n/a |
-| `--cursor` | `new ResultSetCursor<>(me(), rs[, js])` | n/a |
-| `--resultset` | `return st.executeQuery()` | n/a |
-| `--immutable` / `--finallyImmutable` | `list.setImmutable(true)` / `list.setFinallyImmutable()` before returning | `obj.setImmutable(true)` / `obj.setFinallyImmutable()` (null-guarded) |
-| `--tokenlock` | n/a | `obj.requestTokenLock()` (null-guarded) |
+| Situation                                                      | `PdoSelectList`                                                           | `PdoSelectUnique`                                                     |
+|----------------------------------------------------------------|---------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| plain                                                          | `executeListQuery(st)`                                                    | `executeFirstPdoQuery(st)`                                            |
+| with eager joins                                               | `executeListQuery(st, js)`                                                | `executeFirstPdoQuery(st, js)`                                        |
+| [tracked](persistence-wurblets.md) (`--tracked` on the entity) | `executeTrackedListQuery(st[, js])`, return type `TrackedList`            | n/a                                                                   |
+| `--cursor`                                                     | `new ResultSetCursor<>(me(), rs[, js])`                                   | n/a                                                                   |
+| `--resultset`                                                  | `return st.executeQuery()`                                                | n/a                                                                   |
+| `--immutable` / `--finallyImmutable`                           | `list.setImmutable(true)` / `list.setFinallyImmutable()` before returning | `obj.setImmutable(true)` / `obj.setFinallyImmutable()` (null-guarded) |
+| `--tokenlock`                                                  | n/a                                                                       | `obj.requestTokenLock()` (null-guarded)                               |
 
 ---
 
@@ -370,7 +370,7 @@ relation-generated ones.
 - [Tentackle Wurblets — the query mini-language](../../../../tentackle-wurblets/src/main/docs/wurblets.md#wurblet-arguments--the-query-mini-language)
   — the grammar these wurblets parse.
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — immutability, token
-  locks, tracked lists and the objects these queries return.
+  locks, tracked lists, and the objects these queries return.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType` / `Backend` used to build the
   SQL and bind parameters.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets

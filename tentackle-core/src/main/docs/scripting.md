@@ -2,7 +2,7 @@
 
 ## Overview and Motivation
 
-Tentackle embeds a small, language-agnostic **scripting abstraction** so that pieces of behaviour can be expressed
+Tentackle embeds a small, language-agnostic **scripting abstraction** so that pieces of behavior can be expressed
 as text — in source, in a model, in a database column or in an annotation — rather than as compiled Java. The most
 visible consumer is the [validation framework](validation.md): a `@NotNull(condition = "...")`, a
 `@Greater(value = "...")` or a validator `message` may all carry a script expression. The same machinery backs the
@@ -10,23 +10,23 @@ visible consumer is the [validation framework](validation.md): a `@NotNull(condi
 
 The design goal is that *the code using a script never needs to know which language it is written in*. A caller
 asks the [`ScriptFactory`](../java/org/tentackle/script/ScriptFactory.java) for a [`Script`](../java/org/tentackle/script/Script.java),
-supplies named variables, and executes it. Whether the expression is Groovy, Ruby or a JSR-223 engine such as
+supplies named variables, and executes it. Whether the expression is Groovy, Ruby, or a JSR-223 engine such as
 Nashorn is decided by a short language tag in the text, and by which implementation jars happen to be on the path.
 
 The API lives in `org.tentackle.script` in **`tentackle-core`** (exported by the module). The concrete languages
-ship as separate modules so an application only pays for what it uses:
+ship as separate modules, so an application only pays for what it uses:
 
-| Module | Language(s) | Engine |
-|--------|-------------|--------|
-| `tentackle-script-groovy` | Groovy | Embedded `GroovyClassLoader` |
-| `tentackle-script-ruby` | Ruby (JRuby) | JRuby `ScriptingContainer` (native embed API) |
-| `tentackle-script-jsr` | any JSR-223 engine (Nashorn, JRuby, …) | `javax.script` |
+| Module                    | Language(s)                            | Engine                                        |
+|---------------------------|----------------------------------------|-----------------------------------------------|
+| `tentackle-script-groovy` | Groovy                                 | Embedded `GroovyClassLoader`                  |
+| `tentackle-script-ruby`   | Ruby (JRuby)                           | JRuby `ScriptingContainer` (native embed API) |
+| `tentackle-script-jsr`    | any JSR-223 engine (Nashorn, JRuby, …) | `javax.script`                                |
 
 ### Design principles
 
 - **Pluggable via the [service API](../../../../tentackle-common/src/main/docs/services.md).** A language is a
   `@Service(ScriptingLanguage.class)`; the factory discovers all of them through `ServiceFinder` at first use.
-  Drop a jar on the path and its language becomes available — no configuration, no registration code.
+  Drop a jar on the path, and its language becomes available — no configuration, no registration code.
 - **Uniform lifecycle.** Every script follows the same *create → (lazily compile) → execute* path with the same
   caching and thread-safety contract, regardless of language.
 - **Lazy, cached compilation.** Scripts compile on first use (or on demand via `validate()`); identical source can
@@ -116,7 +116,7 @@ public interface Script {
 }
 ```
 
-- The script is **compiled lazily on first execution**. Call `validate()` to force compilation (e.g. to fail fast
+- The script is **compiled lazily on first execution**. Call `validate()` to force compilation (e.g., to fail fast
   on a syntax error) without running it.
 - `execute(...)` binds the supplied [`ScriptVariable`](../java/org/tentackle/script/ScriptVariable.java)s into the
   language's namespace and returns the evaluated result, cast to the caller's expected type `T`. Any failure
@@ -168,7 +168,7 @@ The tag between `#!` and `{` is matched against every language's abbreviations (
 means the default language. The code is everything between the braces. `CompoundValue` then calls
 `ScriptFactory.createScript(language, code, …)` and wraps any `ScriptRuntimeException` as an
 `IllegalArgumentException` describing the offending text. (A `CompoundValue` is more than a script — it can also be
-a constant `\literal`, a property reference `$path` or a negated reference `!$path` — but the `#!…{…}` / `{…}`
+a constant `\literal`, a property reference, or a negated reference `!$path` — but the `#!…{…}` / `{…}`
 forms are the script case.)
 
 ---
@@ -240,7 +240,7 @@ annotation-based `@Service` languages (without overriding abbreviations already 
 this module present, a single application can mix JSR engines and the native Groovy/Ruby providers.
 
 Thread-safety is inferred per engine (`JSR223Language.isEngineThreadSafe`): Nashorn is treated as safe; **JRuby via
-JSR-223 is treated as *not* safe** (it advertises thread isolation it does not reliably honour), so the JSR Ruby
+JSR-223 is treated as *not* safe** (it advertises thread isolation it does not reliably honor), so the JSR Ruby
 path synchronizes on the engine for both compile and eval. Some engines need variable-name translation too — the
 JRuby engine again gets the `@name` prefix. Note the two routes to Ruby: the dedicated `tentackle-script-ruby`
 (native embed API) and this JSR path (the `jruby` JSR engine); prefer the dedicated module when you want JRuby.
@@ -290,11 +290,11 @@ creating an `AbstractScript` subclass that compiles and executes the code), anno
 
 ## Source Map
 
-| Type | Location |
-|------|----------|
-| `ScriptingLanguage`, `ScriptFactory`, `Script`, `ScriptVariable`, `ScriptConverter` | `tentackle-core` · `org.tentackle.script` |
-| `AbstractScript`, `AbstractScriptingLanguage`, `DefaultScriptFactory`, `ScriptRuntimeException` | `tentackle-core` · `org.tentackle.script` |
-| She-bang parsing | [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java) |
-| Groovy implementation | [`tentackle-script-groovy`](../../../../tentackle-script-groovy/src/main/docs/groovy.md) · `org.tentackle.script.groovy` |
-| Ruby implementation | [`tentackle-script-ruby`](../../../../tentackle-script-ruby/src/main/docs/ruby.md) · `org.tentackle.script.ruby` |
-| JSR-223 implementation | [`tentackle-script-jsr`](../../../../tentackle-script-jsr/src/main/docs/jsr.md) · `org.tentackle.script.jsr` |
+| Type                                                                                            | Location                                                                                                                 |
+|-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `ScriptingLanguage`, `ScriptFactory`, `Script`, `ScriptVariable`, `ScriptConverter`             | `tentackle-core` · `org.tentackle.script`                                                                                |
+| `AbstractScript`, `AbstractScriptingLanguage`, `DefaultScriptFactory`, `ScriptRuntimeException` | `tentackle-core` · `org.tentackle.script`                                                                                |
+| She-bang parsing                                                                                | [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java)                                                         |
+| Groovy implementation                                                                           | [`tentackle-script-groovy`](../../../../tentackle-script-groovy/src/main/docs/groovy.md) · `org.tentackle.script.groovy` |
+| Ruby implementation                                                                             | [`tentackle-script-ruby`](../../../../tentackle-script-ruby/src/main/docs/ruby.md) · `org.tentackle.script.ruby`         |
+| JSR-223 implementation                                                                          | [`tentackle-script-jsr`](../../../../tentackle-script-jsr/src/main/docs/jsr.md) · `org.tentackle.script.jsr`             |

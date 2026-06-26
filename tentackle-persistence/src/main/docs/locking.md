@@ -7,12 +7,12 @@ second save silently overwrites the first — the *lost update* problem. Tentack
 addresses this on **two independent levels**, and it is important to understand that
 they solve *different* problems and are *always both* in play for a writable entity:
 
-| Mechanism | Column(s) | Scope | Answers |
-|-----------|-----------|-------|---------|
-| **Optimistic locking** | `serial` | every persistent object, always | "Did the row change since I read it?" — detected *at write time*. |
-| **Token locking** | `editedby` / `editedsince` / `editedexpiry` | opt-in (`tokenlock` option) | "Is someone else *already* editing this?" — visible *before* you start. |
+| Mechanism              | Column(s)                                   | Scope                           | Answers                                                                 |
+|------------------------|---------------------------------------------|---------------------------------|-------------------------------------------------------------------------|
+| **Optimistic locking** | `serial`                                    | every persistent object, always | "Did the row change since I read it?" — detected *at write time*.       |
+| **Token locking**      | `editedby` / `editedsince` / `editedexpiry` | opt-in (`tokenlock` option)     | "Is someone else *already* editing this?" — visible *before* you start. |
 
-The `serial` column is the **safety net**: it cannot be turned off and it guarantees
+The `serial` column is the **safety net**: it cannot be turned off, and it guarantees
 correctness even if nothing else is done — a stale write is *always* rejected. The
 token lock is the **courtesy layer** on top: it lets users discover a conflict *early*
 (before they waste effort editing) and is cooperative and persisted, so it is visible
@@ -103,11 +103,11 @@ transactions** and is **visible to other users**. It is opt-in: an entity gets i
 declaring the `tokenlock` option in its model, which adds three columns
 ([model-definition → option flags](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags)):
 
-| Attribute | Column | Meaning |
-|-----------|--------|---------|
-| `editedBy` | `editedby` | user id of the token holder, `0` = free |
-| `editedSince` | `editedsince` | when editing started (or when last released) |
-| `editedExpiry` | `editedexpiry` | when the token automatically expires |
+| Attribute      | Column         | Meaning                                      |
+|----------------|----------------|----------------------------------------------|
+| `editedBy`     | `editedby`     | user id of the token holder, `0` = free      |
+| `editedSince`  | `editedsince`  | when editing started (or when last released) |
+| `editedExpiry` | `editedexpiry` | when the token automatically expires         |
 
 `isTokenLockProvided()` reports whether an entity has these columns.
 
@@ -236,15 +236,15 @@ sits and edits, where discovering the conflict *after* the work is unacceptable 
 
 ## Summary
 
-| | `serial` (optimistic) | token lock |
-|---|---|---|
-| **Always present?** | Yes, on every persistent object | Opt-in via `tokenlock` model option |
-| **When is a conflict found?** | At write (save/persist/delete) | At lock request (before editing) |
-| **Held resources** | None | A persisted, expiring reservation |
-| **Crosses transactions / visible to others?** | No (it's a version number) | Yes |
-| **On conflict** | `NotFoundException` (temporary → `@Transaction` may retry) | `LockException` (names the holder) |
-| **Bumps `serial`?** | Yes, every persist | No (metadata only) |
-| **Guarantee** | No lost update, unconditionally | Early, cooperative "already being edited" notice |
+|                                               | `serial` (optimistic)                                      | token lock                                       |
+|-----------------------------------------------|------------------------------------------------------------|--------------------------------------------------|
+| **Always present?**                           | Yes, on every persistent object                            | Opt-in via `tokenlock` model option              |
+| **When is a conflict found?**                 | At write (save/persist/delete)                             | At lock request (before editing)                 |
+| **Held resources**                            | None                                                       | A persisted, expiring reservation                |
+| **Crosses transactions / visible to others?** | No (it's a version number)                                 | Yes                                              |
+| **On conflict**                               | `NotFoundException` (temporary → `@Transaction` may retry) | `LockException` (names the holder)               |
+| **Bumps `serial`?**                           | Yes, every persist                                         | No (metadata only)                               |
+| **Guarantee**                                 | No lost update, unconditionally                            | Early, cooperative "already being edited" notice |
 
 The serial column is the unconditional correctness guarantee; the token lock is the
 cooperative, user-facing layer built on top of it — and because token acquisition is

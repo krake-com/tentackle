@@ -493,12 +493,12 @@ relation = <type> [modifiers...]
 select = [<strategy>] [cached] [| wurbletArgs]
 ```
 
-| Strategy   | Description                                                                |
-|------------|----------------------------------------------------------------------------|
-| `lazy`     | Fetched on first access only. Default if not `cached`.                     |
-| `always`   | Fetched on every get (for very special cases, not recommended)             |
+| Strategy   | Description                                                                                                                                                       |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `lazy`     | Fetched on first access only. Default if not `cached`.                                                                                                            |
+| `always`   | Fetched on every get (for very special cases, not recommended)                                                                                                    |
 | `eager`    | Fetched together with the parent entity via left outer join (see [eager relations](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)). |
-| `embedded` | Default for embedded related entities (only used when printing the model). |
+| `embedded` | Default for embedded related entities (only used when printing the model).                                                                                        |
 
 - `cached` — use caching select methods. Default if the related entity's `cached` option is set
  and the strategy is missing. Notice that "lazy cached" is allowed but won't update the loaded reference even if

@@ -3,7 +3,7 @@
 ## Overview and Motivation
 
 Most applications read the same **master data** over and over — currencies, units,
-organisational units, number pools, account types. These tables are small, change
+organizational units, number pools, account types. These tables are small, change
 rarely, and are referenced by almost every transaction. Fetching them from the
 database each time is wasteful, so Tentackle provides a first-class, model-driven
 **PDO cache**.
@@ -21,13 +21,13 @@ domain keys. It transparently:
 
 The whole subsystem lives in `tentackle-pdo`:
 
-| Class | Role |
-|-------|------|
-| [`PdoCache`](../java/org/tentackle/pdo/PdoCache.java) | The cache itself: indexes, lists, strategy, expiration. |
-| [`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java) | One unique-key → PDO mapping (ID index is mandatory). |
-| [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java) | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`. |
-| [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches. |
-| [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java) | Signals a cache inconsistency (triggers invalidation). |
+| Class                                                                                                                                                   | Role                                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| [`PdoCache`](../java/org/tentackle/pdo/PdoCache.java)                                                                                                   | The cache itself: indexes, lists, strategy, expiration. |
+| [`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java)                                                                                         | One unique-key → PDO mapping (ID index is mandatory).   |
+| [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)                                                                                   | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`.   |
+| [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches.                    |
+| [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java)                                                                                 | Signals a cache inconsistency (triggers invalidation).  |
 
 Application code rarely touches these directly. It calls the **generated
 `selectCached…` methods** on the PDO; the model declares the cache and the
@@ -51,15 +51,15 @@ accessors into the persistence implementation:
 // @wurblet cache PdoCache --udk --strategy=LRU --maxsize=5000 code[codeIfUser]
 ```
 
-| Option | Meaning                                                                                                                                                                                      |
-|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--mutable` | Generate a **non-shared, mutable** cache (default is a shared read-only cache).                                                                                                              |
-| `--udk` | Add an index for the entity's unique domain key.                                                                                                                                             |
+| Option                                 | Meaning                                                                                                                                                                                      |
+|----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--mutable`                            | Generate a **non-shared, mutable** cache (default is a shared read-only cache).                                                                                                              |
+| `--udk`                                | Add an index for the entity's unique domain key.                                                                                                                                             |
 | `--strategy=PRELOAD\|LRU\|LFU\|FORGET` | Eviction strategy (default `PRELOAD`).                                                                                                                                                       |
-| `--maxsize=<n>` | Maximum number of cached PDOs (`0` = unlimited).                                                                                                                                             |
-| `--keepquota=<p>` | Percentage of entries kept when shrinking (default 50).                                                                                                                                      |
-| `--configure=<method>` | Call an application method to further configure the cache.                                                                                                                                   |
-| `[index …]` | Additional **unique** indexes by attribute; `attr[method]` extracts the key via `method` (allowing *filtered* indexes whose method returns `null` to exclude PDOs, forming a unique subset). |
+| `--maxsize=<n>`                        | Maximum number of cached PDOs (`0` = unlimited).                                                                                                                                             |
+| `--keepquota=<p>`                      | Percentage of entries kept when shrinking (default 50).                                                                                                                                      |
+| `--configure=<method>`                 | Call an application method to further configure the cache.                                                                                                                                   |
+| `[index …]`                            | Additional **unique** indexes by attribute; `attr[method]` extracts the key via `method` (allowing *filtered* indexes whose method returns `null` to exclude PDOs, forming a unique subset). |
 
 The generated code (see
 [`PdoCache.wrbl`](../../../../tentackle-persistence-wurblets/src/main/wurblets/org/tentackle/persist/wurblet/PdoCache.wrbl))
@@ -79,14 +79,14 @@ private static class CacheHolder {
 }
 ```
 
-The `CacheHolder` idiom gives a **lazily-initialised singleton per PDO class**
+The `CacheHolder` idiom gives a **lazily initialized singleton per PDO class**
 (the cache is created on first use, in a thread-safe way courtesy of the JVM class
 loader). `Pdo.listen(cache::expire, …)` subscribes the cache to the global
 [`ModificationTracker`](../../../../tentackle-session/src/main/docs/session.md) so it
 hears about updates/inserts/deletes to the table — see *Expiration* below.
 
 > For an inheritance hierarchy, the **topmost super entity** normally provides the
-> cache for the whole hierarchy; a subclass may keep its own cache (e.g. to add
+> cache for the whole hierarchy; a subclass may keep its own cache (e.g., to add
 > indexes the superclass doesn't have). For `MULTI`-table inheritance the cache
 > listens to all leaf classes.
 
@@ -101,7 +101,7 @@ A cache is a collection of **unique indexes**, each a
 - The **ID index** is mandatory, created automatically, and cannot be removed.
 - Additional indexes (unique domain key, or any declared unique attribute) are
   added — possibly lazily, on first use ("deferred index assignment"). Adding an
-  index to an already-populated cache back-fills it by walking the ID index.
+  index to an already-populated cache backfills it by walking the ID index.
 - Each index also keeps a **missing set**: keys that were looked up and found *not*
   to exist in the database, so repeated lookups of an absent key don't keep hitting
   storage.
@@ -152,12 +152,12 @@ need to edit cached instances. Closing a session removes its objects and lists
 The cache works in one of four [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)
 modes:
 
-| Strategy | Behaviour when `maxSize` is reached | Best for                                                     |
-|----------|-------------------------------------|--------------------------------------------------------------|
+| Strategy              | Behaviour when `maxSize` is reached                                                        | Best for                                                                                                                                     |
+|-----------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | **PRELOAD** (default) | n/a — the first select loads the **whole table**, so subsequent selects never hit storage. | Small master-data tables; also **large or transactional tables** when a tableserial is configured (in-memory read model / CQRS — see below). |
-| **LRU** | Evicts the **least recently used** PDOs down to `keepQuota` %. | Large tables, keep hot subset.                               |
-| **LFU** | Evicts the **least frequently used** PDOs. | Large tables with skewed access.                             |
-| **FORGET** | **Clears the entire cache.** | Large tables, cheap to refill.                               |
+| **LRU**               | Evicts the **least recently used** PDOs down to `keepQuota` %.                             | Large tables, keep hot subset.                                                                                                               |
+| **LFU**               | Evicts the **least frequently used** PDOs.                                                 | Large tables with skewed access.                                                                                                             |
+| **FORGET**            | **Clears the entire cache.**                                                               | Large tables, cheap to refill.                                                                                                               |
 
 LRU/LFU ordering uses the per-PDO `cacheAccessTime` / `cacheAccessCount` that
 `markCacheAccess()` stamps on every hit. Shrinking (`shrinkCache`) either removes
@@ -283,7 +283,7 @@ whether declared with `--strategy=PRELOAD` or entered implicitly by the first
 `selectAll` — it does not merely keep the rows it already holds up to date: **newly
 inserted PDOs are added to the cache** as their tableserials arrive. The cache
 therefore **mirrors the whole table** and is **fully searchable in memory**:
-application code can iterate, filter or index the complete object set instead of
+application code can iterate, filter, or index the complete object set instead of
 issuing a query — no row silently absent because it was inserted after the preload.
 
 **But search it as an *eventually consistent* view, not a transactional one.**
@@ -291,7 +291,7 @@ A cache is, by its nature, eventually consistent: changes committed by *other* J
 become visible only once their modification event has propagated through the
 [`ModificationTracker`](../../../../tentackle-session/src/main/docs/session.md) and
 the deferred expiration has run on the next access. There is an inherent — usually
-small — propagation window during which a remote insert, update or delete is not yet
+small — propagation window during which a remote insert, update, or delete is not yet
 reflected locally. (Your *own* committed changes are applied immediately, because the
 modifying JVM calls `expire` directly.) So an in-memory search over a preloaded cache
 can momentarily return a slightly stale set: a just-inserted row may be missing, a
@@ -331,7 +331,7 @@ shared cache.
 
 ## Domain Context and Multi-Tenancy
 
-Before any lookup the cache normalises the context (`processContext`):
+Before any lookup the cache normalizes the context (`processContext`):
 
 - a **root context** is replaced by its corresponding **non-root** context, so all
   callers share one cache slot regardless of which root they came from;
@@ -370,15 +370,15 @@ rules for cached entities; see
 The `PdoCache` wurblet adds these methods to the persistence interface (`<Key>` is
 each declared index / unique domain key):
 
-| Method | Effect |
-|--------|--------|
-| `selectCached(id)` | By ID via cache; load from storage if missing. |
-| `selectCachedOnly(id)` | By ID; **don't** load if missing (cache-only peek). |
-| `selectCachedBy<Key>(key)` | By unique key via cache; load if missing. |
-| `selectCachedOnlyBy<Key>(key)` | By unique key; cache-only. |
-| `selectAllCached()` | The whole table via cache. |
-| `selectAnyCached(ids)` | A subset by IDs via cache. |
-| `select…ForCache(…)` | Internal: load for the cache, dispatching to the remote cache when remote. |
+| Method                         | Effect                                                                     |
+|--------------------------------|----------------------------------------------------------------------------|
+| `selectCached(id)`             | By ID via cache; load from storage if missing.                             |
+| `selectCachedOnly(id)`         | By ID; **don't** load if missing (cache-only peek).                        |
+| `selectCachedBy<Key>(key)`     | By unique key via cache; load if missing.                                  |
+| `selectCachedOnlyBy<Key>(key)` | By unique key; cache-only.                                                 |
+| `selectAllCached()`            | The whole table via cache.                                                 |
+| `selectAnyCached(ids)`         | A subset by IDs via cache.                                                 |
+| `select…ForCache(…)`           | Internal: load for the cache, dispatching to the remote cache when remote. |
 
 When an entity is **not** cached, `AbstractPersistentObject` provides default
 implementations of `selectCached…` that simply delegate to the non-cached
