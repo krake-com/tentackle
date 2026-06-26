@@ -179,11 +179,10 @@ root by something on one of its components" without spelling out every relation 
 ### How the path to the root is reduced — `rootId` / `rootClassId`
 
 A naïve component path would have to join every intermediate aggregate level (root → child → grandchild …) just to
-correlate a component row with its root. Tentackle avoids that. Every aggregate **component** table carries a
-`rootId` column holding the **id of its aggregate root**, and — when the same component type is shared by more than
-one aggregate (a *multi-homed* component) — a `rootClassId` column pinning the root's class. These columns are
-added automatically by the model (see
-[Model Definition → `rootid` / `rootclassid`](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags)).
+correlate a component row with its root. Tentackle avoids that. Every aggregate **component** has a
+`getRootId()` method returning the **id of its aggregate root**, and a `getRootClassId()` method returning
+the root's class id. If necessary, the model appends the corresponding `rootId` and/or `rootClassId` columns
+to the table (see [Model Definition → `rootid` / `rootclassid`](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags)).
 
 When a path from a root entity begins with a chain of composite component relations,
 [`WurbletArgument.getExpressionRelations()`](../../../../tentackle-wurblets/src/main/java/org/tentackle/wurblet/WurbletArgument.java)
@@ -240,8 +239,8 @@ A join element may be **filtered** by appending `|` and a filter expression (its
 it contains more than one):
 
 ```
-*invoice*lines|no:<:10          # load only the lines with no < 10
-*invoice|date:>=*lines          # filter the invoice join on date >= ?
+*invoice*lines|no:<:10          # join invoice and load only the lines with no < 10
+*invoice|date:>= *lines         # filter the invoice join on date >= ? and join lines beneath it
 ```
 
 > **Filtered joins force immutability.** Because a filtered eager-load returns only a *subset* of an aggregate's
@@ -349,6 +348,24 @@ A streaming list of unprocessed rows (low-level `Db…` flavour, returning a res
 
 ```java
 // @wurblet resultSetUnprocessed DbSelectList --model=$mapfile --resultset processed:=:null +id
+```
+
+More elaborate wurblet anchors:
+```java
+// @wurblet findByCalloff PdoSelectList Loadings.calloffId or Transports.calloffId | *Loadings *Transports
+public TrackedList<Ingot> findByCalloff(long calloffId) {
+  ...
+}
+
+// @wurblet findByCalloffNumber PdoSelectList Lines.calloffNumber | *Lines +Lines.position
+public TrackedList<Shipment> findByCalloffNumber(String calloffNumber) {
+  ...
+}
+
+// @wurblet findTopByTx PdoSelectList --private siteId upstream beginning[from]:>= beginning[upto]:< | +statisticsByTx.detail.rank *statisticsByTx|detail.rank:<
+private TrackedList<StatisticsSlot> findTopByTx(int rank, long siteId, boolean upstream, Timestamp from, Timestamp upto) {
+  ...
+}
 ```
 
 ---
