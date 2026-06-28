@@ -1,12 +1,9 @@
-# Tentackle
+![Tentackle](./src/main/docs/assets/tentackle_Logo_V6.png)
 
 **Tentackle** is a Java framework for building modular, multi-tier,
 enterprise-grade applications — from the database up to a JavaFX desktop client —
 with a single, location-transparent programming model. It is Open Source and
 licensed under LGPL 2.1.
-
-- 🌐 Website: [tentackle.org](https://tentackle.org/)
-- 📦 Artifacts: [Maven Central](https://search.maven.org/search?q=org.tentackle)
 
 ## Why Tentackle?
 
@@ -45,24 +42,13 @@ Five things set Tentackle apart from other Java frameworks:
    [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md) desktop clients. TRIP replaces
    RMI/JOS with a compact, pluggable, SD-WAN-friendly transport.
 
+For a sense of where Tentackle excels, read
+[Why Tentackle Fits Technical and Scientific Applications](src/main/docs/technical-scientific.md).
+
 ## Where to go next
 
 - 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build, and run a
   complete multi-tier application in minutes.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
-
-For a sense of where Tentackle excels, read
-[Why Tentackle Fits Technical and Scientific Applications](src/main/docs/technical-scientific.md).
-
-## Requirements
-
-- Java (JDK) ≥ 25
-- Maven ≥ 3.9.0
-
-_Notice: for older LTS versions see the branches java21, java17, java11, and java8.
-Java21 still receives bugfixes, java17, java11, and java8 reached end-of-life._
-
-## License
-
-LGPL 2.1. See [tentackle.org](https://tentackle.org/) for details.
+- 🧾 **[Java site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/)** — as a reference.
