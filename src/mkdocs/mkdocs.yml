@@ -1,6 +1,6 @@
 site_name: Tentackle
 site_description: >-
-  Tentackle — a Java framework for building modular, multi-tier, enterprise-grade
+  Tentackle — a Java framework for building modular, multi-tier, domain-driven, enterprise-grade
   applications from a JDBC/SQL database up to a JavaFX desktop client, with a
   single, location-transparent programming model and full JPMS support.
 site_url: https://tentackle.org/
