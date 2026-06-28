@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{#
+  Self-host the ResizeObserver polyfill.
+
+  Material's JavaScript bundle injects `<script src="https://unpkg.com/
+  resize-observer-polyfill">` into the page on browsers that lack a native
+  ResizeObserver (pre-2020 browsers). To avoid that third-party request we load
+  our own copy first, straight from this site's origin.
+
+  - Loaded only when ResizeObserver is missing, so native implementations are
+    never overwritten and modern browsers download nothing extra.
+  - document.write keeps it synchronous during head parsing, so the global is
+    defined before Material's bundle (at the end of <body>) ever checks for it —
+    hence Material never reaches its unpkg fallback. The script is same-origin,
+    so Chrome's slow-network document.write intervention does not apply.
+#}
+{% block extrahead %}
+  {{ super() }}
+  <script>
+    if (!("ResizeObserver" in window)) {
+      document.write(
+        '<script src="{{ "assets/javascripts/resize-observer-polyfill.js" | url }}"><\/script>'
+      );
+    }
+  </script>
+{% endblock %}
