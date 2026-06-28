@@ -1,0 +1,75 @@
+/*
+ * Brand styling for the Tentackle docs — mimics tentackle.org.
+ *
+ * Palette (from src/site/resources/css/site.css):
+ *   dark blue   #00305e   header / nav bar / links / table headers
+ *   accent orange #f18319 headings, borders, hover, accents
+ * Signature look: orange h2/h3 framed by thin orange top/bottom rules.
+ */
+
+/* ---- Custom primary color (Material `primary: custom`) — site dark blue ---- */
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color:        #00305e;
+  --md-primary-fg-color--light: #1c4f80;
+  --md-primary-fg-color--dark:  #00203f;
+  --md-primary-bg-color:        #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+}
+
+/* ---- Custom accent color (Material `accent: custom`) — site orange ---- */
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color:              #f18319;
+  --md-accent-fg-color--transparent: rgba(241, 131, 25, 0.1);
+  --md-accent-bg-color:              #ffffff;
+  --md-accent-bg-color--light:       rgba(255, 255, 255, 0.7);
+}
+
+/* Body links in the site's dark blue (light) / lightened for dark mode. */
+[data-md-color-scheme="default"] {
+  --md-typeset-a-color: #00305e;
+}
+[data-md-color-scheme="slate"] {
+  --md-typeset-a-color: #5b8fc7;
+}
+
+/* ---- Signature typography: orange h2/h3 framed by thin orange rules ---- */
+.md-typeset h1 {
+  font-weight: 700;
+  color: #00305e;
+}
+.md-typeset h2,
+.md-typeset h3 {
+  color: #f18319;
+  border-top: 1px solid #f18319;
+  border-bottom: 1px solid #f18319;
+  padding: 0.2em 0;
+}
+[data-md-color-scheme="slate"] .md-typeset h1 {
+  color: var(--md-default-fg-color);
+}
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3 {
+  color: #f6a24f; /* lighter orange for readability on dark */
+  border-color: #f6a24f;
+}
+
+/* ---- Buttons in the site's dark blue (for any landing-page CTA) ---- */
+.md-typeset .md-button--primary {
+  background-color: #00305e;
+  border-color: #00305e;
+  color: #ffffff;
+}
+.md-typeset .md-button--primary:hover {
+  background-color: #f18319;
+  border-color: #f18319;
+}
+
+/* ---- Header shadow, echoing the original's elevated bar ---- */
+.md-header {
+  box-shadow: 0 4px 20px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* Give the octopus logo a little breathing room. */
+.md-header__button.md-logo img {
+  height: 1.6rem;
+}

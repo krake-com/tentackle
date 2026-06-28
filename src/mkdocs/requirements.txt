@@ -1,0 +1,6 @@
+# Build dependencies for the Tentackle documentation site.
+# Install into a virtualenv:  pip install -r requirements.txt
+mkdocs>=1.6
+mkdocs-material>=9.5
+pymdown-extensions>=10
+# Pillow/CairoSVG are only needed for social-card generation (not used here).
