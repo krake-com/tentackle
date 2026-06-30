@@ -95,7 +95,6 @@
     <junit.version>6.0.3</junit.version>
     <kwik.version>0.10.9</kwik.version>
     <log4j2.version>2.26.0</log4j2.version>
-    <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.11.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
@@ -171,7 +170,7 @@
   <distributionManagement>
     <site>
       <id>${site.id}</id>
-      <url>scp:${site.url}/tentackle/${project.version}/</url>
+      <url>scpexe://${site.url}/site-docs/tentackle/${project.version}/</url>
     </site>
     <repository>
       <id>${repo.id}</id>
@@ -410,12 +409,6 @@
         <artifactId>archetype-packaging</artifactId>
         <version>${maven.archetype.plugin.version}</version>
       </extension>
-      <extension>
-        <!-- this allows us to download gems (for the maven-project-info-reports-plugin) -->
-        <groupId>org.torquebox.mojo</groupId>
-        <artifactId>mavengem-wagon</artifactId>
-        <version>${mavengem.wagon.version}</version>
-      </extension>
     </extensions>
 
     <pluginManagement>
@@ -478,19 +471,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
           <version>${maven.site.plugin.version}</version>
-          <configuration>
-            <siteDirectory>${rootBasedir}/src/site</siteDirectory>
-          </configuration>
           <dependencies>
             <dependency>
               <groupId>org.apache.maven.wagon</groupId>
-              <artifactId>wagon-ssh</artifactId>
+              <artifactId>wagon-ssh-external</artifactId>
               <version>${wagon.ssh.version}</version>
-            </dependency>
-            <dependency>
-              <groupId>org.ow2.asm</groupId>
-              <artifactId>asm</artifactId>
-              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -561,13 +546,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven.javadoc.plugin.version}</version>
-          <dependencies>
-            <dependency>
-              <groupId>org.ow2.asm</groupId>
-              <artifactId>asm</artifactId>
-              <version>${asm.version}</version>
-            </dependency>
-          </dependencies>
         </plugin>
 
         <plugin>
@@ -650,6 +628,20 @@
     </testResources>
 
     <plugins>
+      <plugin>
+        <!-- attach the parent site descriptor so the skin, banner and menus are inherited by the modules -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-descriptor</id>
+            <goals>
+              <goal>attach-descriptor</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
@@ -754,6 +746,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
+        <configuration>
+          <!-- Do not pull developer avatars from gravatar.com: keep the site free of
+               external resource loads (GDPR-clean, works offline). -->
+          <showAvatarImages>false</showAvatarImages>
+        </configuration>
       </plugin>
 
       <plugin>
