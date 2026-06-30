@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle FX RDC Update Extension</name>
   <description>Update Extension for FX Rich Desktop Client</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

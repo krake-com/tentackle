@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Build Support</name>
   <description>Support for building applications</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

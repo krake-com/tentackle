@@ -12,7 +12,6 @@
   <packaging>maven-archetype</packaging>
   <name>Tentackle Project Archetype</name>
   <description>Archetype for a multi-module Tentackle application</description>
-  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>

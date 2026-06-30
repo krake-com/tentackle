@@ -12,7 +12,6 @@
   <packaging>maven-plugin</packaging>
   <name>Tentackle SQL Maven Plugin</name>
   <description>Maven Plugin for Tentackle SQL Backend</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

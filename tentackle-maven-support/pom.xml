@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Maven Support</name>
   <description>Support for Tentackle Maven Plugins</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

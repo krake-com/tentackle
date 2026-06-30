@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle FX Rich Desktop Client</name>
   <description>Rich Desktop Client based on FX</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

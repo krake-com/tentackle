@@ -12,7 +12,6 @@
   <packaging>maven-plugin</packaging>
   <name>Tentackle Checker Maven Plugin</name>
   <description>Maven Plugin for Tentackle Application Checks</description>
-  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>
