@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Persistence Wurblets</name>
   <description>Wurblets for the Tentackle persistence layer</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

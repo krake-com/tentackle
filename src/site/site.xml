@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site xmlns="http://maven.apache.org/SITE/2.0.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/SITE/2.0.0 https://maven.apache.org/xsd/site-2.0.0.xsd"
+      name="Tentackle">
+
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>${maven.fluido.skin.version}</version>
+  </skin>
+
+  <bannerLeft name="Tentackle" href="https://tentackle.org/">
+    <image src="images/logo-tentackle.png" alt="Tentackle"/>
+  </bannerLeft>
+
+  <body>
+    <!-- Inherited by every module; the module name is appended automatically. -->
+    <breadcrumbs>
+      <item name="Tentackle" href="https://tentackle.org/"/>
+    </breadcrumbs>
+
+    <menu name="Tentackle" inherit="top">
+      <item name="Documentation" href="https://tentackle.org/"/>
+      <item name="Source (Bitbucket)" href="https://bitbucket.org/krake-oss/tentackle/"/>
+      <item name="Maven Central" href="https://search.maven.org/search?q=org.tentackle"/>
+      <item name="Krake Softwaretechnik" href="https://krake.de/"/>
+    </menu>
+
+    <!-- Auto-generated navigation provided by the site plugin. -->
+    <menu ref="modules"/>
+    <menu ref="reports"/>
+  </body>
+
+  <custom>
+    <fluidoSkin>
+      <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
+      <breadcrumbDivider>&#187;</breadcrumbDivider>
+      <skipGenerationDate>false</skipGenerationDate>
+    </fluidoSkin>
+  </custom>
+
+</site>

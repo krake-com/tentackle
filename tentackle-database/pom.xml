@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Database</name>
   <description>Tentackle Low-Level DBMS Layer</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

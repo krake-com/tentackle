@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Session</name>
   <description>The session layer of the Tentackle Framework</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

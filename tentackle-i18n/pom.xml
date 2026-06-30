@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle I18N via persistence layer</name>
   <description>I18N provider to use StoredBundle instead of ResourceBundle</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

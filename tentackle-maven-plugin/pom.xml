@@ -12,7 +12,6 @@
   <packaging>maven-plugin</packaging>
   <name>Tentackle Maven Plugin</name>
   <description>Maven Plugin for Tentackle</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

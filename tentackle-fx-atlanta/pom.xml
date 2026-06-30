@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle FX Atlanta Theme</name>
   <description>Atlanta theme and components for FX</description>
-  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>

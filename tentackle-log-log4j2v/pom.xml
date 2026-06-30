@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Logging Log4J2V</name>
   <description>Log4J 2nd Version Logging Adapter for Tentackle</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

@@ -12,7 +12,6 @@
   <packaging>maven-plugin</packaging>
   <name>Tentackle JLink and JPackage Maven Plugin</name>
   <description>Maven Plugin to Create Self-Contained Applications</description>
-  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

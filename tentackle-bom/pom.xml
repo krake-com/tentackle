@@ -12,7 +12,6 @@
   <packaging>pom</packaging>
   <name>Tentackle BOM</name>
   <description>Tentackle Bill Of Materials</description>
-  <url>https://tentackle.org</url>
 
   <dependencyManagement>
     <dependencies>

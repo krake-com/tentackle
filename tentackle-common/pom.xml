@@ -12,7 +12,6 @@
   <packaging>jar</packaging>
   <name>Tentackle Common</name>
   <description>Common Code for Build-Process, Wurblets and Applications</description>
-  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>
