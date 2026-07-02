@@ -93,7 +93,7 @@ public class PdoMojo extends AbstractWizardMojo {
    * {@code !ROOTID}, {@code !ROOTCLASSID} or {@code UNTRACKED} should be set to
    * avoid unwanted entity options.
    */
-  @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, UNTRACKED", property = "batchDefaults")
+  @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED", property = "batchDefaults")
   private String batchModelDefaults;
 
   /**
