@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -78,13 +79,21 @@ public class PdoMojo extends AbstractWizardMojo {
   private List<FileSet> batchFilesets;
 
   /**
+   * Alternative way to specify batch mode from the command line.<br>
+   * Notice that in this case, all files in that directory are considered as input files,
+   * and there is only one such directory configurable.
+   */
+  @Parameter(property = "batchDir")
+  private String batchDir;
+
+  /**
    * The model defaults to use in batch mode.<br>
    * Since the model to load is usually dumped with model defaults applied,
    * we cannot apply them here again. However, some options such as {@code !ROOT},
    * {@code !ROOTID}, {@code !ROOTCLASSID} or {@code UNTRACKED} should be set to
    * avoid unwanted entity options.
    */
-  @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, UNTRACKED")
+  @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, UNTRACKED", property = "batchDefaults")
   private String batchModelDefaults;
 
   /**
@@ -128,13 +137,24 @@ public class PdoMojo extends AbstractWizardMojo {
     super.executeImpl();
     updateClassIDs();
 
+    if (batchDir != null) {
+      FileSet fileSet = new FileSet();
+      fileSet.setDirectory(batchDir);
+      if (batchFilesets == null) {
+        batchFilesets = new ArrayList<>();
+      }
+      batchFilesets.add(fileSet);
+    }
+
     if (batchFilesets != null) {
       Model batchModel = ModelManager.getInstance().getModel("batch");
+      getLog().info("batch mode: " + batchFilesets.size() + " filesets to process");
       for (FileSet fileSet: batchFilesets) {
         if (fileSet.getDirectory() == null) {
           // relative to basedir if not given
           fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
         }
+        getLog().info("loading model from " + fileSet.getDirectory());
         try {
           batchModel.loadFromDirectory(fileSet.getDirectory(), true);
         }
@@ -179,9 +199,8 @@ public class PdoMojo extends AbstractWizardMojo {
           else {
             PdoProfile pdoProfile = null;
             for (String stereotype : new ArrayList<>(entity.getOptions().getStereotypes())) {
-              PdoProfile profile = profileMap.get(stereotype);
+              PdoProfile profile = profileMap.get(stereotype.toUpperCase(Locale.ROOT));
               if (profile != null) {
-                entity.getOptions().getStereotypes().remove(stereotype);
                 pdoProfile = profile;
                 break;
               }
@@ -189,7 +208,9 @@ public class PdoMojo extends AbstractWizardMojo {
             if (pdoProfile == null) {
               getLog().error("no profile for entity " + entity + " -> skipped");
             }
-            generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print(), projectModelDefaults);
+            else {
+              generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print(), projectModelDefaults);
+            }
           }
         }
       }
@@ -256,7 +277,7 @@ public class PdoMojo extends AbstractWizardMojo {
    * @param projectModelDefaults the model defaults of the project (not the batch model defaults)
    */
   private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource, ModelDefaults projectModelDefaults) {
-    getLog().info("generating code for " + entity);
+    getLog().info("generating code for entity " + entity + (pdoProfile == null ? "" : " using profile " + pdoProfile));
     PdoGenerator gen = new PdoGenerator(getModel());
     gen.setProfile(pdoProfile);
     gen.setTemplateDirectory(new File(getTemplateDir(), Constants.CATEGORY_PDO));
