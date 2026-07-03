@@ -74,10 +74,10 @@ public abstract class ServerApplication extends AbstractServerApplication {
    * The default implementation creates a {@link TripServer}.
    *
    * @param connectionClass the class of the connection object to instantiate,
-   *                        null = default or from server's properties config
+   *                        null = default or from server's properties
    * @return the created RmiServer
    */
-  protected TripServer createRmiServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
+  protected TripServer createTripServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
     return new TripServer(getSessionInfo(), connectionClass);
   }
 
@@ -89,13 +89,13 @@ public abstract class ServerApplication extends AbstractServerApplication {
       // see also org.tentackle.dbms.trip.RemoteDbSessionImpl.cleanup
     }
     super.finishStartup();
-    tripServer = createRmiServer(connectionClass);
+    tripServer = createTripServer(connectionClass);
   }
 
 
   /**
    * Starts the TRIP-server.<br>
-   * The default implementation just does {@code rmiServer.start()}.
+   * The default implementation just does {@code tripServer.start()}.
    */
   protected void startTripServer() {
     tripServer.start();
