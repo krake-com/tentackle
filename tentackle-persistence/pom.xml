@@ -115,7 +115,7 @@
               </includes>
               <followSymlinks>false</followSymlinks>
             </fileset>
-            <!-- wurbel rmis last -->
+            <!-- wurbel trip delegates next -->
             <fileset>
               <includes>
                 <include>**/trip/*.java</include>

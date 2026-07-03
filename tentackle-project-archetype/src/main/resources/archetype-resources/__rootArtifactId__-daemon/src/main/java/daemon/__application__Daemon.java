@@ -52,9 +52,9 @@ public class ${application}Daemon extends ConsoleApplication {
 
   @Override
   protected void finishStartup() {
-    super.finishStartup();
     latestMessageId = on(Message.class).selectMaxId();
     Pdo.listen(this::logMessages, Message.class);
+    super.finishStartup();
   }
 
   private void logMessages() {
