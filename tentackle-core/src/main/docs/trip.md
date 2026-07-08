@@ -21,7 +21,8 @@ compact, pluggable protocol:
   a *type dictionary* so each class' shape is transmitted only once, and both
   reference- and value-based deduplication of repeated objects. The dictionary
   is shared not only between messages but also among all connections of the same 
-  client. This significantly reduces bandwidth for applications that repeatedly transfer objects of the same class.
+  client. This significantly reduces the transfer volume and CPU load on both the server 
+  and the clients.
 - **Reflection-driven, annotation-tunable** — by default every non-`static`,
   non-`transient` field is serialized; annotations let you
   deviate where needed without writing serialization code.
