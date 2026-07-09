@@ -12,7 +12,7 @@
 
   <name>Tentackle Parent</name>
   <description>Parent pom.xml for the Tentackle modules</description>
-  <url>https://tentackle.org/</url>
+  <url>https://tentackle.org/tentackle/</url>
   <organization>
     <name>Krake Softwaretechnik</name>
     <url>https://krake.de/</url>
@@ -630,7 +630,7 @@
 
     <plugins>
       <plugin>
-        <!-- attach the parent site descriptor so the skin, banner and menus are inherited by the modules -->
+        <!-- attach the parent site descriptor so the modules inherit the skin, banner and menus -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
         <executions>
