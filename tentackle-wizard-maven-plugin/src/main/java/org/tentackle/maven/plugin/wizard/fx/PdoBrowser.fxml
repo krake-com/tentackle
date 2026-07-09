@@ -10,14 +10,14 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<?import javafx.scene.control.ToggleButton?>
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
    <top>
       <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>
@@ -25,12 +25,15 @@
             <ColumnConstraints minWidth="10.0" />
             <ColumnConstraints minWidth="10.0" />
             <ColumnConstraints minWidth="10.0" />
-            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+            <ColumnConstraints minWidth="10.0" />
+            <ColumnConstraints hgrow="ALWAYS" />
+            <ColumnConstraints />
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" />
          </rowConstraints>
          <children>
+            <ComboBox fx:id="entityField" GridPane.columnIndex="4" />
             <Label text="profile:" GridPane.halignment="RIGHT" />
             <ChoiceBox fx:id="profileField" prefWidth="150.0" GridPane.columnIndex="1" />
             <CheckBox fx:id="rootOnlyField" mnemonicParsing="false" text="only root entities" GridPane.columnIndex="2">
@@ -39,7 +42,12 @@
                </GridPane.margin>
             </CheckBox>
             <Label text="entity:" GridPane.columnIndex="3" GridPane.halignment="RIGHT" />
-            <ComboBox fx:id="entityField" GridPane.columnIndex="4" />
+            <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" visible="false" GridPane.columnIndex="5" GridPane.hgrow="ALWAYS" />
+            <HBox spacing="5.0" GridPane.columnIndex="6">
+               <children>
+                  <Button fx:id="duplicateButton" mnemonicParsing="false" />
+               </children>
+            </HBox>
          </children>
          <BorderPane.margin>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -54,12 +62,11 @@
             <Button fx:id="loadButton" mnemonicParsing="false" text="load" />
             <Button fx:id="byIdButton" mnemonicParsing="false" text="find by ID" />
             <Button fx:id="finderButton" mnemonicParsing="false" text="use finder" />
-            <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
-            <Button fx:id="configCodeButton" mnemonicParsing="false" />
-            <Button fx:id="configPathsButton" mnemonicParsing="false" />
-            <Button fx:id="generateButton" mnemonicParsing="false" text="generate code" />
+            <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" visible="false" HBox.hgrow="ALWAYS" />
+            <Button fx:id="configCodeButton" mnemonicParsing="false" text="code" />
+            <Button fx:id="configPathsButton" mnemonicParsing="false" text="paths" />
+            <Button fx:id="generateButton" mnemonicParsing="false" text="generate" />
             <ToggleButton fx:id="memorizeButton" mnemonicParsing="false" text="memorize" />
-            <Button fx:id="closeButton" mnemonicParsing="false" text="close" />
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

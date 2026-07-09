@@ -66,7 +66,6 @@ import javafx.application.Platform;
 import javafx.beans.property.StringPropertyBase;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -80,6 +79,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -104,26 +104,6 @@ import java.util.StringTokenizer;
 @FxControllerService(resources = FxControllerService.RESOURCES_NONE)
 public class PdoBrowser extends AbstractFxController implements DomainContextProvider {
 
-  /**
-   * Shows the modal dialog.
-   *
-   * @param mojo the browser mojo
-   * @param context the domain context
-   */
-  public static Stage show(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
-    PdoBrowser diffDialog = Fx.load(PdoBrowser.class);
-    Scene scene = Fx.createScene(diffDialog.getView());
-    stage.setScene(scene);
-    stage.setTitle("PDO Browser");
-    diffDialog.setContext(mojo, context);
-    diffDialog.getContainer().updateView();
-    Fx.show(stage);
-    return stage;
-  }
-
-
-
   private static final int LATEST_DEFAULT = 100;                // number of latest PDOs to show initially
   private static final double OUTER_DIVIDER_POSITION = 0.84;    // outer split pane divider position
   private static final String POPUP_CSS = "-fx-font-weight: bold; -fx-font-size: 16;";
@@ -144,12 +124,15 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxButton loadButton;
   @FXML private FxButton finderButton;
   @FXML private FxButton byIdButton;
+  @FXML private FxButton duplicateButton;
   @FXML private FxButton configCodeButton;
   @FXML private FxButton configPathsButton;
   @FXML private FxButton generateButton;
   @FXML private FxToggleButton memorizeButton;
-  @FXML private FxButton closeButton;
 
+  private BrowseContainer container;
+  private Tab containerTab;
+  private String tabTitle;
   private BrowseMojo mojo;
   private DataNodeFactory nodeFactory;
   private DomainContext context;
@@ -187,7 +170,22 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
     });
     genCodeItem.setText("copy Java code to clipboard");
-    ContextMenu rowDetailsContextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem, genCodeItem);
+    MenuItem browseItem = Fx.create(MenuItem.class);
+    browseItem.setOnAction(_ -> {
+      DataNode node = getSelectedDetailDataNode();
+      if (node instanceof DataObject dataObj) {
+        try {
+          PdoBrowser browser = container.addBrowserView();
+          Platform.runLater(() -> browser.setupForPdo(new PdoWrapper(dataObj.getPdo())));
+        }
+        catch (MojoExecutionException mx) {
+          mojo.getLog().error(mx);
+        }
+      }
+    });
+    browseItem.setText("browse in new tab");
+    ContextMenu rowDetailsContextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem,
+                                                        copySqlItem, genCodeItem, browseItem);
     rowDetailsContextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, _ -> {
       genCodeItem.setVisible(getSelectedDetailDataNode() instanceof DataObject);
       PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
@@ -216,6 +214,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     byIdButton.setOnAction(_ -> loadById());
     finderButton.setGraphic(Fx.createGraphic("search"));
     finderButton.setDisable(true);
+    duplicateButton.setGraphic(Fx.createGraphic("add"));
+    duplicateButton.setOnAction(_ -> duplicate());
     memorizeButton.setGraphic(Fx.createGraphic("copy"));
     memorizeButton.setDisable(true);
     memorizeButton.selectedProperty().addListener((_, _, newValue) -> {
@@ -240,8 +240,6 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     generateButton.setGraphic(Fx.createGraphic("generate"));
     generateButton.setDisable(true);
     generateButton.setOnAction(_ -> generateCode());
-    closeButton.setGraphic(Fx.createGraphic("close"));
-    closeButton.setOnAction(this::close);
 
     pdosTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     pdosTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<PdoWrapper>) c -> {
@@ -261,6 +259,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         updateCodeConfiguration(selectedItems);
         showDiff();
       }
+      updateContainerTab();
     });
   }
 
@@ -294,18 +293,59 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   /**
    * Sets the context.
    *
-   * @param mojo the browser mojo
-   * @param context the domain context
+   * @param container the browse container
+   *
    * @throws MojoExecutionException if loading the profiles failed
    */
-  public void setContext(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
-    this.mojo = mojo;
-    this.context = context;
+  public void setContext(BrowseContainer container) throws MojoExecutionException {
+    this.container = container;
+    this.mojo = container.getMojo();
+    this.context = container.getContext();
     nodeFactory = new DataNodeFactory(mojo.getModel());
     profileField.getItems().setAll(mojo.getProfiles(PdoProfile.class));
     updateEntityFieldProperties();
-    entityField.requestFocus();
+    Platform.runLater(entityField::requestFocus);
     showDiff();
+  }
+
+  /**
+   * Sets the container tab.
+   *
+   * @param containerTab the tab to which the browser is attached, null if not attached to a tab
+   */
+  public void setContainerTab(Tab containerTab) {
+    this.containerTab = containerTab;
+    this.tabTitle = containerTab == null ? null : containerTab.getText();
+    updateContainerTab();
+  }
+
+  /**
+   * Sets the entity type and selects the PDO.<br>
+   * Used to initialize a new browser view.
+   *
+   * @param pdo the PDO to browse
+   */
+  public void setupForPdo(PdoWrapper pdo) {
+    setupForType(new PdoType(pdo.getPdo()));
+    if (!pdos.contains(pdo)) {
+      pdos = new ArrayList<>();
+      pdos.add(pdo);
+      pdosTableView.updateView();
+    }
+    pdosTableView.getSelectionModel().select(pdo);
+    pdosTableView.scrollToCentered(pdo);
+  }
+
+  /**
+   * Sets the entity type.<br>
+   * Used to initialize a new browser view.
+   *
+   * @param type the entity type to browse
+   */
+  public void setupForType(PdoType type) {
+    entity = type;
+    entityField.updateView();
+    run();
   }
 
 
@@ -503,7 +543,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
     pdosTableView.updateView();
     if (selectedItem != null && pdos.contains(selectedItem)) {
-      pdosTableView.getSelectionModel().select(selectedItem);
+      pdosTableView.getSelectionModel().select(selectedItem); // updates the container tab as well
+      pdosTableView.scrollToCentered(selectedItem);
+    }
+    else {
+      updateContainerTab();
     }
 
     Platform.runLater(() -> {
@@ -634,12 +678,35 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     return null;
   }
 
-  private void close(Event event) {
-    getStage().hide();
+  private void duplicate() {
+    try {
+      PdoBrowser browser = container.addBrowserView();
+      PdoWrapper pdo = pdosTableView.getSelectionModel().getSelectedItem();
+      if (pdo != null) {
+        Platform.runLater(() -> browser.setupForPdo(pdo));
+      }
+      else if (entity != null) {
+        Platform.runLater(() -> browser.setupForType(entity));
+      }
+    }
+    catch (MojoExecutionException mx) {
+      mojo.getLog().error(mx);
+    }
   }
 
   private DataNode getSelectedDetailDataNode() {
     return rowDetailsTable.getSelectionModel().getSelectedItem();
+  }
+
+  private void updateContainerTab() {
+    if (containerTab != null) {
+      if (dataObject != null) {
+        containerTab.setText(dataObject.toString());
+      }
+      else {
+        containerTab.setText(entity == null ? tabTitle : entity.toString());
+      }
+    }
   }
 
 }
