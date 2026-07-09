@@ -78,7 +78,7 @@ wurblets and runs them against the project sources.
 
 Most wurblets share a small preamble pulled in from
 [`header.incl`](../wurblets/org/tentackle/wurblet/header.incl), which imports the model and SQL APIs and declares
-`@{extends ModelWurblet}` — making [`ModelWurblet`](#modelwurblet-the-shared-base) the base class for the
+`@{extends ModelWurblet}` — making `ModelWurblet` the base class for the
 generated wurblet. The DTO and Include wurblets extend their own bases (`DTOWurblet`, `IncludeWurblet`) instead.
 
 > The module is packaged with an `Automatic-Module-Name` of `org.tentackle.wurblet` rather than an explicit

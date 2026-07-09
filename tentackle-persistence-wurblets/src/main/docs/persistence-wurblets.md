@@ -27,7 +27,7 @@ every build.
 |------------------------|------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
 | **Generates into**     | PDO / operation *interfaces*, DTOs                                                                         | PDO / operation *implementation* classes (and some interface anchors)                                   |
 | **Typical output**     | `CN_*`/`AN_*` constants, getter/setter declarations, relation method declarations, unique-domain-key types | field declarations, `SELECT`/`INSERT`/`UPDATE`/`DELETE` code, class variables, caches, remote delegates |
-| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base)   | [`DbModelWurblet`](#dbmodelwurblet-the-shared-base) (extends `ModelWurblet`)                            |
+| **Base wurblet class** | [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base)   | `DbModelWurblet` (extends `ModelWurblet`)                                                               |
 
 Because this module depends on `tentackle-wurblets`, every helper available to the interface wurblets is also
 available here, extended with persistence-specific machinery — most importantly the translation of the
@@ -149,7 +149,7 @@ the shared preamble with the imports and `@{extends DbModelWurblet}`.
 
 | Class                                                                                     | Role                                                                                                                                                                           |
 |-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)             | Base class for all persistence wurblets (see [above](#dbmodelwurblet-the-shared-base)).                                                                                        |
+| [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)             | Base class for all persistence wurblets.                                                                                                                                       |
 | [`WhereClauseGenerator`](../java/org/tentackle/persist/wurblet/WhereClauseGenerator.java) | A [`CodeGenerator`](../../../../tentackle-wurblets/src/main/docs/wurblets.md) that walks the parsed argument expression and emits the Java that builds the SQL `WHERE` clause. |
 | [`JoinClauseGenerator`](../java/org/tentackle/persist/wurblet/JoinClauseGenerator.java)   | Emits the SQL for eager-loading joins, including filtered joins.                                                                                                               |
 | [`RemoteIncludes`](../java/org/tentackle/persist/wurblet/RemoteIncludes.java)             | Creates and updates the generated TRIP remote interface/implementation files (from FreeMarker templates) used by `AssertRemote`.                                               |

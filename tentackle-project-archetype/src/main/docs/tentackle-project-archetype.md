@@ -76,7 +76,7 @@ Archetype resources are processed by **Velocity**, so the template files differ 
   `.gif`, `.xcf`, the jlink `.ftl` templates). `packaged="true"` file sets are relocated under the generated
   package directory.
 
-The archetype's own [`pom.xml`](../pom.xml) additionally pre-filters the generated root
+The archetype's own [`pom.xml`](../../../pom.xml) additionally pre-filters the generated root
 [`pom.xml`](../resources/archetype-resources/pom.xml) at *archetype build time* (with `\` as the escape string),
 so that the Tentackle, Wurbelizer, JavaFX, and library versions of the current release are baked in as
 `${project.version}`, `${wurbelizer.version}`, `${testng.version}` and friends.
