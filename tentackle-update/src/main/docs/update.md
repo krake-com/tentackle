@@ -48,7 +48,7 @@ plugs everything together.
   `ClientTransportCloseRequest` so the transport is closed gracefully after the answer — the client is about to
   terminate and restart, and this avoids socket-reset noise on the server.
 - **No secrets in the payload.** `UpdateInfo` is *not* encrypted; the recommendation is to fetch updates over the
-  "tripe" (PKI, not TLS, since the server's certificate might have changed) transport instead of encrypting the record by hand. The download itself is plain HTTP(S) and is
+  "tripe" (PSK (pre-shared key), not TLS, since the server's certificate might have changed) transport instead of encrypting the record by hand. The download itself is plain HTTP(S) and is
   protected by a **SHA-256 checksum** rather than by transport encryption.
 - **Convention-based artifact layout.** The server derives the download URLs purely from a naming convention
   (`<artifact>-<version>-<platform>-<arch>[-pkg].zip` plus a matching `.sha256` file) under a configurable base
