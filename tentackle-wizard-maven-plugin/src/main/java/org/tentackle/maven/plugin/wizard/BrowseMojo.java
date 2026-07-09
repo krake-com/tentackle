@@ -26,7 +26,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
-import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
+import org.tentackle.maven.plugin.wizard.fx.BrowseContainer;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -80,6 +80,7 @@ public class BrowseMojo extends AbstractWizardMojo {
 
 
   private Stage stage;
+  private BrowseContainer browseContainer;
 
 
   @Override
@@ -104,7 +105,8 @@ public class BrowseMojo extends AbstractWizardMojo {
             configureFx();
             registerUncaughtExceptionHandler();
             session.makeCurrent();
-            stage = PdoBrowser.show(this, context);
+            browseContainer = new BrowseContainer(this, context);
+            stage = browseContainer.show();
             stage.setOnHidden(_ -> latch.countDown());
           }
           catch (Throwable t) {

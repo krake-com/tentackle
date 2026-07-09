@@ -41,6 +41,10 @@ public class PdoType {
     this.clazz = clazz;
   }
 
+  public PdoType(PersistentDomainObject<?> pdo) {
+    this(pdo.getSingular(), pdo.getEffectiveClass());
+  }
+
   /**
    * The displayed name.
    *

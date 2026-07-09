@@ -97,8 +97,10 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("password", "mdi2k-key");
     nm.put("preferences", "mdi2w-wrench");
     nm.put("print", "mdi2p-printer");
+    nm.put("run", "mdi2p-play-circle-outline");
     nm.put("reload", "mdi2r-refresh");
     nm.put("save", "mdi2c-content-save");
+    nm.put("script", "mdi2s-script-text-outline");
     nm.put("search", "mdi2f-file-find");
     nm.put("security", "mdi2s-security");
     nm.put("session", "mdi2l-lan-connect");
