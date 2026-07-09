@@ -296,7 +296,7 @@ lazily on next access by every other client — keeping the entire chain of cach
 
 The surgical, gap-free expiry above depends on the `tableserial` **history** that only middle-tier / DB-connected
 nodes maintain ("connected to the database **or to another middle-tier server**"). A bare two-tier
-[local client](#3-two-tier--local-client) has no upstream history to combine with, so it falls back to the coarser
+local client has no upstream history to combine with, so it falls back to the coarser
 scheme: modifications hit the modification table inside the transaction, updates are detected via tableserials, but
 deletions show up only as a gap and force a **full cache invalidation**. This is the deliberate trade-off that
 makes local-client mode simple for small deployments and middle-tier mode scale to thousands of users — and it is

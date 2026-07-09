@@ -26,7 +26,7 @@ This document explains each mechanism and then how they interlock.
 
 Every PDO carries a `serial` (declared on
 [`PersistentObject.getSerial()`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java),
-column [`CN_SERIAL = "serial"`](../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java),
+column [`CN_SERIAL = "serial"`](../../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java),
 Javadoc *"object version"*). Its contract is simple:
 
 > Whenever the object is persisted, the `serial` is incremented by one. A freshly
@@ -50,7 +50,7 @@ which bind `id` and `getSerial()`.)
 If another transaction has modified the row in the meantime, its serial has already
 advanced, so **zero rows match** and the statement updates nothing. Tentackle checks
 the affected-row count in
-[`assertThisRowAffected(int)`](../../../tentackle-database/src/main/java/org/tentackle/dbms/AbstractDbObject.java):
+[`assertThisRowAffected(int)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/AbstractDbObject.java):
 
 ```java
 if (count != 1) {
@@ -82,7 +82,7 @@ nothing on the happy path and requires no held database locks — ideal for the 
 ### Related counters
 
 - `tableserial` (model option `tableserial`,
-  [`CN_TABLESERIAL`](../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java)) is a
+  [`CN_TABLESERIAL`](../../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java)) is a
   *table-wide* version advanced on every write, used by the
   [`ModificationTracker`](persistence.md#modification-tracking) to drive **cache expiry** and
   cross-client change notification. It is a coherence/notification counter, not a

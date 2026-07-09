@@ -7,7 +7,7 @@ checks the *members* and the *state* of plain Java objects against a set of
 **constraints declared as annotations**. A constraint such as
 `@NotNull`, `@Greater("0")` or `@Pattern("[A-Z]{2}\\d+")` is attached to a field
 or getter; at validation time the framework discovers the constraint, evaluates
-it, and collects a list of [`ValidationResult`](#validationresult--the-outcome)s
+it, and collects a list of `ValidationResult`s
 describing what passed and what failed. The same API also drives **object
 validators** that check an aggregate as a whole — an annotation such as
 `@IngotValidator` placed on the [`Ingot`](../../../../tentackle-pdo/src/main/docs/pdo.md)
@@ -35,10 +35,10 @@ layers plug into it:
 - **Scope-aware** — the *same* object is validated differently depending on the
   situation. A field may be mandatory only when [interactively](#scopes) edited,
   another constraint may apply only before [persisting](#scopes). A
-  [`ValidationScope`](#validationscope--when-a-constraint-applies) filters which
+  `ValidationScope` filters which
   constraints run, so one annotated class serves every context.
 - **Severity-aware** — a failed validation is not necessarily an error. The
-  [severity](#validationseverity--how-bad-is-it) decides whether a result counts
+  severity decides whether a result counts
   as a hard failure or merely an informational warning.
 - **Conditional and dynamic** — a constraint can carry a `condition` script and
   a `value` script, so it applies only in certain object states and can compare
@@ -55,7 +55,7 @@ layers plug into it:
 - **Validators are stateless singletons.** A `Validator` is created once per
   annotation-occurrence, cached, and reused for every object of the class. It
   *must not* hold per-validation state — all runtime state is passed in through
-  a [`ValidationContext`](#validationcontext--the-runtime-state).
+  a `ValidationContext`.
 - **Annotation and implementation are separated.** The annotation
   (e.g. `@NotNull`) is pure metadata; the logic lives in a paired `Validator`
   implementation (`NotNullImpl`). The `@Validation` meta-annotation links them.
@@ -211,7 +211,7 @@ treats `AllScope` as a wildcard that matches everything.
 Most annotations default to `scope = {DefaultScope.class}`. `DefaultScope` has no
 implementation; it is a placeholder meaning *"ask the object"*. When a constraint
 is configured with only the default scope and the parent object implements
-[`ScopeConfigurator`](#scopeconfigurator), the object's `getDefaultScopes()`
+[`ScopeConfigurator`](#defaultscope-and-scopeconfigurator), the object's `getDefaultScopes()`
 supplies the effective scopes (`AbstractValidator.getConfiguredScopes`). Objects
 that don't implement `ScopeConfigurator` fall back to `AllScope` — i.e., the
 constraint applies always. This lets an entity declare, once, the scopes its
@@ -350,7 +350,7 @@ validation path), as opposed to a logical validation failure.
 
 `validateCollection(coll, path, scope)` validates each element, appending
 `[index]` to the path. Elements implementing
-[`Validateable`](#validateable--objects-that-validate-themselves) are validated
+`Validateable` are validated
 through their own `validate` method (honoring any override); other elements go
 through the annotation-driven `validate`. The `@Validate` constraint ties this
 into the field/object flow: annotated on a member, it descends into a

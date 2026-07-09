@@ -61,6 +61,7 @@ nav:
       - Quickstart: quickstart.md
       - Project Archetype: tentackle-project-archetype.md
       - MyApp Walkthrough: myapp-walkthrough.md
+      - Tentackle BOM: bom.md
   - Concepts & Architecture:
       - Tentackle Modules: modules.md
       - Multi-Tier Cascade: tiers.md
@@ -102,6 +103,8 @@ nav:
       - Interceptors: interceptors.md
       - Immutable — Switchable Read-Only Objects: immutable.md
       - Freezable: freezable.md
+      - Preferences — Database-Backed Settings: preferences.md
+      - Tasks & Daemons — Background Execution: tasks-daemon.md
       - Tentackle Logging: logging.md
       - Tentackle Scripting: scripting.md
   - Internationalization:
@@ -112,6 +115,7 @@ nav:
       - tentackle-fx — Extended JavaFX Layer: fx.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md
+      - tentackle-fx-rdc-poi — Spreadsheet Export: poi.md
       - FX RDC Update — Client Auto-Update: fx-rdc-update.md
   - Logging Providers:
       - SLF4J Provider: tentackle-log-slf4j.md
