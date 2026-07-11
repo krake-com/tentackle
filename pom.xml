@@ -886,6 +886,7 @@
             <configuration>
               <publishingServerId>central</publishingServerId>
               <deploymentName>tentackle</deploymentName>
+              <checksums>required</checksums>
             </configuration>
           </plugin>
         </plugins>
