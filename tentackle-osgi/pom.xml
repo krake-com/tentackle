@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>25.18.2.0</version>
+    <version>25.18.3.0-SNAPSHOT</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
@@ -18,11 +18,11 @@
    OSGI semantic versioning is restricted to x.y.z[.timestamp].
    Thus, the versioning is reduced to LTS.a.b, where a and b are not related to the original versions.
    -->
-  <version>25.1.2</version>
+  <version>25.1.3</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>25.18.2.0</tentackle.version>
+    <tentackle.version>25.18.3.0-SNAPSHOT</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>
