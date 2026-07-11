@@ -93,7 +93,7 @@
     <javafx.version>26.0.1</javafx.version>
     <jruby.version>10.1.0.0</jruby.version>
     <junit.version>6.1.1</junit.version>
-    <kwik.version>0.10.9</kwik.version>
+    <kwik.version>0.11</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
     <plexus.archiver.version>4.12.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
