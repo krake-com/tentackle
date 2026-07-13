@@ -73,10 +73,10 @@ public class ConnectionHandler implements Runnable {
    * @param outputStream the output stream associated with this connection
    */
   public ConnectionHandler(Transport transport, String connectionName, InputStream inputStream, OutputStream outputStream) {
-    this.transport = Objects.requireNonNull(transport);
-    this.connectionName = Objects.requireNonNull(connectionName);
-    this.inputStream = Objects.requireNonNull(inputStream);
-    this.outputStream = Objects.requireNonNull(outputStream);
+    this.transport = Objects.requireNonNull(transport, "missing transport");
+    this.connectionName = Objects.requireNonNull(connectionName, "missing connection name");
+    this.inputStream = Objects.requireNonNull(inputStream, "missing input stream");
+    this.outputStream = Objects.requireNonNull(outputStream, "missing output stream");
   }
 
   /**
@@ -238,7 +238,7 @@ public class ConnectionHandler implements Runnable {
       }
     }
     else {
-      throw new TripStreamClosedException("transport already closed");
+      throw new TripStreamClosedException("connection " + connectionName + " for transport " + transport + " not alive anymore");
     }
   }
 
