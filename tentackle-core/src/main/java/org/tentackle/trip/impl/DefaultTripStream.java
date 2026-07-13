@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Default implementation of a {@link TripStream}.
@@ -84,9 +85,9 @@ public class DefaultTripStream implements TripStream {
    * @param deserializer the deserializer to use
    */
   public DefaultTripStream(Dictionary dictionary, Serializer serializer, Deserializer deserializer) {
-    this.dictionary = dictionary;
-    this.serializer = serializer;
-    this.deserializer = deserializer;
+    this.dictionary = Objects.requireNonNull(dictionary, "dictionary missing");
+    this.serializer = Objects.requireNonNull(serializer, "serializer missing");
+    this.deserializer = Objects.requireNonNull(deserializer, "deserializer missing");
     dictionaryEntriesByName = new HashMap<>();
     tripTypes = new HashMap<>();
     factory = TripFactory.getInstance();

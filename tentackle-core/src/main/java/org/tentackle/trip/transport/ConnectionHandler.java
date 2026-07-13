@@ -21,6 +21,7 @@ package org.tentackle.trip.transport;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
+import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
@@ -224,10 +225,21 @@ public class ConnectionHandler implements Runnable {
    * @return the trip stream
    */
   protected TripStream createStream(UUID id) {
-    TripFactory factory = TripFactory.getInstance();
-    Serializer serializer = factory.createSerializer(outputStream);
-    Deserializer deserializer = factory.createDeserializer(inputStream);
-    return factory.createStream(transport.getServerDictionary(id), serializer, deserializer);
+    if (isConnectionAlive()) {
+      Dictionary serverDictionary = transport.getServerDictionary(id);
+      if (serverDictionary != null) {
+        TripFactory factory = TripFactory.getInstance();
+        Serializer serializer = factory.createSerializer(outputStream);
+        Deserializer deserializer = factory.createDeserializer(inputStream);
+        return factory.createStream(serverDictionary, serializer, deserializer);
+      }
+      else {
+        throw new TripStreamClosedException("no dictionary for transport " + id + " (stale client transport)");
+      }
+    }
+    else {
+      throw new TripStreamClosedException("transport already closed");
+    }
   }
 
 
