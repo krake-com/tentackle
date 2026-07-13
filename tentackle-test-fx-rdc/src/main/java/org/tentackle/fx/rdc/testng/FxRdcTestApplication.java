@@ -95,21 +95,26 @@ public abstract class FxRdcTestApplication extends TestApplication {
   @Override
   protected void setDomainContext(DomainContext context) {
     super.setDomainContext(context);
-    fxSession = context.getSession().clone("FX");
-    CountDownLatch latch = new CountDownLatch(1);
-    Platform.runLater(() -> {
-      Session.setCurrentSession(fxSession);
-      unhandledException.set(null);
-      Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
-      latch.countDown();
-    });
-    try {
-      if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
-        Assert.fail("waiting for FX failed");
-      }
+    if (GraphicsEnvironment.isHeadless()) {
+      throw new SkipException(HEADLESS_MSG);
     }
-    catch (InterruptedException e) {
-      Assert.fail("FX setup interrupted", e);
+    else {
+      fxSession = context.getSession().clone("FX");
+      CountDownLatch latch = new CountDownLatch(1);
+      Platform.runLater(() -> {
+        Session.setCurrentSession(fxSession);
+        unhandledException.set(null);
+        Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
+        latch.countDown();
+      });
+      try {
+        if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
+          Assert.fail("waiting for FX failed");
+        }
+      }
+      catch (InterruptedException e) {
+        Assert.fail("FX setup interrupted", e);
+      }
     }
   }
 
