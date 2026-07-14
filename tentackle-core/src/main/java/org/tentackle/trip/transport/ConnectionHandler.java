@@ -225,20 +225,18 @@ public class ConnectionHandler implements Runnable {
    * @return the trip stream
    */
   protected TripStream createStream(UUID id) {
-    if (isConnectionAlive()) {
-      Dictionary serverDictionary = transport.getServerDictionary(id);
-      if (serverDictionary != null) {
-        TripFactory factory = TripFactory.getInstance();
-        Serializer serializer = factory.createSerializer(outputStream);
-        Deserializer deserializer = factory.createDeserializer(inputStream);
-        return factory.createStream(serverDictionary, serializer, deserializer);
-      }
-      else {
-        throw new TripStreamClosedException("no dictionary for transport " + id + " (stale client transport)");
-      }
+    if (transport.isClosed()) {   // don't use isConnectionAlive since this would block in LoopbackTransport (see override)
+      throw new TripStreamClosedException("transport " + transport + " already closed");
+    }
+    Dictionary serverDictionary = transport.getServerDictionary(id);
+    if (serverDictionary != null) {
+      TripFactory factory = TripFactory.getInstance();
+      Serializer serializer = factory.createSerializer(outputStream);
+      Deserializer deserializer = factory.createDeserializer(inputStream);
+      return factory.createStream(serverDictionary, serializer, deserializer);
     }
     else {
-      throw new TripStreamClosedException("connection " + connectionName + " for transport " + transport + " not alive anymore");
+      throw new TripStreamClosedException("no such dictionary " + id + " in transport " + transport + " (stale client transport?)");
     }
   }
 
