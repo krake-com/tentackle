@@ -31,6 +31,8 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripType;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HexFormat;
@@ -47,6 +49,8 @@ public class TripObjectSerializer implements ObjectSerializer {
   // the dictionaries can be re-used by the copy()-method to increase performance!
   private final Dictionary serializerDictionary;
   private final Dictionary deserializerDictionary;
+  private final Serializer dummySerializer;
+  private final Deserializer dummyDeserializer;
 
   /**
    * Creates the TRIP serializer.
@@ -56,6 +60,28 @@ public class TripObjectSerializer implements ObjectSerializer {
     nilUuid = new UUID(0, 0);
     serializerDictionary = factory.createDictionary(nilUuid, true);
     deserializerDictionary = factory.createDictionary(nilUuid, false);
+    dummySerializer = factory.createSerializer(new ByteArrayOutputStream() {
+      @Override
+      public synchronized void write(int b) {
+        noWriteAllowed();
+      }
+
+      @Override
+      public synchronized void write(byte[] b, int off, int len) {
+        noWriteAllowed();
+      }
+
+      @Override
+      public void writeBytes(byte[] b) {
+        noWriteAllowed();
+      }
+
+      @Override
+      public void write(byte[] b) {
+        noWriteAllowed();
+      }
+    });
+    dummyDeserializer = factory.createDeserializer(new ByteArrayInputStream(new byte[0]));
   }
 
   /**
@@ -72,7 +98,7 @@ public class TripObjectSerializer implements ObjectSerializer {
     Dictionary dictionary = factory.createDictionary(nilUuid, true);
     Serializer serializer = factory.createSerializer(out);
     serializer.serialize(TripConstants.MAGIC);
-    TripStream stream = TripFactory.getInstance().createStream(dictionary, serializer, null);
+    TripStream stream = TripFactory.getInstance().createStream(dictionary, serializer, dummyDeserializer);
     if (object == null) {
       serializer.serializeOpCode(DefaultOpCode.NULL);
     }
@@ -101,7 +127,7 @@ public class TripObjectSerializer implements ObjectSerializer {
     if (magic[0] != TripConstants.MAGIC[0] || magic[1] != TripConstants.MAGIC[1]) {
       throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
     }
-    TripStream stream = TripFactory.getInstance().createStream(dictionary, null, deserializer);
+    TripStream stream = TripFactory.getInstance().createStream(dictionary, dummySerializer, deserializer);
     OpCode opCode = deserializer.deserializeOpCode();
     if (opCode == DefaultOpCode.NULL) {
       return null;
@@ -131,6 +157,12 @@ public class TripObjectSerializer implements ObjectSerializer {
       return type.read(stream, opCode);
     }
     return null;
+  }
+
+
+  private void noWriteAllowed() {
+    // cannot happen, but one never knows (avoids potential memleak)
+    throw new TripRuntimeException("illegal write to dummy output stream");
   }
 
 }
