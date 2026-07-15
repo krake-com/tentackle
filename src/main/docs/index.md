@@ -51,6 +51,7 @@ topic-grouped listing of every document, see the
 ## I
 
 - **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
+- **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
@@ -79,6 +80,8 @@ topic-grouped listing of every document, see the
 ## N
 
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
+- **Number sources (unique business numbers)** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
 
 ## O
 

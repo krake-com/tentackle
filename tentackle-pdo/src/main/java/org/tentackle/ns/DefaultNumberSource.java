@@ -215,7 +215,7 @@ public class DefaultNumberSource implements NumberSource {
           break;
         }
         else if (range.getEnd() == number) {
-          range.setEnd(number);
+          range.setEnd(number + 1);
           merged = true;
           break;
         }

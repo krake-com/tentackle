@@ -26,6 +26,7 @@ the [Index](./index.md).
 - [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md) — creating PDOs and operations in context.
 - [Operation — Behavior Without an Entity](../../../tentackle-pdo/src/main/docs/operation.md) — business logic that is not tied to one entity.
 - [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md) — the optional, coherent object cache.
+- [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) — unique business numbers from persistent, transactional pools.
 - [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md) — exact, atomic aggregate undo.
 - [Security — Permissions, Rules, and Grantees](../../../tentackle-pdo/src/main/docs/security.md) — the PDO security model.
 - [The rootId and rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md) — how components find their aggregate root.
