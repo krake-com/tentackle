@@ -53,6 +53,7 @@ the [Index](./index.md).
 
 - [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — binary serialization and RPC.
 - [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport.
+- [I/O and Networking](../../../tentackle-core/src/main/docs/io.md) — packet-framed compressing/encrypting streams and the reconnection machinery.
 
 ## Core Foundations
 

@@ -94,6 +94,9 @@ The server uses virtual threads to handle multiple connections concurrently.
 | `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module) |
 | `tripcq` | UDP QUIC protocol with compression                      |
 
+The compressing and PSK-encrypting variants are built from the packet-framed streams in
+`org.tentackle.io` — see [io.md](io.md).
+
 ### Remote and RemoteDelegate
 
 The `Remote` interface (`org.tentackle.trip.Remote`) is a **marker interface** — it has no methods. Any object whose methods should be invocable from another JVM must implement this interface (indirectly, through its interface hierarchy).
@@ -788,6 +791,7 @@ Key details:
 
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel over TRIP; location transparency depends on this protocol.
 - [QUIC Transport](../../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) reference transport and how it plugs in.
+- [I/O and Networking](io.md) — the packet-framed compressing/encrypting streams the transports are built from, and the reconnection machinery.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions are remoted as a tree of `RemoteDelegate`s over TRIP.
 - [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
 - [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
