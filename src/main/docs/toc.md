@@ -44,6 +44,7 @@ the [Index](./index.md).
 
 - [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md) — the PDO-aware persistence layer.
 - [Locking — Token Locks and the Optimistic `serial` Column](../../../tentackle-persistence/src/main/docs/locking.md) — concurrency control.
+- [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md) — streaming large result sets, transparently over local and remote sessions.
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.

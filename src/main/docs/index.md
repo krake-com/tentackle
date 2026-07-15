@@ -32,6 +32,7 @@ topic-grouped listing of every document, see the
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
+- **Cursors (streaming large result sets)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 
 ## D
 
@@ -127,6 +128,7 @@ topic-grouped listing of every document, see the
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
+- **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md)
 - **Serialization (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
