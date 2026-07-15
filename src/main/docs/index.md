@@ -85,6 +85,8 @@ topic-grouped listing of every document, see the
 - **Migration (RMI → TRIP)** — [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 - **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md)
 - **Modification tracking** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **ModuleHook** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-modulehook), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
+- **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)
 - **Modules** — [Tentackle Modules](./modules.md)
 - **Multi-tier deployment** — [Multi-Tier Cascade](./tiers.md)
 
@@ -99,6 +101,7 @@ topic-grouped listing of every document, see the
 
 - **Operations (behavior without an entity)** — [Operation](../../../tentackle-pdo/src/main/docs/operation.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
+- **OSGi bundles** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
 
 ## P
 
@@ -132,6 +135,7 @@ topic-grouped listing of every document, see the
 - **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md)
 - **Serialization (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
+- **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)

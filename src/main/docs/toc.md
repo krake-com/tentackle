@@ -60,7 +60,7 @@ the [Index](./index.md).
 
 - [Tentackle Core](../../../tentackle-core/src/main/docs/core.md) — the runtime foundation.
 - [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
-- [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — the ServiceFinder SPI.
+- [Service and Configuration API — Locating Implementations Without Scanning](../../../tentackle-common/src/main/docs/services.md) — the `@Service`/`@MappedService` annotations, the ServiceFinder SPI, build-time registration, module ordering and the ModuleHook.
 - [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — application-specific secret handling: encrypted passwords in configuration, memory, and on the wire.
 - [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
