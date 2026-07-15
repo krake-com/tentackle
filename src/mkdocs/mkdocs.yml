@@ -88,6 +88,7 @@ nav:
   - Persistence & Database:
       - Tentackle Persistence: persistence.md
       - Locking — Token & Optimistic serial: locking.md
+      - Cursors — Streaming Large Result Sets: cursors.md
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
       - Tentackle Database: database.md
@@ -95,18 +96,22 @@ nav:
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md
+      - I/O and Networking: io.md
   - Core Foundations:
       - Tentackle Core: core.md
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
+      - Cryptor and EncryptedProperties: cryptor.md
       - Annotation Processors: annotation-processors.md
       - Binding — Connecting Models to Views: binding.md
       - Validation: validation.md
       - Interceptors: interceptors.md
+      - Reflection — Class Mapping, Mixins, Proxies: reflect.md
       - Immutable — Switchable Read-Only Objects: immutable.md
       - Freezable: freezable.md
       - Preferences — Database-Backed Settings: preferences.md
       - Tasks & Daemons — Background Execution: tasks-daemon.md
+      - Miscellaneous — Contracts, Collections, Utilities: misc.md
       - Tentackle Logging: logging.md
       - Tentackle Scripting: scripting.md
       - CompoundValue — Objects From Strings: compound-value.md
@@ -116,6 +121,7 @@ nav:
       - Database-backed Resource Bundles: i18n.md
   - User Interface (JavaFX):
       - tentackle-fx — Extended JavaFX Layer: fx.md
+      - Tables and Trees: tables.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md
       - tentackle-fx-rdc-poi — Spreadsheet Export: poi.md
