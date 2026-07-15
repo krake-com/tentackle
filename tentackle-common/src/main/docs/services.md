@@ -295,3 +295,4 @@ We don't provide a public P2 repository yet, but that might change in the future
 - [Internationalization](./internationalization.md) — database-backed I18N built on top of the bundle and service infrastructure.
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — PDOs and operations are interfaces whose implementations are located via these services.
 - [Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — code generators that consume the analysis results (e.g. the `RemoteMethod` wurblet).
+- [Reflection](../../../../tentackle-core/src/main/docs/reflect.md) — the `ClassMapper` that resolves `@MappedService` mappings at runtime, including lenient lookup up class hierarchies.

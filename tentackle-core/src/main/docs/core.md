@@ -66,6 +66,8 @@ See **[trip.md](trip.md)** for the full treatment.
 ### Reflection, proxies and interception
 
 Package `org.tentackle.reflect` (plus the build-time `apt` processors).
+See [reflect.md](reflect.md) for the full picture and [interceptors.md](interceptors.md) for the
+interception model.
 
 This package provides two intertwined capabilities:
 
@@ -222,7 +224,7 @@ tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 | Package(s)                                                                                         | Subsystem                                                            | Reference                          |
 |----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------------------------------|
 | `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization                                          | [trip.md](trip.md)                 |
-| `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [interceptors.md](interceptors.md) |
+| `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [reflect.md](reflect.md), [interceptors.md](interceptors.md) |
 | `org.tentackle.bind`                                                                               | Model↔view binding                                                   | [binding.md](binding.md)           |
 | `org.tentackle.validate` (+ `scope`, `validator`, `severity`)                                      | Validation framework                                                 | [validation.md](validation.md)     |
 | `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | [logging.md](logging.md)           |
