@@ -29,6 +29,7 @@ topic-grouped listing of every document, see the
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Code generation** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
+- **CompoundValue (constants, references, scripts in annotations)** — [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Validation](../../../tentackle-core/src/main/docs/validation.md), [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
@@ -124,7 +125,7 @@ topic-grouped listing of every document, see the
 
 ## S
 
-- **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
+- **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
@@ -156,7 +157,7 @@ topic-grouped listing of every document, see the
 
 ## V
 
-- **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)
+- **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)
 
 ## W
 

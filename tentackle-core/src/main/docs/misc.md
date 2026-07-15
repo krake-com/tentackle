@@ -207,14 +207,16 @@ and friends for the whole `java.time` family.
   indexes, materialized lazily, so index arithmetic costs no string allocations.
 - [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java) — builds objects from strings:
   a constant, a `$`-prefixed dotted reference to a field/method (negatable with `!` for booleans),
-  or a [script](scripting.md) in Groovy or JRuby. Used for dynamic parameters in annotations.
+  or a [script](scripting.md) in Groovy or JRuby. Used for dynamic parameters in annotations —
+  see [CompoundValue](compound-value.md) for the full syntax and its role in
+  [validation](validation.md).
 
 
 ## Utilities
 
 | Class                                                                                     | Purpose                                                                                  |
 |-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java)                       | Object helpers, mainly for `CompoundValue`; a `@Service`, so applications extend it for their own types |
+| [`ObjectUtilities`](../java/org/tentackle/misc/ObjectUtilities.java)                       | Object helpers, mainly for [`CompoundValue`](compound-value.md) conversions; a `@Service`, so applications extend it for their own types |
 | [`DiagnosticUtilities`](../java/org/tentackle/misc/DiagnosticUtilities.java)               | Diagnostics (thread dumps and friends); also a `@Service`                                |
 | [`ConcurrencyHelper`](../java/org/tentackle/misc/ConcurrencyHelper.java)                   | Concurrency and multithreading helpers                                                   |
 | [`TimeKeeper`](../java/org/tentackle/misc/TimeKeeper.java)                                 | A `nanoTime`-based duration with a fluent API — used throughout for timing and statistics |
@@ -269,6 +271,7 @@ environment variables, a YAML file, or anywhere else — see the
 ## Related Documentation
 
 - [Tentackle Core](core.md) — the runtime foundation this package belongs to.
+- [CompoundValue](compound-value.md) — `CompoundValue` and `ObjectUtilities` in depth.
 - [Immutable](immutable.md) — the switchable read-only contract and its collections.
 - [Snapshots and Copies](../../../../tentackle-pdo/src/main/docs/snapshot.md) — `Snapshotable` and `TrackedList` snapshot semantics in depth.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — `PersistentObject` implements the contracts defined here.

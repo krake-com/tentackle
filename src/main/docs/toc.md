@@ -74,6 +74,7 @@ the [Index](./index.md).
 - [Miscellaneous — Contracts, Collections, Pooling, Utilities](../../../tentackle-core/src/main/docs/misc.md) — the low-level contracts the upper layers implement, plus `TrackedList`, pooling and smart date/time parsing.
 - [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md) — the pluggable logging API.
 - [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting-language API.
+- [CompoundValue — Objects From Strings](../../../tentackle-core/src/main/docs/compound-value.md) — constants, references and scripts behind dynamic annotation parameters.
 
 ## Internationalization
 
