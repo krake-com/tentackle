@@ -9,7 +9,8 @@ topic-grouped listing of every document, see the
 
 - **Aggregates** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md)
 - **Application bootstrap / lifecycle** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
-- **Annotation analysis / processing** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md), [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
+- **Annotation analysis (`@Analyze`, META-INF generation)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md), [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
+- **Annotation processors (compile-time validation)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md)
 - **Archetype (project scaffolding)** — [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md), [Quickstart](./quickstart.md)
 - **AtlantaFX theme** — [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
@@ -120,6 +121,7 @@ topic-grouped listing of every document, see the
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
+- **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)
 
 ## T
 

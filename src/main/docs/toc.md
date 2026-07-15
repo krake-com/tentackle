@@ -59,6 +59,7 @@ the [Index](./index.md).
 - [Tentackle Core](../../../tentackle-core/src/main/docs/core.md) — the runtime foundation.
 - [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
 - [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — the ServiceFinder SPI.
+- [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
 - [Validation — Annotation-Driven, Scope-Aware Validation](../../../tentackle-core/src/main/docs/validation.md) — declarative constraints.
 - [Interceptors — Annotation-Driven Method Interception](../../../tentackle-core/src/main/docs/interceptors.md) — cross-cutting concerns.

@@ -199,9 +199,16 @@ Package `org.tentackle.apt` (and `apt.visitor`).
 The build-time annotation processors that back core's annotations — chiefly the interception processors
 ([`InterceptionAnnotationProcessor`](../java/org/tentackle/apt/InterceptionAnnotationProcessor.java),
 `AbstractInterceptorAnnotationProcessor`, …) and the service-annotation base
-([`AbstractServiceAnnotationProcessor`](../java/org/tentackle/apt/AbstractServiceAnnotationProcessor.java)). These
-run during compilation/analysis (see the [service & configuration API](../../../../tentackle-common/src/main/docs/services.md))
-and emit the `META-INF` configuration consumed at runtime.
+([`AbstractServiceAnnotationProcessor`](../java/org/tentackle/apt/AbstractServiceAnnotationProcessor.java)).
+These run inside `javac` and **validate** annotated classes — that a service implementation is not
+abstract, implements the required interface and provides the constructors the framework will invoke
+reflectively — reporting errors and warnings. They generate nothing: the `META-INF` configuration is
+emitted by the `@Analyze` handlers of the
+[service & configuration API](../../../../tentackle-common/src/main/docs/services.md) instead, which is
+also what registers the processors themselves.
+
+See [Annotation Processors](annotation-processors.md) for the full picture, including the processors in
+tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 
 ---
 

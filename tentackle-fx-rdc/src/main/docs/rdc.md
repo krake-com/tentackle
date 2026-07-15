@@ -115,11 +115,13 @@ public class InvoiceGuiProvider extends DefaultGuiProvider<Invoice> {
 ```
 
 The [`@GuiProviderService`](../java/org/tentackle/fx/rdc/GuiProviderService.java)
-annotation is picked up at build time by an annotation processor (see
-[Annotation processors](#annotation-processors-apt)) which generates the
+annotation is picked up at build time by the
+[analyze phase](../../../../tentackle-common/src/main/docs/services.md), which generates the
 `META-INF/services` entry, so the provider is found by
 [`GuiProviderFactory`](../java/org/tentackle/fx/rdc/GuiProviderFactory.java) at
-runtime — in both modular and non-modular deployments.
+runtime — in both modular and non-modular deployments. Independently, an
+[annotation processor](#annotation-processors-apt) validates at compile time that the
+provider satisfies the contract.
 
 #### Read-only views with PdoViewer
 
