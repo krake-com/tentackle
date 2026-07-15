@@ -118,7 +118,7 @@ topic-grouped listing of every document, see the
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
-- **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md)
+- **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)
@@ -126,6 +126,7 @@ topic-grouped listing of every document, see the
 ## T
 
 - **Technical & scientific applications** — [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)
+- **Tables / tree-tables (configuration, cell types, layouts)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)
