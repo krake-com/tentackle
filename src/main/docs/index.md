@@ -24,6 +24,7 @@ topic-grouped listing of every document, see the
 ## C
 
 - **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md)
+- **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Code generation** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
@@ -34,6 +35,7 @@ topic-grouped listing of every document, see the
 - **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
+- **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Dictionary (type compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -47,6 +49,7 @@ topic-grouped listing of every document, see the
 
 ## F
 
+- **Formatting (localized patterns)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
 - **Freezable value types** — [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **FX / JavaFX** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 
@@ -96,7 +99,8 @@ topic-grouped listing of every document, see the
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
-- **Pooling (sessions)** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
 
 ## Q

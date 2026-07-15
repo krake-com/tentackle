@@ -357,5 +357,6 @@ assertFalse(numberPool.copy().isImmutable());            // copies are always mu
 - [immutable.md](../../../../tentackle-core/src/main/docs/immutable.md) — the immutability model; snapshots are immutable, copies are mutable.
 - [operation.md](operation.md) — operations, the entity-less sibling of PDOs.
 - [`Snapshotable`](../../../../tentackle-core/src/main/java/org/tentackle/misc/Snapshotable.java),
-  [`TrackedList`](../../../../tentackle-core/src/main/java/org/tentackle/misc/TrackedList.java) — the core contracts.
+  [`TrackedList`](../../../../tentackle-core/src/main/java/org/tentackle/misc/TrackedList.java) — the core contracts
+  ([misc.md](../../../../tentackle-core/src/main/docs/misc.md) covers the package they live in, including `TrackedList`'s modification tracking).
 - [persistence-wurblets.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — the code generation that wires component snapshots.
