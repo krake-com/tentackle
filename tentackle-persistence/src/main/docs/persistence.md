@@ -130,6 +130,9 @@ materializing them all in memory. Its remote counterpart is
 [`RemoteResultSetCursorImpl`](../java/org/tentackle/persist/trip/RemoteResultSetCursorImpl.java), so cursors work
 over a remote connection too.
 
+See [cursors.md](cursors.md) for the full picture: how one class serves both session types, block
+fetching, the join constraint, and cursor lifetime.
+
 ### NormText
 
 [`NormText`](../java/org/tentackle/persist/NormText.java) builds a *normtext* — a phonetically normalized string —
