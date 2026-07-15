@@ -31,6 +31,7 @@ topic-grouped listing of every document, see the
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
+- **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 
 ## D
 
@@ -100,6 +101,7 @@ topic-grouped listing of every document, see the
 ## P
 
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
+- **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
@@ -122,6 +124,7 @@ topic-grouped listing of every document, see the
 ## S
 
 - **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
+- **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Serialization (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
