@@ -35,12 +35,75 @@ platform-specific tools (a Windows installer can only be built on Windows, and s
 [Maven toolchain support](#using-the-maven-toolchain) lets you decouple the JDK that *runs the build* from the JDK
 that *builds the image*.
 
+If you read only one section of this document, make it
+[Why The Plugin Generates The Start Script](#why-the-plugin-generates-the-start-script). It is the shortest path to
+understanding what the plugin actually does.
+
 ### Prerequisites
 
 Java 11 or newer and Maven 3.6.3 or newer is required. The application and its dependencies
 may be compiled for older Java versions as long as they don't use deprecated features that were removed
 in the meantime. For jpackage you need at least Java 14. However, you can still create images for Java 11 LTS
 with jpackage by using maven toolchains (see below).
+
+### What Jlink Needs From The JPMS
+
+Everything the plugin does follows from a handful of JPMS rules. They are worth recalling, because they explain
+why the plugin sometimes builds a picture-perfect modular image and sometimes falls back to something that looks
+suspiciously like the good old classpath.
+
+#### Three kinds of module
+
+The module system sorts every jar on your dependency list into one of three buckets:
+
+| Kind                           | What it is                                                                  | Lives on        |
+|--------------------------------|-----------------------------------------------------------------------------|-----------------|
+| **explicit** (a "real" module) | a jar with a `module-info.class`, i.e. a proper module descriptor           | the module path |
+| **automatic**                  | a plain jar *on the module path*. The JPMS invents a descriptor for it      | the module path |
+| **unnamed**                    | everything on the class path, lumped together into one big anonymous module | the class path  |
+
+An automatic module gets its name from the `Automatic-Module-Name` entry of the jar's manifest, or, if that is
+missing, from the jar's file name (the `.jar` suffix and a trailing `-<version>` are stripped, and anything that
+isn't a valid identifier character becomes a dot). It exports *all* of its packages, it reads *every* other module
+including the unnamed one, and its `provides` clauses are synthesized from the `META-INF/services` entries in the jar.
+In short: an automatic module is a classpath jar wearing a module costume.
+
+#### The rules that shape the packaging strategy
+
+- **jlink links explicit modules only.** It needs a real module descriptor to compute the module graph and to place
+  a module into the `jimage` file. Hand it an automatic module and it refuses, flat out. There is no flag to
+  override this, and that is by design: the whole point of a linked image is that its module graph is known at link
+  time, and an automatic module is precisely a module whose graph *isn't* known.
+- **An explicit module cannot read the unnamed module.** There is no way to write `requires` for something on the
+  class path. If your `module-info` needs a type from a non-modular jar, that jar *must* be on the module path,
+  which makes it an automatic module — and per the previous rule, jlink then can't link it.
+- **The two rules combine, and this is the important part.** If module `A` in your application declares
+  `requires B` and `B` is automatic, jlink cannot link `B` — and therefore cannot link `A` either, since `A`'s
+  graph is incomplete without `B`. The failure is contagious: a single required automatic module knocks your
+  *entire application* out of the runtime image. What remains linkable is the JDK's own modules. This is exactly
+  the difference between category 1 and category 2 [below](#application-categories-and-jigsaw-myths).
+- **Split packages are fatal on the module path, harmless on the class path.** A package must not be provided by
+  more than one module. Two artifacts sharing a package (a classic in the pre-JPMS world) can therefore never both
+  be modules — but they can happily coexist in the unnamed module.
+
+#### How modules get resolved at startup
+
+At startup the JVM resolves a module graph, and only resolved modules exist as far as the runtime is concerned.
+A jar sitting on the module path that nobody pulls in is *not loaded at all* — its classes are invisible even to
+`Class.forName`. Resolution proceeds like this:
+
+1. **Roots.** With `-m mymodule/Main`, the main module is the one and only root.
+2. **`requires`.** The graph is closed transitively over the `requires` clauses. `requires static` is ignored here —
+   it's a compile-time-only dependency.
+3. **Service binding.** For every resolved module that declares `uses X`, any observable module that declares
+   `provides X` is pulled in *and resolved* — even though nothing `requires` it. This is how a plugin finds its
+   implementation without ever naming it.
+4. **Automatic modules are all-or-nothing.** The moment *one* automatic module ends up in the graph, *every*
+   automatic module on the module path is resolved along with it.
+
+Steps 3 and 4 are what make ["unrequired" dependencies](#unrequired-dependencies) work, and they are the reason
+Tentackle's own [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md) keeps
+working inside a linked image.
 
 ### Application Categories and Jigsaw Myths
 
@@ -63,6 +126,58 @@ Java packages are bound to their module and must not appear in more than one art
 However, you can still generate a modular runtime and run the application in classpath mode.
 
 In short: if your application runs on Java 11 or newer, you can package it in one or another way.
+The categories differ only in *where the pieces end up*:
+
+| Category         | What goes into the `jimage`             | What ends up next to it        | How it is launched                     |
+|------------------|-----------------------------------------|--------------------------------|----------------------------------------|
+| 1 plain modular  | JDK modules **and** application modules | nothing (except `conf`)        | `-m mainmodule/MainClass`              |
+| 2 mixed modular  | JDK modules only                        | application modules in `mp/`   | `-p mp/... -m mainmodule/MainClass`    |
+| 3 classpath      | JDK modules only                        | all artifacts in `cp/`         | `-cp cp/... MainClass`                 |
+
+Which category you land in isn't a setting — the plugin derives it from your dependencies. And whatever *doesn't*
+fit into the image has to be handed to the JVM on the command line, which brings us to the heart of the matter.
+
+### Why The Plugin Generates The Start Script
+
+At first glance the generated start script looks like a convenience: a little `run.sh` so nobody has to type a
+`java` command by hand. It is not. **The start script is the other half of the image**, and understanding why is
+the key to understanding this plugin.
+
+Here is the thing: jlink *can* create a launcher itself, via `--launcher name=module/mainclass`. The plugin
+deliberately doesn't use it, because that launcher can do exactly one thing — start a main class from a module that
+lives *inside* the runtime image. It cannot pass `--module-path`, it cannot pass `-cp`, and it cannot be told
+anything about artifacts that live next to the image rather than in it.
+As soon as a single piece of your application fails to make it into the image — one automatic module, one
+non-modular jar, one directory of configuration resources — that launcher is useless, and per the JPMS rules above,
+that is the *normal* case, not the exception.
+
+So the image alone never tells the whole story. The dependency analysis produces exactly four values:
+
+- `mainModule` — empty for a classpath application
+- `mainClass`
+- `modulePath` — whatever had to stay outside the image, in `mp/`
+- `classPath` — whatever runs unnamed, in `cp/`, plus `conf`
+
+and the start script is *where those four values become an executable command line*. The script isn't
+documentation of the analysis; it **is** the analysis, materialized. That is also why those same four values are the
+core variables of the [Freemarker template model](#adding-the-plugin-to-your-maven-project): the template is the
+seam where the plugin's knowledge about your project meets the platform's idea of how to start a process.
+
+Once you see this, the whole plugin collapses into one sentence: *decide what can go into the image, and record what
+couldn't, so the launcher can add it back.* Every feature — the category detection, the `mp/` and `cp/` folders, the
+template model, the cfg patching — serves that sentence.
+
+Two details of the generated script are worth knowing:
+
+- It is written to `bin/` — right next to the `java` executable of the linked runtime — and its first action is to
+  `cd` to the image root, so that the relative paths `mp/...`, `cp/...` and `conf/...` resolve no matter where the
+  user invoked it from. Symlinks are resolved first (via `readlink -f`, or an equivalent on macOS).
+- Its name comes from its own template (`name.ftl`), so it is `run.cmd` on Windows and `run.sh` elsewhere.
+
+And the jpackage goal? It faces the very same problem. jpackage builds its own native launcher, so there is no shell
+script to generate — instead the plugin **patches the launcher's `.cfg` file** afterwards, writing the module path
+into a `java-options` entry and the class path into `app.classpath`. Different mechanism, identical purpose: tell the
+JVM about everything that didn't fit into the image. See [How The Jpackage Goal Works](#how-the-jpackage-goal-works).
 
 ### Adding the Plugin to Your Maven Project
 
@@ -171,7 +286,10 @@ In any case, the important parts are:
   * `<extensions>true</extensions>`: this makes the new packaging types known to maven.
   * the `<mainClass>` of the project.
   * the `<mainModule>` if it is a modular project (JPMS)
-  
+
+Note that `<mainModule>` is what decides between a modular and a classpath application: leave it out, and the plugin
+builds a category 3 image even if every one of your jars has a `module-info`.
+
 That's it!   
 
 Now run `mvn clean install` and the console output will look like this:
@@ -215,14 +333,21 @@ Or if you used the packaging type `jpackage`, it looks like this:
 [INFO] BUILD SUCCESS
 ```
 
+The `full-blown module` / `automatic module` lines are the plugin telling you which bucket each of your dependencies
+landed in, and the `creating jlink image for a ...` line reports the category it derived from that. If you ever
+wonder why your image turned out bigger, smaller or differently laid out than expected, this is the place to look.
+
 When the plugin is invoked the first time, it creates a template directory and installs some default
 templates. The plugin uses [Freemarker](https://freemarker.apache.org/) as its template engine. 
 The templates can and should be modified according to your project-specific needs. 
 The defaults, however, already work for the most basic scenarios.
  
-The templates refer to a _model_ that provides variables. One of the variables is `osName`.
-It is used to derive the platform. For more details, names of the variables, how to define
-your own, etc... please refer to the [plugin docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/plugin-info.html). 
+The templates refer to a _model_ that provides variables. Besides `mainModule`, `mainClass`, `modulePath` and
+`classPath` — the four values [described above](#why-the-plugin-generates-the-start-script) — the model contains the
+system properties, the maven properties and your own `<variables>`, each converted to camelCase (`os.name` becomes
+`osName`). `osName` is the one you'll reach for most, since it is how a template derives the platform.
+For more details, names of the variables, how to define your own, etc... please refer to the
+[plugin docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/plugin-info.html). 
 By using templates, we keep the maven poms free from platform-specific stuff and don't need 
 to fiddle with maven profiles.
 
@@ -290,10 +415,34 @@ or some modules refer to dependencies which are not modularized yet.
 In the first case all modular modules are passed to jlink, which creates a plain modular application.
 Otherwise, only the necessary runtime modules are passed to jlink, the application's modules
 are copied to the `mp` subfolder and added to the `modulePath` variable of the freemarker model.
+This is the "contagious failure" from [the JPMS rules](#the-rules-that-shape-the-packaging-strategy): one required
+automatic module is enough to move *all* of your modules out of the image. The plugin warns about this
+(`required ... is not a full-blown module`); set `<failOnAutomaticRequired>true</failOnAutomaticRequired>` to turn
+that warning into a build failure if a plain modular image is a hard requirement for you.
 
-Next, filtered and non-filtered resources, if any, are copied to the `conf` subfolder by default.
+Next, filtered and non-filtered resources, if any, are copied to the `conf` subfolder by default. The `conf` folder
+is added to the classpath, which is why an application can always read its configuration as a resource, in every
+category.
 
-Finally, the launch script is generated, and all files are packaged within a single ZIP archive.
+Finally, the launch script is generated, and all files are packaged within a single ZIP archive. The interesting
+parts of the resulting layout:
+
+```
+myapp/
+├── bin/          the linked runtime's java executable — plus the generated run.sh / run.cmd
+├── lib/          the jimage holding the linked modules
+├── conf/         configuration resources (added to the classpath)
+├── mp/           modules that could not be linked (category 2)
+└── cp/           artifacts running in the unnamed module (category 3, or mixed setups)
+```
+
+`mp` and `cp` only exist if the analysis actually put something there — for a plain modular application, the
+classpath consists of `conf` alone.
+
+If you want to force individual artifacts out of the image, the plugin offers escape hatches:
+`<classpathDependencies>` pushes an artifact onto the classpath even if it is a proper module, and
+`<modulePathOnly>` keeps a module on the module path instead of linking it into the image — handy when a module has
+to be replaceable in the field without rebuilding the image.
 
 ### How The Jpackage Goal Works
 
@@ -312,6 +461,17 @@ It works in 4 steps:
 
 In phase 2 the template `package-image.ftl` is used to generate the platform-specific jpackage options.
 In phase 4 `package-installer.ftl` is used.
+
+Step 3 is the jpackage counterpart of the generated start script, and it deserves a word of explanation, because it
+is the one step that looks like the plugin is meddling. jpackage's native launcher reads a `.cfg` file next to the
+application image, and that file — not a command line — is where the module path and the class path have to be
+declared. Unfortunately the two are not declared symmetrically: the module path goes into a `java-options` entry as
+a plain `-p`, whereas the class path is *ignored* if given as `-cp` there and has to be set as `app.classpath` in the
+`[Application]` section instead. The plugin knows the correct spelling for both, patches the `.cfg` files of every
+launcher, and cleans up the jars that jpackage duplicated into the `app` directory along the way.
+
+The application image also gets `-DROOTDIR`, `-DAPPDIR` and `-DRUNTIMEDIR` passed as java options, so the
+application — and your own templates, via `${runtimeDir}` — can find its way around the installation.
 
 ### "Unrequired" Dependencies
 
@@ -357,12 +517,31 @@ All those modules are just _wired_ at runtime. For example, the JDBC driver is l
 a Postgres specific class. The same applies to Groovy scripting and the logging implementation,
 which are both loaded via Tentackle's [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md).
 
-When the plugin detects such "unrequired" automatic modules, they are moved to the `mp` folder
-and added to the `modulePath`. The full-blown modules still go into the modular runtime image as usual.
+Since nothing requires them, they don't drag the application out of the image: the full-blown modules are linked as
+usual, and only the automatic ones are copied to the `mp` folder and added to the `modulePath`.
+
+But if the module graph never mentions them — how do they get *loaded* at runtime? This is where
+[service binding and the all-or-nothing rule](#how-modules-get-resolved-at-startup) come in, and it is worth
+following the chain once:
+
+1. `org.tentackle.common` declares `uses org.tentackle.common.ModuleHook`, and every Tentackle module — including
+   the ones on the module path — declares `provides ModuleHook with ...`.
+2. The JVM resolves the boot layer *with service binding*, so those provider modules are pulled into the graph
+   although no `requires` clause names them.
+3. As soon as one of them is an automatic module, the all-or-nothing rule resolves *every* automatic module on the
+   module path — including the JDBC driver and the logging backend, which provide nothing at all.
+4. Now that they are resolved, their classes and their `META-INF/services` entries are visible to the class loader,
+   which is exactly what `DriverManager` and Tentackle's `ServiceFinder` need.
+
+The takeaway is that a module on the module path is not automatically available — it has to be *reachable*, whether
+by `requires`, by service binding, or by riding along with another automatic module. Tentackle's service API arranges
+for the first domino to fall.
 
 This is a nice trick if you have to use 3rd-party dependencies that are not modularized yet
 and probably never will. Create an abstraction layer of the features
 you need and _inject_ an implementation wrapper of those dependencies at runtime. 
+You get a fully modular, jlink-able application *and* keep the freedom to use the un-modularized library of your
+choice — the exact opposite of the all-or-nothing migration that the JPMS is often accused of demanding.
 
 ### Adding Extra Modules
 
@@ -379,6 +558,12 @@ Supposed you want to add tools like `jcmd` to the `bin` folder, add this to the 
 ```
 
 The list of available modules can be obtained with `java --list-modules`.
+
+This is also the cure for the classic runtime surprise of trimmed images: a `NoClassDefFoundError` for a JDK class
+that nobody could see coming, because it is reached reflectively and therefore invisible to both `module-info` and
+`jdeps`. Groovy, for instance, needs `java.desktop` for `java.beans.BeanInfo`, and `jdk.localedata` is required for
+any locale outside of `en`. There is a mirror-image option, `<excludeModules>`, for the rare case that the analysis
+drags in something you know you don't need.
 
 ### Using The Maven Toolchain
 
@@ -400,6 +585,9 @@ to select two different toolchains:
   the plugin's jpackage goal, for example, with Java 11 LTS, even though the jpackage tool was first released 
   with Java 14. The generated runtime will still be based on Java 11 LTS in this case.
 
+Keep in mind that the linked runtime is the JDK the *tools* come from, not the one maven runs on: the toolchain
+you select here is the Java version your users will actually be running.
+
 ### Extending the Plugin
 
 The plugin delegates the actual creation of an artifact to an
@@ -408,6 +596,10 @@ so if you have special requirements — building several variants of your applic
 and a view-only client), emitting an additional archive format, or post-processing the image — you can supply your
 own implementation instead of the built-in one. Because the rest of the pipeline (dependency analysis, runtime
 assembly, template model) stays in place, an extension only has to override the step that differs.
+
+Likewise, the template model itself is pluggable via a
+[TemplateModelFactory](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/TemplateModelFactory.html)
+if the built-in variables aren't enough for your scripts.
 
 ### Auto Update Feature
 
@@ -454,6 +646,11 @@ Again, for a working example, please see this [Quickstart](../../../../src/main/
 
 
 ### Further Reading
+
+[Tentackle Modules](../../../../src/main/docs/modules.md) — how the framework itself is modularized.
+
+[Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md) — the SPI that makes
+"unrequired" dependencies work.
 
 [Java Platform Module System](https://en.wikipedia.org/wiki/Java_Platform_Module_System)
 
