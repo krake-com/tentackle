@@ -126,6 +126,7 @@ nav:
       - JRuby Provider: ruby.md
       - JSR-223 Provider: jsr.md
   - Application Lifecycle & Integration:
+      - Application Bootstrap: application.md
       - Tentackle Update — Self-Update Service: update.md
       - Tentackle Web: web.md
   - Build Tooling (Maven Plugins):

@@ -96,6 +96,7 @@ the [Index](./index.md).
 
 ## Application Lifecycle & Integration
 
+- [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md) — from `main()` to a running tier: the `Application` hierarchy and startup sequence.
 - [Tentackle Update — The Application Self-Update Service](../../../tentackle-update/src/main/docs/update.md) — client auto-update.
 - [Tentackle Web — Bridging Web Frameworks to a Tentackle Tier](../../../tentackle-web/src/main/docs/web.md) — exposing a Tentackle tier to web frameworks.
 
