@@ -109,6 +109,7 @@ nav:
       - Tasks & Daemons — Background Execution: tasks-daemon.md
       - Tentackle Logging: logging.md
       - Tentackle Scripting: scripting.md
+      - CompoundValue — Objects From Strings: compound-value.md
   - Internationalization:
       - Resource Bundles: bundle.md
       - Internationalization (i18n): internationalization.md

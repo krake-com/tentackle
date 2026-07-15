@@ -258,7 +258,7 @@ included by the binder when it evaluates these states.
 ### Conditions, values, and message scripts
 
 Three annotation parameters are not plain strings but
-`org.tentackle.misc.CompoundValue`s — they may be a **constant**, a **method
+[`CompoundValue`](compound-value.md)s — they may be a **constant**, a **method
 reference**, or a **script expression** (Groovy by default; Ruby and JSR-223
 languages are also supported):
 
@@ -278,6 +278,12 @@ reference on the parent object. Inside a message script, the `@('key', args…)`
 syntax is rewritten by `AbstractScriptValidationMessageConverter` into a call to
 `ValidationUtilities.format(object, 'key', args…)`, which performs the localized
 lookup. Compiled scripts are cached, so the compile cost is paid once.
+
+The compound values themselves are built by `ValidatorCompoundValueFactory` and
+created lazily per validator — see
+[CompoundValue](compound-value.md#integration-with-the-validation-api) for the
+full syntax, the script-variable table, and how to choose between a reference and
+a script.
 
 #### Localized messages — the `ValidationBundle` lookup
 

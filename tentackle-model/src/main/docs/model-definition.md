@@ -385,7 +385,8 @@ attributeName: @Anno1, @Anno2(param=value), ...
 - The block can span multiple lines: continuation is indicated by a trailing `,`.
   The block ends with `;`, an empty line, or two consecutive newlines.
 
-Option syntax inside annotations creates a `org.tentackle.misc.CompoundValue`.
+Option syntax inside annotations creates a
+[`CompoundValue`](../../../../tentackle-core/src/main/docs/compound-value.md).
 This can be a constant, a method reference or a script expression (usually Groovy,
 but Ruby and JSR223 are also supported).
 

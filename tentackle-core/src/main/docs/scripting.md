@@ -169,7 +169,8 @@ means the default language. The code is everything between the braces. `Compound
 `ScriptFactory.createScript(language, code, …)` and wraps any `ScriptRuntimeException` as an
 `IllegalArgumentException` describing the offending text. (A `CompoundValue` is more than a script — it can also be
 a constant `\literal`, a property reference, or a negated reference `!$path` — but the `#!…{…}` / `{…}`
-forms are the script case.)
+forms are the script case. See **[CompoundValue](compound-value.md)** for all four forms and how they are
+classified.)
 
 ---
 
@@ -285,8 +286,8 @@ creating an `AbstractScript` subclass that compiles and executes the code), anno
 
 - **[Validation](validation.md)** — the largest consumer: `condition`, `value` and `message` parameters of the
   validator annotations are script-backed `CompoundValue`s.
-- **[`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java)** — the general "constant / reference /
-  script" value abstraction used wherever a configurable expression is needed.
+- **[`CompoundValue`](compound-value.md)** — the general "constant / reference / script" value abstraction used
+  wherever a configurable expression is needed, and the parser of the she-bang notation.
 
 ## Source Map
 
@@ -294,7 +295,7 @@ creating an `AbstractScript` subclass that compiles and executes the code), anno
 |-------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
 | `ScriptingLanguage`, `ScriptFactory`, `Script`, `ScriptVariable`, `ScriptConverter`             | `tentackle-core` · `org.tentackle.script`                                                                                |
 | `AbstractScript`, `AbstractScriptingLanguage`, `DefaultScriptFactory`, `ScriptRuntimeException` | `tentackle-core` · `org.tentackle.script`                                                                                |
-| She-bang parsing                                                                                | [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java)                                                         |
+| She-bang parsing                                                                                | [`CompoundValue`](compound-value.md) · `tentackle-core` · `org.tentackle.misc`                                           |
 | Groovy implementation                                                                           | [`tentackle-script-groovy`](../../../../tentackle-script-groovy/src/main/docs/groovy.md) · `org.tentackle.script.groovy` |
 | Ruby implementation                                                                             | [`tentackle-script-ruby`](../../../../tentackle-script-ruby/src/main/docs/ruby.md) · `org.tentackle.script.ruby`         |
 | JSR-223 implementation                                                                          | [`tentackle-script-jsr`](../../../../tentackle-script-jsr/src/main/docs/jsr.md) · `org.tentackle.script.jsr`             |
