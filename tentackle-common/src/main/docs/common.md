@@ -104,6 +104,9 @@ plain Java serialization when `tentackle-core` is present.
 
 ### Security and configuration
 
+See [cryptor.md](cryptor.md) for the full picture, including the build-time encryption of secrets
+into filtered resources and an honest account of what this protects against.
+
 - [`Cryptor`](../java/org/tentackle/common/Cryptor.java) — a simple symmetric en/decryptor. An application
   provides its own `@Service(Cryptor.class)` subclass with a confidential salt/passphrase; it is used to encrypt
   passwords in memory, during client/server login, and in `backend.properties`.
@@ -215,6 +218,7 @@ service API; higher-level utilities (e.g., the reflection-based class mappers) a
 ## Related Documentation
 
 - [Services / ServiceFinder](services.md) — the in-depth guide to the service and configuration API summarized above.
+- [Cryptor and EncryptedProperties](cryptor.md) — the in-depth guide to the secret-handling layer summarized above.
 - [Freezable](freezable.md) — why the date/time and binary value types are freezable, and how that protects entity attributes from aliasing mutation.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — maps the data types here (`BMoney`, `DMoney`, `Date`, `Timestamp`, `I18NText`, …) to database columns.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — uses `EncryptedProperties`/`Cryptor` for connection configuration and credentials.

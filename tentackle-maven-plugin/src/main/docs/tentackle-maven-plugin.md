@@ -161,6 +161,10 @@ Each `propertyDescriptor` has three elements:
 - `property`: the name of the generated maven property, which becomes available to the rest of the
   build.
 
+The `Cryptor` case above is the common one: it encrypts a build-time secret so the packaged image
+ships only ciphertext. See [cryptor.md](../../../../tentackle-common/src/main/docs/cryptor.md) for
+the end-to-end flow.
+
 Because the converter is loaded by the plugin, its artifact must be on the plugin's classpath — add
 it to the plugin's `<dependencies>`. Converters are cached and therefore must be stateless.
 

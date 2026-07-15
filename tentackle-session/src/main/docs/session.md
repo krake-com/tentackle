@@ -87,7 +87,8 @@ singleton (default implementation
 [`DefaultSessionInfoFactory`](../java/org/tentackle/session/DefaultSessionInfoFactory.java) producing
 [`DefaultSessionInfo`](../java/org/tentackle/session/DefaultSessionInfo.java)), which can build one from a
 username/password, from a properties name, or from an
-[`EncryptedProperties`](../../../../tentackle-common) object — honouring `Cryptor`-encrypted credentials. It also
+[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) object — honouring
+`Cryptor`-encrypted credentials. It also
 carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and `checkServerVersion`
 for client/server version validation (`VersionIncompatibleException`).
 
