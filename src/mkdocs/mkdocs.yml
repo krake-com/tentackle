@@ -99,6 +99,7 @@ nav:
       - Tentackle Core: core.md
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
+      - Annotation Processors: annotation-processors.md
       - Binding — Connecting Models to Views: binding.md
       - Validation: validation.md
       - Interceptors: interceptors.md
