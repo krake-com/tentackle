@@ -453,6 +453,8 @@ Notice that both the enclosing instance and the lambda must implement `Serializa
 otherwise the compiler won't create serialization-capable byte code.
 Notice further that non-static inner classes are rejected for the same reason.
 Providing a `@CanonicalConstructor` or `@TripInstanceCreator` enables serialization again.
+(The `@CanonicalConstructor` family — including `@CanonicalBuilder` for the builder pattern — is
+described in [reflect.md](reflect.md#canonical-construction).)
 
 #### `@TripInstanceCreator`
 

@@ -64,6 +64,7 @@ the [Index](./index.md).
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
 - [Validation — Annotation-Driven, Scope-Aware Validation](../../../tentackle-core/src/main/docs/validation.md) — declarative constraints.
 - [Interceptors — Annotation-Driven Method Interception](../../../tentackle-core/src/main/docs/interceptors.md) — cross-cutting concerns.
+- [Reflection — Class Mapping, Mixins, and Proxy Support](../../../tentackle-core/src/main/docs/reflect.md) — the `ClassMapper` behind `@MappedService`, the mixins behind PDO proxies, canonical construction.
 - [Immutable — Switchable Read-Only Objects](../../../tentackle-core/src/main/docs/immutable.md) — controlled immutability.
 - [Freezable — Making Old-School Mutable Value Types Safe](../../../tentackle-common/src/main/docs/freezable.md) — taming legacy mutable values.
 - [Preferences — Persistable, Database-Backed Settings](../../../tentackle-core/src/main/docs/preferences.md) — settings that roam with the user.
