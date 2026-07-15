@@ -188,7 +188,9 @@ view is searchable out of the box.
 
 ### Tables, trees and cells
 
-RDC plugs PDOs into the table and tree infrastructure of `tentackle-fx`:
+RDC plugs PDOs into the
+[table and tree infrastructure](../../../../tentackle-fx/src/main/docs/tables.md)
+of `tentackle-fx`:
 
 - [`PdoTableCell`](../java/org/tentackle/fx/rdc/PdoTableCell.java),
   [`PdoTreeCell`](../java/org/tentackle/fx/rdc/PdoTreeCell.java) and

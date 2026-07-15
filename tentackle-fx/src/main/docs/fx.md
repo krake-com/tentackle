@@ -211,6 +211,8 @@ and registered with `@TableCellTypeService`. The `org.tentackle.fx.table.type`
 package supplies cell types for strings, numbers, booleans, enums, money,
 `I18NText` and the full range of date/time classes. Tables bind through the
 dedicated `FxTableBinder` / `FxTableBinding` (see the binding doc).
+For the full picture — including preferences-backed layouts, totals, and the
+PDO-aware RDC layer — see [tables.md](tables.md).
 
 ### Binding integration
 

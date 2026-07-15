@@ -79,6 +79,7 @@ the [Index](./index.md).
 ## User Interface (JavaFX)
 
 - [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers, and binding.
+- [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md) — configuration-driven tables and tree-tables, cell types, preferences-backed layouts.
 - [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
 - [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.
 - [tentackle-fx-rdc-poi — Spreadsheet (XLS) Export](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) — Excel export for RDC tables via Apache POI.
