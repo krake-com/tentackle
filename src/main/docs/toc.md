@@ -68,6 +68,7 @@ the [Index](./index.md).
 - [Freezable — Making Old-School Mutable Value Types Safe](../../../tentackle-common/src/main/docs/freezable.md) — taming legacy mutable values.
 - [Preferences — Persistable, Database-Backed Settings](../../../tentackle-core/src/main/docs/preferences.md) — settings that roam with the user.
 - [Tasks and Daemons — Background Execution](../../../tentackle-core/src/main/docs/tasks-daemon.md) — the task dispatcher and daemon supervisor.
+- [Miscellaneous — Contracts, Collections, Pooling, Utilities](../../../tentackle-core/src/main/docs/misc.md) — the low-level contracts the upper layers implement, plus `TrackedList`, pooling and smart date/time parsing.
 - [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md) — the pluggable logging API.
 - [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting-language API.
 

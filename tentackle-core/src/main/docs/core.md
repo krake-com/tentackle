@@ -175,7 +175,9 @@ and the like.
 
 ### Miscellaneous utilities
 
-Packages `org.tentackle.misc` and `org.tentackle.misc.time`.
+Packages `org.tentackle.misc` and `org.tentackle.misc.time`. See [misc.md](misc.md) for the full
+picture — including the contracts (`Modifiable`, `SerialNumbered`, `Snapshotable`, …) that
+`PersistentObject` implements.
 
 The framework's general-purpose toolkit (~70 files). Highlights:
 
@@ -229,7 +231,7 @@ tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 | `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | [io.md](io.md)                     |
 | `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | [preferences.md](preferences.md)   |
 | `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | [tasks-daemon.md](tasks-daemon.md) |
-| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | —                                  |
+| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | [misc.md](misc.md)                 |
 | `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | [annotation-processors.md](annotation-processors.md) |
 | `org.tentackle.service`                                                                            | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | —                                  |
 
