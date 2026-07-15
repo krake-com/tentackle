@@ -55,6 +55,7 @@ topic-grouped listing of every document, see the
 - **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
+- **I/O streams (compression, encryption, packet framing)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md)
 - **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
@@ -106,6 +107,7 @@ topic-grouped listing of every document, see the
 ## R
 
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
+- **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
