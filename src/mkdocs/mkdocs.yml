@@ -74,6 +74,7 @@ nav:
       - The DomainContextProvider: domain-context-provider.md
       - Operation — Behavior Without an Entity: operation.md
       - PDO Caching: cache.md
+      - Number Sources: ns.md
       - Snapshots and Copies: snapshot.md
       - Security — Permissions, Rules, Grantees: security.md
       - The rootId and rootClassId Columns: root-columns.md
