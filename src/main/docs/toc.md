@@ -88,6 +88,7 @@ the [Index](./index.md).
 - [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers, and binding.
 - [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md) — configuration-driven tables and tree-tables, cell types, preferences-backed layouts.
 - [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md) — suggesting values while the user types: suggestion generators, the popup, background matching.
+- [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md) — icons and images by symbolic name, realms, replacing the icon pack.
 - [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
 - [GuiProvider — Per-Entity GUI Services](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md) — the per-entity UI hub: default editor/finder, generated table configurations, i18n levels.
 - [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.

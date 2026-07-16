@@ -214,6 +214,18 @@ dedicated `FxTableBinder` / `FxTableBinding` (see the binding doc).
 For the full picture — including preferences-backed layouts, totals, and the
 PDO-aware RDC layer — see [tables.md](tables.md).
 
+### Graphics and icons
+
+Icons never appear as file names or icon-pack names in framework code. A
+`GraphicProvider` maps a **symbolic name** to a JavaFX `Node`
+(`Fx.createGraphic("save")`), and providers are registered per **realm** with
+`@GraphicProviderService` — the framework uses the default realm, applications
+should use their own. `DefaultGraphicProvider` serves the default realm from the
+Ikonli materialdesign2 pack; `IkonliGraphicProvider` and `ImageGraphicProvider`
+are the base classes for font-icon and image-file providers. Size and color come
+from CSS, so icons follow the theme. See
+[graphic-provider.md](graphic-provider.md).
+
 ### Auto-completion
 
 Any `FxTextComponent` can propose matching values while the user types:
