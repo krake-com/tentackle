@@ -53,6 +53,7 @@ topic-grouped listing of every document, see the
 
 - **Eager relations** — [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Embedded entities** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Error display (marking controls, error/info popups)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 
 ## F
 
@@ -75,6 +76,7 @@ topic-grouped listing of every document, see the
 - **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
 - **Interceptors** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 
 ## J
@@ -169,7 +171,7 @@ topic-grouped listing of every document, see the
 
 ## V
 
-- **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md)
+- **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md), [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md) (showing results in the UI)
 
 ## W
 

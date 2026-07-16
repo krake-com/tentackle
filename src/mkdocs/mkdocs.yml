@@ -125,6 +125,7 @@ nav:
       - Tables and Trees: tables.md
       - Auto-Completion: auto-completion.md
       - GraphicProvider: graphic-provider.md
+      - InteractiveError: interactive-error.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
       - GuiProvider — Per-Entity GUI Services: gui-provider.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md
