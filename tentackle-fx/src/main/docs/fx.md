@@ -214,6 +214,18 @@ dedicated `FxTableBinder` / `FxTableBinding` (see the binding doc).
 For the full picture — including preferences-backed layouts, totals, and the
 PDO-aware RDC layer — see [tables.md](tables.md).
 
+### Showing validation results
+
+Validation results describe problems in the *model* (`invoice.lineList[3].price`),
+not on screen. An `InteractiveError` links a `ValidationResult` to the concrete
+`FxControl` it belongs to, adding the message, an optional error code, and
+whether it is an error or just a warning. `InteractiveErrorFactory` (a
+replaceable `@Service`) resolves the control by mapping the validation path to a
+binding path and looking up the `FxComponentBinding`.
+`AbstractValidateableFxController.validateForm()` ties it together: it validates,
+shows the collected messages in a dialog, and marks the offending components with
+`setError` / `setInfo`. See [interactive-error.md](interactive-error.md).
+
 ### Graphics and icons
 
 Icons never appear as file names or icon-pack names in framework code. A
