@@ -58,6 +58,10 @@ topic-grouped listing of every document, see the
 - **Freezable value types** — [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **FX / JavaFX** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 
+## G
+
+- **GuiProvider (per-entity GUI services, default editor/finder)** — [GuiProvider](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+
 ## I
 
 - **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
