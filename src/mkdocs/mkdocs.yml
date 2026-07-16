@@ -123,6 +123,7 @@ nav:
   - User Interface (JavaFX):
       - tentackle-fx — Extended JavaFX Layer: fx.md
       - Tables and Trees: tables.md
+      - Auto-Completion: auto-completion.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
       - GuiProvider — Per-Entity GUI Services: gui-provider.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md

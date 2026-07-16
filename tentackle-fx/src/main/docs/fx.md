@@ -214,6 +214,18 @@ dedicated `FxTableBinder` / `FxTableBinding` (see the binding doc).
 For the full picture — including preferences-backed layouts, totals, and the
 PDO-aware RDC layer — see [tables.md](tables.md).
 
+### Auto-completion
+
+Any `FxTextComponent` can propose matching values while the user types:
+`setAutoCompletion(...)` takes a `Function<String, List<List<SubString>>>` mapping
+the current input to the matching candidates, each described by its matching text
+segments. The `org.tentackle.fx.component.auto` package supplies the controller
+and ready-made **suggestion generators** (simple substring, camel-case, separated
+segments, regular expression), and the matched segments are rendered in bold in a
+popup below the component. Matching runs in the background, so large choice lists
+don't block the FX thread. For generators, styling and threading rules see
+[auto-completion.md](auto-completion.md).
+
 ### Binding integration
 
 `tentackle-fx` is the JavaFX implementation of the toolkit-neutral binding
@@ -291,7 +303,7 @@ A typical screen comes to life like this:
 | `org.tentackle.fx.component.delegate`                        | Component delegates holding the behaviour (`FxComponentDelegate`, `AbstractTextFieldDelegate`, per-component delegates)                                                                                                                                                                         |
 | `org.tentackle.fx.component.config`                          | Per-component `Configurator`s                                                                                                                                                                                                                                                                   |
 | `org.tentackle.fx.component.build`                           | Component builders used by the FXML builder factory                                                                                                                                                                                                                                             |
-| `org.tentackle.fx.component.auto`                            | Auto-completion (popup, controller, suggestion generators: camel-case, regex, separator, …)                                                                                                                                                                                                     |
+| `org.tentackle.fx.component.auto`                            | [Auto-completion](auto-completion.md) (popup, controller, suggestion generators: camel-case, regex, separator, …)                                                                                                                                                                               |
 | `org.tentackle.fx.component.skin`                            | Custom control skins                                                                                                                                                                                                                                                                            |
 | `org.tentackle.fx.container`                                 | Extended containers: `FxVBox`, `FxHBox`, `FxGridPane`, `FxBorderPane`, `FxAnchorPane`, `FxFlowPane`, `FxTilePane`, `FxStackPane`, `FxSplitPane`, `FxScrollPane`, `FxTabPane`, `FxTab`, `FxTitledPane`, `FxAccordion`, `FxToolBar`, `FxButtonBar`, `FxDialogPane`, `FxPane`, `FxTextFlow`        |
 | `org.tentackle.fx.container.delegate` / `.config` / `.build` | Container delegates, configurators and builders                                                                                                                                                                                                                                                 |
