@@ -17,6 +17,7 @@ This repository ships an extensive prose documentation set. **Consult it before 
 
 - Project-wide docs live in `src/main/docs/`.
 - Each module documents itself in `<module>/src/main/docs/` (e.g. `tentackle-pdo/src/main/docs/pdo.md`).
+- Each module also has a short `<module>/src/site/markdown/index.md` landing page for the generated Maven site (module blurb + links to Javadoc/JXR/reports). It is not a place for prose documentation.
 
 Entry points (all under `src/main/docs/`):
 
@@ -28,6 +29,16 @@ Entry points (all under `src/main/docs/`):
 Conceptual deep-dives worth knowing: [`correctness-first.md`](src/main/docs/correctness-first.md), [`tiers.md`](src/main/docs/tiers.md) (multi-tier cascade), [`modules.md`](src/main/docs/modules.md), and [`pdo-vs-orm.md`](tentackle-pdo/src/main/docs/pdo-vs-orm.md).
 
 When adding or changing a concept, keep the relevant module doc, `toc.md`, and `index.md` in sync.
+
+### Documentation website (MkDocs)
+
+`src/mkdocs/` builds the public site at https://tentackle.org/ with MkDocs + Material. See [`src/mkdocs/README.md`](src/mkdocs/README.md).
+
+- The page content is **generated**, never stored: `prepare.py` stages the repo `README.md` (as the site home page) plus every `src/main/docs/*.md` across the reactor into a flat `src/mkdocs/docs/` tree. Both `docs/` and the built `site/` are git-ignored — never edit them, they are overwritten on every build.
+- Because the tree is flattened, **every doc basename must be unique across the whole reactor**. Check for a collision before adding a doc.
+- `prepare.py` rewrites cross-document links to the flat layout, and rewrites links to Java sources (`../java/.../Foo.java`) to Bitbucket source URLs. Relative links between docs are therefore fine to write naturally.
+- The `nav` in `src/mkdocs/mkdocs.yml` mirrors `src/main/docs/toc.md` — when adding a doc, update both.
+- Build: `make serve` (live preview), `make build` (strict — fails on broken links), `make clean`. The first build needs network access (the privacy plugin localizes the Roboto font). The site is deliberately GDPR-compliant: no third-party requests, no tracking — don't introduce external assets, CDN links, or analytics.
 
 Use American English spelling for all code comments and documentation (e.g. "behavior", "serialize", "color").
 
@@ -73,7 +84,7 @@ UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
                         tentackle-fx-rdc-poi, tentackle-fx-rdc-update, tentackle-web
 Application (runtime):  tentackle-pdo, tentackle-domain, tentackle-persistence, tentackle-update
 Database (runtime):     tentackle-database, tentackle-session
-Core (runtime):         tentackle-core, tentackle-i18n,
+Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic,
                         log/script providers (log-slf4j, log-log4j2v, script-groovy/ruby/jsr)
 Common (build+runtime): tentackle-common, tentackle-sql
 Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentackle-build-support,

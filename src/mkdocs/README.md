@@ -13,8 +13,8 @@ real documentation by [`prepare.py`](prepare.py):
 
 - the project [`README.md`](../../README.md) becomes the site home page (`index.md`),
 - the core docs under [`../main/docs`](../main/docs) and every module's
-  `<module>/src/main/docs/*.md` become the documentation pages (flattened — all
-  67 doc filenames are unique),
+  `<module>/src/main/docs/*.md` become the documentation pages (flattened, so
+  every doc basename must be unique across the whole reactor),
 - cross-document links are rewritten to the flat layout; links to Java source
   files (`../java/.../Foo.java`) are rewritten to the corresponding
   [Bitbucket](https://bitbucket.org/krake-oss/tentackle) source URL,
