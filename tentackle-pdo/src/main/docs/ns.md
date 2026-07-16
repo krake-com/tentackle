@@ -19,9 +19,9 @@ and part of the model like any other entity.
 
 The subsystem has two layers:
 
-| Layer | Package | What it is |
-|-------|---------|------------|
-| The API | `org.tentackle.ns` | [`NumberSource`](../java/org/tentackle/ns/NumberSource.java), [`NumberSourceFactory`](../java/org/tentackle/ns/NumberSourceFactory.java) and the default implementation. |
+| Layer       | Package                | What it is                                                                                                                                                                           |
+|-------------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| The API     | `org.tentackle.ns`     | [`NumberSource`](../java/org/tentackle/ns/NumberSource.java), [`NumberSourceFactory`](../java/org/tentackle/ns/NumberSourceFactory.java) and the default implementation.             |
 | The storage | `org.tentackle.ns.pdo` | [`NumberPool`](../java/org/tentackle/ns/pdo/NumberPool.java) and [`NumberRange`](../java/org/tentackle/ns/pdo/NumberRange.java) — the PDOs the default implementation persists into. |
 
 The two are deliberately separate: `NumberSource` is an interface with a
@@ -43,16 +43,16 @@ record Range(long begin, long end) {
 }
 ```
 
-| Method | Purpose |
-|--------|---------|
-| `popNumber()` | Take the next single number. Throws `NumberSourceEmptyException` if the pool is empty. |
-| `popNumbers(long count)` | Take `count` numbers. Returns them as ranges, ascending — they need not be contiguous. |
-| `popNumbers(long begin, long end)` | Take a *specific* interval, if the pool holds it. Returns the parts actually consumed. |
-| `pushNumber(long number)` | Give one number back. A number already in the pool is ignored. |
-| `pushNumbers(long begin, long end)` | Give an interval back. May overlap what the pool already holds. |
-| `getRanges()` | The current ranges, consuming nothing. |
-| `getCount()` | How many numbers remain. |
-| `isEmpty()` / `isOnline()` | Whether the pool is exhausted / enabled. |
+| Method                              | Purpose                                                                                |
+|-------------------------------------|----------------------------------------------------------------------------------------|
+| `popNumber()`                       | Take the next single number. Throws `NumberSourceEmptyException` if the pool is empty. |
+| `popNumbers(long count)`            | Take `count` numbers. Returns them as ranges, ascending — they need not be contiguous. |
+| `popNumbers(long begin, long end)`  | Take a *specific* interval, if the pool holds it. Returns the parts actually consumed. |
+| `pushNumber(long number)`           | Give one number back. A number already in the pool is ignored.                         |
+| `pushNumbers(long begin, long end)` | Give an interval back. May overlap what the pool already holds.                        |
+| `getRanges()`                       | The current ranges, consuming nothing.                                                 |
+| `getCount()`                        | How many numbers remain.                                                               |
+| `isEmpty()` / `isOnline()`          | Whether the pool is exhausted / enabled.                                               |
 
 Failures are unchecked:
 [`NumberSourceException`](../java/org/tentackle/ns/NumberSourceException.java)
@@ -116,15 +116,15 @@ policy; the ranges hold the actual numbers.
 [`NumberPool`](../java/org/tentackle/ns/pdo/NumberPool.java) — table `numpool`,
 class id `6`, options `[root, remote, fulltracked]`:
 
-| Attribute | Column | Type | Purpose |
-|-----------|--------|------|---------|
-| `name` | `name` | `String(30)` | The pool name. Domain key, `@NotNull`. |
-| `realm` | `realm` | `String(80)` | Optional partition. `[MAPNULL]`. |
-| `description` | `description` | `String` | Free-text description. |
-| `online` | `poolonline` | `boolean` | Whether the pool may be drawn from. |
-| `lowWaterMark` | `lowmark` | `long` | Uplink refill threshold; `0` disables. |
-| `requestSize` | `reqsize` | `long` | Uplink request size; `0` disables. |
-| `uplink` | `uplink` | `String` | Uplink configuration; see [Uplinks](#uplinks-and-slave-pools). |
+| Attribute      | Column        | Type         | Purpose                                                        |
+|----------------|---------------|--------------|----------------------------------------------------------------|
+| `name`         | `name`        | `String(30)` | The pool name. Domain key, `@NotNull`.                         |
+| `realm`        | `realm`       | `String(80)` | Optional partition. `[MAPNULL]`.                               |
+| `description`  | `description` | `String`     | Free-text description.                                         |
+| `online`       | `poolonline`  | `boolean`    | Whether the pool may be drawn from.                            |
+| `lowWaterMark` | `lowmark`     | `long`       | Uplink refill threshold; `0` disables.                         |
+| `requestSize`  | `reqsize`     | `long`       | Uplink request size; `0` disables.                             |
+| `uplink`       | `uplink`      | `String`     | Uplink configuration; see [Uplinks](#uplinks-and-slave-pools). |
 
 A unique index `udk` spans `name, realm`. Because `realm` is declared `[MAPNULL]`,
 a null realm is stored as the backend's empty-string constant rather than SQL
@@ -134,18 +134,17 @@ a null realm is stored as the backend's empty-string constant rather than SQL
 [`NumberRange`](../java/org/tentackle/ns/pdo/NumberRange.java) — table `numrange`,
 class id `7`, options `[remote, fulltracked]`:
 
-| Attribute | Column | Type | Purpose |
-|-----------|--------|------|---------|
-| `numberPoolId` | `poolid` | `long` | The owning pool. |
-| `begin` | `rbegin` | `long` | First number in the range. |
-| `end` | `rend` | `long` | Last number **+ 1**. |
+| Attribute      | Column   | Type   | Purpose                    |
+|----------------|----------|--------|----------------------------|
+| `numberPoolId` | `poolid` | `long` | The owning pool.           |
+| `begin`        | `rbegin` | `long` | First number in the range. |
+| `end`          | `rend`   | `long` | Last number **+ 1**.       |
 
+Both entities declare `integrity := none`: no foreign keys are emitted, because the aggregate 
+is managed programmatically which allows performance optimizations and an efficient caching 
+when handling with the pool's ranges.
 The relation is a composite list with `delete = cascade`: deleting a pool deletes its
-ranges. `numberPoolId` doubles as the component's
-[`rootId`](root-columns.md), and `getRootClassId()` returns `6` — the pool's class
-id — so a range names its aggregate root without a query. Both entities declare
-`integrity := none`: no foreign keys are emitted, because the aggregate already
-guarantees the relationship and the hot path benefits from the absent constraint.
+ranges, which is necessary due to `integrity := none`.
 
 Class ids `6` and `7` are framework-reserved; an application's own entities must not
 claim them.
@@ -359,15 +358,15 @@ Because `NumberSourceFactory` is resolved through the SPI, application code call
 
 ## Summary
 
-| Concern | How number sources address it |
-|---------|-------------------------------|
-| **Uniqueness** | Ranges are merged on push (`fixRanges()`), so a pool cannot hold — or hand out — a number twice. |
-| **Concurrency** | A database write lock on the pool row plus per-operation transactions serialize poppers across tiers. |
-| **Staleness** | Serial comparison on both pool and range discards caches that another tier invalidated. |
-| **Contention** | Popping a number does not bump the pool's serial, so range churn does not invalidate other tiers' pools. |
-| **Partitioning** | `realm` splits one pool name into independent number spaces per tenant, application, or year. |
-| **Placement** | The algorithm stays on the database tier; clients reach it through a `@RemoteMethod`. |
-| **Extension** | `NumberSourceFactory` is an SPI singleton; uplink/slave pools are modeled but left to the application. |
+| Concern          | How number sources address it                                                                            |
+|------------------|----------------------------------------------------------------------------------------------------------|
+| **Uniqueness**   | Ranges are merged on push (`fixRanges()`), so a pool cannot hold — or hand out — a number twice.         |
+| **Concurrency**  | A database write lock on the pool row plus per-operation transactions serialize poppers across tiers.    |
+| **Staleness**    | Serial comparison on both pool and range discards caches that another tier invalidated.                  |
+| **Contention**   | Popping a number does not bump the pool's serial, so range churn does not invalidate other tiers' pools. |
+| **Partitioning** | `realm` splits one pool name into independent number spaces per tenant, application, or year.            |
+| **Placement**    | The algorithm stays on the database tier; clients reach it through a `@RemoteMethod`.                    |
+| **Extension**    | `NumberSourceFactory` is an SPI singleton; uplink/slave pools are modeled but left to the application.   |
 
 Number sources are for numbers the *domain* cares about. For technical object ids,
 see [id sources](../../../../tentackle-database/src/main/docs/database.md#id-sources).

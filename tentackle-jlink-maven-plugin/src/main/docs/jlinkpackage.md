@@ -175,7 +175,7 @@ Two details of the generated script are worth knowing:
 - Its name comes from its own template (`name.ftl`), so it is `run.cmd` on Windows and `run.sh` elsewhere.
 
 And the jpackage goal? It faces the very same problem. jpackage builds its own native launcher, so there is no shell
-script to generate — instead the plugin **patches the launcher's `.cfg` file** afterwards, writing the module path
+script to generate — instead the plugin **patches the launcher's `.cfg` file** afterward, writing the module path
 into a `java-options` entry and the class path into `app.classpath`. Different mechanism, identical purpose: tell the
 JVM about everything that didn't fit into the image. See [How The Jpackage Goal Works](#how-the-jpackage-goal-works).
 

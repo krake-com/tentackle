@@ -167,22 +167,25 @@ default. Most applications therefore never configure
 
 `applyProperties()` interprets a set of properties that need no application code:
 
-| Property | Effect |
-|----------|--------|
+| Property | Effect                                                                                                                                  |
+|----------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `notracker` | Don't start the modification tracker — and disable [PDO caching](cache.md) globally, since a cache without invalidation would go stale. |
-| `nosecurity` | Disable the [security manager](security.md). |
-| `statistics` | Collect PDO/operation invocation statistics. Recommended during development. |
-| `scripting=<lang>` | Set the default scripting language. |
-| `locale=<tag>` | Set the default locale; falls back to the user preference, and warns if unsupported. |
-| `readonlyprefs` | Silently ignore [preference](../../../../tentackle-core/src/main/docs/preferences.md) writes. |
-| `systemprefs` | System preferences only (forced on servers). |
-| `noprefsync` | Turn off preference auto-sync between JVMs. |
+| `nosecurity` | Disable the [security manager](security.md).                                                                                            |
+| `statistics` | Collect PDO/operation method invocation statistics and TRIP/SQL/Transaction statistics (if server). Recommended during development.     |
+| `scripting=<lang>` | Set the default scripting language.                                                                                                     |
+| `locale=<tag>` | Set the default locale; falls back to the user preference, and warns if unsupported.                                                    |
+| `readonlyprefs` | Silently ignore [preference](../../../../tentackle-core/src/main/docs/preferences.md) writes.                                           |
+| `systemprefs` | System preferences only (forced on servers).                                                                                            |
+| `noprefsync` | Turn off preference auto-sync between JVMs.                                                                                             |
 
 Values are run through `StringHelper.evaluate(...)`, so they may reference system
 properties. A property named `SYSTEM_foo` or `^foo` is *set* as system property `foo`
 instead of being stored — the log deliberately records only the key at INFO level,
 never the value, since it may be a password. Command-line properties take precedence
 over properties from a file.
+
+A small shell script `src/scripts/collect_statistics.sh` is provided to collect
+statistics from log files.
 
 ### `stop(exitValue, throwable)`
 
