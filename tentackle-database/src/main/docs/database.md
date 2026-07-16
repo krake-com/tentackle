@@ -146,7 +146,7 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
   integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
-  to be used with care because it complicates error diagnosis.
+  to be used with care because it complicates error diagnosis. See [SQL Statement Batching](./batching.md).
 
 ### Transactions
 

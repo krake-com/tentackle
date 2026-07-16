@@ -17,6 +17,7 @@ topic-grouped listing of every document, see the
 
 ## B
 
+- **Batching (JDBC statement batching, `batchsize`)** — [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
 - **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md)
@@ -136,7 +137,7 @@ topic-grouped listing of every document, see the
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
-- **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md)
+- **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md)
 - **Serialization (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
