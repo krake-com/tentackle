@@ -62,11 +62,13 @@ topic-grouped listing of every document, see the
 
 ## G
 
+- **GraphicProvider (icons/images by symbolic name, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **GuiProvider (per-entity GUI services, default editor/finder)** — [GuiProvider](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 
 ## I
 
 - **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
+- **Icons / images (symbolic names, icon packs, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **I/O streams (compression, encryption, packet framing)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md)
