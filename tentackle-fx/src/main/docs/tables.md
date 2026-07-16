@@ -32,7 +32,7 @@ derives from it:
 
 The foundation lives in `org.tentackle.fx.table` (+ `table.type`) in this module; the PDO layer in
 `org.tentackle.fx.rdc.table` of [tentackle-fx-rdc](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
-is covered [below](#the-rdc-layer--pdo-aware-tables).
+is covered [below](#the-rdc-layer-pdo-aware-tables).
 
 
 ## Key Concepts
@@ -129,7 +129,7 @@ which maps the row class leniently — a provider registered for a supertype or 
 subclasses as well. This is how generic UI such as the RDC search dialog obtains the right columns
 for any row type without knowing it in advance. In RDC applications the per-PDO
 [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/GuiProvider.java)
-*is* the table configuration provider (see [below](#the-rdc-layer--pdo-aware-tables)).
+*is* the table configuration provider (see [below](#the-rdc-layer-pdo-aware-tables)).
 
 ### Preferences-backed layouts
 
@@ -164,7 +164,7 @@ Which columns show a total is controlled by the column configuration's `summable
 defaulting to true for numeric column types.
 
 
-## The RDC Layer — PDO-Aware Tables
+## The RDC Layer: PDO-Aware Tables
 
 The [rich desktop client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) builds on this
 foundation in `org.tentackle.fx.rdc.table` and makes tables of PDOs essentially free.

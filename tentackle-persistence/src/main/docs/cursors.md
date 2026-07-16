@@ -17,8 +17,7 @@ that streams PDOs from a query, and it works **whether the session is local or r
 class, the same API, the same code:
 
 ```java
-try (ScrollableResource<Customer> cursor =
-         Pdo.create(Customer.class, context).selectAllAsCursor()) {
+try (ScrollableResource<SeismicEvent> cursor = on(SeismicEvent.class).findUnprocessed()) {
   while (cursor.next()) {
     cursor.get().process();
   }
