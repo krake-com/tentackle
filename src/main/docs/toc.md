@@ -48,6 +48,7 @@ the [Index](./index.md).
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
+- [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 
 ## Remoting
