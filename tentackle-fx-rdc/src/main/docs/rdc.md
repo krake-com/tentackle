@@ -76,9 +76,12 @@ The companion modules build on top of it:
 ### GuiProvider — the per-entity hub
 
 The [`GuiProvider<T>`](../java/org/tentackle/fx/rdc/GuiProvider.java) is the
-central abstraction of the module. One `GuiProvider` exists per PDO type and
-encapsulates *all* the UI behavior for that entity. Its responsibilities fall
-into a few groups:
+central abstraction of the module — it has its own in-depth document,
+[GuiProvider — Per-Entity GUI Services](gui-provider.md), covering the
+`DefaultGuiProvider` defaults, the generated table configurations, the default
+editor and finder, and the internationalization levels. In short: one
+`GuiProvider` exists per PDO type and encapsulates *all* the UI behavior for
+that entity. Its responsibilities fall into a few groups:
 
 - **Identity / appearance** — `createGraphic()` for an icon, the resource bundle
   (`getBundle()`, `isBundleProvided()`).
