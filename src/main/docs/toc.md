@@ -38,6 +38,7 @@ the [Index](./index.md).
 - [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the model API module.
 - [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL embedded in a PDO interface.
 - [Wurblets — Interface-Level Code Generation](../../../tentackle-wurblets/src/main/docs/wurblets.md) — generating the PDO/operation interfaces.
+- [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md) — generating data transfer objects from a property model or an annotated record.
 - [Persistence Wurblets — Implementation-Level Code Generation](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generating the persistence implementation.
 - [PdoSelectList and PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) — generating query methods.
 - [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — fetching related entities via outer joins.

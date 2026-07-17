@@ -225,7 +225,9 @@ three coordinates always travel together as one value but each must reach its ow
 
 The **value** is a plain immutable record — a pure value with no `DomainContext`. It knows how to parse and format
 itself (`valueOf` / `toString` over an `"x/y/z"` string), offers a little behavior (`midPoint`, copy-`with`
-helpers), and carries TRIP hints, but it is the *same* position regardless of who holds it:
+helpers), and carries TRIP hints, but it is the *same* position regardless of who holds it. The `@RecordDTO`
+annotation ([DTO wurblet](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)) is what lets the build add a
+builder and the copy-`with` factories to the record:
 
 ```java
 @RecordDTO
@@ -456,6 +458,8 @@ Ask these in order; the first "yes" usually settles it.
   type must be freezable once stored.
 - [Binding](../../../tentackle-core/src/main/docs/binding.md) — the `ProductNumber` value type and how a
   `ValueTranslator` gives a custom type live input assistance in the UI.
+- [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md) — how the `@RecordDTO`
+  annotation on a value record (like `Position3D`) drives the build to generate its builder and copy factories.
 - [Validation](../../../tentackle-core/src/main/docs/validation.md) — declaring constraints on an embedded
   entity's attributes (run with the owner's scope) or on a value as a whole.
 - [Immutable](../../../tentackle-core/src/main/docs/immutable.md) — how an embedded entity inherits its owner's
