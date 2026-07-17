@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 interface RemoteDbDelegateLocatorHolder {
   RemoteDbDelegateLocator INSTANCE = ServiceFactory.createService(
-    RemoteDbDelegateLocator.class, RemoteDbDelegateLocatorImpl.class);
+    RemoteDbDelegateLocator.class, DbRemoteDelegateLocator.class);
 }
 
 

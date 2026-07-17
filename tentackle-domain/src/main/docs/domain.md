@@ -74,7 +74,9 @@ Its job is small and well-defined:
   technical object id) — is exposed through `getUniqueDomainKey()` / `setUniqueDomainKey()` /
   `getUniqueDomainKeyType()` / `findByUniqueDomainKey()` and the flag `isUniqueDomainKeyProvided()`. The base
   implementations throw a `DomainException` (and assert root-entity), so an entity that has a domain key
-  **overrides** them; `assertRootEntity()` enforces that these are only used on roots.
+  **overrides** them; `assertRootEntity()` enforces that these are only used on roots. The whole concept —
+  declaration, generated key types, and framework usage — is covered in
+  [Domain Keys](../../../../tentackle-pdo/src/main/docs/domain-key.md).
 - **String representation.** `toString()` returns the domain key for a root entity, or the singular name for a
   component, and is carefully written never to throw (it falls back to `toGenericString()` — class plus
   id/serial — on error), because it is used for logging and debugging.
