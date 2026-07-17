@@ -87,6 +87,7 @@ the [Index](./index.md).
 - [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md) — the i18n overview: bundles, `I18NText` and locale handling.
 - [Internationalization (i18n)](../../../tentackle-common/src/main/docs/internationalization.md) — companion overview of the i18n story.
 - [Tentackle I18N — Database-backed Resource Bundles](../../../tentackle-i18n/src/main/docs/i18n.md) — managing translations in the database.
+- [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md) — the standalone GUI tool for editing database-backed bundles at runtime.
 
 ## User Interface (JavaFX)
 

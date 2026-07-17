@@ -125,6 +125,7 @@ nav:
       - Resource Bundles: bundle.md
       - Internationalization (i18n): internationalization.md
       - Database-backed Resource Bundles: i18n.md
+      - BundleMonkey: bundlemonkey.md
   - User Interface (JavaFX):
       - tentackle-fx — Extended JavaFX Layer: fx.md
       - Tables and Trees: tables.md
