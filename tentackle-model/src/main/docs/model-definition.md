@@ -271,7 +271,7 @@ Booleans: `default true`.
 
 | Option      | Description                                                                                         |
 |-------------|-----------------------------------------------------------------------------------------------------|
-| `key`       | Marks this attribute as part of the unique domain key (UDK).                                        |
+| `key`       | Marks this attribute as part of the [unique domain key](../../../../tentackle-pdo/src/main/docs/domain-key.md) (UDK). |
 | `contextid` | This attribute holds the context entity's ID.                                                       |
 | `utc`       | Timestamp only: set the UTC serialization flag.                                                     |
 | `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method). |

@@ -152,8 +152,8 @@ public interface IngotDomain extends DomainObject<Ingot>, SapNotifiable {
 
 [`DomainObject<T>`](../java/org/tentackle/pdo/DomainObject.java) supplies
 the cross-cutting domain vocabulary: the unique domain key (`getUniqueDomainKey()`,
-`findByUniqueDomainKey(...)`) and presentation helpers (`getSingular()`,
-`getPlural()`, `toGenericString()`).
+`findByUniqueDomainKey(...)` — see [Domain Keys](domain-key.md)) and presentation
+helpers (`getSingular()`, `getPlural()`, `toGenericString()`).
 
 ### The implementations
 

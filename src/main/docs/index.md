@@ -22,6 +22,7 @@ topic-grouped listing of every document, see the
 - **Batching (JDBC statement batching, `batchsize`)** — [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
+- **Bulk updates and deletes (`PdoUpdateBy`, `PdoDeleteBy`)** — [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md#pdoupdateby-and-pdodeleteby--bulk-writes)
 - **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md)
 
 ## C
@@ -44,9 +45,11 @@ topic-grouped listing of every document, see the
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
+- **Deserialization hardening (allowlisting, untrusted data)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Dictionary (type compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Domain key (business identity, `findByUniqueDomainKey`)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Domain logic layer** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 
@@ -95,6 +98,7 @@ topic-grouped listing of every document, see the
 - **MasterSerialEvent (server-to-client events)** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Maven plugins** — [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md), [Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md)
 - **Migration (RMI → TRIP)** — [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
+- **Mixins (multiple-inheritance emulation)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md)
 - **Modification tracking** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **ModuleHook** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-modulehook), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
@@ -104,7 +108,7 @@ topic-grouped listing of every document, see the
 
 ## N
 
-- **Mixins (multiple-inheritance emulation)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
+- **Naming rules (derived class names, `NamingRules`)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md)
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
 - **Number sources (unique business numbers)** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
@@ -124,6 +128,7 @@ topic-grouped listing of every document, see the
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
+- **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
 
 ## Q
 
@@ -132,10 +137,13 @@ topic-grouped listing of every document, see the
 
 ## R
 
+- **Referential integrity (`isReferenced`, `PdoIsReferencing`)** — [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md#pdoisreferencing--the-referential-integrity-guard), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Reflection (proxies, class mapping, helpers)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **Remote delegates (naming, lookup)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
+- **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
 ## S
@@ -150,6 +158,7 @@ topic-grouped listing of every document, see the
 - **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Session pool** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
+- **SessionTaskDispatcher (session-aware background tasks)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md#which-dispatcher-do-i-want), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
@@ -164,12 +173,13 @@ topic-grouped listing of every document, see the
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)
 - **Token locks** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
-- **Transactions** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
+- **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 
 ## U
 
+- **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 
 ## V

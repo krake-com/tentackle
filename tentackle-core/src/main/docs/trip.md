@@ -567,6 +567,110 @@ public class ThirdPartyValue implements Serializable { ... }
 
 ---
 
+## Hardening Deserialization
+
+### The threat model
+
+Deserializing an object graph means reconstructing arbitrary objects from bytes. Unlike Java
+Object Serialization, TRIP **always creates objects through a real constructor**: the
+[canonical constructor](reflect.md#canonical-construction) if the class declares one, the no-arg
+constructor otherwise (with [`TripInstanceCreator`](#tripinstancecreator) as the escape hatch for
+classes that have neither). There is no `Unsafe`-style allocation of uninitialized instances.
+
+The remaining exposure is subtler: for a class deserialized via its **no-arg constructor**, the
+component values are applied *afterwards*, through reflective field access or setters. The
+argument-validating constructors — where such a class typically enforces its invariants — never
+see those values. As long as the bytes come from a trusted peer over a secured channel (your own
+client or server, connected via the `tripe`/`tripce` SSL transports or
+[QUIC](../../../../tentackle-quic/src/main/docs/quic.md)), that is fine: the sender validated the
+objects before serializing them.
+
+The picture changes when the bytes do **not** come from a trusted, live peer — for example when
+serialized objects are stored as BLOBs in a database and read back later. Such data may have been
+modified outside the application, and deserializing it would materialize objects whose values were
+never validated. Two distinct risks follow:
+
+- **Broken invariants** — an object whose fields violate the class's consistency rules enters the
+  application as if it were valid.
+- **Gadget classes** — an attacker substitutes an unexpected class whose deserialization or
+  subsequent use has side effects.
+
+### Per-class defenses
+
+The defense against broken invariants is routing every component value through validating code:
+
+- **Records** are created through their canonical constructor — compact constructor checks run on
+  every deserialization. A record with validating constructors cannot be materialized in an
+  inconsistent state.
+- **Classes with a [`@CanonicalConstructor`](../java/org/tentackle/reflect/CanonicalConstructor.java)**
+  (see [canonical construction](reflect.md#canonical-construction)) get the same guarantee: the
+  component values arrive as constructor arguments instead of being injected into fields.
+- **[`@TripComponentProvider`](#tripcomponentprovider)** puts the application in charge of *how*
+  each component is read and applied — useful when validation has to happen in setters.
+- **[`@TripInstanceCreator`](#tripinstancecreator)** puts the application in charge of the
+  instantiation itself.
+- **`@TripSerializable(validate = "...")`** names a method that TRIP invokes after reading all
+  components — a hook to verify invariants that span multiple fields.
+
+These defenses address the *broken invariants* risk for classes you control. They cannot address
+the *gadget class* risk, because an attacker chooses the class — which is where the allowlist
+comes in.
+
+### Allowlisting: `DisallowedTripType`
+
+The gadget risk is eliminated globally by restricting **which classes may be deserialized at
+all**. The hook is the fallback type builder: whenever no predefined `TripType` exists for a
+class, the [`TripTypeBuilderFactory`](../java/org/tentackle/trip/TripTypeBuilderFactory.java)
+asks its default builder — [`ObjectTypeBuilder`](../java/org/tentackle/trip/builder/ObjectTypeBuilder.java) —
+to generate one. An application that must process untrusted data replaces this builder with one
+that returns a [`DisallowedTripType`](../java/org/tentackle/trip/types/DisallowedTripType.java)
+for every class outside its allowlist. Any attempt to deserialize such a class then fails fast
+with a `TripRuntimeException` instead of materializing the object:
+
+```java
+public class AllowlistingTypeBuilder<T> extends ObjectTypeBuilder<T> {
+
+  @Override
+  public TripType<T> build(Class<T> clazz) {
+    if (isAllowed(clazz)) {           // e.g. own packages, records, an explicit set
+      return super.build(clazz);
+    }
+    return new DisallowedTripType<>(clazz);
+  }
+}
+```
+
+The builder is wired in by replacing the factory
+([services are overridable](../../../../tentackle-common/src/main/docs/services.md)):
+
+```java
+@Service(TripTypeBuilderFactory.class)
+public class MyTripTypeBuilderFactory extends DefaultTripTypeBuilderFactory {
+
+  @Override
+  protected TripTypeBuilder<?> createDefaultBuilder() {
+    return new AllowlistingTypeBuilder<>();
+  }
+}
+```
+
+Note the scope of the hook: predefined types — the built-in `TripType`s for JDK classes and
+types registered via `@TripTypeService` or `@TripTypeBuilderService` — take precedence over the
+fallback builder and are unaffected. The allowlist governs exactly the dangerous path: arbitrary
+object classes the application never intended to receive.
+
+### Practical guidance
+
+- Application-to-application TRIP traffic over the encrypting transports needs no allowlist —
+  both ends are the same trusted code base.
+- Serialized objects that **leave the live session** (BLOB columns, files, message queues) should
+  be treated as untrusted on the way back in: prefer records for the payload classes, and install
+  an allowlisting builder in the tier that reads them.
+- `@TripViaJOS` routes a class through Java Object Serialization and thereby out of TRIP's
+  control; avoid it entirely for data that may be stored or received from outside.
+
+---
+
 ## Writing a Custom Transport
 
 TRIP's transport layer is fully pluggable. 
