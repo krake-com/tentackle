@@ -52,6 +52,7 @@ topic-grouped listing of every document, see the
 - **Domain key (business identity, `findByUniqueDomainKey`)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Domain logic layer** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
+- **DTO (Data Transfer Object) generation** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md)
 
 ## E
 
@@ -141,6 +142,7 @@ topic-grouped listing of every document, see the
 - **Reflection (proxies, class mapping, helpers)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
