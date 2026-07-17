@@ -109,6 +109,8 @@ names, class IDs, and table names that already exist, and enforces the rules tha
 chosen inheritance type (for example, an embedded entity gets no class ID and no caching). The next
 free class ID is pre-filled from the profile's range.
 
+![The PDO Wizard](../../../../src/main/docs/assets/pdo-wizard.png)
+
 **Batch mode** is enabled by configuring `batchFilesets`. Instead of opening the UI, the goal reads a
 secondary model from those file sets and generates the code for every entity it contains that does not
 yet exist in the project model. This is handy for bootstrapping a project from an existing schema
@@ -139,12 +141,18 @@ where applicable, the remote layer. Configuration mirrors `pdo` but uses `Operat
 least one must be configured. There is no batch mode and no class-ID handling (operations have no
 class IDs).
 
+![The Operation Wizard](../../../../src/main/docs/assets/operation-wizard.png)
+
 ### The `browse` Goal
 
 Opens the *PDO Browser*, which connects to a running backend, lets you navigate the PDOs persisted in
 the database along their relations, and generates test code (Java fixtures and the corresponding SQL)
 from the selected objects. It is the tool of choice for building realistic integration-test data from
-existing records. Parameters:
+existing records.
+
+![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
+
+Parameters:
 
 - `url` (required): the backend URL.
 - `user` (required) / `password`: the backend credentials.
