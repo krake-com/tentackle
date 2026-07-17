@@ -550,6 +550,13 @@ relation = <type> [modifiers...]
 | `list`     | 1:N association.                                                   |
 | `reversed` | Reversed 1:1 (non-component list that returns at most one object). |
 
+There is deliberately **no `set` relation type**: a hash- or tree-based set of PDOs is unsound,
+because a PDO's `hashCode`/`equals` are id-based and change when a new object is first persisted, and
+because cyclic graphs are deserialized through partially built placeholders. `1:N` associations are
+always ordered lists (a [`TrackedList`](../../../../tentackle-core/src/main/docs/misc.md#trackedlist--knowing-what-changed)
+when the aggregate is tracked). See
+[Object identity — why relations are lists](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists).
+
 **Modifiers** (any combination):
 
 | Modifier      | Description                                                                       |
