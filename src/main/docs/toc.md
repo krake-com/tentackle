@@ -47,6 +47,7 @@ the [Index](./index.md).
 - [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md) — streaming large result sets, transparently over local and remote sessions.
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
+- [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.

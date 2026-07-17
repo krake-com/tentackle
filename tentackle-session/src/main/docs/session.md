@@ -110,7 +110,9 @@ for client/server version validation (`VersionIncompatibleException`).
 ### Modification tracking
 
 The change-notification subsystem lets any JVM learn that data changed, even when the change happened on another
-client through the server.
+client through the server. This section is the overview — see
+[Modification Tracking](modification-tracking.md) for the full story: the modification table, counting and
+rollback correction, operation modes, the poll loop, delayed listeners and master serial events.
 
 - [`ModificationTracker`](../java/org/tentackle/session/ModificationTracker.java) — the singleton that tracks
   global PDO changes. It maintains its own session (and is both a `SessionTaskDispatcher` and an
@@ -310,6 +312,7 @@ another.
 
 ## Related Documentation
 
+- [Modification Tracking](modification-tracking.md) — the `ModificationTracker`, its listeners and the master serial events, in depth.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the session, info, and tracker factories.

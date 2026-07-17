@@ -91,6 +91,7 @@ nav:
       - Cursors — Streaming Large Result Sets: cursors.md
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
+      - Modification Tracking: modification-tracking.md
       - Tentackle Database: database.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
