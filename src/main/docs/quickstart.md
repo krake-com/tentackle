@@ -1,4 +1,6 @@
 # Quickstart
+![Quickstart](./assets/tentackle-quickstart.png)
+
 
 This chapter takes you from nothing to a running, multi-tier Tentackle
 application in a few minutes. The generated project is a complete starting point

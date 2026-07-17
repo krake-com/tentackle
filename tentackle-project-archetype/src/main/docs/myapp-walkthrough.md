@@ -110,6 +110,9 @@ A **PDO** is a single logical entity that Java cannot express directly because i
 implementation inheritance chains — one for persistence, one for domain logic. Tentackle emulates that multiple
 inheritance with a **dynamic proxy** that fronts a `PersistentObject` and a `DomainObject` working in tandem.
 
+![The PDO Pattern](../../../../src/main/docs/assets/pdo.gif)
+
+
 For each entity there are (at least) five Java types, plus generated SQL. Take **`Message`**:
 
 | Artifact                    | File                                                                |             Hand-written?             |
