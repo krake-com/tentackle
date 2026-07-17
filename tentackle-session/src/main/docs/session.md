@@ -312,6 +312,7 @@ another.
 
 ## Related Documentation
 
+- [Backend Properties](backend-properties.md) — the reference of all session configuration keys (`url`, credentials, timeouts, server endpoints, …).
 - [Modification Tracking](modification-tracking.md) — the `ModificationTracker`, its listeners and the master serial events, in depth.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
