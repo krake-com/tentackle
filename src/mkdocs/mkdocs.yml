@@ -73,6 +73,8 @@ nav:
       - PDO — Persistent Domain Objects: pdo.md
       - The DomainContextProvider: domain-context-provider.md
       - Operation — Behavior Without an Entity: operation.md
+      - Transactions and Transparent Retry: transaction.md
+      - Domain Keys: domain-key.md
       - PDO Caching: cache.md
       - Number Sources: ns.md
       - Snapshots and Copies: snapshot.md
@@ -104,6 +106,7 @@ nav:
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
       - Cryptor and EncryptedProperties: cryptor.md
+      - Naming Rules: naming-rules.md
       - Annotation Processors: annotation-processors.md
       - Binding — Connecting Models to Views: binding.md
       - Validation: validation.md

@@ -146,7 +146,9 @@ A set of `final` static-method helpers and small utilities used throughout build
 - [`Compare`](../java/org/tentackle/common/Compare.java) — null-safe `Comparable` comparisons.
 - [`ParameterString`](../java/org/tentackle/common/ParameterString.java) — parses/builds `name='value', …`
   parameter strings (used in model options and elsewhere).
-- [`NamingRules`](../java/org/tentackle/common/NamingRules.java) — class-naming conventions.
+- [`NamingRules`](../java/org/tentackle/common/NamingRules.java) — the replaceable singleton behind
+  all derived class names (domain/persistence/remote delegate types); see
+  [naming-rules.md](naming-rules.md).
 - [`StripMode`](../java/org/tentackle/common/StripMode.java) — enum for string-stripping behavior.
 - [`Path`](../java/org/tentackle/common/Path.java) / [`PathFactory`](../java/org/tentackle/common/PathFactory.java)
   — a generic path abstraction and its factory.

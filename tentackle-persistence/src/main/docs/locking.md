@@ -71,7 +71,8 @@ Two outcomes are distinguished by re-reading the current serial:
 - **The row still exists** (`persistedSerial > 0`) → it was updated concurrently. The
   `NotFoundException` is flagged **temporary**, because retrying the *whole*
   transaction (re-reading the now-current row) may well succeed. This is the hook a
-  `@Transaction`-annotated method uses to transparently retry.
+  `@Transaction`-annotated method uses to transparently retry — see
+  [Transactions and Transparent Retry](../../../../tentackle-pdo/src/main/docs/transaction.md).
 - **The row is gone** (`persistedSerial == 0`) → it was deleted concurrently; the
   failure is permanent.
 

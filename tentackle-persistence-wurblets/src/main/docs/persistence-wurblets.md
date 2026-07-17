@@ -115,9 +115,63 @@ and share the options `--private`, `--append=<sqltext>` and `--classvar=<classva
 |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | [`DbSelectList`](../wurblets/org/tentackle/persist/wurblet/DbSelectList.wrbl) / [`PdoSelectList`](../wurblets/org/tentackle/persist/wurblet/PdoSelectList.wrbl)             | A method selecting a list of objects.                                                      | `--sort`, `--lock`, `--limit`, `--offset`, `--resultset`, `--bounded`; PDO adds `--cursor`, `--immutable`, `--finallyImmutable`, `--mutable` |
 | [`DbSelectUnique`](../wurblets/org/tentackle/persist/wurblet/DbSelectUnique.wrbl) / [`PdoSelectUnique`](../wurblets/org/tentackle/persist/wurblet/PdoSelectUnique.wrbl)     | A method selecting a single object.                                                        | `--sort`, `--lock`; PDO adds `--tokenlock`, `--immutable`, `--finallyImmutable`, `--mutable`                                                 |
-| [`DbUpdateBy`](../wurblets/org/tentackle/persist/wurblet/DbUpdateBy.wrbl) / [`PdoUpdateBy`](../wurblets/org/tentackle/persist/wurblet/PdoUpdateBy.wrbl)                     | A bulk-update method. Takes `<expression>                                                  | <values>` (the `groupArgs` config).                                                                                                          | |
+| [`DbUpdateBy`](../wurblets/org/tentackle/persist/wurblet/DbUpdateBy.wrbl) / [`PdoUpdateBy`](../wurblets/org/tentackle/persist/wurblet/PdoUpdateBy.wrbl)                     | A bulk-update method. Takes `<expression> \| <values>` (the `groupArgs` config).           |                                                                                                                                              |
 | [`DbDeleteBy`](../wurblets/org/tentackle/persist/wurblet/DbDeleteBy.wrbl) / [`PdoDeleteBy`](../wurblets/org/tentackle/persist/wurblet/PdoDeleteBy.wrbl)                     | A bulk-delete method.                                                                      |                                                                                                                                              |
 | [`DbIsReferencing`](../wurblets/org/tentackle/persist/wurblet/DbIsReferencing.wrbl) / [`PdoIsReferencing`](../wurblets/org/tentackle/persist/wurblet/PdoIsReferencing.wrbl) | A method checking whether an object is referenced by others (referential-integrity guard). |                                                                                                                                              |
+
+The select wurblets have [their own document](pdo-select.md); the reference check and the two
+modifying wurblets deserve a closer look here.
+
+#### PdoIsReferencing — the referential-integrity guard
+
+`PdoIsReferencing` generates a `boolean` **existence check**: a `SELECT` of the `id` column with
+the given `WHERE` expression, limited to a single row. No objects are loaded and nothing is
+modified — the method merely answers whether at least one matching row exists.
+
+Its main job is guarding deletion. For every non-composite object relation whose target entity has
+application-checked integrity, [`PdoRelations`](#relations-and-caching) generates an
+`isReferencing<Entity>By<attribute>` anchor together with the corresponding referencing-class
+registration, so that `isReferenced()` — and with it the default `isRemovable()` — can ask every
+registered referencing entity whether it still points to the object before it is deleted.
+Handwritten anchors work the same way for custom guards (see for example `isReferencingUser` in
+[`ModificationLog`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/ModificationLog.java)).
+All attributes of the expression must belong to the same entity.
+
+The [rich desktop client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) builds on this as
+well: `PdoEditor.isRemoveAllowed()` consults `isRemovable()` — and thus `isReferenced()` — to
+enable or disable the delete button, so removing a still-referenced PDO is already inhibited at
+the GUI level instead of failing later with an SQL exception raised by a foreign-key constraint.
+
+#### PdoUpdateBy and PdoDeleteBy — bulk writes
+
+`PdoUpdateBy` generates a method executing a single `UPDATE <table> SET <values> WHERE <expression>`,
+`PdoDeleteBy` a single `DELETE FROM <table> WHERE <expression>`; both return the number of affected
+rows. The class-level write permission is still checked (see
+[security](../../../../tentackle-pdo/src/main/docs/security.md)), the domain-context condition
+(`--context`) still applies, and both are remote-capable like every other query wurblet.
+
+> **Warning — bulk writes bypass the DDD aggregate rule.** These methods modify rows *directly*,
+> without instantiating the PDOs. Everything the regular PDO write path guarantees is skipped:
+>
+> - **No optimistic locking.** The [`serial`](../../../../tentackle-persistence/src/main/docs/locking.md)
+>   of the affected rows is neither checked nor incremented. A concurrent user editing one of the
+>   objects will neither detect the bulk change, nor will their subsequent save be rejected — the
+>   bulk change is silently overwritten, the classic lost update.
+> - **No token locks.** Rows [token-locked](../../../../tentackle-persistence/src/main/docs/locking.md)
+>   by other users are updated or deleted regardless.
+> - **No modification tracking.** Neither a tableserial bump nor a
+>   [modification-log](../../../../tentackle-session/src/main/docs/modification-tracking.md) entry
+>   is written, so [PDO caches](../../../../tentackle-pdo/src/main/docs/cache.md) — local and in
+>   other JVMs — are never invalidated and keep serving stale objects.
+> - **No aggregate semantics.** A bulk delete removes only rows of *this* table: components are not
+>   cascaded (leaving orphans when applied to a root entity), `isReferenced()` is not consulted,
+>   and no domain logic or [validation](../../../../tentackle-core/src/main/docs/validation.md) runs.
+>
+> In a Tentackle application, all changes normally go through the aggregate root as full PDO
+> operations. `PdoUpdateBy` and `PdoDeleteBy` exist for **rare corner cases where performance is
+> critical** — mass operations on tables that are untracked, uncached, unlocked, and free of
+> components and referencing entities (typically log- or queue-like data). Anywhere else, using
+> them means *you* are responsible for consciously re-establishing the guarantees above.
 
 ### Relations and caching
 

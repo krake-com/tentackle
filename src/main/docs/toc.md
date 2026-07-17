@@ -25,6 +25,8 @@ the [Index](./index.md).
 - [PDO — Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the central programming model.
 - [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md) — creating PDOs and operations in context.
 - [Operation — Behavior Without an Entity](../../../tentackle-pdo/src/main/docs/operation.md) — business logic that is not tied to one entity.
+- [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md) — declarative units of work: begin/commit, rollback, and automatic retry on temporary failures.
+- [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md) — the business identity of a root entity: the `key` option, generated key types, and `findByUniqueDomainKey`.
 - [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md) — the optional, coherent object cache.
 - [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) — unique business numbers from persistent, transactional pools.
 - [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md) — exact, atomic aggregate undo.
@@ -64,6 +66,7 @@ the [Index](./index.md).
 - [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
 - [Service and Configuration API — Locating Implementations Without Scanning](../../../tentackle-common/src/main/docs/services.md) — the `@Service`/`@MappedService` annotations, the ServiceFinder SPI, build-time registration, module ordering and the ModuleHook.
 - [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — application-specific secret handling: encrypted passwords in configuration, memory, and on the wire.
+- [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md) — how the domain, persistence and remote-delegate class names are derived, and how to replace the conventions application-wide.
 - [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
 - [Validation — Annotation-Driven, Scope-Aware Validation](../../../tentackle-core/src/main/docs/validation.md) — declarative constraints.
