@@ -16,8 +16,11 @@ The feature is built around two ideas that shape the whole API:
   expensive. The controller runs the generator in the background and coalesces input, so the field
   keeps up with typing instead of stuttering or timing out.
 
-Auto-completion is **off by default**. It is enabled per component by setting a function; there is no
-global switch.
+Auto-completion is **off by default**. It is enabled explicitly per component by setting a function.
+There is no global switch — but there is a way to reach every component of a given model type at once:
+a [`ValueTranslator`](#enabling-it-for-a-whole-type-a-valuetranslator) can install the generator
+itself, so that, say, every field bound to a `ProductNumber` completes without a single line of
+per-field code.
 
 
 ## Key Concepts
@@ -47,6 +50,43 @@ These components support it:
 
 Two components refuse it and throw `FxRuntimeException` if a non-null function is set:
 `FxPasswordField` (auto-completing a password would disclose it) and `FxHTMLEditor` (unsupported).
+
+### Enabling it for a whole type: a `ValueTranslator`
+
+Setting the function on each field is fine for a one-off. But if a data type should *always* complete
+— an article number, a country code, a `ProductNumber` — putting that call into every controller is
+both tedious and easy to forget. The [`ValueTranslator`](fx.md#value-translators) is the place to do
+it once.
+
+A translator is created per component by `FxFactory.createValueTranslator(modelClass, viewClass,
+component)` and receives that component in its constructor, which is all it takes to install the
+generator there:
+
+```java
+@ValueTranslatorService(modelClass = ProductNumber.class, viewClass = String.class)
+public class ProductNumberStringTranslator extends ValueStringTranslator<ProductNumber> {
+
+  public ProductNumberStringTranslator(FxTextComponent component) {
+    super(component);
+    SeparatorSuggestionGenerator<ProductNumber> generator = new SeparatorSuggestionGenerator<>("-");
+    generator.setChoices(ProductNumberCache.getInstance().getNumbers());
+    component.setAutoCompletion(generator);
+  }
+
+  // toViewFunction() / toModelFunction() as usual
+}
+```
+
+From then on every text component bound to a `ProductNumber` completes, whether it comes from FXML,
+from the RDC's `GuiProvider`, or from a generated form — the binding picks the translator by model
+type, and the translator brings the auto-completion with it. Because the translator is instantiated
+per component, each component still gets its own generator instance, which is exactly what the
+[threading rules](#threading-and-input-coalescing) require.
+
+Model classes are mapped leniently, so a translator registered for a base type covers its subtypes as
+well — that is how `PdoStringTranslator` serves all PDOs. A translator can therefore equip a whole
+family of types in one go. Individual components can still opt out afterward with
+`setAutoCompletion(null)`, or override the choice of generator by setting their own.
 
 ### The function type
 
