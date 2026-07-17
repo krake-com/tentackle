@@ -140,8 +140,7 @@ consistent, but it also means a task holding a transaction open blocks the next 
 pending-count flush, until it commits.
 
 **The `else` branch runs inline.** With no `Application` *and* a dead tracker, the task runs on the **calling
-thread** — which, from a UI action, is the FX thread. This is a deliberate corner case for generic tools like
-the [PDO browser](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md),
+thread** — which, from a UI action, is the FX thread. This is a deliberate corner case for generic tools
 where there is no tracker to defer to. In a normal application, once `finishStartup()` has started the tracker,
 it does not apply — but it is worth knowing why `Rdc.bg(...)` occasionally blocks in a test harness or a tool.
 
