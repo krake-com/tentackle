@@ -118,6 +118,7 @@ topic-grouped listing of every document, see the
 
 ## O
 
+- **Object identity (`equals`/`hashCode`/`compareTo`, id-based, transient trap, why relations are lists not sets)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)
 - **Operations (behavior without an entity)** — [Operation](../../../tentackle-pdo/src/main/docs/operation.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **OSGi bundles** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
