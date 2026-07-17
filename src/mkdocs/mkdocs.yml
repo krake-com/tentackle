@@ -129,6 +129,7 @@ nav:
       - InteractiveError: interactive-error.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
       - GuiProvider — Per-Entity GUI Services: gui-provider.md
+      - Background Execution: background-execution.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md
       - tentackle-fx-rdc-poi — Spreadsheet Export: poi.md
       - FX RDC Update — Client Auto-Update: fx-rdc-update.md

@@ -18,6 +18,7 @@ topic-grouped listing of every document, see the
 
 ## B
 
+- **Background execution (`Rdc.bg`, session pool)** — [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Batching (JDBC statement batching, `batchsize`)** — [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
@@ -148,6 +149,7 @@ topic-grouped listing of every document, see the
 - **ServiceFinder / SPI** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Session pool** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
