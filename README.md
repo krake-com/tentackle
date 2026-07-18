@@ -59,4 +59,5 @@ For a sense of where Tentackle excels, read
 - 🧾 **[Java site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/)** — as a reference.
 
 and for the impatient Java developer:
+
 - 🔔 **[Concise Summary](src/main/docs/unexpected.md)** — main facts you might not expect
