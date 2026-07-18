@@ -8,7 +8,7 @@ Tentackle is a modular Maven reactor. Every module carries an explicit `module-i
 3. **common** — shared by both build- and runtime.
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
-A [BOM](../../../tentackle-bom), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
+A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
 and the TestNG-support modules ([tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md),
 [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md))
 round out the set but are omitted from the diagram.

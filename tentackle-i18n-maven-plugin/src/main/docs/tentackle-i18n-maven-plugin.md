@@ -144,7 +144,7 @@ would cause a `MissingResourceException`. The other findings are reported so the
 typically by `push`/`pull` or by `BundleMonkey` — before running `cleanup`.
 
 > Note: the application's own resource bundles (keys referenced in code) are checked separately by the
-> [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin) during the build; `verify`
+> [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) during the build; `verify`
 > focuses on the consistency between the property files and the database.
 
 ### The `cleanup` Goal

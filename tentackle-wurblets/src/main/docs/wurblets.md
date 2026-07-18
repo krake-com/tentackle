@@ -6,7 +6,7 @@
 Tentackle application: the constants, accessor declarations, relation methods, unique-domain-key types, model
 documentation, and Data Transfer Objects that belong to a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md)
 interface or operation interface. Together with its sibling
-[`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets) — which generates the matching
+[`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — which generates the matching
 *implementation* side — it turns the application
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) into compilable Java.
 

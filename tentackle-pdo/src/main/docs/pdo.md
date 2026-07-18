@@ -590,7 +590,7 @@ A PDO is several coordinated files across the `-pdo`, `-persistence`, and
 the two implementation classes, each with the right SPI annotations and model
 comment block. Rather than create them by hand, the usual starting point is the
 **PDO wizard** of the
-[`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin):
+[`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md):
 
 ```bash
 mvn tentackle-wizard:pdo
@@ -602,7 +602,7 @@ and class id, and generates the interfaces and implementations in the right
 modules, including the SPI annotations and an empty model comment block ready for
 you to fill in. The normal build (`tentackle:analyze` → Wurbelizer → compiler)
 then turns that model into the persistence mappings and DDL described above. New
-projects created from the [project archetype](../../../../tentackle-project-archetype)
+projects created from the [project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
 ship with the same templates under `templates/pdo`. (Table-less *services* are
 scaffolded the same way with `mvn tentackle-wizard:operation` — see
 [operation.md](operation.md).)

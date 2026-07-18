@@ -8,9 +8,9 @@ single object every higher layer talks to in order to start transactions, run da
 notified about changes — regardless of whether the database is connected directly to the current JVM or reached
 through a remote Tentackle server (or even a chain of middle-tiers).
 
-The module sits between [`tentackle-core`](../../../../tentackle-core) (its only dependency) and the persistence
-stack ([`tentackle-database`](../../../../tentackle-database), [`tentackle-persistence`](../../../../tentackle-persistence),
-[`tentackle-pdo`](../../../../tentackle-pdo)). It deliberately contains **only interfaces, abstract bases,
+The module sits between [`tentackle-core`](../../../../tentackle-core/src/main/docs/core.md) (its only dependency) and the persistence
+stack ([`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md), [`tentackle-persistence`](../../../../tentackle-persistence/src/main/docs/persistence.md),
+[`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md)). It deliberately contains **only interfaces, abstract bases,
 annotations, events, and a handful of small helper classes** — the concrete `Session` implementation lives in
 `tentackle-database` (local) and in the remoting modules (remote). This keeps the contract that the whole
 framework programs against free of any JDBC, SQL-dialect, or wire-protocol detail.
@@ -302,7 +302,7 @@ another.
 
 `tentackle-session` sits low in the stack and is intentionally thin:
 
-- It **requires transitive** [`tentackle-core`](../../../../tentackle-core) (and through it `tentackle-common`):
+- It **requires transitive** [`tentackle-core`](../../../../tentackle-core/src/main/docs/core.md) (and through it `tentackle-common`):
   TRIP serialization, tasks/dispatchers, validation, binding, reflection and service discovery.
 - It **opens** `org.tentackle.session` to `org.tentackle.core` for TRIP, because `SessionInfo`, modification and
   master-serial events travel between JVMs.

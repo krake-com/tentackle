@@ -13,7 +13,7 @@ Six plugins build on it:
 - [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — DDL generation
 - [`tentackle-i18n-maven-plugin`](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) — i18n resource handling
 - [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) — model/consistency checks
-- [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin) — jlink/jpackage image building
+- [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — jlink/jpackage image building
 - [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — project wizard
 
 By factoring the recurring concerns into one place, each plugin only has to implement its own goal logic. The

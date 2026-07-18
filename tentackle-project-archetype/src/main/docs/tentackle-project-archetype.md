@@ -86,7 +86,7 @@ so that the Tentackle, Wurbelizer, JavaFX, and library versions of the current r
 ## Anatomy of the Generated Application
 
 The generated root [`pom.xml`](../resources/archetype-resources/pom.xml) is a `pom`-packaging aggregator that
-imports [`tentackle-bom`](../../../../tentackle-bom), centralizes all plugin configuration in `<pluginManagement>`,
+imports [`tentackle-bom`](../../../../tentackle-bom/src/main/docs/bom.md), centralizes all plugin configuration in `<pluginManagement>`,
 and lists eight reactor modules plus a `jlink` sub-aggregator:
 
 ```
@@ -192,7 +192,7 @@ plugins it configures, in build order:
    — i18n resource handling for the German locale.
 6. **maven-compiler-plugin** — compiles with the framework annotation processors
    (`tentackle-core`, `tentackle-pdo`, `tentackle-fx`, `tentackle-fx-rdc`) on the processor path.
-7. [**tentackle-jlink-maven-plugin**](../../../../tentackle-jlink-maven-plugin) — builds the native images under
+7. [**tentackle-jlink-maven-plugin**](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — builds the native images under
    the `jlink` profile.
 
 The build also wires shared model defaults (`tentackle.modelDefaults`), per-column sizes, the
