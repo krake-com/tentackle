@@ -68,7 +68,6 @@ nav:
       - Correctness First: correctness-first.md
       - Technical & Scientific Applications: technical-scientific.md
       - PDOs vs. Traditional ORMs: pdo-vs-orm.md
-      - Embedded Entities vs. DataTypes: embedded-vs-datatype.md
   - Persistent Domain Objects (PDO):
       - PDO — Persistent Domain Objects: pdo.md
       - The DomainContextProvider: domain-context-provider.md
@@ -88,6 +87,7 @@ nav:
       - Persistence Wurblets: persistence-wurblets.md
       - PdoSelectList and PdoSelectUnique: pdo-select.md
       - Eager Relations: eager-relations.md
+      - Embedded Entities vs. DataTypes: embedded-vs-datatype.md
   - Persistence & Database:
       - Tentackle Persistence: persistence.md
       - Locking — Token & Optimistic serial: locking.md
