@@ -54,8 +54,9 @@ For a sense of where Tentackle excels, read
 
 - 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build, and run a
   complete multi-tier application in minutes.
-- 📦 **[BOM](tentackle-bom/src/main/docs/bom.md)** — add Tentackle to an existing
-  project with consistent module versions.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
 - 🧾 **[Java site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/)** — as a reference.
+
+and for the impatient Java developer:
+- 🔔 **[Concise Summary](src/main/docs/unexpected.md)** — main facts you might not expect
