@@ -277,4 +277,4 @@ with realistic data super easy: browse, select, generate, paste.
 - [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates the packaged TT DDL.
 - [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — the PDO Browser that generates test-fixture code.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions and the modification tracker the base classes drive.
-- [tentackle-test-fx-rdc](../../../../tentackle-test-fx-rdc) — the analogous test-support module for the RDC/UI layer.
+- [tentackle-test-fx-rdc](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — the analogous test-support module for the RDC/UI layer.

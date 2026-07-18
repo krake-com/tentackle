@@ -343,7 +343,7 @@ methods, since both run through the same invoker
 
 An operation is several coordinated files across the `-pdo`, `-persistence`, and
 `-domain` modules. Rather than write them by hand, use the **operation wizard** of
-the [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin):
+the [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md):
 
 ```bash
 mvn tentackle-wizard:operation
@@ -355,7 +355,7 @@ required — it stops with *"neither domain- nor persistence-part defined"*
 otherwise). From your answers it generates the interface(s) and implementation(s)
 in the right modules, including the SPI annotations and, for a remoting-capable
 persistence part, the remote delegate scaffolding. New projects created from the
-[project archetype](../../../../tentackle-project-archetype) ship with the same
+[project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) ship with the same
 templates under `templates/operation`.
 
 ---
