@@ -148,7 +148,9 @@ class IDs).
 Opens the *PDO Browser*, which connects to a running backend, lets you navigate the PDOs persisted in
 the database along their relations, and generates test code (Java fixtures and the corresponding SQL)
 from the selected objects. It is the tool of choice for building realistic integration-test data from
-existing records.
+existing records — see
+[tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser)
+for the step-by-step recipe that feeds the generated code into the test base classes.
 
 ![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
 

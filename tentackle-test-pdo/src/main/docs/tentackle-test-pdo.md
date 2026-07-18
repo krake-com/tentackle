@@ -240,6 +240,31 @@ public class CustomerTest extends org.tentackle.pdo.testng.AbstractPdoTest {
 Override `createDatabaseTables(Db)` to add your application's model on top of the framework's TT tables, and choose
 `TransactionType.METHOD` (or `commit = true`) where the default per-class rollback doesn't fit.
 
+### Generating Fixture Code with the PDO Browser
+
+Writing the fixture code by hand gets tedious once tests need realistic object graphs. The *PDO Browser* — the
+`browse` goal of the
+[wizard maven plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) —
+automates it: it connects to a live backend (typically a development or staging database), lets you navigate the
+persisted PDOs along their relations, and turns selected records into ready-to-paste Java code that recreates
+them. The recipe:
+
+1. Start the PDO browser from the aggregator directory: `mvn tentackle-wizard:browse`
+   (the backend `url` and `user` are either configured in the POM or passed via `-D`).
+2. Select the PDO type in the *entity* combo box and load records via *load*, *find by ID*, or *use finder*.
+3. In the table, select the PDOs to generate Java code for.
+4. Click *generate* — the browser builds the Java code (`Pdo.create(...)`, the attribute setters, the component
+   relations, a final `save()`) for the selected objects and copies it to the clipboard.
+5. Paste the code into the test class (see `createDatabaseTables(Db)` above): the `populateDatabase()` override is
+   invoked right after `createDatabaseTables(Db)` has built the in-memory schema, so the pasted code runs against a
+   fresh database.
+6. Repeat for all PDOs that should be available to *all* tests — put those into a common base test class of the
+   suite — and then for the PDOs needed by the individual test classes.
+
+Because the generated code recreates the objects through the plain PDO API, the tests need no backend at run
+time — the fixtures populate the in-memory H2 database like any other test code. This makes creating CI tests
+with realistic data super easy: browse, select, generate, paste.
+
 ---
 
 ## Related Documentation
@@ -250,5 +275,6 @@ Override `createDatabaseTables(Db)` to add your application's model on top of th
 - [Tentackle Model](../../../../tentackle-model/src/main/docs/tentackle-model.md) — the object graph `DbTestUtilities` turns into DDL.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `Backend`/`DataType` used to render the schema.
 - [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates the packaged TT DDL.
+- [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — the PDO Browser that generates test-fixture code.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — sessions and the modification tracker the base classes drive.
 - [tentackle-test-fx-rdc](../../../../tentackle-test-fx-rdc) — the analogous test-support module for the RDC/UI layer.
