@@ -130,6 +130,49 @@ interceptors all key off the effective class, and all of them would silently mis
 proxy class name. Implementors include `AbstractDomainObject`, `AbstractDomainOperation`,
 `ValidationUtilities`, `ScriptVariable`, `DefaultTableConfiguration`, and the security interceptors.
 
+#### `getClass()`, `getEffectiveClass()` and `instanceof`
+
+For a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) the effective class is the **entity
+interface** — the type the application declared and thinks in, e.g. `Customer` — *not* the domain or
+persistence implementation class behind the proxy. Three type queries therefore give three different
+answers, and only two of them are useful:
+
+| Expression                              | Result for a `Customer` PDO                                        |
+|-----------------------------------------|-------------------------------------------------------------------|
+| `pdo.getClass()`                        | the synthetic proxy class (`jdk.proxy…$ProxyN`) — never use it     |
+| `pdo.getEffectiveClass()`               | `Customer.class` — the entity interface                           |
+| `pdo instanceof Customer`               | **`true`** — the proxy implements the entity interface           |
+| `pdo instanceof CustomerImpl` (or any domain/persistence impl class, `AbstractDomainObject`, …) | **`false`** — the impls are the *delegates* behind the proxy, not the proxy itself |
+
+The practical rule that follows:
+
+- **To test what kind of entity you hold, `instanceof` (or `switch`) against the entity
+  *interface*.** That is what travels between tiers and what the proxy actually implements. Testing
+  against an implementation class always fails — the impl is hidden behind the proxy — and testing
+  against the proxy class is meaningless.
+- **When you need the exact type as a `Class`** (to key a map, drive a `switch` on `Class`, look up a
+  provider), call `getEffectiveClass()`; `getClass()` would hand you the proxy. Use the static
+  `EffectiveClassProvider.getEffectiveClass(obj)` when `obj` might be either a proxy or a plain
+  object — it returns the effective class for the former and `obj.getClass()` for the latter.
+
+```java
+// Yes — the entity interface is what the proxy implements
+if (pdo instanceof Customer c) {
+  c.getCreditLimit();
+}
+
+// No — CustomerImpl is the domain delegate, hidden behind the proxy: this is always false
+if (pdo instanceof CustomerImpl) { … }         // dead branch
+
+// Keying by type: getEffectiveClass(), never getClass()
+Map<Class<?>, Handler> handlers = …;
+Handler h = handlers.get(pdo.getEffectiveClass());   // Customer.class, not the proxy class
+```
+
+`getEffectiveSuperClasses()` completes the picture: it returns the entity's PDO super-interfaces, so
+a caller that walks an inheritance hierarchy (a generic editor, an export) sees the same interface
+lineage the application declared, not the proxy's.
+
 ### Interception
 
 The interception types — [`Interceptable`](../java/org/tentackle/reflect/Interceptable.java),

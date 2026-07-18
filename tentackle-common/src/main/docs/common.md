@@ -63,7 +63,8 @@ This is the heart of the module and is documented fully in [services.md](service
   classpath.
 - [`RemoteMethod`](../java/org/tentackle/common/RemoteMethod.java) / [`RecordDTO`](../java/org/tentackle/common/RecordDTO.java)
   — annotations consumed by wurblets/analysis to make handwritten methods remoting-capable and to mark records
-  for code generation.
+  for code generation. `@RecordDTO` drives the
+  [DTO wurblet](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does).
 
 ### Database-aware data types
 

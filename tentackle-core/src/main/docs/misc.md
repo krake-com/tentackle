@@ -87,6 +87,13 @@ dirty flag can use it.
 - it can be configured to reject `null` elements outright;
 - [`TrackedListListener`](../java/org/tentackle/misc/TrackedListListener.java) reports the events.
 
+A related question is why OR-mapped relations are *lists* at all and never sets. Two properties of
+PDOs make a hash- or tree-based `Set` unsound: their `hashCode`/`equals` are id-based and change when
+a transient object is first persisted, and cyclic graphs are deserialized through partially built
+placeholders whose ids are not yet set — either way a set's bucketing would be corrupted, while a
+list stores by position and never hashes its elements. See
+[Object identity — why relations are lists](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists).
+
 ### Copy-on-write wrappers
 
 [`CopyOnWriteCollection`](../java/org/tentackle/misc/CopyOnWriteCollection.java),

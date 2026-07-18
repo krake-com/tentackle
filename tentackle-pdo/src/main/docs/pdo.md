@@ -221,6 +221,79 @@ public IngotCategory determineCategory() {
 
 ---
 
+## Object identity — `equals`, `hashCode`, and why relations are lists
+
+A PDO's identity is its **class plus its object id**, not its field values. The
+implementation lives in [`AbstractDbObject`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/AbstractDbObject.java)
+and is deliberately `final` — you cannot override it:
+
+- **`equals`** — two PDOs are equal when they have the **same effective class and the same id**.
+- **`hashCode`** — is the id (`(int) getId()`).
+- **`compareTo`** — orders by id, then by class name. The natural ordering is therefore *technical*
+  (insertion/id order), never a business field. To sort by name, price, or date, pass an explicit
+  `Comparator`.
+
+The proxy forwards `equals`/`hashCode`/`compareTo` to the persistence delegate (see
+[The implementations](#the-implementations)), so this is exactly what application code observes when
+it compares two `Ingot`s.
+
+### The transient-object trap
+
+There is one crucial subtlety. A freshly created, **not-yet-persisted** PDO has an id of `0`. With no
+id there is no domain identity, so `equals`/`hashCode` **fall back to the object's address**
+(`Object.equals`/`Object.hashCode`). The moment the object is persisted and receives its id, both
+change:
+
+```java
+Ingot i = Pdo.create(Ingot.class, ctx);   // id == 0  → identity hash (its address)
+Set<Ingot> seen = new HashSet<>();
+seen.add(i);
+i.persist();                              // id assigned → hashCode is now (int) id
+seen.contains(i);                         // ⇒ FALSE — it now hashes to a different bucket
+```
+
+Two consequences follow directly:
+
+- **Never put un-persisted PDOs into a `HashSet`/`HashMap`.** Their hash changes on the first
+  `persist()`, and they become unreachable in the collection. This is the classic Hibernate
+  "don't build `equals`/`hashCode` on the generated id" hazard — except here it is intentional and
+  `final`, because a PDO's identity genuinely *is* its persistent id.
+- **Two distinct un-persisted PDOs are never equal**, even if every field matches — each is only
+  equal to itself until it has an id.
+
+### Why relations are lists, not sets
+
+This is the reason the [model](../../../../tentackle-model/src/main/docs/model-definition.md) offers
+`list` relations (backed by [`TrackedList`](../../../../tentackle-core/src/main/docs/misc.md#trackedlist--knowing-what-changed))
+but has **no `set` relation** — a hash- or tree-based `Set` of PDOs would be unsound for two
+independent reasons:
+
+1. **Identity mutates on save.** A `Set` decides membership by `hashCode`/`equals` at insertion time.
+   Add a new component to an aggregate, then save the aggregate: every component's id — and therefore
+   its hash — changes, and the `Set`'s internal bucketing is silently corrupted. `contains`, `remove`
+   and iteration stop being reliable. A `List` stores elements by position and never hashes them, so
+   it is immune.
+
+2. **Cyclic object graphs during deserialization.** PDO graphs are cyclic by design — a component
+   points back to its root, related entities reference each other — and
+   [TRIP](../../../../tentackle-core/src/main/docs/trip.md) reconstructs them by **registering a
+   placeholder for each object *before* its fields are read**, so a back-reference encountered later
+   in the same subgraph can resolve to the object under construction. That means an element can be
+   handed to its containing collection while it is still half-built: its id (and other fields) not yet
+   deserialized. Adding such an element to a `Set` would hash it in its incomplete state, and
+   completing it later would move it to a different bucket — the same corruption as above, now
+   unavoidable because the cycle *forces* the element to be referenced before it is finished. A
+   `List` appends by position regardless of the element's state, so partially built elements are
+   never a problem.
+
+`TrackedList` additionally gives the OR-mapper the added/removed history it needs to translate an
+in-memory collection back into inserts, updates and deletes — a set would not carry that either. See
+[TrackedList](../../../../tentackle-core/src/main/docs/misc.md#trackedlist--knowing-what-changed) for
+the collection contract and [TRIP](../../../../tentackle-core/src/main/docs/trip.md) for the
+placeholder/back-reference protocol.
+
+---
+
 ## The Model and Code Generation
 
 A PDO interface carries its **model** in a special comment block. For `Ingot` the

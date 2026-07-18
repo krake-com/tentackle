@@ -314,3 +314,4 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism that discovers backends and data types.
+- [Backend Properties](../../../../tentackle-session/src/main/docs/backend-properties.md) — the reference of all property keys `BackendInfo` and the session layer understand.

@@ -84,6 +84,7 @@ nav:
       - Tentackle Model: tentackle-model.md
       - Model Definition Syntax: model-definition.md
       - Wurblets — Interface-Level Generation: wurblets.md
+      - The DTO Wurblet and @RecordDTO: dto-wurblet.md
       - Persistence Wurblets: persistence-wurblets.md
       - PdoSelectList and PdoSelectUnique: pdo-select.md
       - Eager Relations: eager-relations.md
@@ -94,6 +95,7 @@ nav:
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
       - Modification Tracking: modification-tracking.md
+      - Backend Properties: backend-properties.md
       - Tentackle Database: database.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
@@ -124,6 +126,7 @@ nav:
       - Resource Bundles: bundle.md
       - Internationalization (i18n): internationalization.md
       - Database-backed Resource Bundles: i18n.md
+      - BundleMonkey: bundlemonkey.md
   - User Interface (JavaFX):
       - tentackle-fx — Extended JavaFX Layer: fx.md
       - Tables and Trees: tables.md

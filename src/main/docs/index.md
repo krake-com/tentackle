@@ -15,15 +15,18 @@ topic-grouped listing of every document, see the
 - **AtlantaFX theme** — [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Auto-completion (text field suggestions)** — [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
+- **Autologin (desktop clients)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#desktop-client-keys)
 
 ## B
 
+- **Backend properties (`backend.properties`, connection/server/client keys)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Background execution (`Rdc.bg`, session pool)** — [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Batching (JDBC statement batching, `batchsize`)** — [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
 - **Bulk updates and deletes (`PdoUpdateBy`, `PdoDeleteBy`)** — [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md#pdoupdateby-and-pdodeleteby--bulk-writes)
-- **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md)
+- **BundleMonkey (translation editor)** — [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
+- **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
 
 ## C
 
@@ -52,10 +55,12 @@ topic-grouped listing of every document, see the
 - **Domain key (business identity, `findByUniqueDomainKey`)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Domain logic layer** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
+- **DTO (Data Transfer Object) generation** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md)
 
 ## E
 
 - **Eager relations** — [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Effective class (`getClass()` vs `instanceof` on a PDO proxy)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md#getclass-geteffectiveclass-and-instanceof)
 - **Embedded entities** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Error display (marking controls, error/info popups)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 
@@ -72,7 +77,7 @@ topic-grouped listing of every document, see the
 
 ## I
 
-- **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md)
+- **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
 - **Icons / images (symbolic names, icon packs, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
@@ -115,6 +120,7 @@ topic-grouped listing of every document, see the
 
 ## O
 
+- **Object identity (`equals`/`hashCode`/`compareTo`, id-based, transient trap, why relations are lists not sets)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)
 - **Operations (behavior without an entity)** — [Operation](../../../tentackle-pdo/src/main/docs/operation.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **OSGi bundles** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
@@ -141,6 +147,7 @@ topic-grouped listing of every document, see the
 - **Reflection (proxies, class mapping, helpers)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Relations (object, list, reversed, N:M)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
+- **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md)
 - **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
