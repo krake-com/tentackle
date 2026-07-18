@@ -151,7 +151,13 @@ You never call a constructor. You ask the factory:
 Message m = Pdo.create(Message.class, context);   // a live, empty PDO bound to a domain context
 ```
 
-`Pdo.create` returns a proxy implementing `Message`. Calls that belong to the persistence facet are routed to a
+or if inside a `DomainContextProvider` (which is usually the case):
+
+```java
+Message m = on(Message.class);
+```
+
+`Pdo.create` or `on(...)` returns a proxy implementing `Message`. Calls that belong to the persistence facet are routed to a
 `MessagePersistenceImpl`; calls on the domain facet go to a `MessageDomainImpl`. Inside an implementation, `me()`
 returns the proxy (so a domain method can call persistence methods and vice-versa) and `getDomainContext()` yields the
 ambient context. You can see both halves cooperating in `MessageDomainImpl.create(...)`:

@@ -228,7 +228,7 @@ public class CustomerTest extends org.tentackle.pdo.testng.AbstractPdoTest {
 
   @Test(groups = "local")
   public void createAndReload() {
-    Customer c = Pdo.create(Customer.class, getDomainContext());
+    Customer c = on(Customer.class);
     c.setName("Acme");
     c.save();
     Assert.assertNotNull(c.getId());
@@ -253,7 +253,7 @@ them. The recipe:
    (the backend `url` and `user` are either configured in the POM or passed via `-D`).
 2. Select the PDO type in the *entity* combo box and load records via *load*, *find by ID*, or *use finder*.
 3. In the table, select the PDOs to generate Java code for.
-4. Click *generate* — the browser builds the Java code (`Pdo.create(...)`, the attribute setters, the component
+4. Click *generate* — the browser builds the Java code (`on(...)`, the attribute setters, the component
    relations, a final `save()`) for the selected objects and copies it to the clipboard.
 5. Paste the code into the test class (see `createDatabaseTables(Db)` above): the `populateDatabase()` override is
    invoked right after `createDatabaseTables(Db)` has built the in-memory schema, so the pasted code runs against a

@@ -118,10 +118,9 @@ no identity map filling up behind your back, so there is nothing to `clear()`:
 
 ```java
 // Tentackle batch: PDOs are GC'd as soon as the loop moves on
-try (ScrollableResource<Customer> cursor =
-         Pdo.create(Customer.class, context).selectAllAsCursor()) {
+try (ScrollableResource<Product> cursor = on(Product.class).selectAllAsCursor()) {
   while (cursor.next()) {
-    cursor.get().process();   // each PDO is unreferenced once the loop advances → GC-eligible
+    cursor.get().whatSoEver();   // each PDO is unreferenced once the loop advances → GC-eligible
   }
 }
 ```
