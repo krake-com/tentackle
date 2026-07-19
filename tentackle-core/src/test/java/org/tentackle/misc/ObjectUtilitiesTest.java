@@ -23,6 +23,7 @@ import org.tentackle.bind.BindingEvent;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.TentackleRuntimeException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,7 +37,10 @@ import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
@@ -106,6 +110,53 @@ public class ObjectUtilitiesTest {
       // expected!
       assertNull(iax.getCause());   // no parse exception or alike
     }
+  }
+
+  @Test
+  public void testValueOf() {
+    ObjectUtilities ou = ObjectUtilities.getInstance();
+    // Integer.valueOf(String)
+    assertEquals(ou.valueOf(Integer.class, "123"), Integer.valueOf(123));
+    // Long.valueOf(String)
+    assertEquals(ou.valueOf(Long.class, "5"), Long.valueOf(5));
+    // enum valueOf(String)
+    assertEquals(ou.valueOf(BindingEvent.Type.class, "TO_VIEW_VIA_GETTER"), BindingEvent.Type.TO_VIEW_VIA_GETTER);
+  }
+
+  @Test
+  public void testValueOfNoMatchingMethod() {
+    // there is no public static Integer#valueOf(Integer), so this must fail
+    assertThrows(IllegalArgumentException.class, () -> ObjectUtilities.getInstance().valueOf(Integer.class, Integer.valueOf(5)));
+  }
+
+  @Test
+  public void testValueOfInvocationFailure() {
+    // Integer.valueOf(String) exists but throws NumberFormatException, which is wrapped
+    assertThrows(TentackleRuntimeException.class, () -> ObjectUtilities.getInstance().valueOf(Integer.class, "not a number"));
+  }
+
+  @Test
+  public void testIsZero() {
+    ObjectUtilities ou = ObjectUtilities.getInstance();
+    assertTrue(ou.isZero(0));
+    assertTrue(ou.isZero(0L));
+    assertTrue(ou.isZero((short) 0));
+    assertTrue(ou.isZero((byte) 0));
+    assertTrue(ou.isZero(0.0d));
+    assertTrue(ou.isZero(0.0f));
+    assertTrue(ou.isZero(BigInteger.ZERO));
+    assertTrue(ou.isZero(BigDecimal.ZERO));
+    assertTrue(ou.isZero(new BMoney(0.0d, 2)));
+
+    assertFalse(ou.isZero(1));
+    assertFalse(ou.isZero(-1L));
+    assertFalse(ou.isZero(0.0001d));
+    assertFalse(ou.isZero(0.0001f));
+    assertFalse(ou.isZero(BigInteger.ONE));
+    assertFalse(ou.isZero(BigDecimal.ONE));
+    assertFalse(ou.isZero(new BMoney(1.0d, 2)));
+    // null is explicitly not zero
+    assertFalse(ou.isZero(null));
   }
 
   @Override
