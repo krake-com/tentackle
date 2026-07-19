@@ -230,6 +230,12 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   }
 
   @Override
+  public E removeFirst() {
+    assertMutable();
+    return super.removeFirst();
+  }
+
+  @Override
   public boolean retainAll(Collection<?> collection) {
     // re-implemented here to catch removed objects
     boolean someRemoved = false;

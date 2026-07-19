@@ -1,0 +1,106 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.misc;
+
+import org.tentackle.common.TentackleRuntimeException;
+import org.testng.annotations.Test;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
+
+/**
+ * Tests for {@link ConcurrencyHelper}.
+ */
+@SuppressWarnings("missing-explicit-ctor")
+public class ConcurrencyHelperTest {
+
+  @Test
+  public void testBlockingExecutorWaitsForCompletion() {
+    ExecutorService delegate = Executors.newSingleThreadExecutor();
+    try {
+      Executor blocking = ConcurrencyHelper.createBlockingExecutor(delegate);
+      AtomicBoolean done = new AtomicBoolean(false);
+      blocking.execute(() -> {
+        try {
+          Thread.sleep(50);
+        }
+        catch (InterruptedException ix) {
+          Thread.currentThread().interrupt();
+        }
+        done.set(true);
+      });
+      // execute() must not return before the command has finished
+      assertTrue(done.get());
+    }
+    finally {
+      delegate.shutdownNow();
+    }
+  }
+
+  @Test
+  public void testBlockingExecutorRunsOnDelegateThread() {
+    ExecutorService delegate = Executors.newSingleThreadExecutor();
+    try {
+      Executor blocking = ConcurrencyHelper.createBlockingExecutor(delegate);
+      AtomicReference<Thread> runThread = new AtomicReference<>();
+      Thread caller = Thread.currentThread();
+      blocking.execute(() -> runThread.set(Thread.currentThread()));
+      // the command runs on the delegate executor, not the calling thread
+      assertNotEquals(runThread.get(), caller);
+    }
+    finally {
+      delegate.shutdownNow();
+    }
+  }
+
+  @Test
+  public void testBlockingExecutorWrapsExecutionException() {
+    ExecutorService delegate = Executors.newSingleThreadExecutor();
+    try {
+      Executor blocking = ConcurrencyHelper.createBlockingExecutor(delegate);
+      TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class,
+          () -> blocking.execute(() -> {
+            throw new IllegalStateException("boom");
+          }));
+      assertEquals(ex.getCause().getClass(), java.util.concurrent.ExecutionException.class);
+      assertEquals(ex.getCause().getCause().getClass(), IllegalStateException.class);
+    }
+    finally {
+      delegate.shutdownNow();
+    }
+  }
+
+  @Test
+  public void testDirectExecutorRunsSynchronously() {
+    // a same-thread executor is fine as long as execute() is not called from the executor's own thread
+    Executor direct = Runnable::run;
+    Executor blocking = ConcurrencyHelper.createBlockingExecutor(direct);
+    AtomicBoolean done = new AtomicBoolean(false);
+    blocking.execute(() -> done.set(true));
+    assertTrue(done.get());
+  }
+}
