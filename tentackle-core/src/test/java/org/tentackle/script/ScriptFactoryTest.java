@@ -18,27 +18,51 @@
 
 package org.tentackle.script;
 
-import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
+
+/**
+ * Tests the {@link ScriptFactory} singleton wiring.
+ *
+ * @author harald
+ */
 @SuppressWarnings("missing-explicit-ctor")
 public class ScriptFactoryTest {
 
   @Test
-  public void testGetLanguages() {
-    try {
-      ScriptFactory factory = ScriptFactory.getInstance();
-      for (ScriptingLanguage language : factory.getLanguages()) {
-        for (String abbrv : language.getAbbreviations()) {
-          Reporter.log("found scripting language " + language + " as " + abbrv + "<br>");
-        }
-      }
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail("Exception thrown", e);
-    }
+  public void testGetInstanceIsSingleton() {
+    ScriptFactory factory = ScriptFactory.getInstance();
+    assertNotNull(factory);
+    assertSame(ScriptFactory.getInstance(), factory);
   }
 
+  @Test
+  public void testDefaultImplementationIsResolved() {
+    // no other ScriptFactory is registered on the core test classpath
+    assertTrue(ScriptFactory.getInstance() instanceof DefaultScriptFactory);
+  }
+
+  @Test
+  public void testRegisteredLanguageIsAvailableViaSingleton() {
+    ScriptFactory factory = ScriptFactory.getInstance();
+    assertTrue(factory.isLanguageAvailable(TestScriptingLanguage.ABBREVIATION));
+    assertNotNull(factory.getLanguage(TestScriptingLanguage.ABBREVIATION));
+  }
+
+  @Test
+  public void testGetLanguages() {
+    ScriptFactory factory = ScriptFactory.getInstance();
+    assertTrue(factory.getLanguages().stream()
+                   .anyMatch(l -> TestScriptingLanguage.NAME.equals(l.getName())),
+               "test scripting language not found via singleton");
+    for (ScriptingLanguage language : factory.getLanguages()) {
+      for (String abbrv : language.getAbbreviations()) {
+        Reporter.log("found scripting language " + language + " as " + abbrv + "<br>");
+      }
+    }
+  }
 }
