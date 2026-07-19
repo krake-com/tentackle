@@ -29,8 +29,8 @@ import java.util.Arrays;
  * Base implementation for storing objects in a database.
  * <p>
  * The object is serialized avoiding the transactional limits of blobs, because blobs usually are
- * only valid within a transaction. Instead, it provides a blob-like interface while remaining v
- * alid outside transactions.
+ * only valid within a transaction. Instead, it provides a blob-like interface while remaining
+ * valid outside transactions.
  * <p>
  * Furthermore, binaries can be frozen, i.e., made immutable.
  * <p>
@@ -164,13 +164,20 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
     if (o == null || getClass() != o.getClass()) return false;
     AbstractBinary<?> binary = (AbstractBinary<?>) o;
     if (length != binary.length) return false;
-    return Arrays.equals(data, 0, length - 1, binary.data, 0, length - 1);
+    // only the first 'length' bytes are valid: the backing array may be larger (e.g. read from a stream)
+    return length == 0 || Arrays.equals(data, 0, length, binary.data, 0, length);
   }
 
   @Override
   public int hashCode() {
     if (hash == null) {
-      hash = Arrays.hashCode(data);
+      // hash only the valid bytes, so that binaries with equal content but differently sized
+      // backing arrays are consistent with equals()
+      int h = 1;
+      for (int i = 0; i < length; i++) {
+        h = 31 * h + data[i];
+      }
+      hash = h;
     }
     return hash;
   }
