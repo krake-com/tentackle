@@ -18,6 +18,9 @@
 
 package org.tentackle.validate.validator;
 
+import org.testng.annotations.Test;
+
+import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationContextFactory;
@@ -25,11 +28,9 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
-import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.scope.PersistenceScope;
 import org.tentackle.validate.severity.DefaultSeverity;
 import org.tentackle.validate.severity.MinorSeverity;
-import org.testng.annotations.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -88,9 +89,9 @@ public class AbstractValidatorTest {
   /**
    * Parent object that reconfigures the default scope.
    */
-  public static class ConfiguringParent implements ScopeConfigurator {
+  private static class ConfiguringParent implements ScopeConfigurator {
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Class<? extends ValidationScope>[] getDefaultScopes() {
       return new Class[] { PersistenceScope.class };
     }
