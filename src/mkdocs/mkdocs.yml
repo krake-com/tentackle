@@ -61,6 +61,7 @@ nav:
       - Quickstart: quickstart.md
       - Project Archetype: tentackle-project-archetype.md
       - MyApp Walkthrough: myapp-walkthrough.md
+      - For the Impatient: unexpected.md
       - Tentackle BOM: bom.md
   - Concepts & Architecture:
       - Tentackle Modules: modules.md
