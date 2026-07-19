@@ -22,14 +22,20 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 @SuppressWarnings("missing-explicit-ctor")
@@ -360,6 +366,52 @@ public class DateTimeUtilitiesTest {
     assertEquals(localDateTime.getDayOfMonth(), 8);
   }
 
+
+  @Test
+  public void parseOffset() {
+    DateTimeUtilities u = DateTimeUtilities.getInstance();
+    assertEquals(u.parseOffset("+2:30").getTotalSeconds(), 9000);   // missing leading zero is fixed
+    assertEquals(u.parseOffset("+02:30").getTotalSeconds(), 9000);
+    assertEquals(u.parseOffset("+02").getTotalSeconds(), 7200);
+    assertEquals(u.parseOffset("-2:30").getTotalSeconds(), -9000);
+    // null and empty default to the current offset
+    assertEquals(u.parseOffset(null), OffsetTime.now().getOffset());
+    assertEquals(u.parseOffset(""), OffsetTime.now().getOffset());
+  }
+
+  @Test
+  public void parseZoneId() {
+    DateTimeUtilities u = DateTimeUtilities.getInstance();
+    assertEquals(u.parseZoneId("Europe/Berlin"), ZoneId.of("Europe/Berlin"));
+    // partial, case-insensitive match
+    assertEquals(u.parseZoneId("berlin"), ZoneId.of("Europe/Berlin"));
+    // null and empty default to the current zone
+    assertEquals(u.parseZoneId(null), ZonedDateTime.now().getZone());
+    assertEquals(u.parseZoneId(""), ZonedDateTime.now().getZone());
+    // unknown zone throws
+    assertThrows(DateTimeException.class, () -> u.parseZoneId("no_such_zone_xyz"));
+  }
+
+  @Test
+  public void getZoneIds() {
+    List<String> zoneIds = DateTimeUtilities.getInstance().getZoneIds();
+    assertTrue(zoneIds.contains("Europe/Berlin"));
+    // the list is sorted
+    for (int i = 1; i < zoneIds.size(); i++) {
+      assertTrue(zoneIds.get(i - 1).compareTo(zoneIds.get(i)) <= 0);
+    }
+  }
+
+  @Test
+  public void nowOf() {
+    DateTimeUtilities u = DateTimeUtilities.getInstance();
+    assertEquals(u.nowOf(LocalDate.class).getClass(), LocalDate.class);
+    assertEquals(u.nowOf(LocalDateTime.class).getClass(), LocalDateTime.class);
+    assertEquals(u.nowOf(OffsetDateTime.class).getClass(), OffsetDateTime.class);
+    assertNotNull(u.nowOf(Instant.class));
+    // an unsupported temporal type is rejected
+    assertThrows(DateTimeException.class, () -> u.nowOf(java.time.Year.class));
+  }
 
   private void skipFlip() {
     LocalTime localTimeNow = LocalTime.now();
