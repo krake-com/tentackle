@@ -93,7 +93,7 @@ public class AbstractTaskTest {
   private SimpleTask task;
 
   @BeforeMethod
-  public void setUp() {
+  private void setUp() {
     task = new SimpleTask();
   }
 

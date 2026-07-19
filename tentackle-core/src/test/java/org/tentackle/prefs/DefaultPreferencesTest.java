@@ -52,7 +52,7 @@ public class DefaultPreferencesTest {
   private DefaultPreferences prefs;
 
   @BeforeMethod
-  public void setUp() {
+  private void setUp() {
     backing = new InMemoryPreferences(true);
     prefs = new DefaultPreferences(backing);
   }

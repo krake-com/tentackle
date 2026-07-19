@@ -54,7 +54,7 @@ public class DefaultTaskDispatcherTest {
 
 
   @AfterMethod
-  public void tearDown() {
+  private void tearDown() {
     if (dispatcher != null && !dispatcher.isKilled() && dispatcher.isAlive()) {
       dispatcher.terminate();
     }
