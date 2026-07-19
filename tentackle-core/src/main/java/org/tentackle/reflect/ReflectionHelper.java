@@ -830,7 +830,7 @@ public final class ReflectionHelper {
   public static Method getSetter(Field field) {
     String methodName = "set" + StringHelper.firstToUpper(field.getName());
     try {
-      Method method = field.getDeclaringClass().getMethod(methodName);
+      Method method = field.getDeclaringClass().getMethod(methodName, field.getType());
       if (method.getReturnType() == Void.TYPE && method.getParameterTypes().length == 1 &&
           field.getType() == method.getParameterTypes()[0]) {
         return method;
