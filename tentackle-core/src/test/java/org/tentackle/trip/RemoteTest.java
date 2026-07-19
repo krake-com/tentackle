@@ -28,7 +28,11 @@ import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestSubClass;
 import org.tentackle.trip.transport.LoopbackTransport;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.testng.Assert.assertEquals;
@@ -72,6 +76,43 @@ public class RemoteTest {
     assertSame(echo.name, testObject.name);   // optimized using the local reference
     assertNotSame(echo.child, testObject.child);
     assertSame(((TestSubClass) echo.child).parent, echo);
+
+    transport.close();
+  }
+
+  @Test
+  void testMethodIndexCache() throws Exception {
+    LoopbackTransport transport;
+    try {
+      transport = (LoopbackTransport) TripFactory.getInstance().createTransport(new URI("loopback://localhost:0"));
+      transport.putConnection(transport.getConnection());   // start up client transport
+    }
+    catch (Exception e) {
+      throw new TripRuntimeException("cannot initialize transport", e);
+    }
+    transport.getConnectionPool().getServerTransport().getRegistry().register(new DemoLoginImpl("1.0.0"), "login");
+
+    RemoteLookup lookup = transport.getRemoteLookup();
+    UUID remoteId = lookup.lookup("login");
+    DemoLogin login = TripFactory.getInstance().createRemoteProxy(remoteId, transport, DemoLogin.class);
+    DemoSession session = login.login("harr", "0815");
+
+    // repeated invocations of the same method with parameters must hit the method-index
+    // cache: the map must hold one entry per distinct method, not one per call
+    TestClass testObject = new TestClass();
+    testObject.name = "ping";
+    testObject.age = 42;
+    for (int i = 0; i < 3; i++) {
+      assertEquals(session.echo(testObject), testObject);
+    }
+    assertEquals(session.getUsername(), "harr");
+    assertEquals(session.getUsername(), "harr");    // should map to same slot
+
+    InvocationHandler handler = Proxy.getInvocationHandler(session);
+    Field mapField = handler.getClass().getDeclaredField("methodTypeMap");
+    mapField.setAccessible(true);
+    Map<?, ?> methodTypeMap = (Map<?, ?>) mapField.get(handler);
+    assertEquals(methodTypeMap.size(), 2);    // echo + getUsername
 
     transport.close();
   }

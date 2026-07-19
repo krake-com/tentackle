@@ -275,8 +275,10 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
     - Classes containing lambda fields (without `@TripSerializeLambda`) → error
     - Regular classes → `ObjectTripType`
     - Records → `RecordTripType`
-    - Enums → `EnumTripType`
-    - Collections/Maps → `CollectionTypeBuilder` / `MapTypeBuilder`
+    - Enums → `EnumTripType` (constants with class bodies are mapped to their enum class)
+    - Collections/Maps → `CollectionTypeBuilder` / `MapTypeBuilder`, including the JDK types
+      without usable constructors: the `Collections` wrappers (`unmodifiable*`, `empty*`,
+      `singleton*`), `Arrays.asList`, `EnumSet` and `EnumMap`
 
 4. **Component construction**: For `ObjectTripType`, the builder scans the class for serializable fields:
     - Skips `transient`, `static`, and fields annotated with `@TripIgnore`

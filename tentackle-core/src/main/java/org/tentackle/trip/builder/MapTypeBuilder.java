@@ -22,12 +22,19 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeBuilder;
 import org.tentackle.trip.TripTypeBuilderService;
+import org.tentackle.trip.types.EnumMapTripType;
 import org.tentackle.trip.types.ImmutableMapTripType;
 import org.tentackle.trip.types.MapTripType;
 import org.tentackle.trip.types.TreeMapTripType;
+import org.tentackle.trip.types.WrappedMapTripType;
 
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 /**
  * Builder for map types.
@@ -36,6 +43,23 @@ import java.util.TreeMap;
  */
 @TripTypeBuilderService(Map.class)
 public class MapTypeBuilder<T extends Map<?, ?>> implements TripTypeBuilder<T> {
+
+  /** the JDK maps without usable constructors, mapped to their wrapper functions. */
+  private static final Map<Class<?>, Function<LinkedHashMap<Object, Object>, Map<?, ?>>> WRAPPED_TYPES = createWrappedTypes();
+
+  private static Map<Class<?>, Function<LinkedHashMap<Object, Object>, Map<?, ?>>> createWrappedTypes() {
+    Map<Class<?>, Function<LinkedHashMap<Object, Object>, Map<?, ?>>> wrappedTypes = new HashMap<>();
+    wrappedTypes.put(Collections.unmodifiableMap(new HashMap<>()).getClass(),
+                     map -> Collections.unmodifiableMap(map));
+    wrappedTypes.put(Collections.emptyMap().getClass(), map -> Collections.emptyMap());
+    wrappedTypes.put(Collections.singletonMap(Boolean.TRUE, Boolean.TRUE).getClass(),
+                     map -> {
+                       Map.Entry<Object, Object> entry = map.entrySet().iterator().next();
+                       return Collections.singletonMap(entry.getKey(), entry.getValue());
+                     });
+    return Map.copyOf(wrappedTypes);
+  }
+
 
   /**
    * Creates the type builder.
@@ -47,6 +71,13 @@ public class MapTypeBuilder<T extends Map<?, ?>> implements TripTypeBuilder<T> {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public TripType<T> build(Class<T> clazz) {
+    Function<LinkedHashMap<Object, Object>, Map<?, ?>> wrapper = WRAPPED_TYPES.get(clazz);
+    if (wrapper != null) {
+      return new WrappedMapTripType(clazz, wrapper);
+    }
+    if (EnumMap.class.isAssignableFrom(clazz)) {
+      return new EnumMapTripType(clazz);
+    }
     if (TreeMap.class.isAssignableFrom(clazz)) {
       return new TreeMapTripType(clazz);
     }
