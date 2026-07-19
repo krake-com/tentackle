@@ -39,4 +39,32 @@ public class TransactionRetryPolicyTest {
 
   }
 
+  /**
+   * The wait must stay within the documented random window
+   * [250 .. 750) ms, doubled on every retry, and drop to 0 after 7 retries.
+   */
+  @Test
+  public void testExponentialBackoffBounds() {
+    TransactionRetryPolicy policy = new DefaultTransactionRetryPolicy();
+    // repeat to account for the randomized component
+    for (int iteration = 0; iteration < 1000; iteration++) {
+      for (int count = 1; count <= 7; count++) {
+        long multiplier = 1L << (count - 1);
+        long wait = policy.waitMillis("test", count);
+        Assert.assertTrue(wait >= 250 * multiplier,
+                          "count=" + count + " wait=" + wait + " below lower bound");
+        Assert.assertTrue(wait < 750 * multiplier,
+                          "count=" + count + " wait=" + wait + " above upper bound");
+      }
+    }
+  }
+
+  @Test
+  public void testNoWaitAfterMaxRetries() {
+    TransactionRetryPolicy policy = new DefaultTransactionRetryPolicy();
+    for (int count = 8; count <= 20; count++) {
+      Assert.assertEquals(policy.waitMillis("test", count), 0, "no retry beyond the maximum");
+    }
+  }
+
 }
