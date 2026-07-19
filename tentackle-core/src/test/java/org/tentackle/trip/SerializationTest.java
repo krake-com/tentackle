@@ -136,6 +136,36 @@ public class SerializationTest {
   }
 
   @Test
+  void testLong5() {
+    tunnel(123L, serializer::serializeLong5, deserializer::deserializeLong5);
+    tunnel(-123L, serializer::serializeLong5, deserializer::deserializeLong5);
+    tunnel(800000000L, serializer::serializeLong5, deserializer::deserializeLong5);
+    tunnel(-800000000L, serializer::serializeLong5, deserializer::deserializeLong5);
+    tunnel(TripConstants.LONG5_MAX, serializer::serializeLong5, deserializer::deserializeLong5);
+    tunnel(TripConstants.LONG5_MIN, serializer::serializeLong5, deserializer::deserializeLong5);
+  }
+
+  @Test
+  void testLong6() {
+    tunnel(123L, serializer::serializeLong6, deserializer::deserializeLong6);
+    tunnel(-123L, serializer::serializeLong6, deserializer::deserializeLong6);
+    tunnel(TripConstants.LONG5_MAX + 1, serializer::serializeLong6, deserializer::deserializeLong6);
+    tunnel(TripConstants.LONG5_MIN - 1, serializer::serializeLong6, deserializer::deserializeLong6);
+    tunnel(TripConstants.LONG6_MAX, serializer::serializeLong6, deserializer::deserializeLong6);
+    tunnel(TripConstants.LONG6_MIN, serializer::serializeLong6, deserializer::deserializeLong6);
+  }
+
+  @Test
+  void testLong7() {
+    tunnel(123L, serializer::serializeLong7, deserializer::deserializeLong7);
+    tunnel(-123L, serializer::serializeLong7, deserializer::deserializeLong7);
+    tunnel(TripConstants.LONG6_MAX + 1, serializer::serializeLong7, deserializer::deserializeLong7);
+    tunnel(TripConstants.LONG6_MIN - 1, serializer::serializeLong7, deserializer::deserializeLong7);
+    tunnel(TripConstants.LONG7_MAX, serializer::serializeLong7, deserializer::deserializeLong7);
+    tunnel(TripConstants.LONG7_MIN, serializer::serializeLong7, deserializer::deserializeLong7);
+  }
+
+  @Test
   void testFloat() {
     tunnel(123.456f, serializer::serializeFloat, deserializer::deserializeFloat);
     tunnel(-123.456f, serializer::serializeFloat, deserializer::deserializeFloat);

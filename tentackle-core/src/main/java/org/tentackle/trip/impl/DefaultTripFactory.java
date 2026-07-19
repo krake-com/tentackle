@@ -136,6 +136,11 @@ public class DefaultTripFactory implements TripFactory {
   @Override
   @SuppressWarnings("unchecked")
   public <T> TripType<T> getType(Class<? extends T> clazz) {
+    Class<?> superClass = clazz.getSuperclass();
+    if (superClass != null && superClass.isEnum()) {
+      // anonymous subclass of an enum constant with a class body -> use the enum class itself
+      clazz = (Class<? extends T>) superClass;
+    }
     return (TripType<T>) typeMap.computeIfAbsent(clazz, this::createType);
   }
 

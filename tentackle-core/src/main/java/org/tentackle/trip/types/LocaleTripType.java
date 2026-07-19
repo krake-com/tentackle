@@ -36,6 +36,11 @@ interface LocaleTypeHolder {
 
 /**
  * Trip type for {@link Locale}.
+ * <p>
+ * Locales that survive the round trip through a BCP 47 language tag are serialized
+ * as their tag, which preserves script and extensions. All other locales (legacy
+ * variants that are not representable as a tag) are serialized as their
+ * language, country and variant parts.
  */
 @TripTypeService(Locale.class)
 public final class LocaleTripType extends AbstractTripType<Locale> {
@@ -55,10 +60,17 @@ public final class LocaleTripType extends AbstractTripType<Locale> {
     }
     else {
       serializer.serializeOpCode(DefaultOpCode.LOCALE);
-      LocaleTypeHolder.STRING_INSTANCE.write(value.getLanguage() + "_" +
-                                             value.getCountry() + "_" +
-                                             value.getVariant(),
-                                             stream);
+      String languageTag = value.toLanguageTag();
+      if (Locale.forLanguageTag(languageTag).equals(value)) {
+        serializer.serializeBoolean(true);
+        LocaleTypeHolder.STRING_INSTANCE.write(languageTag, stream);
+      }
+      else {
+        serializer.serializeBoolean(false);
+        LocaleTypeHolder.STRING_INSTANCE.write(value.getLanguage(), stream);
+        LocaleTypeHolder.STRING_INSTANCE.write(value.getCountry(), stream);
+        LocaleTypeHolder.STRING_INSTANCE.write(value.getVariant(), stream);
+      }
     }
   }
 
@@ -66,14 +78,15 @@ public final class LocaleTripType extends AbstractTripType<Locale> {
   public Locale read(TripStream stream, OpCode opCode) {
     Locale value;
     if (opCode == DefaultOpCode.LOCALE) {
-      String[] localeParts = LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode())
-                                                             .split("_");
-      value = switch (localeParts.length) {
-        case 0 -> Locale.ROOT;
-        case 1 -> Locale.of(localeParts[0]);
-        case 2 -> Locale.of(localeParts[0], localeParts[1]);
-        default -> Locale.of(localeParts[0], localeParts[1], localeParts[2]);
-      };
+      if (stream.getDeserializer().deserializeBoolean()) {
+        value = Locale.forLanguageTag(LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode()));
+      }
+      else {
+        String language = LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
+        String country = LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
+        String variant = LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
+        value = Locale.of(language, country, variant);
+      }
     }
     else {
       value = super.read(stream, opCode);

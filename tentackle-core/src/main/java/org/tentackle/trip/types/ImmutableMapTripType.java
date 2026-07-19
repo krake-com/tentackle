@@ -53,6 +53,11 @@ public class ImmutableMapTripType<T extends Map> extends MapTripType<T> {
   }
 
   @Override
+  protected boolean isConverted() {
+    return true;
+  }
+
+  @Override
   protected OpCode getOpCode() {
     return OP_CODE;
   }

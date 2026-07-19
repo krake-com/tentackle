@@ -183,6 +183,12 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
         initializer.accept(value);
       }
 
+      if (reference != null && !isConverted()) {
+        // register before reading the elements, so that elements may back-reference the collection itself
+        stream.addReference(reference, value, isDeduplicateable(value));
+        reference.markReceived();
+      }
+
       if (size > 0) {
         opCode = stream.receiveOpCode();
         int elementCount = 0;
@@ -211,7 +217,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       value = convert(value);
       validateRead(value);
 
-      if (reference != null) {
+      if (reference != null && isConverted()) {
         stream.addReference(reference, value, isDeduplicateable(value));
         reference.markReceived();
       }
@@ -229,6 +235,18 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    */
   protected T convert(T value) {
     return value;
+  }
+
+  /**
+   * Tells whether {@link #convert(Collection)} returns a different instance.<br>
+   * Non-converted collections are registered as references before reading the elements,
+   * so that elements may back-reference the collection itself. Converted collections
+   * can only be registered after the conversion.
+   *
+   * @return true if the collection is converted
+   */
+  protected boolean isConverted() {
+    return false;
   }
 
   @Override
