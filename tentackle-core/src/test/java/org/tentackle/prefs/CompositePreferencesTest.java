@@ -54,7 +54,7 @@ public class CompositePreferencesTest {
 
 
   @BeforeMethod
-  public void resetStore() {
+  private void resetStore() {
     TestPreferencesFactory.resetBackingStore();
   }
 

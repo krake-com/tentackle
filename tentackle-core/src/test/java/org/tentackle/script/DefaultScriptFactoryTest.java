@@ -46,7 +46,7 @@ public class DefaultScriptFactoryTest {
   private DefaultScriptFactory factory;
 
   @BeforeMethod
-  public void setUp() {
+  private void setUp() {
     factory = new DefaultScriptFactory();
   }
 
