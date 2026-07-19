@@ -20,7 +20,11 @@ package org.tentackle.common;
 
 import org.testng.annotations.Test;
 
+import java.util.Calendar;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Test for DateHelper.
@@ -50,6 +54,57 @@ public class DateHelperTest {
     assertEquals(DateHelper.deriveYearFromMonth(11, 1, 2020,3),2019);
     assertEquals(DateHelper.deriveYearFromMonth(1, 11, 2020,3),2021);
     assertEquals(DateHelper.deriveYearFromMonth(1, 10, 2020,3),2020);
+    // a window outside 0..11 always returns the current year
+    assertEquals(DateHelper.deriveYearFromMonth(11, 1, 2020, 20), 2020);
+  }
+
+  @Test
+  public void testDeriveMonthFromDay() {
+    // within the window -> current month
+    assertEquals(DateHelper.deriveMonthFromDay(20, 18, 5, 15), 5);
+    // far ahead in the month -> previous month
+    assertEquals(DateHelper.deriveMonthFromDay(30, 5, 5, 15), 4);
+    // far behind in the month -> next month
+    assertEquals(DateHelper.deriveMonthFromDay(2, 28, 5, 15), 6);
+    // a window outside 0..30 always returns the current month
+    assertEquals(DateHelper.deriveMonthFromDay(30, 5, 5, 40), 5);
+  }
+
+  @Test
+  public void testNullSafeConversions() {
+    assertNull(DateHelper.toDate((java.util.Date) null));
+    assertNull(DateHelper.toDate((Calendar) null));
+    assertNull(DateHelper.toTime((java.util.Date) null));
+    assertNull(DateHelper.toTimestamp((java.util.Date) null));
+    assertEquals(DateHelper.toMillis(null), 0L);
+
+    java.util.Date util = new java.util.Date(123456789L);
+    assertEquals(DateHelper.toMillis(util), 123456789L);
+    assertEquals(DateHelper.toDate(util).getTime(), 123456789L);
+    assertEquals(DateHelper.toTimestamp(util).getTime(), 123456789L);
+  }
+
+  @Test
+  public void testSetMidnight() {
+    Calendar cal = DateHelper.today();
+    cal.set(Calendar.HOUR_OF_DAY, 13);
+    cal.set(Calendar.MINUTE, 45);
+    cal.set(Calendar.SECOND, 30);
+    cal.set(Calendar.MILLISECOND, 500);
+    DateHelper.setMidnight(cal);
+    assertEquals(cal.get(Calendar.HOUR_OF_DAY), 0);
+    assertEquals(cal.get(Calendar.MINUTE), 0);
+    assertEquals(cal.get(Calendar.SECOND), 0);
+    assertEquals(cal.get(Calendar.MILLISECOND), 0);
+  }
+
+  @Test
+  public void testCurrentFields() {
+    Calendar now = DateHelper.today();
+    assertEquals(DateHelper.getCurrentYear(), now.get(Calendar.YEAR));
+    // month and day are read via separate calendars, allow the value to be plausible
+    assertTrue(DateHelper.getCurrentMonth() >= 0 && DateHelper.getCurrentMonth() <= 11);
+    assertTrue(DateHelper.getCurrentDay() >= 1 && DateHelper.getCurrentDay() <= 31);
   }
 
 }
