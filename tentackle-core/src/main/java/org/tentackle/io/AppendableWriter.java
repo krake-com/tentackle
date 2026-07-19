@@ -78,7 +78,7 @@ public class AppendableWriter extends Writer {
     else if (len == 0) {
       return;
     }
-    appendable.append(new String(cbuf), off, len);
+    appendable.append(new String(cbuf), off, off + len);
   }
 
   @Override

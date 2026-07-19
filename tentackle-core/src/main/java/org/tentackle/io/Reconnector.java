@@ -79,7 +79,7 @@ public class Reconnector {
       reconnect(policy, resource);
     }
     else {
-      executorService.submit(() -> (Runnable) () -> reconnect(policy, resource));
+      executorService.execute(() -> reconnect(policy, resource));
     }
   }
 
