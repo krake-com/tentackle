@@ -37,9 +37,9 @@ execution and lifecycle.
   entity-specific artifacts an application must supply are the *editor view*, the
   *finder view* and the *table/tree configuration*.
 - **Never block the FX thread.** Persistence operations may go to a local
-  database or across the network. RDC funnels them through a background pool and
-  marshals the results back onto the FX application thread (see
-  [Background execution](#background-execution)).
+  database or across the network. RDC funnels them through a replaceable
+  background executor and marshals the results back onto the FX application
+  thread (see [Background execution](#background-execution)).
 - **Location transparency, inherited.** Because PDOs are remoting-capable, the
   same UI code works whether the client talks to the database directly or through
   a middle-tier server — no `LazyInitializationException`, ever.
@@ -76,9 +76,12 @@ The companion modules build on top of it:
 ### GuiProvider — the per-entity hub
 
 The [`GuiProvider<T>`](../java/org/tentackle/fx/rdc/GuiProvider.java) is the
-central abstraction of the module. One `GuiProvider` exists per PDO type and
-encapsulates *all* the UI behavior for that entity. Its responsibilities fall
-into a few groups:
+central abstraction of the module — it has its own in-depth document,
+[GuiProvider — Per-Entity GUI Services](gui-provider.md), covering the
+`DefaultGuiProvider` defaults, the generated table configurations, the default
+editor and finder, and the internationalization levels. In short: one
+`GuiProvider` exists per PDO type and encapsulates *all* the UI behavior for
+that entity. Its responsibilities fall into a few groups:
 
 - **Identity / appearance** — `createGraphic()` for an icon, the resource bundle
   (`getBundle()`, `isBundleProvided()`).
@@ -115,11 +118,13 @@ public class InvoiceGuiProvider extends DefaultGuiProvider<Invoice> {
 ```
 
 The [`@GuiProviderService`](../java/org/tentackle/fx/rdc/GuiProviderService.java)
-annotation is picked up at build time by an annotation processor (see
-[Annotation processors](#annotation-processors-apt)) which generates the
+annotation is picked up at build time by the
+[analyze phase](../../../../tentackle-common/src/main/docs/services.md), which generates the
 `META-INF/services` entry, so the provider is found by
 [`GuiProviderFactory`](../java/org/tentackle/fx/rdc/GuiProviderFactory.java) at
-runtime — in both modular and non-modular deployments.
+runtime — in both modular and non-modular deployments. Independently, an
+[annotation processor](#annotation-processors-apt) validates at compile time that the
+provider satisfies the contract.
 
 #### Read-only views with PdoViewer
 
@@ -186,7 +191,9 @@ view is searchable out of the box.
 
 ### Tables, trees and cells
 
-RDC plugs PDOs into the table and tree infrastructure of `tentackle-fx`:
+RDC plugs PDOs into the
+[table and tree infrastructure](../../../../tentackle-fx/src/main/docs/tables.md)
+of `tentackle-fx`:
 
 - [`PdoTableCell`](../java/org/tentackle/fx/rdc/PdoTableCell.java),
   [`PdoTreeCell`](../java/org/tentackle/fx/rdc/PdoTreeCell.java) and
@@ -250,20 +257,29 @@ open views, tables and trees can react and refresh.
 
 ### Background execution
 
-Persistence calls must never run on the JavaFX application thread. RDC provides
-the `bg(...)` helpers on `Rdc` (backed by
-[`RdcUtilitiesWithBackgroundPool`](../java/org/tentackle/fx/rdc/RdcUtilitiesWithBackgroundPool.java))
-to run work off-thread and post the result back:
+Time-consuming persistence calls must never run on the JavaFX application thread. RDC provides
+the `bg(...)` helpers on [`Rdc`](../java/org/tentackle/fx/rdc/Rdc.java) to run
+work off-thread and post the result back:
 
 ```java
 Rdc.bg(node,
-       () -> invoice.reload(),            // runs in background pool
+       () -> invoice.reload(),            // runs in the background
        reloaded -> refreshView(reloaded), // runs on the FX thread
        ex -> showError(ex));              // FX thread, on failure
 ```
 
 This pattern keeps the UI responsive regardless of whether the PDO is served
 locally or remotely.
+
+By default the task runs on the
+[`ModificationTracker`](../../../../tentackle-session/src/main/docs/modification-tracking.md)'s
+thread and session — no extra threads or sessions, but tasks are serialized and a
+long one delays modification tracking. Applications that need several background
+tasks in parallel replace `RdcUtilities` with a subclass of
+[`RdcUtilitiesWithBackgroundPool`](../java/org/tentackle/fx/rdc/RdcUtilitiesWithBackgroundPool.java),
+which runs each task on its own pooled session. See
+[Background Execution](background-execution.md) for both models, the trade-offs
+and the parallel-runner API.
 
 ---
 
@@ -346,9 +362,10 @@ A typical "open an entity for editing" flow ties the pieces together:
 5. The editor's controls are [bound](../../../../tentackle-fx/src/main/docs/fx.md#binding-integration)
    to the PDO's attributes; edits flow through the
    [binding layer](../../../../tentackle-core/src/main/docs/binding.md).
-6. On save, `PdoCrud` runs `pdo.save()` via `Rdc.bg(...)` off the FX thread; on
-   completion a [`PdoEvent`](../java/org/tentackle/fx/rdc/PdoEvent.java) refreshes
-   any other open views.
+6. On save, `PdoCrud` validates and persists the PDO within a single transaction;
+   on completion a [`PdoEvent`](../java/org/tentackle/fx/rdc/PdoEvent.java)
+   refreshes any other open views. Lengthy work — a slow search, printing — is
+   moved off the FX thread with [`Rdc.bg(...)`](background-execution.md).
 
 The application only had to supply an editor view (or even use a generated default) 
 and a `GuiProvider`; everything else came from the framework.

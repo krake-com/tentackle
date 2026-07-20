@@ -326,3 +326,4 @@ pool.setName("oops");                        // logged with stack trace, change 
 - [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md) — snapshots are immutable; copies are mutable.
 - [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) — the aggregate model immutability cascades over.
 - [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) — the `immutable` relation option.
+- [misc.md](misc.md) — the `org.tentackle.misc` package these contracts and collections live in.

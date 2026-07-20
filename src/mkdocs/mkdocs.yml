@@ -61,6 +61,7 @@ nav:
       - Quickstart: quickstart.md
       - Project Archetype: tentackle-project-archetype.md
       - MyApp Walkthrough: myapp-walkthrough.md
+      - For the Impatient: unexpected.md
       - Tentackle BOM: bom.md
   - Concepts & Architecture:
       - Tentackle Modules: modules.md
@@ -68,12 +69,14 @@ nav:
       - Correctness First: correctness-first.md
       - Technical & Scientific Applications: technical-scientific.md
       - PDOs vs. Traditional ORMs: pdo-vs-orm.md
-      - Embedded Entities vs. DataTypes: embedded-vs-datatype.md
   - Persistent Domain Objects (PDO):
       - PDO — Persistent Domain Objects: pdo.md
       - The DomainContextProvider: domain-context-provider.md
       - Operation — Behavior Without an Entity: operation.md
+      - Transactions and Transparent Retry: transaction.md
+      - Domain Keys: domain-key.md
       - PDO Caching: cache.md
+      - Number Sources: ns.md
       - Snapshots and Copies: snapshot.md
       - Security — Permissions, Rules, Grantees: security.md
       - The rootId and rootClassId Columns: root-columns.md
@@ -81,39 +84,59 @@ nav:
       - Tentackle Model: tentackle-model.md
       - Model Definition Syntax: model-definition.md
       - Wurblets — Interface-Level Generation: wurblets.md
+      - The DTO Wurblet and @RecordDTO: dto-wurblet.md
       - Persistence Wurblets: persistence-wurblets.md
       - PdoSelectList and PdoSelectUnique: pdo-select.md
       - Eager Relations: eager-relations.md
+      - Embedded Entities vs. DataTypes: embedded-vs-datatype.md
   - Persistence & Database:
       - Tentackle Persistence: persistence.md
       - Locking — Token & Optimistic serial: locking.md
+      - Cursors — Streaming Large Result Sets: cursors.md
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
+      - Modification Tracking: modification-tracking.md
+      - Backend Properties: backend-properties.md
       - Tentackle Database: database.md
+      - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md
+      - I/O and Networking: io.md
   - Core Foundations:
       - Tentackle Core: core.md
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
+      - Cryptor and EncryptedProperties: cryptor.md
+      - Naming Rules: naming-rules.md
+      - Annotation Processors: annotation-processors.md
       - Binding — Connecting Models to Views: binding.md
       - Validation: validation.md
       - Interceptors: interceptors.md
+      - Reflection — Class Mapping, Mixins, Proxies: reflect.md
       - Immutable — Switchable Read-Only Objects: immutable.md
       - Freezable: freezable.md
       - Preferences — Database-Backed Settings: preferences.md
       - Tasks & Daemons — Background Execution: tasks-daemon.md
+      - Miscellaneous — Contracts, Collections, Utilities: misc.md
       - Tentackle Logging: logging.md
       - Tentackle Scripting: scripting.md
+      - CompoundValue — Objects From Strings: compound-value.md
   - Internationalization:
       - Resource Bundles: bundle.md
       - Internationalization (i18n): internationalization.md
       - Database-backed Resource Bundles: i18n.md
+      - BundleMonkey: bundlemonkey.md
   - User Interface (JavaFX):
       - tentackle-fx — Extended JavaFX Layer: fx.md
+      - Tables and Trees: tables.md
+      - Auto-Completion: auto-completion.md
+      - GraphicProvider: graphic-provider.md
+      - InteractiveError: interactive-error.md
       - tentackle-fx-rdc — Rich Desktop Client: rdc.md
+      - GuiProvider — Per-Entity GUI Services: gui-provider.md
+      - Background Execution: background-execution.md
       - tentackle-fx-atlanta — AtlantaFX Theme Layer: atlanta.md
       - tentackle-fx-rdc-poi — Spreadsheet Export: poi.md
       - FX RDC Update — Client Auto-Update: fx-rdc-update.md
@@ -125,6 +148,7 @@ nav:
       - JRuby Provider: ruby.md
       - JSR-223 Provider: jsr.md
   - Application Lifecycle & Integration:
+      - Application Bootstrap: application.md
       - Tentackle Update — Self-Update Service: update.md
       - Tentackle Web: web.md
   - Build Tooling (Maven Plugins):

@@ -3,7 +3,7 @@
 The `tentackle-i18n-maven-plugin` synchronizes an application's resource bundles between its
 `*.properties` files and a database backend. Tentackle can serve localized texts from the database
 instead of (or in addition to) the property files baked into the jars, which lets translators edit
-texts at runtime and add languages not provided by the property files — typically through the `BundleMonkey` tool — without rebuilding and redeploying the
+texts at runtime and add languages not provided by the property files — typically through the [`BundleMonkey`](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md) tool — without rebuilding and redeploying the
 application. This plugin is the build-time counterpart that moves translations in both directions and
 keeps the two representations consistent.
 
@@ -144,7 +144,7 @@ would cause a `MissingResourceException`. The other findings are reported so the
 typically by `push`/`pull` or by `BundleMonkey` — before running `cleanup`.
 
 > Note: the application's own resource bundles (keys referenced in code) are checked separately by the
-> [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin) during the build; `verify`
+> [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) during the build; `verify`
 > focuses on the consistency between the property files and the database.
 
 ### The `cleanup` Goal
@@ -163,7 +163,7 @@ mvn tentackle-i18n:cleanup
 
 1. Developers add or change keys in the `*.properties` files and run `tentackle-i18n:push` to make the
    new keys available in the database (existing translations stay untouched).
-2. Translators edit the texts at runtime through `BundleMonkey`.
+2. Translators edit the texts at runtime through [`BundleMonkey`](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md).
 3. `tentackle-i18n:pull` brings the edited texts back into the property files so they are committed to
    source control.
 4. `tentackle-i18n:verify` is run (e.g., in CI) to surface differing, missing or obsolete entries.
@@ -174,4 +174,6 @@ mvn tentackle-i18n:cleanup
 
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —
   the `analyze` goal that records the `@Bundle` annotations this plugin relies on
+- [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md) —
+  the GUI tool translators use to edit the stored bundles between `push` and `pull`
 - [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-i18n-maven-plugin/plugin-info.html)

@@ -24,12 +24,41 @@
   --md-accent-bg-color--light:       rgba(255, 255, 255, 0.7);
 }
 
-/* Body links in the site's dark blue (light) / lightened for dark mode. */
+/*
+ * Body links. The site's dark blue (#00305e) is too close to the near-black
+ * body text to read as a link, so light mode uses a brighter, more saturated
+ * blue and every body link is underlined for an unambiguous affordance.
+ */
 [data-md-color-scheme="default"] {
-  --md-typeset-a-color: #00305e;
+  --md-typeset-a-color: #1663b0;
 }
 [data-md-color-scheme="slate"] {
   --md-typeset-a-color: #5b8fc7;
+}
+
+/* Underline body links (but not the icon/button links Material also styles). */
+.md-typeset a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(22, 99, 176, 0.4);
+}
+.md-typeset a:hover,
+.md-typeset a:focus {
+  text-decoration-color: currentcolor;
+}
+[data-md-color-scheme="slate"] .md-typeset a {
+  text-decoration-color: rgba(91, 143, 199, 0.45);
+}
+
+/* Keep chrome/navigation/button links free of the body-link underline. */
+.md-typeset .md-button,
+.md-typeset .headerlink,
+.md-nav a,
+.md-header a,
+.md-footer a,
+.md-tabs a {
+  text-decoration: none;
 }
 
 /* ---- Signature typography: orange h2/h3 framed by thin orange rules ---- */

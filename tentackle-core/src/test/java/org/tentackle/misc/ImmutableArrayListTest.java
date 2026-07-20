@@ -1,0 +1,206 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.misc;
+
+import org.testng.annotations.Test;
+
+import org.tentackle.log.Logger;
+
+import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
+
+/**
+ * Tests for {@link ImmutableArrayList}.
+ */
+@SuppressWarnings("missing-explicit-ctor")
+public class ImmutableArrayListTest {
+
+  private static ImmutableArrayList<String> sample() {
+    ImmutableArrayList<String> list = new ImmutableArrayList<>();
+    list.add("a");
+    list.add("b");
+    list.add("c");
+    return list;
+  }
+
+  @Test
+  public void testMutableByDefault() {
+    ImmutableArrayList<String> list = new ImmutableArrayList<>();
+    assertFalse(list.isImmutable());
+    assertFalse(list.isFinallyImmutable());
+    list.add("x");
+    assertEquals(list, List.of("x"));
+  }
+
+  @Test
+  public void testCollectionConstructor() {
+    ImmutableArrayList<String> list = new ImmutableArrayList<>(List.of("a", "b"));
+    assertEquals(list, List.of("a", "b"));
+  }
+
+  @Test
+  public void testImmutableBlocksAdd() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertTrue(list.isImmutable());
+    assertThrows(ImmutableException.class, () -> list.add("d"));
+    assertThrows(ImmutableException.class, () -> list.addFirst("d"));
+    assertThrows(ImmutableException.class, () -> list.addAll(List.of("d")));
+    assertThrows(ImmutableException.class, () -> list.addAll(0, List.of("d")));
+    // nothing changed
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testImmutableBlocksRemove() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.remove("a"));
+    assertThrows(ImmutableException.class, () -> list.removeFirst());
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testSetSameInstanceAllowedWhenImmutable() {
+    ImmutableArrayList<String> list = sample();
+    String existing = list.get(1);
+    list.setImmutable(true);
+    // replacing with the exact same instance must not trigger the immutability check
+    String previous = list.set(1, existing);
+    assertEquals(previous, existing);
+  }
+
+  @Test
+  public void testSetDifferentInstanceRejectedAndRolledBack() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.set(1, "different"));
+    // the rejected set must have been rolled back
+    assertEquals(list.get(1), "b");
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testRetainAllRejectedWhenImmutable() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.retainAll(List.of("a")));
+  }
+
+  @Test
+  public void testRetainAllNoRemovalDoesNotThrow() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    // nothing would be removed, so the mutability check is never reached
+    assertFalse(list.retainAll(List.of("a", "b", "c")));
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testToggleBackToMutable() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    list.setImmutable(false);
+    assertFalse(list.isImmutable());
+    list.add("d");
+    assertEquals(list, List.of("a", "b", "c", "d"));
+  }
+
+  @Test
+  public void testFinallyImmutableCannotBeReverted() {
+    ImmutableArrayList<String> list = sample();
+    list.setFinallyImmutable();
+    assertTrue(list.isImmutable());
+    assertTrue(list.isFinallyImmutable());
+    assertThrows(ImmutableException.class, () -> list.setImmutable(false));
+    // still immutable
+    assertThrows(ImmutableException.class, () -> list.add("d"));
+  }
+
+  @Test
+  public void testCloneIsMutableCopy() {
+    ImmutableArrayList<String> list = sample();
+    list.setFinallyImmutable();
+    ImmutableArrayList<String> clone = list.clone();
+    assertFalse(clone.isImmutable());
+    assertFalse(clone.isFinallyImmutable());
+    clone.add("d");
+    assertEquals(clone, List.of("a", "b", "c", "d"));
+    // original is untouched and still immutable
+    assertEquals(list, List.of("a", "b", "c"));
+    assertThrows(ImmutableException.class, () -> list.add("z"));
+  }
+
+  @Test
+  public void testLoggingLevelSuppressesException() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    list.setImmutableLoggingLevel(Logger.Level.WARNING);
+    assertEquals(list.getImmutableLoggingLevel(), Logger.Level.WARNING);
+    // with a logging level set, the violation is logged instead of thrown, and the mutation proceeds
+    list.add("d");
+    assertEquals(list, List.of("a", "b", "c", "d"));
+  }
+
+  @Test
+  public void testSimpleEqualsAndHashCode() {
+    ImmutableArrayList<String> a = sample();
+    ImmutableArrayList<String> b = sample();
+    // default: content-based equality like ArrayList
+    assertEquals(a, b);
+    assertEquals(a.hashCode(), b.hashCode());
+
+    a.setSimpleEqualsAndHashCode(true);
+    b.setSimpleEqualsAndHashCode(true);
+    assertTrue(a.isSimpleEqualsAndHashCode());
+    // now equality is identity based
+    assertEquals(a, a);
+    assertNotEquals(a, b);
+    // hashCode is stable for the same instance
+    assertEquals(a.hashCode(), a.hashCode());
+  }
+
+  @Test
+  public void testSetImmutableWithElements() {
+    ImmutableArrayList<ImmutableArrayList<String>> outer = new ImmutableArrayList<>();
+    ImmutableArrayList<String> inner = sample();
+    outer.add(inner);
+    // withElements=true cascades immutability to elements implementing Immutable
+    outer.setImmutable(true, true);
+    assertTrue(inner.isImmutable());
+    assertThrows(ImmutableException.class, () -> inner.add("d"));
+  }
+
+  @Test
+  public void testSetImmutableWithoutElements() {
+    ImmutableArrayList<ImmutableArrayList<String>> outer = new ImmutableArrayList<>();
+    ImmutableArrayList<String> inner = sample();
+    outer.add(inner);
+    outer.setImmutable(true, false);
+    // elements are left mutable
+    assertFalse(inner.isImmutable());
+    inner.add("d");
+    assertEquals(inner, List.of("a", "b", "c", "d"));
+  }
+}

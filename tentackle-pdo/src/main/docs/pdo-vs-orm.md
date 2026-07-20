@@ -118,10 +118,9 @@ no identity map filling up behind your back, so there is nothing to `clear()`:
 
 ```java
 // Tentackle batch: PDOs are GC'd as soon as the loop moves on
-try (ScrollableResource<Customer> cursor =
-         Pdo.create(Customer.class, context).selectAllAsCursor()) {
+try (ScrollableResource<Product> cursor = on(Product.class).selectAllAsCursor()) {
   while (cursor.next()) {
-    cursor.get().process();   // each PDO is unreferenced once the loop advances → GC-eligible
+    cursor.get().whatSoEver();   // each PDO is unreferenced once the loop advances → GC-eligible
   }
 }
 ```
@@ -480,3 +479,5 @@ defining property of an ordinary Java object.**
   lets a PDO stay fully functional on any tier.
 - [session.md](../../../../tentackle-session/src/main/docs/session.md) — what a
   `Session` is (a resource), and crucially what it is *not* (a persistence context).
+- [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md) — the
+  cursor used in the batch example above, and why it works remotely too.

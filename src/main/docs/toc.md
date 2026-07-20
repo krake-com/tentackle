@@ -25,7 +25,10 @@ the [Index](./index.md).
 - [PDO — Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the central programming model.
 - [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md) — creating PDOs and operations in context.
 - [Operation — Behavior Without an Entity](../../../tentackle-pdo/src/main/docs/operation.md) — business logic that is not tied to one entity.
+- [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md) — declarative units of work: begin/commit, rollback, and automatic retry on temporary failures.
+- [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md) — the business identity of a root entity: the `key` option, generated key types, and `findByUniqueDomainKey`.
 - [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md) — the optional, coherent object cache.
+- [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) — unique business numbers from persistent, transactional pools.
 - [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md) — exact, atomic aggregate undo.
 - [Security — Permissions, Rules, and Grantees](../../../tentackle-pdo/src/main/docs/security.md) — the PDO security model.
 - [The rootId and rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md) — how components find their aggregate root.
@@ -35,6 +38,7 @@ the [Index](./index.md).
 - [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the model API module.
 - [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL embedded in a PDO interface.
 - [Wurblets — Interface-Level Code Generation](../../../tentackle-wurblets/src/main/docs/wurblets.md) — generating the PDO/operation interfaces.
+- [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md) — generating data transfer objects from a property model or an annotated record.
 - [Persistence Wurblets — Implementation-Level Code Generation](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generating the persistence implementation.
 - [PdoSelectList and PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) — generating query methods.
 - [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — fetching related entities via outer joins.
@@ -43,41 +47,59 @@ the [Index](./index.md).
 
 - [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md) — the PDO-aware persistence layer.
 - [Locking — Token Locks and the Optimistic `serial` Column](../../../tentackle-persistence/src/main/docs/locking.md) — concurrency control.
+- [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md) — streaming large result sets, transparently over local and remote sessions.
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
+- [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
+- [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `backend.properties` reference: connection, server, and client configuration keys.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
+- [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 
 ## Remoting
 
 - [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — binary serialization and RPC.
 - [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport.
+- [I/O and Networking](../../../tentackle-core/src/main/docs/io.md) — packet-framed compressing/encrypting streams and the reconnection machinery.
 
 ## Core Foundations
 
 - [Tentackle Core](../../../tentackle-core/src/main/docs/core.md) — the runtime foundation.
 - [Tentackle Common](../../../tentackle-common/src/main/docs/common.md) — the shared build- and runtime foundation.
-- [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — the ServiceFinder SPI.
+- [Service and Configuration API — Locating Implementations Without Scanning](../../../tentackle-common/src/main/docs/services.md) — the `@Service`/`@MappedService` annotations, the ServiceFinder SPI, build-time registration, module ordering and the ModuleHook.
+- [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — application-specific secret handling: encrypted passwords in configuration, memory, and on the wire.
+- [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md) — how the domain, persistence and remote-delegate class names are derived, and how to replace the conventions application-wide.
+- [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.
 - [Validation — Annotation-Driven, Scope-Aware Validation](../../../tentackle-core/src/main/docs/validation.md) — declarative constraints.
 - [Interceptors — Annotation-Driven Method Interception](../../../tentackle-core/src/main/docs/interceptors.md) — cross-cutting concerns.
+- [Reflection — Class Mapping, Mixins, and Proxy Support](../../../tentackle-core/src/main/docs/reflect.md) — the `ClassMapper` behind `@MappedService`, the mixins behind PDO proxies, canonical construction.
 - [Immutable — Switchable Read-Only Objects](../../../tentackle-core/src/main/docs/immutable.md) — controlled immutability.
 - [Freezable — Making Old-School Mutable Value Types Safe](../../../tentackle-common/src/main/docs/freezable.md) — taming legacy mutable values.
 - [Preferences — Persistable, Database-Backed Settings](../../../tentackle-core/src/main/docs/preferences.md) — settings that roam with the user.
 - [Tasks and Daemons — Background Execution](../../../tentackle-core/src/main/docs/tasks-daemon.md) — the task dispatcher and daemon supervisor.
+- [Miscellaneous — Contracts, Collections, Pooling, Utilities](../../../tentackle-core/src/main/docs/misc.md) — the low-level contracts the upper layers implement, plus `TrackedList`, pooling and smart date/time parsing.
 - [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md) — the pluggable logging API.
 - [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting-language API.
+- [CompoundValue — Objects From Strings](../../../tentackle-core/src/main/docs/compound-value.md) — constants, references and scripts behind dynamic annotation parameters.
 
 ## Internationalization
 
 - [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md) — the i18n overview: bundles, `I18NText` and locale handling.
 - [Internationalization (i18n)](../../../tentackle-common/src/main/docs/internationalization.md) — companion overview of the i18n story.
 - [Tentackle I18N — Database-backed Resource Bundles](../../../tentackle-i18n/src/main/docs/i18n.md) — managing translations in the database.
+- [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md) — the standalone GUI tool for editing database-backed bundles at runtime.
 
 ## User Interface (JavaFX)
 
 - [tentackle-fx — The Extended JavaFX Layer](../../../tentackle-fx/src/main/docs/fx.md) — JavaFX components, containers, and binding.
+- [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md) — configuration-driven tables and tree-tables, cell types, preferences-backed layouts.
+- [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md) — suggesting values while the user types: suggestion generators, the popup, background matching.
+- [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md) — icons and images by symbolic name, realms, replacing the icon pack.
+- [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md) — turning validation results into marked controls on screen.
 - [tentackle-fx-rdc — Rich Desktop Client](../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the rich-client framework.
+- [GuiProvider — Per-Entity GUI Services](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md) — the per-entity UI hub: default editor/finder, generated table configurations, i18n levels.
+- [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md) — `Rdc.bg(...)`, the ModificationTracker default and the session-pool alternative.
 - [tentackle-fx-atlanta — The AtlantaFX Theme Layer](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming and component styling.
 - [tentackle-fx-rdc-poi — Spreadsheet (XLS) Export](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) — Excel export for RDC tables via Apache POI.
 - [FX RDC Update — Auto-Update for the Rich Desktop Client](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) — the client-side update UI.
@@ -95,6 +117,7 @@ the [Index](./index.md).
 
 ## Application Lifecycle & Integration
 
+- [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md) — from `main()` to a running tier: the `Application` hierarchy and startup sequence.
 - [Tentackle Update — The Application Self-Update Service](../../../tentackle-update/src/main/docs/update.md) — client auto-update.
 - [Tentackle Web — Bridging Web Frameworks to a Tentackle Tier](../../../tentackle-web/src/main/docs/web.md) — exposing a Tentackle tier to web frameworks.
 

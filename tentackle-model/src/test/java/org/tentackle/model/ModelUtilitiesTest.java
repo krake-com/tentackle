@@ -91,4 +91,27 @@ public class ModelUtilitiesTest {
 
     Assert.assertEquals(mu.bestMatch("date_trans", List.of("transmit_date", "delay_estimated_date")), "transmit_date");
   }
+
+  @Test
+  public void testBestMatchWithEmptyCandidates() {
+    Assert.assertNull(mu.bestMatch("anything", List.of()));
+  }
+
+  @Test
+  public void testIsVowel() {
+    for (char c : "aeiouyAEIOUY".toCharArray()) {
+      Assert.assertTrue(mu.isVowel(c), "expected vowel: " + c);
+    }
+    for (char c : "bcdfghBCDFGH123".toCharArray()) {
+      Assert.assertFalse(mu.isVowel(c), "expected consonant: " + c);
+    }
+  }
+
+  @Test
+  public void testContainsVowel() {
+    Assert.assertTrue(mu.containsVowel("xyz"));    // 'y' counts as a vowel
+    Assert.assertTrue(mu.containsVowel("brick"));
+    Assert.assertFalse(mu.containsVowel("bcdfg"));
+    Assert.assertFalse(mu.containsVowel(""));
+  }
 }

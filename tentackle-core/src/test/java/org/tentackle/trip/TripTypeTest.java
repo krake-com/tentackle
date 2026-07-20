@@ -38,6 +38,7 @@ import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
+import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
 import org.tentackle.trip.impl.NotReferencableClass;
 import org.tentackle.trip.impl.PreparedSerializableClass;
@@ -68,9 +69,14 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -282,6 +288,28 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  void testBigDecimalCornerCases() {
+    TripType<BigDecimal> tripType = TripFactory.getInstance().getType(BigDecimal.class);
+    tunnel(BigDecimal.ZERO, tripType);
+    tunnel(new BigDecimal("-123.456"), tripType);
+    tunnel(new BigDecimal("-1.23E+10"), tripType);      // negative scale
+    tunnel(new BigDecimal("1E-30"), tripType);          // large positive scale
+    tunnel(new BigDecimal("-1234567890123456789012345678901234567890.0123456789"), tripType);
+    tunnel(new BMoney(-12345600, 2), tripType);
+    tunnel(new DMoney(-12345600, 2), tripType);
+  }
+
+  @Test
+  void testNegativeZero() {
+    TripType<Float> floatType = TripFactory.getInstance().getType(Float.class);
+    Float tunnelledFloat = tunnel(-0.0f, floatType);
+    assertEquals(Float.floatToIntBits(tunnelledFloat), Float.floatToIntBits(-0.0f));
+    TripType<Double> doubleType = TripFactory.getInstance().getType(Double.class);
+    Double tunnelledDouble = tunnel(-0.0d, doubleType);
+    assertEquals(Double.doubleToLongBits(tunnelledDouble), Double.doubleToLongBits(-0.0d));
+  }
+
+  @Test
   void testDate() {
     TripType<java.util.Date> tripType = TripFactory.getInstance().getType(java.util.Date.class);
     tunnel(new java.util.Date(), tripType);
@@ -291,6 +319,15 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     date.freeze();
     Date tunnelled = (Date) tunnelPhenotypic(date, tripType);
     assertTrue(tunnelled.isFrozen());
+  }
+
+  @Test
+  void testPre1970Date() {
+    TripType<java.util.Date> tripType = TripFactory.getInstance().getType(java.util.Date.class);
+    tunnel(new java.util.Date(-1234567890123L), tripType);
+    tunnel(new java.sql.Date(java.sql.Date.valueOf("1888-03-15").getTime()), tripType);
+    Date date = new Date(java.sql.Date.valueOf("1888-03-15").getTime());
+    tunnelPhenotypic(date, tripType);
   }
 
   @Test
@@ -316,6 +353,44 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     timestamp.setUTC(true);
     tunnelled = (Timestamp) tunnel(timestamp, tripType);
     assertTrue(tunnelled.isUTC());
+  }
+
+  @Test
+  void testTimestampNanos() {
+    // sub-millisecond nanos are not covered by currentTimeMillis-based timestamps
+    TripType<java.sql.Timestamp> tripType = TripFactory.getInstance().getType(java.sql.Timestamp.class);
+    Timestamp timestamp = new Timestamp(1234567890123L);
+    timestamp.setNanos(123456789);
+    Timestamp tunnelled = (Timestamp) tunnel(timestamp, tripType);
+    assertEquals(tunnelled.getNanos(), timestamp.getNanos());
+    java.sql.Timestamp sqlTimestamp = new java.sql.Timestamp(1234567890123L);
+    sqlTimestamp.setNanos(987654321);
+    java.sql.Timestamp tunnelledSql = tunnel(sqlTimestamp, tripType);
+    assertEquals(tunnelledSql.getNanos(), sqlTimestamp.getNanos());
+  }
+
+  @Test
+  void testUTCTimestampAcrossTimeZones() {
+    // A UTC timestamp preserves its YYYYMMDDHHMMSS rendering across timezones;
+    // the epoch millis are re-derived in the receiver's zone (see Timestamp#writeObject).
+    TimeZone originalZone = TimeZone.getDefault();
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone("Europe/Berlin"));
+      Timestamp timestamp = new Timestamp(1234567890123L, true);
+      String sentText = timestamp.toString();
+      TripType<java.sql.Timestamp> tripType = TripFactory.getInstance().getType(java.sql.Timestamp.class);
+      tripType.write(timestamp, transceiver.getStream());
+      transceiver.echo();
+      TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+      Timestamp tunnelled = (Timestamp) tripType.read(transceiver.getStream(),
+                                                      transceiver.getStream().getDeserializer().deserializeOpCode());
+      assertTrue(tunnelled.isUTC());
+      assertEquals(tunnelled.toString(), sentText);   // same wall clock in another zone
+    }
+    finally {
+      TimeZone.setDefault(originalZone);
+      transceiver.reset();
+    }
   }
 
   @Test
@@ -448,6 +523,23 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  void testStringLengthBoundaries() {
+    // wire lengths are UTF-8 bytes, not chars: exercise the 1-, 2- and 4-byte length encodings
+    tunnel("x".repeat(255));
+    tunnel("x".repeat(256));
+    tunnel("x".repeat(65535));
+    tunnel("x".repeat(65536));
+    tunnel("ä".repeat(128));      // 256 UTF-8 bytes from 128 chars
+    tunnel("x".repeat(70000));    // exceeds the serializer's internal buffer
+  }
+
+  @Test
+  void testStringSupplementaryPlane() {
+    tunnel("hello 😀 world");                   // emoji, 4-byte UTF-8
+    tunnel("😀".repeat(100));
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   void testTwoDimensionalArray() {
     int[][] testArray = new int[][] { {1, 2, 3}, {4, 5}, {6, 7, 8, 9}, null, {}, {10}};
@@ -507,6 +599,20 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  void testEnumWithBody() {
+    TripType<TestBodyEnum> tripType = TripFactory.getInstance().getType(TestBodyEnum.class);
+    tunnel(TestBodyEnum.PLAIN, tripType);
+    tunnel(TestBodyEnum.FANCY, tripType);
+
+    // held polymorphically, the runtime class is the anonymous subclass of the enum
+    TripType<TestClass> objectType = TripFactory.getInstance().getType(TestClass.class);
+    TestClass obj = new TestClass();
+    obj.someObject = TestBodyEnum.FANCY;
+    TestClass tunnelled = tunnel(obj, objectType);
+    assertSame(tunnelled.someObject, TestBodyEnum.FANCY);
+  }
+
+  @Test
   void testLocale() {
     TripType<Locale> tripType = TripFactory.getInstance().getType(Locale.class);
     tunnel(Locale.of("de", "DE"), tripType);
@@ -515,6 +621,17 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     tunnel(Locale.of("en", "US", "WIN"), tripType);
     tunnel(Locale.of("en", "", "WIN"), tripType);
     tunnel(Locale.ROOT, tripType);
+    tunnel(null, tripType);
+  }
+
+  @Test
+  void testLocaleCornerCases() {
+    TripType<Locale> tripType = TripFactory.getInstance().getType(Locale.class);
+    tunnel(Locale.of("de", "DE", "NY_X"), tripType);                // variant containing an underscore
+    tunnel(Locale.forLanguageTag("zh-Hant-TW"), tripType);          // script
+    tunnel(Locale.forLanguageTag("ja-JP-u-ca-japanese"), tripType); // extension
+    tunnel(Locale.of("th", "TH", "TH"), tripType);                  // legacy special case
+    tunnel(Locale.of("ja", "JP", "JP"), tripType);                  // legacy special case
   }
 
   @Test
@@ -670,6 +787,120 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertNotSame(tunneledList, list);
     assertSame(tunneledList, tunnel(list, type));
     assertNull(tunnel(null, type));
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testSelfReferencingCollection() {
+    List<Object> list = new ArrayList<>();
+    list.add("element");
+    list.add(list);
+    TripType<List> type = TripFactory.getInstance().getType(list.getClass());
+    List tunneledList = tunnelNoEquals((List) list, type);
+    assertEquals(tunneledList.size(), 2);
+    assertEquals(tunneledList.get(0), "element");
+    assertSame(tunneledList.get(1), tunneledList);
+
+    Map<String, Object> map = new HashMap<>();
+    map.put("self", map);
+    TripType<Map> mapType = TripFactory.getInstance().getType(map.getClass());
+    Map tunneledMap = tunnelNoEquals((Map) map, mapType);
+    assertSame(tunneledMap.get("self"), tunneledMap);
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testWrappedCollections() {
+    List<String> unmodifiableList = Collections.unmodifiableList(new ArrayList<>(Arrays.asList("one", null, "two")));
+    TripType<List> listType = TripFactory.getInstance().getType(unmodifiableList.getClass());
+    List tunneledList = tunnel((List) unmodifiableList, listType);
+    assertEquals(tunneledList.getClass(), unmodifiableList.getClass());
+    try {
+      tunneledList.add("three");
+      fail("should be unmodifiable");
+    }
+    catch (UnsupportedOperationException ok) {
+      // expected
+    }
+
+    List<String> asList = Arrays.asList("one", null, "two");
+    tunnel((List) asList, TripFactory.getInstance().getType(asList.getClass()));
+
+    List<String> emptyList = Collections.emptyList();
+    assertSame(tunnel((List) emptyList, TripFactory.getInstance().getType(emptyList.getClass())),
+               Collections.emptyList());
+
+    Set<String> emptySet = Collections.emptySet();
+    assertSame(tunnel((Set) emptySet, TripFactory.getInstance().getType(emptySet.getClass())),
+               Collections.emptySet());
+
+    List<String> singletonList = Collections.singletonList("solo");
+    tunnel((List) singletonList, TripFactory.getInstance().getType(singletonList.getClass()));
+
+    Set<String> singleton = Collections.singleton("solo");
+    tunnel((Set) singleton, TripFactory.getInstance().getType(singleton.getClass()));
+
+    Set<String> unmodifiableSet = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("one", "two")));
+    tunnel((Set) unmodifiableSet, TripFactory.getInstance().getType(unmodifiableSet.getClass()));
+
+    // Collections.unmodifiableCollection provides no content-based equals
+    Collection<String> unmodifiableCollection = Collections.unmodifiableCollection(List.of("one", "two"));
+    Collection tunneledCollection = tunnelNoEquals((Collection) unmodifiableCollection,
+                                                   TripFactory.getInstance().getType(unmodifiableCollection.getClass()));
+    assertEquals(new ArrayList<>(tunneledCollection), List.of("one", "two"));
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testWrappedMaps() {
+    Map<String, Integer> unmodifiableMap = Collections.unmodifiableMap(new HashMap<>(Map.of("one", 1, "two", 2)));
+    TripType<Map> mapType = TripFactory.getInstance().getType(unmodifiableMap.getClass());
+    Map tunneledMap = tunnel((Map) unmodifiableMap, mapType);
+    assertEquals(tunneledMap.getClass(), unmodifiableMap.getClass());
+    try {
+      tunneledMap.put("three", 3);
+      fail("should be unmodifiable");
+    }
+    catch (UnsupportedOperationException ok) {
+      // expected
+    }
+
+    Map<String, Integer> emptyMap = Collections.emptyMap();
+    assertSame(tunnel((Map) emptyMap, TripFactory.getInstance().getType(emptyMap.getClass())),
+               Collections.emptyMap());
+
+    Map<String, Integer> singletonMap = Collections.singletonMap("solo", 1);
+    tunnel((Map) singletonMap, TripFactory.getInstance().getType(singletonMap.getClass()));
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testEnumSet() {
+    EnumSet<TestEnum> set = EnumSet.of(TestEnum.RED, TestEnum.BLUE);
+    TripType<EnumSet> type = TripFactory.getInstance().getType(set.getClass());
+    EnumSet tunneledSet = tunnel((EnumSet) set, type);
+    assertTrue(tunneledSet.contains(TestEnum.RED));
+
+    EnumSet<TestEnum> empty = EnumSet.noneOf(TestEnum.class);
+    EnumSet tunneledEmpty = tunnel((EnumSet) empty, type);
+    assertTrue(tunneledEmpty.isEmpty());
+    tunneledEmpty.add(TestEnum.GREEN);    // proves the element type survived
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testEnumMap() {
+    EnumMap<TestEnum, String> map = new EnumMap<>(TestEnum.class);
+    map.put(TestEnum.RED, "red");
+    map.put(TestEnum.BLUE, null);
+    TripType<EnumMap> type = TripFactory.getInstance().getType(map.getClass());
+    EnumMap tunneledMap = tunnel((EnumMap) map, type);
+    assertEquals(tunneledMap.get(TestEnum.RED), "red");
+
+    EnumMap<TestEnum, String> empty = new EnumMap<>(TestEnum.class);
+    EnumMap tunneledEmpty = tunnel((EnumMap) empty, type);
+    assertTrue(tunneledEmpty.isEmpty());
+    tunneledEmpty.put(TestEnum.GREEN, "green");   // proves the key type survived
   }
 
   @Test
@@ -883,6 +1114,52 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
       assertEquals(tunneledException.getStackTrace(), exception.getStackTrace());
       assertEquals(tunneledException.getCause().getStackTrace(), exception.getCause().getStackTrace());
     }
+  }
+
+  @Test
+  void testThrowableWithoutMessageCauseConstructor() {
+    // NullPointerException has neither a (String, Throwable) nor a (Throwable) constructor;
+    // the message must survive nevertheless, and the cause must be applied via initCause()
+    NullPointerException npe = new NullPointerException("npe");
+    npe.initCause(new IllegalStateException("inner"));
+    TripType<NullPointerException> tripType = TripFactory.getInstance().getType(NullPointerException.class);
+    NullPointerException tunnelled = tunnelPhenotypic(npe, tripType);
+    assertEquals(tunnelled.getMessage(), "npe");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "inner");
+  }
+
+  @Test
+  void testSuppressedExceptionsDropped() {
+    // suppressed exceptions are deliberately not serialized (see ThrowableComponentProvider)
+    IllegalStateException exception = new IllegalStateException("boom", new NullPointerException("npe"));
+    exception.addSuppressed(new RuntimeException("suppressed"));
+    TripType<IllegalStateException> tripType = TripFactory.getInstance().getType(IllegalStateException.class);
+    IllegalStateException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getMessage(), "boom");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "npe");
+    assertEquals(tunnelled.getSuppressed().length, 0);
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testLargeReferenceTables() {
+    // more than 65535 distinct referenced objects: exercises the 2- and 3-byte
+    // reference id encodings (REFERENCE2/REFERENCE3) on both stream ends
+    List<Object> list = new ArrayList<>();
+    for (int i = 0; i < 70000; i++) {
+      TestClass obj = new TestClass();
+      obj.name = "obj" + i;
+      obj.age = i;
+      list.add(obj);
+    }
+    list.addAll(new ArrayList<>(list));   // same instances again -> written as references
+    TripType<List> type = TripFactory.getInstance().getType(list.getClass());
+    List tunneled = tunnel((List) list, type);
+    assertSame(tunneled.get(0), tunneled.get(70000));
+    assertSame(tunneled.get(300), tunneled.get(70300));
+    assertSame(tunneled.get(69999), tunneled.get(139999));
   }
 
   @Test

@@ -42,6 +42,7 @@ public class CompressedInputStream extends PacketSizedInputStream {
   private byte[] inflaterBuffer;        // buffer holding compressed data for the inflater (size is dynamically adapted)
   private boolean compressed;           // true if the current packet is compressed and inf... is valid
   private int readPending;              // number of bytes pending to read from the underlying stream
+  private boolean endOfStream;          // true once the end of the underlying stream has been reached
 
   // for statistic only (Level.FINE must be enabled)
   private long totalRead;               // total number of bytes read by application
@@ -112,6 +113,10 @@ public class CompressedInputStream extends PacketSizedInputStream {
       throw new ArrayIndexOutOfBoundsException("b.length=" + b.length + ", off=" + off + ", len=" + len);
     }
 
+    if (endOfStream) {
+      return -1;    // stay at end of stream on repeated reads
+    }
+
     int count = 0;    // number of bytes read
 
     while (count == 0) {
@@ -129,6 +134,7 @@ public class CompressedInputStream extends PacketSizedInputStream {
           if (readPending == 0) {
             // read header of next packet
             if (readHeader() < 0) {
+              endOfStream = true;
               return -1;    // end of stream reached
             }
             if (!compressed) {
@@ -160,6 +166,7 @@ public class CompressedInputStream extends PacketSizedInputStream {
         if (readPending == 0) {
           // read header of next packet
           if (readHeader() < 0) {
+            endOfStream = true;
             return -1;
           }
           if (compressed) {

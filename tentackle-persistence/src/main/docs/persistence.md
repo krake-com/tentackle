@@ -4,7 +4,7 @@
 
 The `tentackle-persistence` module is where the two halves of Tentackle's architecture finally meet: the
 **Persistent Domain Object (PDO)** abstraction from [`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md)
-and the raw, dialect-aware database machinery from [`tentackle-database`](../../../../tentackle-database). It
+and the raw, dialect-aware database machinery from [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md). It
 provides the concrete **persistence implementation** behind every PDO — the code that actually selects, inserts,
 updates and deletes domain objects, manages their caches, locks, number ranges, security rules and the remoting
 that lets all of this work transparently across JVMs.
@@ -22,7 +22,7 @@ The application's generated persistence classes extend these, the Wurbelizer fil
 code (see [persistence-wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)),
 and at runtime the PDO proxy delegates all persistence calls here.
 
-Where [`tentackle-database`](../../../../tentackle-database) knows about tables, columns, `PreparedStatement`s, and
+Where [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md) knows about tables, columns, `PreparedStatement`s, and
 result sets (its `AbstractDbObject`/`AbstractDbOperation`), this module raises that to the level of *domain
 objects*: it understands aggregates and their components, eager joins, the modification tracker, token locks and
 the domain context. It is therefore the topmost runtime layer of the persistence stack — everything above it
@@ -129,6 +129,9 @@ materializing them all in memory. Its remote counterpart is
 [`RemoteResultSetCursor`](../java/org/tentackle/persist/trip/RemoteResultSetCursor.java) /
 [`RemoteResultSetCursorImpl`](../java/org/tentackle/persist/trip/RemoteResultSetCursorImpl.java), so cursors work
 over a remote connection too.
+
+See [cursors.md](cursors.md) for the full picture: how one class serves both session types, block
+fetching, the join constraint, and cursor lifetime.
 
 ### NormText
 
@@ -237,7 +240,7 @@ A typical read of an entity through a PDO proxy flows like this:
 
 For a **local** session, `AbstractPersistentObject` assembles SQL via the
 [`Backend`](../../../../tentackle-sql/src/main/docs/sql.md) and executes it through the
-[`tentackle-database`](../../../../tentackle-database) primitives. For a **remote** session, the call is shipped to
+[`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md) primitives. For a **remote** session, the call is shipped to
 the server, where the corresponding `…RemoteDelegateImpl` runs the very same logic against its local connection and
 returns the PDOs over TRIP. Caches stay coherent because every write advances a serial in the
 `PdoModificationTracker`, which clients consult to expire stale entries.
@@ -255,7 +258,7 @@ entities, relations, and attributes are declared.
 `tentackle-persistence` sits at the top of the persistence stack:
 
 - It **requires transitive** [`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md) (the PDO contracts
-  it implements) and [`tentackle-database`](../../../../tentackle-database) (the low-level DB engine it builds on),
+  it implements) and [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md) (the low-level DB engine it builds on),
   plus `java.naming`.
 - It **opens** its `persist`, `persist.ns`, `persist.security` and `persist.trip` packages to `org.tentackle.core`
   for TRIP serialization.

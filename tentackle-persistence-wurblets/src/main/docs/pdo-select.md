@@ -281,7 +281,7 @@ into a single joined statement, and the generated body therefore returns `execut
 | `--limit`     | Add a parameter limiting the number of returned rows (dialect-aware paging).                                                                                                                                                        |
 | `--offset`    | Add a parameter skipping the first rows.                                                                                                                                                                                            |
 | `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability).                                                                                                                          |
-| `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results. Incompatible with `--resultset`, immutability and tracking; with joins the query must be sorted by `id`. |
+| `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results — see [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md). Incompatible with `--resultset`, immutability and tracking; with joins the query must be sorted by `id`. |
 | `--bounded`   | Return `List<? extends MainClass>` instead of `List<MainClass>`.                                                                                                                                                                    |
 
 ### `PdoSelectUnique` only

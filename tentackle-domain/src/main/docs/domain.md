@@ -67,14 +67,19 @@ Its job is small and well-defined:
   the domain object reaches the [session](../../../../tentackle-session/src/main/docs/session.md) *through* the
   PDO, never directly.
 - **Effective class.** `getEffectiveClass()` / `getEffectiveSuperClasses()` forward to the proxy, supporting
-  Tentackle's effective-class (entity-substitution) mechanism.
+  Tentackle's effective-class (entity-substitution) mechanism. For a PDO the effective class is the entity
+  *interface* (e.g. `Customer`), not this delegate's class — so business code should `instanceof` the entity
+  interface and key maps by `getEffectiveClass()`, never `getClass()`. See
+  [Reflection → `getClass()`, `getEffectiveClass()` and `instanceof`](../../../../tentackle-core/src/main/docs/reflect.md#getclass-geteffectiveclass-and-instanceof).
 - **Naming.** `getSingular()` / `getPlural()` resolve human-readable entity names via `PdoUtilities` (falling back
   to the simple class name and a default English pluralization rule).
 - **Domain key.** The *unique domain key* — the business identity of a **root entity** (as opposed to the
   technical object id) — is exposed through `getUniqueDomainKey()` / `setUniqueDomainKey()` /
   `getUniqueDomainKeyType()` / `findByUniqueDomainKey()` and the flag `isUniqueDomainKeyProvided()`. The base
   implementations throw a `DomainException` (and assert root-entity), so an entity that has a domain key
-  **overrides** them; `assertRootEntity()` enforces that these are only used on roots.
+  **overrides** them; `assertRootEntity()` enforces that these are only used on roots. The whole concept —
+  declaration, generated key types, and framework usage — is covered in
+  [Domain Keys](../../../../tentackle-pdo/src/main/docs/domain-key.md).
 - **String representation.** `toString()` returns the domain key for a root entity, or the singular name for a
   component, and is carefully written never to throw (it falls back to `toGenericString()` — class plus
   id/serial — on error), because it is used for logging and debugging.

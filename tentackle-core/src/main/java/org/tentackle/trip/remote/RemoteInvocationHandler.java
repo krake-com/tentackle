@@ -58,10 +58,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
   private final TripType<InitialRemoteResponse> initialResponseType;
   private final TripType<IdentifiedRemoteCall> identifiedCallType;
   private final TripType<IdentifiedRemoteResponse> identifiedRemoteType;
-
-  private record MethodKey(String methodName, Class<?>[] parameterTypes) {}
-
-  private final Map<MethodKey, Integer> methodTypeMap;    // method+parameterTypes -> methodIndex
+  private final Map<Method, Integer> methodTypeMap;    // method -> methodIndex
 
   /**
    * Creates a remote invocation handler.
@@ -88,8 +85,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
     TripStream stream = connection.getStream();
     try {
       stream.clear();
-      MethodKey key = new MethodKey(method.getName(), method.getParameterTypes());
-      Integer methodIndex = methodTypeMap.get(key);
+      Integer methodIndex = methodTypeMap.get(method);
 
       // send call
       try {
@@ -124,7 +120,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
         response = initialResponse;
         methodIndex = initialResponse.methodIndex();
         if (methodIndex >= 0) {
-          methodTypeMap.put(key, methodIndex);
+          methodTypeMap.put(method, methodIndex);
         }
         if (initialResponse.wasSuccessFul()) {
           return processResult(initialResponse.result());

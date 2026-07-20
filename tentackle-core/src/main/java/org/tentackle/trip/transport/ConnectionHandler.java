@@ -21,6 +21,7 @@ package org.tentackle.trip.transport;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
+import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
@@ -72,10 +73,10 @@ public class ConnectionHandler implements Runnable {
    * @param outputStream the output stream associated with this connection
    */
   public ConnectionHandler(Transport transport, String connectionName, InputStream inputStream, OutputStream outputStream) {
-    this.transport = Objects.requireNonNull(transport);
-    this.connectionName = Objects.requireNonNull(connectionName);
-    this.inputStream = Objects.requireNonNull(inputStream);
-    this.outputStream = Objects.requireNonNull(outputStream);
+    this.transport = Objects.requireNonNull(transport, "missing transport");
+    this.connectionName = Objects.requireNonNull(connectionName, "missing connection name");
+    this.inputStream = Objects.requireNonNull(inputStream, "missing input stream");
+    this.outputStream = Objects.requireNonNull(outputStream, "missing output stream");
   }
 
   /**
@@ -224,10 +225,19 @@ public class ConnectionHandler implements Runnable {
    * @return the trip stream
    */
   protected TripStream createStream(UUID id) {
-    TripFactory factory = TripFactory.getInstance();
-    Serializer serializer = factory.createSerializer(outputStream);
-    Deserializer deserializer = factory.createDeserializer(inputStream);
-    return factory.createStream(transport.getServerDictionary(id), serializer, deserializer);
+    if (transport.isClosed()) {   // don't use isConnectionAlive since this would block in LoopbackTransport (see override)
+      throw new TripStreamClosedException("transport " + transport + " already closed");
+    }
+    Dictionary serverDictionary = transport.getServerDictionary(id);
+    if (serverDictionary != null) {
+      TripFactory factory = TripFactory.getInstance();
+      Serializer serializer = factory.createSerializer(outputStream);
+      Deserializer deserializer = factory.createDeserializer(inputStream);
+      return factory.createStream(serverDictionary, serializer, deserializer);
+    }
+    else {
+      throw new TripStreamClosedException("no such dictionary " + id + " in transport " + transport + " (stale client transport?)");
+    }
   }
 
 

@@ -211,6 +211,44 @@ and registered with `@TableCellTypeService`. The `org.tentackle.fx.table.type`
 package supplies cell types for strings, numbers, booleans, enums, money,
 `I18NText` and the full range of date/time classes. Tables bind through the
 dedicated `FxTableBinder` / `FxTableBinding` (see the binding doc).
+For the full picture — including preferences-backed layouts, totals, and the
+PDO-aware RDC layer — see [tables.md](tables.md).
+
+### Showing validation results
+
+Validation results describe problems in the *model* (`invoice.lineList[3].price`),
+not on screen. An `InteractiveError` links a `ValidationResult` to the concrete
+`FxControl` it belongs to, adding the message, an optional error code, and
+whether it is an error or just a warning. `InteractiveErrorFactory` (a
+replaceable `@Service`) resolves the control by mapping the validation path to a
+binding path and looking up the `FxComponentBinding`.
+`AbstractValidateableFxController.validateForm()` ties it together: it validates,
+shows the collected messages in a dialog, and marks the offending components with
+`setError` / `setInfo`. See [interactive-error.md](interactive-error.md).
+
+### Graphics and icons
+
+Icons never appear as file names or icon-pack names in framework code. A
+`GraphicProvider` maps a **symbolic name** to a JavaFX `Node`
+(`Fx.createGraphic("save")`), and providers are registered per **realm** with
+`@GraphicProviderService` — the framework uses the default realm, applications
+should use their own. `DefaultGraphicProvider` serves the default realm from the
+Ikonli materialdesign2 pack; `IkonliGraphicProvider` and `ImageGraphicProvider`
+are the base classes for font-icon and image-file providers. Size and color come
+from CSS, so icons follow the theme. See
+[graphic-provider.md](graphic-provider.md).
+
+### Auto-completion
+
+Any `FxTextComponent` can propose matching values while the user types:
+`setAutoCompletion(...)` takes a `Function<String, List<List<SubString>>>` mapping
+the current input to the matching candidates, each described by its matching text
+segments. The `org.tentackle.fx.component.auto` package supplies the controller
+and ready-made **suggestion generators** (simple substring, camel-case, separated
+segments, regular expression), and the matched segments are rendered in bold in a
+popup below the component. Matching runs in the background, so large choice lists
+don't block the FX thread. For generators, styling and threading rules see
+[auto-completion.md](auto-completion.md).
 
 ### Binding integration
 
@@ -289,7 +327,7 @@ A typical screen comes to life like this:
 | `org.tentackle.fx.component.delegate`                        | Component delegates holding the behaviour (`FxComponentDelegate`, `AbstractTextFieldDelegate`, per-component delegates)                                                                                                                                                                         |
 | `org.tentackle.fx.component.config`                          | Per-component `Configurator`s                                                                                                                                                                                                                                                                   |
 | `org.tentackle.fx.component.build`                           | Component builders used by the FXML builder factory                                                                                                                                                                                                                                             |
-| `org.tentackle.fx.component.auto`                            | Auto-completion (popup, controller, suggestion generators: camel-case, regex, separator, …)                                                                                                                                                                                                     |
+| `org.tentackle.fx.component.auto`                            | [Auto-completion](auto-completion.md) (popup, controller, suggestion generators: camel-case, regex, separator, …)                                                                                                                                                                               |
 | `org.tentackle.fx.component.skin`                            | Custom control skins                                                                                                                                                                                                                                                                            |
 | `org.tentackle.fx.container`                                 | Extended containers: `FxVBox`, `FxHBox`, `FxGridPane`, `FxBorderPane`, `FxAnchorPane`, `FxFlowPane`, `FxTilePane`, `FxStackPane`, `FxSplitPane`, `FxScrollPane`, `FxTabPane`, `FxTab`, `FxTitledPane`, `FxAccordion`, `FxToolBar`, `FxButtonBar`, `FxDialogPane`, `FxPane`, `FxTextFlow`        |
 | `org.tentackle.fx.container.delegate` / `.config` / `.build` | Container delegates, configurators and builders                                                                                                                                                                                                                                                 |
@@ -298,7 +336,7 @@ A typical screen comes to life like this:
 | `org.tentackle.fx.table`                                     | Table configuration and cell-type infrastructure (`TableConfiguration`, `TableColumnConfiguration`, `TableConfigurationProvider`, `TableCellType`, `TableCellTypeFactory`, `FxTableColumn`/`FxTableCell` and tree variants, `TotalsTableView`)                                                  |
 | `org.tentackle.fx.table.type`                                | Concrete `TableCellType`s per value class                                                                                                                                                                                                                                                       |
 | `org.tentackle.fx.nofxml`                                    | Build a view/controller without `FXMLLoader` (`NoFXML`, `NoFXMLLinker`)                                                                                                                                                                                                                         |
-| `org.tentackle.fx.apt`                                       | Annotation processors emitting SPI metadata for controllers, translators and cell types                                                                                                                                                                                                         |
+| `org.tentackle.fx.apt`                                       | Annotation processors validating the contracts of controllers, translators and cell types at compile time (see [Annotation Processors](../../../../tentackle-core/src/main/docs/annotation-processors.md))                                                                                       |
 | `org.tentackle.fx.service`                                   | Module hook (`Hook`) registered as a `ModuleHook`                                                                                                                                                                                                                                               |
 
 See also: [binding.md](../../../../tentackle-core/src/main/docs/binding.md) for

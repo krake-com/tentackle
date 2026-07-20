@@ -2,8 +2,10 @@
 
 **Tentackle** is a Java framework for building modular, multi-tier,
 enterprise-grade applications — from the database up to a JavaFX desktop client —
-with a single, location-transparent programming model. It is Open Source and
-licensed under LGPL 2.1.
+with a single, location-transparent programming model. It is Open Source (LGPL 2.1),
+available from [Maven Central](https://search.maven.org/search?q=org.tentackle),
+and requires Java 25 or later (older LTS lines are maintained on the `java21`,
+`java17`, `java11` and `java8` branches).
 
 ## Why Tentackle?
 
@@ -18,15 +20,19 @@ Five things set Tentackle apart from other Java frameworks:
 
 2. **Write the domain logic once, run it on any tier.** The same artifact works
    whether the database is local, behind a middle-tier server, or reached through
-   a cascade of nested servers — transparently, over the
-   [TRIP](tentackle-core/src/main/docs/trip.md) protocol. See the
+   a cascade of nested servers — transparently, over
+   [TRIP](tentackle-core/src/main/docs/trip.md), a compact binary protocol that
+   replaces RMI/JOS with pluggable, SD-WAN-friendly transports (TLS, compression,
+   pre-shared-key encryption, QUIC). The topology is pure configuration: a
+   connection URL decides where each node sits. See the
    [Multi-Tier Cascade](src/main/docs/tiers.md).
 
-3. **Correctness is the default, not an add-on.** Aggregates as first citizens
-   enforcing DDD rules, optimistic (`serial`) locking always on, 
-   validation is declarative and travels with the object,
-   shared objects can be made immutable, and aggregates revert atomically via
-   snapshots. See [Correctness First](src/main/docs/correctness-first.md).
+3. **Correctness is the default, not an add-on.** Optimistic (`serial`) locking
+   is always on, validation is declarative and travels with the object,
+   aggregates are first-class citizens enforcing DDD boundaries and reverting
+   atomically via snapshots, and shared objects can be made immutable. Whatever
+   goes wrong fails loudly and early instead of corrupting data quietly. See
+   [Correctness First](src/main/docs/correctness-first.md).
 
 4. **One model, generated everywhere — at build time.** The model lives in the
    PDO interface and drives generation of the persistence layer, DDL and database
@@ -36,11 +42,10 @@ Five things set Tentackle apart from other Java frameworks:
    classpath scanning, fast startup, and it works in both modular and classpath mode.
 
 5. **True JPMS, self-contained apps.** Every module is a real
-   [JPMS module](src/main/docs/modules.md); applications ship as
+   [JPMS module](src/main/docs/modules.md); applications ship as self-contained
    jlink/jpackage images with built-in client
    [auto-update](tentackle-update/src/main/docs/update.md) and rich
-   [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md) desktop clients. TRIP replaces
-   RMI/JOS with a compact, pluggable, SD-WAN-friendly transport.
+   [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md) desktop clients.
 
 For a sense of where Tentackle excels, read
 [Why Tentackle Fits Technical and Scientific Applications](src/main/docs/technical-scientific.md).
@@ -52,3 +57,7 @@ For a sense of where Tentackle excels, read
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
 - 🧾 **[Java site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/)** — as a reference.
+
+and for the impatient Java developer:
+
+- 🔔 **[Concise Summary](src/main/docs/unexpected.md)** — main facts you might not expect

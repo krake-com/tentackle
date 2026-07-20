@@ -188,6 +188,12 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
         initializer.accept(value);
       }
 
+      if (reference != null && !isConverted()) {
+        // register before reading the entries, so that keys or values may back-reference the map itself
+        stream.addReference(reference, value, isDeduplicateable(value));
+        reference.markReceived();
+      }
+
       if (size > 0) {
         opCode = stream.receiveOpCode();
         int elementCount = 0;
@@ -233,7 +239,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
       value = convert(value);
       validateRead(value);
 
-      if (reference != null) {
+      if (reference != null && isConverted()) {
         stream.addReference(reference, value, isDeduplicateable(value));
         reference.markReceived();
       }
@@ -251,6 +257,18 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    */
   protected T convert(T value) {
     return value;
+  }
+
+  /**
+   * Tells whether {@link #convert(Map)} returns a different instance.<br>
+   * Non-converted maps are registered as references before reading the entries,
+   * so that keys or values may back-reference the map itself. Converted maps
+   * can only be registered after the conversion.
+   *
+   * @return true if the map is converted
+   */
+  protected boolean isConverted() {
+    return false;
   }
 
   @Override

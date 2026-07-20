@@ -66,6 +66,8 @@ See **[trip.md](trip.md)** for the full treatment.
 ### Reflection, proxies and interception
 
 Package `org.tentackle.reflect` (plus the build-time `apt` processors).
+See [reflect.md](reflect.md) for the full picture and [interceptors.md](interceptors.md) for the
+interception model.
 
 This package provides two intertwined capabilities:
 
@@ -150,6 +152,9 @@ the [`SocketChannelDispatcher`](../java/org/tentackle/io/SocketChannelDispatcher
 connections, and the reconnection machinery ([`Reconnector`](../java/org/tentackle/io/Reconnector.java),
 [`ReconnectionPolicy`](../java/org/tentackle/io/ReconnectionPolicy.java)) that lets dropped connections recover.
 
+See [io.md](io.md) for the details: the packet framing that makes compression and encryption work on a
+communication link, and how reconnection policies are applied.
+
 ### Preferences
 
 Package `org.tentackle.prefs`.
@@ -172,7 +177,9 @@ and the like.
 
 ### Miscellaneous utilities
 
-Packages `org.tentackle.misc` and `org.tentackle.misc.time`.
+Packages `org.tentackle.misc` and `org.tentackle.misc.time`. See [misc.md](misc.md) for the full
+picture — including the contracts (`Modifiable`, `SerialNumbered`, `Snapshotable`, …) that
+`PersistentObject` implements.
 
 The framework's general-purpose toolkit (~70 files). Highlights:
 
@@ -199,9 +206,16 @@ Package `org.tentackle.apt` (and `apt.visitor`).
 The build-time annotation processors that back core's annotations — chiefly the interception processors
 ([`InterceptionAnnotationProcessor`](../java/org/tentackle/apt/InterceptionAnnotationProcessor.java),
 `AbstractInterceptorAnnotationProcessor`, …) and the service-annotation base
-([`AbstractServiceAnnotationProcessor`](../java/org/tentackle/apt/AbstractServiceAnnotationProcessor.java)). These
-run during compilation/analysis (see the [service & configuration API](../../../../tentackle-common/src/main/docs/services.md))
-and emit the `META-INF` configuration consumed at runtime.
+([`AbstractServiceAnnotationProcessor`](../java/org/tentackle/apt/AbstractServiceAnnotationProcessor.java)).
+These run inside `javac` and **validate** annotated classes — that a service implementation is not
+abstract, implements the required interface and provides the constructors the framework will invoke
+reflectively — reporting errors and warnings. They generate nothing: the `META-INF` configuration is
+emitted by the `@Analyze` handlers of the
+[service & configuration API](../../../../tentackle-common/src/main/docs/services.md) instead, which is
+also what registers the processors themselves.
+
+See [Annotation Processors](annotation-processors.md) for the full picture, including the processors in
+tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 
 ---
 
@@ -210,17 +224,17 @@ and emit the `META-INF` configuration consumed at runtime.
 | Package(s)                                                                                         | Subsystem                                                            | Reference                          |
 |----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|------------------------------------|
 | `org.tentackle.trip` (+ `builder`, `creators`, `impl`, `provider`, `remote`, `transport`, `types`) | TRIP remoting/serialization                                          | [trip.md](trip.md)                 |
-| `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [interceptors.md](interceptors.md) |
+| `org.tentackle.reflect`                                                                            | Class mapping, interceptable proxies, reflection helpers             | [reflect.md](reflect.md), [interceptors.md](interceptors.md) |
 | `org.tentackle.bind`                                                                               | Model↔view binding                                                   | [binding.md](binding.md)           |
 | `org.tentackle.validate` (+ `scope`, `validator`, `severity`)                                      | Validation framework                                                 | [validation.md](validation.md)     |
-| `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | —                                  |
-| `org.tentackle.task`                                                                               | Serialized task dispatchers                                          | —                                  |
-| `org.tentackle.script`                                                                             | Scripting abstraction                                                | —                                  |
-| `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | —                                  |
-| `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | —                                  |
-| `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | —                                  |
-| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | —                                  |
-| `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | —                                  |
+| `org.tentackle.log`                                                                                | Pluggable logging, MDC, `@Log`, method statistics                    | [logging.md](logging.md)           |
+| `org.tentackle.task`                                                                               | Serialized task dispatchers                                          | [tasks-daemon.md](tasks-daemon.md) |
+| `org.tentackle.script`                                                                             | Scripting abstraction                                                | [scripting.md](scripting.md)       |
+| `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | [io.md](io.md)                     |
+| `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | [preferences.md](preferences.md)   |
+| `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | [tasks-daemon.md](tasks-daemon.md) |
+| `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | [misc.md](misc.md)                 |
+| `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | [annotation-processors.md](annotation-processors.md) |
 | `org.tentackle.service`                                                                            | The [`Hook`](../java/org/tentackle/service/Hook.java) (`ModuleHook`) | —                                  |
 
 ---

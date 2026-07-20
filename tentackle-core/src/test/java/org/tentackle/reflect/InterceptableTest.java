@@ -22,6 +22,13 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.reflect.interceptable.Calculator;
+import org.tentackle.reflect.interceptable.LogItInterceptor;
+
+import java.lang.reflect.Proxy;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Interceptable test.
@@ -34,6 +41,30 @@ public class InterceptableTest {
   @Test
   public void testCreateInterceptable() {
     Calculator calc = InterceptableFactory.getInstance().createInterceptable(Calculator.class);
-    Assert.assertEquals(calc.add(10, 30), 140);   // + 100 due to @Offset
+    assertEquals(calc.add(10, 30), 140);   // + 100 due to @Offset
+  }
+
+  @Test
+  public void testCreatedInterceptableIsProxy() {
+    Calculator calc = InterceptableFactory.getInstance().createInterceptable(Calculator.class);
+    Assert.assertNotNull(calc);
+    assertTrue(calc instanceof Calculator);
+    assertTrue(Proxy.isProxyClass(calc.getClass()));
+  }
+
+  @Test
+  public void testInterceptorChainIsApplied() {
+    // The @LogIt interceptor runs first (outermost) and records the result
+    // produced after the chained @Offset interceptor added its offset of 100.
+    LogItInterceptor.lastResult = null;
+    Calculator calc = InterceptableFactory.getInstance().createInterceptable(Calculator.class);
+    int result = calc.add(1, 2);
+    assertEquals(result, 103);                       // (1 + 2) + 100
+    assertEquals(LogItInterceptor.lastResult, 103);  // recorded by the LogIt interceptor
+  }
+
+  @Test
+  public void testFactorySingleton() {
+    assertSame(InterceptableFactory.getInstance(), InterceptableFactory.getInstance());
   }
 }

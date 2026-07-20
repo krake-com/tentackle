@@ -292,18 +292,114 @@ Tentackle ships a number of interceptors. The most important ones, all in
 | Annotation                             | Type   | Purpose                                                                                                            |
 |----------------------------------------|--------|--------------------------------------------------------------------------------------------------------------------|
 | `@Transaction`                         | PUBLIC | Wrap the method in a transaction — begin/commit, rollback on exception, optional retry, isolation and writability. |
-| `@NoTransaction`                       | PUBLIC | Assert that the method runs *without* a (new) transaction; useful for cached PDOs.                                 |
+| `@NoTransaction`                       | PUBLIC | Assert that **no** transaction is running when the method is invoked; useful for cached PDOs.                      |
 | `@Secured`                             | PUBLIC | Evaluate one or more `Permission`s against the domain context before proceeding (`org.tentackle.security`).        |
-| `@PreCommit` / `@PostCommit`           | PUBLIC | Register the method to run as part of the pre-/post-commit phase of the surrounding transaction.                   |
-| `@WithinContext` / `@NotWithinContext` | PUBLIC | Require that named objects are (not) present in the current domain context.                                        |
+| `@PreCommit` / `@PostCommit`           | PUBLIC | Defer the method's execution to just before / right after the commit of the surrounding transaction.               |
+| `@WithinContext` / `@NotWithinContext` | PUBLIC | Assert that the current domain context is (not) within a given *named* context.                                    |
 | `@LocalSessionOnly`                    | ALL    | Restrict the method to a local (non-remote) session.                                                               |
 | `@InvokeInBuddyDelegate`               | HIDDEN | Internal redirection of an implementation method to a buddy delegate.                                              |
 | `@Log`                                 | ALL    | Measure and log the execution time of the method (`tentackle-core`, `org.tentackle.log`).                          |
 
+One table row cannot carry the semantics that matter in practice — when exactly
+the deferred methods run, what happens on rollback, how the assertions behave.
+The following sections spell them out.
+
+### `@Transaction`
+
 `@Transaction` is a good illustration of a **remote-aware** interceptor: when the
 session is remote and the implementation is a `@RemoteMethod`, it forwards the
 call to the server's own `TransactionInterceptor` rather than opening the
-transaction locally, saving the begin/commit round trips.
+transaction locally, saving the begin/commit round trips. Its attributes — the
+transaction name (`value`), the `running` assertion, `rollbackSilently`,
+isolation, writability, and the transparent-retry machinery — as well as the
+nesting rules (an inner `@Transaction` method *joins* the outer transaction) are
+covered in depth in
+[Transactions and Transparent Retry](../../../../tentackle-pdo/src/main/docs/transaction.md).
+
+### `@PreCommit` and `@PostCommit` — deferred until the commit
+
+Calling a method annotated with `@PreCommit` or `@PostCommit` does **not**
+execute it. The interceptor registers the invocation — method, arguments and
+all — with the session
+([`Session.preCommit`](../../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) /
+`Session.postCommit`) and returns immediately. The recorded call runs later:
+
+- **`@PreCommit`** — immediately *before* the physical commit, still inside the
+  transaction. Intended for final computations that must see the complete state
+  of the unit of work and whose own modifications must commit with it: derived
+  totals, audit records, last-minute consistency checks.
+- **`@PostCommit`** — *after* the successful physical commit. Intended for
+  non-transactional follow-ups: firing events, sending notifications, external
+  side effects that must happen only when the data is durably committed. In a
+  [retryable transaction](../../../../tentackle-pdo/src/main/docs/transaction.md#writing-retryable-methods)
+  this is exactly where one-shot side effects belong, because a post-commit runs
+  once, after the attempt that succeeded.
+
+The rules, each enforced with a `PersistenceException`:
+
+- The annotated method must **return `void`** — the intercepted call returns
+  immediately, so there is nowhere for a return value to come from — and must be
+  invoked **within a running transaction**.
+- **Rollback discards the registrations.** If the transaction rolls back,
+  neither its pre- nor its post-commits run. (Under transparent retry the next
+  attempt re-registers them by re-executing the method body.)
+- **A pre-commit that throws prevents the commit**: the exception propagates and
+  rolls the transaction back like any other failure inside it.
+- **A post-commit that throws cannot undo the commit** — the transaction is
+  already durable; the exception merely propagates to the caller. Write
+  post-commit code defensively.
+- **Registrations do not recurse**: a pre-commit must not register another
+  pre-commit, a post-commit must not register another post-commit. (A
+  post-commit may, however, start a complete new transaction.)
+
+They *do* compose with nesting: hooks registered by an inner (joined)
+`@Transaction` method run **before** those of the outer method, and within one
+nesting level in registration order. Pre- and post-commits always execute in the
+JVM in which they were registered.
+
+### `@NoTransaction` — asserting the absence of a transaction
+
+`@NoTransaction` is a pure assertion: if a transaction **is** running when the
+method is invoked, a `PersistenceException` is thrown — it never suspends or
+commits anything. Its purpose is to protect transactions from methods that
+return potentially **stale data** — values served from the
+[PDO cache](../../../../tentackle-pdo/src/main/docs/cache.md) or lazy references —
+which must not silently leak into a unit of work that expects consistent reads.
+
+- `cachedOnly = true` relaxes the check: it fails only if the PDO is actually
+  cached. For a component PDO the **aggregate root** decides, because caching
+  happens at the root.
+- Like `@Transaction`, the interceptor is remote-aware: with a remote session
+  and a `@RemoteMethod` implementation the check is skipped locally and
+  performed by the server instead.
+- The combination `@NoTransaction` followed by `@Transaction` guarantees that a
+  method always runs in a **fresh** transaction: since chain order is annotation
+  order, `@NoTransaction` first asserts that nothing is running, then
+  `@Transaction` begins a new transaction — instead of silently
+  [joining](../../../../tentackle-pdo/src/main/docs/transaction.md) an existing one.
+
+### `@WithinContext` and `@NotWithinContext` — asserting the domain context
+
+Domain contexts form a parent chain and can be **named**. `@WithinContext`
+requires that each name given in its `value` matches the name of the current
+[`DomainContext`](domain-context-provider.md) or one of its parents;
+`@NotWithinContext` requires the opposite. A violated assertion throws a
+`DomainException`. This turns workflow assumptions into checked contracts: a
+method that only makes sense inside, say, a named migration- or import context —
+or must never run there — declares it instead of relying on discipline.
+
+Two edge cases: the empty name is always "within" (the topmost parent context is
+unnamed), and if no domain context is set at all (unit tests, bootstrapping) the
+check is skipped.
+
+### `@LocalSessionOnly` — pinning a method to the database side
+
+`@LocalSessionOnly` throws a `PersistenceException` when the session is
+**remote** — for methods that need resources existing only where the database
+is, such as low-level backend access. Its type is `ALL`, so it may sit on the
+interface or on the implementing method. There is deliberately no
+`@RemoteSessionOnly` counterpart: a remote invocation always ends up in a local
+session on the server, so the restriction would be meaningless.
 
 ---
 
@@ -347,8 +443,13 @@ therefore reported as a compilation error.
 
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) —
   the proxy layer interceptors plug into.
+- [Transactions and Transparent Retry](../../../../tentackle-pdo/src/main/docs/transaction.md) —
+  `@Transaction` in depth: attributes, nesting, remote behavior, retry.
 - [Validation](validation.md) — a sibling annotation-driven mechanism with the
   same separation of annotation and implementation.
 - [TRIP](trip.md) — remoting, relevant to remote-aware interceptors.
 - [Services](../../../../tentackle-common/src/main/docs/services.md) — the SPI
   used for `implementedByService` binding.
+- [Reflection](reflect.md) — the rest of `org.tentackle.reflect`: the `ClassMapper`
+  that locates interceptable implementations, the mixins behind the proxies, and
+  canonical construction.

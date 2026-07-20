@@ -6,7 +6,7 @@
 Tentackle application: the constants, accessor declarations, relation methods, unique-domain-key types, model
 documentation, and Data Transfer Objects that belong to a [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md)
 interface or operation interface. Together with its sibling
-[`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets) — which generates the matching
+[`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — which generates the matching
 *implementation* side — it turns the application
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) into compilable Java.
 
@@ -115,11 +115,15 @@ its leading `@{comment ...}@` block.
 
 ### The DTO wurblet
 
+> A dedicated deep-dive — the two input modes, the `@RecordDTO` build-time analysis, and a mode-by-mode table of
+> what is generated — lives in [The DTO Wurblet and `@RecordDTO`](dto-wurblet.md). This section is the quick
+> reference.
+
 [`DTO`](../wurblets/org/tentackle/wurblet/DTO.wrbl) is the most feature-rich generator and the only one not tied
 to a persistent entity. It produces a Data Transfer Object from a small *property model*, usually written as a
 here-document (a "heap file" named `.<filename>`) inside the leading comment block of the DTO source file, or
-inferred directly from a Java `record`. Each model line is `<type> <name> <comment>`, with single-character
-prefixes selecting per-property behavior:
+inferred directly from a Java `record` annotated with [`@RecordDTO`](dto-wurblet.md#what-recorddto-actually-does).
+Each model line is `<type> <name> <comment>`, with single-character prefixes selecting per-property behavior:
 
 | Prefix | Meaning                                                                                             |
 |--------|-----------------------------------------------------------------------------------------------------|
@@ -249,6 +253,7 @@ running application.
 
 ## Related Documentation
 
+- [The DTO Wurblet and `@RecordDTO`](dto-wurblet.md) — the `DTO` wurblet in depth: property models vs. annotated records.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets consume.
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the interfaces these wurblets populate.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType`/`Backend` used during generation.

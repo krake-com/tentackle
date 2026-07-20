@@ -22,6 +22,9 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.text.ParseException;
+import java.util.Properties;
+
+import static org.testng.Assert.assertEquals;
 
 /**
  * Tests the ParameterString.
@@ -37,13 +40,13 @@ public class ParameterStringTest {
     try {
       String parStr = "user='harald', enabled, offset='10', skipLine";
       ParameterString ps = new ParameterString(parStr);
-      Assert.assertEquals(parStr, ps.toString());
+      assertEquals(ps.toString(), parStr);
       ps.setParameter("userId", "harr's");
       parStr += ", userId='harr''s'";
-      Assert.assertEquals(parStr, ps.toString());
+      assertEquals(parStr, ps.toString());
       ps.setParameter("offset", null);
       parStr = "user='harald', enabled, skipLine, userId='harr''s'";
-      Assert.assertEquals(parStr, ps.toString());
+      assertEquals(ps.toString(), parStr);
     }
     catch (ParseException ex) {
       Assert.fail(ex.toString());
@@ -56,8 +59,61 @@ public class ParameterStringTest {
       Assert.fail("should have failed");
     }
     catch (ParseException ex) {
-      Assert.assertEquals(5, ex.getErrorOffset());
+      assertEquals(ex.getErrorOffset(), 5);
     }
+  }
+
+  @Test
+  public void testAccessors() throws ParseException {
+    ParameterString ps = new ParameterString("user='harald', enabled, offset='10'");
+    assertEquals(ps.getParameter("user"), "harald");
+    assertEquals(ps.getParameter("offset"), "10");
+    // a name without a value is stored as the empty string (presence flag, e.g. for booleans)
+    assertEquals(ps.getParameter("enabled"), "");
+    // unknown parameter
+    Assert.assertNull(ps.getParameter("missing"));
+    // insertion order is preserved
+    assertEquals(ps.getParameterNames(), new String[] { "user", "enabled", "offset" });
+  }
+
+  @Test
+  public void testSetParameterReturnsPreviousValue() {
+    ParameterString ps = new ParameterString();
+    Assert.assertNull(ps.setParameter("x", "1"));
+    assertEquals(ps.setParameter("x", "2"), "1");
+    // setting null removes and returns the previous value
+    assertEquals(ps.setParameter("x", null), "2");
+    Assert.assertNull(ps.getParameter("x"));
+  }
+
+  @Test
+  public void testToProperties() throws ParseException {
+    ParameterString ps = new ParameterString("user='harald', enabled, offset='10'");
+    Properties props = ps.toProperties();
+    assertEquals(props.getProperty("user"), "harald");
+    assertEquals(props.getProperty("offset"), "10");
+    assertEquals(props.getProperty("enabled"), "");
+    assertEquals(props.size(), 3);
+  }
+
+  @Test
+  public void testQuoteRoundtrip() throws ParseException {
+    // a value containing single quotes is encoded as doubled quotes and parses back to the original
+    ParameterString ps = new ParameterString();
+    ps.setParameter("q", "it's a 'test'");
+    String external = ps.toString();
+    assertEquals(external, "q='it''s a ''test'''");
+    ParameterString reparsed = new ParameterString(external);
+    assertEquals(reparsed.getParameter("q"), "it's a 'test'");
+  }
+
+  @Test
+  public void testEmptyAndNull() throws ParseException {
+    assertEquals(new ParameterString("").toString(), "");
+    // parse(null) clears without failing
+    ParameterString ps = new ParameterString("a='1'");
+    ps.parse(null);
+    assertEquals(ps.getParameterNames().length, 0);
   }
 
 }

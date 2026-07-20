@@ -41,7 +41,7 @@ generation, remoting, UI, and build machinery that surround it.
 
 MyApp is a Maven reactor of eight library/application modules plus a `jlink` sub-aggregator. The root
 `pom.xml` is a `pom`-packaging aggregator that imports
-[`tentackle-bom`](../../../../tentackle-bom) and centralises **all** plugin configuration in
+[`tentackle-bom`](../../../../tentackle-bom/src/main/docs/bom.md) and centralizes **all** plugin configuration in
 `<pluginManagement>` so the child modules stay tiny.
 
 ```
@@ -77,7 +77,7 @@ Every module has an explicit `module-info.java`. The dependency edges encode Ten
 | `…daemon`  | `transitive …persist`, `…domain`                                                   |   no    | a headless console client                                                                                                                        |
 
 The domain, persistence, and gui modules are **`open module`** because the framework reflects into them: TRIP
-serialises PDO state, JavaFX/FXML instantiates controllers, and the proxy-based PDO assembly (below) needs reflective
+serializes PDO state, JavaFX/FXML instantiates controllers, and the proxy-based PDO assembly (below) needs reflective
 access to the implementation classes.
 
 Notice that `…client`, `…server` and `…daemon` each pull in **both** `…persist` and `…domain`. A running JVM needs both
@@ -109,6 +109,9 @@ one-class pattern.
 A **PDO** is a single logical entity that Java cannot express directly because it needs *two* independent
 implementation inheritance chains — one for persistence, one for domain logic. Tentackle emulates that multiple
 inheritance with a **dynamic proxy** that fronts a `PersistentObject` and a `DomainObject` working in tandem.
+
+![The PDO Pattern](../../../../src/main/docs/assets/pdo.gif)
+
 
 For each entity there are (at least) five Java types, plus generated SQL. Take **`Message`**:
 
@@ -148,7 +151,13 @@ You never call a constructor. You ask the factory:
 Message m = Pdo.create(Message.class, context);   // a live, empty PDO bound to a domain context
 ```
 
-`Pdo.create` returns a proxy implementing `Message`. Calls that belong to the persistence facet are routed to a
+or if inside a `DomainContextProvider` (which is usually the case):
+
+```java
+Message m = on(Message.class);
+```
+
+`Pdo.create` or `on(...)` returns a proxy implementing `Message`. Calls that belong to the persistence facet are routed to a
 `MessagePersistenceImpl`; calls on the domain facet go to a `MessageDomainImpl`. Inside an implementation, `me()`
 returns the proxy (so a domain method can call persistence methods and vice-versa) and `getDomainContext()` yields the
 ambient context. You can see both halves cooperating in `MessageDomainImpl.create(...)`:
@@ -235,8 +244,12 @@ Things to note for a newcomer:
 
 - **`attributes`** are declared as `JavaType(size) attributeName column_name description [modifiers]`. Modifiers in
   brackets drive generation: `key` (part of the domain key), `uc`/`normtext` (uppercase / normalized search text),
-  `cached`, `tableserial`, `trimwrite`, `@NotNull` (a bean-validation constraint), `[MUTE]` (excluded from the PDO —
+  `cached`, `tableserial`, `trimwrite`, `@NotNull` (a constraint of Tentackle's
+  [validation layer](../../../../tentackle-core/src/main/docs/validation.md)), `[MUTE]` (excluded from the PDO —
   see the password below), etc.
+- **`validations`** attach further [validation annotations](../../../../tentackle-core/src/main/docs/validation.md)
+  to attributes; the `{ @('please enter the name') }` syntax pulls the localized message from the module's resource
+  bundle, so validation failures speak the user's language.
 - **`$ou_name`, `$ou_comment`, `$msg_text`…** are *column sizes* defined centrally in the root `pom.xml`
   (`<wurbletProperties>`), so the whole model's field widths are tuned in one place.
 - **`extends := OrgUnit`** in `User.java`/`UserGroup.java` produces the multi-table inheritance.
@@ -247,7 +260,7 @@ Things to note for a newcomer:
 
 A subtle, instructive detail: `User`'s `password` attribute is declared `[MUTE]`, so the hash column exists in the
 table but is **not** part of the `User` PDO. The hash is read/written only through dedicated persistence operations
-(`selectPasswordHash()`, `updatePasswordHash(...)`), keeping it off the wire — see the login flow in §8.
+(`selectPasswordHash()`, `updatePasswordHash(...)`), keeping it off the wire — see the login flow in §9.
 
 `@TableName(...)` and `@ClassId(...)` carry `/*@*/ … /*@*/` markers; the `Inject` wurblet keeps those literals in sync
 with the model variables. The `// @wurblet …` comments are **guarded regions** — read on.
@@ -358,11 +371,11 @@ as services** (`@Service(...)`), so the framework picks them up automatically:
 | `MyAppSessionInfoFactory`   | `@Service(SessionInfoFactory)`   | builds `MyAppSessionInfo` from username/password/properties                       |
 | `MyAppDomainContext`        | `DefaultDomainContext`           | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo`            |
 | `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext`                                                       |
-| `MyAppCryptor`              | `@Service(Cryptor.class)`        | app-specific symmetric encryption (salt + passphrase) for stored secrets          |
+| `MyAppCryptor`              | `@Service(Cryptor.class)`        | app-specific symmetric encryption (salt + passphrase) for stored secrets — see [Cryptor and EncryptedProperties](../../../../tentackle-common/src/main/docs/cryptor.md) |
 | `MyAppLocaleProvider`       | `@Service(LocaleProvider.class)` | restricts supported locales to `en` (default) and `de`                            |
-| `MyAppPreferences`          | —                                | typed access to persisted system/user preferences (e.g. the help URL)             |
+| `MyAppPreferences`          | —                                | typed access to persisted system/user [preferences](../../../../tentackle-core/src/main/docs/preferences.md) (e.g. the help URL) |
 | `Version`                   | —                                | reads `version`/`date` from a *filtered* `Version.properties` baked at build time |
-| `Constants`                 | —                                | app constants such as the number-pool realm `"MyApp"`                             |
+| `Constants`                 | —                                | app constants such as the realm `"MyApp"` of the [number pool](../../../../tentackle-pdo/src/main/docs/ns.md) |
 
 The **`SessionInfo` / `DomainContext`** pair is worth internalizing early:
 
@@ -374,7 +387,8 @@ The **`SessionInfo` / `DomainContext`** pair is worth internalizing early:
 
 `MyAppCryptor` deliberately obfuscates its salt/passphrase character-by-character and notes in comments that production
 deployments should derive the passphrase from an external source. It is the same `Cryptor` the build uses to encrypt
-passwords into the jlink images (§11).
+passwords into the jlink images (§14) — the full mechanism, including the `~`-prefixed encrypted values in properties
+files, is described in [cryptor.md](../../../../tentackle-common/src/main/docs/cryptor.md).
 
 ---
 
@@ -406,7 +420,9 @@ The FX `MainController` consults this in `configure()` to enable/disable the *Se
 
 All three subclass a Tentackle **application base class** and share the `getUser(...)` contract from §3. Each `main`
 just constructs the application and calls `start(args)`; the base class drives configuration, login, the session
-lifecycle and shutdown hooks.
+lifecycle and shutdown hooks. The startup sequence (`register → initialize → login → configure → finishStartup`)
+and the three application shapes — console, server, desktop — are dissected in
+[Application Bootstrap](../../../../tentackle-pdo/src/main/docs/application.md).
 
 ### 8.1 Desktop client — `MyAppFxClient`
 
@@ -438,7 +454,8 @@ set — starts the [server-side update service](../../../../tentackle-update/src
 auto-update to the running version.
 
 The server is the only tier **directly** connected to the database; clients and the daemon connect *to the server* over
-TRIP. This is the classic three-tier topology, and it is configured purely through properties (§10), not code.
+TRIP. This is the classic three-tier topology, and it is configured purely through properties (§12), not code —
+see the [Multi-Tier Cascade](../../../../src/main/docs/tiers.md) for the deeper cascades the same mechanism allows.
 
 ### 8.3 Console daemon — `MyAppDaemon`
 
@@ -450,7 +467,8 @@ latestMessageId = on(Message.class).selectMaxId();
 Pdo.listen(this::logMessages, Message.class);   // fire whenever a Message is committed anywhere
 ```
 
-`Pdo.listen(...)` is the framework's change-notification primitive (the same one the security manager uses). Whenever a
+`Pdo.listen(...)` is the framework's change-notification primitive (the same one the security manager uses, and the
+one that keeps the [PDO cache](../../../../tentackle-pdo/src/main/docs/cache.md) coherent across tiers). Whenever a
 `Message` is persisted — by *any* JVM connected to the server — every listener is notified, and the daemon prints the
 new messages. It illustrates that PDO change events, like PDO methods, cross the remoting boundary transparently.
 
@@ -499,11 +517,13 @@ repeatable trio of artifacts (look at the `user`, `usergroup` and `message` sub-
 2. A **`…Editor`** extending `PdoEditor<Entity>` annotated `@FxControllerService`, paired with an **`.fxml`** layout and
    **`.properties`** bundles co-located in `src/main/java` (a Tentackle convention so SceneBuilder finds them by
    relative path, the project's FXML/FX convention). Fields are wired with `@FXML` and bound to the PDO with
-   `@Bindable` + the controller's binder. `UserEditor` shows a text field, checkboxes, a child `UserGroup` table with a
+   `@Bindable` + the controller's binder (see the [binding API](../../../../tentackle-core/src/main/docs/binding.md)).
+   `UserEditor` shows a text field, checkboxes, a child `UserGroup` table with a
    context menu, and a password button.
 3. A **`…Finder`** (e.g. `MessageFinder`) or the framework's `DefaultPdoFinder`, plus a `TableConfiguration` describing
    the search-result columns (see `MessageGuiProvider.createTableConfiguration()`, which uses the generated `AN_*`/`RN_*`
-   attribute-name constants for column ids and bundle keys).
+   attribute-name constants for column ids and bundle keys — the configuration-driven table machinery is covered in
+   [Tables and Trees](../../../../tentackle-fx/src/main/docs/tables.md)).
 
 `MainController` ties it together: menu items call `edit(clazz)` / `search(clazz)`, which delegate to
 `Rdc.displayCrudStage(...)` / `Rdc.displaySearchStage(...)`; the RDC layer then looks up the right `GuiProvider`,
@@ -512,7 +532,7 @@ preferences dialog, and password-change view round out the shell.
 
 ---
 
-## 11. Internationalisation
+## 11. Internationalization
 
 > Reference: [i18n](../../../../tentackle-i18n/src/main/docs/i18n.md),
 > [bundles](../../../../tentackle-common/src/main/docs/bundle.md),
@@ -532,10 +552,14 @@ would trip the i18n checker (see the comment in `Version.java`).
 ## 12. Configuration and properties
 
 The runnables are configured by **`.properties` files resolved as resources**, selected with a `--backend=<name>`
-(client/daemon) or `--backend`/service argument (server). Two patterns appear:
+(client/daemon) or `--backend`/service argument (server) — how the command line is parsed into a `SessionInfo` is
+part of the [application startup sequence](../../../../tentackle-pdo/src/main/docs/application.md). Two patterns
+appear:
 
-- **`backend.properties`** (client/daemon) points the JVM at a data source. For tests the client uses
-  `url=${dbService}` (a `trip://…` server URL), and the daemon uses an H2 in-memory URL. Commented lines show optional
+- **`backend.properties`** (client/daemon) points the JVM at a data source. In the *test* resources the client uses
+  `url=${dbService}` (a `trip://…` server URL) and the daemon an H2 in-memory URL; the *packaged images* get their
+  own filtered `backend.properties` (under `jlink/*/src/main/filtered-resources`) — the client connects to the TRIP
+  service, the daemon additionally carries its fixed `daemon` account. Commented lines show optional
   auto-login / view-only setups.
 - **`server.properties`** gives the server its JDBC `url`/`user`/`password`, the TRIP `service` URL to publish, and a
   `timeout`.
@@ -546,14 +570,15 @@ The `${…}` placeholders are **Maven-filtered** at build time from properties d
 the root POM's `<resources>`/`<testResources>` and inherited everywhere.
 
 Secrets are never stored in clear text in the packaged images: the jlink build encrypts them with `MyAppCryptor`
-(see §11 packaging).
+(see §14 and [cryptor.md](../../../../tentackle-common/src/main/docs/cryptor.md)).
 
 ---
 
 ## 13. Testing
 
-> Reference: [persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) and the
-> [maven plugins](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md).
+> Reference: [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) (the TestNG
+> base classes used here), [tentackle-test-fx-rdc](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
+> (UI testing), and [persistence](../../../../tentackle-persistence/src/main/docs/persistence.md).
 
 The project demonstrates three distinct testing styles:
 
@@ -605,18 +630,20 @@ mvn clean install
 # build the native images too
 mvn -Pjlink clean install
 
-# initialise a CI/dev database with the seed data (FillDatabase, group "initdb")
+# initialize a CI/dev database with the seed data (FillDatabase, group "initdb")
 mvn -Pinitdb test
 
 # run a single test / launcher
-mvn -Dtest=RunServer test          # boot the server
-mvn -Dtest=RunClient#runClient test# boot the FX client
-mvn -Dtest=MessageTest test        # the no-DB domain unit test
+mvn -Dtest=RunServer test            # boot the server
+mvn -Dtest=RunClient#runClient test  # boot the FX client
+mvn -Dtest=MessageTest test          # the no-DB domain unit test
 ```
 
-A typical **first run** is: build (`mvn install`), point `server.properties` at a real PostgreSQL, generate the schema
-DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), start `MyAppServer`, then start
-`MyAppFxClient` against, and log in as one of the seed users.
+A typical **first run** is: build with `mvn -Pjlink clean install`, create the PostgreSQL database and apply the
+generated DDL (`jlink/server/target/sql/PostgreSQL/createmodel.sql`), seed it (`mvn -Pinitdb test` in
+`myapp-server`), start the server image, then the client image, and log in as one of the seed users
+(`gonzo`/`gonzo`). The [Quickstart](../../../../src/main/docs/quickstart.md) walks through exactly this sequence
+step by step.
 
 ---
 
@@ -629,8 +656,18 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
   and add a `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
-- **Tune the schema**: add an attribute
-- **add an entity**: use the PDO wizard
+- **Evolve the schema.** Add or change an attribute in the entity's
+  [model block](../../../../tentackle-model/src/main/docs/model-definition.md) and rebuild: the wurblets regenerate
+  the accessors and column plumbing, and the
+  [SQL plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) produces the DDL —
+  including **migration scripts** for databases that already carry the old schema.
+- **Add a validation rule.** Attach a
+  [validation annotation](../../../../tentackle-core/src/main/docs/validation.md) in the model block's
+  `validations` section; it is enforced before every persist, on every tier, and the
+  `tentackle-check-maven-plugin` verifies it at build time.
+- **Change the topology.** Nothing in the code fixes the two-tier client/server layout: repoint the `url` in a
+  module's `backend.properties` to connect a client directly to the database, or insert another server as a proxy —
+  see the [Multi-Tier Cascade](../../../../src/main/docs/tiers.md).
 
 ---
 
@@ -647,6 +684,10 @@ DDL (produced under `target/wurbel`/by the sql plugin), seed it (`-Pinitdb`), st
 | The FX desktop UI                      | [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) · [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) · [atlanta.md](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)                                                                                   |
 | Auto-update                            | [update.md](../../../../tentackle-update/src/main/docs/update.md) · [fx-rdc-update.md](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)                                                                                                                      |
 | Security                               | [security.md](../../../../tentackle-pdo/src/main/docs/security.md)                                                                                                                                                                                                              |
+| Application startup & lifecycle        | [application.md](../../../../tentackle-pdo/src/main/docs/application.md)                                                                                                                                                                                                        |
+| Validation & binding                   | [validation.md](../../../../tentackle-core/src/main/docs/validation.md) · [binding.md](../../../../tentackle-core/src/main/docs/binding.md) · [tables.md](../../../../tentackle-fx/src/main/docs/tables.md)                                                                     |
+| Testing                                | [tentackle-test-pdo.md](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) · [tentackle-test-fx-rdc.md](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)                                                                              |
+| Secrets & encrypted properties         | [cryptor.md](../../../../tentackle-common/src/main/docs/cryptor.md)                                                                                                                                                                                                             |
 | Services / config / bundles            | [common.md](../../../../tentackle-common/src/main/docs/common.md) · [services.md](../../../../tentackle-common/src/main/docs/services.md) · [i18n.md](../../../../tentackle-i18n/src/main/docs/i18n.md)                                                                         |
 | Packaging                              | [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)                                                                                                                                                                                       |
 | The architecture in the large          | [modules.md](../../../../src/main/docs/modules.md) · [tiers.md](../../../../src/main/docs/tiers.md)                                                                                                                                                                             |

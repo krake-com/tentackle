@@ -55,6 +55,11 @@ public class ImmutableCollectionTripType<T extends Collection> extends Collectio
   }
 
   @Override
+  protected boolean isConverted() {
+    return true;
+  }
+
+  @Override
   protected OpCode getOpCode() {
     return OP_CODE;
   }

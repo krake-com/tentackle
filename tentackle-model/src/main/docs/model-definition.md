@@ -267,11 +267,32 @@ String values should be quoted: `default "hello world"`.
 Timestamps: `default "1970-01-01 00:00:00.000"`. 
 Booleans: `default true`.
 
+##### `default` vs. `init` vs. `new`
+
+These three look similar but act at different times and on different layers:
+
+- **`default <value>`** is a *database* default. It is emitted into the DDL `DEFAULT` clause of
+  the generated column, so the value is supplied by the database whenever a row is inserted
+  without that column (for example by another application, a migration, or a `mute` column). It
+  is a literal SQL value, not Java code, and does not initialize the Java field.
+- **`init <expr>`** is a *Java field initializer*. The expression is placed verbatim on the field
+  declaration in the persistence implementation (`type name = <expr>;`), so it applies to *every*
+  instance from the moment it is constructed — freshly created or about to be reloaded from the
+  database (the read then overwrites it). Use it to avoid `null` starting values, e.g.
+  `init BigDecimal.ZERO` or `init ""`.
+- **`new <expr>`** runs *once, just before the first save* of a virgin (never-persisted) PDO,
+  from the generated `presetVirgin()` method. Unlike `init` it does not touch reloaded objects,
+  and unlike `default` it is real Java executed on the object, so it can call methods or read
+  other fields. Use it to stamp values that only make sense for a brand-new object.
+
+`default` and `init`/`new` are independent: a column may carry a DDL default *and* a Java
+initializer, and the two need not agree.
+
 #### Semantic options
 
 | Option      | Description                                                                                         |
 |-------------|-----------------------------------------------------------------------------------------------------|
-| `key`       | Marks this attribute as part of the unique domain key (UDK).                                        |
+| `key`       | Marks this attribute as part of the [unique domain key](../../../../tentackle-pdo/src/main/docs/domain-key.md) (UDK). |
 | `contextid` | This attribute holds the context entity's ID.                                                       |
 | `utc`       | Timestamp only: set the UTC serialization flag.                                                     |
 | `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method). |
@@ -280,6 +301,56 @@ Booleans: `default true`.
 | `hidden`    | Attribute is not declared in the interface (implementation only).                                   |
 | `mute`      | Not part of the PDO — mapped to the database table only.                                            |
 | `mapnull`   | Map `null` to a constant (typically empty string `""` or 0) in the database.                        |
+
+##### Timezone handling (`utc` and `tz`)
+
+Temporal attributes are a classic source of confusion, so the two timezone-related options
+deserve a closer look. Both apply **only to the legacy `java.sql` types** — `utc` to `Timestamp`,
+`tz` to `Timestamp`, `Date` or `Time`. The `java.time` types (`LocalDate`, `LocalDateTime`,
+`OffsetDateTime`, `ZonedDateTime`, `Instant`, …) already encode their own offset/zone semantics
+and use neither option; reach for one of those types first if you can.
+
+- **`utc`** sets the UTC serialization flag on the column. The timestamp is read from and written
+  to the database as an absolute instant in UTC, independent of the JVM's default timezone. This
+  is the right choice for "point in time" values (audit stamps, event times) that must compare
+  correctly across servers running in different timezones.
+
+- **`tz`** makes the generated JDBC code apply an explicit timezone through the
+  `Calendar`-argument variants of the JDBC accessors (`rs.getTimestamp(col, cal)` /
+  `ps.setTimestamp(col, val, cal)`). The `Calendar` is *not* fixed at build time — the PDO must
+  supply it at runtime through a method named after the attribute:
+
+  ```java
+  Calendar get<AttributeName>TimezoneConfig();   // e.g. getPrintedTimezoneConfig()
+  ```
+
+  This lets the effective timezone be chosen per object or per user (a tenant's or a document's
+  own zone, say) rather than being a fixed constant. Use `tz` when a *wall-clock* date/time must
+  be stored and reproduced in a specific, data-driven zone; use `utc` when you want a
+  zone-independent absolute instant. They are different mechanisms and are not normally combined.
+
+##### `contextid`
+
+Marks the attribute that holds the **id of the object spanning this object's
+[domain context](../../../../tentackle-pdo/src/main/docs/domain-context-provider.md)** — for
+example the tenant/mandator in a multi-tenant application. When a PDO is placed into a
+`DomainContext`, the generated `determineContextId()` copies `context.getContextId()` into this
+attribute, and the generated queries add a context condition so that objects belonging to one
+context are not visible from another. There may be at most one `contextid` attribute per entity,
+and it is not allowed on embedded attributes. Entities that live only in the default context do
+not need it.
+
+##### `mute`
+
+A `mute` attribute is mapped to a real database column but is **deliberately invisible to the
+PDO**: no field is declared, no getter/setter is generated, and it appears neither in the domain
+interface nor in snapshots or copies. Because the persistence layer never reads or writes it, the
+column must be able to exist without the PDO's help — hence a `mute` column must be nullable or
+carry a database `default` (the model validation enforces this). Use it for columns that are
+populated outside the normal object lifecycle: by a database trigger, a migration, another
+application, or hand-written code. In the [complete example](#entity-with-inheritance-and-nm-relation-user)
+below, `User.password` is `mute` because it is written through a dedicated password-hashing path
+rather than a plain setter.
 
 #### Access and generation options
 
@@ -292,6 +363,16 @@ Booleans: `default true`.
 | `noconstant`     | Do not generate the name constant.                                                      |
 | `super`          | Attribute is inherited from a super entity (if not in model of superclass)              |
 | `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`. |
+
+##### `super`
+
+Marks an attribute as **inherited from a super entity**. When an entity `extends` another
+*modeled* entity, the generator already knows the inherited attributes and does not regenerate
+them, so `super` is not needed there. It is for the case where the attribute lives in a superclass
+that is **not itself described by a model** (a hand-written or framework base class): listing the
+attribute in the subclass model — flagged `super` — tells the generator that the field, name
+constant and accessors already exist upstream, so it must *use* the attribute (in queries, the
+UDK, etc.) without emitting a second declaration for it.
 
 #### String handling options
 
@@ -385,7 +466,8 @@ attributeName: @Anno1, @Anno2(param=value), ...
 - The block can span multiple lines: continuation is indicated by a trailing `,`.
   The block ends with `;`, an empty line, or two consecutive newlines.
 
-Option syntax inside annotations creates a `org.tentackle.misc.CompoundValue`.
+Option syntax inside annotations creates a
+[`CompoundValue`](../../../../tentackle-core/src/main/docs/compound-value.md).
 This can be a constant, a method reference or a script expression (usually Groovy,
 but Ruby and JSR223 are also supported).
 
@@ -467,6 +549,13 @@ relation = <type> [modifiers...]
 | `object`   | 1:1 association (default).                                         |
 | `list`     | 1:N association.                                                   |
 | `reversed` | Reversed 1:1 (non-component list that returns at most one object). |
+
+There is deliberately **no `set` relation type**: a hash- or tree-based set of PDOs is unsound,
+because a PDO's `hashCode`/`equals` are id-based and change when a new object is first persisted, and
+because cyclic graphs are deserialized through partially built placeholders. `1:N` associations are
+always ordered lists (a [`TrackedList`](../../../../tentackle-core/src/main/docs/misc.md#trackedlist--knowing-what-changed)
+when the aggregate is tracked). See
+[Object identity — why relations are lists](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists).
 
 **Modifiers** (any combination):
 

@@ -15,7 +15,7 @@ funneled through this one interface, so the layers above it can stay completely 
 
 The module serves two distinct audiences:
 
-1. **The runtime persistence layer** ([`tentackle-persistence`](../../../../tentackle-persistence)) uses a
+1. **The runtime persistence layer** ([`tentackle-persistence`](../../../../tentackle-persistence/src/main/docs/persistence.md)) uses a
    `Backend` to build and execute the SQL behind every PDO operation — selects, inserts, updates, deletes,
    sequences, write locks, paged queries, and array parameters.
 2. **The build-time tooling** — the [SQL Maven plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)
@@ -91,7 +91,7 @@ jdbc:oracle:thin:@//localhost:1521/xe|Oracle8
 ```
 
 `BackendInfo` can be built directly from arguments, from an
-[`EncryptedProperties`](../../../../tentackle-common) configuration (honouring `Cryptor`-encrypted URLs and
+[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/common.md) configuration (honouring `Cryptor`-encrypted URLs and
 passwords), or copied with a different user/password. It also carries the optional **keep-alive** settings
 (`backendTimeout`, `backendKeepAliveEnabled`) used to survive cloud databases that silently drop idle
 connections — either by sending a dummy `SELECT` periodically, or by testing the connection just before it is
@@ -314,3 +314,4 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism that discovers backends and data types.
+- [Backend Properties](../../../../tentackle-session/src/main/docs/backend-properties.md) — the reference of all property keys `BackendInfo` and the session layer understand.

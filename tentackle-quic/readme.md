@@ -1,3 +1,8 @@
+(Obsolete since kwik 0.11, which switched back to `com.io7m.repackage.io.whitfin.siphash`,
+but kept in case...)
+
+----------------
+
 Since version 0.10.9, kwik illegally requires the automatic module `io.whitfin.siphash`.
 
 When using the tentackle-jlink-maven-plugin, make sure to move

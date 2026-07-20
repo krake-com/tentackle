@@ -8,9 +8,9 @@ single object every higher layer talks to in order to start transactions, run da
 notified about changes — regardless of whether the database is connected directly to the current JVM or reached
 through a remote Tentackle server (or even a chain of middle-tiers).
 
-The module sits between [`tentackle-core`](../../../../tentackle-core) (its only dependency) and the persistence
-stack ([`tentackle-database`](../../../../tentackle-database), [`tentackle-persistence`](../../../../tentackle-persistence),
-[`tentackle-pdo`](../../../../tentackle-pdo)). It deliberately contains **only interfaces, abstract bases,
+The module sits between [`tentackle-core`](../../../../tentackle-core/src/main/docs/core.md) (its only dependency) and the persistence
+stack ([`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md), [`tentackle-persistence`](../../../../tentackle-persistence/src/main/docs/persistence.md),
+[`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md)). It deliberately contains **only interfaces, abstract bases,
 annotations, events, and a handful of small helper classes** — the concrete `Session` implementation lives in
 `tentackle-database` (local) and in the remoting modules (remote). This keeps the contract that the whole
 framework programs against free of any JDBC, SQL-dialect, or wire-protocol detail.
@@ -87,7 +87,8 @@ singleton (default implementation
 [`DefaultSessionInfoFactory`](../java/org/tentackle/session/DefaultSessionInfoFactory.java) producing
 [`DefaultSessionInfo`](../java/org/tentackle/session/DefaultSessionInfo.java)), which can build one from a
 username/password, from a properties name, or from an
-[`EncryptedProperties`](../../../../tentackle-common) object — honouring `Cryptor`-encrypted credentials. It also
+[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) object — honouring
+`Cryptor`-encrypted credentials. It also
 carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and `checkServerVersion`
 for client/server version validation (`VersionIncompatibleException`).
 
@@ -109,7 +110,9 @@ for client/server version validation (`VersionIncompatibleException`).
 ### Modification tracking
 
 The change-notification subsystem lets any JVM learn that data changed, even when the change happened on another
-client through the server.
+client through the server. This section is the overview — see
+[Modification Tracking](modification-tracking.md) for the full story: the modification table, counting and
+rollback correction, operation modes, the poll loop, delayed listeners and master serial events.
 
 - [`ModificationTracker`](../java/org/tentackle/session/ModificationTracker.java) — the singleton that tracks
   global PDO changes. It maintains its own session (and is both a `SessionTaskDispatcher` and an
@@ -299,7 +302,7 @@ another.
 
 `tentackle-session` sits low in the stack and is intentionally thin:
 
-- It **requires transitive** [`tentackle-core`](../../../../tentackle-core) (and through it `tentackle-common`):
+- It **requires transitive** [`tentackle-core`](../../../../tentackle-core/src/main/docs/core.md) (and through it `tentackle-common`):
   TRIP serialization, tasks/dispatchers, validation, binding, reflection and service discovery.
 - It **opens** `org.tentackle.session` to `org.tentackle.core` for TRIP, because `SessionInfo`, modification and
   master-serial events travel between JVMs.
@@ -309,6 +312,8 @@ another.
 
 ## Related Documentation
 
+- [Backend Properties](backend-properties.md) — the reference of all session configuration keys (`url`, credentials, timeouts, server endpoints, …).
+- [Modification Tracking](modification-tracking.md) — the `ModificationTracker`, its listeners and the master serial events, in depth.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism behind the session, info, and tracker factories.
