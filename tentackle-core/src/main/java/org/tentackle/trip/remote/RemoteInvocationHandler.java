@@ -34,7 +34,6 @@ import org.tentackle.trip.impl.TripError;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -59,28 +58,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
   private final TripType<InitialRemoteResponse> initialResponseType;
   private final TripType<IdentifiedRemoteCall> identifiedCallType;
   private final TripType<IdentifiedRemoteResponse> identifiedRemoteType;
-
-  private record MethodKey(String methodName, Class<?>[] parameterTypes) {
-
-    // record components compare by identity, so arrays must be checked via Arrays.equals
-
-    @Override
-    public boolean equals(Object o) {
-      if (o == null || getClass() != o.getClass()) return false;
-
-      MethodKey methodKey = (MethodKey) o;
-      return methodName.equals(methodKey.methodName) && Arrays.equals(parameterTypes, methodKey.parameterTypes);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = methodName.hashCode();
-      result = 31 * result + Arrays.hashCode(parameterTypes);
-      return result;
-    }
-  }
-
-  private final Map<MethodKey, Integer> methodTypeMap;    // method+parameterTypes -> methodIndex
+  private final Map<Method, Integer> methodTypeMap;    // method -> methodIndex
 
   /**
    * Creates a remote invocation handler.
@@ -107,8 +85,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
     TripStream stream = connection.getStream();
     try {
       stream.clear();
-      MethodKey key = new MethodKey(method.getName(), method.getParameterTypes());
-      Integer methodIndex = methodTypeMap.get(key);
+      Integer methodIndex = methodTypeMap.get(method);
 
       // send call
       try {
@@ -143,7 +120,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
         response = initialResponse;
         methodIndex = initialResponse.methodIndex();
         if (methodIndex >= 0) {
-          methodTypeMap.put(key, methodIndex);
+          methodTypeMap.put(method, methodIndex);
         }
         if (initialResponse.wasSuccessFul()) {
           return processResult(initialResponse.result());
