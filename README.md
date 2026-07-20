@@ -56,7 +56,7 @@ For a sense of where Tentackle excels, read
   complete multi-tier application in minutes.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
-- 🧾 **[Java site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/)** — as a reference.
+- 🧾 **[Java site docs](https://tentackle.org/tentackle/)** — as a reference.
 
 and for the impatient Java developer:
 
