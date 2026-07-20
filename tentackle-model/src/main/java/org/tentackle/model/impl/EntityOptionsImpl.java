@@ -39,37 +39,68 @@ import java.util.Locale;
  */
 public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOptions {
 
-  /** don't apply model defaults. */
+  /**
+   * Ignores the project-wide model defaults for this entity, so only the options listed
+   * explicitly in its model apply.
+   */
   public static final String OPTION_NO_MODELDEFAULTS = "NODEFAULTS";
 
-  /** don't generate ID as primary key. */
+  /**
+   * Suppresses the generated {@code id} primary key column, for entities that have none
+   * (e.g. views or plain link tables).
+   */
   public static final String OPTION_NO_PRIMARY = "NOPKEY";
 
-  /** column tableserial is provided. */
+  /**
+   * Adds the {@code tableSerial} column: a table-wide serial bumped on every modification,
+   * used for change detection and cache invalidation.
+   */
   public static final String OPTION_TABLESERIAL = "TABLESERIAL";
 
-  /** token lock columns editedBy/Since/Expiry are provided. */
+  /**
+   * Adds the token-lock columns ({@code editedBy}, {@code editedSince}, {@code editedExpiry})
+   * that back Tentackle's pessimistic token locking.
+   */
   public static final String OPTION_TOKENLOCK = "TOKENLOCK";
 
-  /** normText is provided. */
+  /**
+   * Adds the {@code normText} column holding normalized, concatenated text of the attributes
+   * flagged {@code normtext}, used for full-text search.
+   */
   public static final String OPTION_NORMTEXT = "NORMTEXT";
 
-  /** root entity. */
+  /**
+   * Marks the entity as a root entity — the top of an aggregate, or a standalone entity — rather
+   * than a component of another aggregate. Normally derived automatically from the model.
+   */
   public static final String OPTION_ROOT = "ROOT";
 
-  /** rootid is provided. */
+  /**
+   * Adds the {@code rootId} column carrying the id of the aggregate root, so a component knows
+   * its root without a database query. Normally derived automatically from the model.
+   */
   public static final String OPTION_ROOTID = "ROOTID";
 
-  /** rootclassid is provided. */
+  /**
+   * Adds the {@code rootClassId} column carrying the class id of the aggregate root, for
+   * components shared by more than one root entity type. Normally derived automatically.
+   */
   public static final String OPTION_ROOTCLASSID = "ROOTCLASSID";
 
-  /** enable remoting. */
+  /**
+   * Enables remoting via TRIP, so the entity's methods can be invoked across JVMs
+   * (directly or through a remote server). Generates the remote delegate methods.
+   */
   public static final String OPTION_REMOTE = "REMOTE";
 
-  /** entity provided by externally. */
+  /**
+   * Declares the table as maintained externally: no DDL or SQL is generated for this entity.
+   */
   public static final String OPTION_PROVIDED = "PROVIDED";
 
-  /** entity provides a cache. */
+  /**
+   * Lets the entity provide a cache (root entities only); generates cache-aware select methods.
+   */
   public static final String OPTION_CACHED = "CACHED";
 
 

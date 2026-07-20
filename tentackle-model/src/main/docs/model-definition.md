@@ -156,7 +156,7 @@ prefixed with `#`.
 | `fulltracked` | Full tracking per attribute including access to the old persisted value.     |
 | `untracked`   | No tracking (default, also used to override the model default).              |
 | `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`)    |
-| `tableserial` | Adds the `tableSerial` attribute.                                            |
+| `tableserial` | Adds the `tableSerial` attribute (table-wide serial bumped on every modification; used for change detection and cache invalidation). |
 | `normtext`    | Adds the `normText` attribute for full-text search.                          |
 | `nopkey`      | No primary key `id`.                                                         |
 | `nodefaults`  | Ignore global model defaults entirely.                                       |
@@ -359,8 +359,8 @@ rather than a plain setter.
 | `readonly`       | Generate getter only; no setter.                                                        |
 | `writeonly`      | Generate setter only; no getter.                                                        |
 | `nomethod`       | Generate neither getter nor setter.                                                     |
-| `nodeclare`      | Do not emit the field declaration code.                                                 |
-| `noconstant`     | Do not generate the name constant.                                                      |
+| `nodeclare`      | Do not emit the backing-field declaration. The column is still mapped (read/written); the value is held elsewhere (e.g. a derived or superclass field). |
+| `noconstant`     | Do not generate the name constants (the `AN_`/`CN_` attribute- and column-name constants and the size constant). |
 | `super`          | Attribute is inherited from a super entity (if not in model of superclass)              |
 | `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`. |
 
