@@ -120,8 +120,10 @@ public abstract class FxRdcTestApplication extends TestApplication {
 
   @Override
   public void unregister() {
-    super.unregister();
-    fxSession.close();
+    if (fxSession != null) {
+      super.unregister();
+      fxSession.close();
+    }
   }
 
   /**
