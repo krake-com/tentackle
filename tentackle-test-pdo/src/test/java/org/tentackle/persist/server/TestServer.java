@@ -18,7 +18,6 @@
 
 package org.tentackle.persist.server;
 
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Version;
 import org.tentackle.dbms.trip.RemoteDbConnectionImpl;
 import org.tentackle.dbms.trip.RemoteDbSession;
@@ -27,9 +26,15 @@ import org.tentackle.dbms.trip.TripServer;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.testng.ServerProcessWrapper;
 import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.trip.Transport;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Server to run client transactions.
@@ -83,12 +88,40 @@ public class TestServer extends ServerApplication {
   }
 
 
-  private void sleep(long millis) {
+  /**
+   * Waits until the parent closes our standard input (EOF) or the safety timeout elapses.
+   * <p>
+   * The parent orchestrates the shutdown by closing the subprocess's standard input
+   * (see {@link ServerProcessWrapper#stopAndWait()}), so the server stays up exactly as long as the
+   * test needs it. The timeout is only a safety net that prevents a leaked process should the
+   * parent die without signaling.
+   *
+   * @param maxUptimeMillis the maximum time to keep running in milliseconds
+   */
+  private void awaitShutdownSignal(long maxUptimeMillis) {
+    CountDownLatch stdinClosed = new CountDownLatch(1);
+    Thread watcher = new Thread(() -> {
+      try {
+        InputStream in = System.in;
+        //noinspection StatementWithEmptyBody
+        while (in.read() >= 0) {
+          // drain until EOF (parent closed our stdin) -> shutdown signal
+        }
+      }
+      catch (IOException ex) {
+        LOGGER.warning("reading stdin failed", ex);
+      }
+      finally {
+        stdinClosed.countDown();
+      }
+    }, "shutdown-signal-watcher");
+    watcher.setDaemon(true);
+    watcher.start();
     try {
-      Thread.sleep(millis);
+      stdinClosed.await(maxUptimeMillis, TimeUnit.MILLISECONDS);
     }
     catch (InterruptedException ix) {
-      throw new InterruptedRuntimeException(ix);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -101,23 +134,27 @@ public class TestServer extends ServerApplication {
    * <p>
    * Usage: &lt;classname&gt; [duration=&lt;ms&gt;]
    * <p>
-   * where:<br>
-   * duration = optional time in ms the server will be running.
-   * Default is 10000 ms (10 s).
+   * The server prints {@link ServerProcessWrapper#READY_MARKER} to standard output once it is listening,
+   * then keeps running until the parent closes its standard input (EOF). The optional
+   * {@code duration} is only a safety-net ceiling on the uptime in case the parent dies without
+   * signaling; it is not the normal shutdown mechanism. Default is 60000 ms (60 s).
    *
    * @param args command line arguments
    */
   public static void main(final String[] args) {
-    long duration = 10000;   // default uptime in ms
+    long maxUptime = 60000;   // safety-net ceiling on uptime in ms
     for (String arg: args) {
       if (arg.startsWith(DURATION)) {
-        duration = Long.parseLong(arg.substring(DURATION.length()));
+        maxUptime = Long.parseLong(arg.substring(DURATION.length()));
       }
     }
     try {
       TestServer server = new TestServer();
       server.start(args);
-      server.sleep(duration);
+      // signal readiness to the parent now that the transport is bound and accepting
+      System.out.println(ServerProcessWrapper.READY_MARKER);
+      System.out.flush();
+      server.awaitShutdownSignal(maxUptime);
       server.stop();
     }
     catch (RuntimeException ex) {

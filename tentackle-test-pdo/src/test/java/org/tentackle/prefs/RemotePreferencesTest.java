@@ -25,6 +25,7 @@ import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.testng.AbstractPdoTest;
+import org.tentackle.pdo.testng.ServerProcessWrapper;
 import org.tentackle.prefs.other.AddAndRemovePrefsInServer;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
@@ -69,30 +70,60 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
   // synchronized because it's the modification tracker's thread
   // Reporter.log doesn't work from other than the test thread!
+  // notifyAll wakes the test thread blocked in awaitEvents.
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
     nodeEvents.add(evt);
     LOGGER.info("child added: " + evt);
+    notifyAll();
   }
 
   @Override
   public synchronized void childRemoved(NodeChangeEvent evt) {
     nodeEvents.add(evt);
     LOGGER.info("child removed: " + evt);
+    notifyAll();
   }
 
   @Override
   public synchronized void preferenceChange(PreferenceChangeEvent evt) {
     keyEvents.add(evt);
     LOGGER.info("key changed: " + evt);
+    notifyAll();
+  }
+
+  /**
+   * Waits until the expected number of node- and key-events have been observed.
+   * <p>
+   * The events are fired asynchronously by the modification tracker after the server commits its
+   * changes. Waiting for the actual counts (rather than a fixed delay) makes the test independent of
+   * the tracker's polling interval and the current system load.
+   *
+   * @param expectedNodeEvents the number of node-change events to wait for
+   * @param expectedKeyEvents the number of key-change events to wait for
+   * @param timeoutMs the maximum time to wait in milliseconds
+   * @throws InterruptedException if interrupted while waiting
+   */
+  private synchronized void awaitEvents(int expectedNodeEvents, int expectedKeyEvents, long timeoutMs)
+      throws InterruptedException {
+    long deadline = System.currentTimeMillis() + timeoutMs;
+    while (nodeEvents.size() < expectedNodeEvents || keyEvents.size() < expectedKeyEvents) {
+      long remaining = deadline - System.currentTimeMillis();
+      if (remaining <= 0) {
+        throw new IllegalStateException(
+            "timed out waiting for events: nodeEvents=" + nodeEvents.size() + " (expected " + expectedNodeEvents
+            + "), keyEvents=" + keyEvents.size() + " (expected " + expectedKeyEvents + ")");
+      }
+      wait(remaining);
+    }
   }
 
   @Test(groups = "remote2", dependsOnGroups = "remote1")  // must be the last test!
   public void writePreferences() throws Exception {
     Reporter.log("RemotePreferencesTest.writePreferences <br>", true);
 
-    Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);
-    Thread.sleep(3000);
+    ServerProcessWrapper server = new ServerProcessWrapper(AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class));
+    server.awaitReady(30000);   // block until the server is listening instead of guessing with sleep
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
     Session session = Pdo.createSession(sessionInfo);
@@ -135,9 +166,10 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertTrue(nodeEvents.isEmpty());
       assertTrue(keyEvents.isEmpty());
 
-      // add node and key in other jvm
-      Thread.sleep(3000);   // give time for the modification tracker to fire events
-
+      // add node and key in the other jvm, then wait for the change to propagate to us
+      server.sendCommand(AddAndRemovePrefsInServer.ADD_COMMAND);
+      server.awaitOutput(AddAndRemovePrefsInServer.ADDED_MARKER, 30000);   // server committed
+      awaitEvents(1, 1, 15000);                                            // tracker fired the events
 
       assertEquals(nodeEvents.size(), 1);
       NodeChangeEvent nodeEvent = nodeEvents.getFirst();
@@ -159,8 +191,10 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(otherPrefs.get(KEY_4, ""), VALUE_4);
       keyEvents.clear();
 
-      // remove node and key in other jvm
-      Thread.sleep(5000);   // give time for the modification tracker to fire events
+      // remove node and key in the other jvm, then wait for the change to propagate to us
+      server.sendCommand(AddAndRemovePrefsInServer.REMOVE_COMMAND);
+      server.awaitOutput(AddAndRemovePrefsInServer.REMOVED_MARKER, 30000);   // server committed
+      awaitEvents(1, 1, 15000);                                              // tracker fired the events
 
       assertEquals(nodeEvents.size(), 1);
       nodeEvent = nodeEvents.getFirst();
@@ -181,7 +215,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     }
     finally {
       ModificationTracker.getInstance().terminate();
-      AbstractPdoTest.waitForProcess(process);
+      server.stopAndWait();   // signal shutdown via stdin EOF and wait for the server to terminate
       session.close();
     }
   }
