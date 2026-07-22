@@ -32,6 +32,7 @@ module org.tentackle.persistence {
 
   // necessary for TRIP
   opens org.tentackle.persist to org.tentackle.core;
+  opens org.tentackle.persist.lock to org.tentackle.core;
   opens org.tentackle.persist.ns to org.tentackle.core;
   opens org.tentackle.persist.security to org.tentackle.core;
   opens org.tentackle.persist.trip to org.tentackle.core;
