@@ -351,6 +351,8 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     installTemplate(Constants.CATEGORY_OPERATION, "PersistenceInterface.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "RemoteInterface.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "RemoteImplementation.ftl");
+
+    installTemplate(Constants.CATEGORY_SCRIPT, "example.ftl");
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {
