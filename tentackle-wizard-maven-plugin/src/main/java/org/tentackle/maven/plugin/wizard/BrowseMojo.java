@@ -96,8 +96,9 @@ public class BrowseMojo extends AbstractWizardMojo {
       Session session = Pdo.createSession(sessionInfo);
       try {
         DomainContext context = Pdo.createDomainContext(session);
-        ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
-        pdoTracker.setSession(session);
+        ModificationTracker pdoTracker = ModificationTracker.getInstance();
+        pdoTracker.setSession(session.clone("MT"));
+        pdoTracker.start();   // update caches in background
         CountDownLatch latch = new CountDownLatch(1);
 
         Platform.startup(() -> {
@@ -128,6 +129,7 @@ public class BrowseMojo extends AbstractWizardMojo {
       }
       finally {
         if (session != null) {
+          ModificationTracker.getInstance().terminate();
           session.close();
         }
       }
