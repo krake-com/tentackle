@@ -21,6 +21,7 @@ package org.tentackle.dbms.trip;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.trip.Transport;
@@ -51,9 +52,21 @@ import java.util.TreeMap;
  *   If there is more than one transport, use {@code service_<somename>=<uri>} to specify
  *   them separately. For example, {@code service_plain=<uri>}, {@code service_ssl=<uri>}
  *   or {@code service_quic=<uri>}
+ *   <p>
+ *   The URI of a {@code service_<somename>} may be <em>derived</em> from the default {@code service} URI
+ *   by referencing its components with a simple expression language (see {@link UriHelper#expand}).
+ *   This avoids repeating (or externally configuring) values such as the host or port when they only
+ *   differ slightly between transports.
+ *   <p>
+ *   Example (given {@code service=trips://localhost:18000/myapp?idle=10}):
+ *   <pre>
+ *     service_compressed=tripcs://$host:${port+1}/$path?$query
+ *   </pre>
+ *   expands to {@code tripcs://localhost:18001/myapp?idle=10}. Only the {@code service_<somename>} entries
+ *   are expanded; the default {@code service} URI is always used verbatim as the template.
  * </li>
  * <li>
- * {@code connectionclass=<FQCN>}: the connection class is usually provided programmatically, but
+ * {@code connectionclass=<FQCN>}: the connection class is usually provided programmatically but
  *  can be configured as a property as well.
  * </li>
  * <li>
@@ -159,7 +172,8 @@ public class TripServer {
       sessionTimeoutCheckInterval = DEFAULT_CHECK_INTERVAL;
     }
 
-    services = new TreeMap<>();
+    // first pass: collect the raw (unexpanded) service configurations
+    Map<String, String> rawConfigs = new TreeMap<>();
     for (String key : props.stringPropertyNames()) {
       boolean multi = key.startsWith(MULTI_SERVICE);
       if (multi || key.equals(SINGLE_SERVICE)) {
@@ -169,14 +183,39 @@ public class TripServer {
         }
         else {
           String subname = multi ? key.substring(MULTI_SERVICE.length()) : "";
-          try {
-            services.put(subname, URI.create(config));
-          }
-          catch (IllegalArgumentException ix) {
-            throw new TentackleRuntimeException("malformed service URI '" + config + "'", ix);
-          }
+          rawConfigs.put(subname, config);
         }
       }
+    }
+
+    // the default 'service' URI is the template all derived service URIs are expanded against
+    URI baseUri = null;
+    String baseConfig = rawConfigs.get("");
+    if (baseConfig != null) {
+      baseUri = createUri(baseConfig);
+    }
+
+    // second pass: expand and parse each service URI
+    services = new TreeMap<>();
+    for (Map.Entry<String, String> entry : rawConfigs.entrySet()) {
+      String subname = entry.getKey();
+      String config = subname.isEmpty() ? entry.getValue() : UriHelper.expand(entry.getValue(), baseUri);
+      services.put(subname, subname.isEmpty() ? baseUri : createUri(config));
+    }
+  }
+
+  /**
+   * Creates a service URI, translating parse errors to a {@link TentackleRuntimeException}.
+   *
+   * @param config the service configuration string
+   * @return the URI
+   */
+  private static URI createUri(String config) {
+    try {
+      return URI.create(config);
+    }
+    catch (IllegalArgumentException ix) {
+      throw new TentackleRuntimeException("malformed service URI '" + config + "'", ix);
     }
   }
 

@@ -18,6 +18,7 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.TentackleRuntimeException;
 import org.testng.annotations.Test;
 
 import java.net.URI;
@@ -26,15 +27,18 @@ import java.util.function.Function;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Tests the {@link UriHelper} query parameter parsing.
+ * Tests the {@link UriHelper} query parameter parsing and variable expansion.
  *
  * @author harald
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class UriHelperTest {
+
+  private static final URI BASE = URI.create("trips://localhost:18000/myapp?idle=10&backlog=100");
 
   @Test
   void testIntegerParameters() {
@@ -95,5 +99,91 @@ public class UriHelperTest {
     Map<String, Integer> parameters = UriHelper.getQueryParameters("a=1&a=2", Integer::parseInt);
     assertEquals(parameters.size(), 1);
     assertEquals(parameters.get("a"), 2);
+  }
+
+
+  @Test
+  public void testExpandNothingToExpand() {
+    // fast path: no '$' means the string is returned unchanged, base is irrelevant
+    assertEquals(UriHelper.expand("trips://host:1234/app", null), "trips://host:1234/app");
+    assertEquals(UriHelper.expand("trips://host:1234/app", BASE), "trips://host:1234/app");
+  }
+
+  @Test
+  public void testExpandJavadocExample() {
+    assertEquals(UriHelper.expand("tripcs://$host:${port+1}/$path?$query", BASE),
+                 "tripcs://localhost:18001/myapp?idle=10&backlog=100");
+  }
+
+  @Test
+  public void testExpandBareVariables() {
+    assertEquals(UriHelper.expand("$scheme://$host:$port/$path", BASE), "trips://localhost:18000/myapp");
+    assertEquals(UriHelper.expand("$rawpath", BASE), "/myapp");
+    assertEquals(UriHelper.expand("$authority", BASE), "localhost:18000");
+  }
+
+  @Test
+  public void testExpandVariablesAreCaseInsensitive() {
+    assertEquals(UriHelper.expand("$HOST:${PORT+1}", BASE), "localhost:18001");
+  }
+
+  @Test
+  public void testExpandArithmeticOperations() {
+    assertEquals(UriHelper.expand("${port+1}", BASE), "18001");
+    assertEquals(UriHelper.expand("${port-1}", BASE), "17999");
+    assertEquals(UriHelper.expand("${port*2}", BASE), "36000");
+    assertEquals(UriHelper.expand("${port/3}", BASE), "6000");
+    assertEquals(UriHelper.expand("${port%7}", BASE), "3");   // 18000 % 7 == 3
+  }
+
+  @Test
+  public void testExpandWhitespaceInsideBracesIsIgnored() {
+    assertEquals(UriHelper.expand("${ port + 1 }", BASE), "18001");
+  }
+
+  @Test
+  public void testExpandEscapedDollar() {
+    assertEquals(UriHelper.expand("\\$host", BASE), "$host");
+    assertEquals(UriHelper.expand("$host\\$", BASE), "localhost$");
+  }
+
+  @Test
+  public void testExpandAdjacentVariables() {
+    // adjacent braced and bare forms compose correctly
+    assertEquals(UriHelper.expand("${port+1}-$host", BASE), "18001-localhost");
+  }
+
+  @Test
+  public void testExpandNoBaseButVariableUsed() {
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("$host", null));
+  }
+
+  @Test
+  public void testExpandUnknownVariable() {
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("$bogus", BASE));
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("${bogus+1}", BASE));
+  }
+
+  @Test
+  public void testExpandUnterminatedBrace() {
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("${port+1", BASE));
+  }
+
+  @Test
+  public void testExpandArithmeticOnNonNumericVariable() {
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("${host+1}", BASE));
+  }
+
+  @Test
+  public void testExpandUndefinedComponentThrows() {
+    URI noPort = URI.create("trips://localhost/myapp");
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("${port+1}", noPort));
+    URI noQuery = URI.create("trips://localhost:18000/myapp");
+    assertThrows(TentackleRuntimeException.class, () -> UriHelper.expand("$query", noQuery));
+  }
+
+  @Test
+  public void testExpandTrailingDollarIsLiteral() {
+    assertEquals(UriHelper.expand("$host$", BASE), "localhost$");
   }
 }

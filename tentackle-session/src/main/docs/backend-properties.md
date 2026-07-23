@@ -108,6 +108,46 @@ when the tier is an application server (see [Multi-Tier Cascade](../../../../src
 > dead client session around. `jdbcIdleTimeout` is the *database connection* inactivity timeout on
 > the JDBC side. They are unrelated; a typical server sets both.
 
+### Deriving service URIs
+
+When a server listens on several transports, the endpoints usually differ only slightly — the same
+host, a neighboring port, the same application path. Rather than spelling out (or externally
+configuring, e.g. from a Maven profile) a full URI for every `service_<name>`, you can **derive** it
+from the default `service` URI with a small expression language. It is provided by the general-purpose
+[`UriHelper.expand`](../../../../tentackle-core/src/main/java/org/tentackle/io/UriHelper.java) and can
+therefore be reused to derive any URI from another, not just TRIP service endpoints.
+
+A variable is written as `$name`, or as `${expression}` when arithmetic is needed. The following
+components of the default `service` URI are available (names are case-insensitive):
+
+| Variable | Value from the default `service` URI |
+|----------|--------------------------------------|
+| `scheme` | the URI scheme, e.g. `trips` |
+| `userinfo` | the user-info part, if any |
+| `host` | the host |
+| `port` | the port (numeric) |
+| `authority` | the full authority (`userinfo@host:port`) |
+| `path` | the path *without* its leading `/`, e.g. `MyApp` |
+| `rawpath` | the path *including* its leading `/`, e.g. `/MyApp` |
+| `query` | the query string without the leading `?`, if any |
+| `fragment` | the fragment, if any |
+
+Inside `${...}` a single arithmetic operation (`+`, `-`, `*`, `/`, `%`) may be applied to a numeric
+variable and an integer literal, e.g. `${port+1}`. A literal `$` is escaped with a backslash (`\$`).
+
+```properties
+service=trips://myserver:18000/MyApp?idle=10&backlog=100
+
+# derived: same host and path, next port, compressed transport
+service_compressed=tripcs://$host:${port+1}/$path?$query
+```
+
+Here `service_compressed` expands to `tripcs://myserver:18001/MyApp?idle=10&backlog=100`.
+Referencing a variable while no default `service` is defined — or referencing a component the default
+URI does not carry (e.g. `$query` when it has no query string) — is a configuration error and fails
+startup. The default `service` URI itself is always used verbatim; only the derived `service_<name>`
+entries are expanded.
+
 ## Desktop Client Keys
 
 Interpreted by the [Rich Desktop Client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md).
