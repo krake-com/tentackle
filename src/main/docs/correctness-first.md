@@ -94,9 +94,10 @@ tool that never asked for a lock.
 
 On top of that floor sits the **opt-in token lock** (`editedby`/`editedsince`/`editedexpiry`), which moves the
 discovery of a conflict to the *start* of editing — granted atomically by a single conditional `UPDATE` that is
-*itself* serial-checked, and time-boxed so a crashed client cannot block an object forever. The two layers are
-complementary: the token gives a friendly early warning, the serial gives the hard guarantee. The full design,
-including the SQL and the failure distinctions, is in
+*itself* serial-checked, and time-boxed so a misbehaving client cannot block an object forever. 
+When clients crash, their token locks are automatically released.
+The two layers are complementary: the token gives a friendly early warning, the serial gives the hard guarantee. 
+The full design, including the SQL and the failure distinctions, is in
 [locking.md](../../../tentackle-persistence/src/main/docs/locking.md).
 
 > The design choice worth noticing: the unconditional guarantee is the cheap, always-on one, and the convenient
