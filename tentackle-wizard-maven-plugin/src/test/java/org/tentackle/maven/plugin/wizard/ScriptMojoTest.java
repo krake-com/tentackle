@@ -33,7 +33,7 @@ public class ScriptMojoTest {
         """
         @import org.tentackle.misc.*
         def today = LocalDate.now()
-          @import java.time.LocalDate
+        @import java.time.LocalDate
         println today""");
     assertEquals(parts.getImports(), "import org.tentackle.misc.*\nimport java.time.LocalDate");
     assertEquals(parts.getContent(), "def today = LocalDate.now()\nprintln today");
