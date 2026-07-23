@@ -104,6 +104,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("search", "mdi2f-file-find");
     nm.put("security", "mdi2s-security");
     nm.put("session", "mdi2l-lan-connect");
+    nm.put("stop", "mdi2t-timer-stop-outline");
     nm.put("subtract", "mdi2m-minus");
     nm.put("table", "mdi2t-table");
     nm.put("theme", "mdi2t-theme-light-dark");

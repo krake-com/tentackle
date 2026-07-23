@@ -8,11 +8,12 @@
  * Every fragment line starting with an @-sign, such as "@import org.tentackle.misc.*",
  * is stripped of the @-sign and inserted via the ${r"${imports}"} variable instead.
  *
- * Because Harness implements DomainContextProvider, the fragment can use on() and
+ * Because this Harness implements DomainContextProvider, the fragment can use on() and
  * op() directly. To support the "Interrupt" button, long-running fragments should
  * check Thread.currentThread().isInterrupted() in their loops.
  */
 import org.tentackle.pdo.*
+
 // add project-specific imports here...
 ${imports}
 

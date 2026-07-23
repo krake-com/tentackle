@@ -29,37 +29,37 @@ public class ScriptMojoTest {
 
   @Test
   public void testExtractImports() {
-    ScriptMojo.FragmentParts parts = ScriptMojo.extractImports(
+    FragmentParts parts = new FragmentParts(
         """
         @import org.tentackle.misc.*
         def today = LocalDate.now()
           @import java.time.LocalDate
         println today""");
-    assertEquals(parts.imports(), "import org.tentackle.misc.*\nimport java.time.LocalDate");
-    assertEquals(parts.content(), "def today = LocalDate.now()\nprintln today");
+    assertEquals(parts.getImports(), "import org.tentackle.misc.*\nimport java.time.LocalDate");
+    assertEquals(parts.getContent(), "def today = LocalDate.now()\nprintln today");
   }
 
   @Test
   public void testNoImports() {
-    ScriptMojo.FragmentParts parts = ScriptMojo.extractImports("println 'hello'\nprintln 'world'\n");
-    assertEquals(parts.imports(), "");
-    assertEquals(parts.content(), "println 'hello'\nprintln 'world'\n");
+    FragmentParts parts = new FragmentParts("println 'hello'\nprintln 'world'\n");
+    assertEquals(parts.getImports(), "");
+    assertEquals(parts.getContent(), "println 'hello'\nprintln 'world'\n");
   }
 
   @Test
   public void testMarkerIsLanguageAgnostic() {
-    ScriptMojo.FragmentParts parts = ScriptMojo.extractImports(
+    FragmentParts parts = new FragmentParts(
         """
         @require 'json'
         puts JSON.generate({ answer: 42 })""");
-    assertEquals(parts.imports(), "require 'json'");
-    assertEquals(parts.content(), "puts JSON.generate({ answer: 42 })");
+    assertEquals(parts.getImports(), "require 'json'");
+    assertEquals(parts.getContent(), "puts JSON.generate({ answer: 42 })");
   }
 
   @Test
   public void testEmptyFragment() {
-    ScriptMojo.FragmentParts parts = ScriptMojo.extractImports("");
-    assertEquals(parts.imports(), "");
-    assertEquals(parts.content(), "");
+    FragmentParts parts = new FragmentParts("");
+    assertEquals(parts.getImports(), "");
+    assertEquals(parts.getContent(), "");
   }
 }

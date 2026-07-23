@@ -57,7 +57,9 @@ public abstract class AbstractGenerator {
    */
   public Configuration createFreemarkerConfiguration() throws IOException {
     Configuration cfg = new Configuration(Configuration.VERSION_2_3_34);
-    cfg.setDirectoryForTemplateLoading(templateDirectory);
+    if (templateDirectory != null) {
+      cfg.setDirectoryForTemplateLoading(templateDirectory);
+    }
     cfg.setDefaultEncoding("UTF-8");
     cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
     cfg.setLogTemplateExceptions(false);

@@ -34,7 +34,7 @@ import java.util.Objects;
  * generated script. The remaining lines are the freemarker template that the
  * fragment is woven into (via the {@code content} variable).
  */
-public class ScriptHarness {
+public class ScriptHarness implements Comparable<ScriptHarness> {
 
   private final String name;
   private final String content;
@@ -57,7 +57,7 @@ public class ScriptHarness {
   /**
    * Gets the harness name.
    *
-   * @return the filename without directory
+   * @return the filename without the directory
    */
   public String getName() {
     return name;
@@ -120,4 +120,10 @@ public class ScriptHarness {
   public int hashCode() {
     return name.hashCode();
   }
+
+  @Override
+  public int compareTo(ScriptHarness o) {
+    return this.name.compareTo(o.name);
+  }
+
 }

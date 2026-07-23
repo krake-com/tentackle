@@ -18,11 +18,7 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import freemarker.template.Configuration;
-import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import freemarker.template.TemplateExceptionHandler;
-
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -32,7 +28,8 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
-import org.tentackle.maven.plugin.wizard.fx.ScriptContainer;
+import org.tentackle.fx.Fx;
+import org.tentackle.maven.plugin.wizard.fx.ScriptEditor;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.script.Script;
@@ -43,17 +40,17 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
 import javafx.application.Platform;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -83,9 +80,6 @@ import java.util.concurrent.CountDownLatch;
 @Mojo(name = "script", aggregator = true)
 public class ScriptMojo extends AbstractWizardMojo {
 
-  /** marks an import line within a fragment. */
-  private static final String IMPORT_MARKER = "@";
-
   /**
    * The backend URL.
    */
@@ -106,7 +100,7 @@ public class ScriptMojo extends AbstractWizardMojo {
 
   /**
    * The harness scripts.<br>
-   * By default, the harness scripts are loaded from the {@code script} sub-directory
+   * By default, the harness scripts are loaded from the {@code script} subdirectory
    * of the {@code templateDir}. When given, the filesets are used instead.<br>
    * Each harness must start with a she-bang line specifying the scripting language,
    * for example, {@code #!groovy}. The scripting language must be on the classpath.<br>
@@ -116,8 +110,11 @@ public class ScriptMojo extends AbstractWizardMojo {
   public List<FileSet> harnesses;
 
   /**
-   * If given, pre-selects the harness to use.<br>
+   * If given, selects the harness to use.<br>
    * This is the filename without the directory.
+   * In interactive mode, the selected harness is shown in the editor.
+   * In batch mode, the fragment is run with the selected harness.
+   * If there is only one harness, it is selected automatically.
    */
   @Parameter(property = "harness")
   public String harness;
@@ -134,7 +131,6 @@ public class ScriptMojo extends AbstractWizardMojo {
   private Map<String, ScriptHarness> harnessMap;   // unique harness name :: harness
 
   private Stage stage;
-  private ScriptContainer scriptContainer;
 
 
   @Override
@@ -176,8 +172,7 @@ public class ScriptMojo extends AbstractWizardMojo {
               configureFx();
               registerUncaughtExceptionHandler();
               session.makeCurrent();
-              scriptContainer = new ScriptContainer(this, session, harnessMap.values());
-              stage = scriptContainer.show();
+              stage = showScriptEditor(session, harnessMap.values(), harness == null ? null : harnessMap.get(harness));
               stage.setOnHidden(_ -> latch.countDown());
             }
             catch (Throwable t) {
@@ -247,7 +242,6 @@ public class ScriptMojo extends AbstractWizardMojo {
     }
   }
 
-
   /**
    * Weaves a fragment into a harness.<br>
    * Lines of the fragment starting with an {@code @}-sign are moved to the
@@ -260,22 +254,15 @@ public class ScriptMojo extends AbstractWizardMojo {
    * @throws TemplateException if the harness template is invalid
    */
   public String weave(ScriptHarness scriptHarness, String fragment) throws IOException, TemplateException {
-    FragmentParts parts = extractImports(fragment);
-    if (!parts.imports().isEmpty() && !scriptHarness.getContent().contains("imports")) {
-      getLog().warn("harness '" + scriptHarness.getName() +
-                    "' does not use the 'imports' variable -> fragment imports dropped");
-    }
-    ScriptTemplateModel model = new ScriptTemplateModel(
-        parts.content(), parts.imports(), scriptHarness.getLanguage().getName(), scriptHarness.getName());
-    Configuration cfg = new Configuration(Configuration.VERSION_2_3_34);
-    cfg.setDefaultEncoding("UTF-8");
-    cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-    cfg.setLogTemplateExceptions(false);
-    cfg.setWrapUncheckedExceptions(true);
-    Template template = new Template(scriptHarness.getName(), new StringReader(scriptHarness.getContent()), cfg);
-    StringWriter writer = new StringWriter();
-    template.process(model, writer);
-    return writer.toString();
+    FragmentParts parts = new FragmentParts(fragment);
+    ScriptTemplateModel model = new ScriptTemplateModel(parts.getContent(),
+                                                        parts.getImports(),
+                                                        scriptHarness.getLanguage().getName(),
+                                                        scriptHarness.getName());
+    ScriptGenerator generator = new ScriptGenerator(model,
+                                                    scriptHarness.getName(),
+                                                    scriptHarness.getContent());
+    return generator.generate();
   }
 
 
@@ -285,49 +272,16 @@ public class ScriptMojo extends AbstractWizardMojo {
   }
 
 
-  /**
-   * A fragment split into import statements and the remaining content.
-   *
-   * @param imports the import statements, one per line, stripped of the {@code @}-sign
-   * @param content the fragment without the import lines
-   */
-  record FragmentParts(String imports, String content) {
+  private Stage showScriptEditor(Session session, Collection<ScriptHarness> harnesses, ScriptHarness harness) {
+    Stage stage = Fx.createStage(Modality.NONE, null);
+    ScriptEditor editor = Fx.load(ScriptEditor.class);
+    stage.setScene(Fx.createScene(editor.getView()));
+    stage.setTitle("Script Runner");
+    editor.setup(this, session, harnesses, harness);
+    editor.getContainer().updateView();
+    Fx.show(stage);
+    return stage;
   }
-
-  /**
-   * Extracts the import lines from a fragment.<br>
-   * A line marks an import if it starts with an {@code @}-sign, optionally preceded
-   * by whitespace. Such lines are removed from the fragment and collected in the
-   * order of appearance, stripped of the {@code @}-sign.
-   *
-   * @param fragment the script fragment
-   * @return the fragment parts
-   */
-  static FragmentParts extractImports(String fragment) {
-    StringBuilder imports = new StringBuilder();
-    StringBuilder content = new StringBuilder();
-    boolean firstContentLine = true;
-    for (String line : fragment.split("\n", -1)) {
-      String stripped = line.strip();
-      if (stripped.startsWith(IMPORT_MARKER)) {
-        if (!imports.isEmpty()) {
-          imports.append('\n');
-        }
-        imports.append(stripped.substring(IMPORT_MARKER.length()));
-      }
-      else {
-        if (firstContentLine) {
-          firstContentLine = false;
-        }
-        else {
-          content.append('\n');
-        }
-        content.append(line);
-      }
-    }
-    return new FragmentParts(imports.toString(), content.toString());
-  }
-
 
   private ScriptHarness selectHarness() throws MojoFailureException {
     if (harness != null) {
@@ -343,15 +297,16 @@ public class ScriptMojo extends AbstractWizardMojo {
     throw new MojoFailureException("multiple harnesses configured -> select one with -Dharness=<name>");
   }
 
-
   private Map<String, ScriptHarness> loadHarnesses() throws MojoExecutionException, MojoFailureException {
     if (harnesses == null) {
+      // load from templateDir/script
       harnesses = new ArrayList<>();
       FileSet fileSet = new FileSet();
       fileSet.setDirectory(new File(getTemplateDir(), org.tentackle.maven.plugin.wizard.Constants.CATEGORY_SCRIPT).getAbsolutePath());
       harnesses.add(fileSet);
     }
-    Map<String, ScriptHarness> map = new LinkedHashMap<>();
+
+    Map<String, ScriptHarness> map = new TreeMap<>();   // sorted by name
     for (FileSet fileSet : harnesses) {
       if (fileSet.getDirectory() == null) {
         fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
