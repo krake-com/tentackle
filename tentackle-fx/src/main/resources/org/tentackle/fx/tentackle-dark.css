@@ -169,3 +169,35 @@
 .scroll-bar > .decrement-button:pressed > .decrement-arrow {
   -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-55%);
 }
+
+/**
+ * expand-/collapse button of one-line text areas (see FxTextArea).
+ * The icon is dimmed until the mouse hovers over it, so that it stays discreet.
+ */
+.tt-expand-button {
+  -fx-padding: 0 2 0 2;
+  /* blends the button into the text, whatever the component's state (mandatory, error) is */
+  -fx-background-color: -fx-control-inner-background;
+  -fx-background-insets: 1 1 1 -1;
+}
+
+/* keep the button in line with the .text-area:readonly .content rule above */
+.text-area:readonly > .tt-expand-button {
+  -fx-background-color: derive(-fx-background, 30%);
+}
+
+.tt-expand-button > .ikonli-font-icon {
+  -fx-icon-size: 12;
+  -fx-opacity: 0.5;
+}
+
+.tt-expand-button:hover > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+}
+
+/**
+ * the multi-line editor a one-line text area expands to.
+ */
+.tt-expanded-text-pane {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.0, 0, 3);
+}

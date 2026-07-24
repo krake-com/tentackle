@@ -63,6 +63,7 @@ topic-grouped listing of every document, see the
 - **Effective class (`getClass()` vs `instanceof` on a PDO proxy)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md#getclass-geteffectiveclass-and-instanceof)
 - **Embedded entities** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Error display (marking controls, error/info popups)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
+- **Expandable text areas (one-liner expanding to a multi-line editor)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#expandable-one-line-text-areas)
 
 ## F
 

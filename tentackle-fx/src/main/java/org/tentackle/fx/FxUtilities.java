@@ -219,6 +219,17 @@ public class FxUtilities {
   }
 
   /**
+   * Gets the number of rows of the multi-line editor a one-line text area expands to,
+   * if not set on the component.
+   *
+   * @param textArea the text area component
+   * @return the row count (default is 6)
+   */
+  public int getDefaultExpandedRowCount(FxTextArea textArea) {
+    return 6;
+  }
+
+  /**
    * Gets the timeout for the prefix selection in dropdown lists such as in combo boxes.
    *
    * @return the timeout in milliseconds (default is 750)

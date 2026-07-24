@@ -250,6 +250,43 @@ popup below the component. Matching runs in the background, so large choice list
 don't block the FX thread. For generators, styling and threading rules see
 [auto-completion.md](auto-completion.md).
 
+### Expandable one-line text areas
+
+A text area displayed as a one-liner (`prefRowCount` of 1, e.g. from the
+`LINES=1` binding option) is a compromise: it saves space in the form, but the
+text does not fit. `FxTextArea` can therefore show an **expand button** at its
+right edge. Clicking it pops up a multi-line editor that covers the text area,
+aligned to its upper left corner, so that the first line stays where it is and
+the editor grows downwards. It collapses again as soon as it loses the focus, or on `ESCAPE`, or
+via the collapse button in its upper right corner.
+
+The feature is **off by default** and enabled per component:
+
+```java
+textArea.setExpandable(true);       // opt in, no effect unless isOneLiner()
+textArea.setExpandedRowCount(10);   // 0 = FxUtilities.getDefaultExpandedRowCount(), which is 6
+textArea.expand();                  // programmatically, e.g. from a menu item
+```
+
+Expanding is only a different *view* on the same component. The editor's text is
+written back to the text area on each keystroke, so binding, validation, and the
+modification tracking behave exactly as if the user had typed into the text area
+itself and the text area keeps the focus in its own scene while the popup is
+showing — the model is updated by its regular focus handling. The editor also
+gets a `TextFormatter` with the component's delegate as its filter, so valid
+chars, case conversion and `maxColumns` apply to the expanded view as well.
+`ENTER` inserts a newline there instead of navigating, since entering more than
+one line is the very reason to expand; `TAB` collapses and navigates as usual.
+
+The button lives in `FxTextAreaSkin`, which lays out the text in the space left
+of it, and the editor in `ExpandedTextPopup`. Styling hooks:
+
+| Hook                     | Kind        | Applies to                                    |
+|--------------------------|-------------|-----------------------------------------------|
+| `.tt-expand-button`      | style class | both the expand- and the collapse button      |
+| `.tt-expanded-text`      | style class | the popup                                     |
+| `.tt-expanded-text-pane` | style class | the popup's `StackPane`                       |
+
 ### Binding integration
 
 `tentackle-fx` is the JavaFX implementation of the toolkit-neutral binding
@@ -323,7 +360,7 @@ A typical screen comes to life like this:
 | Package                                                      | Role                                                                                                                                                                                                                                                                                            |
 |--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `org.tentackle.fx`                                           | Core contracts (`FxControl`, `FxComponent`, `FxContainer`, `FxController`), the `Fx` facade, `FxFactory`, `ValueTranslator`, `Configurator`, controller base classes, graphic/notification/interactive-error support                                                                            |
-| `org.tentackle.fx.component`                                 | Extended components: `FxTextField`, `FxTextArea`, `FxComboBox`, `FxChoiceBox`, `FxCheckBox`, `FxRadioButton`, `FxToggleButton`, `FxButton`, `FxLabel`, `FxDatePicker`, `FxColorPicker`, `FxPasswordField`, `FxListView`, `FxTableView`, `FxTreeView`, `FxTreeTableView`, `FxHTMLEditor`, `Note` |
+| `org.tentackle.fx.component`                                 | Extended components: `FxTextField`, `FxTextArea`, `FxComboBox`, `FxChoiceBox`, `FxCheckBox`, `FxRadioButton`, `FxToggleButton`, `FxButton`, `FxLabel`, `FxDatePicker`, `FxColorPicker`, `FxPasswordField`, `FxListView`, `FxTableView`, `FxTreeView`, `FxTreeTableView`, `FxHTMLEditor`, `Note`, `ExpandedTextPopup` |
 | `org.tentackle.fx.component.delegate`                        | Component delegates holding the behaviour (`FxComponentDelegate`, `AbstractTextFieldDelegate`, per-component delegates)                                                                                                                                                                         |
 | `org.tentackle.fx.component.config`                          | Per-component `Configurator`s                                                                                                                                                                                                                                                                   |
 | `org.tentackle.fx.component.build`                           | Component builders used by the FXML builder factory                                                                                                                                                                                                                                             |
