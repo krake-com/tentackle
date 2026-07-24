@@ -23,6 +23,7 @@ import tech.kwik.core.log.Logger;
 import tech.kwik.core.server.ServerConnectionConfig;
 import tech.kwik.core.server.ServerConnector;
 
+import org.tentackle.io.SslParameters;
 import org.tentackle.io.UriHelper;
 import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
@@ -33,14 +34,11 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.transport.AbstractTransport;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.URI;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Map;
 
@@ -81,13 +79,14 @@ public class QuicTripTransport extends AbstractTransport {
 
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
-    String keystoreType = queryParameters.get("kstype");    // keystore instance name
-    String keystorePassword = queryParameters.getOrDefault("kspass", System.getProperty("javax.net.ssl.keyStorePassword"));
-    String keystoreFile = queryParameters.getOrDefault("ksfile", System.getProperty("javax.net.ssl.keyStore"));
-    String certificateAlias = queryParameters.get("ksalias");
-    if (keystorePassword == null || keystoreFile == null || certificateAlias == null) {
+
+    // the keystore, certificate alias and password are resolved consistently with the TCP transports
+    SslParameters sslParameters = new SslParameters(uri);
+    KeyStore keyStore = sslParameters.getKeyStore();
+    String certificateAlias = sslParameters.getCertificateAlias();
+    if (keyStore == null || certificateAlias == null) {
       throw new TripRuntimeException(
-        "keystore-password (kspass), keystore-file (ksfile) and certificate-alias (ksalias) must be specified");
+        "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
     }
 
     ServerConnectionConfig serverConnectionConfig =
@@ -96,12 +95,10 @@ public class QuicTripTransport extends AbstractTransport {
                             .build();
 
     try {
-      KeyStore keyStore = KeyStore.getInstance(keystoreType == null ? KeyStore.getDefaultType() : keystoreType);
-      keyStore.load(new FileInputStream(keystoreFile), keystorePassword.toCharArray());
       ServerConnector.Builder builder =
         ServerConnector.builder()
                        .withConfiguration(serverConnectionConfig)
-                       .withKeyStore(keyStore, certificateAlias, keystorePassword.toCharArray())
+                       .withKeyStore(keyStore, certificateAlias, sslParameters.getKeyPassword())
                        .withLogger(log);
       String host = uri.getHost();
       int port = uri.getPort();
@@ -122,7 +119,7 @@ public class QuicTripTransport extends AbstractTransport {
       serverConnector.start();
       accepting = true;
     }
-    catch (CertificateException | KeyStoreException | IOException | NoSuchAlgorithmException e) {
+    catch (CertificateException | IOException e) {
       throw new TripRuntimeException("starting QUIC service failed", e);
     }
   }

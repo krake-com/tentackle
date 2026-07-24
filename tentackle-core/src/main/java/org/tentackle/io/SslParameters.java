@@ -114,6 +114,7 @@ public class SslParameters {
   private final ClientAuth clientAuth;          // server-side client-certificate policy
   private final String endpointIdentification;  // client-side endpoint identification, null for none
 
+  private KeyStore keyStore;                    // lazily loaded, shared keystore
   private SSLContext sslContext;                // lazily built, shared context
 
   /**
@@ -164,6 +165,78 @@ public class SslParameters {
       }
     }
     return sslContext;
+  }
+
+  /**
+   * Loads the keystore holding the own certificate(s).<br>
+   * The keystore is loaded once and cached; the same instance is shared between the SSL context and
+   * any other consumer (such as the QUIC transport, which hands the keystore to its own TLS stack).
+   *
+   * @return the keystore, or null if none is configured
+   * @throws TentackleRuntimeException if the keystore cannot be loaded
+   */
+  public synchronized KeyStore getKeyStore() {
+    if (keyStore == null && keyStoreFile != null) {
+      try {
+        keyStore = loadKeyStore(keyStoreFile, keyStoreType, keyStorePassword);
+      }
+      catch (GeneralSecurityException | IOException e) {
+        throw new TentackleRuntimeException("cannot load keystore " + keyStoreFile + " for " + uri, e);
+      }
+    }
+    return keyStore;
+  }
+
+  /**
+   * Gets the alias of the certificate to present.<br>
+   * Returns the configured alias if any; otherwise, if the keystore holds exactly one key entry,
+   * that entry's alias (see {@link #getKeyStore()}); otherwise null.
+   *
+   * @return the certificate alias, or null if none is configured and it cannot be inferred
+   * @throws TentackleRuntimeException if the keystore cannot be inspected
+   */
+  public String getCertificateAlias() {
+    if (keyStoreAlias != null) {
+      return keyStoreAlias;
+    }
+    KeyStore store = getKeyStore();
+    if (store == null) {
+      return null;
+    }
+    try {
+      return soleKeyEntryAlias(store);
+    }
+    catch (KeyStoreException e) {
+      throw new TentackleRuntimeException("cannot inspect keystore " + keyStoreFile + " for " + uri, e);
+    }
+  }
+
+  /**
+   * Gets the configured keystore path.
+   *
+   * @return the keystore path, or null if none is configured
+   */
+  public String getKeyStoreFile() {
+    return keyStoreFile;
+  }
+
+  /**
+   * Gets the keystore password.
+   *
+   * @return the keystore password, or null if none is configured
+   */
+  public char[] getKeyStorePassword() {
+    return keyStorePassword == null ? null : keyStorePassword.toCharArray();
+  }
+
+  /**
+   * Gets the private key password, falling back to the keystore password.
+   *
+   * @return the key password, or null if neither a key nor a keystore password is configured
+   */
+  public char[] getKeyPassword() {
+    String password = keyPassword != null ? keyPassword : keyStorePassword;
+    return password == null ? null : password.toCharArray();
   }
 
   /**
@@ -237,16 +310,15 @@ public class SslParameters {
    *
    * @return the key managers, or null if no keystore is configured
    */
-  private KeyManager[] createKeyManagers() throws GeneralSecurityException, IOException {
-    if (keyStoreFile == null) {
+  private KeyManager[] createKeyManagers() throws GeneralSecurityException {
+    KeyStore store = getKeyStore();
+    if (store == null) {
       return null;    // no own certificate (typical for a plain SSL client)
     }
-    KeyStore keyStore = loadKeyStore(keyStoreFile, keyStoreType, keyStorePassword);
     KeyManagerFactory factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    String password = keyPassword != null ? keyPassword : keyStorePassword;
-    factory.init(keyStore, password == null ? null : password.toCharArray());
+    factory.init(store, getKeyPassword());
     KeyManager[] keyManagers = factory.getKeyManagers();
-    String alias = keyStoreAlias != null ? keyStoreAlias : soleKeyEntryAlias(keyStore);
+    String alias = getCertificateAlias();
     if (alias != null) {
       for (int i = 0; i < keyManagers.length; i++) {
         if (keyManagers[i] instanceof X509ExtendedKeyManager manager) {

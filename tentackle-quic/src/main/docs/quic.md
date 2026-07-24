@@ -109,8 +109,12 @@ contract. Server and client responsibilities are clearly separated.
 `QuicTripTransport.accept()` builds and starts a KWIK `ServerConnector`:
 
 1. **TLS keystore** — QUIC mandates TLS, so a server certificate is required. The
-   keystore is loaded from the parameters described below and handed to the
-   connector via `withKeyStore(keyStore, alias, password)`.
+   keystore, certificate alias and password are resolved by
+   [`SslParameters`](../../../../tentackle-core/src/main/docs/io.md) — the very same
+   configuration the TCP-based `trips`/`tripcs` transports use — and the loaded
+   keystore is handed to the connector via `withKeyStore(keyStore, alias, password)`.
+   This means the `tentackle.ssl.*` system-property fallbacks and the single-entry
+   keystore alias auto-selection apply to QUIC too (see below).
 2. **Connection config** — `maxOpenPeerInitiatedBidirectionalStreams` is set from
    the `maxstreams` parameter (default 128), capping how many concurrent streams
    a single client may open.
@@ -207,19 +211,26 @@ tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
+The keystore parameters (`ksfile`, `kspass`, `ksalias`, `kstype`) are resolved by the shared
+[`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), so each
+also honors a `tentackle.ssl.<name>` system property and, as a fallback, the standard
+`javax.net.ssl.<name>` property. See that table for the full precedence rules.
+
 | Parameter     | Side            | Default                                          | Description                                                                                    |
 |---------------|-----------------|--------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `ksfile`      | server          | `javax.net.ssl.keyStore` system property         | Path to the TLS keystore file. **Required** (here or via the system property).                 |
-| `kspass`      | server          | `javax.net.ssl.keyStorePassword` system property | Keystore (and key) password. **Required**.                                                     |
-| `ksalias`     | server          | —                                                | Alias of the server certificate within the keystore. **Required**.                             |
-| `kstype`      | server          | JDK default (`KeyStore.getDefaultType()`)        | Keystore type, e.g. `PKCS12` or `JKS`.                                                         |
+| `ksfile`      | server          | `tentackle.ssl.keyStore` / `javax.net.ssl.keyStore` | Path to the TLS keystore file. **Required** (here or via a system property).                 |
+| `kspass`      | server          | `tentackle.ssl.keyStorePassword` / `javax.net.ssl.keyStorePassword` | Keystore password; also used as the key password unless `kmpass` is set.   |
+| `ksalias`     | server          | the sole key entry, if the keystore has exactly one | Alias of the server certificate within the keystore. Required only for multi-entry keystores. |
+| `kstype`      | server          | `tentackle.ssl.keyStoreType` / `javax.net.ssl.keyStoreType` / JDK default | Keystore type, e.g. `PKCS12` or `JKS`.                                  |
+| `kmpass`      | server          | the keystore password (`kspass`)                 | Private key password, if it differs from the keystore password.                                |
 | `alpnid`      | both            | the URI scheme (`tripq` / `tripcq`)              | ALPN application-protocol identifier. Client and server must match.                            |
 | `maxstreams`  | server          | `128`                                            | Maximum concurrent peer-initiated bidirectional streams per connection.                        |
 | `certcheck`   | client          | `false`                                          | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
 | `mincompress` | both (`tripcq`) | `1024`                                           | Minimum block size in bytes before deflate compression is applied.                             |
 
-> On the server, if `kspass`, `ksfile`, or `ksalias` resolve to `null`, `accept()`
-> throws a `TripRuntimeException`. The port must be in the range `0..65535`.
+> On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
+> keystore holds a single key entry) cannot be resolved, `accept()` throws a
+> `TripRuntimeException`. The port must be in the range `0..65535`.
 
 ---
 
