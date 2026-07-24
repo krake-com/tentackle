@@ -86,6 +86,29 @@ These are what the [`EncryptedTransport`](../java/org/tentackle/trip/transport/E
 and `CompressedEncryptedTransport` stack onto their sockets — see [trip.md](trip.md) for the
 transport variants (TCP, SSL, compressed, encrypted, loopback) and when each applies.
 
+### SSL/TLS socket factories
+
+[`TcpSocketFactory`](../java/org/tentackle/io/TcpSocketFactory.java) (client) and
+[`TcpServerSocketFactory`](../java/org/tentackle/io/TcpServerSocketFactory.java) (server) are the
+SSL-aware replacements for the JDK's default socket factories. The default
+`SSLServerSocketFactory` always presents the *first* suitable certificate in the keystore and gives
+no way to change that; these factories let you **select the certificate by its alias** and tune the
+SSL options (enabled protocols, cipher suites, client-certificate policy, endpoint identification).
+Constructed without arguments they behave as plain TCP factories; constructed with an
+[`SslParameters`](../java/org/tentackle/io/SslParameters.java) they build an `SSLContext` and produce
+configured `SSLSocket`/`SSLServerSocket`s. Client certificates are supported by simply providing a
+keystore (and optionally an alias) on the client side.
+
+[`SslParameters`](../java/org/tentackle/io/SslParameters.java) resolves each configuration value from
+the transport URI's query string, falling back to a `tentackle.ssl.<name>` system property and then,
+for the keystore/truststore settings, to the standard `javax.net.ssl.<name>` property — so existing
+JSSE configurations (e.g. in `backend.properties`) keep working. It builds the `SSLContext` once,
+wrapping the JSSE key managers so the aliased certificate is always chosen. The parameters and their
+resolution order are documented in [trip.md](trip.md#ssltls-configuration).
+
+The [`SslTransport`](../java/org/tentackle/trip/transport/SslTransport.java) (`trips`) and
+`CompressedSslTransport` (`tripcs`) use these factories.
+
 ### Reconnection
 
 Three pieces cooperate:
@@ -170,6 +193,7 @@ visible to application code — it is the plumbing under
 | Packet framing       | `PacketSizedOutputStream`, `PacketSizedInputStream`                                                                        |
 | Compression          | `CompressedOutputStream`, `CompressedInputStream`                                                                          |
 | Encryption           | `EncryptingOutputStream`, `DecryptingInputStream`                                                                          |
+| SSL/TLS sockets      | `TcpSocketFactory`, `TcpServerSocketFactory`, `SslParameters`                                                              |
 | Reconnection         | `Reconnector`, `ReconnectionPolicy`, `ReconnectedException`                                                                |
 | Server sockets       | `SocketChannelDispatcher`                                                                                                  |
 | Byte arrays & chars  | `NotifyingByteArrayOutputStream`, `BlockingByteArrayInputStream`, `MutableByteArrayInputStream`, `AppendableWriter`         |

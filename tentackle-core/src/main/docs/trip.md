@@ -97,6 +97,48 @@ The server uses virtual threads to handle multiple connections concurrently.
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
 `org.tentackle.io` — see [io.md](io.md).
 
+### SSL/TLS configuration
+
+The SSL-based transports (`trips` and `tripcs`) create their sockets through the SSL-aware
+[`TcpSocketFactory`](../java/org/tentackle/io/TcpSocketFactory.java) and
+[`TcpServerSocketFactory`](../java/org/tentackle/io/TcpServerSocketFactory.java). Unlike the default
+JSSE factories — which always present the *first* certificate found in the keystore — these allow
+**selecting the certificate by its alias** and tuning the SSL options.
+
+The configuration is held by [`SslParameters`](../java/org/tentackle/io/SslParameters.java). Each
+value is resolved from up to three sources, in order of precedence:
+
+1. the URI **query parameter** (short key, e.g. `ksfile`),
+2. the Tentackle **system property** `tentackle.ssl.<name>` (e.g. `tentackle.ssl.keyStore`),
+3. the standard JSSE **system property** `javax.net.ssl.<name>` as a fallback, so existing
+   configurations (e.g. in `backend.properties`) keep working.
+
+| Query key    | `tentackle.ssl.` suffix   | `javax.net.ssl.` fallback | Side   | Description                                                                       |
+|--------------|---------------------------|---------------------------|--------|-----------------------------------------------------------------------------------|
+| `ksfile`     | `keyStore`                | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert |
+| `kspass`     | `keyStorePassword`        | `keyStorePassword`        | both   | keystore password                                                                 |
+| `kstype`     | `keyStoreType`            | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                            |
+| `ksalias`    | `keyStoreAlias`           | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
+| `kmpass`     | `keyPassword`             | `keyPassword`             | both   | private key password (default: keystore password)                                 |
+| `tsfile`     | `trustStore`              | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                 |
+| `tspass`     | `trustStorePassword`      | `trustStorePassword`      | both   | truststore password                                                               |
+| `tstype`     | `trustStoreType`          | `trustStoreType`          | both   | truststore type                                                                   |
+| `protocol`   | `protocol`                | —                         | both   | `SSLContext` protocol (default `TLS`)                                             |
+| `protocols`  | `protocols`               | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                          |
+| `ciphers`    | `cipherSuites`            | —                         | both   | comma-separated enabled cipher suites                                             |
+| `clientauth` | `clientAuth`              | —                         | server | client-certificate policy: `none` (default), `want` or `need`                     |
+| `endpointid` | `endpointIdentification`  | —                         | client | endpoint identification algorithm, e.g. `HTTPS` (default: none)                    |
+
+Example — a server presenting the certificate stored under alias `server` and requiring client
+certificates, with clients verified against a dedicated truststore:
+
+```
+trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfile=clients.p12&tspass=secret&clientauth=need
+```
+
+Client certificates are supported symmetrically: a client presents one by providing `ksfile`
+(and, to pick a specific one, `ksalias`).
+
 ### Remote and RemoteDelegate
 
 The `Remote` interface (`org.tentackle.trip.Remote`) is a **marker interface** — it has no methods. Any object whose methods should be invocable from another JVM must implement this interface (indirectly, through its interface hierarchy).

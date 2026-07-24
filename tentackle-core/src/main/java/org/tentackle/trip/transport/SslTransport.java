@@ -18,16 +18,23 @@
 
 package org.tentackle.trip.transport;
 
+import org.tentackle.io.SslParameters;
+import org.tentackle.io.TcpServerSocketFactory;
+import org.tentackle.io.TcpSocketFactory;
 import org.tentackle.trip.TransportService;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocketFactory;
 import java.net.URI;
 
 /**
- * Transport implementation for SSL over TCP.
+ * Transport implementation for SSL over TCP.<br>
+ * <p>
+ * Uses the SSL-aware {@link TcpSocketFactory} and {@link TcpServerSocketFactory}, which
+ * &mdash; unlike the default JSSE factories &mdash; allow selecting the certificate by its alias
+ * and tuning the SSL options. The configuration is taken from the URI query parameters or the
+ * {@code tentackle.ssl.*} (and, as a fallback, {@code javax.net.ssl.*}) system properties;
+ * see {@link SslParameters}.
  */
 @TransportService(SslTransport.PROTOCOL)
 public class SslTransport extends TcpTransport {
@@ -37,8 +44,7 @@ public class SslTransport extends TcpTransport {
    */
   public static final String PROTOCOL = "trips";
 
-  private final SocketFactory socketFactory = SSLSocketFactory.getDefault();
-  private final ServerSocketFactory serverSocketFactory = SSLServerSocketFactory.getDefault();
+  private SslParameters sslParameters;    // the resolved SSL parameters, shared by both factories
 
   /**
    * Creates a new SSL transport.
@@ -51,13 +57,27 @@ public class SslTransport extends TcpTransport {
 
 
   @Override
-  protected SocketFactory getSocketFactory() {
-    return socketFactory;
+  protected SocketFactory createSocketFactory() {
+    return new TcpSocketFactory(getSslParameters());
   }
 
   @Override
-  protected ServerSocketFactory getServerSocketFactory() {
-    return serverSocketFactory;
+  protected ServerSocketFactory createServerSocketFactory() {
+    return new TcpServerSocketFactory(getSslParameters());
+  }
+
+  /**
+   * Gets the SSL parameters resolved from the transport URI.<br>
+   * The parameters (and the SSL context they build) are created once and shared
+   * between the client- and server socket factories.
+   *
+   * @return the SSL parameters
+   */
+  protected synchronized SslParameters getSslParameters() {
+    if (sslParameters == null) {
+      sslParameters = new SslParameters(getUri());
+    }
+    return sslParameters;
   }
 
 }
