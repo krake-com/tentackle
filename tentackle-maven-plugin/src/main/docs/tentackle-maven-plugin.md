@@ -146,6 +146,11 @@ never lands in the artifact:
         <converter>@org.tentackle.common.Cryptor</converter>
         <property>encryptedPasswd</property>
       </propertyDescriptor>
+      <propertyDescriptor>
+        <input>${dbPort} + 1</input>
+        <converter>org.tentackle.common.NumericEvaluator</converter>
+        <property>nextPort</property>
+      </propertyDescriptor>
     </propertyDescriptors>
   </configuration>
 </plugin>

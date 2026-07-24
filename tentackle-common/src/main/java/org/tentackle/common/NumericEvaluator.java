@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * A small arithmetic expression evaluator for numeric values.
@@ -52,7 +53,7 @@ import java.util.Objects;
  * @param <T> the numeric datatype of the variables and the result
  * @author harald
  */
-public class NumericEvaluator<T extends Number> {
+public class NumericEvaluator<T extends Number> implements Function<String, String> {
 
   private final Class<T> type;                    // the result datatype
   private final String expression;                // the source expression
@@ -60,19 +61,6 @@ public class NumericEvaluator<T extends Number> {
   private final Map<String, Number> variables;    // variable name -> value
 
   private int pos;                                // current parser position within expression
-
-  /**
-   * Creates an evaluator for the {@link Integer} datatype and evaluates the expression.
-   *
-   * @param expression the expression to evaluate
-   * @param arguments the variables referenced by the expression
-   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
-   */
-  @SafeVarargs
-  @SuppressWarnings("unchecked")
-  public NumericEvaluator(String expression, NumericVariable<T>... arguments) {
-    this((Class<T>) Integer.class, expression, arguments);
-  }
 
   /**
    * Creates an evaluator for the given datatype and evaluates the expression.
@@ -90,6 +78,27 @@ public class NumericEvaluator<T extends Number> {
     for (NumericVariable<T> argument : arguments) {
       variables.put(argument.name(), argument.value());
     }
+  }
+
+  /**
+   * Creates an evaluator for the {@link Integer} datatype and evaluates the expression.
+   *
+   * @param expression the expression to evaluate
+   * @param arguments the variables referenced by the expression
+   * @throws TentackleRuntimeException if the expression is malformed or cannot be evaluated
+   */
+  @SafeVarargs
+  @SuppressWarnings("unchecked")
+  public NumericEvaluator(String expression, NumericVariable<T>... arguments) {
+    this((Class<T>) Integer.class, expression, arguments);
+  }
+
+  /**
+   * Constructor to use it as a {@code Function<String, String>}.<br>
+   * Nice for {@code PropertyDescriptor}s within the {@code tentackle-maven-plugin}.
+   */
+  public NumericEvaluator() {
+    this("");
   }
 
   /**
@@ -116,6 +125,21 @@ public class NumericEvaluator<T extends Number> {
   public String toString() {
     return expression;
   }
+
+  /**
+   * Convenience method to evaluate a numeric expression without variables.
+   * <p>
+   * This allows the NumericEvaluator to be used as a {@code PropertyDescriptor}
+   * within the {@code tentackle-maven-plugin}.
+   *
+   * @param expression the expression to evaluate
+   * @return the result as string
+   */
+  @Override
+  public String apply(String expression) {
+    return Integer.toString(new NumericEvaluator<>(Integer.class, expression).evaluate());
+  }
+
 
 
   // --- parser (recursive descent) ---

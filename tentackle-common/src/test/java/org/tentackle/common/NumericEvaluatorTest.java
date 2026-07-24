@@ -128,4 +128,12 @@ public class NumericEvaluatorTest {
   public void testDecimalLiteralRejectedForIntegralType() {
     assertThrows(TentackleRuntimeException.class, () -> new NumericEvaluator<Integer>("1.5 + 1").evaluate());
   }
+
+  @Test
+  public void testEvaluateConstantExpression() {
+    assertEquals(new NumericEvaluator<>("1 + 1").evaluate(), 2);
+    // same as a Function useful for the tentackle-maven-plugin PropertyDescriptor
+    assertEquals(new NumericEvaluator<>().apply("1 + 1"), "2");
+  }
+
 }
