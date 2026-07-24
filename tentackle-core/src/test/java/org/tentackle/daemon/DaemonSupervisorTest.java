@@ -44,10 +44,10 @@ import static org.testng.Assert.fail;
 public class DaemonSupervisorTest {
 
   /** small check interval so the supervisor reacts quickly. */
-  private static final long CHECK_INTERVAL = 20;
+  private static final long CHECK_INTERVAL = 100;
 
   /** generous upper bound for all polling loops. */
-  private static final long AWAIT_TIMEOUT = 10000;    // 30s for slow machines (windows jenkins slave in KVM)
+  private static final long AWAIT_TIMEOUT = 10000;    // 10s for slow machines (windows jenkins slave in KVM)
 
 
   /**

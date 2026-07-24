@@ -47,8 +47,8 @@ import static org.testng.Assert.fail;
 @SuppressWarnings("missing-explicit-ctor")
 public class DefaultTaskDispatcherTest {
 
-  private static final long SLEEP_INTERVAL = 20;    // in ms
-  private static final long AWAIT_TIMEOUT = 5000;   // in ms
+  private static final long SLEEP_INTERVAL = 100;     // in ms
+  private static final long AWAIT_TIMEOUT = 5000;     // in ms
 
   private DefaultTaskDispatcher dispatcher;
 
