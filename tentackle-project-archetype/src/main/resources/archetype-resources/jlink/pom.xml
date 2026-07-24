@@ -31,7 +31,7 @@
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
     <cert.dname>cn=${application}Server, ou=${application}, o=Example, c=US</cert.dname>
     <cert.password>didoedeldu</cert.password>
-    <cert.dir>${symbol_dollar}{project.build.directory}/jks</cert.dir>
+    <cert.dir>${symbol_dollar}{project.build.directory}/pkcs12</cert.dir>
     <cert.file>${symbol_dollar}{project.parent.basedir}/server/target/server.cer</cert.file>
     <cert.alias>server</cert.alias>
     <dbService>trips://localhost:8888/${application}Server</dbService>
@@ -51,7 +51,7 @@
       </resource>
       <!--  additional resource directory for generated key- and truststores -->
       <resource>
-        <directory>${symbol_dollar}{project.build.directory}/jks</directory>
+        <directory>${symbol_dollar}{project.build.directory}/pkcs12</directory>
       </resource>
     </resources>
 

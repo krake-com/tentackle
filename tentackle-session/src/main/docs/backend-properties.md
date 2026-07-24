@@ -185,8 +185,8 @@ updateService=trips://myserver:18000/UpdateService
 updateURL=https://myserver/updates
 timeout=30
 
-^javax.net.ssl.keyStore=@{RUNTIMEDIR?.}/conf/keystore.jks
-^javax.net.ssl.keyStorePassword=~o93jd2iJdqw2Mss3uAA71g==
+^tentackle.ssl.keyStore=@{RUNTIMEDIR?.}/conf/keystore.p12
+^tentackle.ssl.keyStorePassword=~o93jd2iJdqw2Mss3uAA71g==
 ```
 
 A three-tier desktop client connecting to that server, with user-managed backends:
@@ -194,8 +194,8 @@ A three-tier desktop client connecting to that server, with user-managed backend
 ```properties
 url=trips://myserver:18000/MyApp
 backend=@user
-^javax.net.ssl.trustStore=@{RUNTIMEDIR?.}/conf/truststore.jks
-^javax.net.ssl.trustStorePassword=~x0PoR8fFPqmboo3sJ11w7A==
+^tentackle.ssl.trustStore=@{RUNTIMEDIR?.}/conf/truststore.p12
+^tentackle.ssl.trustStorePassword=~x0PoR8fFPqmboo3sJ11w7A==
 ```
 
 ## Related Documentation
