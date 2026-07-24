@@ -18,8 +18,9 @@
 
 package org.tentackle.io;
 
-import org.tentackle.common.TentackleRuntimeException;
 import org.testng.annotations.Test;
+
+import org.tentackle.common.TentackleRuntimeException;
 
 import java.net.URI;
 import java.util.Map;
@@ -186,4 +187,5 @@ public class UriHelperTest {
   public void testExpandTrailingDollarIsLiteral() {
     assertEquals(UriHelper.expand("$host$", BASE), "localhost$");
   }
+
 }

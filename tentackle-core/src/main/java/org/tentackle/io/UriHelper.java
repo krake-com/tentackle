@@ -18,12 +18,18 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.NumericVariable;
+import org.tentackle.common.NumericEvaluator;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -83,8 +89,10 @@ public class UriHelper {
    *   <li>{@code query} &mdash; the query string without the leading {@code ?}, if any</li>
    *   <li>{@code fragment} &mdash; the fragment, if any</li>
    * </ul>
-   * Within {@code ${...}} a single arithmetic operation ({@code +}, {@code -}, {@code *}, {@code /}, {@code %})
-   * may be applied to a numeric variable and an integer literal, for example {@code ${port+1}}.
+   * Within {@code ${...}} an arithmetic expression over the numeric URI components and integer literals
+   * may be used, with the operators {@code +}, {@code -}, {@code *}, {@code /} and {@code %}, the usual
+   * operator precedence and parentheses for grouping, for example {@code ${(port+1000)/2}}.
+   * The expression is evaluated with integer semantics (see {@link NumericEvaluator}).
    * A {@code $} can be escaped with a backslash ({@code \$}).
    * <p>
    * Example (given the base {@code trips://localhost:18000/myapp?idle=10}):
@@ -138,40 +146,50 @@ public class UriHelper {
   }
 
   /**
-   * Evaluates a {@code ${...}} expression, i.e., a variable optionally followed by a single arithmetic operation.
+   * Evaluates a {@code ${...}} arithmetic expression against the base URI.<br>
+   * The variables referenced by the expression are the numeric URI components (currently only
+   * {@code port}). Each referenced variable is resolved against the base URI, and the expression
+   * is evaluated with integer semantics by a {@link NumericEvaluator}.
    *
-   * @param expr the trimmed expression, e.g. {@code port+1}
+   * @param expr the trimmed expression, e.g. {@code (port+1000)/2}
    * @param base the base URI
    * @param value the whole string (for error messages)
    * @return the resolved string
    */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private static String evaluate(String expr, URI base, String value) {
+    // collect the variable names referenced by the expression and resolve them against the base URI
+    Set<String> names = new LinkedHashSet<>();
     for (int i = 0; i < expr.length(); i++) {
-      char op = expr.charAt(i);
-      if (op == '+' || op == '-' || op == '*' || op == '/' || op == '%') {
-        String name = expr.substring(0, i).trim();
-        String operand = expr.substring(i + 1).trim();
-        long left;
-        long right;
-        try {
-          left = Long.parseLong(resolve(name, base, value));
-          right = Long.parseLong(operand);
+      if (isVariableStart(expr.charAt(i))) {
+        int j = i + 1;
+        while (j < expr.length() && isVariablePart(expr.charAt(j))) {
+          j++;
         }
-        catch (NumberFormatException nx) {
-          throw new TentackleRuntimeException(
-              "non-numeric operand in expression '" + expr + "' of '" + value + "'", nx);
-        }
-        long result = switch (op) {
-          case '+' -> left + right;
-          case '-' -> left - right;
-          case '*' -> left * right;
-          case '/' -> left / right;
-          default  -> left % right;
-        };
-        return Long.toString(result);
+        names.add(expr.substring(i, j));
+        i = j - 1;
       }
     }
-    return resolve(expr, base, value);
+    List<NumericVariable<Long>> arguments = new ArrayList<>(names.size());
+    for (String name : names) {
+      long resolved;
+      try {
+        resolved = Long.parseLong(resolve(name, base, value));
+      }
+      catch (NumberFormatException nx) {
+        throw new TentackleRuntimeException(
+          "non-numeric variable '" + name + "' in expression '" + expr + "' of '" + value + "'", nx);
+      }
+      arguments.add(new NumericVariable<>(name, resolved));
+    }
+    try {
+      return new NumericEvaluator<>(Long.class, expr, arguments.toArray(new NumericVariable[0]))
+               .evaluate().toString();
+    }
+    catch (TentackleRuntimeException tx) {
+      throw new TentackleRuntimeException(
+        "invalid expression '" + expr + "' in '" + value + "'", tx);
+    }
   }
 
   /**
