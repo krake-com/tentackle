@@ -149,6 +149,13 @@ against the theme.
 walks a `MenuBar` and converts every `FontIcon` graphic to an `ImageView` (sized, and colored for the
 current light/dark mode) before enabling the system menu bar.
 
+The conversion renders the glyph with `Node#snapshot`, which performs a CSS pass first. Size and color
+are therefore applied as an *inline* style: `FontIcon` reports `StyleOrigin.USER_AGENT` for
+`iconSize` and `iconColor` even when they were set programmatically, so a matching rule of the user
+agent stylesheet — the AtlantaFX themes define `.ikonli-font-icon { -fx-icon-size: 18px; ... }` —
+would otherwise win over the values chosen for the menu bar and yield mis-sized images that macOS
+has to rescale. The glyph is snapshotted centered in a square of exactly the system menu icon size.
+
 
 ## How It Fits Together
 
