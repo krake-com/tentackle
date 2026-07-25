@@ -79,7 +79,7 @@ public class FxTextAreaSkin extends TextAreaSkin {
    * Adds or removes the expand-button according to the text area's current configuration.
    */
   protected void updateExpandButton() {
-    boolean expandable = textArea.isExpandable() && textArea.isOneLiner();
+    boolean expandable = textArea.isExpandable();
     if (expandable && expandButton == null) {
       expandButton = FxFactory.getInstance().createButton(STYLE_CLASS, GRAPHIC_NAME, BUNDLE_KEY,
                                                           textArea::expand);

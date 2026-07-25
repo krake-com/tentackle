@@ -48,10 +48,13 @@ import java.util.function.Function;
 /**
  * Extended TextArea.
  * <p>
- * A text area displayed as a one-liner (see {@link #isOneLiner()}) can offer an expand button at its
+ * Since the default navigation in Tentackle works with {@code ENTER} and {@code Shift-ENTER} keys,
+ * FxTextArea provides {@link #setNavigateViaEnterEnabled(boolean)} to control this behavior.
+ * It is enabled by default.
+ * <p>
+ * A text area displayed with only one or very few lines can offer an expand-button at its top
  * right edge. Clicking it pops up a multi-line editor covering the text area, which collapses again
- * as soon as it loses the focus. This provides a UX similar to the expandable text fields in IntelliJ.
- * The feature is opt-in via {@link #setExpandable(boolean)}.
+ * as soon as it loses the focus. The feature is opt-in via {@link #setExpandable(boolean)}.
  *
  * @author harald
  */
@@ -100,17 +103,6 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    */
   public void setNavigateViaEnterEnabled(boolean navigateViaEnterEnabled) {
     this.navigateViaEnterEnabled = navigateViaEnterEnabled;
-  }
-
-
-  /**
-   * Returns whether this text area is displayed as a one-liner.<br>
-   * Only one-liners are worth expanding, because all other text areas are multi-line already.
-   *
-   * @return true if the preferred row count is 1
-   */
-  public boolean isOneLiner() {
-    return getPrefRowCount() <= 1;
   }
 
   /**
@@ -182,11 +174,11 @@ public class FxTextArea extends TextArea implements FxTextComponent {
 
   /**
    * Expands this text area to a multi-line editor.<br>
-   * Does nothing if not {@link #isExpandable()}, not a {@link #isOneLiner()}, already expanded
+   * Does nothing if not {@link #isExpandable()}, already expanded
    * or not displayed at all.
    */
   public void expand() {
-    if (isExpandable() && isOneLiner()) {
+    if (isExpandable()) {
       getExpandedTextPopup().showPopup();
     }
   }
