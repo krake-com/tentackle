@@ -63,7 +63,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   /**
    * True if enter/shift-Enter navigates to the next/previous component.
    */
-  private boolean navigateViaEnterEnabled = true;
+  private BooleanProperty navigateViaEnterEnabledProperty;
 
   /**
    * True if a one-liner can be expanded to a multi-line editor (opt-in).
@@ -92,7 +92,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    * @return true if tentackle, false if standard FX
    */
   public boolean isNavigateViaEnterEnabled() {
-    return navigateViaEnterEnabled;
+    return navigateViaEnterEnabledProperty == null || navigateViaEnterEnabledProperty.get();
   }
 
   /**
@@ -102,7 +102,19 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    * @param navigateViaEnterEnabled false to restore FX standard behavior
    */
   public void setNavigateViaEnterEnabled(boolean navigateViaEnterEnabled) {
-    this.navigateViaEnterEnabled = navigateViaEnterEnabled;
+    navigateViaEnterEnabledProperty().set(navigateViaEnterEnabled);
+  }
+
+  /**
+   * Gets the navigate-via-enter property.
+   *
+   * @return the property
+   */
+  public BooleanProperty navigateViaEnterEnabledProperty() {
+    if (navigateViaEnterEnabledProperty == null) {
+      navigateViaEnterEnabledProperty = new SimpleBooleanProperty(this, "navigateViaEnterEnabled", true);
+    }
+    return navigateViaEnterEnabledProperty;
   }
 
   /**
