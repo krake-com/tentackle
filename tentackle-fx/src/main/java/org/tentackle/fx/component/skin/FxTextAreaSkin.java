@@ -101,9 +101,10 @@ public class FxTextAreaSkin extends TextAreaSkin {
     }
     else {
       double buttonWidth = snapSizeX(expandButton.prefWidth(-1));
+      double buttonHeight = snapSizeY(expandButton.prefHeight(-1));
       super.layoutChildren(x, y, Math.max(0, w - buttonWidth), h);
-      // full height, so that the button's background covers the strip taken from the text
-      expandButton.resizeRelocate(snapPositionX(x + w - buttonWidth), snapPositionY(y), buttonWidth, h);
+      // place the button at the top right corner
+      expandButton.resizeRelocate(snapPositionX(x + w - buttonWidth), snapPositionY(y), buttonWidth, buttonHeight);
     }
   }
 
