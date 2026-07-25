@@ -19,41 +19,45 @@
 
 package org.tentackle.fx.table;
 
-import javafx.collections.ObservableList;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
-
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.filter.TableColumnFilter;
+import org.tentackle.fx.table.filter.TableFilter;
+import org.tentackle.fx.table.filter.TableFilterSupport;
+import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.reflect.EffectiveClassProvider;
 
+import javafx.collections.ObservableList;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 /**
  * Default implementation of a table configuration.
  *
- * @param <S> type of the objects contained within the table's items list
+ * @param <S> type of the objects contained within the table's item list
  * @author harald
  */
 public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   /*
-   * TableView and TreeTableView don't inherit from each other and thus
-   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * TableView and TreeTableView don't inherit from each other, and thus
+   * each spawns their own related types such as TableColum, TreeTableColumn, etc...
    * As a result, since TableConfiguration and TableColumnConfiguration apply
    * to both tables and tree-tables, a lot of semantically identical code is necessary.
-   * However, it is not really duplicate code. There's not much we can do to reduce it.
+   * However, it is not really duplicate code. There's little we can do to reduce it.
    */
 
   /** preferences key for table and column width. */
@@ -68,12 +72,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /** preferences key for column visibility. */
   private static final String PREF_COLUMN_VISIBILITY = "visible";
 
-  /** preferences key for column sort type. */
+  /** preferences key for the column sort type. */
   private static final String PREF_COLUMN_SORT_TYPE = "sort_type";
 
   /** preferences key for column sort order. */
   private static final String PREF_COLUMN_SORT_INDEX = "sort_ndx";
 
+  /** preferences key for the column filter. */
+  private static final String PREF_COLUMN_FILTER = "filter";
+
+  private static final Logger LOGGER = Logger.get(DefaultTableConfiguration.class);
 
 
   /**
@@ -92,7 +100,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private final Class<S> objectClass;
 
   /**
-   * The column configs mapped by column name.
+   * The column configs mapped by the column name.
    */
   private final Map<String, TableColumnConfiguration<S, ?>> nameColumnConfigMap = new LinkedHashMap<>();
 
@@ -120,6 +128,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * Whether preferences include the view size.
    */
   private boolean viewSizeIncluded = true;
+
+  /**
+   * Whether the columns provide a filter UI in their headers.
+   */
+  private boolean filterEnabled;
+
+  /**
+   * Whether preferences include the column filters.
+   */
+  private boolean filterIncluded;
 
   /**
    * The edit mode.
@@ -248,6 +266,26 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public boolean isFilterEnabled() {
+    return filterEnabled;
+  }
+
+  @Override
+  public void setFilterEnabled(boolean filterEnabled) {
+    this.filterEnabled = filterEnabled;
+  }
+
+  @Override
+  public boolean isFilterIncluded() {
+    return filterIncluded;
+  }
+
+  @Override
+  public void setFilterIncluded(boolean filterIncluded) {
+    this.filterIncluded = filterIncluded;
+  }
+
+  @Override
   public void savePreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
@@ -265,6 +303,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
                                       PersistedPreferences.systemRoot().node(prefName.toString()) :
                                       PersistedPreferences.userRoot().node(prefName.toString());
 
+      TableFilter<S> filter = table.getFilter();
       int viewIndex = 0;
       for (TableColumn<S, ?> column : table.getColumns()) {
         TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(column);
@@ -282,6 +321,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
             columnPrefs.remove(PREF_COLUMN_SORT_TYPE);
             columnPrefs.remove(PREF_COLUMN_SORT_INDEX);
           }
+          saveColumnFilter(columnPrefs, filter, columnConfig);
         }
         viewIndex++;
       }
@@ -290,7 +330,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       double height = table.getHeight();
       TotalsTableView<S> totalsTable = TotalsTableView.getTotalsTableView(table);
       if (totalsTable != null) {
-        // add the height of the totals table
+        // add the height of the "totals" table
         height += totalsTable.getHeight();
       }
       prefs.putDouble(PREF_TABLE_HEIGHT, height);
@@ -326,12 +366,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
         columnMapByName.put(columnName, systemPref.node(columnName));
       }
       if (userPref != null) {
-        // replace by user settings, if present
+        // replace preference by user settings, if present
         for (String columnName : userPref.childrenNames()) {
           columnMapByName.put(columnName, userPref.node(columnName));
         }
       }
 
+      TableFilter<S> filter = table.getFilter();
       Map<Integer, TableColumn<S, ?>> columnMapByIndex = new TreeMap<>();
       for (Map.Entry<String, PersistedPreferences> entry : columnMapByName.entrySet()) {
         TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(entry.getKey());
@@ -339,6 +380,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
           TableColumn<S, ?> column = columnConfig.getTableColumn();
           if (column != null) {
             PersistedPreferences columnPref = entry.getValue();
+            loadColumnFilter(columnPref, filter, columnConfig);
             int visibility = columnPref.getInt(PREF_COLUMN_VISIBILITY, -1);
             column.setVisible(visibility != 0);
             double width = columnPref.getDouble(PREF_WIDTH, -1.0);
@@ -368,11 +410,15 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       table.getColumns().addAll(columnMapByIndex.values());
       table.getSortOrder().addAll(sortOrder.values());
 
+      if (table.getFilterSupport() != null) {
+        table.getFilterSupport().refilter();
+      }
+
       // read table dimensions
       if (isViewSizeIncluded()) {
         double width = -1.0;
         String key = PREF_WIDTH;
-        if (!system) {
+        if (!system && userPref != null) {
           width = userPref.getDouble(key, width);
         }
         if (width < 0.0) {
@@ -384,7 +430,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
         double height = -1.0;
         key = PREF_TABLE_HEIGHT;
-        if (!system) {
+        if (!system && userPref != null) {
           height = userPref.getDouble(key, height);
         }
         if (height < 0.0) {
@@ -419,6 +465,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
                                    PersistedPreferences.systemRoot().node(prefName.toString()) :
                                    PersistedPreferences.userRoot().node(prefName.toString());
 
+      TableFilter<S> filter = treeTable.getFilter();
       int viewIndex = 0;
       for (TreeTableColumn<S, ?> column : treeTable.getColumns()) {
         TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(column);
@@ -436,6 +483,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
             columnPrefs.remove(PREF_COLUMN_SORT_TYPE);
             columnPrefs.remove(PREF_COLUMN_SORT_INDEX);
           }
+          saveColumnFilter(columnPrefs, filter, columnConfig);
         }
         viewIndex++;
       }
@@ -475,12 +523,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
         columnMapByName.put(columnName, systemPref.node(columnName));
       }
       if (userPref != null) {
-        // replace by user settings, if present
+        // replace preference by user settings, if present
         for (String columnName : userPref.childrenNames()) {
           columnMapByName.put(columnName, userPref.node(columnName));
         }
       }
 
+      TableFilter<S> filter = treeTable.getFilter();
       Map<Integer, TreeTableColumn<S, ?>> columnMapByIndex = new TreeMap<>();
       for (Map.Entry<String, PersistedPreferences> entry : columnMapByName.entrySet()) {
         TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(entry.getKey());
@@ -488,6 +537,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
           TreeTableColumn<S, ?> column = columnConfig.getTreeTableColumn();
           if (column != null) {
             PersistedPreferences columnPref = entry.getValue();
+            loadColumnFilter(columnPref, filter, columnConfig);
             int visibility = columnPref.getInt(PREF_COLUMN_VISIBILITY, -1);
             column.setVisible(visibility != 0);
             double width = columnPref.getDouble(PREF_WIDTH, -1.0);
@@ -517,11 +567,15 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       treeTable.getColumns().addAll(columnMapByIndex.values());
       treeTable.getSortOrder().addAll(sortOrder.values());
 
+      if (treeTable.getFilterSupport() != null) {
+        treeTable.getFilterSupport().refilter();
+      }
+
       // read table dimensions
       if (isViewSizeIncluded()) {
         double width = -1.0;
         String key = PREF_WIDTH;
-        if (!system) {
+        if (!system && userPref != null) {
           width = userPref.getDouble(key, width);
         }
         if (width < 0.0) {
@@ -533,7 +587,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
         double height = -1.0;
         key = PREF_TABLE_HEIGHT;
-        if (!system) {
+        if (!system && userPref != null) {
           height = userPref.getDouble(key, height);
         }
         if (height < 0.0) {
@@ -549,7 +603,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       throw new FxRuntimeException("loading table preferences failed for '" + prefName + "'", ex);
     }
   }
-
 
   @Override
   public EDITMODE getEditMode() {
@@ -585,6 +638,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     table.setEditable(tableEditable);
     table.getSelectionModel().cellSelectionEnabledProperty().set(tableEditable);
     table.setConfiguration(this);
+    if (isFilterEnabled()) {
+      installFilterSupport(table);
+    }
+    else {
+      table.setFilterSupport(null);   // re-configured without filter: drop the old support
+    }
   }
 
   @Override
@@ -601,6 +660,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     treeTable.setEditable(tableEditable);
     treeTable.getSelectionModel().cellSelectionEnabledProperty().set(tableEditable);
     treeTable.setConfiguration(this);
+    if (isFilterEnabled()) {
+      installFilterSupport(treeTable);
+    }
+    else {
+      treeTable.setFilterSupport(null);   // re-configured without filter: drop the old support
+    }
   }
 
   @Override
@@ -636,6 +701,81 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     return new TreeItem<>(object);
   }
 
+
+  /**
+   * Saves the filter of a column to the preferences.<br>
+   * The filter is removed from the preferences if not {@link #isFilterIncluded() included} or inactive.
+   *
+   * @param columnPrefs the column's preference node
+   * @param filter the table filter, null if the view provides no filter
+   * @param columnConfig the column configuration
+   */
+  protected void saveColumnFilter(PersistedPreferences columnPrefs, TableFilter<S> filter,
+                                  TableColumnConfiguration<S, ?> columnConfig) {
+    TableColumnFilter<S, ?> columnFilter = filter == null ? null : filter.getColumnFilter(columnConfig);
+    if (isFilterIncluded() && columnFilter != null && columnFilter.isActive()) {
+      String prefValue = columnFilter.toPreferencesString();
+      if (prefValue.length() <= Preferences.MAX_VALUE_LENGTH) {
+        columnPrefs.put(PREF_COLUMN_FILTER, prefValue);
+        return;
+      }
+      LOGGER.warning("filter of column {0} is too large for the preferences and will not be saved",
+                     columnConfig.getName());
+    }
+    columnPrefs.remove(PREF_COLUMN_FILTER);
+  }
+
+  /**
+   * Loads the filter of a column from the preferences.
+   *
+   * @param columnPrefs the column's preference node
+   * @param filter the table filter, null if the view provides no filter
+   * @param columnConfig the column configuration
+   */
+  protected void loadColumnFilter(PersistedPreferences columnPrefs, TableFilter<S> filter,
+                                  TableColumnConfiguration<S, ?> columnConfig) {
+    if (isFilterIncluded() && filter != null) {
+      filter.getColumnFilter(columnConfig).fromPreferencesString(columnPrefs.get(PREF_COLUMN_FILTER, null));
+    }
+  }
+
+  @Override
+  public TableFilterSupport<S> installFilterSupport(FxTableView<S> table) {
+    table.setFilterSupport(null);   // uninstall any previous support
+    TableFilterSupport<S> support = createFilterSupport(table);
+    table.setFilterSupport(support);
+    support.install();
+    return support;
+  }
+
+  @Override
+  public TableFilterSupport<S> installFilterSupport(FxTreeTableView<S> treeTable) {
+    treeTable.setFilterSupport(null);   // uninstall any previous support
+    TableFilterSupport<S> support = createFilterSupport(treeTable);
+    treeTable.setFilterSupport(support);
+    support.install();
+    return support;
+  }
+
+  /**
+   * Creates the filter support for a table view.
+   *
+   * @param table the table view
+   * @return the filter support
+   */
+  protected TableFilterSupport<S> createFilterSupport(FxTableView<S> table) {
+    return new TableFilterSupport<>(table);
+  }
+
+  /**
+   * Creates the filter support for a treetable view.
+   *
+   * @param treeTable the treetable view
+   * @return the filter support
+   */
+  protected TableFilterSupport<S> createFilterSupport(FxTreeTableView<S> treeTable) {
+    return new TableFilterSupport<>(treeTable);
+  }
 
   /**
    * Creates a column configuration.

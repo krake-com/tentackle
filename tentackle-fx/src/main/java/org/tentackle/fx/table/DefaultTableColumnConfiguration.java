@@ -19,6 +19,12 @@
 
 package org.tentackle.fx.table;
 
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxTableBinding;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.reflect.ReflectionHelper;
+
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
@@ -28,13 +34,6 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
-
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.bind.FxTableBinding;
-import org.tentackle.misc.FormatHelper;
-import org.tentackle.reflect.ReflectionHelper;
-
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +41,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Default configuration for a table column.<br>
  *
- * @param <S> type of the objects contained within the table's items list
+ * @param <S> type of the objects contained within the table's item list
  * @param <T> type of the content in all cells in this column
  *
  * @author harald
@@ -101,18 +100,18 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
   /**
    * The decimal format.<br>
-   * null if pattern and scale is null.
+   * null if pattern and scale are both null.
    */
   private DecimalFormat numberFormat;
 
   /**
    * Formatter for all date- and time-related types.<br>
-   * null if pattern is null.
+   * null if the pattern is null.
    */
   private DateTimeFormatter dateTimeFormatter;
 
   /**
-   * Alignment within cell.
+   * Alignment within the cell.
    */
   private Pos alignment;
 
@@ -142,7 +141,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Boolean autoSelect;
 
   /**
-   * Max. columns in cell.
+   * Maximum columns in the cell.
    */
   private Integer maxColumns;
 
@@ -162,6 +161,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Boolean summable;
 
   /**
+   * Filterable or not.
+   */
+  private Boolean filterable;
+
+  /**
    * Editable or not.
    */
   private Boolean editable;
@@ -170,7 +174,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Optional editor.
    */
   private FxComponent editor;
-
 
 
   /**
@@ -185,6 +188,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     this.name = name;
     this.displayedName = displayedName;
   }
+
 
   @Override
   public String toString() {
@@ -406,6 +410,16 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
+  public void setFilterable(Boolean filterable) {
+    this.filterable = filterable;
+  }
+
+  @Override
+  public Boolean getFilterable() {
+    return filterable;
+  }
+
+  @Override
   public boolean isEditable() {
     return Boolean.TRUE.equals(editable) ||
            tableConfiguration != null && tableConfiguration.getEditMode() != TableConfiguration.EDITMODE.NO;
@@ -474,7 +488,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     return new ReadOnlyObjectWrapper<>(binding.getModelValue());
   }
 
-
   /**
    * Creates the cell value factory.
    *
@@ -483,7 +496,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTableCellValueFactory() {
     return this::createTableCellValue;
   }
-
 
   /**
    * Creates a table cell.<br>
@@ -495,7 +507,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected TableCell<S,T> createTableCell(TableColumn<S, T> column) {
     return new FxTableCell<>(this);
   }
-
 
   /**
    * Gets the cell factory.
@@ -519,7 +530,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
 
-
   // ------------- for TreeTableView ------------------
 
   /**
@@ -537,7 +547,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     return new ReadOnlyObjectWrapper<>(binding.getModelValue());
   }
 
-
   /**
    * Creates the tree table cell value factory.
    *
@@ -546,7 +555,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected Callback<TreeTableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTreeTableCellValueFactory() {
     return this::createTreeTableCellValue;
   }
-
 
   /**
    * Creates a treetable cell.<br>
@@ -558,7 +566,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected TreeTableCell<S,T> createTreeTableCell(TreeTableColumn<S, T> column) {
     return new FxTreeTableCell<>(this);
   }
-
 
   /**
    * Creates the treetable cell factory.
@@ -580,6 +587,5 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     tc.setCellFactory(createTreeTableCellFactory());
     return tc;
   }
-
 
 }

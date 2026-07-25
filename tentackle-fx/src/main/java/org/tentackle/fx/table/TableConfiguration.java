@@ -26,6 +26,7 @@ import javafx.scene.control.TreeTableColumn;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.filter.TableFilterSupport;
 
 import java.util.Collection;
 
@@ -192,6 +193,70 @@ public interface TableConfiguration<S> {
    * @param sortingIncluded true if sorting is restored from the preferences (default is false)
    */
   void setSortingIncluded(boolean sortingIncluded);
+
+  /**
+   * Returns whether the columns provide a filter UI in their headers.
+   *
+   * @return true if the columns can be filtered by the user (default is false)
+   * @see org.tentackle.fx.table.filter.TableFilter
+   */
+  default boolean isFilterEnabled() {
+    return false;
+  }
+
+  /**
+   * Sets whether the columns provide a filter UI in their headers.<br>
+   * Must be set before the view is configured. To turn the feature on or off after the view has been
+   * configured, use {@link FxTableView#setFilterEnabled(boolean)} respectively
+   * {@link FxTreeTableView#setFilterEnabled(boolean)}.
+   *
+   * @param filterEnabled true if the columns can be filtered by the user (default is false)
+   */
+  default void setFilterEnabled(boolean filterEnabled) {
+    // optional feature
+  }
+
+  /**
+   * Installs a fresh column filter support on a configured table view.<br>
+   * Any support currently installed on the view is uninstalled first. Invoked by
+   * {@link FxTableView#setFilterEnabled(boolean)} to enable the feature after configuration.
+   *
+   * @param table the table view, already configured with this configuration
+   * @return the installed filter support, null if filtering is not supported
+   */
+  default TableFilterSupport<S> installFilterSupport(FxTableView<S> table) {
+    return null;    // optional feature
+  }
+
+  /**
+   * Installs a fresh column filter support on a configured treetable view.<br>
+   * Any support currently installed on the view is uninstalled first. Invoked by
+   * {@link FxTreeTableView#setFilterEnabled(boolean)} to enable the feature after configuration.
+   *
+   * @param treeTable the treetable view, already configured with this configuration
+   * @return the installed filter support, null if filtering is not supported
+   */
+  default TableFilterSupport<S> installFilterSupport(FxTreeTableView<S> treeTable) {
+    return null;    // optional feature
+  }
+
+  /**
+   * Returns whether the preferences include the column filters.
+   *
+   * @return true if the filters are restored from the preferences (default is false)
+   */
+  default boolean isFilterIncluded() {
+    return false;
+  }
+
+  /**
+   * Sets whether the preferences include the column filters.
+   *
+   * @param filterIncluded true if the filters are restored from the preferences (default is false)
+   */
+  default void setFilterIncluded(boolean filterIncluded) {
+    // optional feature
+  }
 
   /**
    * Returns whether the preferences include the view size.

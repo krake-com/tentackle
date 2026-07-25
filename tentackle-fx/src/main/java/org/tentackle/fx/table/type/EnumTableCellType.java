@@ -46,14 +46,14 @@ public class EnumTableCellType extends AbstractTableCellType<Enum> {
 
   @Override
   public void updateItem(FxTableCell<?, Enum> tableCell, Enum item) {
-    tableCell.setText(item.toString());
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), item));
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, Enum> treeTableCell, Enum item) {
-    treeTableCell.setText(item.toString());
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), item));
     treeTableCell.setGraphic(null);
     updateAlignment(treeTableCell, Pos.BASELINE_CENTER);
   }

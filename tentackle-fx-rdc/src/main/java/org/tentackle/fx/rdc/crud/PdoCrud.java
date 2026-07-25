@@ -47,7 +47,7 @@ import org.tentackle.validate.ValidationFailedException;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
+import javafx.collections.transformation.TransformationList;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.fxml.FXML;
@@ -528,9 +528,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
           else {
             T pdo = getPdo().persist();
             if (pdoList != null && pdoListIndex >= 0 && pdoListIndex < pdoList.size()) {
-              // set does not work for SortedList (-> UnsupportedOperationException).
-              if (pdoList instanceof SortedList) {
-                ((SortedList) pdoList).getSource().set(((SortedList) pdoList).getSourceIndex(pdoListIndex), pdo);
+              // set does not work for transformation lists such as SortedList or FilteredList
+              // (-> UnsupportedOperationException). Apply it to the root source instead.
+              if (pdoList instanceof TransformationList) {
+                FxUtilities.getInstance().setSourceElement(pdoList, pdoListIndex, pdo);
                 pdoListIndex = pdoList.indexOf(pdo);    // may be changed!
                 updatePrevNextButtons();
               }

@@ -19,13 +19,13 @@
 
 package org.tentackle.fx.table;
 
-import javafx.geometry.Pos;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TreeTableColumn;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
 
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Configuration for a table or treetable column.
  *
- * @param <S> type of the objects contained within the table's or treetable's items list
+ * @param <S> type of the objects contained within the table's or tree-table's item list
  * @param <T> type of the content in all cells in this column
  *
  * @author harald
@@ -101,7 +101,7 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the specific table cell type.
    *
-   * @return the cell type, null to determine from column type
+   * @return the cell type, null to determine from the column type
    * @see #getName()
    */
   TableCellType<T> getCellType();
@@ -109,13 +109,46 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Sets the specific table cell type.
    *
-   * @param cellType the cell type, null to determine from column type
+   * @param cellType the cell type, null to determine from the column type
    */
   void setCellType(TableCellType<T> cellType);
 
   /**
+   * Gets the effective table cell type.<br>
+   * This is either the specific cell type or the one determined from the column type.
+   *
+   * @return the cell type, never null
+   */
+  default TableCellType<T> getEffectiveCellType() {
+    TableCellType<T> cellType = getCellType();
+    return cellType == null ? getTableConfiguration().getTableCellType(getType()) : cellType;
+  }
+
+  /**
+   * Gets the text displayed for a value of this column.
+   *
+   * @param value the value; may be null
+   * @return the displayed text, null if none
+   * @see TableCellType#getText(TableColumnConfiguration, Object)
+   */
+  default String getText(T value) {
+    return value == null ? null : getEffectiveCellType().getText(this, value);
+  }
+
+  /**
+   * Gets the graphic displayed for a value of this column.
+   *
+   * @param value the value; may be null
+   * @return a newly created graphic, null if the value is rendered as text only
+   * @see TableCellType#getGraphic(TableColumnConfiguration, Object)
+   */
+  default Node getGraphic(T value) {
+    return value == null ? null : getEffectiveCellType().getGraphic(this, value);
+  }
+
+  /**
    * Defines the format for numeric or date/time-types.<br>
-   * If null is returned a default format will be used according to the column class.
+   * If null is returned, a default format will be used according to the column class.
    *
    * @return the format pattern or null if default
    */
@@ -157,72 +190,72 @@ public interface TableColumnConfiguration<S,T> {
   void setAlignment(Pos alignment);
 
   /**
-   * Defines the "blankzero" attribute of the column.
+   * Defines the {@code blankzero} attribute of the column.
    *
-   * @return true if blank zeros, false if not, null if use default from editor
+   * @return true if blank zeros, false if not, null to use default from the editor
    */
   Boolean isBlankZero();
 
   /**
    * Sets whether to blank out numeric zero values.
    *
-   * @param blankZero true if blank zeros, false if not, null if use default from editor
+   * @param blankZero true if blank zeros, false if not, null to use default from the editor
    */
   void setBlankZero(Boolean blankZero);
 
   /**
    * Sets whether a numeric field is unsigned or signed.
    *
-   * @param unsigned true if unsigned, null if use default from editor
+   * @param unsigned true if unsigned, null to use default from the editor
    */
   void setUnsigned(Boolean unsigned);
 
   /**
    * Returns whether a numeric field is unsigned or signed.
    *
-   * @return true if unsigned, null if use default from editor
+   * @return true if unsigned, null to use default from the editor
    */
   Boolean isUnsigned();
 
   /**
    * Sets allowed characters.
    *
-   * @param validChars the valid characters, null to use default from editor
+   * @param validChars the valid characters, null to use default from the editor
    */
   void setValidChars(String validChars);
 
   /**
    * Gets allowed characters.
    *
-   * @return the valid characters, null to use default from editor
+   * @return the valid characters, null to use default from the editor
    */
   String getValidChars();
 
   /**
    * Sets invalid characters.
    *
-   * @param invalidChars the invalid characters, null to use default from editor
+   * @param invalidChars the invalid characters, null to use default from the editor
    */
   void setInvalidChars(String invalidChars);
 
   /**
    * Gets invalid characters.
    *
-   * @return the invalid characters, null to use default from editor
+   * @return the invalid characters, null to use default from the editor
    */
   String getInvalidChars();
 
   /**
    * Gets the autoselect flag.
    *
-   * @return true if autoselect, false if not, null if use default from editor
+   * @return true if autoselect, false if not, null to use default from the editor
    */
   Boolean isAutoSelect();
 
   /**
    * Sets the autoselect feature.
    *
-   * @param autoSelect true if autoselect, false if not, null if use default from editor
+   * @param autoSelect true if autoselect, false if not, null to use default from the editor
    */
   void setAutoSelect(Boolean autoSelect);
 
@@ -271,7 +304,7 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Determines whether the column is summable.<br>
    *
-   * @return true if column is summable
+   * @return true if the column is summable
    */
   boolean isSummable();
 
@@ -290,6 +323,36 @@ public interface TableColumnConfiguration<S,T> {
   Boolean getSummable();
 
   /**
+   * Determines whether the column provides a filter UI in its header.<br>
+   * Filtering must be enabled for the whole table as well.
+   *
+   * @return true if the column can be filtered by the user
+   * @see TableConfiguration#isFilterEnabled()
+   */
+  default boolean isFilterable() {
+    return !Boolean.FALSE.equals(getFilterable()) &&
+           getTableConfiguration() != null && getTableConfiguration().isFilterEnabled();
+  }
+
+  /**
+   * Sets whether the column provides a filter UI in its header.
+   *
+   * @param filterable {@link Boolean#FALSE} to suppress the filter for this column, else null or {@link Boolean#TRUE}
+   */
+  default void setFilterable(Boolean filterable) {
+    // optional feature
+  }
+
+  /**
+   * Returns whether the column provides a filter UI in its header.
+   *
+   * @return {@link Boolean#FALSE} if the filter is suppressed for this column, else null or {@link Boolean#TRUE}
+   */
+  default Boolean getFilterable() {
+    return null;
+  }
+
+  /**
    * Returns whether the column is editable.
    *
    * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
@@ -304,7 +367,7 @@ public interface TableColumnConfiguration<S,T> {
   void setEditable(Boolean editable);
 
   /**
-   * Returns whether column is editable.
+   * Returns whether the column is editable.
    *
    * @return true if editable, the default is false
    */
@@ -313,14 +376,14 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the editor component.
    *
-   * @return the editor, null to use default from {@link TableCellType#getEditor()}
+   * @return the editor; null to use default from {@link TableCellType#getEditor()}
    */
   FxComponent getEditor();
 
   /**
    * Sets the editor component.
    *
-   * @param editor the editor, null to use default from {@link TableCellType#getEditor()}
+   * @param editor the editor; null to use default from {@link TableCellType#getEditor()}
    */
   void setEditor(FxComponent editor);
 

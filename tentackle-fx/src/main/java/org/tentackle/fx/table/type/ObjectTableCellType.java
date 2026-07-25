@@ -43,14 +43,14 @@ public class ObjectTableCellType extends AbstractTableCellType<Object> {
 
   @Override
   public void updateItem(FxTableCell<?, Object> tableCell, Object item) {
-    tableCell.setText(item.toString());
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), item));
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, Object> treeTableCell, Object item) {
-    treeTableCell.setText(item.toString());
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), item));
     treeTableCell.setGraphic(null);
     updateAlignment(treeTableCell, Pos.BASELINE_CENTER);
   }

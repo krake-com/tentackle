@@ -22,6 +22,11 @@
    * opacity for disabled components like radio-buttons, checkboxes and comboboxes.
    */
   -tt-disabled-opacity: 0.6;
+
+  /**
+   * color of the filter button of a filtered column.
+   */
+  -tt-filter-active-color: #1a6fc4;
 }
 
 .tt-info {
@@ -132,4 +137,49 @@
  */
 .tt-expanded-text-pane {
   -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.0, 0, 3);
+}
+
+/**
+ * column filter (autofilter), see TableFilterSupport.
+ * The filter button is dimmed until the mouse hovers over it or the column is filtered.
+ */
+.tt-filter-column > .label {
+  -fx-content-display: right;
+  -fx-graphic-text-gap: 4;
+}
+
+.tt-filter-button {
+  -fx-padding: 0 2 0 2;
+  -fx-background-color: transparent;
+}
+
+.tt-filter-button > .ikonli-font-icon {
+  -fx-icon-size: 12;
+  -fx-opacity: 0.4;
+}
+
+.tt-filter-button:hover > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+}
+
+.tt-filter-button-active > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+  -fx-icon-color: -tt-filter-active-color;
+}
+
+.tt-filter-popup-pane {
+  -fx-background-color: -fx-background;
+  -fx-padding: 6;
+  -fx-spacing: 4;
+  -fx-min-width: 220;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.0, 0, 3);
+}
+
+.tt-filter-popup-pane .tt-filter-condition {
+  -fx-spacing: 2;
+}
+
+.tt-filter-popup-pane .tt-filter-hint {
+  -fx-font-size: 0.9em;
+  -fx-opacity: 0.7;
 }

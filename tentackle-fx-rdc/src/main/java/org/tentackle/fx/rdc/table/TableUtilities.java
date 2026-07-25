@@ -227,7 +227,7 @@ public class TableUtilities {
             binding.setBoundRootObject(item);
             Object value = binding.getModelValue();
             if (value != null) {
-              rowValues.add(value.toString());
+              rowValues.add(getText(tc, value));
             }
           }
         }
@@ -253,6 +253,20 @@ public class TableUtilities {
     catch (IOException ex) {
       throw new RdcRuntimeException("creating spreadsheet file failed", ex);
     }
+  }
+
+  /**
+   * Gets the text displayed for a column's value.<br>
+   * Exports show the same text as the table.
+   *
+   * @param columnConfiguration the column configuration
+   * @param value the value, never null
+   * @return the displayed text, never null
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected String getText(TableColumnConfiguration<?, ?> columnConfiguration, Object value) {
+    String text = ((TableColumnConfiguration) columnConfiguration).getText(value);
+    return text == null ? "" : text;
   }
 
   /**
@@ -320,7 +334,7 @@ public class TableUtilities {
             if (binding != null) {
               binding.setBoundRootObject(item);
               Object value = binding.getModelValue();
-              String text = value == null ? "" : value.toString();
+              String text = value == null ? "" : getText(tc, value);
               hd.startElement("", "", tag, atts);
               hd.characters(text.toCharArray(), 0, text.length());
               hd.endElement("", "", tag);

@@ -25,6 +25,7 @@ import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxTableView;
@@ -125,7 +126,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * The items found.<br>
    * Initially empty, never null.
    */
-  private SortedList<T> items = new SortedList<>(FXCollections.observableArrayList());
+  private ObservableList<T> items = new SortedList<>(FXCollections.observableArrayList());
 
   private InvalidationListener itemsListener;   // listener for items totals change
   private PdoFinder<T> finder;                  // the finder
@@ -299,7 +300,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       // items where updated in PdoCrud.save()!
                       int ndx = items.indexOf(updatedPdo);
                       if (ndx >= 0) {
-                        ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
+                        FxUtilities.getInstance().setSourceElement(items, ndx, updatedPdo);
                       }
                     }
                     else if (e.getEventType() == PdoEvent.READ) { // the up/down button was pressed
@@ -597,21 +598,23 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void setItems(List<T> pdos) {
     ObservableList<T> viewablePdos = filterViewablePdos(pdos);
+    SortedList<T> sortedItems;
     if (shiftDown && items != null && !items.isEmpty() && !viewablePdos.isEmpty()) {
       // append to the item list if not already in the list
       Set<T> itemSet = new HashSet<>(items);
-      ObservableList<T> unsortedItems = FXCollections.observableArrayList(items.getSource());
+      ObservableList<T> unsortedItems = FXCollections.observableArrayList(FxUtilities.getInstance().getRootSource(items));
       for (T pdo : viewablePdos) {
         if (!itemSet.contains(pdo)) {
           unsortedItems.add(pdo);
         }
       }
-      items = new SortedList<>(unsortedItems);
+      sortedItems = new SortedList<>(unsortedItems);
     }
     else {
-      items = new SortedList<>(viewablePdos);
+      sortedItems = new SortedList<>(viewablePdos);
     }
-    items.comparatorProperty().bind(tableView.comparatorProperty());
+    sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
+    items = sortedItems;
     countLabel.setText(Integer.toString(items.size()));
 
     if (treeShown) {
@@ -634,6 +637,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     else {
       tableView.setItems(items);
+      // the table may wrap the items again, for example if column filters are enabled
+      items = tableView.getItems();
       if (items.isEmpty()) {
         Node placeHolder = createPlaceHolder();
         if (placeHolder != null) {
@@ -798,7 +803,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           T treePdo = item.getValue();
           if (listPdo.getSerial() != treePdo.getSerial()) {
             // item was modified in the tree
-            ((List) items.getSource()).set(items.getSourceIndex(index), treePdo);
+            FxUtilities.getInstance().setSourceElement(items, index, treePdo);
           }
           index++;
         }

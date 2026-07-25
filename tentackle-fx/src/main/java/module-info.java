@@ -36,6 +36,7 @@ module org.tentackle.fx {
   exports org.tentackle.fx.container.delegate;
   exports org.tentackle.fx.nofxml;
   exports org.tentackle.fx.table;
+  exports org.tentackle.fx.table.filter;
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
 

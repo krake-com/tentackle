@@ -21,6 +21,8 @@ package org.tentackle.fx.table;
 
 import org.tentackle.fx.FxComponent;
 
+import javafx.scene.Node;
+
 /**
  * A table and treetable cell type.<p>
  * Table cell types are singletons per java class.
@@ -30,6 +32,34 @@ import org.tentackle.fx.FxComponent;
  * @author harald
  */
 public interface TableCellType<T> {
+
+  /**
+   * Gets the text displayed for an item.<p>
+   * This is the same text as rendered by {@link #updateItem(FxTableCell, Object)}, but without a cell.
+   * It is used wherever the displayed text is needed outside a cell, such as the column filters
+   * or the spreadsheet export.<br>
+   * Implementations rendering a graphic only should return a textual representation, nevertheless.
+   *
+   * @param columnConfiguration the column configuration providing the format, case conversion, etc...
+   * @param item the item, never null
+   * @return the displayed text, null if none
+   */
+  default String getText(TableColumnConfiguration<?,T> columnConfiguration, T item) {
+    return item.toString();
+  }
+
+  /**
+   * Gets the graphic displayed for an item.<p>
+   * Cell types rendering their items as a graphic instead of text must create a <em>new</em>
+   * node for each invocation, since a node has only one parent.
+   *
+   * @param columnConfiguration the column configuration
+   * @param item the item, never null
+   * @return the graphic, null if the item is rendered as text only (default)
+   */
+  default Node getGraphic(TableColumnConfiguration<?,T> columnConfiguration, T item) {
+    return null;
+  }
 
   /**
    * Updates the table cells view.

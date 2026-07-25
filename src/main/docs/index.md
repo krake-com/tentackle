@@ -67,6 +67,7 @@ topic-grouped listing of every document, see the
 
 ## F
 
+- **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Formatting (localized patterns)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
 - **Freezable value types** — [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **FX / JavaFX** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
