@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.task;
 
 import org.tentackle.common.InterruptedRuntimeException;
@@ -32,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 
 /**
  * A thread executing tasks in a serialized manner.
@@ -689,6 +687,28 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         }
 
         lastMillis = System.currentTimeMillis();
+
+        // Finish all dispatcher-side bookkeeping *before* signaling completion.
+        // setCompleted() sets the (volatile) completion timestamp and fires the
+        // task's completion listeners, and the notifyAll() below wakes waitForTask().
+        // All of these observers must see a consistent dispatcher state: the task
+        // already dequeued and - unless it repeats - removed from the id map.
+        // Otherwise, a completion observer could still find the just-completed task
+        // via getTask() or isTaskPending() (see DefaultTaskDispatcherTest).
+        unlockInternal(0);
+
+        queue.remove(task);
+
+        long repeat = task.getRepeatInterval();
+        if (repeat > 0 && task.getDispatcher() == this) {
+          // if repeat and not removed from the dispatcher in the meantime
+          task.setScheduledEpochalTime(lastMillis + repeat);
+          queue.add(task);
+        }
+        else  {
+          idMap.remove(task.getId());
+        }
+
         try {
           task.setCompleted(lastMillis);
         }
@@ -699,20 +719,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
       finally {
         task.notifyAll();
-      }
-
-      unlockInternal(0);
-
-      queue.remove(task);
-
-      long repeat = task.getRepeatInterval();
-      if (repeat > 0 && task.getDispatcher() == this) {
-        // if repeat and not removed from the dispatcher in the meantime
-        task.setScheduledEpochalTime(lastMillis + repeat);
-        queue.add(task);
-      }
-      else  {
-        idMap.remove(task.getId());
       }
     }
 
@@ -797,7 +803,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         /*
          * We don't need a 'synchronized(this)' here because
          * if there is already a lock, only the same thread can lock it again.
-         * If it is not the same thread the lock() below will block.
+         * If it is a different thread, the lock() below will block.
          */
         for (;;) {
           assertAlive();
@@ -928,7 +934,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       /*
        * We don't need a 'synchronized(this)' here because we can assume
        * that the same thread that locked the dispatcher will also unlock it.
-       * If it is a different thread or there is no lock at all
+       * If it is a different thread or there is no lock at all,
        * the "unlock()" below will fail with an IllegalMonitorStateException.
        */
       checkUnlockKey(key);

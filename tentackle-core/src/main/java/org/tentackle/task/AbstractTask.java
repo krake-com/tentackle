@@ -36,7 +36,7 @@ public abstract class AbstractTask implements Task {
   private Throwable cause;                            // an exception thrown in a runnable
   private Serializable result;                        // the result (return value) of the task
   private long started;                               // timestamp when started
-  private long completed;                             // timestamp when completed
+  private volatile long completed;                    // timestamp when completed (volatile: publishes the dispatcher's post-run bookkeeping to completion observers)
   private long scheduled;                             // time scheduled for next execution
   private long repeat;                                // repeat interval
   private long id;                                    // the (unique) task id

@@ -282,8 +282,10 @@ public class DefaultTaskDispatcherTest {
     assertTrue(task.getStarted() != 0);
     assertTrue(task.getCompleted() >= task.getStarted());
     assertNull(task.getCause());
-    // completed tasks are removed from the id map
-    assertNull(dispatcher.getTask(task.getId()));
+    // Completed tasks are removed from the id map. This happens a few instructions
+    // after the completion flag is set (see DefaultTaskDispatcher.executeTask), so
+    // on a loaded system the removal may lag behind getCompleted() -> await it.
+    await(() -> dispatcher.getTask(task.getId()) == null);
   }
 
   @Test
