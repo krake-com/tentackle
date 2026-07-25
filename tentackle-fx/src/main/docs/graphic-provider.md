@@ -147,7 +147,10 @@ against the theme.
 
 **macOS caveat:** font icons cannot be rendered in the system menu bar. `MacUtilities.toSystemMenuBar(...)`
 walks a `MenuBar` and converts every `FontIcon` graphic to an `ImageView` (sized, and colored for the
-current light/dark mode) before enabling the system menu bar.
+current light/dark mode) before enabling the system menu bar. Because the images are rendered for the
+theme that is active at that moment, the menu bar is registered and its images are rendered again
+whenever the light/dark mode or the theme changes — otherwise the icons would keep the old color
+until the menu bar is rebuilt.
 
 The conversion renders the glyph with `Node#snapshot`, which performs a CSS pass first. Size and color
 are therefore applied as an *inline* style: `FontIcon` reports `StyleOrigin.USER_AGENT` for
