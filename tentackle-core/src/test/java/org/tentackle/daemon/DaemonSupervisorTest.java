@@ -299,7 +299,11 @@ public class DaemonSupervisorTest {
     TestSupervisor supervisor = new TestSupervisor("run", CHECK_INTERVAL, 0, 2);
     try {
       supervisor.start();
-      assertTrue(await(() -> supervisor.getRunningDaemons().length == 2), "daemons should start");
+      // wait until both daemons are alive AND have recorded their start time
+      // (a thread is alive the moment start() returns, but startedAt is only set
+      //  in the first line of run(), which runs asynchronously)
+      assertTrue(await(() -> supervisor.getRunningDaemons().length == 2
+                             && supervisor.getEarliestStartTime() > 0), "daemons should start");
 
       assertEquals(supervisor.getStartedDaemons().length, 2);
       assertNotNull(supervisor.getStartedDaemon(0));
