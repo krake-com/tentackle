@@ -152,25 +152,201 @@ tool of choice for building realistic integration-test data from existing record
 [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser)
 for the step-by-step recipe that feeds the generated code into the test base classes.
 
-**Interactive mode** (the default) opens the *PDO Browser*, which lets you navigate the PDOs persisted
-in the database along their relations and generates test code (Java fixtures and the corresponding SQL)
-from the objects you select.
-
-![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
-
-**Batch mode** runs headless and writes the Java fixture code for a known set of objects straight to a
-file, without opening the UI. It is enabled by supplying both the `pdo` and the `output` parameters.
-This is handy for regenerating fixtures in a scripted or CI setting once you know which records you
-want. The objects are selected by entity name and object ID; if any ID cannot be found in the
-database, the goal fails.
-
-Parameters:
+Common parameters (valid in both modes):
 
 - `url` (required): the backend URL.
 - `user` (required) / `password`: the backend credentials.
 - `maxLinesInStringLiteral`: caps the number of lines emitted in generated multi-line string literals.
 - `mapSchemas` (`tentackle.mapSchemas`): map schema names to flat table names in the generated SQL
   `SELECT` statements.
+
+If no backend can be reached, the goal fails with a clear message.
+
+#### Interactive Mode: the PDO Browser
+
+Interactive mode is the default — it opens the *PDO Browser*, which lets you navigate the PDOs
+persisted in the database along their relations, compare them over time, and generate test code (Java
+fixtures and the corresponding SQL) from the objects you select. It connects with the credentials
+given above and runs against the *live* backend, so pointing it at a development or staging database
+rather than production is a good idea. Note that the browser only *reads* — it never writes to the
+database.
+
+**The browser shows the Java view of your data, not the SQL view.** This is the whole point: it does
+not display database columns but the *properties of the PDO*, read through their getters, in the very
+form the application sees them. An enum shows up as its constant, not as the number or character
+stored in the column; a `Money`, a `Timestamp`, or any application-specific data type shows up as its
+formatted Java value, not as its raw column representation; a component or a collection is a subtree,
+not a foreign key. Node names are Java property names, and the `Type` column shows the Java type.
+Outgoing relations are followed for you: the referenced object is rendered by its unique domain key,
+and its full data is one click away in the details table at the bottom. In other words, you are
+browsing objects, not rows — the database columns only surface where you explicitly ask for them, via
+*copy table name* and *copy SQL SELECT…* in the context menus.
+
+![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
+
+The window is organized into two toolbars and three data areas, the latter resizable via split panes:
+
+| Area                            | Contents                                                                                    |
+|---------------------------------|---------------------------------------------------------------------------------------------|
+| top toolbar                     | *profile*, *only root entities*, *entity*, and the duplicate (**+**) button.                 |
+| left table                      | the loaded PDOs, with their object ID and their unique domain key (*UDK*). Multi-selectable. |
+| right tree table                | the object tree of the PDO selected on the left, optionally diffed against a memorized state.|
+| bottom table                    | the row details of the tree node selected above.                                             |
+| bottom toolbar                  | loading on the left (*latest*, *load*, *find by ID*, *use finder*), code generation on the right (*code*, *paths*, *generate*, *memorize*). |
+
+##### Choosing the Entity
+
+The *entity* combo box lists every persistable entity of the application. Two filters narrow it down:
+the *profile* choice box restricts the list to the entities of one [profile](#how-the-wizard-places-files-the-model-and-profiles)
+(i.e. one PDO package), and *only root entities* hides the components of aggregates. Embedded entities
+are never listed.
+
+The list is sorted by camel-case letters and renders them in bold, and typing selects by camel-case
+prefix — entering `CO` jumps to `CustomerOrder`. Selecting an entity immediately loads its records.
+
+##### Loading PDOs
+
+- **latest** / **load** — loads the *n* most recently created PDOs of the entity (default 100). Changing
+  the count reloads immediately; *load* re-runs the query.
+- **find by ID** — opens a popup to enter one or more object IDs, separated by whitespace, commas,
+  colons, semicolons, or slashes. The objects found are inserted at the top of the table and *added* to
+  what is already loaded; entering `0` as the first ID clears the table first. IDs that do not exist are
+  skipped, non-numeric input is rejected with a warning, and a short note reports how many PDOs were
+  loaded.
+- **use finder** — opens the application's own search dialog for that entity and lists its result. The
+  button is only enabled if the application provides a
+  [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/docs/gui-provider.md) with a finder for the
+  entity, which requires the application's [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+  layer on the plugin classpath.
+
+The context menu of the table adds **reload**, which re-reads the selected PDOs from the database —
+the fastest way to see what an application function has just changed (see *memorize* below). Below it
+sit the standard Tentackle table features: *auto adjust* column widths, *print*, *export to
+spreadsheet* (all or selected rows; CSV, or XLS if `tentackle-fx-rdc-poi` is on the plugin classpath),
+*export to XML*, saving and loading the table preferences, and a row counter.
+
+##### Inspecting the Object Tree
+
+Selecting a PDO on the left expands it into the tree table on the right: its attributes, its embedded
+and composite components, and its collections, recursively. Every node is read through the PDO's
+getters, so the `Type` column shows the Java type (`Timestamp`, `List<DaemonReport>`, an enum, a custom
+data type, …) and the value column its formatted Java value — never the underlying column type or its
+encoded representation. For an object node the value is `[<id>/<serial>]`.
+
+Outgoing (non-composite) 1:1 relations are resolved for display: an ID-carrying attribute shows
+`5503 -> Site OFF1`, i.e. the referenced object's unique domain key next to the raw ID, and selecting
+it brings up that object's data in the details table below. N:M links are likewise shown as the object
+they point to rather than as the link entity. A relation is only resolved this way if the referenced
+entity provides a unique domain key; otherwise the attribute stays a plain ID.
+
+The rendering carries meaning:
+
+| Rendering              | Meaning                                                                       |
+|------------------------|-------------------------------------------------------------------------------|
+| **bold**               | an implicit attribute — supplied by the model or the framework, not authored by you (`id`, `serial`, `editedBy`, …). |
+| underlined             | part of the entity's unique domain key.                                       |
+| *italic*               | a hidden component or attribute — no public getter available.                  |
+| highlighted row        | the node differs from the memorized state (see below).                        |
+| tooltip                | the comment of the attribute or relation, taken from the model.               |
+
+The context menu offers, depending on the selected node:
+
+- **show differences only** / **show all lines** — only present when a state has been memorized; filters
+  the tree down to the differing nodes and expands them.
+- **copy FQCN … to clipboard** — the fully qualified class name of the selected object.
+- **copy table name … to clipboard** — its database table.
+- **copy SQL SELECT… to clipboard** — a ready-to-run `SELECT` that fetches exactly this node: for an
+  object node the row itself, for an attribute node all rows carrying that value. Inheritance is taken
+  into account (single-table and joined-table hierarchies produce the appropriate column lists and
+  joins), and `mapSchemas` controls whether schema names are mapped to flat table names. The item is
+  hidden for embedded objects and for attributes whose data type spans several columns.
+- **copy class-ID … to clipboard** — the class ID of the selected object.
+
+Plus the standard table features described above, extended by *expand* and *collapse* for the subtree
+of the selected node.
+
+##### The Row Details Table
+
+Selecting a node in the tree fills the table at the bottom, which renders objects as rows and their
+attributes as columns — the compact, tabular counterpart to the tree:
+
+- an **object** node yields a single row,
+- a **list** node yields one row per element, which makes comparing the elements of a collection much
+  easier than expanding them one by one in the tree,
+- an **attribute** node carrying an outgoing relation yields the *referenced* PDO — clicking the
+  `userId` of an incident shows the user's own data, without having to look up the ID in another table.
+  This is the browser's way of navigating relations: one click down the reference, and *browse in new
+  tab* below if you want to keep it.
+
+Its context menu repeats *copy FQCN*, *copy table name*, *copy class-ID*, and *copy SQL SELECT…*, and
+adds two items of its own:
+
+- **copy Java code to clipboard** — generates the fixture code for that single object. There is no
+  path configuration here, but it is the quickest way to create the referenced master data an object
+  depends on.
+- **browse in new tab** — opens the object in a new browser tab, which is how you follow a relation
+  without losing the current view.
+
+##### Comparing States: *memorize*
+
+The **memorize** toggle button remembers the currently selected PDO — the whole object tree, timestamped.
+The tree table then shows two value columns, headed by the load time and the memorize time, and rows
+that differ are highlighted; *show differences only* reduces the tree to just those rows.
+
+The typical workflow is: select the PDO, press *memorize*, run the function under test in the
+application, then *reload* the PDO from the table's context menu and look at what changed. Memorization
+survives a reload, but is dropped when a different entity is selected.
+
+Differences are determined by value as well as by object ID and `serial`, so an object replaced by
+another one is detected too. Implicit attributes and the IDs of composite relations are ignored, since
+they carry no domain information. Collections are matched up by ID, so inserted and deleted elements
+show up as gaps on one side rather than shifting everything below them.
+
+##### Working with Several Views
+
+The **+** button in the top toolbar duplicates the current view — same entity, same selected PDO — into
+a new tab, as does *browse in new tab* in the row details menu. The first duplicate turns the window
+into a tab pane; each tab is titled after its selected object (or its entity, when nothing is selected),
+so several objects can be inspected side by side. Tabs are closable except for the first one, and
+closing them until one is left restores the plain single view.
+
+##### Generating the Code
+
+Select one or more PDOs in the left table and press **generate**: the browser builds the Java code that
+recreates them — `on(…)`, the attribute setters, the components and collections, and a final `save()` —
+and copies it to the clipboard, prefixed with a comment recording the generation time, the user, the
+host, and the session it came from. A note confirms what was copied.
+
+Two buttons configure the result:
+
+- **code** — the code settings popup, holding the same two options as the batch parameters
+  `-Ddistinct` and `-Doffset`: whether each generated instance gets its own numbered variable name, and
+  which number to start at. With distinct variables, the generated code ends in `persist()` rather than
+  `save()`, so each object stays available under its own name.
+- **paths** — a list of check boxes for the *code paths* of the current selection, i.e. the dotted paths
+  of the attributes and relations that may be included or excluded. The list is derived from the model
+  and only offers what is actually configurable: attributes and relations carrying the `NOTEST`
+  stereotype (unchecked by default), multi-line string attributes, and N:M relation lists (both checked
+  by default). The button stays disabled when the selection has nothing to configure.
+
+The `maxLinesInStringLiteral` parameter additionally caps how much of a long text ends up in the
+generated string literals.
+
+##### Preferences
+
+*save user preferences* in the context menu of either table stores its column layout (order, widths,
+visibility, sorting) under the `PdoBrowser` node of `java.util.prefs`, separately from the
+application's own preferences. Both tables load their preferences on startup, and the initial divider
+positions of the split panes follow the stored table widths — so arranging the browser once makes it
+come up that way from then on.
+
+#### Batch Mode
+
+Batch mode runs headless and writes the Java fixture code for a known set of objects straight to a
+file, without opening the UI. It is enabled by supplying both the `pdo` and the `output` parameters.
+This is handy for regenerating fixtures in a scripted or CI setting once you know which records you
+want. The objects are selected by entity name and object ID; if any ID cannot be found in the
+database, the goal fails.
 
 Batch parameters (supplying both `pdo` and `output` switches the goal into batch mode):
 
@@ -182,8 +358,6 @@ Batch parameters (supplying both `pdo` and `output` switches the goal into batch
   2nd, 3rd, … instance. When `true`, the variable names are numbered instead.
 - `offset` (`-Doffset`): when `distinct` is `true`, the number the variable names start at. If unset,
   the first instance is left unnumbered.
-
-If no backend can be reached, the goal fails with a clear message.
 
 ### The `script` Goal
 
