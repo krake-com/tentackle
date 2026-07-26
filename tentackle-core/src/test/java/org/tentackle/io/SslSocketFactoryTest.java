@@ -24,7 +24,6 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
@@ -129,13 +128,7 @@ public class SslSocketFactoryTest {
    * query and are accepted by the Windows file APIs as well, so the path stays usable on either platform.
    */
   private static String uriPath(Path path) {
-//    return path.toString().replace('\\', '/');
-    try {
-      return path.toFile().getCanonicalPath();
-    }
-    catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return path.toString().replace('\\', '/');
   }
 
   /**
