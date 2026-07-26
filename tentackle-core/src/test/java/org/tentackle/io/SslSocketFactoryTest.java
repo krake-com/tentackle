@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
@@ -88,9 +89,9 @@ public class SslSocketFactoryTest {
   public void usesSingleKeyEntryWithoutAlias() throws Exception {
     // no ksalias given: the store's only key entry must be selected automatically (legacy behavior)
     SslParameters server = new SslParameters(URI.create(
-      "trips://localhost:0?ksfile=" + singleKeyStoreFile + "&kspass=" + STORE_PASSWORD));
+      "trips://localhost:0?ksfile=" + uriPath(singleKeyStoreFile) + "&kspass=" + STORE_PASSWORD));
     SslParameters client = new SslParameters(URI.create(
-      "trips://localhost:0?tsfile=" + singleTrustStoreFile + "&tspass=" + STORE_PASSWORD));
+      "trips://localhost:0?tsfile=" + uriPath(singleTrustStoreFile) + "&tspass=" + STORE_PASSWORD));
     assertEquals(handshakeAndGetServerCn(server, client), "solo");
   }
 
@@ -114,12 +115,27 @@ public class SslSocketFactoryTest {
 
   private SslParameters serverParametersForAlias(String alias) {
     return new SslParameters(URI.create(
-      "trips://localhost:0?ksfile=" + keyStoreFile + "&kspass=" + STORE_PASSWORD + "&ksalias=" + alias));
+      "trips://localhost:0?ksfile=" + uriPath(keyStoreFile) + "&kspass=" + STORE_PASSWORD + "&ksalias=" + alias));
   }
 
   private SslParameters clientParameters() {
     return new SslParameters(URI.create(
-      "trips://localhost:0?tsfile=" + trustStoreFile + "&tspass=" + STORE_PASSWORD));
+      "trips://localhost:0?tsfile=" + uriPath(trustStoreFile) + "&tspass=" + STORE_PASSWORD));
+  }
+
+  /**
+   * Renders a filesystem path for embedding in a URI query.<br>
+   * Windows paths use backslashes, which are illegal in a URI; forward slashes are valid in a URI
+   * query and are accepted by the Windows file APIs as well, so the path stays usable on either platform.
+   */
+  private static String uriPath(Path path) {
+//    return path.toString().replace('\\', '/');
+    try {
+      return path.toFile().getCanonicalPath();
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
