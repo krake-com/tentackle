@@ -222,7 +222,7 @@ public class ClientUpdateUtilities {
     try {
       // create or re-create the update directory (must be empty!)
       if (!updateDir.mkdir()) {
-        FileHelper.removeDirectory(updateDir.getName());
+        FileHelper.removeDirectory(updateDir.getPath());
         if (!updateDir.mkdir()) {
           throw new TentackleRuntimeException("cannot create update directory");
         }
