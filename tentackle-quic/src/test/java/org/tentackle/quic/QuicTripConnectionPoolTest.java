@@ -27,6 +27,7 @@ import org.tentackle.trip.TripRuntimeException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -71,6 +72,50 @@ public class QuicTripConnectionPoolTest {
       assertNotNull(exception.getCause());
       assertTrue(exception.getCause() instanceof IOException,
                  "expected the original IOException, got " + exception.getCause());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  @Test
+  public void rejectsNonPositiveConnectTimeout() {
+    QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?connecttimeout=0"));
+    try {
+      IllegalArgumentException exception =
+        expectThrows(IllegalArgumentException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      assertTrue(exception.getMessage().contains("connect timeout must be > 0"),
+                 "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  /**
+   * {@code connecttimeout} must actually bound how long connecting to an unresponsive server takes.
+   * <p>
+   * Nothing listens on the port, and a UDP datagram into the void produces no answer, so KWIK
+   * waits for the whole handshake timeout &mdash; which is exactly what the parameter controls.
+   * Without it, the default of {@value QuicTripConnectionPool#DEFAULT_CONNECT_TIMEOUT} seconds
+   * would apply.
+   */
+  @Test(timeOut = 60000)
+  public void honorsTheConfiguredConnectTimeout() throws Exception {
+    final int connectTimeout = 2;
+    URI uri = URI.create("tripq://localhost:" + QuicTestSupport.freeUdpPort() +
+                         "?connecttimeout=" + connectTimeout);
+    QuicTripTransport transport = new QuicTripTransport(uri);
+    try {
+      long startTime = System.nanoTime();
+      expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startTime);
+
+      assertTrue(elapsedSeconds >= connectTimeout,
+                 "gave up after " + elapsedSeconds + "s, before the configured timeout of " + connectTimeout + "s");
+      assertTrue(elapsedSeconds < QuicTripConnectionPool.DEFAULT_CONNECT_TIMEOUT,
+                 "waited " + elapsedSeconds + "s, so the configured timeout was ignored " +
+                 "in favor of the " + QuicTripConnectionPool.DEFAULT_CONNECT_TIMEOUT + "s default");
     }
     finally {
       transport.close();

@@ -31,12 +31,22 @@ import org.tentackle.trip.transport.ConnectionPoolSlot;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
 
 /**
  * The QUIC client connection pool.
  */
 public class QuicTripConnectionPool extends AbstractConnectionPool {
+
+  /**
+   * The default connect timeout in seconds, applied if the URI does not specify {@code connecttimeout}.
+   * <p>
+   * This is the timeout for establishing the QUIC connection, i.e., the handshake with the server,
+   * not for the individual streams created per pool slot.
+   */
+  public static final int DEFAULT_CONNECT_TIMEOUT = 10;
+
 
   private final QuicTripTransport transport;
   private final QuicClientConnection connection;
@@ -54,12 +64,18 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     if (uri.getPort() <= 0) {
       throw new IllegalArgumentException("QUIC port number must be > 0, got " + uri.getPort() + " from URI " + uri);
     }
+    int connectTimeout = transport.getUriPars().getOrDefault("connecttimeout", DEFAULT_CONNECT_TIMEOUT);
+    if (connectTimeout <= 0) {
+      throw new IllegalArgumentException(
+        "QUIC connect timeout must be > 0 seconds, got " + connectTimeout + " from URI " + uri);
+    }
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     String alpnId = queryParameters.getOrDefault("alpnid", scheme);
     QuicClientConnection.Builder builder = QuicClientConnection.newBuilder()
                                                                .uri(uri)  // only host and port are used
-                                                               .applicationProtocol(alpnId);
+                                                               .applicationProtocol(alpnId)
+                                                               .connectTimeout(Duration.ofSeconds(connectTimeout));
     if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
       builder.noServerCertificateCheck();
     }

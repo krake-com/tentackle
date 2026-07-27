@@ -149,7 +149,12 @@ bidirectional streams (`Integer.MAX_VALUE`), with the real cap enforced by the
    (`noServerCertificateCheck()`), matching TRIP's design assumption that the
    transport runs on a trusted, non-public network. Set `certcheck=true` to
    enforce certificate validation.
-3. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
+3. Establishing that connection is bounded by `connecttimeout` (default 10
+   seconds). Since QUIC runs over UDP, an unreachable or unresponsive server
+   produces no answer at all, so the client waits for the full timeout before
+   failing with a `TripRuntimeException`. Lower it when a client should fail
+   over quickly rather than wait.
+4. Each pool slot (`createSlot`) opens a new **bidirectional** QUIC stream
    (`connection.createStream(true)`) and wraps it in a `QuicTripConnection`.
 
 So one QUIC *connection* carries many TRIP *connections*, each being one QUIC
@@ -207,7 +212,7 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&certcheck=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&certcheck=...][&connecttimeout=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
@@ -226,6 +231,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `alpnid`      | both            | the URI scheme (`tripq` / `tripcq`)              | ALPN application-protocol identifier. Client and server must match.                            |
 | `maxstreams`  | server          | `128`                                            | Maximum concurrent peer-initiated bidirectional streams per connection.                        |
 | `certcheck`   | client          | `false`                                          | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
+| `connecttimeout` | client       | `10`                                             | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                          |
 | `mincompress` | both (`tripcq`) | `1024`                                           | Minimum block size in bytes before deflate compression is applied.                             |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
