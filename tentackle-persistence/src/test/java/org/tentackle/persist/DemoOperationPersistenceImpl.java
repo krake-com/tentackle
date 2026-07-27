@@ -20,6 +20,7 @@ package org.tentackle.persist;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
+import org.tentackle.session.Session;
 
 import java.io.Serial;
 
@@ -40,10 +41,12 @@ public class DemoOperationPersistenceImpl extends AbstractPersistentOperation<De
   public static final PersistentOperationClassVariables<DemoOperation, DemoOperationPersistenceImpl> CLASSVARIABLES =
       PersistentOperationClassVariables.create(DemoOperation.class, DemoOperationPersistenceImpl.class);
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
-   * Creates the operation.
+   * Creates a persistent object for an operation.
    *
-   * @param operation the operation this is a delegate for
+   * @param operation the operation object
    * @param context the domain context
    */
   public DemoOperationPersistenceImpl(DemoOperation operation, DomainContext context) {
@@ -51,20 +54,32 @@ public class DemoOperationPersistenceImpl extends AbstractPersistentOperation<De
   }
 
   /**
-   * Creates the operation.
+   * Creates a persistent object for an operation.
    *
-   * @param operation the operation this is a delegate for
+   * @param operation the operation object
+   * @param session the session
+   */
+  public DemoOperationPersistenceImpl(DemoOperation operation, Session session) {
+    super(operation, session);
+  }
+
+  /**
+   * Creates a persistent object for an operation.
+   *
+   * @param operation the operation object
    */
   public DemoOperationPersistenceImpl(DemoOperation operation) {
     super(operation);
   }
 
   /**
-   * Creates the operation.
+   * Creates a persistent object.
    */
   public DemoOperationPersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
   @Override
   public PersistentOperationClassVariables<DemoOperation, DemoOperationPersistenceImpl> getClassVariables() {

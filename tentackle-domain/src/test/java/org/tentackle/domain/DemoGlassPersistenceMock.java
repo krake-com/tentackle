@@ -18,8 +18,10 @@
 
 package org.tentackle.domain;
 
+import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.pdo.mock.MockPersistentObject;
+import org.tentackle.session.Session;
 
 import java.io.Serial;
 
@@ -34,20 +36,44 @@ public class DemoGlassPersistenceMock extends MockPersistentObject<DemoGlass, De
   @Serial
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
-   * Creates a persistence mock for a PDO.
+   * Creates a PDO.
    *
-   * @param pdo the persistent domain object
+   * @param pdo the PDO
+   * @param context the domain context
+   */
+  public DemoGlassPersistenceMock (DemoGlass pdo, DomainContext context)    {
+    super(pdo, context);
+  }
+
+  /**
+   * Creates a PDO with a session only.
+   *
+   * @param pdo the PDO
+   * @param session the session
+   */
+  public DemoGlassPersistenceMock(DemoGlass pdo, Session session) {
+    super(pdo, session);
+  }
+
+  /**
+   * Creates a pdo without domain context or session.
+   *
+   * @param pdo the number space PDO
    */
   public DemoGlassPersistenceMock(DemoGlass pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a persistence mock.
+   * Creates a PDO without domain context or session.
    */
   public DemoGlassPersistenceMock() {
     super();
   }
+
+  //</editor-fold>
 
 }

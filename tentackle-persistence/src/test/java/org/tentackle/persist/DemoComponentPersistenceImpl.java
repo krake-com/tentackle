@@ -20,6 +20,7 @@ package org.tentackle.persist;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
@@ -52,31 +53,45 @@ public class DemoComponentPersistenceImpl extends AbstractPersistentObject<DemoC
   private transient StringBuilder relationsNormText;
   private transient long contextUserId;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
-   * Creates a demo component.
+   * Creates a PDO.
    *
-   * @param pdo the PDO this is a delegate for
+   * @param pdo the PDO
    * @param context the domain context
    */
-  public DemoComponentPersistenceImpl(DemoComponent pdo, DomainContext context) {
+  public DemoComponentPersistenceImpl (DemoComponent pdo, DomainContext context)    {
     super(pdo, context);
   }
 
   /**
-   * Creates a demo component.
+   * Creates a PDO with a session only.
    *
-   * @param pdo the PDO this is a delegate for
+   * @param pdo the PDO
+   * @param session the session
+   */
+  public DemoComponentPersistenceImpl(DemoComponent pdo, Session session) {
+    super(pdo, session);
+  }
+
+  /**
+   * Creates a pdo without domain context or session.
+   *
+   * @param pdo the number space PDO
    */
   public DemoComponentPersistenceImpl(DemoComponent pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a demo component.
+   * Creates a PDO without domain context or session.
    */
   public DemoComponentPersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
 
   @Override

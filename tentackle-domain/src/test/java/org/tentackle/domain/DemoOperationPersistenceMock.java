@@ -18,8 +18,10 @@
 
 package org.tentackle.domain;
 
+import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
 import org.tentackle.pdo.mock.MockPersistentOperation;
+import org.tentackle.session.Session;
 
 import java.io.Serial;
 
@@ -34,20 +36,44 @@ public class DemoOperationPersistenceMock extends MockPersistentOperation<DemoOp
   @Serial
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
-   * Creates a persistence mock for an operation.
+   * Creates a persistent object for an operation.
    *
-   * @param operation the operation
+   * @param operation the operation object
+   * @param context the domain context
+   */
+  public DemoOperationPersistenceMock(DemoOperation operation, DomainContext context) {
+    super(operation, context);
+  }
+
+  /**
+   * Creates a persistent object for an operation.
+   *
+   * @param operation the operation object
+   * @param session the session
+   */
+  public DemoOperationPersistenceMock(DemoOperation operation, Session session) {
+    super(operation, session);
+  }
+
+  /**
+   * Creates a persistent object for an operation.
+   *
+   * @param operation the operation object
    */
   public DemoOperationPersistenceMock(DemoOperation operation) {
     super(operation);
   }
 
   /**
-   * Creates a persistence mock.
+   * Creates a persistent object.
    */
   public DemoOperationPersistenceMock() {
     super();
   }
+
+  //</editor-fold>
 
 }

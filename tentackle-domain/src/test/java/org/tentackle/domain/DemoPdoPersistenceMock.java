@@ -18,8 +18,10 @@
 
 package org.tentackle.domain;
 
+import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.pdo.mock.MockPersistentObject;
+import org.tentackle.session.Session;
 
 import java.io.Serial;
 
@@ -39,21 +41,45 @@ public class DemoPdoPersistenceMock extends MockPersistentObject<DemoPdo, DemoPd
 
   private boolean rootEntity;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
-   * Creates a persistence mock for a PDO.
+   * Creates a PDO.
    *
-   * @param pdo the persistent domain object
+   * @param pdo the PDO
+   * @param context the domain context
+   */
+  public DemoPdoPersistenceMock (DemoPdo pdo, DomainContext context)    {
+    super(pdo, context);
+  }
+
+  /**
+   * Creates a PDO with a session only.
+   *
+   * @param pdo the PDO
+   * @param session the session
+   */
+  public DemoPdoPersistenceMock(DemoPdo pdo, Session session) {
+    super(pdo, session);
+  }
+
+  /**
+   * Creates a pdo without domain context or session.
+   *
+   * @param pdo the number space PDO
    */
   public DemoPdoPersistenceMock(DemoPdo pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a persistence mock.
+   * Creates a PDO without domain context or session.
    */
   public DemoPdoPersistenceMock() {
     super();
   }
+
+  //</editor-fold>
 
   /**
    * Sets whether this mock pretends to be a root entity.

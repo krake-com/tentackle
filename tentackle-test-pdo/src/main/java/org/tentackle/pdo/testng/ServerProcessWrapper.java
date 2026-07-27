@@ -21,6 +21,8 @@ package org.tentackle.pdo.testng;
 
 import org.testng.Reporter;
 
+import org.tentackle.common.InterruptedRuntimeException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -167,9 +169,14 @@ public class ServerProcessWrapper implements AutoCloseable {
    * @throws InterruptedException if interrupted while waiting for termination
    */
   @Override
-  public void close() throws InterruptedException {
+  public void close()  {
     if (process.isAlive()) {
-      stopAndWait();
+      try {
+        stopAndWait();
+      }
+      catch (InterruptedException e) {
+        throw new InterruptedRuntimeException(e);
+      }
     }
   }
 
