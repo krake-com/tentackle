@@ -55,11 +55,13 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
 
   /**
    * Controls creation of extra group version properties.<br>
+   * Only the version shared by most of the artifacts of a groupId is ever turned into a group property.
    * <ul>
    *   <li>0: no group versions (default)</li>
    *   <li>&gt;0: create a version property, if at least the given number of artifacts of the same groupId share the same version.</li>
-   *   <li>&lt;0: create a version property, if less than given number of artifacts of the same groupId don't share the same version,
-   *   i.e. -1 means all of the same groupId must refer to the same version.</li>
+   *   <li>&lt;0: create a version property, if at least two artifacts of the same groupId share the same version
+   *   and no more artifacts than the absolute value of the given number don't,
+   *   i.e. -1 means that all but at most one artifact of the same groupId must refer to the same version.</li>
    * </ul>
    */
   @Parameter(property = "groupVersions")

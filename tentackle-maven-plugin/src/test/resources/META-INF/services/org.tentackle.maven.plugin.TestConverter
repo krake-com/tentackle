@@ -1,0 +1,2 @@
+# converter used by PropertiesMojoTest to verify the @-prefixed service lookup
+org.tentackle.maven.plugin.PropertiesMojoTest$UpperCaseConverter
