@@ -54,6 +54,7 @@ public class QuicTripTransport extends AbstractTransport {
   public static final String PROTOCOL = "tripq";
 
 
+  private ServerConnector serverConnector;    // the running KWIK server connector, null if not accepting
   private boolean accepting;
 
   /**
@@ -94,6 +95,9 @@ public class QuicTripTransport extends AbstractTransport {
                             .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 128))
                             .build();
 
+    DatagramSocket socket = null;       // the UDP socket bound here, owned by the connector once it is built
+    ServerConnector connector = null;   // the connector, owned by this transport once it is accepting
+
     try {
       ServerConnector.Builder builder =
         ServerConnector.builder()
@@ -109,24 +113,62 @@ public class QuicTripTransport extends AbstractTransport {
         builder.withPort(port);
       }
       else if (host != null) {
-        builder.withSocket(new DatagramSocket(port, InetAddress.getByName(host)));
+        socket = new DatagramSocket(port, InetAddress.getByName(host));
+        builder.withSocket(socket);
       }
       else {
         throw new TripRuntimeException("missing host in URI " + uri);
       }
-      ServerConnector serverConnector = builder.build();
-      serverConnector.registerApplicationProtocol(alpnId, new QuicProtocolConnectionFactory(this));
-      serverConnector.start();
+      connector = builder.build();
+      connector.registerApplicationProtocol(alpnId, new QuicProtocolConnectionFactory(this));
+      connector.start();
+      serverConnector = connector;
       accepting = true;
     }
     catch (CertificateException | IOException e) {
       throw new TripRuntimeException("starting QUIC service failed", e);
+    }
+    finally {
+      if (!accepting) {
+        // building or starting the connector failed: give the UDP port back instead of leaking it
+        if (connector != null) {
+          connector.close();    // closes the socket as well, whoever created it
+        }
+        else if (socket != null) {
+          socket.close();
+        }
+      }
     }
   }
 
   @Override
   public boolean isAccepting() {
     return accepting;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to shut down the KWIK server connector, which releases the UDP socket and
+   * terminates the QUIC connections of all clients.
+   * <p>
+   * The connector is closed <em>before</em> the transport's thread pools are shut down, so that
+   * no incoming stream is dispatched to a pool that is already gone. Closing it waits for the
+   * client connections to terminate, which is why it happens outside the transport's monitor:
+   * connection handlers still running must be able to invoke synchronized transport methods.
+   */
+  @Override
+  public void close() {
+    ServerConnector connector;
+    synchronized (this) {
+      connector = serverConnector;
+      serverConnector = null;
+      accepting = false;
+    }
+    if (connector != null) {
+      connector.close();
+    }
+    super.close();
   }
 
   /**
