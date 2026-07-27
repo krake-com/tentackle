@@ -172,9 +172,9 @@ What is actually running now is a small [multi-tier cascade](./tiers.md):
 
 * The **server** connects to PostgreSQL via JDBC and offers two
   [TRIP](../../../tentackle-core/src/main/docs/trip.md) services:
-  the application service at `trip://localhost:8888/MyAppServer` and the
+  the application service at `trips://localhost:8888/MyAppServer` and the
   [update service](../../../tentackle-update/src/main/docs/update.md) at
-  `trip://localhost:8890/MyAppUpdate`.
+  `tripe://localhost:8890/MyAppUpdate`.
 * The **client** and the **daemon** hold no database connection at all: they open
   remote sessions to the server's TRIP URL. The same code would run unchanged if
   they connected to the database directly — swap the `url` in the module's
