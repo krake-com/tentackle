@@ -132,6 +132,30 @@ public class PersistentObjectClassVariablesTest {
   }
 
   @Test
+  public void testColumnNameListWithPrefix() {
+    // the prefix of an embedded PDO belongs between the table alias and the column name,
+    // exactly as in the single-column getColumnName(prefix, name)
+    PersistentObjectClassVariables<DemoEntity, DemoEntityPersistenceImpl> cv = createEntityVariables();
+    assertEquals(cv.getColumnNames("pre_", List.of("id", "serial")), "dem.pre_id,dem.pre_serial");
+  }
+
+  @Test
+  public void testColumnNameListWithPrefixMatchesTheSingleColumnName() {
+    PersistentObjectClassVariables<DemoEntity, DemoEntityPersistenceImpl> cv = createEntityVariables();
+    assertEquals(cv.getColumnNames("pre_", List.of(DemoEntityPersistenceImpl.CN_NAME)),
+                 cv.getColumnName("pre_", DemoEntityPersistenceImpl.CN_NAME));
+  }
+
+  @Test
+  public void testColumnNameListWithPrefixButWithoutTableAlias() {
+    // no alias: nothing to qualify, the prefix simply leads the column name
+    PersistentObjectClassVariables<DemoEntity, DemoEntityPersistenceImpl> cv =
+        PersistentObjectClassVariables.create(DemoEntity.class, DemoEntityPersistenceImpl.class, null);
+    assertNull(cv.getTableAlias());
+    assertEquals(cv.getColumnNames("pre_", List.of("id", "serial")), "pre_id,pre_serial");
+  }
+
+  @Test
   public void testColumnNameListIsCached() {
     PersistentObjectClassVariables<DemoEntity, DemoEntityPersistenceImpl> cv = createEntityVariables();
     String columnNames = cv.getColumnNames(List.of("id", "serial"));

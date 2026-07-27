@@ -25,8 +25,10 @@ import org.tentackle.common.StringNormalizer;
 import org.tentackle.common.Timestamp;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.pdo.TokenLockInfo;
+import org.tentackle.session.PersistenceException;
+
+import java.util.List;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -261,12 +263,62 @@ public class AbstractPersistentObjectTest {
   }
 
   @Test
-  public void testEmbeddedPdosAreNotPersistable() {
-    // isEmbedded() is false for all test PDOs, so the negative case is what can be checked here:
+  public void testEmbeddedPdoNeedsItsEmbeddingParent() {
+    DemoEmbeddedPersistenceImpl embedded = new DemoEmbeddedPersistenceImpl();
+    assertTrue(embedded.isEmbedded());
+    assertTrue(expectThrows(PersistenceException.class, embedded::getClassVariables)
+                   .getMessage().contains("parent not set for embedded"));
+  }
+
+  @Test
+  public void testEmbeddedPdoUsesTheClassVariablesOfItsParent() {
+    DemoBasePersistenceImpl parent = new DemoBasePersistenceImpl();
+    DemoEmbeddedPersistenceImpl embedded = new DemoEmbeddedPersistenceImpl();
+    embedded.setEmbeddingPersistentObject(parent, "adr_");
+
+    assertEquals(embedded.getColumnPrefix(), "adr_");
+    assertSame(embedded.getClassVariables(), DemoBasePersistenceImpl.CLASSVARIABLES,
+               "an embedded PDO maps to the table of its parent");
+    assertEquals(embedded.getTableName(), "demobase");
+    assertEquals(embedded.getTableAlias(), "dbs");
+  }
+
+  @Test
+  public void testColumnsOfAnEmbeddedPdoAreQualifiedAndPrefixed() {
+    DemoBasePersistenceImpl parent = new DemoBasePersistenceImpl();
+    DemoEmbeddedPersistenceImpl embedded = new DemoEmbeddedPersistenceImpl();
+    embedded.setEmbeddingPersistentObject(parent, "adr_");
+
+    // the prefix separates the embedded columns from the parent's own ones within the same table
+    assertEquals(embedded.getColumnName("street"), "dbs.adr_street");
+    assertEquals(embedded.getColumnNames(List.of("street", "city")), "dbs.adr_street,dbs.adr_city",
+                 "the column list must be qualified exactly like a single column name");
+  }
+
+  @Test
+  public void testEmbeddedPdoIsPersistedAlongWithItsParent() {
+    DemoEmbeddedPersistenceImpl embedded = new DemoEmbeddedPersistenceImpl();
+    embedded.setEmbeddingPersistentObject(new DemoBasePersistenceImpl(), "adr_");
+    embedded.setDomainContext(Pdo.createDomainContext(null));
+
+    assertFalse(embedded.isPersistable(), "an embedded PDO is never persisted on its own");
+    assertTrue(embedded.toGenericString().endsWith("[embedded]"));
+  }
+
+  @Test
+  public void testEmbeddingParentIsReachedThroughItsPdo() {
+    DemoEntity parentPdo = Pdo.create(DemoEntity.class);
+    DemoEmbeddedPersistenceImpl embedded = new DemoEmbeddedPersistenceImpl();
+    embedded.setEmbeddingPersistentObject((DemoEntityPersistenceImpl) parentPdo.getPersistenceDelegate(), "adr_");
+    assertSame(embedded.getEmbeddingParent(), parentPdo);
+  }
+
+  @Test
+  public void testNonEmbeddedPdoIsPersistedOnItsOwn() {
     DemoEntityPersistenceImpl po = createEntity();
     po.setDomainContext(Pdo.createDomainContext(null));
     assertFalse(po.isEmbedded());
-    assertTrue(po.isPersistable(), "only embedded PDOs are persisted along with their parent");
+    assertTrue(po.isPersistable());
   }
 
 
