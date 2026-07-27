@@ -74,7 +74,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   /**
    * Limits the number of lines in generated multi-line string literals.
    */
-  @Parameter
+  @Parameter(property = "maxLines")
   public int maxLinesInStringLiteral;
 
   /**

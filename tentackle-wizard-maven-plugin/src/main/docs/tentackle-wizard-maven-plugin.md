@@ -329,8 +329,8 @@ Two buttons configure the result:
   stereotype (unchecked by default), multi-line string attributes, and N:M relation lists (both checked
   by default). The button stays disabled when the selection has nothing to configure.
 
-The `maxLinesInStringLiteral` parameter additionally caps how much of a long text ends up in the
-generated string literals.
+The `-DmaxLines` parameter (`maxLinesInStringLiteral` maven property) additionally caps how much 
+of a long text ends up in the generated string literals.
 
 ##### Preferences
 
