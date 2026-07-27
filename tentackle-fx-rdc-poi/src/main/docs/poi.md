@@ -87,6 +87,24 @@ fails, because an automatic module referencing it uses the wrong class loader an
 Once POI and all its transitive dependencies are fully modularized, the module can declare a normal
 `module-info.java` and this special handling can be dropped.
 
+## Unit testing the export
+
+The module's own tests (`src/test/java`) run **without a JavaFX toolkit**. That is possible because
+the export only touches the table *configuration*, never a `Control`:
+
+- A `DefaultTableConfiguration` is filled with columns and bound to a plain row class with
+  `@Bindable` getters (`config.getBinder().bind()`), which yields the very same `FxTableBinding`s the
+  RDC uses at runtime.
+- Column visibility is toggled through `getTableColumn()` / `getTreeTableColumn()` — the column
+  configuration creates those lazily, and a `TableColumn` is not a `Control`.
+- The workbook is written to a temporary file and read back with POI, so cell types, values, number
+  formats and the reuse of cell styles are verified on the real `.xls` output.
+
+`selectSpreadsheetFile(...)` would open a `FileChooser`, so the tests register a
+`TestRdcUtilities` via `@Service(RdcUtilities.class)` that records the arguments instead
+(hence the `test-analyze` goal in the module's `pom.xml`). The same mechanism verifies that
+`TableUtilities.getInstance()` really resolves to `PoiTableUtilities`.
+
 ## See also
 
 - [tentackle-fx-rdc — Rich Desktop Client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
