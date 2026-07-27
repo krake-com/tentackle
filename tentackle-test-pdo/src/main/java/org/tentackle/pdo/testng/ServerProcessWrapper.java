@@ -166,7 +166,7 @@ public class ServerProcessWrapper implements AutoCloseable {
   /**
    * Stops the server if it is still running.
    *
-   * @throws InterruptedException if interrupted while waiting for termination
+   * @throws InterruptedRuntimeException if interrupted while waiting for termination
    */
   @Override
   public void close()  {
