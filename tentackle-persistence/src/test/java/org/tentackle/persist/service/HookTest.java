@@ -1,0 +1,68 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.persist.service;
+
+import org.testng.annotations.Test;
+
+import org.tentackle.common.ModuleHook;
+
+import java.util.Locale;
+import java.util.MissingResourceException;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
+
+/**
+ * Unit tests for {@link Hook}.
+ * <p>
+ * The module hook resolves resource bundles within this module, which is what makes the bundles
+ * visible to the rest of the framework when the persistence module runs as a named JPMS module.
+ */
+@SuppressWarnings("missing-explicit-ctor")
+public class HookTest {
+
+  private static final String BUNDLE = "org.tentackle.persist.service.HookBundle";
+
+
+  @Test
+  public void testResolvesBundleOfThePersistenceModule() {
+    ModuleHook hook = new Hook();
+    assertEquals(hook.getBundle(BUNDLE, Locale.US).getString("greeting"), "hello");
+  }
+
+  @Test
+  public void testResolvesLocalizedBundle() {
+    ModuleHook hook = new Hook();
+    assertEquals(hook.getBundle(BUNDLE, Locale.GERMANY).getString("greeting"), "hallo");
+  }
+
+  @Test
+  public void testFallsBackToTheDefaultBundle() {
+    ModuleHook hook = new Hook();
+    assertEquals(hook.getBundle(BUNDLE, Locale.FRANCE).getString("greeting"), "hello");
+  }
+
+  @Test
+  public void testUnknownBundle() {
+    ModuleHook hook = new Hook();
+    expectThrows(MissingResourceException.class,
+                 () -> hook.getBundle("org.tentackle.persist.service.NoSuchBundle", Locale.US));
+  }
+
+}

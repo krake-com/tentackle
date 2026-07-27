@@ -24,6 +24,12 @@
       <artifactId>tentackle-database</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo-mock</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -37,6 +43,14 @@
         <directory>src/test/filtered-resources</directory>
         <filtering>true</filtering>
       </testResource>
+      <testResource>
+        <!-- the defaults are overridden above, hence both directories must be listed explicitly -->
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <!-- the services of the test PDOs, created by the test-analyze goal -->
+        <directory>target/generated-test-resources</directory>
+      </testResource>
     </testResources>
 
     <plugins>
@@ -49,6 +63,12 @@
           <execution>
             <goals>
               <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
             </goals>
           </execution>
         </executions>
@@ -123,6 +143,19 @@
               <followSymlinks>false</followSymlinks>
             </fileset>
           </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!--
+            Run on the classpath, not patched into the module.
+            A patched module resolves META-INF/mapped-services/* from the patch directory only,
+            which would hide the persistence implementations of this module behind the ones of the tests.
+          -->
+          <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
 
