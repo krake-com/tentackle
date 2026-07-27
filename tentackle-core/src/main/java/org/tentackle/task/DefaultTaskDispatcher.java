@@ -76,6 +76,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private long lastActivity;                            // last activity, 0 if a task is currently executed
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
+  private final Object queueLock;                       // makes composite updates of queue + idMap atomic
   private final List<TaskListener> listeners;           // task listeners
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
   private int nonMutexLockCount;                        // non-mutex lock count
@@ -111,6 +112,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     queue = new ConcurrentSkipListSet<>();
     listeners = new ArrayList<>();
     idMap = new ConcurrentHashMap<>();
+    queueLock = new Object();
     interruptMutex = new ReentrantReadWriteLock();
   }
 
@@ -284,11 +286,11 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         throw new TaskException("task " + task + " already belongs to dispatcher " +
                                 task.getDispatcher() + ", cannot be added to " + this);
       }
-      if (task.getId() != 0 && queue.contains(task)) {
-        LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
-        return false;
-      }
-      else {
+      synchronized (queueLock) {
+        if (task.getId() != 0 && queue.contains(task)) {
+          LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
+          return false;
+        }
         task.setDispatcher(this);
         if (task.getId() == 0) {
           // task never added before: set a unique id
@@ -296,17 +298,20 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         }
         queue.add(task);
         idMap.put(task.getId(), task);
-        LOGGER.fine("{0}: task {1} added", this, task);
-        safeInterrupt();   // wake up!
-        return true;
       }
+      LOGGER.fine("{0}: task {1} added", this, task);
+      safeInterrupt();   // wake up!
+      return true;
     }
   }
 
   @Override
   public boolean isTaskPending(Task task) {
     assertNotKilled();
-    return queue.contains(task);
+    synchronized (queueLock) {
+      // never observe a repeating task while it is being rescheduled (see executeTask)
+      return queue.contains(task);
+    }
   }
 
   @Override
@@ -378,13 +383,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public boolean removeTask(Task task) {
     assertNotKilled();
-    boolean removed = queue.remove(task);
-    if (removed) {
-      idMap.remove(task.getId());
-      task.setDispatcher(null);   // this triggers the warning when finished
-      if (task.getStarted() != 0 && task.getCompleted() == 0) {
-        LOGGER.warning("{0}: removed task {1} is still running -> dispatcher remains blocked until task has finished!", this, task);
+    boolean removed;
+    synchronized (queueLock) {
+      removed = queue.remove(task);
+      if (removed) {
+        idMap.remove(task.getId());
+        task.setDispatcher(null);   // this triggers the warning when finished
       }
+    }
+    if (removed && task.getStarted() != 0 && task.getCompleted() == 0) {
+      LOGGER.warning("{0}: removed task {1} is still running -> dispatcher remains blocked until task has finished!", this, task);
     }
     return removed;
   }
@@ -697,16 +705,23 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         // via getTask() or isTaskPending() (see DefaultTaskDispatcherTest).
         unlockInternal(0);
 
-        queue.remove(task);
+        // A repeating task must be dequeued and re-queued because the queue is sorted
+        // by the scheduled time, which is about to change (see AbstractTask.compareTo).
+        // The lock keeps that update atomic: without it a concurrent removeTask() could
+        // hit the gap, fail to remove the task and thus fail to clear its dispatcher,
+        // whereupon the task would be re-queued below and repeat forever.
+        synchronized (queueLock) {
+          queue.remove(task);
 
-        long repeat = task.getRepeatInterval();
-        if (repeat > 0 && task.getDispatcher() == this) {
-          // if repeat and not removed from the dispatcher in the meantime
-          task.setScheduledEpochalTime(lastMillis + repeat);
-          queue.add(task);
-        }
-        else  {
-          idMap.remove(task.getId());
+          long repeat = task.getRepeatInterval();
+          if (repeat > 0 && task.getDispatcher() == this) {
+            // if repeat and not removed from the dispatcher in the meantime
+            task.setScheduledEpochalTime(lastMillis + repeat);
+            queue.add(task);
+          }
+          else  {
+            idMap.remove(task.getId());
+          }
         }
 
         try {
