@@ -50,13 +50,14 @@
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>
+    <module>tentackle-pdo-mock</module>
     <module>tentackle-log-log4j2v</module>
     <module>tentackle-log-slf4j</module>
     <module>tentackle-script-jsr</module>
     <module>tentackle-script-groovy</module>
     <module>tentackle-script-ruby</module>
-    <module>tentackle-domain</module>
     <module>tentackle-persistence-wurblets</module>
+    <module>tentackle-domain</module>
     <module>tentackle-database</module>
     <module>tentackle-persistence</module>
     <module>tentackle-i18n</module>

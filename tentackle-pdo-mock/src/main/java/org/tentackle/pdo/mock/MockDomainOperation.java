@@ -37,10 +37,14 @@ import java.io.Serial;
 public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOperation<T,D>>
        implements DomainOperation<T> {
 
+  /**
+   * Exception message if the method is not implemented.
+   */
+  public static final String UNSUPPORTED = "not implemented";
+
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private static final String UNSUPPORTED = "not implemented";
 
   private T operation;   // the operation instance this is a delegate for
 

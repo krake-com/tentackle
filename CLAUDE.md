@@ -77,7 +77,7 @@ Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US
 
 ## Module Architecture
 
-This is a 37-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
+This is a 38-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
 
 ```
 UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
@@ -93,7 +93,7 @@ Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentack
                         tentackle-wizard-maven-plugin, tentackle-model,
                         tentackle-wurblets, tentackle-persistence-wurblets
 Aggregation/scaffold:   tentackle-bom, tentackle-project-archetype
-Test support:           tentackle-test-pdo, tentackle-test-fx-rdc
+Test support:           tentackle-pdo-mock, tentackle-test-pdo, tentackle-test-fx-rdc
 ```
 
 Note the interface/implementation split: interface modules are implemented by separate runtime modules that are injected via the SPI (see below), so the API stays agnostic of the implementation.

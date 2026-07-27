@@ -43,6 +43,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <!-- the mock delegates, re-exposed to downstream projects -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo-mock</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-model</artifactId>
       <version>${project.version}</version>

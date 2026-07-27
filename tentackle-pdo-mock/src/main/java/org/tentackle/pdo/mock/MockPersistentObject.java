@@ -54,10 +54,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends MockPersistentObject<T,P>>
        implements PersistentObject<T>, PdoMethodCacheProvider<T> {
 
+  /**
+   * Exception message if the method is not implemented.
+   */
+  public static final String UNSUPPORTED = "not implemented";
+
+
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private static final String UNSUPPORTED = "not implemented";
+
+
   @SuppressWarnings("rawtypes")
   private static final Map<Class, PdoMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 

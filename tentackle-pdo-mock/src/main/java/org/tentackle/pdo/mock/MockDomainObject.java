@@ -37,11 +37,14 @@ import java.io.Serial;
 public class MockDomainObject<T extends PersistentDomainObject<T>, D extends MockDomainObject<T,D>>
        implements DomainObject<T> {
 
+  /**
+   * Exception message if the method is not implemented.
+   */
+  public static final String UNSUPPORTED = "not implemented";
+
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private static final String UNSUPPORTED = "not implemented";
-  
 
   private T pdo;   // the pdo instance this is a delegate for
 

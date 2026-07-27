@@ -9,7 +9,8 @@ Tentackle is a modular Maven reactor. Every module carries an explicit `module-i
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
-and the TestNG-support modules ([tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md),
+and the test-support modules ([tentackle-pdo-mock](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates),
+[tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md),
 [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md))
 round out the set but are omitted from the diagram.
 
@@ -71,9 +72,10 @@ Not part of the layered diagram, but each ships its own docs:
 - [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the Atlanta JavaFX theme.
 - [tentackle-project-archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — project scaffolding ([walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)).
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support.
+- [tentackle-pdo-mock](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates) — mock PDO/operation delegates for database-less unit tests, usable by the domain- and persistence layer themselves.
 
 Full per-module API documentation is published under the
-[Tentackle site docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/).
+[Tentackle site docs](https://tentackle.org/tentackle/).
 
 ## Related Documentation
 

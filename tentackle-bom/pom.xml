@@ -134,6 +134,12 @@
       <!-- test dependencies -->
       <dependency>
         <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-pdo-mock</artifactId>
+        <version>25.0-SNAPSHOT</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-test-pdo</artifactId>
         <version>25.0-SNAPSHOT</version>
         <scope>test</scope>

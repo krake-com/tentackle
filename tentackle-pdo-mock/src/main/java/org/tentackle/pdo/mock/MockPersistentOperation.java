@@ -41,10 +41,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MockPersistentOperation<T extends Operation<T>>
        implements PersistentOperation<T>, OperationMethodCacheProvider<T> {
 
+  /**
+   * Exception message if the method is not implemented.
+   */
+  public static final String UNSUPPORTED = "not implemented";
+
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private static final String UNSUPPORTED = "not implemented";
   @SuppressWarnings("rawtypes")
   private static final Map<Class, OperationMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 

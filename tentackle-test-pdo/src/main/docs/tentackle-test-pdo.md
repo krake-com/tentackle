@@ -36,7 +36,7 @@ module descriptor.
 | `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`).  |
 | `org.tentackle.pdo.junit`  | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter.                                                                           |
 | `org.tentackle.pdo.test`   | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes. |
-| `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests.                  |
+| `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests. Ships in the separate `tentackle-pdo-mock` artifact (see below) and reaches downstream projects through this one. |
 
 ---
 
@@ -122,6 +122,12 @@ test schema can never disagree with the generated persistence layer.
 The `org.tentackle.pdo.mock` package lets a **unit** test work with PDOs and operations without any persistence
 backend. Recall the [PDO pattern](../../../../tentackle-pdo/src/main/docs/pdo.md): a PDO is a dynamic proxy backed
 by a *domain* delegate and a *persistence* delegate. The mocks supply trivial stand-ins for those delegates:
+
+> **Where they live.** The package is its own artifact, **`tentackle-pdo-mock`**, which depends on nothing but
+> `tentackle-pdo`. It sits *below* the domain- and persistence layer, so those modules can use the mocks in their
+> own unit tests — a dependency on `tentackle-test-pdo` would be a cycle, because this module depends on them.
+> Downstream projects need not care: `tentackle-test-pdo` depends on `tentackle-pdo-mock`, so the classes arrive
+> transitively under their unchanged package and class names.
 
 | Mock                         | Stands in for                                                                            |
 |------------------------------|------------------------------------------------------------------------------------------|
