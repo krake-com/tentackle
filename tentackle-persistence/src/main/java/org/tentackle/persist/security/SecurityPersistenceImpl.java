@@ -162,6 +162,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   //</editor-fold>//GEN-END:declare
 
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
    * Creates a security rule.
    *
@@ -197,6 +199,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   public SecurityPersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
+
 
   /**
    * Gets the object this rule applies to.<br>

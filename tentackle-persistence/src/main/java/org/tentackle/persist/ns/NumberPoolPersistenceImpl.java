@@ -147,6 +147,8 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   //</editor-fold>//GEN-END:declare
 
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
    * Creates a number space.
    *
@@ -182,6 +184,8 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public NumberPoolPersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
   @Override
   public boolean isUpdatingSerialEvenIfNotModified() {

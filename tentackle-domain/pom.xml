@@ -19,6 +19,12 @@
       <artifactId>tentackle-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo-mock</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -33,8 +39,15 @@
         <version>${project.version}</version>
         <executions>
           <execution>
+            <id>analyze</id>
             <goals>
               <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
             </goals>
           </execution>
         </executions>
@@ -42,6 +55,79 @@
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>wurbel</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <wurbletDependencies>
+            <wurbletDependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>tentackle-persistence-wurblets</artifactId>
+              <version>${project.version}</version>
+            </wurbletDependency>
+          </wurbletDependencies>
+
+          <verbosity>info</verbosity>
+
+          <wurbletPaths>
+            <param>org.tentackle.wurblet</param>
+            <param>org.tentackle.persist.wurblet</param>
+          </wurbletPaths>
+
+          <wurbletProperties>
+            <property>
+              <name>guardtype</name>
+              <value>netbeans</value>
+            </property>
+            <property>
+              <name>foldtype</name>
+              <value>collapsed</value>
+            </property>
+            <property>
+              <name>model</name>
+              <value>${wurbel.wurbelDir}/model</value>
+            </property>
+            <property>
+              <name>backends</name>
+              <value>all</value>
+            </property>
+          </wurbletProperties>
+
+          <filesets>
+            <!-- wurbel the test mocks -->
+            <fileset>
+              <directory>${project.basedir}/src/test/java/</directory>
+              <includes>
+                <include>**/*PersistenceMock.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!--
+            Run on the classpath, not patched into the module.
+            A patched module resolves META-INF/mapped-services/* from the patch directory only,
+            which would hide the domain implementations of this module behind the ones of the tests.
+          -->
+          <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
     </plugins>

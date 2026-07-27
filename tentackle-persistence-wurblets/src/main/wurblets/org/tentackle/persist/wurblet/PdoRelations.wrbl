@@ -191,7 +191,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   // @(rel)@
-  private @(type)@ @(rel.getVariableName())@ = on(@(rel.getForeignEntity())@.class);
+  private @(type)@ @(rel.getVariableName())@;
 @[
             }
           }
@@ -755,9 +755,16 @@ For more options, see {\@link DbModelWurblet}.
   @(scope)@ boolean is@(StringHelper.firstToUpper(var))@Loaded() {
 @[
           if (generateMock) {
+            if (rel.getRelationType() == RelationType.LIST) {
 ]@
     return true;
 @[
+            }
+            else {
+]@
+    return @(var)@ != null;
+@[
+            }
           }
           else {
 ]@

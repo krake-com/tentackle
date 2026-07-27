@@ -106,6 +106,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   //</editor-fold>//GEN-END:declare
 
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
    * Creates a number space.
    *
@@ -141,6 +143,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   public NumberRangePersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
 
   // @wurblet methods MethodsImpl
