@@ -299,10 +299,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
         if (!buf.isEmpty()) {
           buf.append(',');
         }
-        if (columnPrefix != null) {
-          buf.append(columnPrefix);
-        }
-        buf.append(getColumnName(name));
+        buf.append(getColumnName(columnPrefix, name));
       }
       sqlColumnNames = buf.toString();
     }
