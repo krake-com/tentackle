@@ -179,7 +179,7 @@ For more options, see {\@link DbModelWurblet}.
           String type = rel.getDeclaredJavaType(false);
           String transientModifier = isRelationTransient(rel) ? "transient " : "";
           if (generateMock) {
-            if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
               String varListType  = (rel.isTracked() ? "TrackedArrayList" : "List") + "<>";
 ]@
 
@@ -755,7 +755,7 @@ For more options, see {\@link DbModelWurblet}.
   @(scope)@ boolean is@(StringHelper.firstToUpper(var))@Loaded() {
 @[
           if (generateMock) {
-            if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
 ]@
     return true;
 @[
