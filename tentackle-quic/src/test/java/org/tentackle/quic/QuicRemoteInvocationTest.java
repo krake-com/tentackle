@@ -75,7 +75,7 @@ public class QuicRemoteInvocationTest {
   @Test(dataProvider = "schemes")
   public void invokesRemoteMethodsOverQuic(String scheme) throws Exception {
     EchoServiceImpl service = new EchoServiceImpl("echo-" + scheme);
-    try (Endpoints endpoints = startEndpoints(scheme, service, "")) {
+    try (Endpoints endpoints = startEndpoints(scheme, service, "&connecttimeout=60")) {
       EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
 
       assertEquals(remote.getName(), "echo-" + scheme);
