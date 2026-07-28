@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -97,6 +98,7 @@ public class QuicLoggerTest {
 
   @Test
   public void forwardsInfoAndWarningsToTheTentackleLogger() {
+    Reporter.log("forwardsInfoAndWarningsToTheTentackleLogger", true);
     QuicLogger log = new QuicLogger();
     log.logInfo(true);
     log.logWarning(true);
@@ -120,6 +122,7 @@ public class QuicLoggerTest {
    */
   @Test
   public void suppressesCategoriesThatAreNotEnabled() {
+    Reporter.log("suppressesCategoriesThatAreNotEnabled", true);
     QuicLogger log = new QuicLogger();
 
     log.info("marker-off info");
@@ -133,6 +136,7 @@ public class QuicLoggerTest {
 
   @Test
   public void forwardsErrorsWithACauseAsSevere() {
+    Reporter.log("forwardsErrorsWithACauseAsSevere", true);
     QuicLogger log = new QuicLogger();
     Exception cause = new IllegalStateException("marker-cause");
 
@@ -154,6 +158,7 @@ public class QuicLoggerTest {
    */
   @Test
   public void rendersHexDumpsAtFineLevel() {
+    Reporter.log("rendersHexDumpsAtFineLevel", true);
     QuicLogger log = new QuicLogger();
     log.logRaw(true);
     byte[] data = { (byte) 0xde, (byte) 0xad, (byte) 0xbe, (byte) 0xef };

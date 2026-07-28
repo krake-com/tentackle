@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.io.CompressedInputStream;
@@ -52,6 +53,7 @@ public class CompressedQuicTripTransportTest {
 
   @Test
   public void wrapsTheStreamsInTheCompressionLayer() {
+    Reporter.log("wrapsTheStreamsInTheCompressionLayer", true);
     CompressedQuicTripTransport transport =
       new CompressedQuicTripTransport(URI.create("tripcq://localhost:12345"));
     try {
@@ -67,6 +69,7 @@ public class CompressedQuicTripTransportTest {
 
   @Test
   public void compressedStreamsRoundTrip() throws Exception {
+    Reporter.log("compressedStreamsRoundTrip", true);
     CompressedQuicTripTransport transport =
       new CompressedQuicTripTransport(URI.create("tripcq://localhost:12345"));
     try {
@@ -92,6 +95,7 @@ public class CompressedQuicTripTransportTest {
    */
   @Test
   public void leavesBlocksBelowMinCompressUncompressed() throws Exception {
+    Reporter.log("leavesBlocksBelowMinCompressUncompressed", true);
     CompressedQuicTripTransport transport =
       new CompressedQuicTripTransport(URI.create("tripcq://localhost:12345?mincompress=8192"));
     try {
@@ -118,6 +122,7 @@ public class CompressedQuicTripTransportTest {
 
   @Test
   public void defaultsMinCompressWhenNotConfigured() {
+    Reporter.log("defaultsMinCompressWhenNotConfigured", true);
     CompressedQuicTripTransport transport =
       new CompressedQuicTripTransport(URI.create("tripcq://localhost:12345"));
     try {
@@ -134,6 +139,7 @@ public class CompressedQuicTripTransportTest {
    */
   @Test
   public void createStreamCompressesTheQuicStream() {
+    Reporter.log("createStreamCompressesTheQuicStream", true);
     CompressedQuicTripTransport compressed =
       new CompressedQuicTripTransport(URI.create("tripcq://localhost:12345"));
     QuicTripTransport plain = new QuicTripTransport(URI.create("tripq://localhost:12345"));

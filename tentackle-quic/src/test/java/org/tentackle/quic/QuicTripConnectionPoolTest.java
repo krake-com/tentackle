@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.trip.Dictionary;
@@ -43,6 +44,7 @@ public class QuicTripConnectionPoolTest {
 
   @Test
   public void rejectsUriWithoutPort() {
+    Reporter.log("rejectsUriWithoutPort", true);
     // unlike TCP, a QUIC client has no default port to fall back to
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost"));
     try {
@@ -61,6 +63,7 @@ public class QuicTripConnectionPoolTest {
    */
   @Test(timeOut = 60000)
   public void wrapsConnectFailure() {
+    Reporter.log("wrapsConnectFailure", true);
     // ".invalid" is reserved by RFC 6761 and never resolves, so this fails without waiting
     // for KWIK's connect timeout
     URI uri = URI.create("tripq://tentackle-quic-test.invalid:9999");
@@ -80,6 +83,7 @@ public class QuicTripConnectionPoolTest {
 
   @Test
   public void rejectsNonPositiveConnectTimeout() {
+    Reporter.log("rejectsNonPositiveConnectTimeout", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?connecttimeout=0"));
     try {
       IllegalArgumentException exception =
@@ -102,6 +106,7 @@ public class QuicTripConnectionPoolTest {
    */
   @Test(timeOut = 60000)
   public void honorsTheConfiguredConnectTimeout() throws Exception {
+    Reporter.log("honorsTheConfiguredConnectTimeout", true);
     final int connectTimeout = 2;
     URI uri = URI.create("tripq://localhost:" + QuicTestSupport.freeUdpPort() +
                          "?connecttimeout=" + connectTimeout);

@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -64,6 +65,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void refusesToAcceptWithoutKeyStore() {
+    Reporter.log("refusesToAcceptWithoutKeyStore", true);
     // QUIC mandates TLS, hence a server certificate is not optional
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
@@ -78,6 +80,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void refusesToAcceptWithoutPort() {
+    Reporter.log("refusesToAcceptWithoutPort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
       "tripq://localhost?" + QuicTestSupport.keyStoreParameters(keyStore)));
     try {
@@ -93,6 +96,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void refusesToAcceptWithOutOfRangePort() {
+    Reporter.log("refusesToAcceptWithOutOfRangePort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
       "tripq://localhost:70000?" + QuicTestSupport.keyStoreParameters(keyStore)));
     try {
@@ -107,6 +111,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void acceptsAndRefusesToAcceptTwice() throws Exception {
+    Reporter.log("acceptsAndRefusesToAcceptTwice", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
       "tripq://localhost:" + QuicTestSupport.freeUdpPort() + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     try {
@@ -129,6 +134,7 @@ public class QuicTripTransportTest {
    */
   @Test
   public void closeReleasesTheServerPort() throws Exception {
+    Reporter.log("closeReleasesTheServerPort", true);
     int port = QuicTestSupport.freeUdpPort();
     String uri = "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(keyStore);
 
@@ -156,6 +162,7 @@ public class QuicTripTransportTest {
    */
   @Test
   public void failedAcceptReleasesTheServerPort() throws Exception {
+    Reporter.log("failedAcceptReleasesTheServerPort", true);
     // KWIK supports RSA and EC certificates only, so a DSA one makes ServerConnector.build() fail
     // after the socket has already been bound
     Path dsaKeyStore = QuicTestSupport.createKeyStore("DSA", 1024);
@@ -183,6 +190,7 @@ public class QuicTripTransportTest {
    */
   @Test
   public void closeIsIdempotent() throws Exception {
+    Reporter.log("closeIsIdempotent", true);
     QuicTripTransport clientSide = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     clientSide.close();
     clientSide.close();
@@ -197,6 +205,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void readsMaxStreamsFromTheUriQuery() {
+    Reporter.log("readsMaxStreamsFromTheUriQuery", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?maxstreams=7"));
     try {
       assertEquals(transport.getUriPars().get("maxstreams"), Integer.valueOf(7));
@@ -209,6 +218,7 @@ public class QuicTripTransportTest {
 
   @Test
   public void defaultsMaxStreamsWhenNotConfigured() {
+    Reporter.log("defaultsMaxStreamsWhenNotConfigured", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
       assertEquals(transport.getUriPars().getOrDefault("maxstreams", 128), Integer.valueOf(128));
@@ -224,6 +234,7 @@ public class QuicTripTransportTest {
    */
   @Test
   public void createsTripStreamOnTopOfTheQuicStream() {
+    Reporter.log("createsTripStreamOnTopOfTheQuicStream", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
       FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);

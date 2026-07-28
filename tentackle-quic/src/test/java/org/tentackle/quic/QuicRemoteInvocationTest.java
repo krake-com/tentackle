@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -74,6 +75,7 @@ public class QuicRemoteInvocationTest {
 
   @Test(dataProvider = "schemes")
   public void invokesRemoteMethodsOverQuic(String scheme) throws Exception {
+    Reporter.log("invokesRemoteMethodsOverQuic", true);
     EchoServiceImpl service = new EchoServiceImpl("echo-" + scheme);
     try (Endpoints endpoints = startEndpoints(scheme, service, "&connecttimeout=60")) {
       EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
@@ -99,6 +101,7 @@ public class QuicRemoteInvocationTest {
 
   @Test(dataProvider = "schemes")
   public void propagatesServerSideExceptions(String scheme) throws Exception {
+    Reporter.log("propagatesServerSideExceptions", true);
     try (Endpoints endpoints = startEndpoints(scheme, new EchoServiceImpl("echo"), "")) {
       EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
       IllegalStateException exception = expectThrows(IllegalStateException.class, () -> remote.fail("boom"));
@@ -114,6 +117,7 @@ public class QuicRemoteInvocationTest {
    */
   @Test
   public void multiplexesPooledConnectionsAsQuicStreams() throws Exception {
+    Reporter.log("multiplexesPooledConnectionsAsQuicStreams", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
                                               "&initial=1&increment=1")) {
       Transport client = endpoints.client();
@@ -140,6 +144,7 @@ public class QuicRemoteInvocationTest {
    */
   @Test
   public void handlesConcurrentInvocations() throws Exception {
+    Reporter.log("handlesConcurrentInvocations", true);
     final int callCount = 8;
     EchoServiceImpl service = new EchoServiceImpl("echo");
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, service, "")) {
@@ -169,6 +174,7 @@ public class QuicRemoteInvocationTest {
    */
   @Test
   public void survivesAnIdlePeriodLongerThanTheQuicIdleTimeout() throws Exception {
+    Reporter.log("survivesAnIdlePeriodLongerThanTheQuicIdleTimeout", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
                                               "&quicidle=1")) {
       EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
@@ -183,6 +189,7 @@ public class QuicRemoteInvocationTest {
    */
   @Test
   public void rejectsClientWithMismatchingAlpnId() throws Exception {
+    Reporter.log("rejectsClientWithMismatchingAlpnId", true);
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
       URI uri = URI.create(QuicTripTransport.PROTOCOL + "://localhost:" + endpoints.port() + "?alpnid=nosuchprotocol");
       Transport client = TripFactory.getInstance().createTransport(uri);

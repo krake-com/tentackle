@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -68,6 +69,7 @@ public class QuicProtocolConnectionTest {
 
   @Test
   public void dispatchesThePeerInitiatedStreamToAConnectionHandler() throws Exception {
+    Reporter.log("dispatchesThePeerInitiatedStreamToAConnectionHandler", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     transport.expectHandler();
 
@@ -89,6 +91,7 @@ public class QuicProtocolConnectionTest {
    */
   @Test
   public void closesTheStreamWhenTheHandlerFails() throws Exception {
+    Reporter.log("closesTheStreamWhenTheHandlerFails", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     transport.expectHandler();
     transport.failWith(new IllegalStateException("handler exploded"));

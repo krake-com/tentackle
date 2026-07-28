@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import tech.kwik.core.server.ApplicationProtocolConnection;
@@ -36,6 +37,7 @@ public class QuicProtocolConnectionFactoryTest {
 
   @Test
   public void createsOneProtocolConnectionPerQuicConnection() {
+    Reporter.log("createsOneProtocolConnectionPerQuicConnection", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
       QuicProtocolConnectionFactory factory = new QuicProtocolConnectionFactory(transport);
@@ -60,6 +62,7 @@ public class QuicProtocolConnectionFactoryTest {
    */
   @Test
   public void declaresBidirectionalStreamsOnly() {
+    Reporter.log("declaresBidirectionalStreamsOnly", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
       QuicProtocolConnectionFactory factory = new QuicProtocolConnectionFactory(transport);

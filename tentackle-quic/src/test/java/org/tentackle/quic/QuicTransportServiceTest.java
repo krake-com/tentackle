@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.trip.Transport;
@@ -45,6 +46,7 @@ public class QuicTransportServiceTest {
 
   @Test
   public void resolvesPlainQuicTransportByScheme() {
+    Reporter.log("resolvesPlainQuicTransportByScheme", true);
     URI uri = URI.create(QuicTripTransport.PROTOCOL + "://localhost:12345");
     Transport transport = TripFactory.getInstance().createTransport(uri);
     try {
@@ -61,6 +63,7 @@ public class QuicTransportServiceTest {
 
   @Test
   public void resolvesCompressedQuicTransportByScheme() {
+    Reporter.log("resolvesCompressedQuicTransportByScheme", true);
     URI uri = URI.create(CompressedQuicTripTransport.PROTOCOL + "://localhost:12345");
     Transport transport = TripFactory.getInstance().createTransport(uri);
     try {
@@ -74,6 +77,7 @@ public class QuicTransportServiceTest {
 
   @Test
   public void protocolConstantsMatchTheServiceAnnotations() {
+    Reporter.log("protocolConstantsMatchTheServiceAnnotations", true);
     assertEquals(QuicTripTransport.PROTOCOL, "tripq");
     assertEquals(CompressedQuicTripTransport.PROTOCOL, "tripcq");
     assertEquals(QuicTripTransport.class.getAnnotation(TransportService.class).value(),
@@ -84,6 +88,7 @@ public class QuicTransportServiceTest {
 
   @Test
   public void rejectsUnknownScheme() {
+    Reporter.log("rejectsUnknownScheme", true);
     expectThrows(TripRuntimeException.class,
                  () -> TripFactory.getInstance().createTransport(URI.create("tripq2://localhost:12345")));
   }
@@ -94,6 +99,7 @@ public class QuicTransportServiceTest {
    */
   @Test
   public void transportManagerSharesTransportsPerEndpoint() {
+    Reporter.log("transportManagerSharesTransportsPerEndpoint", true);
     TransportManager manager = TransportManager.getInstance();
     URI plain = URI.create(QuicTripTransport.PROTOCOL + "://localhost:12346/someObject");
     URI plainOtherPath = URI.create(QuicTripTransport.PROTOCOL + "://localhost:12346/otherObject");

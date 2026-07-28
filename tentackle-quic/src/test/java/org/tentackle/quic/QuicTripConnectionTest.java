@@ -18,6 +18,7 @@
 
 package org.tentackle.quic;
 
+import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -67,6 +68,7 @@ public class QuicTripConnectionTest {
    */
   @Test
   public void sendsTheTripPreambleOnCreation() {
+    Reporter.log("sendsTheTripPreambleOnCreation", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
@@ -83,6 +85,7 @@ public class QuicTripConnectionTest {
 
   @Test
   public void closesBothHalvesOfTheQuicStream() {
+    Reporter.log("closesBothHalvesOfTheQuicStream", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
@@ -95,6 +98,7 @@ public class QuicTripConnectionTest {
 
   @Test
   public void reportsTheTransportAndTheQuicStreamInToString() {
+    Reporter.log("reportsTheTransportAndTheQuicStreamInToString", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
@@ -103,6 +107,7 @@ public class QuicTripConnectionTest {
 
   @Test
   public void wrapsIoExceptionWhileClosing() {
+    Reporter.log("wrapsIoExceptionWhileClosing", true);
     IOException failure = new IOException("stream is gone");
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0], failure);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
@@ -119,6 +124,7 @@ public class QuicTripConnectionTest {
    */
   @Test
   public void isNotOpenOnceTheQuicConnectionIsGone() {
+    Reporter.log("isNotOpenOnceTheQuicConnectionIsGone", true);
     AtomicBoolean connected = new AtomicBoolean(true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, connected::get, quicStream);
