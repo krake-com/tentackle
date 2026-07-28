@@ -74,6 +74,13 @@ public abstract class AbstractTransport implements Transport {
    * This is necessary to GC the server-side dictionaries when the last
    * connection sharing the dictionary (mapped by its UUID, which is
    * the same reference as the UUID of the client's transport) is closed.
+   * <p>
+   * Notice: the ModificationTracker automatically reconnects its {@code Session} if the
+   * TRIP-connection is closed due to an error (for example, a timeout or some serialization error).
+   * If this was the only connection, the dictionary is removed from this map, and a
+   * new dictionary is created when the session is re-established.<br>
+   * If TRIP is used by other applications, some similar reconnection mechanism must be implemented as well.<br>
+   * See also {@code ConnectionHandler:239 → "no such dictionary … (stale client transport?)"}.
    */
   private WeakHashMap<UUID, WeakReference<Dictionary>> dictionariesById;
 
