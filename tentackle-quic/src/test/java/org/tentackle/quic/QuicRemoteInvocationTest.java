@@ -162,6 +162,23 @@ public class QuicRemoteInvocationTest {
   }
 
   /**
+   * A QUIC connection is discarded silently by both peers once it stays idle for longer than the
+   * QUIC max idle timeout (RFC-9000, 10.1), which is far shorter than the pool's idle timeout.
+   * The client must keep it alive, otherwise the next invocation fails with
+   * "connection closed by server".
+   */
+  @Test
+  public void survivesAnIdlePeriodLongerThanTheQuicIdleTimeout() throws Exception {
+    try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
+                                              "&quicidle=1")) {
+      EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
+      assertEquals(remote.add(1, 2), 3);
+      Thread.sleep(3000);   // safely longer than quicidle
+      assertEquals(remote.add(20, 22), 42);
+    }
+  }
+
+  /**
    * Client and server must agree on the ALPN id, otherwise the QUIC handshake is refused.
    */
   @Test

@@ -237,25 +237,39 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
       initialized = true;
       PoolTimeoutThread.register(this);   // start monitoring by timeout thread
     }
-    if (unusedCount == 0) {
-      createSlots(incrementSize); // enlarge the pool (will throw Exception if the pool is exhausted)
+    // A resource may die while sitting unused in the pool, without the pool being notified:
+    // the peer closed it, a protocol-level idle timeout struck, the network went away, ...
+    // Such a resource must be dropped and replaced instead of being handed out.
+    // Each loop either returns a resource or removes a stale one, so the number of
+    // stale resources found is limited by the current pool size.
+    int staleLimit = slots.length + 1;
+    for (int stale = 0; ; stale++) {
+      if (unusedCount == 0) {
+        createSlots(incrementSize); // enlarge the pool (will throw Exception if the pool is exhausted)
+      }
+      int poolId = unusedList[--unusedCount];
+      PoolSlot<T> poolSlot = slots[poolId];
+      if (poolSlot == null) {
+        throw createException("pool " + this + ": poolable with ID=" + poolId + " cleared unexpectedly");
+      }
+      T poolable = poolSlot.getPoolable();
+      if (poolable == null) {
+        throw createException("pool " + this + ": poolable with ID=" + poolId + " still in use unexpectedly");
+      }
+      if (!poolable.isOpen()) {
+        if (stale >= staleLimit) {
+          // a freshly created resource must be open: give up rather than loop forever
+          throw createException(poolable, "pool " + this + ": no usable resource after " + stale + " attempts");
+        }
+        LOGGER.info("pool {0}: unused poolable {1} is not open anymore -> removed from pool", this, poolSlot);
+        removePoolable(poolable, poolId);
+        continue;   // try the next unused resource, create a new one if there is none left
+      }
+      poolSlot.use(Thread.currentThread());
+      poolable.setPoolId(poolId + 1);   // starting at 1
+      LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
+      return poolable;
     }
-    int poolId = unusedList[--unusedCount];
-    PoolSlot<T> poolSlot = slots[poolId];
-    if (poolSlot == null) {
-      throw createException("pool " + this + ": poolable with ID=" + poolId + " cleared unexpectedly");
-    }
-    T poolable = poolSlot.getPoolable();
-    if (poolable == null) {
-      throw createException("pool " + this + ": poolable with ID=" + poolId + " still in use unexpectedly");
-    }
-    if (!poolable.isOpen()) {
-      throw createException(poolable, "pool " + this + ": poolable " + poolSlot + " has been closed unexpectedly");
-    }
-    poolSlot.use(Thread.currentThread());
-    poolable.setPoolId(poolId + 1);   // starting at 1
-    LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
-    return poolable;
   }
 
   @Override

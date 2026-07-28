@@ -22,6 +22,7 @@ import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
 import org.tentackle.io.UriHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.PoolSlot;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
@@ -36,6 +37,12 @@ import java.util.Map;
 
 /**
  * The QUIC client connection pool.
+ * <p>
+ * All pooled connections are streams multiplexed over a single QUIC connection. Since that
+ * connection is discarded silently by both peers as soon as it stays idle for longer than the QUIC
+ * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is way shorter than
+ * the pool's idle timeout, it is kept alive by sending PING frames. Otherwise, the pool would hand
+ * out connections belonging to a QUIC connection that is long gone.
  */
 public class QuicTripConnectionPool extends AbstractConnectionPool {
 
@@ -47,9 +54,13 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    */
   public static final int DEFAULT_CONNECT_TIMEOUT = 10;
 
+  private static final Logger LOGGER = Logger.get(QuicTripConnectionPool.class);
+
 
   private final QuicTripTransport transport;
-  private final QuicClientConnection connection;
+  private final QuicClientConnection.Builder connectionBuilder;
+  private final int keepAliveSeconds;
+  private QuicClientConnection connection;
 
   /**
    * Creates a QUIC connection pool.
@@ -72,21 +83,17 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     String alpnId = queryParameters.getOrDefault("alpnid", scheme);
-    QuicClientConnection.Builder builder = QuicClientConnection.newBuilder()
-                                                               .uri(uri)  // only host and port are used
-                                                               .applicationProtocol(alpnId)
-                                                               .connectTimeout(Duration.ofSeconds(connectTimeout));
+    keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    connectionBuilder = QuicClientConnection.newBuilder()
+                                            .uri(uri)  // only host and port are used
+                                            .applicationProtocol(alpnId)
+                                            .connectTimeout(Duration.ofSeconds(connectTimeout))
+                                            .maxIdleTimeout(Duration.ofSeconds(transport.getMaxIdleSeconds()));
     if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
-      builder.noServerCertificateCheck();
+      connectionBuilder.noServerCertificateCheck();
     }
 
-    try {
-      connection = builder.build();
-      connection.connect();
-    }
-    catch (IOException e) {
-      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
-    }
+    connect();
   }
 
   @Override
@@ -98,21 +105,49 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
 
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {
+    QuicStream quicStream = createQuicStream();   // may re-establish the QUIC connection
+    QuicClientConnection quicConnection = connection;
     return new ConnectionPoolSlot(this, slotNumber,
-                                  new QuicTripConnection(transport, getDictionary(), createQuicStream()));
+                                  new QuicTripConnection(transport, getDictionary(),
+                                                         quicConnection::isConnected, quicStream));
   }
 
   /**
-   * Creates a new client quic stream.
+   * Creates a new client quic stream.<br>
+   * Re-establishes the QUIC connection if it has been terminated meanwhile.
    *
    * @return the quic stream
    */
   protected QuicStream createQuicStream() {
+    if (!connection.isConnected()) {
+      // idle timeout, peer restarted, network loss, ...
+      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
+      connect();
+    }
     try {
       return connection.createStream(true);
     }
     catch (IOException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e);
+    }
+  }
+
+  /**
+   * Establishes the QUIC connection all pooled connections are multiplexed over.
+   */
+  protected void connect() {
+    URI uri = getTransport().getUri();
+    try {
+      QuicClientConnection quicConnection = connectionBuilder.build();
+      quicConnection.connect();
+      if (keepAliveSeconds != 0) {
+        // negative means: as long as this pool lives
+        quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
+      }
+      connection = quicConnection;
+    }
+    catch (IOException e) {
+      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
     }
   }
 

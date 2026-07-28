@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -67,7 +68,7 @@ public class QuicTripConnectionTest {
   @Test
   public void sendsTheTripPreambleOnCreation() {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
-    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, quicStream);
+    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
     ByteBuffer expected = ByteBuffer.allocate(TripConstants.MAGIC.length + 16);
     expected.put(TripConstants.MAGIC);
@@ -83,7 +84,7 @@ public class QuicTripConnectionTest {
   @Test
   public void closesBothHalvesOfTheQuicStream() {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
-    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, quicStream);
+    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
     connection.close();
 
@@ -95,7 +96,7 @@ public class QuicTripConnectionTest {
   @Test
   public void reportsTheTransportAndTheQuicStreamInToString() {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
-    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, quicStream);
+    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
     assertEquals(connection.toString(), transport.toString() + quicStream);
   }
@@ -104,10 +105,27 @@ public class QuicTripConnectionTest {
   public void wrapsIoExceptionWhileClosing() {
     IOException failure = new IOException("stream is gone");
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0], failure);
-    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, quicStream);
+    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
     TripRuntimeException exception = expectThrows(TripRuntimeException.class, connection::close);
     assertSame(exception.getCause(), failure);
+    assertFalse(connection.isOpen());    // closed even though closing the stream failed
+  }
+
+  /**
+   * The QUIC connection can be terminated without the stream being closed explicitly, for example
+   * by the max idle timeout of either peer (RFC-9000, 10.1). The stream is unusable then, and the
+   * connection must report that, so the pool drops it instead of handing it out.
+   */
+  @Test
+  public void isNotOpenOnceTheQuicConnectionIsGone() {
+    AtomicBoolean connected = new AtomicBoolean(true);
+    FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
+    QuicTripConnection connection = new QuicTripConnection(transport, dictionary, connected::get, quicStream);
+
+    assertTrue(connection.isOpen());
+    connected.set(false);
+    assertFalse(connection.isOpen());
   }
 
 }

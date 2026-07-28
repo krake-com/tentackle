@@ -920,6 +920,9 @@ Key details:
     - `kstype` — keystore type (defaults to JDK default)
     - `alpnid` — ALPN protocol identifier (defaults to the URI scheme)
     - `maxstreams` — maximum concurrent bidirectional streams (default: 128)
+    - `connecttimeout` — seconds to wait for the QUIC handshake before giving up. Must be > 0.
+    - `quicidle` — QUIC max idle timeout in seconds (default: 30)
+    - `keepalive` — seconds to keep the QUIC connection alive, `0` disables it (default: unlimited)
 
 - **`createStream()`** method wraps a QUIC stream's I/O in a TRIP `TripStream`:
   ```java
@@ -931,7 +934,7 @@ Key details:
   }
   ```
 
-- **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`.
+- **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`. Since all pooled connections share that single QUIC connection, it is kept alive by PING frames (see `keepalive` above) and re-established if it is lost.
 
 - **Server-side streams**: `QuicProtocolConnectionFactory` accepts incoming `QuicStream`s from peer-initiated bidirectional streams and hands them to `transport.createConnectionHandler()` on a virtual thread.
 

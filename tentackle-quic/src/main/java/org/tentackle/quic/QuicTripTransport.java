@@ -53,6 +53,11 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public static final String PROTOCOL = "tripq";
 
+  /**
+   * The default QUIC max idle timeout in seconds, applied if the URI does not specify {@code quicidle}.
+   */
+  public static final int DEFAULT_MAX_IDLE_SECONDS = 30;
+
 
   private ServerConnector serverConnector;    // the running KWIK server connector, null if not accepting
   private boolean accepting;
@@ -93,6 +98,9 @@ public class QuicTripTransport extends AbstractTransport {
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
                             .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 128))
+                            // configured explicitly so that both ends agree instead of relying on
+                            // the differing KWIK client- and server defaults
+                            .maxIdleTimeoutInSeconds(getMaxIdleSeconds())
                             .build();
 
     DatagramSocket socket = null;       // the UDP socket bound here, owned by the connector once it is built
@@ -144,6 +152,21 @@ public class QuicTripTransport extends AbstractTransport {
   @Override
   public boolean isAccepting() {
     return accepting;
+  }
+
+  /**
+   * Gets the QUIC max idle timeout in seconds.<br>
+   * A QUIC connection is discarded silently by both peers when it stays idle for longer than the
+   * minimum of the timeouts of both peers (see RFC-9000, 10.1). The same value is configured on the
+   * server and on the client, so that the effective timeout is well-defined.
+   * <p>
+   * Note that this has nothing to do with the {@code idle} parameter, which is the timeout in
+   * <em>minutes</em> after which the connection pool closes unused connections.
+   *
+   * @return the timeout in seconds
+   */
+  public int getMaxIdleSeconds() {
+    return getUriPars().getOrDefault("quicidle", DEFAULT_MAX_IDLE_SECONDS);
   }
 
   /**

@@ -212,7 +212,7 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&certcheck=...][&connecttimeout=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&certcheck=...][&connecttimeout=...][&quicidle=...][&keepalive=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
@@ -232,11 +232,34 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `maxstreams`  | server          | `128`                                            | Maximum concurrent peer-initiated bidirectional streams per connection.                        |
 | `certcheck`   | client          | `false`                                          | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
 | `connecttimeout` | client       | `10`                                             | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                          |
+| `quicidle`    | both            | `30`                                             | QUIC max idle timeout in **seconds**. See below.                                               |
+| `keepalive`   | client          | unlimited                                        | Seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.              |
 | `mincompress` | both (`tripcq`) | `1024`                                           | Minimum block size in bytes before deflate compression is applied.                             |
 
 > On the server, if the keystore file (`ksfile`) or the certificate alias (`ksalias`, unless the
 > keystore holds a single key entry) cannot be resolved, `accept()` throws a
 > `TripRuntimeException`. The port must be in the range `0..65535`.
+
+### Idle timeout and keep-alive
+
+QUIC connections are not kept open indefinitely: according to
+[RFC-9000, 10.1](https://www.rfc-editor.org/rfc/rfc9000.html#name-idle-timeout), both peers
+silently discard a connection that stays idle for longer than the *minimum* of the two peers'
+`max_idle_timeout` values &mdash; without notifying the application. `quicidle` configures that
+timeout on both ends, so the effective value is well-defined rather than being the minimum of two
+differing library defaults.
+
+Note that this has nothing to do with the connection pool's `idle` parameter, which is given in
+**minutes** and is always much longer. All pooled connections are streams multiplexed over a single
+QUIC connection, so the pool would keep handing out connections belonging to a QUIC connection that
+is long gone. To prevent that, the client keeps the QUIC connection alive by sending PING frames,
+for as long as the pool exists. Set `keepalive=0` to disable this, for example, when the connection
+is short-lived anyway, or `keepalive=<seconds>` to limit it. Should the QUIC connection be lost
+nevertheless (network loss, peer restart, `keepalive=0`), the pool drops the dead connections and
+re-establishes the QUIC connection on the next request.
+
+The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
+are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
 
 ---
 
