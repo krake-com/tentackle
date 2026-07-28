@@ -167,12 +167,13 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("osInfo", resources.getString("OS"));
     config.addColumn("hostInfo", resources.getString("hostname"));
     config.addColumn("clientHost", resources.getString("client"));
-    config.addColumn("since", resources.getString("since"));
+    config.addColumn("since", resources.getString("since")).setFilterable(false);
     config.addColumn("sessionNumber", resources.getString("session-no."));
     config.addColumn("sessionGroup", resources.getString("group-no."));
     config.addColumn("sessionName", resources.getString("name"));
     config.addColumn("cloned", resources.getString("cloned"));
     config.addColumn("options", resources.getString("options"));
+    config.setFilterEnabled(true);
     return config;
   }
 
