@@ -367,6 +367,8 @@ tool of choice for ad-hoc data fixes, one-off migrations, or exploring persisted
 domain model at hand — the script runs with the application's dependencies on the classpath, so it can
 use `on()` and `op()` exactly like application code.
 
+![The Script Goal](../../../../src/main/docs/assets/script-wizard.png)
+
 The key concept is the **harness**. The code you write is only a *fragment*; it is woven into a
 harness, a FreeMarker template that owns the boilerplate: it implements a
 `DomainContextProvider` (so `on()`/`op()` resolve), and defines the `run()` method your fragment is
@@ -383,7 +385,7 @@ Instead, the fragment marks import lines with a leading `@`-sign:
 @import java.time.LocalDate
 ```
 
-Every line starting with an `@`-sign (optionally indented) is removed from the fragment, stripped of
+Every line starting with an `@`-sign is removed from the fragment, stripped of
 the `@`-sign, and handed to the harness via the `imports` variable, which places it at the top level
 of the generated script. The mechanism is language-agnostic — in a Ruby fragment, `@require 'json'`
 becomes a top-level `require 'json'`. Note that consequently a line must not *start* with an
