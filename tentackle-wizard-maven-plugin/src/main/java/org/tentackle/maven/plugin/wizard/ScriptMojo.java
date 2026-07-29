@@ -67,9 +67,9 @@ import java.util.concurrent.CountDownLatch;
  * <p>
  * Since the fragment is inserted into the {@code run()} method, it cannot contain
  * import statements itself. Instead, the fragment marks such lines with a
- * leading {@code @}-sign, for example {@code @import org.tentackle.misc.*} in
+ * leading {@code ^}-sign, for example {@code @import org.tentackle.misc.*} in
  * Groovy or {@code @require 'json'} in Ruby. Every line starting with an
- * {@code @}-sign is removed from the fragment, stripped of the {@code @}-sign,
+ * {@code ^}-sign is removed from the fragment, stripped of the {@code ^}-sign,
  * and provided to the harness via the {@code imports} model variable, which
  * places it at the top level of the generated script.
  * <p>
@@ -244,8 +244,8 @@ public class ScriptMojo extends AbstractWizardMojo {
 
   /**
    * Weaves a fragment into a harness.<br>
-   * Lines of the fragment starting with an {@code @}-sign are moved to the
-   * {@code imports} model variable, stripped of the {@code @}-sign.
+   * Lines of the fragment starting with an {@code ^}-sign are moved to the
+   * {@code imports} model variable, stripped of the {@code ^}-sign.
    *
    * @param scriptHarness the harness
    * @param fragment the script fragment

@@ -378,18 +378,17 @@ it is stripped and does not land in the generated script. The scripting language
 `tentackle-script-groovy`) must be on the plugin classpath, added as a `<dependency>` of the plugin.
 
 Since the fragment lands inside the `run()` method, it cannot contain import statements itself.
-Instead, the fragment marks import lines with a leading `@`-sign:
+Instead, the fragment marks import lines with a leading `^`-sign:
 
 ```groovy
-@import org.tentackle.misc.*
-@import java.time.LocalDate
+^import org.tentackle.misc.*
+^import java.time.LocalDate
 ```
 
-Every line starting with an `@`-sign is removed from the fragment, stripped of
-the `@`-sign, and handed to the harness via the `imports` variable, which places it at the top level
-of the generated script. The mechanism is language-agnostic — in a Ruby fragment, `@require 'json'`
-becomes a top-level `require 'json'`. Note that consequently a line must not *start* with an
-annotation (`@Override`, …); place annotations on the same line as the annotated element instead.
+Every line starting with an `^`-sign is removed from the fragment, stripped of
+the `^`-sign, and handed to the harness via the `imports` variable, which places it at the top level
+of the generated script. The mechanism is language-agnostic — in a Ruby fragment, `^require 'json'`
+becomes a top-level `require 'json'`.
 
 When weaving, FreeMarker exposes four variables to the harness template:
 

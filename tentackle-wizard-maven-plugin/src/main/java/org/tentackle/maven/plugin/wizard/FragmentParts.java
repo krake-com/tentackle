@@ -20,13 +20,13 @@ package org.tentackle.maven.plugin.wizard;
 
 /**
  * Extracts the import lines from a fragment.<br>
- * A line marks an import if it starts with an import marker (defaults to {@code @}-sign).
+ * A line marks an import if it starts with an import marker (defaults to {@code ^}-sign).
  * Such lines are removed from the fragment and collected in the
- * order of appearance, stripped of the {@code @}-sign.
+ * order of appearance, stripped of the {@code ^}-sign.
  */
 public class FragmentParts {
 
-  private static final String DEFAULT_IMPORT_MARKER = "@";
+  private static final String DEFAULT_IMPORT_MARKER = "^";
 
   private final String imports;
   private final String content;
@@ -60,7 +60,7 @@ public class FragmentParts {
 
   /**
    * Creates the parts.
-   * Uses the default import marker ({@code @}-sign).
+   * Uses the default import marker ({@code ^}-sign).
    *
    * @param fragment the fragment
    */
