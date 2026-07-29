@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
 /**
- * Tests the extraction of {@code @}-marked import lines from a script fragment.
+ * Tests the extraction of {@code ^}-marked import lines from a script fragment.
  */
 public class ScriptMojoTest {
 
@@ -31,9 +31,9 @@ public class ScriptMojoTest {
   public void testExtractImports() {
     FragmentParts parts = new FragmentParts(
         """
-        @import org.tentackle.misc.*
+        ^import org.tentackle.misc.*
         def today = LocalDate.now()
-        @import java.time.LocalDate
+        ^import java.time.LocalDate
         println today""");
     assertEquals(parts.getImports(), "import org.tentackle.misc.*\nimport java.time.LocalDate");
     assertEquals(parts.getContent(), "def today = LocalDate.now()\nprintln today");
@@ -50,7 +50,7 @@ public class ScriptMojoTest {
   public void testMarkerIsLanguageAgnostic() {
     FragmentParts parts = new FragmentParts(
         """
-        @require 'json'
+        ^require 'json'
         puts JSON.generate({ answer: 42 })""");
     assertEquals(parts.getImports(), "require 'json'");
     assertEquals(parts.getContent(), "puts JSON.generate({ answer: 42 })");
