@@ -1,0 +1,19 @@
+## the invoice header
+name := Invoice
+id := 4
+table := invoice
+
+## attributes
+[root]
+
+Long            customerId      customer_id     object ID of the customer
+
+## relations
+# the customer
+Customer:
+    select = lazy
+
+InvoiceLine:
+    relation = component list,
+    name = lines,
+    select = lazy

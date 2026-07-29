@@ -1,0 +1,9 @@
+## an article on stock
+name := StockItem
+id := 8
+table := stockitem
+extends := AbstractStockItem
+
+## attributes
+
+Integer         count           count           the number of items on stock

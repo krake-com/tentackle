@@ -1,0 +1,9 @@
+## the article sold
+name := Article
+id := 7
+table := article
+
+## attributes
+[root]
+
+String(30)      name            name            the article's name

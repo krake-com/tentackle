@@ -161,6 +161,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
     copyClassIdItem.setOnAction(_ -> PdoBrowserUtils.copyClassId(getSelectedDetailDataNode()));
     MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(_ -> PdoBrowserUtils.copySql(getSelectedDetailDataNode()));
+    MenuItem findReferencesItem = PdoBrowserUtils.createFindReferencesItem(
+                                    _ -> PdoBrowserUtils.copyReferencingSql(getSelectedDetailDataNode()));
     MenuItem genCodeItem = Fx.create(MenuItem.class);
     genCodeItem.setOnAction(_ -> {
       DataNode node = getSelectedDetailDataNode();
@@ -185,11 +187,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     });
     browseItem.setText("browse in new tab");
     ContextMenu rowDetailsContextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem,
-                                                        copySqlItem, genCodeItem, browseItem);
+                                                        copySqlItem, findReferencesItem, genCodeItem, browseItem);
     rowDetailsContextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, _ -> {
       genCodeItem.setVisible(getSelectedDetailDataNode() instanceof DataObject);
       PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
-                                           copyTableItem, copyClassIdItem, copySqlItem);
+                                           copyTableItem, copyClassIdItem, copySqlItem, findReferencesItem);
     });
     rowDetailsTable.getSelectionModel().selectedItemProperty().addListener(
       (_, _, current) ->

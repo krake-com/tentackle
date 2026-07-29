@@ -1,0 +1,9 @@
+## the agent taking care of customers
+name := Agent
+id := 3
+table := agent
+
+## attributes
+[root]
+
+String(30)      name            name            the agent's name

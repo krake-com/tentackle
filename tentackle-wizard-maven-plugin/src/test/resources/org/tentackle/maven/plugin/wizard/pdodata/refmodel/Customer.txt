@@ -1,0 +1,14 @@
+## the customer
+name := Customer
+id := 1
+table := customer
+
+## attributes
+[root]
+
+String(30)      name            name            the customer's name
+
+## relations
+# the embedded contact data
+Contact:
+    comment = the contact data

@@ -180,7 +180,7 @@ not a foreign key. Node names are Java property names, and the `Type` column sho
 Outgoing relations are followed for you: the referenced object is rendered by its unique domain key,
 and its full data is one click away in the details table at the bottom. In other words, you are
 browsing objects, not rows — the database columns only surface where you explicitly ask for them, via
-*copy table name* and *copy SQL SELECT…* in the context menus.
+*copy table name*, *copy SQL SELECT…* and *copy SQL SELECTs of referencing PDOs…* in the context menus.
 
 ![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
 
@@ -260,6 +260,15 @@ The context menu offers, depending on the selected node:
   into account (single-table and joined-table hierarchies produce the appropriate column lists and
   joins), and `mapSchemas` controls whether schema names are mapped to flat table names. The item is
   hidden for embedded objects and for attributes whose data type spans several columns.
+- **copy SQL SELECTs of referencing PDOs to clipboard** — the opposite direction: a script answering
+  *who points at this object?*, derived from the model. It holds one `SELECT` per referencing table
+  and column, each preceded by a comment naming the referencing entity and attribute, grouped into
+  three sections: *references* (the non-composite relations — the ones that keep the object from being
+  deleted), *components* (the parts of its aggregate, found via their foreign key), and, for a root
+  entity, *aggregate members* (every component of the whole aggregate at once, found via its
+  `rootId`/`rootClassId` columns). Relations declared on either side are picked up, references to a
+  super-entity are included, and references living in an embedded type resolve to the prefixed column
+  of the embedding table. The item is only shown for object nodes.
 - **copy class-ID … to clipboard** — the class ID of the selected object.
 
 Plus the standard table features described above, extended by *expand* and *collapse* for the subtree
@@ -278,8 +287,8 @@ attributes as columns — the compact, tabular counterpart to the tree:
   This is the browser's way of navigating relations: one click down the reference, and *browse in new
   tab* below if you want to keep it.
 
-Its context menu repeats *copy FQCN*, *copy table name*, *copy class-ID*, and *copy SQL SELECT…*, and
-adds two items of its own:
+Its context menu repeats *copy FQCN*, *copy table name*, *copy class-ID*, *copy SQL SELECT…* and
+*copy SQL SELECTs of referencing PDOs…*, and adds two items of its own:
 
 - **copy Java code to clipboard** — generates the fixture code for that single object. There is no
   path configuration here, but it is the quickest way to create the referenced master data an object

@@ -1,0 +1,9 @@
+## an article reserved for a customer
+name := ReservedItem
+id := 9
+table := reserveditem
+extends := AbstractStockItem
+
+## attributes
+
+Date            reservedUntil   reserved_until  the reservation's expiry
