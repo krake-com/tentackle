@@ -5,7 +5,7 @@
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoSelectList
-    [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--private] [--noif] [--oneshot] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
     [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset]
     [--immutable] [--finallyImmutable] [--mutable]
     &lt;expression&gt;
@@ -14,6 +14,7 @@ arguments:
 <ul>
 <li><em>--private:</em> makes the method private (default is public).</li>
 <li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
+<li><em>--oneshot:</em> use the prepared statement only once (no StatementId)</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
@@ -57,6 +58,7 @@ For more options, see {\@link DbModelWurblet}.
     String  cursor            = null;
     boolean resultSet         = false;
     boolean noif              = false;
+    boolean oneshot           = false;
     boolean immutable         = false;
     boolean finallyImmutable  = false;
     boolean forceMutable      = false;
@@ -80,6 +82,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("noif")) {
         noif = true;
+      }
+      else if (arg.equals("oneshot")) {
+        oneshot = true;
       }
       else if (arg.equals("immutable")) {
         immutable = true;
@@ -289,8 +294,17 @@ For more options, see {\@link DbModelWurblet}.
     getSession().assertTxRunning();
 @[
     }
+    if (oneshot) {
+]@
+    try (PreparedStatementWrapper st = createPreparedStatement(
+@[
+    }
+    else {
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
+@[
+    }
+]@
       b -> {
         StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
@@ -318,8 +332,17 @@ For more options, see {\@link DbModelWurblet}.
 ]@
         return sql.toString();
       }
+@[
+    if (oneshot) {
+]@
+    )) {
+@[
+    }
+    else {
+]@
     );
 @[
+    }
     if (limit || offset) {
 ]@
     int ndx = getBackend().setLeadingSelectParameters(st, @(limit ? "limit" : "0")@, @(offset ? "offset" : "0")@);
@@ -429,10 +452,15 @@ For more options, see {\@link DbModelWurblet}.
         }   // end !immutable
       }   // end if list
     }   // end !resultset
+    if (oneshot) {
+]@
+    }
+@[
+    }
 ]@
   }
 @[
-    if (classVar.isEmpty()) {
+    if (classVar.isEmpty() && !oneshot) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();

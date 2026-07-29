@@ -5,13 +5,14 @@
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; DbSelectList
-    [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--private] [--oneshot] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
     [--sort] [--lock] [--resultset] [--bounded] [--limit] [--offset]
     &lt;expression&gt;
 <p>
 arguments:
 <ul>
 <li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--oneshot:</em> use the prepared statement only once (no StatementId)</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
@@ -32,6 +33,7 @@ For more options, see {\@link DbModelWurblet}.
 
     String  scope       = "public";
     String  classVar    = null;
+    boolean oneshot     = false;
     boolean sort        = false;
     boolean lock        = false;
     String  append      = null;
@@ -44,6 +46,9 @@ For more options, see {\@link DbModelWurblet}.
       if (arg.equals("private")) {
         scope = "private";
         setRemote(false);
+      }
+      else if (arg.equals("oneshot")) {
+        oneshot = true;
       }
       else if (arg.equals("sort")) {
         if (isWithDefaultSorting()) {
@@ -80,7 +85,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (resultSet) {
-      setRemote(false);     // disable remoting for sure
+      setRemote(false);     // disable remoting
     }
 
     if (classVar == null) {
@@ -125,8 +130,17 @@ For more options, see {\@link DbModelWurblet}.
     }
 @[
     } // end if remote
+    if (oneshot) {
+]@
+    try (PreparedStatementWrapper st = createPreparedStatement(
+@[
+    }
+    else {
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
+@[
+    }
+]@
       b -> {
         StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
@@ -148,8 +162,17 @@ For more options, see {\@link DbModelWurblet}.
 ]@
         return sql.toString();
       }
+@[
+    if (oneshot) {
+]@
+    )) {
+@[
+    }
+    else {
+]@
     );
 @[
+    }
     if (limit || offset) {
 ]@
     int ndx = getBackend().setLeadingSelectParameters(st, @(limit ? "limit" : "0")@, @(offset ? "offset" : "0")@);
@@ -207,10 +230,15 @@ For more options, see {\@link DbModelWurblet}.
     }
 @[
     }
+    if (oneshot) {
+]@
+    }
+@[
+    }
 ]@
   }
 @[
-    if (classVar.isEmpty()) {
+    if (classVar.isEmpty() && !oneshot) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();
