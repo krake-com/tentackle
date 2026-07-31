@@ -195,6 +195,54 @@ if (withKey || withValue) {
 
 ---
 
+## When the query itself is dynamic — `Query`
+
+Optional conditions vary *whether* a condition is applied, but the set of possible conditions is still fixed at
+build time. When even that shape is not known until runtime, drop down to
+[`Query`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/Query.java) — a small builder that
+collects SQL fragments together with their parameters and executes them against a session:
+
+```java
+Query query = createQuery();                                    // SELECT <all columns> FROM <table> WHERE 1=1
+if (from != null) {
+  query.add(" AND " + getColumnName(CN_WHEN) + ">=?", from);    // SQL fragment + its parameters
+}
+query.add(" ORDER BY " + getTableAlias() + "." + CN_ID);
+return executeQuery(query);                                     // TrackedList<Message>
+```
+
+- [`createQuery()`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java)
+  starts from the entity's own `SELECT`, ending in `WHERE 1=1`, so every fragment can simply begin with `AND`.
+  `createQuery(js)` adds a [`JoinedSelect`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/JoinedSelect.java)
+  for eager loading.
+- `executeQuery(query[, js])` turns the rows into PDOs exactly as a generated finder does and returns a
+  `TrackedList`; `executeScrollableQuery(query[, js])` returns a cursor instead. Plain `query.execute(db)` yields
+  the `ResultSetWrapper`, `query.getRowCount(db)` a `SELECT COUNT(*)` over the same query.
+- `setLimit`/`setOffset` are rendered backend-specifically, so pagination stays portable.
+- Parameters accept all predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md#datatype) and
+  `Convertible`s. Multi-column types (`BMoney`, `ZonedDateTime`, …) consume more than one question mark —
+  the fragment must provide them.
+
+**Prefer the wurblets.** They validate attributes and paths against the model, cache their prepared statement,
+generate the remote delegate, the load joins and the tracked list, and they keep the query visible in the source.
+A `Query` gives up all of that: its SQL is assembled on every invocation and prepared as a one-shot statement
+(`setStatementCached(true)` re-enables caching, but only for a query whose SQL string is in fact fixed), and
+nothing checks it until the statement reaches the backend. Use `getColumnName(CN_…)` and `getTableAlias()` rather
+than literal names so that a model change still propagates. A hand-written method also needs its own
+`// @wurblet <name> RemoteMethod` anchor to be callable over a remote session.
+
+So reach for `Query` only when the statement's *structure* depends on runtime data:
+
+| Situation                                                                    | Use                                    |
+|------------------------------------------------------------------------------|----------------------------------------|
+| fixed condition set                                                          | `PdoSelectList` / `PdoSelectUnique`    |
+| known conditions, applied selectively (query by form)                        | optional conditions (`?boolean`)       |
+| condition count unknown at build time (ad-hoc filter lists, generated `IN` …) | `Query`                                |
+| `ORDER BY` chosen by the user, or paging over an arbitrary sort              | `Query`                                |
+| one-off administrative or reporting statements outside the entity's shape    | `Query` (or a plain `PreparedStatementWrapper`) |
+
+---
+
 ## Selecting across relations, components, and embedded entities
 
 A condition does not have to name an attribute of the entity the wurblet sits on — it can reach **through a
@@ -445,6 +493,8 @@ relation-generated ones.
   locks, tracked lists, and the objects these queries return.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType` / `Backend` used to build the
   SQL and bind parameters.
+- [Tentackle Database](../../../../tentackle-database/src/main/docs/database.md) — `Query`, the statement
+  wrappers and the result sets the generated methods run on.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets
   consume.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol behind the generated remote
