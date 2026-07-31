@@ -21,6 +21,8 @@ package org.tentackle.dbms;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
+import org.tentackle.common.I18NText;
+import org.tentackle.common.TBinary;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
@@ -33,12 +35,17 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * A database query.
@@ -414,13 +421,17 @@ public class Query {
 
 
   /**
-   * Apply the query parameters only.
+   * Apply the query parameters only.<br>
+   * All predefined datatypes are supported. Values of other types are applied via their
+   * {@link DataType}, if there is one registered for the value's class.
+   * <p>
+   * Notice that some datatypes span more than one column (see {@link DataType#getColumnCount(Backend)}).
+   * The application must provide the corresponding number of question marks in the SQL code.
    *
    * @param st the statement
    * @param ndx the starting index
    * @return the next parameter index
    */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
   public int applyParameters(PreparedStatementWrapper st, int ndx) {
 
     for (QueryItem item : items) {
@@ -460,6 +471,10 @@ public class Query {
             else if (data instanceof BigDecimal) {
               st.setBigDecimal(ndx++, (BigDecimal) data);
             }
+            else {
+              // some other number, for example BigInteger or an atomic type
+              ndx = applyByDataType(st, item, dataIndex, data.getClass(), data, ndx);
+            }
           }
           else if (data instanceof String) {
             st.setString(ndx++, (String) data);
@@ -488,29 +503,74 @@ public class Query {
           else if (data instanceof LocalTime) {
             st.setLocalTime(ndx++, (LocalTime) data);
           }
+          else if (data instanceof OffsetDateTime) {
+            st.setOffsetDateTime(ndx, (OffsetDateTime) data);
+            ndx += 2;
+          }
+          else if (data instanceof ZonedDateTime) {
+            st.setZonedDateTime(ndx, (ZonedDateTime) data);
+            ndx += 2;
+          }
+          else if (data instanceof Instant) {
+            st.setInstant(ndx, (Instant) data);
+            ndx += 2;
+          }
+          else if (data instanceof OffsetTime) {
+            st.setOffsetTime(ndx, (OffsetTime) data);
+            ndx += 2;
+          }
           else if (data instanceof Binary<?>) {
             st.setBinary(ndx++, (Binary<?>) data);
           }
+          else if (data instanceof TBinary<?>) {
+            st.setTBinary(ndx++, (TBinary<?>) data);
+          }
+          else if (data instanceof UUID) {
+            // no dedicated setter: the mapping is backend-specific (native UUID or VARCHAR)
+            ndx = applyByDataType(st, item, dataIndex, UUID.class, data, ndx);
+          }
+          else if (data instanceof I18NText) {
+            // no dedicated setter: spans 1 or 2 columns, depending on the backend
+            ndx = applyByDataType(st, item, dataIndex, I18NText.class, data, ndx);
+          }
+          else if (data == null) {
+            throw new PersistenceException("null value in '" + item + "' arg[" + dataIndex + "]");
+          }
           else {
-            if (data == null) {
-              throw new PersistenceException("null value in '" + item + "' arg[" + dataIndex + "]");
-            }
-            else {
-              DataType dataType = DataTypeFactory.getInstance().get(data.getClass());
-              if (dataType == null) {
-                throw new PersistenceException(
-                    "unsupported type " + data.getClass() + " in '" + item + "' arg[" + dataIndex + "]");
-              }
-              // the application must provide the correct number of question marks!
-              st.set(dataType, ndx, data, false, null);
-              ndx += dataType.getColumnCount(st.getSession().getBackend());
-            }
+            // some application-specific type
+            ndx = applyByDataType(st, item, dataIndex, data.getClass(), data, ndx);
           }
         }
       }
     }
 
     return ndx;
+  }
+
+  /**
+   * Applies a parameter according to its {@link DataType}.<br>
+   * Used for all types without a dedicated setter in the {@link PreparedStatementWrapper},
+   * such as {@code UUID} or {@code I18NText}, and for application-specific types.
+   *
+   * @param st the statement
+   * @param item the query item the value belongs to (for error messages only)
+   * @param dataIndex the index of the value within the query item (for error messages only)
+   * @param clazz the class to determine the datatype for
+   * @param data the value, never null
+   * @param ndx the parameter index
+   * @return the next parameter index
+   */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private int applyByDataType(PreparedStatementWrapper st, QueryItem item, int dataIndex,
+                              Class<?> clazz, Object data, int ndx) {
+    DataType dataType = DataTypeFactory.getInstance().get(clazz);
+    if (dataType == null) {
+      throw new PersistenceException(
+          "unsupported type " + clazz + " in '" + item + "' arg[" + dataIndex + "]");
+    }
+    // the application must provide the correct number of question marks!
+    st.set(dataType, ndx, data, false, null);
+    return ndx + dataType.getColumnCount(st.getSession().getBackend());
   }
 
   /**

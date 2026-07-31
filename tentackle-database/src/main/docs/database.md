@@ -143,6 +143,9 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
   [`ResultSetSkipBlock`](../java/org/tentackle/dbms/ResultSetSkipBlock.java) support joines (due to inheritance or for load joins).
 - [`Query`](../java/org/tentackle/dbms/Query.java) — builds the SQL string + parameter set for a one-off query
   (e.g., user-entered), adding the backend-specific `SELECT`/`LIMIT`/`OFFSET` automatically.
+  All predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md) are accepted as parameters, as well as
+  application-specific types with a registered `DataType`. Notice that some datatypes span more than one column
+  (`BMoney` or `ZonedDateTime`, for example) and thus require a matching number of question marks.
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
   integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
