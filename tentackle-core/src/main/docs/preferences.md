@@ -150,6 +150,30 @@ to remember the last export directory per table (key prefix `lastXlsNames/`). Th
 backs RDC window geometry and table column layouts — settings that, thanks to the database backing
 store, are restored on whatever client the user signs in to next.
 
+## Preferenzr — Browsing and Editing the Store
+
+Because the preferences live in database tables rather than in a local file or the registry, there
+is nothing to inspect with an OS tool. **Preferenzr** fills that gap: a JavaFX application that
+connects to the application's database and shows the system tree and the tree of every user in a
+single view.
+
+- **Browse and edit** nodes and keys; edits are highlighted and only written on *save*.
+- **Add and remove** nodes and keys — removing a node marks its whole subtree for deletion.
+- **Dump and load** a subtree to/from a file, merging it or replacing it, into any user or into
+  system space. The files use the standard XML format of `java.util.prefs`, so they interoperate
+  with `Preferences.exportSubtree()` / `Preferences.importPreferences()`.
+- **Filter and find** across node names, key names and values.
+
+Preferenzr only touches `prefnode`, `prefkey`, `modification` and `object_sequence_id`, so it can
+run with limited database privileges. It deliberately stores its *own* settings in the local
+`java.util.prefs` store instead of the database it is editing.
+
+Like [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), it is developed as a
+separate open-source project at
+[bitbucket.org/krake-oss/preferenzr](https://bitbucket.org/krake-oss/preferenzr) and distributed as
+a self-contained [jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+image; to build it yourself, clone the repository and run `mvn -Pjlink clean install`.
+
 ## See also
 
 - [Tentackle Core](core.md) — the runtime foundation that hosts this API.
