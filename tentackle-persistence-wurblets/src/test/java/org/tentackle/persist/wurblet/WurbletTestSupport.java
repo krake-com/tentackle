@@ -109,6 +109,27 @@ public final class WurbletTestSupport {
   }
 
   /**
+   * Creates a model wurblet for the given wurblet arguments.
+   * <p>
+   * {@code getMethodArguments()} is otherwise populated by {@code run()} from the wurblet's
+   * argument parser; overriding it is what lets the generated method signature be tested.
+   *
+   * @param entity the entity
+   * @param args the wurblet arguments, one per token
+   * @return the wurblet
+   * @throws WurbelException if the arguments could not be parsed
+   */
+  public static DbModelWurblet createWurblet(Entity entity, String... args) throws WurbelException {
+    WurbletArgumentParser parser = new WurbletArgumentParser(entity, false, Arrays.asList(args));
+    return new DbModelWurblet() {
+      @Override
+      public List<WurbletArgument> getMethodArguments() {
+        return parser.getMethodArguments();
+      }
+    };
+  }
+
+  /**
    * Parses a single wurblet argument against the test entity.
    *
    * @param entity the entity

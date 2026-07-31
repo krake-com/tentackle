@@ -185,7 +185,8 @@ Each [`WurbletArgument`](../java/org/tentackle/wurblet/WurbletArgument.java) has
 [types](../java/org/tentackle/wurblet/WurbletArgumentType.java):
 
 - **property condition** — an attribute (optionally reached through a relation path, optionally a single column of
-  a multi-column type) constrained by a relational operator and value;
+  a multi-column type) constrained by a relational operator and value; a `?<boolean>` suffix makes the condition
+  [optional](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#optional-conditions-qbf-style-finders);
 - **property update** — an attribute to be assigned;
 - **property sorting** — `+` ascending / `-` descending;
 - **load join** — `*` marks a relation to eagerly load; join paths can themselves be filtered.

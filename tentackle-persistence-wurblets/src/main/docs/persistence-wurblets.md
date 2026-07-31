@@ -110,7 +110,9 @@ These come in a **`Db…`** (low-level persistent object) flavor and a **`Pdo…
 [wurblet-argument `<expression>`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#wurblet-arguments--the-query-mini-language)
 and share the options `--private`, `--append=<sqltext>` and `--classvar=<classvariables>`; the `Pdo…` variants add
 `--noif`. The four select wurblets additionally share `--oneshot`, which prepares the statement for a single use
-instead of caching it under a `StatementId`.
+instead of caching it under a `StatementId`. They are also the only ones accepting
+[optional conditions](pdo-select.md#optional-conditions-qbf-style-finders) (`attribute?<boolean>`), which imply
+`--oneshot` because the SQL text then depends on the boolean method arguments.
 
 | Wurblet                                                                                                                                                                     | Generates                                                                                  | Notable extra options                                                                                                                        |
 |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|

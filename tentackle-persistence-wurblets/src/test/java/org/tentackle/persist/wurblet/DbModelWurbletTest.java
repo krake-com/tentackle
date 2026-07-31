@@ -235,6 +235,36 @@ public class DbModelWurbletTest {
   }
 
   /**
+   * An optional condition adds a boolean method argument telling the finder whether to apply it.
+   */
+  @Test
+  public void addsABooleanArgumentForEveryOptionalCondition() throws Exception {
+    DbModelWurblet optional = createWurblet(entity, "user?withUser", "txId?withTxId");
+    assertEquals(optional.buildMethodParameters(), "String user, boolean withUser, long txId, boolean withTxId");
+    assertEquals(optional.buildInvocationParameters(), "user, withUser, txId, withTxId");
+  }
+
+  /**
+   * Conditions sharing a boolean are switched by one and the same method argument.
+   */
+  @Test
+  public void addsASharedBooleanArgumentOnlyOnce() throws Exception {
+    DbModelWurblet shared = createWurblet(entity, "user?withText", "OR", "user[user2]?withText");
+    assertEquals(shared.buildMethodParameters(), "String user, boolean withText, String user2");
+    assertEquals(shared.buildInvocationParameters(), "user, withText, user2");
+  }
+
+  /**
+   * A condition with a fixed value has no value argument, but still gets its boolean.
+   */
+  @Test
+  public void addsABooleanArgumentForAnOptionalFixedValue() throws Exception {
+    DbModelWurblet fixed = createWurblet(entity, "user?withUser:=:\"admin\"");
+    assertEquals(fixed.buildMethodParameters(), "boolean withUser");
+    assertEquals(fixed.buildInvocationParameters(), "withUser");
+  }
+
+  /**
    * Generating for several backends at once means the feature has to be supported by all of them.
    */
   @Test

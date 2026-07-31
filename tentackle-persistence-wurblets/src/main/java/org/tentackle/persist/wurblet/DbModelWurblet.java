@@ -45,6 +45,7 @@ import org.tentackle.wurblet.WurbletRelation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -163,6 +164,13 @@ public class DbModelWurblet extends ModelWurblet {
           if (arg.isPath()) {
             throw new WurbelException("relation paths not allowed in wurblet " + this);
           }
+        }
+      }
+
+      // optional conditions are generated for the where-expression only, not for the filters of load joins
+      for (WurbletArgument arg: getMethodArguments()) {
+        if (arg.isOptional() && !parser.getExpressionArguments().contains(arg)) {
+          throw new WurbelException("optional condition '" + arg + "' not allowed in a join filter");
         }
       }
 
@@ -301,6 +309,63 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public List<WurbletArgument> getExpressionArguments() {
     return parser.getExpressionArguments();
+  }
+
+
+  /**
+   * Returns whether at least one condition is optional.<br>
+   * Because the SQL text of such finders depends on the boolean method arguments,
+   * the prepared statement cannot be cached, i.e. the option {@code --oneshot} is implied.
+   *
+   * @return true if there are optional conditions
+   * @see WurbletArgument#isOptional()
+   */
+  public boolean isWithOptionalArguments() {
+    return parser.isWithOptionalArguments();
+  }
+
+
+  /**
+   * Asserts that none of the conditions is optional.<br>
+   * To be invoked by wurblets caching their prepared statement, since the SQL text
+   * of an optional condition is not fixed.
+   *
+   * @throws WurbelException if there is an optional condition
+   */
+  public void assertNoOptionalArguments() throws WurbelException {
+    for (WurbletArgument arg: getMethodArguments()) {
+      if (arg.isOptional()) {
+        throw new WurbelException("optional condition '" + arg + "' not supported by wurblet " + this);
+      }
+    }
+  }
+
+
+  /**
+   * Creates the java boolean expression that determines whether the given arguments
+   * are part of the query.<br>
+   * The expression is true if at least one of the arguments is applicable.
+   * Arguments referring to the same boolean method argument are considered only once.
+   *
+   * @param args the wurblet arguments
+   * @return the java code, null if the arguments are always part of the query
+   */
+  public String createOptionalCondition(List<WurbletArgument> args) {
+    StringBuilder buf = new StringBuilder();
+    Set<String> names = new LinkedHashSet<>();
+    for (WurbletArgument arg: args) {
+      if (!arg.isOptional()) {
+        return null;    // mandatory condition: always applicable
+      }
+      names.add(arg.getOptionalName());
+    }
+    for (String name: names) {
+      if (!buf.isEmpty()) {
+        buf.append(" || ");
+      }
+      buf.append(name);
+    }
+    return buf.isEmpty() ? null : buf.toString();
   }
 
 
@@ -1216,6 +1281,12 @@ public class DbModelWurblet extends ModelWurblet {
           params.append(arg);
         }
       }
+      // the boolean determining whether an optional condition is part of the query
+      if (key.isOptional() && argSet.add(key.getOptionalName())) {
+        appendCommaSeparated(params, "boolean");
+        params.append(' ');
+        params.append(key.getOptionalName());
+      }
     }
 
     return params.toString();
@@ -1259,6 +1330,9 @@ public class DbModelWurblet extends ModelWurblet {
         if (argSet.add(arg)) {
           appendCommaSeparated(params, arg);
         }
+      }
+      if (key.isOptional() && argSet.add(key.getOptionalName())) {
+        appendCommaSeparated(params, key.getOptionalName());
       }
     }
 

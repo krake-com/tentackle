@@ -17,7 +17,9 @@ arguments:
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
 <li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.<br>
+Conditions marked with <em>?&lt;boolean&gt;</em> are optional, i.e. become part of the query only if the
+boolean method argument is true. Such finders always create a one-shot prepared statement.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -29,7 +31,7 @@ For more options, see {\@link DbModelWurblet}.
 
     String  classVar    = null;
     String  scope       = "public";
-    boolean oneshot     = false;
+    boolean oneshot     = isWithOptionalArguments();    // optional conditions imply --oneshot
     boolean lock        = false;
     boolean sort        = false;
     String  append      = null;

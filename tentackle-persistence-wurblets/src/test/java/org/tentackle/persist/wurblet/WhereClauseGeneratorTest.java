@@ -66,6 +66,21 @@ public class WhereClauseGeneratorTest {
     return buf.toString();
   }
 
+  /**
+   * Encloses the expected code in the if-statement generated for an optional condition.
+   *
+   * @param condition the expected java condition
+   * @param appends the append arguments, one per generated line
+   * @return the expected code
+   */
+  private static String guarded(String condition, String... appends) {
+    StringBuilder buf = new StringBuilder(INDENT).append("if (").append(condition).append(") {\n");
+    for (String line : code(appends).split("\n")) {
+      buf.append("  ").append(line).append('\n');
+    }
+    return buf.append(INDENT).append("}\n").toString();
+  }
+
 
   @Test
   public void generatesAColumnComparison() throws Exception {
@@ -140,6 +155,46 @@ public class WhereClauseGeneratorTest {
                       "CN_MODTYPE", "Backend.SQL_EQUAL_PAR",
                       "Backend.SQL_RIGHT_PARENTHESIS",
                       "Backend.SQL_RIGHT_PARENTHESIS"));
+  }
+
+  /**
+   * An optional condition is only appended if its boolean method argument is true.
+   */
+  @Test
+  public void guardsAnOptionalCondition() throws Exception {
+    assertEquals(generator.generate(parseArgument(entity, "user?withUser")),
+                 guarded("withUser", "CN_USER", "Backend.SQL_EQUAL_PAR"));
+  }
+
+  /**
+   * Every column of a multi-column type belongs to the same condition, i.e. one guard for all.
+   */
+  @Test
+  public void guardsEveryColumnOfAMultiColumnType() throws Exception {
+    assertEquals(generator.generate(parseArgument(entity, "amount?withAmount")),
+                 guarded("withAmount",
+                         "CN_AMOUNT", "Backend.SQL_EQUAL_PAR",
+                         "Backend.SQL_AND",
+                         "CN_AMOUNT_2", "Backend.SQL_EQUAL_PAR"));
+  }
+
+  /**
+   * The operators and parentheses are emitted unconditionally. Whatever ends up empty because its
+   * conditions were skipped is removed from the SQL at runtime by {@code Backend.reduceSql}.
+   */
+  @Test
+  public void emitsOperatorsOfOptionalConditionsUnconditionally() throws Exception {
+    WurbletArgumentExpression expr = parseExpression(entity, "user?withUser", "OR", "txId?withTxId");
+    assertEquals(generator.generate(expr.getOperators().getFirst()), code("Backend.SQL_OR"));
+  }
+
+  /**
+   * A mandatory condition is never guarded, not even next to optional ones.
+   */
+  @Test
+  public void leavesMandatoryConditionsUnguarded() throws Exception {
+    assertEquals(generator.generate(parseArgument(entity, "user")),
+                 code("CN_USER", "Backend.SQL_EQUAL_PAR"));
   }
 
   /**

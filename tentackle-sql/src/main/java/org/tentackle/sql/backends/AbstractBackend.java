@@ -1014,6 +1014,283 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String reduceSql(String sql) {
+    StringBuilder buf = new StringBuilder(sql);
+    reduceSql(buf);
+    return buf.toString();
+  }
+
+  @Override
+  public void reduceSql(StringBuilder sql) {
+    List<SqlToken> tokens = tokenizeSql(sql);
+    boolean modified = false;
+    while (reduceSqlTokens(tokens)) {
+      modified = true;
+    }
+    if (modified) {
+      sql.setLength(0);
+      for (SqlToken token: tokens) {
+        sql.append(token.text());
+      }
+    }
+  }
+
+  /**
+   * Removes one superfluous token from the given token list.<br>
+   * Empty parenthesized groups are removed first, then the operators becoming dangling.
+   *
+   * @param tokens the tokens, modified in place
+   * @return true if a token was removed, false if there is nothing left to reduce
+   */
+  private boolean reduceSqlTokens(List<SqlToken> tokens) {
+
+    // the indexes of all tokens that are not just whitespace
+    List<Integer> indexes = new ArrayList<>();
+    for (int index = 0; index < tokens.size(); index++) {
+      if (tokens.get(index).type() != SqlTokenType.SPACE) {
+        indexes.add(index);
+      }
+    }
+
+    // remove the first parenthesized group without any operand
+    List<Integer> openIndexes = new ArrayList<>();     // stack of positions within indexes
+    for (int pos = 0; pos < indexes.size(); pos++) {
+      SqlTokenType type = tokens.get(indexes.get(pos)).type();
+      if (type == SqlTokenType.LEFT_PARENTHESIS) {
+        openIndexes.add(pos);
+      }
+      else if (type == SqlTokenType.RIGHT_PARENTHESIS) {
+        if (openIndexes.isEmpty()) {
+          break;      // unbalanced: leave the SQL alone
+        }
+        int openPos = openIndexes.removeLast();
+        boolean empty = true;
+        for (int inner = openPos + 1; inner < pos; inner++) {
+          if (tokens.get(indexes.get(inner)).type() == SqlTokenType.OPERAND) {
+            empty = false;
+            break;
+          }
+        }
+        // an empty group is only removed if it is an operand of a logical expression.
+        // this keeps parentheses belonging to an operand untouched, such as "now()" or "id IN()"
+        SqlTokenType before = openPos > 0 ? tokens.get(indexes.get(openPos - 1)).type() : null;
+        SqlTokenType after = pos < indexes.size() - 1 ? tokens.get(indexes.get(pos + 1)).type() : null;
+        if (empty &&
+            (before == null || before.isOperator() || before == SqlTokenType.LEFT_PARENTHESIS) &&
+            (after == null || after.isOperator() || after == SqlTokenType.RIGHT_PARENTHESIS)) {
+          // remove the group including everything in between (operators and nested empty groups)
+          tokens.subList(indexes.get(openPos), indexes.get(pos) + 1).clear();
+          return true;
+        }
+      }
+    }
+
+    // remove dangling operators
+    for (int pos = 0; pos < indexes.size(); pos++) {
+      SqlTokenType type = tokens.get(indexes.get(pos)).type();
+      if (type.isOperator()) {
+        SqlTokenType prev = pos > 0 ? tokens.get(indexes.get(pos - 1)).type() : null;
+        SqlTokenType next = pos < indexes.size() - 1 ? tokens.get(indexes.get(pos + 1)).type() : null;
+        boolean dangling;
+        if (type == SqlTokenType.NOT) {
+          // unary: needs an operand or a group to the right
+          dangling = next == null || next == SqlTokenType.RIGHT_PARENTHESIS || next.isBinaryOperator();
+        }
+        else {
+          // binary: needs an operand or a group on both sides.
+          // if the operand in between two operators was skipped, the operand's leading operator is removed
+          dangling = prev == null || prev == SqlTokenType.LEFT_PARENTHESIS ||
+                     next == null || next == SqlTokenType.RIGHT_PARENTHESIS ||
+                     next.isBinaryOperator();
+        }
+        if (dangling) {
+          tokens.remove((int) indexes.get(pos));
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Splits the SQL text into tokens.<br>
+   * The tokens hold the original text, i.e. concatenating all tokens restores the SQL text.
+   * Only uppercase keywords are recognized as operators. Text within quotes is never interpreted.
+   *
+   * @param sql the SQL text
+   * @return the tokens
+   */
+  private List<SqlToken> tokenizeSql(CharSequence sql) {
+    List<SqlToken> tokens = new ArrayList<>();
+    StringBuilder operand = new StringBuilder();      // pending operand or whitespace
+    int index = 0;
+    while (index < sql.length()) {
+      char c = sql.charAt(index);
+      SqlTokenType type = null;
+      int length = 1;
+      if (c == '\'' || c == '"') {
+        // skip quoted text (may contain anything, doubled quotes are escapes)
+        int end = index + 1;
+        while (end < sql.length()) {
+          if (sql.charAt(end) == c) {
+            if (end + 1 < sql.length() && sql.charAt(end + 1) == c) {
+              end++;      // escaped quote
+            }
+            else {
+              break;
+            }
+          }
+          end++;
+        }
+        length = Math.min(end + 1, sql.length()) - index;
+      }
+      else if (c == '(') {
+        type = SqlTokenType.LEFT_PARENTHESIS;
+      }
+      else if (c == ')') {
+        type = SqlTokenType.RIGHT_PARENTHESIS;
+      }
+      else if (isKeywordAt(sql, index, "AND")) {
+        type = SqlTokenType.AND;
+        length = 3;
+      }
+      else if (isKeywordAt(sql, index, "OR")) {
+        type = SqlTokenType.OR;
+        length = 2;
+      }
+      else if (isKeywordAt(sql, index, "NOT")) {
+        // "NOT IN", "NOT LIKE" and "IS NOT NULL" belong to the operand
+        if (isKeywordAt(sql, skipBlanks(sql, index + 3), "IN") ||
+            isKeywordAt(sql, skipBlanks(sql, index + 3), "LIKE") ||
+            isKeywordAt(sql, skipBlanks(sql, index + 3), "NULL")) {
+          length = 3;
+        }
+        else {
+          type = SqlTokenType.NOT;
+          length = 3;
+        }
+      }
+
+      if (type == null) {
+        operand.append(sql, index, index + length);
+      }
+      else {
+        addOperandToken(tokens, operand);
+        tokens.add(new SqlToken(type, sql.subSequence(index, index + length).toString()));
+      }
+      index += length;
+    }
+    addOperandToken(tokens, operand);
+    return tokens;
+  }
+
+  /**
+   * Adds the pending operand to the token list.
+   *
+   * @param tokens the tokens
+   * @param operand the pending text, cleared
+   */
+  private void addOperandToken(List<SqlToken> tokens, StringBuilder operand) {
+    if (!operand.isEmpty()) {
+      String text = operand.toString();
+      tokens.add(new SqlToken(StringHelper.isAllWhitespace(text) ? SqlTokenType.SPACE : SqlTokenType.OPERAND, text));
+      operand.setLength(0);
+    }
+  }
+
+  /**
+   * Returns whether the given uppercase keyword starts at the given index.<br>
+   * The keyword must not be part of a longer word.
+   *
+   * @param sql the SQL text
+   * @param index the index within the text
+   * @param keyword the keyword
+   * @return true if the keyword starts at index
+   */
+  private boolean isKeywordAt(CharSequence sql, int index, String keyword) {
+    int end = index + keyword.length();
+    if (end > sql.length()) {
+      return false;
+    }
+    for (int i = 0; i < keyword.length(); i++) {
+      if (sql.charAt(index + i) != keyword.charAt(i)) {
+        return false;
+      }
+    }
+    return (index == 0 || !Character.isJavaIdentifierPart(sql.charAt(index - 1))) &&
+           (end == sql.length() || !Character.isJavaIdentifierPart(sql.charAt(end)));
+  }
+
+  /**
+   * Skips blanks.
+   *
+   * @param sql the SQL text
+   * @param index the index within the text
+   * @return the index of the next non-blank character
+   */
+  private int skipBlanks(CharSequence sql, int index) {
+    while (index < sql.length() && Character.isWhitespace(sql.charAt(index))) {
+      index++;
+    }
+    return index;
+  }
+
+
+  /**
+   * The kind of an {@link SqlToken}.
+   */
+  private enum SqlTokenType {
+
+    /** anything that is not an operator, a parenthesis or whitespace. */
+    OPERAND,
+
+    /** whitespace between tokens. */
+    SPACE,
+
+    /** an opening parenthesis. */
+    LEFT_PARENTHESIS,
+
+    /** a closing parenthesis. */
+    RIGHT_PARENTHESIS,
+
+    /** the logical AND. */
+    AND,
+
+    /** the logical OR. */
+    OR,
+
+    /** the logical NOT. */
+    NOT;
+
+    /**
+     * Returns whether this is a logical operator.
+     *
+     * @return true if AND, OR or NOT
+     */
+    private boolean isOperator() {
+      return this == AND || this == OR || this == NOT;
+    }
+
+    /**
+     * Returns whether this is a binary logical operator.
+     *
+     * @return true if AND or OR
+     */
+    private boolean isBinaryOperator() {
+      return this == AND || this == OR;
+    }
+  }
+
+  /**
+   * A token of an SQL text.
+   *
+   * @param type the token type
+   * @param text the original text
+   */
+  private record SqlToken(SqlTokenType type, String text) {}
+
+  @Override
   public String buildSelectSql(String sql, boolean writeLock, int limit, int offset) {
     StringBuilder buf = new StringBuilder(sql);
     buildSelectSql(buf, writeLock, limit, offset);

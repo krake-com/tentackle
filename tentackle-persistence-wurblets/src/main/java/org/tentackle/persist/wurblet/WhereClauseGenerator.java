@@ -67,6 +67,7 @@ public class WhereClauseGenerator implements CodeGenerator<Object> {
 
     if (t instanceof WurbletArgument argument) {
       StringBuilder buf = new StringBuilder();
+      StringBuilder existsBuf = new StringBuilder();    // the EXISTS clause introducing the relations
       Attribute attribute = argument.getAttribute();
       if (argument.isPath()) {
         Set<Relation> existsRelations = argument.getExistsRelations();
@@ -173,6 +174,9 @@ public class WhereClauseGenerator implements CodeGenerator<Object> {
             }
           }
           buf.deleteCharAt(buf.length() - 1).append(";\n");
+          // the EXISTS clause is shared by all arguments of the clause and gets its own condition
+          existsBuf.append(buf);
+          buf.setLength(0);
         }
 
         String compKeyClass = wurblet.deriveClassNameForEntity(attribute.getEmbeddingPath() == null ?
@@ -241,13 +245,40 @@ public class WhereClauseGenerator implements CodeGenerator<Object> {
         }
       }
 
+      // the condition itself is generated only if its boolean method argument is true.
+      // the EXISTS clause is generated if at least one of its conditions is applicable.
+      String clauseCondition = argument.getExistsArguments() == null ? null :
+                                 wurblet.createOptionalCondition(argument.getExistsArguments());
+      StringBuilder code = new StringBuilder();
+      code.append(wrapOptional(existsBuf.toString(), clauseCondition))
+          .append(wrapOptional(buf.toString(), argument.isOptional() ? argument.getOptionalName() : null));
       if (argument.isEndOfExistsClause()) {
-        buf.append("        sql.append(Backend.SQL_RIGHT_PARENTHESIS);\n");
+        code.append(wrapOptional("        sql.append(Backend.SQL_RIGHT_PARENTHESIS);\n", clauseCondition));
       }
-      return buf.toString();
+      return code.toString();
     }
 
     return "        sql.append(" + t + ");\n";
+  }
+
+
+  /**
+   * Encloses the generated code in an if-statement, if the code is optional.
+   *
+   * @param code the generated code, may be empty
+   * @param condition the java boolean expression, null if the code is not optional
+   * @return the code
+   */
+  private String wrapOptional(String code, String condition) {
+    if (condition == null || code.isEmpty()) {
+      return code;
+    }
+    StringBuilder buf = new StringBuilder("        if (").append(condition).append(") {\n");
+    for (String line: code.split("\n")) {
+      buf.append("  ").append(line).append('\n');
+    }
+    buf.append("        }\n");
+    return buf.toString();
   }
 
 }

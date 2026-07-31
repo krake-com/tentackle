@@ -21,7 +21,9 @@ arguments:
 <li><em>--offset:</em> adds a parameter to skip the first objects.</li>
 <li><em>--resultset:</em> returns the ResultSetWrapper instead of a List.</li>
 <li><em>--bounded:</em> returns a bounded List&lt;? extends mainClass&gt; instead of List&lt;mainClass&gt;.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.<br>
+Conditions marked with <em>?&lt;boolean&gt;</em> are optional, i.e. become part of the query only if the
+boolean method argument is true. Such finders always create a one-shot prepared statement.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -33,7 +35,7 @@ For more options, see {\@link DbModelWurblet}.
 
     String  scope       = "public";
     String  classVar    = null;
-    boolean oneshot     = false;
+    boolean oneshot     = isWithOptionalArguments();    // optional conditions imply --oneshot
     boolean sort        = false;
     boolean lock        = false;
     String  append      = null;
@@ -86,7 +88,8 @@ For more options, see {\@link DbModelWurblet}.
 
     if (resultSet) {
       if (oneshot) {
-        throw new WurbelException("oneshot not allowed with resultset");
+        throw new WurbelException(isWithOptionalArguments() ? "optional conditions imply oneshot, which is not allowed with resultset"
+                                                           : "oneshot not allowed with resultset");
       }
       setRemote(false);     // disable remoting
     }
