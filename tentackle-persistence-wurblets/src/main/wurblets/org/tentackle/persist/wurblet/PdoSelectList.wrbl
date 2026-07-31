@@ -14,7 +14,7 @@ arguments:
 <ul>
 <li><em>--private:</em> makes the method private (default is public).</li>
 <li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
-<li><em>--oneshot:</em> use the prepared statement only once (no StatementId)</li>
+<li><em>--oneshot:</em> use the prepared statement only once (no StatementId, not allowed with --resultset or --cursor)</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
@@ -137,6 +137,9 @@ For more options, see {\@link DbModelWurblet}.
       if (immutable || finallyImmutable) {
         throw new WurbelException("immutable/finallyimmutable not allowed with resultset");
       }
+      if (oneshot) {
+        throw new WurbelException("oneshot not allowed with resultset");
+      }
       setRemote(false);     // disable remoting for sure
     }
 
@@ -154,6 +157,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       if (immutable || finallyImmutable) {
         throw new WurbelException("immutable/finallyimmutable not allowed with cursor");
+      }
+      if (oneshot) {
+        throw new WurbelException("oneshot not allowed with cursor");
       }
       if (isTracked()) {
         throw new WurbelException("tracked not available with cursors!");

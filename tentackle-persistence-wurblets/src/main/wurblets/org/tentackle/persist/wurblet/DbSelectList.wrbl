@@ -12,7 +12,7 @@ usage:<br>
 arguments:
 <ul>
 <li><em>--private:</em> makes the method private (default is public).</li>
-<li><em>--oneshot:</em> use the prepared statement only once (no StatementId)</li>
+<li><em>--oneshot:</em> use the prepared statement only once (no StatementId, not allowed with --resultset)</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
@@ -85,6 +85,9 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (resultSet) {
+      if (oneshot) {
+        throw new WurbelException("oneshot not allowed with resultset");
+      }
       setRemote(false);     // disable remoting
     }
 

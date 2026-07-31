@@ -109,7 +109,8 @@ documentation in their leading `@{comment ...}@` block. They fall into four grou
 These come in a **`Db…`** (low-level persistent object) flavor and a **`Pdo…`** (full PDO) flavor. All take a
 [wurblet-argument `<expression>`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#wurblet-arguments--the-query-mini-language)
 and share the options `--private`, `--append=<sqltext>` and `--classvar=<classvariables>`; the `Pdo…` variants add
-`--noif`.
+`--noif`. The four select wurblets additionally share `--oneshot`, which prepares the statement for a single use
+instead of caching it under a `StatementId`.
 
 | Wurblet                                                                                                                                                                     | Generates                                                                                  | Notable extra options                                                                                                                        |
 |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
