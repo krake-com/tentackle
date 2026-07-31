@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -63,10 +62,10 @@ import static org.testng.Assert.expectThrows;
  * <p>
  * A test table is created with a column set for each datatype.
  * The values are applied to an {@code INSERT} statement covering all columns, which verifies
- * that each value is applied to the statement and that the number of consumed question marks
- * matches the number of columns of the datatype.
- * The values are then inserted and selected again, once per datatype, which verifies that the
- * values are applied with a type accepted by the backend.
+ * that each value is applied to the statement, that the number of consumed question marks matches
+ * the number of columns of the datatype, and that the values are accepted by the backend.
+ * The row is then selected again, once per datatype, which verifies that the parameters of a
+ * where-clause are applied the same way as the inserted values.
  *
  * @author harald
  */
@@ -137,17 +136,16 @@ public class QueryParameterTest extends AbstractDbTest {
 
 
   /**
-   * The columns, the where-condition and the value for a single datatype.
+   * The columns, the where-condition, and the value for a single datatype.
    *
    * @param columns the comma separated column names
    * @param placeholders the question marks, one per column
    * @param columnCount the number of columns of the datatype
    * @param condition the where-condition, null if the datatype cannot be compared by the backend
-   * @param blob true if at least one column is a BLOB
    * @param value the value
    */
   private record TestCase(String columns, String placeholders, int columnCount,
-                          String condition, boolean blob, Object value) { }
+                          String condition, Object value) { }
 
 
   private final List<TestCase> testCases = new ArrayList<>();
@@ -168,7 +166,6 @@ public class QueryParameterTest extends AbstractDbTest {
       StringJoiner columns = new StringJoiner(", ");
       StringJoiner placeholders = new StringJoiner(", ");
       StringJoiner condition = new StringJoiner(" AND ");
-      boolean blob = false;
       boolean comparable = true;
 
       for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
@@ -182,14 +179,12 @@ public class QueryParameterTest extends AbstractDbTest {
         columns.add(columnName);
         placeholders.add("?");
         condition.add(columnName + " = ?");
-        blob |= sqlType == SqlType.BLOB;
-        // LOBs are not comparable and the CLOB column of an I18NText is null as long as
-        // the text fits into the VARCHAR column
-        comparable &= sqlType != SqlType.BLOB && sqlType != SqlType.CLOB;
+        // the CLOB column of an I18NText is null as long as the text fits into the VARCHAR column
+        comparable &= sqlType != SqlType.CLOB;
       }
 
       testCases.add(new TestCase(columns.toString(), placeholders.toString(), columnCount,
-                                 comparable ? condition.toString() : null, blob, value));
+                                 comparable ? condition.toString() : null, value));
     }
 
     ddl.append(backend.sqlCreateTableClosing(TABLE_NAME, null));
@@ -201,35 +196,28 @@ public class QueryParameterTest extends AbstractDbTest {
 
 
   /**
-   * Applies a value of each predefined datatype and verifies that all question marks are consumed.
+   * Inserts a value of each predefined datatype and verifies that all question marks are consumed.
    */
   @Test
   public void testApplyAllPredefinedDataTypes() {
     Db db = getSession();
-    Query query = createInsertQuery(testCase -> true);
+    Query insert = createInsertQuery();
     int columnCount = testCases.stream().mapToInt(TestCase::columnCount).sum();
 
-    try (PreparedStatementWrapper st = db.createPreparedStatement(query::buildInnerSql)) {
-      assertEquals(query.applyParameters(st, 1), columnCount + 1, "wrong number of applied parameters");
+    try (PreparedStatementWrapper st = db.createPreparedStatement(insert::buildInnerSql)) {
+      assertEquals(insert.applyParameters(st, 1), columnCount + 1, "wrong number of applied parameters");
       assertEquals(st.getParameters().size(), columnCount, "not all parameters applied");
-      st.consume();    // don't execute: BLOBs are mapped to large objects by some backends
+      assertEquals(st.executeUpdate(), 1);
     }
   }
 
 
   /**
-   * Inserts a value of each predefined datatype and selects the row again by each comparable datatype.
+   * Selects the inserted row by each comparable datatype.
    */
   @Test(dependsOnMethods = "testApplyAllPredefinedDataTypes")
   public void testSelectByAllComparableDataTypes() {
     Db db = getSession();
-    // BLOB columns are left out: they are mapped to large objects by some backends (postgres, for example)
-    Query insert = createInsertQuery(testCase -> !testCase.blob());
-
-    try (PreparedStatementWrapper st = db.createPreparedStatement(insert::buildInnerSql)) {
-      insert.applyParameters(st, 1);
-      assertEquals(st.executeUpdate(), 1);
-    }
 
     for (TestCase testCase : testCases) {
       if (testCase.condition() != null) {
@@ -254,27 +242,22 @@ public class QueryParameterTest extends AbstractDbTest {
 
 
   /**
-   * Creates the INSERT query for the accepted test cases.
+   * Creates the INSERT query for all test cases.
    *
-   * @param filter the test case filter
    * @return the query
    */
-  private Query createInsertQuery(Predicate<TestCase> filter) {
+  private Query createInsertQuery() {
     StringJoiner columns = new StringJoiner(", ");
     StringJoiner placeholders = new StringJoiner(", ");
     Query query = new Query();
 
     for (TestCase testCase : testCases) {
-      if (filter.test(testCase)) {
-        columns.add(testCase.columns());
-        placeholders.add(testCase.placeholders());
-      }
+      columns.add(testCase.columns());
+      placeholders.add(testCase.placeholders());
     }
     query.add("INSERT INTO " + TABLE_NAME + " (" + columns + ") VALUES (" + placeholders + ")");
     for (TestCase testCase : testCases) {
-      if (filter.test(testCase)) {
-        query.add("", testCase.value());
-      }
+      query.add("", testCase.value());
     }
     return query;
   }

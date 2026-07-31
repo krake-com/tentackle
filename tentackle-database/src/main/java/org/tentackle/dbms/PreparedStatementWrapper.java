@@ -1228,7 +1228,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
    * The implementation translates the Binary into an InputStream and invokes
-   * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
+   * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param b the parameter value, null if the value should be set to SQL NULL
@@ -1242,7 +1242,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {
-        getStatement().setBlob(ep, b.getInputStream(), b.getLength());
+        // notice: setBlob would create a large object on backends mapping BLOB to a plain binary
+        // type such as BYTEA (postgres), BYTE (informix) or VARBINARY (mssql)
+        getStatement().setBinaryStream(ep, b.getInputStream(), b.getLength());
       }
       rememberParameter(ep, b);
     }
@@ -1256,7 +1258,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
    * The implementation translates the Binary into an InputStream and invokes
-   * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
+   * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param b the parameter value, null if the value should be set to SQL NULL
@@ -1270,7 +1272,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {
-        getStatement().setBlob(ep, b.getInputStream(), b.getLength());
+        // notice: setBlob would create a large object on backends mapping BLOB to a plain binary
+        // type such as BYTEA (postgres), BYTE (informix) or VARBINARY (mssql)
+        getStatement().setBinaryStream(ep, b.getInputStream(), b.getLength());
       }
       rememberParameter(ep, b);
     }

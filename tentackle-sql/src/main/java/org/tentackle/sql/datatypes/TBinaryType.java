@@ -80,7 +80,9 @@ public class TBinaryType extends AbstractDataType<TBinary<?>> {
       statement.setNull(pos, Types.LONGVARBINARY);
     }
     else {
-      statement.setBlob(pos, object.getInputStream(), object.getLength());
+      // notice: setBlob would create a large object on backends mapping BLOB to a plain binary
+      // type such as BYTEA (postgres), BYTE (informix) or VARBINARY (mssql)
+      statement.setBinaryStream(pos, object.getInputStream(), object.getLength());
     }
     return new Object[] { object };
   }
