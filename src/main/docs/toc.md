@@ -56,6 +56,7 @@ the [Index](./index.md).
 - [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
+- [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.
 
 ## Remoting
 

@@ -226,6 +226,10 @@ When several backends could match the same URL (e.g. `Oracle` and the deprecated
 URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. Backends marked
 `isDeprecated()` are excluded from `BackendFactory.getAllBackends()`.
 
+Oracle deviates from the other products far enough to warrant its own document —
+see [The Oracle Backend](oracle.md), most notably for how filtered indexes are emulated and what that means for
+the query optimizer.
+
 ---
 
 ## How It Fits Together
@@ -311,6 +315,7 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 
 ## Related Documentation
 
+- [The Oracle Backend](oracle.md) — the peculiarities of Oracle: emulated filtered indexes, virtual index columns, empty strings and more.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism that discovers backends and data types.

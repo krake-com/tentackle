@@ -101,6 +101,7 @@ nav:
       - The Query DSL: query-dsl.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
+      - The Oracle Backend: oracle.md
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md

@@ -21,6 +21,11 @@ package org.tentackle.sql.backends;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.metadata.IndexColumnMetaData;
+import org.tentackle.sql.metadata.IndexMetaData;
+import org.tentackle.sql.metadata.OracleIndexColumnMetaData;
+import org.tentackle.sql.metadata.OracleIndexMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
 
 /**
  * Backend for Oracle versions 12 or newer.
@@ -29,6 +34,15 @@ import org.tentackle.sql.BackendException;
  */
 @Service(Backend.class)
 public class Oracle extends Oracle8 {
+
+  /** leading part of the CASE-expression emulating a filtered index. */
+  private static final String SQL_CASE_WHEN = "CASE WHEN (";
+
+  /** middle part of the CASE-expression emulating a filtered index. */
+  private static final String SQL_CASE_THEN = ") THEN ";
+
+  /** trailing part of the CASE-expression emulating a filtered index. */
+  private static final String SQL_CASE_END = " END";
 
   private static final String SQL_FETCHNEXT_1 = " FETCH NEXT ";
   private static final String SQL_FETCHNEXT_2 = " ROWS ONLY";
@@ -78,6 +92,59 @@ public class Oracle extends Oracle8 {
     if (limit > 0) {
       sqlBuilder.append(SQL_FETCHNEXT_PAR);
     }
+  }
+
+  @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return true;
+  }
+
+  @Override
+  public boolean isFilteredIndexSupported() {
+    // emulated by a function-based index, see sqlCreateIndex
+    return true;
+  }
+
+  @Override
+  public IndexMetaData createIndexMetaData(TableMetaData tableMetaData) {
+    return new OracleIndexMetaData(tableMetaData);
+  }
+
+  @Override
+  public IndexColumnMetaData createIndexColumnMetaData(IndexMetaData indexMetaData) {
+    return new OracleIndexColumnMetaData(indexMetaData);
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Oracle does not support {@code CREATE INDEX ... WHERE <condition>}.
+   * A filtered index is therefore emulated by a function-based index wrapping each
+   * index column into a {@code CASE WHEN <condition> THEN <column> END} expression.
+   * Rows not matching the condition get an all-NULL key and oracle does not store
+   * all-NULL keys, which gives exactly the semantics of a filtered (partial) index.
+   * <p>
+   * Notice that the query optimizer will only consider such an index if the query
+   * contains the very same CASE-expression. See the
+   * <a href="https://tentackle.org/oracle/">oracle backend documentation</a>.
+   */
+  @Override
+  public String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition,
+                               String... columnNames) {
+    if (filterCondition != null) {
+      String[] caseColumnNames = new String[columnNames.length];
+      for (int ndx = 0; ndx < columnNames.length; ndx++) {
+        String columnName = columnNames[ndx];
+        String descending = "";
+        if (columnName.startsWith("-")) {   // keep the marker interpreted by AbstractBackend
+          columnName = columnName.substring(1);
+          descending = "-";
+        }
+        caseColumnNames[ndx] = descending + SQL_CASE_WHEN + filterCondition + SQL_CASE_THEN + columnName + SQL_CASE_END;
+      }
+      return super.sqlCreateIndex(tableName, indexName, unique, null, caseColumnNames);
+    }
+    return super.sqlCreateIndex(tableName, indexName, unique, null, columnNames);
   }
 
   @Override
