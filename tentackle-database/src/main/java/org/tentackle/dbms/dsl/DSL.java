@@ -49,7 +49,7 @@ import java.util.Objects;
  * DSL-wurblet is a better choice since it automatically keeps the
  * generated constants in sync with the model:
  * <pre>
- *   // @wurblet dsl DSL Customer id name turnover
+ *   // &#64;wurblet dsl DSL Customer id name turnover
  * </pre>
  * The queries are then built and executed as follows:
  * <pre>
