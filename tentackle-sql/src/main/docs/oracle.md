@@ -81,11 +81,11 @@ Oracle will **not** match that against the `CASE`-based index. Consequently:
 Whenever an index is not a plain list of columns, Oracle materializes a hidden, system-generated virtual column
 for it. This affects three cases:
 
-| Model                            | What Oracle really creates                         |
-|----------------------------------|----------------------------------------------------|
-| `index x := code \| type = 0`    | index over `CASE WHEN ("TYPE"=0) THEN "CODE" END`  |
-| `index x := upper(name)`         | index over `UPPER("NAME")`                         |
-| `index x := -code`               | index over `"CODE"` (descending indexes are function-based in Oracle) |
+| Model                         | What Oracle really creates                                            |
+|-------------------------------|-----------------------------------------------------------------------|
+| `index x := code \| type = 0` | index over `CASE WHEN ("TYPE"=0) THEN "CODE" END`                     |
+| `index x := upper(name)`      | index over `UPPER("NAME")`                                            |
+| `index x := -code`            | index over `"CODE"` (descending indexes are function-based in Oracle) |
 
 `DatabaseMetaData.getIndexInfo()` then reports:
 
@@ -125,6 +125,53 @@ compare its output with the model — that is where the round trip is decided.
 
 ---
 
+## Column Defaults Are Stored as Source Text
+
+Oracle does not store a column default as a value, but as the **verbatim source text** of the expression, in the
+`LONG` column `ALL_TAB_COLUMNS.DATA_DEFAULT` — and that text includes the whitespace up to the token following
+the default value. Since Oracle wants `DEFAULT` *before* `NOT NULL`, Tentackle generates:
+
+```sql
+CREATE TABLE td_kafkasndq (
+    ...
+    serial NUMBER(19) DEFAULT 1 NOT NULL -- object serial
+);
+```
+
+which Oracle stores — and `DatabaseMetaData.getColumns()` reports in `COLUMN_DEF` — as `"1 "`, with a trailing
+blank. Written as a separate statement, the same default ends at the statement terminator and is stored as `"1"`:
+
+```sql
+ALTER TABLE td_kafkasndq MODIFY serial DEFAULT 1;
+```
+
+Compared literally, `"1 "` differs from the model's `1`, so the migrator would report the default as changed and
+emit exactly that `MODIFY` statement for a table it had just created itself. Executing it "fixes" the table only
+because it rewrites the stored text without the blank.
+
+[`OracleColumnMetaData`](../java/org/tentackle/sql/metadata/OracleColumnMetaData.java) therefore trims the
+default before it is compared. Only the text *outside* the quotes is removed, so the single blank Oracle uses for
+the empty string (see below) survives as `' '`.
+
+Every column that is `NOT NULL` **and** has a default is affected — most notably `serial`, which every entity
+carries.
+
+### Defaults that are not written the way the model spells them
+
+Two model values do not reach the DDL unchanged, because `valueToLiteral` rewrites them for Oracle:
+
+| Model            | DDL           | Reason                                                                            |
+|------------------|---------------|-----------------------------------------------------------------------------------|
+| `[default ""]`   | `DEFAULT ' '` | Oracle cannot distinguish `''` from `NULL`, so the empty string is a single blank |
+| `[default true]` | `DEFAULT 1`   | booleans are `NUMBER(1)`                                                          |
+
+Comparing the model value with the stored text directly would therefore fail — `""` against `' '`, `TRUE` against
+`1` — and unlike the trailing-blank case above, re-applying the `MODIFY` would *not* settle it: the mismatch
+would be reported on every single migration run, forever. `Oracle8.isDefaultEqual()` applies the same mapping to
+the model value before comparing.
+
+---
+
 ## Other Oracle Peculiarities
 
 These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle`):
@@ -139,8 +186,9 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
   are prefixed `tmp_` instead of `_tmp` (`isTemporaryName`). Identifiers containing `$` are treated as reserved.
 - **Booleans are `NUMBER(1)`.** So are `BIT` and `TINYINT`; `SMALLINT`/`INTEGER`/`BIGINT` become `NUMBER(5|10|19)`.
   `valueToLiteral` renders `true`/`false` as `1`/`0`.
-- **`DEFAULT` comes before `NOT NULL`** in a column declaration, and there is no real `DROP DEFAULT` — Tentackle
-  emits `DEFAULT NULL`, which is functionally but not structurally equivalent
+- **`DEFAULT` comes before `NOT NULL`** in a column declaration (see
+  [Column Defaults Are Stored as Source Text](#column-defaults-are-stored-as-source-text)), and there is no real
+  `DROP DEFAULT` — Tentackle emits `DEFAULT NULL`, which is functionally but not structurally equivalent
   (see [`OracleColumnMetaData`](../java/org/tentackle/sql/metadata/OracleColumnMetaData.java)).
 - **`ALTER TABLE` needs parentheses** — `ADD (...)` / `MODIFY (...)` instead of `ADD COLUMN` / `ALTER COLUMN`.
 - **An extra commit is required** (`isExtraCommitRequired()`), and `SELECT` without a table needs `FROM DUAL`.

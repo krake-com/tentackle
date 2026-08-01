@@ -21,8 +21,17 @@ package org.tentackle.sql.backends;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import org.tentackle.sql.SqlType;
+import org.tentackle.sql.metadata.ModelMetaData;
+import org.tentackle.sql.metadata.OracleColumnMetaData;
 import org.tentackle.sql.metadata.OracleIndexColumnMetaData;
 import org.tentackle.sql.metadata.OracleIndexColumnMetaData.ColumnExpression;
+import org.tentackle.sql.metadata.TableMetaData;
+
+import java.lang.reflect.Proxy;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Types;
 
 /**
  * Tests for the oracle backend.
@@ -110,6 +119,107 @@ public class OracleTest {
     expression = OracleIndexColumnMetaData.parseColumnExpression("CASEID");
     Assert.assertNull(expression.filterCondition());
     Assert.assertEquals(expression.columnName(), "caseid");
+  }
+
+
+  @Test
+  public void testColumnDefault() {
+    Oracle oracle = new Oracle();
+
+    // "serial NUMBER(19) DEFAULT 1 NOT NULL" is reported as "1 " because oracle stores
+    // the default as the verbatim source text, up to the token following the default value
+    OracleColumnMetaData column = createColumnMetaData(oracle, "1 ");
+    Assert.assertEquals(column.getDefaultValue(), "1");
+    Assert.assertTrue(oracle.isDefaultEqual(column, SqlType.BIGINT, 1L),
+                      "the trailing blank must not be mistaken for a changed default");
+
+    // the single blank oracle uses instead of the empty string keeps its quotes
+    Assert.assertEquals(createColumnMetaData(oracle, "' ' ").getDefaultValue(), "' '");
+
+    // no default at all
+    Assert.assertNull(createColumnMetaData(oracle, null).getDefaultValue());
+    Assert.assertNull(createColumnMetaData(oracle, "   ").getDefaultValue());
+
+    // the NULL literals still drop the default, even with trailing whitespace
+    Assert.assertNull(createColumnMetaData(oracle, "NULL ").getDefaultValue());
+    Assert.assertNull(createColumnMetaData(oracle, "(null)\n").getDefaultValue());
+  }
+
+
+  @Test
+  public void testMappedColumnDefault() {
+    Oracle oracle = new Oracle();
+
+    // oracle cannot store the empty string: the DDL says DEFAULT ' ' and oracle reports "' '"
+    OracleColumnMetaData column = createColumnMetaData(oracle, "' '");
+    Assert.assertTrue(oracle.isDefaultEqual(column, SqlType.VARCHAR, ""),
+                      "the empty string must match the single blank oracle stores for it");
+    // an explicitly declared single blank is the very same default
+    Assert.assertTrue(oracle.isDefaultEqual(column, SqlType.VARCHAR, " "));
+    Assert.assertFalse(oracle.isDefaultEqual(column, SqlType.VARCHAR, "x"));
+
+    // a non-empty string is unaffected by the mapping
+    Assert.assertTrue(oracle.isDefaultEqual(createColumnMetaData(oracle, "'abc'"), SqlType.VARCHAR, "abc"));
+
+    // booleans are rendered as 1/0 by valueToLiteral
+    Assert.assertTrue(oracle.isDefaultEqual(createColumnMetaData(oracle, "1 "), SqlType.BIT, true),
+                      "TRUE must match the 1 oracle stores for it");
+    Assert.assertTrue(oracle.isDefaultEqual(createColumnMetaData(oracle, "0 "), SqlType.BIT, false));
+    Assert.assertFalse(oracle.isDefaultEqual(createColumnMetaData(oracle, "0"), SqlType.BIT, true));
+
+    // no default at all
+    Assert.assertTrue(oracle.isDefaultEqual(createColumnMetaData(oracle, null), SqlType.VARCHAR, null));
+    Assert.assertFalse(oracle.isDefaultEqual(createColumnMetaData(oracle, null), SqlType.VARCHAR, ""));
+  }
+
+
+  /**
+   * Creates the column metadata for a NUMBER(19) NOT NULL column with a given default.
+   *
+   * @param backend the oracle backend
+   * @param defaultValue the default value as reported by {@code getColumns}, null if none
+   * @return the column metadata
+   */
+  private OracleColumnMetaData createColumnMetaData(Oracle backend, String defaultValue) {
+    TableMetaData tableMetaData = new TableMetaData(new ModelMetaData(backend, new DatabaseMetaData[0], null), "foo");
+    OracleColumnMetaData column = (OracleColumnMetaData) backend.createColumnMetaData(tableMetaData);
+    try {
+      column.setupColumnFromMetaData(columnResultSet(defaultValue));
+    }
+    catch (Exception ex) {
+      throw new AssertionError("cannot set up the column metadata", ex);
+    }
+    return column;
+  }
+
+  /**
+   * Creates a result set as returned by {@link DatabaseMetaData#getColumns} for a single column.
+   *
+   * @param defaultValue the default value, null if none
+   * @return the result set
+   */
+  private ResultSet columnResultSet(String defaultValue) {
+    return (ResultSet) Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[] { ResultSet.class },
+        (proxy, method, args) -> switch (method.getName()) {
+          case "getString" -> switch ((String) args[0]) {
+            case "COLUMN_NAME" -> "SERIAL";
+            case "TYPE_NAME" -> "NUMBER";
+            case "COLUMN_DEF" -> defaultValue;
+            default -> null;
+          };
+          case "getInt" -> switch ((String) args[0]) {
+            case "COLUMN_SIZE" -> 19;
+            case "NULLABLE" -> DatabaseMetaData.columnNoNulls;
+            case "DATA_TYPE" -> Types.BIGINT;
+            default -> 0;
+          };
+          case "getShort" -> (short) 0;
+          case "hashCode" -> System.identityHashCode(proxy);
+          case "equals" -> proxy == args[0];
+          case "toString" -> "ResultSet[serial]";
+          default -> null;
+        });
   }
 
 }
