@@ -95,6 +95,7 @@ nav:
       - Cursors — Streaming Large Result Sets: cursors.md
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
+      - Table Names — Schemas & Prefixes: table-names.md
       - Modification Tracking: modification-tracking.md
       - Backend Properties: backend-properties.md
       - Tentackle Database: database.md

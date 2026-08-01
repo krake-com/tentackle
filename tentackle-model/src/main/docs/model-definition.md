@@ -78,7 +78,7 @@ The trailing semicolon is optional. Leading and trailing whitespace around key a
 |---------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------|
 | `name`        | string (often `$classname`)                                           | Entity name (class simple name). Must be unique in the model.                |
 | `id`          | integer (often `$classid`)                                            | Unique numeric class ID (non-abstract classes only).                         |
-| `table`       | string (often `$tablename`)                                           | Database table name (if applicable). May include schema: `schema.tablename`. |
+| `table`       | string (often `$tablename`)                                           | Database table name (if applicable). May include schema: `schema.tablename` — see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md). |
 | `alias`       | string                                                                | Short table alias used in SQL joins. Auto-generated if omitted.              |
 | `integrity`   | see [Integrity Modes](#integrity-modes)                               | Referential integrity strategy.                                              |
 | `comment`     | string                                                                | optional entity description (overriding any previous comment)                |

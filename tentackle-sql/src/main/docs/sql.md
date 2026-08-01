@@ -316,6 +316,7 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 ## Related Documentation
 
 - [The Oracle Backend](oracle.md) — the peculiarities of Oracle: emulated filtered indexes, virtual index columns, empty strings and more.
+- [Table Names](../../../../tentackle-session/src/main/docs/table-names.md) — schema mapping and table prefixes for the backends whose `isSchemaSupported()` returns `false`.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.
 - [Services / ServiceFinder](../../../../tentackle-common/src/main/docs/services.md) — the SPI mechanism that discovers backends and data types.

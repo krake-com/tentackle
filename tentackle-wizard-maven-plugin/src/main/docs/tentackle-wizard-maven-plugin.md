@@ -85,7 +85,9 @@ All profiles (for both `pdo` and `operation`) share these elements:
 - `pdoInterface` (optional): the super PDO interface, defaults to `PersistentDomainObject`.
 - `minClassId` (required) / `maxClassId` (optional): the range of class IDs reserved for this
   profile. IDs below 100 are reserved for Tentackle and rejected. See *Class IDs* below.
-- `tablePrefix` (optional): a prefix prepended to table names entered in the wizard.
+- `tablePrefix` (optional): a prefix prepended to table names entered in the wizard, typically a schema
+  such as `md.`. This ends up in the model and is **not** the same as `@TableName.prefix` (see
+  [Table Names](../../../../tentackle-session/src/main/docs/table-names.md)).
 
 `OperationProfile` adds:
 
@@ -158,7 +160,8 @@ Common parameters (valid in both modes):
 - `user` (required) / `password`: the backend credentials.
 - `maxLinesInStringLiteral`: caps the number of lines emitted in generated multi-line string literals.
 - `mapSchemas` (`tentackle.mapSchemas`): map schema names to flat table names in the generated SQL
-  `SELECT` statements.
+  `SELECT` statements. Set it to the same value as everywhere else in the project — see
+  [Table Names](../../../../tentackle-session/src/main/docs/table-names.md).
 
 If no backend can be reached, the goal fails with a clear message.
 

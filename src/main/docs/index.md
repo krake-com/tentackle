@@ -167,6 +167,7 @@ topic-grouped listing of every document, see the
 
 - **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
+- **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md)
@@ -186,6 +187,7 @@ topic-grouped listing of every document, see the
 
 - **Technical & scientific applications** — [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)
 - **Tables / tree-tables (configuration, cell types, layouts)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+- **Table names (`@TableName`, schemas, prefixes)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)

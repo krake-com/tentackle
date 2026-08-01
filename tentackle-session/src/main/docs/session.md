@@ -208,6 +208,7 @@ These annotations let the persistence layer examine the generated model by refle
 - [`@TableName`](../java/org/tentackle/session/TableName.java) — the database table name for a PDO, with
   build-time options `mapSchema` (replace dots by underscores) and `prefix` (configurable via the Wurbelizer
   plugin's `wurbletProperties`, e.g. `tablePrefix`), to retarget schemas/tables without touching the model.
+  See [Table Names](table-names.md) for the full picture, including the corresponding maven parameters.
 
 [`SessionValidationUtilities`](../java/org/tentackle/session/SessionValidationUtilities.java) (a `@Service`
 overriding the core `ValidationUtilities`) uses the `@Persistent` ordinal so validators fire in priority plus

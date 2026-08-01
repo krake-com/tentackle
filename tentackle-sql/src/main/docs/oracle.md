@@ -179,7 +179,9 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **The empty string is `NULL`.** Oracle cannot distinguish `''` from `NULL`, so `getEmptyString()` returns a
   single blank. An attribute set to `""` is stored — and read back — as `" "`.
 - **No schemas.** `isSchemaSupported()` returns `false`: in Oracle a "schema" is a user, so Tentackle does not
-  generate schema-qualified DDL.
+  generate schema-qualified DDL. A model using schemas must map them — see
+  [Table Names](../../../../tentackle-session/src/main/docs/table-names.md), which applies to MySQL and
+  MariaDB as well.
 - **30-character identifiers.** `getMaxNameLength()` returns 30 for every kind of name. Long entity or index names
   in the model will be rejected at build time.
 - **No leading underscore.** Identifiers must not start with `_`, so temporary objects created during a migration
@@ -200,6 +202,8 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 ## Related Documentation
 
 - [Tentackle SQL](sql.md) — the backend abstraction this backend implements.
+- [Table Names](../../../../tentackle-session/src/main/docs/table-names.md) — schema mapping and table
+  prefixes, required on Oracle because it has no usable schemas.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the index syntax, including
   filter conditions.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) —

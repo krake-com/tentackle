@@ -67,7 +67,9 @@ On top of that, `AbstractSqlMojo` adds the parameters shared by all SQL goals.
   the `[defaults ...]` block in a model file).
 - `entityAliases` (`tentackle.entityAliases`): entity alias definitions.
 - `mapSchemas` (`tentackle.mapSchemas`): map schema-qualified table names to flat table names, for
-  backends that do not support schemas.
+  backends that do not support schemas (Oracle, MySQL, MariaDB, Informix). Must match the `mapSchema`
+  wurblet property that configures the runtime side — see
+  [Table Names](../../../../tentackle-session/src/main/docs/table-names.md).
 
 #### Backend selection
 
