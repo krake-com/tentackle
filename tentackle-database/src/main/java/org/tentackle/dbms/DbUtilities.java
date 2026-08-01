@@ -22,6 +22,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.BackendConfiguration;
@@ -41,6 +42,7 @@ import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 interface DbUtilitiesHolder {
@@ -71,6 +73,7 @@ public class DbUtilities {
 
 
   private ConnectionManager connectionManager;
+  private volatile String[] preloadDelegateClassNames;   // cached names of the preload candidates
 
   /**
    * Creates the db utitities.
@@ -169,6 +172,25 @@ public class DbUtilities {
   public Class<?> getServicedClass(Class<?> implementingClass) {
     // overridden in PersistenceUtilities
     return null;
+  }
+
+  /**
+   * Gets the names of the classes to preload the remote delegates for.<br>
+   * By default, these are the classes annotated with {@link PreloadRemoteDelegate}, collected
+   * at build time and looked up via the service API. The classes are not loaded.
+   *
+   * @return the class names, never null
+   * @see Db#preloadRemoteDelegates()
+   */
+  public String[] getPreloadDelegateClassNames() {
+    String[] classNames = preloadDelegateClassNames;
+    if (classNames == null) {
+      Set<String> names = ServiceFactory.getServiceFinder()
+                                        .findServiceConfigurations(PreloadRemoteDelegate.class.getName()).keySet();
+      classNames = names.toArray(new String[0]);
+      preloadDelegateClassNames = classNames;
+    }
+    return classNames;
   }
 
   /**

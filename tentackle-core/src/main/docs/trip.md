@@ -185,6 +185,31 @@ The Tentackle's [Session API](../../../../tentackle-session/src/main/docs/sessio
 When a session is closed, the remote session delegate is unregistered
 together with all other remote objects of the session.
 
+#### Returning several remote objects at once
+
+A remote method may also return an **array of `Remote` objects**. Each element is registered
+individually, exactly as a single `Remote` result would be, and the client receives an array
+of proxies:
+
+```java
+public interface MyService extends Remote {
+    Remote[] lookupServices(String[] names);   // one roundtrip for all of them
+}
+```
+
+Elements may be `null`, which allows the server to answer "no such remote object" for individual
+entries without failing the whole call. The elements join the returning delegate's tree, so they
+are unregistered together with it.
+
+This is what the session layer uses to
+[preload remote delegates](../../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates):
+on links with a high latency, fetching hundreds of delegates one by one is the dominating cost
+of the application startup.
+
+Notice that only arrays with a component type of `Remote` (or a subtype) are treated this way.
+Collections and `Object[]` are serialized as ordinary results, since scanning every list-shaped
+result for remote objects would slow down all other remote calls.
+
 ### Registry and RemoteLookup
 
 The `Registry` (`org.tentackle.trip.Registry`) is the server-side name/address lookup service. It maps:

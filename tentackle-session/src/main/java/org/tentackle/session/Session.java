@@ -505,6 +505,20 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   RemoteSession getRemoteSession();
 
   /**
+   * Preloads the remote delegates of the entities marked as preload candidates.
+   * <p>
+   * Remote sessions create the delegates lazily, one roundtrip per entity class.
+   * For applications with a large entity model running on links with a high latency,
+   * this may slow down the application startup substantially. Preloading fetches the delegates
+   * of all candidates in a single roundtrip.
+   * <p>
+   * Since not all sessions benefit from preloading, it is up to the application to decide
+   * per session whether to invoke this method. It is usually invoked right after the session
+   * has been created.
+   */
+  void preloadRemoteDelegates();
+
+  /**
    * Gets the connection url.
    *
    * @return the url

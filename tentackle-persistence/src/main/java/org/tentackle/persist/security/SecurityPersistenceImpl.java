@@ -23,6 +23,7 @@ import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
@@ -53,6 +54,7 @@ import java.util.Objects;
  * @author harald
  */
 @PersistentObjectService(Security.class)
+@PreloadRemoteDelegate
 public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, SecurityPersistenceImpl> implements SecurityPersistence {
 
   @Serial

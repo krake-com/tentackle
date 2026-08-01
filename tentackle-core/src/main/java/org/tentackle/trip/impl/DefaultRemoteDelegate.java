@@ -157,6 +157,14 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
 
 
   private Object processResult(Object result) {
+    if (result instanceof Remote[] remotes) {
+      // several remote objects returned in a single roundtrip
+      DelegateDescriptor[] descriptors = new DelegateDescriptor[remotes.length];
+      for (int i = 0; i < remotes.length; i++) {
+        descriptors[i] = remotes[i] == null ? null : (DelegateDescriptor) processResult(remotes[i]);
+      }
+      return descriptors;
+    }
     if (result instanceof Remote remote) {
       RemoteDelegate<Remote> delegate;
       UUID id = registry.lookup(remote);

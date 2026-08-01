@@ -22,6 +22,7 @@ package org.tentackle.i18n.pdo;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.i18n.pdo.trip.StoredBundleKeyRemoteDelegate;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
@@ -42,6 +43,7 @@ import java.util.Objects;
  * @author harald
  */
 @PersistentObjectService(StoredBundleKey.class)
+@PreloadRemoteDelegate
 public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<StoredBundleKey, StoredBundleKeyPersistenceImpl> implements StoredBundleKeyPersistence {
 
   @Serial

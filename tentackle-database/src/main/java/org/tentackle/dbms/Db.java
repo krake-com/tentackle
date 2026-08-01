@@ -23,6 +23,7 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.trip.DbRemoteDelegate;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.dbms.trip.RemoteDbConnection;
 import org.tentackle.dbms.trip.RemoteDbDelegate;
 import org.tentackle.dbms.trip.RemoteDbSession;
@@ -53,6 +54,7 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.BackendInfoFactory;
 import org.tentackle.sql.ScriptRunnerResult;
+import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
@@ -587,6 +589,8 @@ public class Db implements Session, Cloneable {
   private ReconnectionPolicy<Db> reconnectionPolicy;          // reconnection policy, null if none (default)
   private int batchSize;                                      // >1 if JDBC batching should be used for certain prepared statements
   private RemoteDbDelegate[] delegates;                       // the delegates per session (TRIP only)
+  private Map<String, RemoteDbDelegate> preloadedDelegates;   // preloaded delegates by classname, null if not preloaded
+  private boolean preloadRequested;                           // true if the application requested preloading
 
 
   /**
@@ -741,6 +745,10 @@ public class Db implements Session, Cloneable {
       cleanable = CLEANER.register(this, resources);
 
       registerSession();
+
+      if (preloadRequested) {
+        preloadRemoteDelegates();   // restore the preloaded delegates after re-open
+      }
 
       if (!isCloned()) {
         LOGGER.info("session {0} opened", this);
@@ -2669,6 +2677,7 @@ public class Db implements Session, Cloneable {
       // cloning a remote session involves creating an entire new session via open()!
       // notice that a remote session is always open (otherwise it wouldn't be remote ;-))
       delegates = null;
+      preloadedDelegates = null;    // but keep preloadRequested for re-open
       remoteTransaction = null;
     }
     else  {
@@ -2729,6 +2738,7 @@ public class Db implements Session, Cloneable {
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
       newDb.dispatcherRef = null;
+      newDb.preloadRequested = false;   // a clone is another session and must request preloading explicitly
 
       newDb.open(resources.conMgr);
 
@@ -2888,12 +2898,69 @@ public class Db implements Session, Cloneable {
 
     // check if delegate already fetched from TRIP-server
     if (delegates[delegateId] == null) {
-      assertOpen();
-      RemoteDbDelegate delegate = resources.rses.getRemoteDelegate(remoteClasses[delegateId].getName());
+      String className = remoteClasses[delegateId].getName();
+      // check if preloaded, else fetch it from the TRIP-server
+      RemoteDbDelegate delegate = preloadedDelegates == null ? null : preloadedDelegates.remove(className);
+      if (delegate == null) {
+        assertOpen();
+        delegate = resources.rses.getRemoteDelegate(className);
+      }
       delegates[delegateId] = delegate;
       return delegate;
     }
     return delegates[delegateId];
+  }
+
+
+  /**
+   * Preloads the remote delegates of all classes annotated with {@link PreloadRemoteDelegate}.
+   * <p>
+   * Remote delegates are created lazily, one roundtrip per class. For applications with a large
+   * entity model running on links with a high latency, this may slow down the application startup
+   * substantially. This method fetches the delegates of all preload candidates in a single roundtrip.
+   * <p>
+   * Since not all sessions benefit from preloading, it is up to the application to decide
+   * per session whether to invoke this method. It is usually invoked right after the session
+   * has been created. Preloading is remembered for this session, i.e., it is repeated
+   * whenever the session is re-opened (see {@link #reOpen()}). Cloned sessions, however,
+   * are sessions of their own and must request preloading explicitly.
+   * <p>
+   * Does nothing for local sessions or if the delegates are preloaded already.
+   *
+   * @see DbUtilities#getPreloadDelegateClassNames()
+   */
+  @Override
+  public void preloadRemoteDelegates() {
+    preloadRequested = true;
+    if (isRemote() && preloadedDelegates == null) {
+      assertOpen();
+      String[] classNames = DbUtilities.getInstance().getPreloadDelegateClassNames();
+      preloadedDelegates = new HashMap<>();
+      if (classNames.length > 0) {
+        Remote[] remoteDelegates = resources.rses.getRemoteDelegates(classNames);
+        for (int i = 0; i < classNames.length; i++) {
+          if (remoteDelegates[i] != null) {
+            preloadedDelegates.put(classNames[i], (RemoteDbDelegate) remoteDelegates[i]);
+          }
+          // else: no delegate on server side (already logged there)
+        }
+      }
+      LOGGER.info("{0} of {1} remote delegates preloaded for session {2}",
+                  preloadedDelegates.size(), classNames.length, this);
+    }
+  }
+
+
+  /**
+   * Gets the number of preloaded remote delegates not requested so far.<br>
+   * Once a preloaded delegate is requested via {@link #getRemoteDelegate(int)}, it is moved
+   * to the delegate array and no longer counted.
+   *
+   * @return the number of pending preloaded delegates, 0 if not preloaded at all
+   * @see #preloadRemoteDelegates()
+   */
+  public int getPreloadedDelegateCount() {
+    return preloadedDelegates == null ? 0 : preloadedDelegates.size();
   }
 
 

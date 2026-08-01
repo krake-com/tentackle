@@ -703,6 +703,22 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   @Override
+  public Remote[] getRemoteDelegates(String[] classnames) {
+    Remote[] delegates = new Remote[classnames.length];
+    for (int i = 0; i < classnames.length; i++) {
+      try {
+        delegates[i] = getRemoteDelegate(classnames[i]);
+      }
+      catch (RuntimeException rex) {
+        // leave null: preloading must never break the session
+        LOGGER.warning("cannot preload remote delegate for " + classnames[i], rex);
+      }
+    }
+    LOGGER.fine("{0} delegates preloaded for session={1}", delegates.length, this);
+    return delegates;
+  }
+
+  @Override
   public DbRemoteDelegate getRemoteDelegate() {
     try {
       return createRemoteDelegate(DbRemoteDelegate.class, DbRemoteDelegateImpl.class, Db.class, null);
