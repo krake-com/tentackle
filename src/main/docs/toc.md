@@ -53,6 +53,7 @@ the [Index](./index.md).
 - [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
 - [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `backend.properties` reference: connection, server, and client configuration keys.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
+- [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 

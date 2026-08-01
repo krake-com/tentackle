@@ -22,6 +22,7 @@
 module org.tentackle.database {
 
   exports org.tentackle.dbms;
+  exports org.tentackle.dbms.dsl;
   exports org.tentackle.dbms.prefs;
   exports org.tentackle.dbms.prefs.trip;
   exports org.tentackle.dbms.trip;

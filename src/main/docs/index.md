@@ -55,6 +55,7 @@ topic-grouped listing of every document, see the
 - **Domain key (business identity, `findByUniqueDomainKey`)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Domain logic layer** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
+- **DSL (typed SQL projection queries)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md)
 - **DTO (Data Transfer Object) generation** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md)
 
 ## E
@@ -136,6 +137,7 @@ topic-grouped listing of every document, see the
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Projection queries (plain data instead of PDOs)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
 - **Preferenzr (preferences editor)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md#preferenzr--browsing-and-editing-the-store)
@@ -143,6 +145,7 @@ topic-grouped listing of every document, see the
 
 ## Q
 
+- **Query DSL (typed `SELECT`s, aggregates, joins)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md)
 - **QUIC transport** — [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Quickstart** — [Quickstart](./quickstart.md)
 

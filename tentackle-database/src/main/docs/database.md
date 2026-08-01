@@ -146,6 +146,9 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
   All predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md) are accepted as parameters, as well as
   application-specific types with a registered `DataType`. Notice that some datatypes span more than one column
   (`BMoney` or `ZonedDateTime`, for example) and thus require a matching number of question marks.
+- The [`org.tentackle.dbms.dsl`](../java/org/tentackle/dbms/dsl/DSL.java) package builds such a `Query` from
+  typed expressions instead of hand-written SQL strings, and counts the columns of multi-column datatypes for
+  you — see [The Query DSL](./query-dsl.md).
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
   integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
@@ -272,6 +275,7 @@ carries the master modification serial back to clients.
 | Package | Contents |
 |---------|----------|
 | `org.tentackle.dbms` | The engine: `Db`, `AbstractDbObject`/`AbstractDbOperation`, connection managers and `ManagedConnection`, pools and factories, id-sources, statement/query/result wrappers, transactions, batching, modification tracking + table serials, modification logging, persistence visitors, diagnostics/statistics and the SPI utility replacements. |
+| `org.tentackle.dbms.dsl` | The [query DSL](./query-dsl.md): typed tables, columns, expressions and conditions rendered to the SQL of a `Query`. |
 | `org.tentackle.dbms.prefs` (+ `prefs.trip`) | Database-backed `java.util.prefs.Preferences` and its remoting. |
 | `org.tentackle.dbms.trip` | The TRIP server, remote connection/session and the remote delegates that make the layer location-transparent. |
 | `org.tentackle.dbms.service` | The [`Hook`](../java/org/tentackle/dbms/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
@@ -333,6 +337,7 @@ plug into.
 ## Related Documentation
 
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — the `Session`/transaction/tracking contracts this module implements.
+- [The Query DSL](./query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the dialect-aware backend that builds the executed SQL.
 - [Persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) — the PDO-aware layer that builds on `AbstractDbObject`/`Db`.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain object pattern at the top of the stack.

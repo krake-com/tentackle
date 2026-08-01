@@ -64,8 +64,9 @@ genuinely custom logic outside the guarded regions.
 
 [`DbModelWurblet`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java) extends
 [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base) and is the
-base class for every wurblet in this module (pulled in via
-[`header.incl`](../wurblets/org/tentackle/persist/wurblet/header.incl)'s `@{extends DbModelWurblet}`). On top of
+base class of the query wurblets in this module (pulled in via
+[`header.incl`](../wurblets/org/tentackle/persist/wurblet/header.incl)'s `@{extends DbModelWurblet}`; the
+[`DSL` wurblet](#the-dsl-wurblet) is the exception, as it takes no query expression). On top of
 the model loading and target resolution it inherits, it adds:
 
 - **Tracking and context options** parsed in `run()`: `--context=<key>` (domain-context column),
@@ -103,6 +104,55 @@ documentation in their leading `@{comment ...}@` block. They fall into four grou
 | [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl) | The per-class `PersistentObjectClassVariables` holder (table alias, statement-id registry, super/sub-class wiring, eager relations) shared by all instances of the entity. |
 | [`MethodsImpl`](../wurblets/org/tentackle/persist/wurblet/MethodsImpl.wrbl)       | Getter/setter and other method *implementations*. Options: `--noif` (no interface ⇒ no `@Override`), `--noudk`, `--noisroot`, `--mock`.                                    |
 | [`MethodCache`](../wurblets/org/tentackle/persist/wurblet/MethodCache.wrbl)       | The `PdoMethodCache` for an embedded entity.                                                                                                                               |
+| [`DSL`](../wurblets/org/tentackle/persist/wurblet/DSL.wrbl)                       | The table- and field constants of the [query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md). Options: `--public`, `--protected`, `--prefix[=<prefix>]`, `--table=<constant>`, `--alias=<alias>`, `--noalias`. |
+
+#### The DSL wurblet
+
+[`DSL`](../wurblets/org/tentackle/persist/wurblet/DSL.wrbl) generates the constants a
+[query-DSL](../../../../tentackle-database/src/main/docs/query-dsl.md) query is built from — the table and
+the typed columns:
+
+```java
+  // @wurblet dsl DSL Customer id name turnover active
+```
+
+```java
+  /** the query DSL table of entity Customer. */
+  private static final Table CUSTOMER = DSL.table("customer", "cu");
+
+  /** the query DSL field for 'id', column 'id'. */
+  private static final Field<Long> ID = CUSTOMER.field("id", Long.class);
+
+  /** the query DSL field for 'name', column 'name'. */
+  private static final Field<String> NAME = CUSTOMER.field("name", String.class);
+  ...
+```
+
+It differs from the other wurblets in two ways:
+
+- **The entity is the first argument**, not the model of the source file. Projection queries are usually written
+  where the data is *used* — a report, an export, an operation — not in the entity's own classes, and a join query
+  needs the declarations of several entities in the same class. The remaining arguments name the attributes;
+  without any, the fields for all attributes mapped by the entity are generated.
+- **It takes no query expression**, which is why it extends `ModelWurblet` directly instead of `DbModelWurblet`.
+
+Everything else follows from the model: the table name and alias, the column name of each attribute, and the java
+type of its *effective* [`DataType`](../../../../tentackle-sql/src/main/docs/sql.md#datatype) — the wrapper for
+primitives (the values of a query are objects), the external type for `Convertible`s, and the variant for types
+such as the large string. Columns whose java type is generic (`Binary<T>`) become untyped fields, since there is
+no class literal for them. Rename a column in the model and the constant follows on the next build; drop an
+attribute and the block stops compiling where it is used.
+
+Because the constants are ordinary java constants, they live wherever the developer puts the anchor. Generating
+the declarations of two entities into one class needs `--prefix` (or `--table=`) to keep the names apart:
+
+```java
+  // @wurblet customer DSL --prefix Customer id name
+  // @wurblet order DSL --prefix Ordr customerId net
+```
+
+The generated code refers to `DSL`, `Table` and `Field` from `org.tentackle.dbms.dsl` — and to
+`org.tentackle.sql.DataTypeFactory` if a datatype has a variant — so the class must import them.
 
 ### Query — select, update, delete, reference checks
 

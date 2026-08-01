@@ -61,6 +61,10 @@ import java.util.UUID;
  * {@code SELECT} via add() <em>before</em> execution.
  * The {@code SELECT}, however, and {@code LIMIT/OFFSET} clauses are provided by the query automatically,
  * because they are backend-specific.
+ * <p>
+ * Instead of writing the SQL-code by hand, projection queries can be built from typed expressions
+ * by the {@link org.tentackle.dbms.dsl.DSL}, which creates a {@code Query} for the resulting
+ * {@link org.tentackle.dbms.dsl.Select}.
  *
  * @author harald
  */

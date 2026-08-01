@@ -98,6 +98,7 @@ nav:
       - Modification Tracking: modification-tracking.md
       - Backend Properties: backend-properties.md
       - Tentackle Database: database.md
+      - The Query DSL: query-dsl.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
   - Remoting:
