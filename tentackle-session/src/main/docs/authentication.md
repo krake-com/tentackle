@@ -64,7 +64,7 @@ Everything lives in `org.tentackle.session.auth`, so both the client (`Db.open`)
 
 [`SessionInfo`](../java/org/tentackle/session/SessionInfo.java) carries a `Credentials` object.
 It defaults to `PasswordCredentials`, so `getUserName()`, `getPassword()` and `setPassword(char[])`
-keep working exactly as before — they simply read and write the default credentials underneath:
+simply read and write the default credentials underneath:
 
 ```java
 SessionInfo sessionInfo = Pdo.createSessionInfo("hugo", password, null);
