@@ -226,9 +226,15 @@ When several backends could match the same URL (e.g. `Oracle` and the deprecated
 URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. Backends marked
 `isDeprecated()` are excluded from `BackendFactory.getAllBackends()`.
 
-Oracle deviates from the other products far enough to warrant its own document —
-see [The Oracle Backend](oracle.md), most notably for how filtered indexes are emulated and what that means for
-the query optimizer.
+Two products deviate from the others far enough to warrant their own document:
+
+- [The Oracle Backend](oracle.md) — most notably how filtered indexes are emulated and what that means for the
+  query optimizer.
+- [The MySQL and MariaDB Backends](mysql.md) — the type mapping (`LONGTEXT`/`LONGBLOB`, decimal scale, fractional
+  seconds), the index key limits, migration by full column declaration, and sequences on MariaDB.
+
+Both refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12, MySQL 8.0,
+MariaDB 10.3.
 
 ---
 
@@ -316,6 +322,7 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 ## Related Documentation
 
 - [The Oracle Backend](oracle.md) — the peculiarities of Oracle: emulated filtered indexes, virtual index columns, empty strings and more.
+- [The MySQL and MariaDB Backends](mysql.md) — the peculiarities of MySQL and MariaDB: type mapping, index key limits, migration by full column declaration, sequences.
 - [Table Names](../../../../tentackle-session/src/main/docs/table-names.md) — schema mapping and table prefixes for the backends whose `isSchemaSupported()` returns `false`.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.

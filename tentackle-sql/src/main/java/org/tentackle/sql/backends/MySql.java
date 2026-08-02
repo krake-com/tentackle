@@ -37,11 +37,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Backend for MySQL.
+ * <p>
+ * Requires at least MySQL 8.0.13, which is the first version providing functional indexes
+ * and default values for {@code TEXT}- and {@code BLOB}-columns.
  *
  * @author harald
  */
@@ -50,6 +56,15 @@ public class MySql extends AbstractSql92Backend {
 
   // maximum length for identifiers, names, etc...
   private static final int MAX_NAME_LENGTH = 64;
+
+  // minimum major version (8.0.13, but validateVersion only gets major and minor)
+  private static final int MIN_MAJOR_VERSION = 8;
+
+  // maximum scale of a DECIMAL, regardless of its size
+  private static final int MAX_DECIMAL_SCALE = 30;
+
+  // default size of a DECIMAL if the model does not provide one
+  private static final int DEFAULT_DECIMAL_SIZE = 19;
 
   /** LIMIT string. */
   public static final String SQL_LIMIT = " LIMIT ";
@@ -63,6 +78,9 @@ public class MySql extends AbstractSql92Backend {
   /** OFFSET ? string. */
   public static final String SQL_OFFSET_PAR = SQL_OFFSET + SQL_PAR;
 
+  /** the limit used to emulate an OFFSET without a LIMIT (mysql requires both). */
+  public static final int MAX_LIMIT = Integer.MAX_VALUE;
+
   private static final String[] RESERVED_SCHEMAS = {
       "information_schema",
       "mysql",
@@ -70,12 +88,46 @@ public class MySql extends AbstractSql92Backend {
       "sys"
   };
 
+  /** array of additional reserved words (those not already covered by SQL92). */
+  public static final String[] RESERVED_WORDS_MYSQL = new String[] {
+    "ACCESSIBLE", "ANALYZE", "ASENSITIVE", "BEFORE", "BIGINT", "BINARY", "BLOB", "CHANGE", "CUBE",
+    "CUME_DIST", "DATABASE", "DATABASES", "DAY_HOUR", "DAY_MICROSECOND", "DAY_MINUTE", "DAY_SECOND",
+    "DELAYED", "DENSE_RANK", "DISTINCTROW", "DIV", "DUAL", "EACH", "EMPTY", "ENCLOSED", "ESCAPED",
+    "EXPLAIN", "FIRST_VALUE", "FLOAT4", "FLOAT8", "FORCE", "FULLTEXT", "GENERATED", "GROUPING",
+    "GROUPS", "HIGH_PRIORITY", "HOUR_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND", "IGNORE", "INDEX",
+    "INFILE", "INT1", "INT2", "INT3", "INT4", "INT8", "IO_AFTER_GTIDS", "IO_BEFORE_GTIDS", "ITERATE",
+    "JSON_TABLE", "KEYS", "KILL", "LAG", "LAST_VALUE", "LATERAL", "LEAD", "LIMIT", "LINEAR", "LINES",
+    "LOAD", "LOCALTIME", "LOCALTIMESTAMP", "LOCK", "LONG", "LONGBLOB", "LONGTEXT", "LOW_PRIORITY",
+    "MASTER_BIND", "MASTER_SSL_VERIFY_SERVER_CERT", "MAXVALUE", "MEDIUMBLOB", "MEDIUMINT",
+    "MEDIUMTEXT", "MIDDLEINT", "MINUTE_MICROSECOND", "MINUTE_SECOND", "MOD", "MODIFIES",
+    "NO_WRITE_TO_BINLOG", "NTH_VALUE", "NTILE", "OPTIMIZE", "OPTIMIZER_COSTS", "OPTIONALLY", "OVER",
+    "OUTFILE", "PERCENT_RANK", "PURGE", "RANGE", "RANK", "READ_WRITE", "READS", "RECURSIVE",
+    "REGEXP", "RELEASE", "RENAME", "REPLACE", "REQUIRE", "RESIGNAL", "RLIKE", "ROW", "ROW_NUMBER",
+    "SCHEMAS", "SECOND_MICROSECOND", "SENSITIVE", "SEPARATOR", "SHOW", "SPATIAL", "SQL_BIG_RESULT",
+    "SQL_CALC_FOUND_ROWS", "SQL_SMALL_RESULT", "SSL", "STARTING", "STORED", "STRAIGHT_JOIN",
+    "SYSTEM", "TERMINATED", "TINYBLOB", "TINYINT", "TINYTEXT", "TRIGGER", "UNLOCK", "UNSIGNED",
+    "USE", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP", "VARBINARY", "VARCHARACTER", "VIRTUAL",
+    "WINDOW", "XOR", "YEAR_MONTH", "ZEROFILL"
+  };
+
+  // set of reserved words (built only once, per instance because of the MariaDb subclass)
+  private Set<String> reservedWords;
+
 
   /**
    * Creates the MySql backend.
    */
   public MySql() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public synchronized Set<String> getReservedWords() {
+    if (reservedWords == null) {
+      reservedWords = new HashSet<>(super.getReservedWords());
+      reservedWords.addAll(Arrays.asList(RESERVED_WORDS_MYSQL));
+    }
+    return reservedWords;
   }
 
   @Override
@@ -95,7 +147,15 @@ public class MySql extends AbstractSql92Backend {
 
   @Override
   public String getDriverClassName() {
-    return "com.mysql.jdbc.Driver";
+    return "com.mysql.cj.jdbc.Driver";
+  }
+
+  @Override
+  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
+    if (databaseMajorVersion < MIN_MAJOR_VERSION) {
+      throw new BackendException(this + " needs at least MySQL " + MIN_MAJOR_VERSION + ".0.13" +
+                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion);
+    }
   }
 
   @Override
@@ -134,7 +194,7 @@ public class MySql extends AbstractSql92Backend {
 
   @Override
   public boolean isFunctionBasedIndexSupported() {
-    return true;
+    return true;    // since 8.0.13, and with an extra pair of parentheses (see sqlCreateIndex)
   }
 
   @Override
@@ -148,21 +208,33 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isAliasRequiredForSubSelect() {
+    return true;    // "every derived table must have its own alias"
+  }
+
+  @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return super.isTransientTransactionException(ex) ||
+           // deadlock (SQLState 40001, but not on all versions), lock wait timeout (SQLState HY000)
+           isExceptionErrorCodeMatching(ex, 1213, 1205);
+  }
+
+  @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
     }
-    if (writeLock) {
-      sqlBuilder.append(SQL_FOR_UPDATE);
-    }
     if (offset > 0 && limit <= 0) {
-      limit = 99999999;   // mysql can't do OFFSET without LIMIT -> fake it
+      limit = MAX_LIMIT;   // mysql can't do OFFSET without LIMIT -> fake it
     }
     if (limit > 0) {
       sqlBuilder.append(SQL_LIMIT_PAR);
     }
     if (offset > 0) {
       sqlBuilder.append(SQL_OFFSET_PAR);
+    }
+    if (writeLock) {
+      sqlBuilder.append(SQL_FOR_UPDATE);   // the locking clause must come after LIMIT and OFFSET
     }
   }
 
@@ -174,7 +246,7 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public int setTrailingSelectParameters(BackendPreparedStatement stmt, int index, int limit, int offset) {
     if (offset > 0 && limit <= 0) {
-      limit = 99999999;   // mysql can't do OFFSET without LIMIT -> fake it
+      limit = MAX_LIMIT;   // mysql can't do OFFSET without LIMIT -> fake it
     }
     if (limit > 0) {
       stmt.setInt(index++, limit);
@@ -194,6 +266,25 @@ public class MySql extends AbstractSql92Backend {
     };
   }
 
+  @Override
+  public int getMaxScale(SqlType sqlType, int size) {
+    int maxScale = super.getMaxScale(sqlType, size);
+    if (sqlType == SqlType.DECIMAL && maxScale > MAX_DECIMAL_SCALE) {
+      maxScale = MAX_DECIMAL_SCALE;   // mysql allows at most 30 decimal digits, regardless of the size
+    }
+    return maxScale;
+  }
+
+  @Override
+  public int getDefaultSize(SqlType sqlType) {
+    return switch (sqlType) {
+      // no size means "as large as possible" -> LONGTEXT (see sqlTypeToString)
+      case VARCHAR -> 0;
+      // without an explicit size mysql would default to DECIMAL(10,0) and silently drop all fraction digits
+      case DECIMAL -> DEFAULT_DECIMAL_SIZE;
+      default -> super.getDefaultSize(sqlType);
+    };
+  }
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
@@ -204,13 +295,18 @@ public class MySql extends AbstractSql92Backend {
       case BIGINT -> TYPE_BIGINT;
       case FLOAT -> TYPE_FLOAT;
       case DOUBLE -> TYPE_DOUBLE;
-      case DECIMAL -> size == 0 ? TYPE_DECIMAL_19 : TYPE_DECIMAL;
+      case DECIMAL -> TYPE_DECIMAL;
       case CHAR -> TYPE_CHAR_1;
-      case VARCHAR -> TYPE_VARCHAR;
+      // an unsized string must not become VARCHAR(max): the declared length counts towards
+      // the 65535 bytes per row and the 3072 bytes per index key
+      case VARCHAR -> size == 0 ? TYPE_LONGTEXT : TYPE_VARCHAR;
       case DATE -> TYPE_DATE;
-      case TIME, TIMESTAMP -> TYPE_DATETIME;
-      case BLOB -> TYPE_BLOB;
-      case CLOB -> TYPE_CLOB;
+      // mysql truncates to whole seconds unless the fractional precision is declared
+      case TIME -> TYPE_TIME_6;
+      case TIMESTAMP -> TYPE_DATETIME_6;
+      // BLOB and TEXT are limited to 64k
+      case BLOB -> TYPE_LONGBLOB;
+      case CLOB -> TYPE_LONGTEXT;
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -219,8 +315,44 @@ public class MySql extends AbstractSql92Backend {
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
     return switch (jdbcType) {
       case Types.BIT, Types.BOOLEAN, Types.TINYINT -> new SqlType[]{SqlType.BIT, SqlType.TINYINT};
-      case Types.TIMESTAMP, Types.TIME -> new SqlType[]{SqlType.TIMESTAMP, SqlType.TIME};
+      // VARCHAR and LONGTEXT are both used for strings, sized or not
+      case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
+    };
+  }
+
+  @Override
+  public String columnTypeNullDefaultToString(String columnName, SqlType sqlType, int size, int scale,
+                                              boolean nullable, Object defaultValue) {
+    if (defaultValue == null || !isLobDeclaration(sqlType, size)) {
+      return super.columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue);
+    }
+    // TEXT- and BLOB-columns only accept a default if it is written as an expression
+    StringBuilder buf = new StringBuilder();
+    buf.append(columnTypeToString(sqlType, size, scale));
+    if (!nullable) {
+      buf.append(" NOT NULL");
+    }
+    buf.append(" DEFAULT (");
+    buf.append(valueToLiteral(sqlType, defaultValue));
+    buf.append(')');
+    return buf.toString();
+  }
+
+  /**
+   * Returns whether the given type is declared as a TEXT- or BLOB-type.<br>
+   * Such columns cannot be indexed without a key length and their default must be an expression.
+   *
+   * @param sqlType the SQL type
+   * @param size the size from the model, 0 if none
+   * @return true if TEXT or BLOB
+   */
+  protected boolean isLobDeclaration(SqlType sqlType, int size) {
+    return switch (sqlType) {
+      case CLOB, BLOB -> true;
+      case VARCHAR -> (size == 0 ? getDefaultSize(sqlType) : size) == 0;
+      default -> false;
     };
   }
 
@@ -245,32 +377,59 @@ public class MySql extends AbstractSql92Backend {
        * We need a connection for each schema!
        */
       DatabaseMetaData[] metaData = new DatabaseMetaData[backendInfo.getSchemas().length];
-      for (int i=0; i < metaData.length; i++) {
-        // replace database name with schema name
-        int ndx1 = backendInfo.getUrl().lastIndexOf('/');
-        if (ndx1 == -1) {
-          throw new BackendException("missing slash in " + backendInfo.getUrl());
-        }
-        int ndx2 = backendInfo.getUrl().indexOf('?', ndx1);
-        if (ndx2 == -1) {
-          ndx2 = backendInfo.getUrl().length();
-        }
-        if (ndx2 > ndx1 + 1) {
-          ndx1++;
-          String schema = backendInfo.getSchemas()[i];
-          String url = backendInfo.getUrl().substring(0, ndx1) + schema + backendInfo.getUrl().substring(ndx2);
+      List<Connection> connections = new ArrayList<>(metaData.length);
+      try {
+        for (int i = 0; i < metaData.length; i++) {
+          // replace database name with schema name
+          String url = replaceDatabaseInUrl(backendInfo.getUrl(), backendInfo.getSchemas()[i]);
           Connection con = createConnection(url, backendInfo.getUser(), backendInfo.getPassword());
+          connections.add(con);   // ownership passes to the caller along with the metadata
           metaData[i] = con.getMetaData();
         }
-        else  {
-          throw new BackendException("missing database name in " + backendInfo.getUrl());
+      }
+      catch (SQLException | RuntimeException ex) {
+        // none of the metadata is returned -> don't leak the connections opened so far
+        for (Connection con: connections) {
+          try {
+            con.close();
+          }
+          catch (SQLException sqx) {
+            // ignored, we're already on the error path
+          }
         }
+        throw ex;
       }
       return metaData;
     }
     else  {
       return super.getMetaData(backendInfo);
     }
+  }
+
+  /**
+   * Replaces the database name in a JDBC url.<br>
+   * The database name is the path component of {@code jdbc:mysql://host:port/database?parameters}.
+   *
+   * @param url the JDBC url
+   * @param database the database name to set
+   * @return the modified url
+   */
+  protected String replaceDatabaseInUrl(String url, String database) {
+    int hostNdx = url.indexOf("//");
+    // the path separator, not just any slash: parameter values may contain slashes as well
+    int start = hostNdx >= 0 ? url.indexOf('/', hostNdx + 2) : url.lastIndexOf('/');
+    if (start == -1) {
+      throw new BackendException("missing slash in " + url);
+    }
+    start++;
+    int end = start;
+    while (end < url.length() && url.charAt(end) != '?' && url.charAt(end) != ';') {
+      end++;
+    }
+    if (end == start) {
+      throw new BackendException("missing database name in " + url);
+    }
+    return url.substring(0, start) + database + url.substring(end);
   }
 
   @Override
@@ -314,7 +473,12 @@ public class MySql extends AbstractSql92Backend {
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {
-    return null;    // need full spec
+    return  SQL_ALTER_TABLE + tableName +
+            " RENAME COLUMN " +
+            oldColumnName +
+            " TO " +
+            newColumnName +
+            ";\n";
   }
 
   @Override
@@ -352,15 +516,77 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  SQL_ALTER_TABLE + tableName +
-            SQL_ALTER_COLUMN +
-            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
-            ";\n";
+    // ALTER COLUMN can only set or drop the default in mysql -> MODIFY COLUMN with the full declaration
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
+    buf.append(tableName);
+    buf.append(" MODIFY COLUMN ");
+    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
+    if (comment != null) {
+      buf.append(" COMMENT ");     // MODIFY replaces the whole declaration: the comment must be repeated
+      buf.append(toQuotedString(comment));
+    }
+    buf.append(";\n");
+    return buf.toString();
+  }
+
+  @Override
+  public String sqlAlterColumnNullConstraint(String tableName, String columnName, SqlType sqlType, int size, int scale,
+                                             boolean nullable, Object defaultValue) {
+    // mysql cannot change the null-constraint alone, the type must be repeated
+    return sqlAlterColumnType(tableName, columnName, null, sqlType, size, scale, nullable, defaultValue);
   }
 
   @Override
   public String sqlAlterColumnComment(String tableName, String columnName, String comment) {
     return null;    // use sqlRenameAndAlterColumnType
+  }
+
+  @Override
+  public String sqlAlterTableComment(String tableName, String comment) {
+    return  SQL_ALTER_TABLE + tableName +
+            " COMMENT=" +
+            toQuotedString(comment == null ? "" : comment) +
+            ";\n";
+  }
+
+  @Override
+  public String sqlDropForeignKey(String referencingTableName, String foreignKeyName) {
+    // mysql knows DROP CONSTRAINT only since 8.0.19, but DROP FOREIGN KEY in all versions
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
+    buf.append(referencingTableName).append(" DROP FOREIGN KEY ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
+    buf.append(foreignKeyName).append(";\n");
+    return buf.toString();
+  }
+
+  @Override
+  public String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition,
+                               String... columnNames) {
+    String[] indexParts = new String[columnNames.length];
+    for (int ndx = 0; ndx < columnNames.length; ndx++) {
+      String columnName = columnNames[ndx];
+      String descending = "";
+      if (columnName.startsWith("-")) {   // keep the marker interpreted by AbstractBackend
+        columnName = columnName.substring(1);
+        descending = "-";
+      }
+      // a functional key part must be enclosed in an extra pair of parentheses
+      indexParts[ndx] = descending + (columnName.indexOf('(') >= 0 ? "(" + columnName + ")" : columnName);
+    }
+    return super.sqlCreateIndex(tableName, indexName, unique, filterCondition, indexParts);
+  }
+
+  @Override
+  public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
+    // mysql reports the default of a string column without quotes, so an empty string comes back as
+    // "" and is kept as such by MySqlColumnMetaData. The base class would normalize both the empty
+    // string and "no default at all" to the same value and never detect the difference.
+    if ((defaultValue == null) != (column.getDefaultValue() == null)) {
+      return false;
+    }
+    return super.isDefaultEqual(column, sqlType, defaultValue);
   }
 
   @Override
@@ -394,9 +620,9 @@ public class MySql extends AbstractSql92Backend {
     boolean typeChanged = !column.matchesSqlType(sqlType);
     boolean sizeChanged = maxSize != -1 &&
                           (size > column.getSize() ||    // model size increased
-                           // or changed from VARCHAR(x) to VARCHAR(maxSize)
-                           size == 0 && sqlType == SqlType.VARCHAR &&
-                           column.getSize() > 0 && column.getSize() != maxSize);
+                           // or changed from VARCHAR(x) to LONGTEXT
+                           size == 0 && (sqlType == SqlType.VARCHAR || sqlType == SqlType.CLOB) &&
+                           column.getSize() > 0 && column.getSize() <= maxSize);
     boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
     boolean scaleWarning = maxSize != -1 && scale < column.getScale();

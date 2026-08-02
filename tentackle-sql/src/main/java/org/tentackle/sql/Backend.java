@@ -983,6 +983,25 @@ public interface Backend {
   String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable);
 
   /**
+   * Generates SQL code to change the null-constraint of a column, given its full declaration.<br>
+   * Some backends (MySQL, for example) cannot change a single property of a column: the whole
+   * declaration must be repeated. Backends that can change the null-constraint on its own
+   * simply ignore the type, size, scale and default.
+   *
+   * @param tableName the tablename
+   * @param columnName the new column name
+   * @param sqlType the JDBC SQL type
+   * @param size the optional size
+   * @param scale the optional scale
+   * @param nullable true if NULL, else NOT NULL
+   * @param defaultValue the optional default value
+   * @return the SQL code, null if need {@link #sqlAlterColumnType}
+   * @see #sqlAlterColumnNullConstraint(String, String, boolean)
+   */
+  String sqlAlterColumnNullConstraint(String tableName, String columnName, SqlType sqlType, int size, int scale,
+                                      boolean nullable, Object defaultValue);
+
+  /**
    * Generates SQL code to change the default value of a column.
    *
    * @param tableName the tablename

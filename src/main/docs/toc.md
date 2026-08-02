@@ -61,6 +61,7 @@ the [Index](./index.md).
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 - [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.
+- [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) — type mapping, index key limits, migration by full column declaration, sequences.
 
 ## Remoting
 

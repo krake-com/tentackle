@@ -48,7 +48,7 @@ topic-grouped listing of every document, see the
 
 ## D
 
-- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
+- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
@@ -93,7 +93,7 @@ topic-grouped listing of every document, see the
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **I/O streams (compression, encryption, packet framing)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md)
-- **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (filtered indexes on Oracle)
+- **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (filtered indexes on Oracle), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) (index key limits)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
@@ -123,6 +123,7 @@ topic-grouped listing of every document, see the
 - **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)
 - **Modules** — [Tentackle Modules](./modules.md)
 - **Multi-tier deployment** — [Multi-Tier Cascade](./tiers.md)
+- **MySQL / MariaDB (backend peculiarities)** — [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
 
 ## N
 

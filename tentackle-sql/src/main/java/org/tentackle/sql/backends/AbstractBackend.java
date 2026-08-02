@@ -72,6 +72,7 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_CHAR_1 = "CHAR(1)";
   protected static final String TYPE_DATE = "DATE";
   protected static final String TYPE_DATETIME = "DATETIME";
+  protected static final String TYPE_DATETIME_6 = "DATETIME(6)";
   protected static final String TYPE_DATETIME_YEAR_TO_SECOND = "DATETIME YEAR TO SECOND";
   protected static final String TYPE_DECIMAL = "DECIMAL";
   protected static final String TYPE_DECIMAL_19 = "DECIMAL(19)";
@@ -85,6 +86,8 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_INT4 = "INT4";
   protected static final String TYPE_INT8 = "INT8";
   protected static final String TYPE_INTEGER = "INTEGER";
+  protected static final String TYPE_LONGBLOB = "LONGBLOB";
+  protected static final String TYPE_LONGTEXT = "LONGTEXT";
   protected static final String TYPE_NCHAR_1 = "NCHAR(1)";
   protected static final String TYPE_NUMBER = "NUMBER";
   protected static final String TYPE_NUMBER_1 = "NUMBER(1)";
@@ -96,6 +99,7 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_REAL = "REAL";
   protected static final String TYPE_TEXT = "TEXT";
   protected static final String TYPE_TIME = "TIME";
+  protected static final String TYPE_TIME_6 = "TIME(6)";
   protected static final String TYPE_TIMESTAMP = "TIMESTAMP";
   protected static final String TYPE_TINYINT = "TINYINT";
   protected static final String TYPE_SMALLFLOAT = "SMALLFLOAT";
@@ -674,6 +678,13 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable) {
     return null;
+  }
+
+  @Override
+  public String sqlAlterColumnNullConstraint(String tableName, String columnName, SqlType sqlType, int size, int scale,
+                                             boolean nullable, Object defaultValue) {
+    // most backends don't need the full declaration
+    return sqlAlterColumnNullConstraint(tableName, columnName, nullable);
   }
 
   @Override
