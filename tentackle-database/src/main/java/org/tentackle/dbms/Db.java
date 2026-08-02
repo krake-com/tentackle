@@ -694,9 +694,10 @@ public class Db implements Session, Cloneable {
    * @param conMgr the connection manager, null if remote
    */
   private void open(ConnectionManager conMgr) {
+    Transport transport = null;                 // remote transport
+    boolean transportHandedOver = false;        // true once the resources own the transport
     try {
       int sessionId;                            // the local or remote session ID
-      Transport transport = null;               // remote transport
       DbRemoteDelegate rdel = null;             // remote database delegate
       RemoteDbConnection rcon = null;           // != null if remote connection established to TRIP-server
       RemoteDbSession rses = null;              // remote database session if logged in to TRIP-server
@@ -743,6 +744,7 @@ public class Db implements Session, Cloneable {
       resources = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
       resources.name = toString();
       cleanable = CLEANER.register(this, resources);
+      transportHandedOver = true;   // from here on the resources release the transport
 
       registerSession();
 
@@ -755,6 +757,17 @@ public class Db implements Session, Cloneable {
       }
     }
     catch (Throwable ex) {
+      if (transport != null && !transportHandedOver) {
+        // the setup failed before the resources took ownership, e.g., because the login was refused.
+        // without releasing it here, the transport would stay cached in the TransportManager and
+        // poison every later connection to the same URI, so a retried login could never succeed.
+        try {
+          TransportManager.getInstance().releaseTransport(transport);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("could not release the transport of a failed connection", rx);
+        }
+      }
       throw handleConnectException(ex);
     }
   }
@@ -1602,11 +1615,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Creates an unnamed savepoint in the current transaction.
-   *
-   * @return the savepoint handle unique within current transaction
-   */
   @Override
   public SavepointHandle setSavepoint() {
     assertOpen();
@@ -1629,13 +1637,6 @@ public class Db implements Session, Cloneable {
     }
   }
 
-  /**
-   * Creates a savepoint with the given name in the current transaction.
-   *
-   * @param name the savepoint name
-   *
-   * @return the savepoint handle unique within current transaction
-   */
   @Override
   public SavepointHandle setSavepoint(String name) {
     assertOpen();
@@ -2109,7 +2110,7 @@ public class Db implements Session, Cloneable {
         transaction = null;
         postCommits = null;
         preCommits = null;
-        // remember the txLevel for pending rollback()s, if any will arrive from the application
+        // remember the txLevel for pending rollback()s if any will arrive from the application
         immediatelyRolledBack = currentTxLevel;
       }
       // else: not within a transaction: cleanup forced
@@ -2916,7 +2917,7 @@ public class Db implements Session, Cloneable {
    * Preloads the remote delegates of all classes annotated with {@link PreloadRemoteDelegate}.
    * <p>
    * Remote delegates are created lazily, one roundtrip per class. For applications with a large
-   * entity model running on links with a high latency, this may slow down the application startup
+   * entity model running on links with high latency, this may slow down the application startup
    * substantially. This method fetches the delegates of all preload candidates in a single roundtrip.
    * <p>
    * Since not all sessions benefit from preloading, it is up to the application to decide
