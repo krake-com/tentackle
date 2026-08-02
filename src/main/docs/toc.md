@@ -50,6 +50,7 @@ the [Index](./index.md).
 - [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md) — streaming large result sets, transparently over local and remote sessions.
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
+- [Authentication — Credentials, Providers, and Single Sign-On](../../../tentackle-session/src/main/docs/authentication.md) — the pluggable login: password, OAuth2/OIDC tokens, and your own.
 - [Table Names](../../../tentackle-session/src/main/docs/table-names.md) — schemas, schema mapping and table prefixes: `@TableName`, the wurblet properties and the maven parameters.
 - [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
 - [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `backend.properties` reference: connection, server, and client configuration keys.

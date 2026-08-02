@@ -35,6 +35,9 @@ import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
+import org.tentackle.session.auth.Authentication;
+import org.tentackle.session.auth.AuthenticationManager;
+import org.tentackle.session.auth.AuthenticationProvider;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteRoot;
@@ -297,6 +300,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private Registry registry;                                  // the registry where the delegate is registered
   private UUID remoteId;                                      // the remote delegate ID of this session
   private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
+  private Authentication authentication;                      // the proven identity, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
 
@@ -337,6 +341,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       resources = new Resources(db, con, this.serverInfo);
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
         this.clientInfo.setSince(System.currentTimeMillis());
+        db.makeCurrent();   // authentication providers may need the persistence layer to look up the user
         verifySessionInfo(this.clientInfo);
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
@@ -449,14 +454,55 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
 
   /**
    * Verifies and updates the client's session info.<br>
-   * Needs to be implemented by the application.<br>
-   * Checks login credentials and sets the user id.
+   * Checks the login credentials and sets the user id.
+   * <p>
+   * The default implementation hands the credentials to the {@link AuthenticationManager}, which
+   * drives the chain of configured {@link AuthenticationProvider}s and applies the application's
+   * {@link org.tentackle.session.auth.UserResolver}, and then transfers the proven identity onto
+   * the session info via {@link #applyAuthentication(SessionInfo, Authentication)}.
+   * <p>
+   * Applications override this method to add concerns that belong to the <em>session</em> rather
+   * than to the verification of the credentials, such as refusing a second login of the same user
+   * or writing an audit record. They should invoke {@code super.verifySessionInfo(sessionInfo)}
+   * first, so the credentials are still verified by the provider chain.
    * <p>
    * Throws LoginFailedException if login is not allowed for whatever reason.
    *
    * @param sessionInfo the session info
    */
-  public abstract void verifySessionInfo(SessionInfo sessionInfo);
+  public void verifySessionInfo(SessionInfo sessionInfo) {
+    authentication = AuthenticationManager.getInstance().authenticate(sessionInfo.getCredentials());
+    applyAuthentication(sessionInfo, authentication);
+  }
+
+  /**
+   * Transfers a proven identity onto the client's session info.
+   * <p>
+   * The username is taken over as well, since with single sign-on the client does not
+   * necessarily know it before the login.
+   *
+   * @param sessionInfo the session info
+   * @param authentication the proven identity
+   */
+  protected void applyAuthentication(SessionInfo sessionInfo, Authentication authentication) {
+    sessionInfo.setUserId(authentication.getUserId());
+    sessionInfo.setUserClassId(authentication.getUserClassId());
+    if (authentication.getName() != null) {
+      sessionInfo.setUserName(authentication.getName());
+    }
+  }
+
+  /**
+   * Gets the proven identity of this session.
+   * <p>
+   * Provides the application with everything the authentication established beyond the user id,
+   * such as the verified claims and the roles asserted by an identity provider.
+   *
+   * @return the authentication, null if the application authenticated without the provider chain
+   */
+  public Authentication getAuthentication() {
+    return authentication;
+  }
 
   /**
    * Gets the unique session number.

@@ -488,6 +488,10 @@ public abstract class AbstractApplication implements Application {
       }
       localInfo.setUserId(remoteInfo.getUserId());
       localInfo.setUserClassId(remoteInfo.getUserClassId());
+      if (remoteInfo.getUserName() != null) {
+        // with single sign-on, the client does not know the username before the login
+        localInfo.setUserName(remoteInfo.getUserName());
+      }
       localInfo.setImmutable(immutable);  // restore immutable flag if changed
     }
     return ctx;

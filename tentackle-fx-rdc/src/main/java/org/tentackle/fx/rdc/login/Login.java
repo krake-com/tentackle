@@ -34,16 +34,22 @@ import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.log.Logger;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.CredentialsProvider;
 
 import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.WindowEvent;
 import java.util.ResourceBundle;
 
@@ -65,6 +71,8 @@ public class Login extends AbstractFxController implements LoginController {
   private boolean backendsEditable;           // true if the user can edit the backends configuration
   private int inactivityTimeout;              // inactivity timeout in seconds (0 if turned off)
   private long lastActivity;                  // last key press epochal time
+  private CredentialsProvider credentialsProvider;    // the configured authentication method
+  private FxCredentialsPrompt credentialsPrompt;      // != null while an interactive login is running
 
   @FXML
   private ResourceBundle resources;           // localization bundle
@@ -80,8 +88,14 @@ public class Login extends AbstractFxController implements LoginController {
   private FxButton backendButton;
 
   @FXML
+  private FxLabel usernameLabel;
+  @FXML
   private FxTextField usernameField;
 
+  @FXML
+  private FxLabel passwordLabel;
+  @FXML
+  private HBox passwordBox;
   @FXML
   private FxPasswordField passwordField;
 
@@ -93,6 +107,9 @@ public class Login extends AbstractFxController implements LoginController {
 
   @FXML
   private FxButton loginButton;
+
+  @FXML
+  private FxButton ssoButton;
 
   @FXML
   private FxButton cancelButton;
@@ -116,6 +133,9 @@ public class Login extends AbstractFxController implements LoginController {
     cancelButton.setGraphic(Fx.createGraphic("cancel"));
     loginButton.setOnAction(_ -> login());
     loginButton.setGraphic(Fx.createGraphic("login"));
+    ssoButton.setOnAction(_ -> login());
+    ssoButton.setGraphic(Fx.createGraphic("login"));
+    setSingleSignOn(false);   // until the session info tells us the authentication method
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(_ -> login());
     passwordField.setAutoSelect(true);
@@ -145,6 +165,9 @@ public class Login extends AbstractFxController implements LoginController {
    * @param backendConfiguration the backend config, null if none
    */
   public void presetUserAndPassword(BackendConfiguration backendConfiguration) {
+    if (isSingleSignOn()) {
+      return;   // there are no user- and password fields to preset
+    }
     if (backendConfiguration != null && backendConfiguration.getUrl() != null &&
         !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JDBC_URL_INTRO) &&
         !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JNDI_URL_INTRO) &&
@@ -238,11 +261,46 @@ public class Login extends AbstractFxController implements LoginController {
   }
 
   /**
+   * Returns whether the configured authentication method logs in interactively,
+   * i.e., without the username and password fields.
+   *
+   * @return true if single sign-on
+   */
+  public boolean isSingleSignOn() {
+    return credentialsProvider != null && credentialsProvider.isInteractive();
+  }
+
+  /**
+   * Switches the view between the username/password fields and the single sign-on button.
+   *
+   * @param singleSignOn true for single sign-on
+   */
+  protected void setSingleSignOn(boolean singleSignOn) {
+    setVisibleAndManaged(usernameLabel, !singleSignOn);
+    setVisibleAndManaged(usernameField, !singleSignOn);
+    setVisibleAndManaged(passwordLabel, !singleSignOn);
+    setVisibleAndManaged(passwordBox, !singleSignOn);
+    setVisibleAndManaged(loginButton, !singleSignOn);
+    setVisibleAndManaged(ssoButton, singleSignOn);
+  }
+
+  /**
+   * Shows or hides a node without leaving a gap in the layout.
+   *
+   * @param node the node
+   * @param visible true to show
+   */
+  private void setVisibleAndManaged(Node node, boolean visible) {
+    node.setVisible(visible);
+    node.setManaged(visible);
+  }
+
+  /**
    * Sets the initial focus.
    */
   @Override
   public void requestInitialFocus() {
-    Platform.runLater(usernameField::requestFocus);
+    Platform.runLater(isSingleSignOn() ? ssoButton::requestFocus : usernameField::requestFocus);
   }
 
   /**
@@ -253,8 +311,12 @@ public class Login extends AbstractFxController implements LoginController {
   @Override
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
-    setUsername(sessionInfo.getUserName());
-    setPassword(sessionInfo.getPassword());
+    credentialsProvider = CredentialsProvider.getInstance(sessionInfo);
+    setSingleSignOn(credentialsProvider.isInteractive());
+    if (!isSingleSignOn()) {
+      setUsername(sessionInfo.getUserName());
+      setPassword(sessionInfo.getPassword());
+    }
     String backendInfo = sessionInfo.getProperties().getPropertyIgnoreCase(Constants.BACKEND_INFO);
     backendsEditable = false;
     if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
@@ -334,6 +396,7 @@ public class Login extends AbstractFxController implements LoginController {
     if (progress <= 0.0 && !autoLogin) {
       progressBar.setProgress(0.0);
       loginButton.setDisable(false);
+      ssoButton.setDisable(false);
       cancelButton.setDisable(false);
       usernameField.setChangeable(true);
       passwordField.setChangeable(true);
@@ -342,7 +405,8 @@ public class Login extends AbstractFxController implements LoginController {
     else {
       progressBar.setProgress(progress);
       loginButton.setDisable(true);
-      cancelButton.setDisable(true);
+      ssoButton.setDisable(true);
+      cancelButton.setDisable(!isSingleSignOn());   // sso: allow to abort the browser round-trip
       usernameField.setChangeable(false);
       passwordField.setChangeable(false);
       revealButton.setDisable(true);
@@ -397,15 +461,20 @@ public class Login extends AbstractFxController implements LoginController {
   @Override
   public void login() {
     if (progressBar.getProgress() <= 0.0) {
-      sessionInfo.setUserName(usernameField.getText());
-      sessionInfo.setPassword(password);
       BackendConfiguration backendConfiguration = backendField.getValue();
       if (backendConfiguration != null) {
         String backendInfo = sessionInfo.getProperties().getPropertyIgnoreCase(Constants.BACKEND_INFO) + ":" + backendConfiguration;
         sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
       }
       setProgress(0.01);    // login is in progress...
-      ((DesktopApplication<?>) Application.getInstance()).login(getView(), sessionInfo);
+      if (isSingleSignOn()) {
+        obtainCredentials();
+      }
+      else {
+        sessionInfo.setUserName(usernameField.getText());
+        sessionInfo.setPassword(password);
+        ((DesktopApplication<?>) Application.getInstance()).login(getView(), sessionInfo);
+      }
     }
     else {
       LOGGER.warning("login already in progress...");
@@ -413,9 +482,54 @@ public class Login extends AbstractFxController implements LoginController {
   }
 
   /**
+   * Obtains the credentials from an interactive credentials provider and logs in.
+   * <p>
+   * The provider runs on a background thread, since it usually waits for the user to
+   * authenticate at the identity provider in a browser.
+   */
+  private void obtainCredentials() {
+    credentialsPrompt = new FxCredentialsPrompt(this);
+    setMessage(resources.getString("signing in..."));
+    Service<Credentials> service = new Service<>() {
+      @Override
+      protected Task<Credentials> createTask() {
+        return new Task<>() {
+          @Override
+          protected Credentials call() {
+            return credentialsProvider.createCredentials(sessionInfo, credentialsPrompt);
+          }
+        };
+      }
+    };
+    service.setOnSucceeded(_ -> {
+      credentialsPrompt = null;
+      Credentials credentials = service.getValue();
+      if (credentials == null) {
+        // the user cancelled or the identity provider refused: let them try again
+        setProgress(0.0);
+        setMessage(resources.getString("sign in canceled"));
+      }
+      else {
+        sessionInfo.setCredentials(credentials);
+        ((DesktopApplication<?>) Application.getInstance()).login(getView(), sessionInfo);
+      }
+    });
+    service.setOnFailed(_ -> {
+      credentialsPrompt = null;
+      LOGGER.severe("could not obtain the credentials", service.getException());
+      setProgress(0.0);
+      setMessage(resources.getString("sign in failed"));
+    });
+    service.start();
+  }
+
+  /**
    * Cancels the login and terminates the application.
    */
   private void cancel() {
+    if (credentialsPrompt != null) {
+      credentialsPrompt.cancel();   // stop waiting for the identity provider
+    }
     Fx.getStage(getView()).hide();
   }
 

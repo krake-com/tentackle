@@ -1,0 +1,96 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.session.auth;
+
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.TentackleRuntimeException;
+
+/**
+ * Holder for the optional user resolver singleton.
+ */
+interface UserResolverHolder {
+
+  private static UserResolver loadUserResolver() {
+    try {
+      return ServiceFactory.createService(UserResolver.class);
+    }
+    catch (TentackleRuntimeException rx) {
+      // no application-specific user resolver configured: fine, the providers set the ids themselves
+      return null;
+    }
+  }
+
+  UserResolver INSTANCE = loadUserResolver();
+}
+
+
+/**
+ * Maps a proven identity onto the application's user entity.
+ * <p>
+ * This is the application-specific counterpart of the {@link AuthenticationProvider}: the provider
+ * proves <em>who</em> the caller is, the resolver decides <em>which user of this application</em>
+ * that is, by setting {@link Authentication#setUserId(long)} and
+ * {@link Authentication#setUserClassId(int)}.
+ * <p>
+ * The resolver is optional and only consulted when the provider chain left the user id at zero,
+ * which is the normal case for a generic single sign-on provider that only knows a token's subject.
+ * The built-in password provider found the user entity anyway and sets the ids itself.
+ * <pre>
+ *    &#64;Service(UserResolver.class)
+ *    public class MyUserResolver implements UserResolver {
+ *
+ *      &#64;Override
+ *      public void resolveUser(Authentication authentication) {
+ *        DomainContext context = Pdo.createDomainContext(Session.getSession());
+ *        User user = Pdo.create(User.class, context).selectByUniqueDomainKey(authentication.getName());
+ *        if (user == null || !user.isLoginAllowed()) {
+ *          throw new AuthenticationException("login refused");
+ *        }
+ *        authentication.setUserId(user.getId());
+ *        authentication.setUserClassId(user.getClassId());
+ *      }
+ *    }
+ * </pre>
+ *
+ * @author harald
+ */
+public interface UserResolver {
+
+  /**
+   * Gets the optional application-specific user resolver singleton.
+   *
+   * @return the resolver, null if no {@code @Service(UserResolver.class)} configured
+   */
+  static UserResolver getInstance() {
+    return UserResolverHolder.INSTANCE;
+  }
+
+  /**
+   * Resolves the application's user for a proven identity.
+   * <p>
+   * Implementations set the user id and the user class id on the given authentication.
+   * The invocation runs on the server, within the freshly opened session, so the persistence
+   * layer is available.
+   *
+   * @param authentication the proven identity
+   * @throws org.tentackle.session.LoginFailedException if there is no such user or the login must be refused
+   */
+  void resolveUser(Authentication authentication);
+
+}

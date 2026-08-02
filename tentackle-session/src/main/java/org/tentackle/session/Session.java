@@ -393,7 +393,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   /**
    * Creates an unnamed savepoint in the current transaction.
    *
-   * @return the savepoint handle unique within current transaction
+   * @return the savepoint handle unique within the current transaction
    */
   SavepointHandle setSavepoint();
 
@@ -402,7 +402,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    *
    * @param name the savepoint name
    *
-   * @return the savepoint handle unique within current transaction
+   * @return the savepoint handle unique within the current transaction
    */
   SavepointHandle setSavepoint(String name);
 

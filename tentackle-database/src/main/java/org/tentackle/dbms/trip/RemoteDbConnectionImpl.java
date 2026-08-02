@@ -29,6 +29,10 @@ import org.tentackle.trip.Transport;
  * <ul>
  * <li>client gets a reference to a {@link RemoteDbConnection} via a {@link org.tentackle.trip.Registry#lookup(String)}</li>
  * <li>the client invokes {@link RemoteDbConnection#login(SessionInfo)} and gets a reference to a {@link RemoteDbSession}.</li>
+ * <li>the session verifies the credentials carried by the session info: {@link RemoteDbSessionImpl#verifySessionInfo(SessionInfo)}
+ *     hands them to the {@link org.tentackle.session.auth.AuthenticationManager}, which drives the chain of configured
+ *     {@link org.tentackle.session.auth.AuthenticationProvider}s. A refused login throws a
+ *     {@link org.tentackle.session.LoginFailedException}.</li>
  * <li>all further client requests work through the session object and the remote delegates created within the session</li>
  * <li>the client invokes {@link RemoteDbSession#close()} to close the session and all its registered delegates.</li>
  * <li>in case the client terminates abnormally, the {@link RemoteDbSessionCleanupThread} will close the session.</li>

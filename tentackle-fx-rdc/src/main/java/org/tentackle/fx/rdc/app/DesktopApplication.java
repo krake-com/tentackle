@@ -34,6 +34,7 @@ import org.tentackle.reflect.ClassMappedListener;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.auth.PasswordCredentials;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.ValidatorCache;
 
@@ -190,7 +191,9 @@ public abstract class DesktopApplication<C extends FxController>
           @Override
           protected Void call() {
             try {
-              if (StringHelper.isAllWhitespace(sessionInfo.getUserName())) {
+              // with single sign-on the username is unknown until the server verified the credentials
+              if (sessionInfo.getCredentials() instanceof PasswordCredentials &&
+                  StringHelper.isAllWhitespace(sessionInfo.getUserName())) {
                 showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
                 return null;
               }

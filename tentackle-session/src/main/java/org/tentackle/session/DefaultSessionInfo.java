@@ -27,11 +27,12 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertiesUtilities;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.PasswordCredentials;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.FileNotFoundException;
 import java.io.Serial;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -39,7 +40,11 @@ import java.util.TimeZone;
 /**
  * The default implementation for a session-info.
  * <p>
- * The password is encrypted if a {@link Cryptor} is configured.
+ * The credentials default to {@link PasswordCredentials}, i.e., the traditional username and
+ * password login. Applications using another authentication method replace them via
+ * {@link #setCredentials(Credentials)}.
+ * <p>
+ * Confidential parts of the credentials are encrypted if a {@link Cryptor} is configured.
  *
  * @author harald
  */
@@ -52,9 +57,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private static final Logger LOGGER = Logger.get(DefaultSessionInfo.class);
 
   private String userName;                      // name of the user
-  private char[] password;                      // user's password
-  private byte[] encryptedPassword;             // encrypted password if a Cryptor is available
-  private transient boolean cleared;            // true if password was cleared (else set or no password set)
+  private Credentials credentials;              // the credentials to authenticate with, never null
   private long userId;                          // the user id
   private int userClassId;                      // the user class id
   private String applicationName;               // an optional application name
@@ -85,6 +88,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
   public DefaultSessionInfo(String username, char[] password, String propertiesName)  {
+    credentials = new PasswordCredentials();
     setUserName(username);
     setPassword(password);
     setPropertiesName(propertiesName == null ? Constants.BACKEND_PROPS : propertiesName);
@@ -113,6 +117,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @param properties the properties
    */
   public DefaultSessionInfo(EncryptedProperties properties)  {
+    credentials = new PasswordCredentials();
     setPropertiesName("<internal>");
     setProperties(properties);
     setUserName(properties.getPropertyIgnoreCase(Constants.BACKEND_USER));
@@ -207,6 +212,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   public void setUserName (String userName)  {
     assertMutable();
     this.userName = userName;
+    if (credentials instanceof PasswordCredentials passwordCredentials) {
+      passwordCredentials.setUserName(userName);
+    }
   }
 
   @Override
@@ -218,38 +226,34 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   @Override
   public void setPassword(char[] password)  {
     assertMutable();
-    cleared = false;
-    Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
-      encryptedPassword = password == null ? null : cryptor.encrypt(password);
-      this.password = null;
+    if (credentials instanceof PasswordCredentials passwordCredentials) {
+      passwordCredentials.setPassword(password);
     }
     else {
-      this.password = password;
-      this.encryptedPassword = null;
+      credentials = new PasswordCredentials(userName, password);
     }
   }
 
   @Override
   public char[] getPassword() {
-    if (encryptedPassword != null) {
-      return Cryptor.getInstance().decryptToChars(encryptedPassword);
-    }
-    return password;
+    return credentials instanceof PasswordCredentials passwordCredentials ? passwordCredentials.getPassword() : null;
   }
 
   @Override
   public void clearPassword() {
-    if (password != null) {
-      Arrays.fill(password, ' ');
-      password = null;
-      cleared = true;
-    }
-    if (encryptedPassword != null) {
-      Arrays.fill(encryptedPassword, (byte) 0);
-      encryptedPassword = null;
-      cleared = true;
-    }
+    credentials.clear();
+  }
+
+
+  @Override
+  public Credentials getCredentials() {
+    return credentials;
+  }
+
+  @Override
+  public void setCredentials(Credentials credentials) {
+    assertMutable();
+    this.credentials = credentials == null ? new PasswordCredentials(userName, null) : credentials;
   }
 
 
@@ -330,21 +334,16 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     buf.append('[');
     buf.append(userId);
     buf.append("]/");
-    if (cleared) {
-      buf.append("<cleared>");
-    }
-    else {
-      if (encryptedPassword != null) {
-        buf.append("<enc.passwd>");
+    if (credentials instanceof PasswordCredentials passwordCredentials) {
+      if (passwordCredentials.isPasswordCleared()) {
+        buf.append("<cleared>");
       }
       else {
-        if (password != null) {
-          buf.append("<passwd>");
-        }
-        else {
-          buf.append("<no-passwd>");
-        }
+        buf.append(passwordCredentials.isPasswordSet() ? "<passwd>" : "<no-passwd>");
       }
+    }
+    else {
+      buf.append(credentials);
     }
     if (applicationName != null) {
       buf.append('/');
@@ -364,7 +363,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   /**
    * Clones a session-info.<br>
-   * The password is copied, if not null.<br>
+   * The credentials are cloned, i.e., their secrets are physically copied.<br>
    * The properties are cloned as well.<br>
    * Cloned session infos are mutable by default and have no sessionName.
    */
@@ -378,17 +377,8 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
       throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
 
-    if (password != null) {
-      // physically copy the password (as it might be cleared later)
-      sessionInfo.password = new char[password.length];
-      System.arraycopy(password, 0, sessionInfo.password, 0, password.length);
-    }
-
-    if (encryptedPassword != null) {
-      // physically copy the password (as it might be cleared later)
-      sessionInfo.encryptedPassword = new byte[encryptedPassword.length];
-      System.arraycopy(encryptedPassword, 0, sessionInfo.encryptedPassword, 0, encryptedPassword.length);
-    }
+    // physically copy the credentials (as their secrets might be cleared later)
+    sessionInfo.credentials = credentials.clone();
 
     if (properties != null) {
       sessionInfo.properties = properties.clone();

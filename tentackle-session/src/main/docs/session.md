@@ -294,6 +294,8 @@ another.
   `@MasterSerialEventService(YourEvent.class)`. The server stays oblivious to handlers; clients bind their own.
 - **Custom session info:** provide a `SessionInfo`/`SessionInfoFactory` implementation via the SPI to carry extra
   per-session attributes between client and server.
+- **Custom authentication:** register an `AuthenticationProvider` to verify a new kind of credentials on the server,
+  and a `CredentialsProvider` to obtain them on the client — see [Authentication](authentication.md).
 - **Reacting to session lifecycle:** register a `SessionCloseHandler` (per session, or globally via the
   `SessionFactory`) — but keep it non-blocking, as it runs during close.
 
@@ -314,6 +316,7 @@ another.
 ## Related Documentation
 
 - [Backend Properties](backend-properties.md) — the reference of all session configuration keys (`url`, credentials, timeouts, server endpoints, …).
+- [Authentication](authentication.md) — the credentials a `SessionInfo` carries and the provider chain verifying them at login.
 - [Modification Tracking](modification-tracking.md) — the `ModificationTracker`, its listeners and the master serial events, in depth.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.

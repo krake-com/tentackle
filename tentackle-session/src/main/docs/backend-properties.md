@@ -154,10 +154,11 @@ entries are expanded.
 
 Interpreted by the [Rich Desktop Client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md).
 
-| Key          | Value                                                                                                                                                                                                                                                                        |
-|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `autologin`  | Log the user in with the `user`/`password` from the properties without asking for credentials. **The mere presence of the key enables it** (even `autologin=false`!) — remove the key to disable. A failed autologin terminates the application instead of offering retries. |
-| `noRdcCache` | The presence of the key disables the RDC's GUI caching — useful while editing database-backed bundles with [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), so changes become visible immediately.                                                  |
+| Key              | Value                                                                                                                                                                                                                                                                                                                                            |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `autologin`      | Log the user in with the `user`/`password` from the properties without asking for credentials. **The mere presence of the key enables it** (even `autologin=false`!) — remove the key to disable. A failed autologin terminates the application instead of offering retries.                                                                     |
+| `authentication` | Name of the authentication method, i.e. of the [`CredentialsProvider`](authentication.md#the-client-side-obtaining-the-credentials) used to obtain the credentials before the session is opened. Defaults to `password`. An interactive method (single sign-on) replaces the username and password fields of the login view by a sign-in button. |
+| `noRdcCache`     | The presence of the key disables the RDC's GUI caching — useful while editing database-backed bundles with [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), so changes become visible immediately.                                                                                                                      |
 
 ## Application-Level Keys
 
@@ -201,6 +202,7 @@ backend=@user
 ## Related Documentation
 
 - [Tentackle Session](session.md) — the session abstraction the properties configure.
+- [Authentication](authentication.md) — the `authentication` key: what a credentials provider is and how a login is verified.
 - [Application Bootstrap](../../../../tentackle-pdo/src/main/docs/application.md) — how properties files, command-line options and system properties come together at startup.
 - [Cryptor and EncryptedProperties](../../../../tentackle-common/src/main/docs/cryptor.md) — the `~`-encryption of secrets in these files.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `BackendInfo` and the backend (dialect) abstraction behind the `url` key.

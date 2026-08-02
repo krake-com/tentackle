@@ -13,6 +13,8 @@ topic-grouped listing of every document, see the
 - **Annotation processors (compile-time validation)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md)
 - **Archetype (project scaffolding)** — [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md), [Quickstart](./quickstart.md)
 - **AtlantaFX theme** — [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
+- **Authentication (login, credentials, providers)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
+- **AuthenticationProvider / AuthenticationManager** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-provider-chain)
 - **Auto-completion (text field suggestions)** — [Auto-Completion](../../../tentackle-fx/src/main/docs/auto-completion.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **Auto-update** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **Autologin (desktop clients)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#desktop-client-keys)
@@ -41,6 +43,7 @@ topic-grouped listing of every document, see the
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
+- **Credentials (password, token, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Cursors (streaming large result sets)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 
 ## D
@@ -129,13 +132,14 @@ topic-grouped listing of every document, see the
 - **Optional query conditions (QBF-style finders)** — [Query Methods](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#optional-conditions-qbf-style-finders)
 - **Oracle (backend peculiarities)** — [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
+- **OAuth2 / OIDC login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
 - **OSGi bundles** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
 
 ## P
 
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser)
-- **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
+- **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
@@ -177,6 +181,7 @@ topic-grouped listing of every document, see the
 - **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Session pool** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
+- **Single sign-on (SSO)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
 - **SessionTaskDispatcher (session-aware background tasks)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md#which-dispatcher-do-i-want), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
@@ -193,6 +198,7 @@ topic-grouped listing of every document, see the
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)
 - **Token locks** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
+- **Tokens (bearer, refresh, expiry)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
@@ -201,6 +207,7 @@ topic-grouped listing of every document, see the
 
 - **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
+- **UserResolver (principal → user entity)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#from-a-principal-to-a-user-the-userresolver)
 
 ## V
 

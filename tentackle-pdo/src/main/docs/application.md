@@ -149,7 +149,7 @@ guess, because the order is exactly what distinguishes the tiers.
 | Step | Default behavior |
 |------|------------------|
 | `initialize()` | Applies properties, initializes scripting, logs the discovered module hooks. The first step, always. |
-| `login()` | *(subclass)* Creates the `SessionInfo`, opens the session, makes it current, sets the root domain context. |
+| `login()` | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the root domain context. |
 | `configure()` | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()`. Runs **after** the connection exists. |
 | `finishStartup()` | Activates statistics if asked, starts the [modification tracker](../../../../tentackle-session/src/main/docs/session.md), registers its emergency-shutdown hook. |
 | `cleanup()` | Terminates PDO helper threads and closes the session. |

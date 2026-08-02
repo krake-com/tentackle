@@ -22,8 +22,13 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.PropertiesUtilities;
+import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.CredentialsPrompt;
+import org.tentackle.session.auth.CredentialsProvider;
+import org.tentackle.session.auth.DefaultCredentialsPrompt;
 
 /**
  * Abstract class to handle the application's lifecycle for a console application (no gui).
@@ -106,6 +111,7 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
     configureSessionInfo(sessionInfo);
+    obtainCredentials(sessionInfo);
     setSessionInfo(sessionInfo);
     Session session = createSession(sessionInfo);
     session.makeCurrent();
@@ -113,6 +119,34 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
     setDomainContext(createDomainContext(session));
 
     updateSessionInfoAfterLogin();
+  }
+
+
+  /**
+   * Obtains the credentials to log in with.
+   * <p>
+   * Determines the {@link CredentialsProvider} from the {@value Constants#BACKEND_AUTHENTICATION}
+   * property and lets it create the credentials. For the default username/password method there is
+   * nothing to obtain, since the session info carries them already.
+   *
+   * @param sessionInfo the session info
+   */
+  protected void obtainCredentials(SessionInfo sessionInfo) {
+    CredentialsProvider credentialsProvider = CredentialsProvider.getInstance(sessionInfo);
+    Credentials credentials = credentialsProvider.createCredentials(sessionInfo, createCredentialsPrompt());
+    if (credentials == null) {
+      throw new LoginFailedException("no credentials obtained");
+    }
+    sessionInfo.setCredentials(credentials);
+  }
+
+  /**
+   * Creates the prompt an interactive {@link CredentialsProvider} may use.
+   *
+   * @return the prompt, never null
+   */
+  protected CredentialsPrompt createCredentialsPrompt() {
+    return new DefaultCredentialsPrompt();
   }
 
 }

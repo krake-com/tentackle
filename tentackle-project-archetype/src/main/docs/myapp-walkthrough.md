@@ -487,14 +487,20 @@ The `trip` packages contain the connection/session classes that make remoting co
 - `myapp-server/.../server/trip/MyAppRemoteDbConnectionImpl` and `MyAppRemoteDbSessionImpl` — the **server-side**
   endpoint.
 
-The two server classes are where the application's authentication actually happens:
+Together with `myapp-server/.../server/auth/MyAppPasswordAuthenticationProvider` they are where the application's
+authentication happens — split along the line between *verifying credentials* and *managing a session*
+(see [Authentication](../../../../tentackle-session/src/main/docs/authentication.md)):
 
 - `MyAppRemoteDbConnectionImpl.checkClientVersion(...)` rejects clients whose `Version.RELEASE` differs from the
   server's — version skew is caught at connect time (`VersionIncompatibleException`).
-- `MyAppRemoteDbSessionImpl.verifySessionInfo(...)` performs **login**: it looks up the `User` by unique domain key
-  (the uppercase username), compares `user.hash(password)` against `user.selectPasswordHash()` (recall the hash is
-  `[MUTE]`d out of the PDO and fetched on demand), enforces `isLoginAllowed()`, rejects duplicate logins of the same
-  main session (`AlreadyLoggedInException`), sets the session locale, and **logs a `LOGIN` message**.
+- `MyAppPasswordAuthenticationProvider` is a `@Service(AuthenticationProvider.class)` and does the **credential
+  check**: it looks up the `User` by unique domain key (the uppercase username), compares `user.hash(password)`
+  against `user.selectPasswordHash()` (recall the hash is `[MUTE]`d out of the PDO and fetched on demand), enforces
+  `isLoginAllowed()`, and returns the proven identity with the user's id. Adding single sign-on means adding a
+  second provider next to it, not editing this one.
+- `MyAppRemoteDbSessionImpl.verifySessionInfo(...)` calls `super` — which runs that provider chain — and then adds
+  what belongs to the **session**: it sets the locale, rejects duplicate logins of the same main session
+  (`AlreadyLoggedInException`), and **logs a `LOGIN` message**.
 - `closeDb(...)` mirrors that on logout / crash, writing a `LOGOUT` message (annotated as `crashed …` if the session
   died). This is the producer side of the events the daemon listens for in §8.3.
 

@@ -21,9 +21,11 @@
  */
 module org.tentackle.session {
   exports org.tentackle.session;
+  exports org.tentackle.session.auth;
 
   // TRIP
   opens org.tentackle.session to org.tentackle.core;
+  opens org.tentackle.session.auth to org.tentackle.core;
 
   requires transitive org.tentackle.core;
 

@@ -21,6 +21,8 @@ package org.tentackle.session;
 
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.misc.Immutable;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.PasswordCredentials;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -78,12 +80,13 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the password.
    *
-   * @return the password
+   * @return the password, null if the credentials are not password based
    */
   char[] getPassword();
 
   /**
-   * Sets the password.
+   * Sets the password.<br>
+   * Replaces the current credentials by {@link PasswordCredentials}.
    *
    * @param password the password
    */
@@ -93,8 +96,31 @@ public interface SessionInfo extends Immutable, Serializable {
    * Clears the password.<br>
    * Will remove it from memory by overwriting each
    * element in the character array.
+   *
+   * @see Credentials#clear()
    */
   void clearPassword();
+
+  /**
+   * Gets the credentials to authenticate with.
+   * <p>
+   * They are transferred to the application server at login, where the
+   * {@link org.tentackle.session.auth.AuthenticationManager} hands them to the configured
+   * {@link org.tentackle.session.auth.AuthenticationProvider}s.
+   *
+   * @return the credentials, never null
+   */
+  Credentials getCredentials();
+
+  /**
+   * Sets the credentials to authenticate with.
+   * <p>
+   * This is how a client logs in with something other than a username and a password, for
+   * example with a token obtained from an identity provider.
+   *
+   * @param credentials the credentials, null to reset to empty {@link PasswordCredentials}
+   */
+  void setCredentials(Credentials credentials);
 
   /**
    * Gets the epochal time since when logged in.

@@ -10,6 +10,7 @@
  */
 module ${package}.server {
   exports ${package}.server;
+  exports ${package}.server.auth;
   exports ${package}.server.trip;
 
   requires transitive ${package}.persist;
