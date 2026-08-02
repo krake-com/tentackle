@@ -279,32 +279,6 @@ The module declares its dependencies as:
 </dependency>
 ```
 
-### jlink / jpackage caveat
-
-Since version 0.10.9, KWIK pulls in the **automatic module**
-`io.whitfin.siphash`. Automatic modules cannot be placed on the module path by
-jlink. When building a runtime image with the `tentackle-jlink-maven-plugin`,
-move `tentackle-quic` and KWIK explicitly to the module path so the plugin does
-not, as a side effect, push *all* modules onto it:
-
-```xml
-<plugin>
-  <groupId>org.tentackle</groupId>
-  <artifactId>tentackle-jlink-maven-plugin</artifactId>
-  <configuration>
-    <modulePathOnly>
-      <module>org.tentackle.quic</module>
-      <module>tech.kwik.core</module>
-    </modulePathOnly>
-    ...
-  </configuration>
-</plugin>
-```
-
-This is safe precisely because `tentackle-quic` is not required by any other
-Tentackle module — it only contributes the QUIC transports via
-`@TransportService`.
-
 ### JPMS descriptor
 
 ```java
