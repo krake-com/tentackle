@@ -13,10 +13,10 @@
 <strong>({\@code \@wurblet})</strong> Generate the table- and field declarations for the query DSL.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; DSL [options] &lt;entity&gt; [&lt;attribute&gt; ...]
+&#064;wurblet &lt;tag&gt; QueryDSL [options] &lt;entity&gt; [&lt;attribute&gt; ...]
 <p>
 example:<br>
-&#064;wurblet dsl DSL Customer id name turnover active
+&#064;wurblet dsl QueryDSL Customer id name turnover active
 <p>
 arguments:
 <ul>

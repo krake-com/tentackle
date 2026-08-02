@@ -45,7 +45,7 @@ import java.util.Objects;
  * persistence layer reads and writes: the non-primitive type for primitives (values in a query are
  * objects) and the external type for {@code Convertible}s.
  *
- * @see DSL
+ * @see QueryDSL
  */
 public class DslDeclarationFactory {
 

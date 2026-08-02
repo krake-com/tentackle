@@ -46,10 +46,10 @@ import java.util.Objects;
  *   Field&lt;BMoney&gt;  TURNOVER = CUSTOMER.field("turnover", BMoney.class);
  * </pre>
  * If the table is a regular entity of the application's model, the
- * DSL-wurblet is a better choice since it automatically keeps the
+ * QueryDSL-wurblet is a better choice since it automatically keeps the
  * generated constants in sync with the model:
  * <pre>
- *   // &#64;wurblet dsl DSL Customer id name turnover
+ *   // &#64;wurblet customer QueryDSL Customer id name turnover
  * </pre>
  * The queries are then built and executed as follows:
  * <pre>

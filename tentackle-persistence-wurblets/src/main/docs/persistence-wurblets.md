@@ -66,7 +66,7 @@ genuinely custom logic outside the guarded regions.
 [`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#modelwurblet--the-shared-base) and is the
 base class of the query wurblets in this module (pulled in via
 [`header.incl`](../wurblets/org/tentackle/persist/wurblet/header.incl)'s `@{extends DbModelWurblet}`; the
-[`DSL` wurblet](#the-dsl-wurblet) is the exception, as it takes no query expression). On top of
+[`QueryDSL` wurblet](#the-querydsl-wurblet) is the exception, as it takes no query expression). On top of
 the model loading and target resolution it inherits, it adds:
 
 - **Tracking and context options** parsed in `run()`: `--context=<key>` (domain-context column),
@@ -104,16 +104,16 @@ documentation in their leading `@{comment ...}@` block. They fall into four grou
 | [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl) | The per-class `PersistentObjectClassVariables` holder (table alias, statement-id registry, super/sub-class wiring, eager relations) shared by all instances of the entity. |
 | [`MethodsImpl`](../wurblets/org/tentackle/persist/wurblet/MethodsImpl.wrbl)       | Getter/setter and other method *implementations*. Options: `--noif` (no interface ⇒ no `@Override`), `--noudk`, `--noisroot`, `--mock`.                                    |
 | [`MethodCache`](../wurblets/org/tentackle/persist/wurblet/MethodCache.wrbl)       | The `PdoMethodCache` for an embedded entity.                                                                                                                               |
-| [`DSL`](../wurblets/org/tentackle/persist/wurblet/DSL.wrbl)                       | The table- and field constants of the [query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md). Options: `--public`, `--protected`, `--prefix[=<prefix>]`, `--table=<constant>`, `--alias=<alias>`, `--noalias`. |
+| [`QueryDSL`](../wurblets/org/tentackle/persist/wurblet/QueryDSL.wrbl)             | The table- and field constants of the [query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md). Options: `--public`, `--protected`, `--prefix[=<prefix>]`, `--table=<constant>`, `--alias=<alias>`, `--noalias`. |
 
-#### The DSL wurblet
+#### The QueryDSL wurblet
 
-[`DSL`](../wurblets/org/tentackle/persist/wurblet/DSL.wrbl) generates the constants a
+[`QueryDSL`](../wurblets/org/tentackle/persist/wurblet/QueryDSL.wrbl) generates the constants a
 [query-DSL](../../../../tentackle-database/src/main/docs/query-dsl.md) query is built from — the table and
 the typed columns:
 
 ```java
-  // @wurblet dsl DSL Customer id name turnover active
+  // @wurblet customer QueryDSL Customer id name turnover active
 ```
 
 ```java
@@ -147,8 +147,8 @@ Because the constants are ordinary java constants, they live wherever the develo
 the declarations of two entities into one class needs `--prefix` (or `--table=`) to keep the names apart:
 
 ```java
-  // @wurblet customer DSL --prefix Customer id name
-  // @wurblet order DSL --prefix Ordr customerId net
+  // @wurblet customer QueryDSL --prefix Customer id name
+  // @wurblet order QueryDSL --prefix Order customerId net
 ```
 
 The generated code refers to `DSL`, `Table` and `Field` from `org.tentackle.dbms.dsl` — and to
