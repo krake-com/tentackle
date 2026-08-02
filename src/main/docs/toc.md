@@ -9,6 +9,7 @@ the [Index](./index.md).
 - [Quickstart](./quickstart.md) — generate, build, and run a multi-tier application in minutes.
 - [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
 - [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
+- [What a Seasoned Java Developer Would Not Expect](./unexpected.md) — the distilled list of deviations from mainstream Java frameworks, each with a pointer to the document that covers it.
 - [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md) — the Bill of Materials for pinning Tentackle module versions in downstream projects.
 
 ## Concepts & Architecture
@@ -16,6 +17,7 @@ the [Index](./index.md).
 - [Tentackle Modules](./modules.md) — the build-time, runtime and common modules, and how they layer.
 - [Multi-Tier Cascade](./tiers.md) — nested servers and clients; how the same artifact runs at any tier.
 - [Correctness First](./correctness-first.md) — the design philosophy: refuse to be wrong quietly.
+- [Exceptions and Error Handling](./exceptions.md) — the exception hierarchy, the `temporary` flag behind transparent retry, session-aware messages, and how a `Throwable` survives a trip between tiers.
 - [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — where location transparency shines.
 - [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
 - [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modeling tool.

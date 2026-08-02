@@ -324,3 +324,4 @@ another.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol that carries a remote session's calls and its `SessionInfo` between JVMs.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — token locks, whose `lockLingerEnabled` flag is carried on the `SessionInfo`.
 - [Database](../../../../tentackle-database/src/main/docs/database.md) — the module providing the concrete local `Session` implementation.
+- [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md) — `PersistenceException` and the session it points at, lazy messages, and the `SessionUtilities` alignment hooks.

@@ -68,6 +68,10 @@ topic-grouped listing of every document, see the
 - **Effective class (`getClass()` vs `instanceof` on a PDO proxy)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md#getclass-geteffectiveclass-and-instanceof)
 - **Embedded entities** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Error display (marking controls, error/info popups)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
+- **Error handling / exception model** — [Exceptions and Error Handling](./exceptions.md), [Correctness First](./correctness-first.md)
+- **`ExceptionHelper` (searching and handling exception chains)** — [Exceptions and Error Handling](./exceptions.md#exceptionhelper--working-with-chains)
+- **Exceptions (hierarchy, `TentackleRuntimeException`, `PersistenceException`)** — [Exceptions and Error Handling](./exceptions.md)
+- **Exceptions across tiers (remoting a `Throwable`)** — [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Expandable text areas (one-liner expanding to a multi-line editor)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#expandable-one-line-text-areas)
 
 ## F
@@ -94,15 +98,17 @@ topic-grouped listing of every document, see the
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
 - **Interceptors** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
+- **Interrupts (`InterruptedRuntimeException`)** — [Exceptions and Error Handling](./exceptions.md#interrupts)
 
 ## J
 
-- **JPMS / Jigsaw (modules)** — [Tentackle Modules](./modules.md), [Quickstart](./quickstart.md)
+- **JPMS / Jigsaw (modules, automatic modules)** — [Tentackle Modules](./modules.md#named-modules-and-automatic-modules), [Quickstart](./quickstart.md)
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
 
 ## L
 
 - **Locking (optimistic `serial`, token locks)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
+- **`Loggable` (how much of an exception to log)** — [Exceptions and Error Handling](./exceptions.md#loggable-how-much-of-an-exception-to-log), [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md)
 - **Logging** — [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md), [SLF4J Provider](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md), [Log4J 2 Provider](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md)
 
 ## M
@@ -192,6 +198,7 @@ topic-grouped listing of every document, see the
 ## T
 
 - **Technical & scientific applications** — [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)
+- **Temporary exceptions (the retry classifier)** — [Exceptions and Error Handling](./exceptions.md#the-temporary-flag), [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md#what-is-retried--temporary-exceptions)
 - **Tables / tree-tables (configuration, cell types, layouts)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Table names (`@TableName`, schemas, prefixes)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
@@ -205,6 +212,7 @@ topic-grouped listing of every document, see the
 
 ## U
 
+- **Unexpected (deviations from mainstream Java frameworks)** — [What a Seasoned Java Developer Would Not Expect](./unexpected.md)
 - **Unique domain key (UDK)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Update (self-update service)** — [Tentackle Update](../../../tentackle-update/src/main/docs/update.md), [FX RDC Update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)
 - **UserResolver (principal → user entity)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#from-a-principal-to-a-user-the-userresolver)

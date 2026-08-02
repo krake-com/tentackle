@@ -67,6 +67,7 @@ nav:
       - Tentackle Modules: modules.md
       - Multi-Tier Cascade: tiers.md
       - Correctness First: correctness-first.md
+      - Exceptions and Error Handling: exceptions.md
       - Technical & Scientific Applications: technical-scientific.md
       - PDOs vs. Traditional ORMs: pdo-vs-orm.md
   - Persistent Domain Objects (PDO):

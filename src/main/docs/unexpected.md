@@ -125,8 +125,10 @@ The framework's first commitment is [fail loudly and early rather than corrupt q
   ([services](../../../tentackle-common/src/main/docs/services.md)). Annotation *parameters* are
   captured as data too, so resolving "class id 2001 ⇄ `Message`" loads no classes at all — startup
   time does not grow with the model.
-- **The same SPI works on the classpath and the module path.** Every one of the 37 reactor modules
-  is a real [JPMS module](./modules.md), yet applications run modular, non-modular, or mixed.
+- **The same SPI works on the classpath and the module path.** Every artifact an application ships
+  with is a real [JPMS module](./modules.md#named-modules-and-automatic-modules) with an explicit
+  `module-info.java`, yet applications run modular, non-modular, or mixed — the service registry is
+  data, not a scan, so it does not care which.
 - **The database schema is derived, migrated, and verified from the model.** The
   [SQL plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)
   generates backend-specific DDL, computes incremental migrations by comparing the model against a

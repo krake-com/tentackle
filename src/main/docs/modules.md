@@ -1,11 +1,33 @@
 ## Tentackle Modules
 
-Tentackle is a modular Maven reactor. Every module carries an explicit `module-info.java`
-(JPMS) and falls into one of three kinds:
+Tentackle is a modular Maven reactor. Every module falls into one of three kinds:
 
 1. **runtime** — modules an application ships with;
 2. **build-time** — Maven plugins and code-generation support;
 3. **common** — shared by both build- and runtime.
+
+### Named modules and automatic modules
+
+Twenty artifacts — every module an application ships with, plus `tentackle-model` — are real
+[JPMS](https://openjdk.org/projects/jigsaw/) modules with an explicit `module-info.java`:
+`tentackle-common`, `-core`, `-sql`, `-model`, `-session`, `-database`, `-pdo`, `-persistence`,
+`-domain`, `-i18n`, `-quic`, `-update`, `-web`, `-fx`, `-fx-rdc`, `-fx-atlanta`, `-fx-rdc-update`,
+`-log-slf4j`, `-log-log4j2v` and `-script-jsr`.
+
+The remaining artifacts declare an `Automatic-Module-Name` in their JAR manifest instead. Those are
+the build-time modules (the Maven plugins, `tentackle-maven-support`, `tentackle-build-support`, the
+wurblets), the test-support modules (`tentackle-pdo-mock`, `tentackle-test-pdo`,
+`tentackle-test-fx-rdc`) and the three providers whose third-party backends are themselves not
+modularized (`tentackle-script-groovy`, `tentackle-script-ruby`, `tentackle-fx-rdc-poi`). They carry
+a stable module name, so a modular application can `requires` them, but no compile-time module
+descriptor. `tentackle-bom` and `tentackle-project-archetype` ship no code at all.
+
+This is not a limitation of the programming model: the
+[Service API](../../../tentackle-common/src/main/docs/services.md) resolves implementations from
+`META-INF` data written at build time, so Tentackle applications run on the module path, the class
+path, or a mix of both — and the
+[jlink/jpackage plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+derives the right packaging category for each artifact by itself.
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)

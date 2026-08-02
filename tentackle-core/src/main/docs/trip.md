@@ -974,3 +974,4 @@ Key details:
 - [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
 - [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
 - [Tentackle Modules](../../../../src/main/docs/modules.md) — where `tentackle-core` (TRIP) sits among the framework modules.
+- [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md) — how a `Throwable` is put on the wire and rethrown unchanged on the far side.

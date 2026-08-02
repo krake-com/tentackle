@@ -214,6 +214,8 @@ back with the transaction. Two things to watch:
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — the optimistic `serial`
   check whose temporary `NotFoundException` powers the retry, and token locks for long
   interactions.
+- [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md) — where the `temporary`
+  flag comes from, how it survives a remote call, and what a rollback actually logs.
 - [Interceptors](../../../../tentackle-core/src/main/docs/interceptors.md) — the interception
   framework `@Transaction` is built on, and the other built-in interceptors
   (`@PreCommit`/`@PostCommit`, `@NoTransaction`, …).
