@@ -26,9 +26,12 @@ import org.tentackle.session.ModificationListenerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
@@ -44,6 +47,7 @@ import static org.testng.Assert.assertTrue;
 public class ModificationTrackerConcurrencyTest extends AbstractDbTest {
 
   private static final String TRACKED_NAME = "mttest";
+  private static final String OTHER_NAME = "mttest2";
   private static final int LISTENER_COUNT = 3000;   // the more listeners, the longer poll() iterates them
   private static final long RUN_MILLIS = 5000;
 
@@ -130,6 +134,100 @@ public class ModificationTrackerConcurrencyTest extends AbstractDbTest {
   }
 
 
+  /**
+   * Registering listeners for the same, not yet configured name concurrently must not
+   * configure the name twice.
+   * <p>
+   * The loser's table entry is replaced in the tracker's maps, but is still referenced by
+   * the listener registered for it. Since poll() only updates the entry found in the maps,
+   * the listener's entry would keep its initial serial and fire on every poll from then on.
+   */
+  @Test
+  public void testConcurrentConfigurationOfSameName() throws Exception {
+    Db db = getSession();
+
+    DbModificationTracker tracker = new DbModificationTracker("test configuration tracker");
+    tracker.setSession(db.clone(null));
+    tracker.setSleepInterval(50);
+    tracker.start();
+
+    try {
+      // register listeners for the same still unconfigured name at the very same time
+      int threadCount = 4;
+      List<CountingListener> listeners = new ArrayList<>();
+      List<Thread> threads = new ArrayList<>();
+      CountDownLatch startSignal = new CountDownLatch(1);
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+
+      for (int i = 0; i < threadCount; i++) {
+        CountingListener listener = new CountingListener();
+        listeners.add(listener);
+        Thread thread = new Thread(() -> {
+          try {
+            startSignal.await();
+            tracker.addModificationListener(listener);
+          }
+          catch (Throwable t) {
+            failure.set(t);
+          }
+        }, "registrar " + i);
+        threads.add(thread);
+        thread.start();
+      }
+
+      startSignal.countDown();
+      for (Thread thread : threads) {
+        thread.join(30000);
+      }
+      assertNull(failure.get(), "registering the listeners failed: " + failure.get());
+
+      // modify the tracked name once: all listeners must notice
+      countModification(db, tracker, TRACKED_NAME);
+      awaitPolls(db, tracker, 3);
+      for (CountingListener listener : listeners) {
+        assertTrue(listener.count.get() > 0, "the listener was not notified at all");
+      }
+
+      // now modify another name only: the listeners of TRACKED_NAME must not fire anymore
+      List<Integer> countsBefore = new ArrayList<>();
+      listeners.forEach(listener -> countsBefore.add(listener.count.get()));
+
+      awaitPolls(db, tracker, 5);
+
+      for (int i = 0; i < listeners.size(); i++) {
+        assertEquals(listeners.get(i).count.get(), (int) countsBefore.get(i),
+                     "listener " + i + " was notified again although '" + TRACKED_NAME +
+                     "' was not modified - it refers to a table entry configured twice");
+      }
+    }
+    finally {
+      tracker.terminate();
+    }
+  }
+
+
+  /**
+   * Modifies another name repeatedly, so that the master serial changes and the tracker polls.
+   *
+   * @param db the session
+   * @param tracker the tracker
+   * @param count the number of modifications
+   */
+  private void awaitPolls(Db db, DbModificationTracker tracker, int count) throws InterruptedException {
+    for (int i = 0; i < count; i++) {
+      countModification(db, tracker, OTHER_NAME);
+      Thread.sleep(150);    // at least 2 polling intervals
+    }
+  }
+
+  private void countModification(Db db, DbModificationTracker tracker, String name) {
+    db.transaction("countModification", () -> {
+      tracker.countModification(db, name);
+      return null;
+    });
+  }
+
+
   private ModificationListener createListener() {
     return new ModificationListenerAdapter(TRACKED_NAME) {
       @Override
@@ -137,6 +235,24 @@ public class ModificationTrackerConcurrencyTest extends AbstractDbTest {
         // nothing to do, we're only interested in the tracker surviving
       }
     };
+  }
+
+
+  /**
+   * A listener counting its invocations.
+   */
+  private static class CountingListener extends ModificationListenerAdapter {
+
+    private final AtomicInteger count = new AtomicInteger();
+
+    private CountingListener() {
+      super(TRACKED_NAME);
+    }
+
+    @Override
+    public void dataChanged(ModificationEvent event) {
+      count.incrementAndGet();
+    }
   }
 
 }

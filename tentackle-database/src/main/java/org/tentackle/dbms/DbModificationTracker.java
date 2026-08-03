@@ -323,6 +323,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
   private final Object shutdownRunnablesLock;                       // guards shutdownRunnables
+  private final Object configurationLock;                           // serializes configuration tasks if the tracker isn't running
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
   private final Set<ListenerEntry> listenerEntries;                 // modification listeners, sorted by priority
@@ -367,6 +368,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     timeRandom = new Random();
     shutdownRunnables = new ArrayList<>();
     shutdownRunnablesLock = new Object();
+    configurationLock = new Object();
   }
 
   /**
@@ -451,20 +453,21 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   @Override
   public void addModificationListener(ModificationListener listener) {
+    // notice that the listener must refer to the configured entry, not to one configured concurrently
     if (listener.getNames() == null || listener.getNames().length == 0) {
       // unnamed master listener
-      if (masterEntry == null) {
-        configureMaster();
+      TableEntry entry = masterEntry;
+      if (entry == null) {
+        entry = configureMaster();
       }
-      listenerEntries.add(new ListenerEntry(listener, masterEntry));
+      listenerEntries.add(new ListenerEntry(listener, entry));
     }
     else  {
       // named listener(s)
       for (String name: listener.getNames()) {
         TableEntry entry = tableEntriesByName.get(name);
         if (entry == null) {
-          configureName(name);
-          entry = tableEntriesByName.get(name);
+          entry = configureName(name);
         }
         listenerEntries.add(new ListenerEntry(listener, entry));
       }
@@ -534,10 +537,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return the current master serial
    */
   public long getMasterSerial() {
-    if (masterEntry == null) {
-      configureMaster();
+    TableEntry entry = masterEntry;
+    if (entry == null) {
+      entry = configureMaster();
     }
-    return masterEntry.serial;
+    return entry.serial;
   }
 
   /**
@@ -553,8 +557,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
     TableEntry entry = tableEntriesByName.get(tableName);
     if (entry == null) {
-      configureName(tableName);
-      entry = tableEntriesByName.get(tableName);
+      entry = configureName(tableName);
     }
     return new IdSerialTuple(entry.id, entry.serial);
   }
@@ -1102,20 +1105,17 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
-        IdSerialTuple idSer = selectIdSerialForName(tableName);
-        long lastSerial = idSer == null ? 0 : idSer.getSerial();
-        counter.setLastSerial(lastSerial);
-        countersByName.put(tableName, counter);
-        countersById.put(counter.getId(), counter);
+        if (countersByName.get(tableName) == null) {   // another task may have configured it in the meantime
+          ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
+          IdSerialTuple idSer = selectIdSerialForName(tableName);
+          long lastSerial = idSer == null ? 0 : idSer.getSerial();
+          counter.setLastSerial(lastSerial);
+          countersByName.put(tableName, counter);
+          countersById.put(counter.getId(), counter);
+        }
       }
     };
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
-    }
-    else  {
-      addTaskAndWait(task);
-    }
+    runConfigurationTask(task);
     ModificationTally tally = countersByName.get(tableName);
     if (tally == null) {
       throw new PersistenceException("configuration of counter failed for " + tableName);
@@ -1125,50 +1125,87 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   /**
    * Configures the master entry.
+   *
+   * @return the master entry, never null
    */
-  private void configureMaster() {
+  private TableEntry configureMaster() {
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        long serial = selectMasterSerial();
-        masterEntry = new TableEntry(null, 0, serial);
+        if (masterEntry == null) {   // another task may have configured it in the meantime
+          long serial = selectMasterSerial();
+          masterEntry = new TableEntry(null, 0, serial);
+        }
       }
     };
 
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
+    runConfigurationTask(task);
+    TableEntry entry = masterEntry;
+    if (entry == null) {
+      throw new PersistenceException("configuration of the master entry failed");
     }
-    else  {
-      addTaskAndWait(task);
-    }
+    return entry;
   }
 
   /**
    * Configures a named entry.
    *
    * @param name the name
+   * @return the table entry, never null
    */
-  private void configureName(String name) {
+  private TableEntry configureName(String name) {
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        IdSerialTuple idSer = selectIdSerialForName(name);
-        if (idSer == null) {
-          // missing: create it
-          getCounter(name).addToModificationTable();
-          idSer = selectIdSerialForName(name);
+        if (tableEntriesByName.get(name) == null) {   // another task may have configured it in the meantime
+          IdSerialTuple idSer = selectIdSerialForName(name);
+          if (idSer == null) {
+            // missing: create it
+            getCounter(name).addToModificationTable();
+            idSer = selectIdSerialForName(name);
+          }
+          TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
+          tableEntriesByName.put(name, entry);
+          tableEntriesById.put(idSer.getId(), entry);
         }
-        TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
-        tableEntriesByName.put(name, entry);
-        tableEntriesById.put(idSer.getId(), entry);
       }
     };
 
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
+    runConfigurationTask(task);
+    TableEntry entry = tableEntriesByName.get(name);
+    if (entry == null) {
+      throw new PersistenceException("configuration of the table entry failed for " + name);
     }
-    else  {
-      addTaskAndWait(task);
+    return entry;
+  }
+
+  /**
+   * Runs a configuration task.
+   * <p>
+   * Configuration tasks lazily create the entries and counters. They must be serialized against
+   * each other, since two threads requesting the same entry concurrently would otherwise create
+   * it twice: the loser's instance is replaced in the maps, but is still referenced by the
+   * {@link ListenerEntry} created for it. Its serial would never be updated again by {@link #poll()},
+   * so the listener would fire on every poll from then on.
+   * <p>
+   * Tasks are serialized by the tracker thread, which executes them one after the other.
+   * Only if the tracker is not running, they are executed by the invoking thread and must be
+   * serialized explicitly. Notice that the tracker thread never acquires that lock (it always
+   * takes the first branch below), so waiting for a task cannot deadlock against it.
+   *
+   * @param task the configuration task
+   */
+  private void runConfigurationTask(Task task) {
+    if (isTaskDispatcherThread()) {
+      task.run();               // we are the tracker thread: already serialized
+    }
+    else if (isAlive()) {
+      addTaskAndWait(task);     // serialized by the tracker thread
+    }
+    else {
+      synchronized (configurationLock) {
+        task.run();             // no tracker thread to serialize us
+      }
     }
   }
 
