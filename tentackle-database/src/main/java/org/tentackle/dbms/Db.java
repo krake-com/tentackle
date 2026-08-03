@@ -1620,11 +1620,14 @@ public class Db implements Session, Cloneable {
                                                TransactionIsolation.valueOf(connection().getTransactionIsolation()) +
                                                " to " + transactionIsolation);
         }
-        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT &&
-            transactionWritability.getWritable() != connection().isReadOnly()) {
-          throw new PersistenceException(this, connection().isReadOnly() ?
-                                               "cannot change a running read-only transaction to read-write" :
-                                               "cannot change a running read-write transaction to read-only");
+        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+          // notice that the writability is the inverse of the connection's read-only mode (see the tx starter above)
+          boolean readOnly = connection().isReadOnly();
+          if (transactionWritability != TransactionWritability.valueOf(!readOnly)) {
+            throw new PersistenceException(this, readOnly ?
+                                                 "cannot change a running read-only transaction to read-write" :
+                                                 "cannot change a running read-write transaction to read-only");
+          }
         }
         transaction.incrementTxLevel(txName);    // increment the nesting level
         LOGGER.fine("{0}: nested begin", this);

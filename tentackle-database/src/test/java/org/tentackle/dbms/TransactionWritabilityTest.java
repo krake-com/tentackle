@@ -1,0 +1,112 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.dbms;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
+
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.TransactionWritability;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
+
+/**
+ * Tests the transaction writability of nested {@link Db#begin(String, org.tentackle.session.TransactionIsolation,
+ * TransactionWritability)} invocations.
+ *
+ * @author harald
+ */
+public class TransactionWritabilityTest extends AbstractDbTest {
+
+  public TransactionWritabilityTest() {
+    super(TransactionType.NONE);    // the transactions are managed by the test methods
+  }
+
+  @AfterMethod
+  public void rollbackPendingTransaction() {
+    Db db = getSession();
+    while (db.isTxRunning()) {
+      db.rollbackImmediately(null);
+    }
+  }
+
+
+  @Test
+  public void testOuterBeginAppliesWritability() {
+    Db db = getSession();
+
+    long voucher = db.begin("readWrite", null, TransactionWritability.READ_WRITE);
+    assertFalse(db.connection().isReadOnly(), "read-write transaction must not be read-only");
+    db.rollback(voucher);
+
+    voucher = db.begin("readOnly", null, TransactionWritability.READ_ONLY);
+    assertTrue(db.connection().isReadOnly(), "read-only transaction must be read-only");
+    db.rollback(voucher);
+  }
+
+
+  @Test
+  public void testNestedBeginWithSameWritabilityIsAllowed() {
+    Db db = getSession();
+
+    long voucher = db.begin("readWrite", null, TransactionWritability.READ_WRITE);
+    assertEquals(db.begin("nested", null, TransactionWritability.READ_WRITE), 0,
+                 "a nested begin must not create another transaction");
+    assertEquals(db.getTxLevel(), 2);
+    db.rollback(voucher);
+
+    voucher = db.begin("readOnly", null, TransactionWritability.READ_ONLY);
+    assertEquals(db.begin("nested", null, TransactionWritability.READ_ONLY), 0,
+                 "a nested begin must not create another transaction");
+    assertEquals(db.getTxLevel(), 2);
+    db.rollback(voucher);
+  }
+
+
+  @Test
+  public void testNestedBeginWithoutWritabilityIsAllowed() {
+    Db db = getSession();
+
+    long voucher = db.begin("readOnly", null, TransactionWritability.READ_ONLY);
+    assertEquals(db.begin("nestedDefault", null, TransactionWritability.DEFAULT), 0);
+    assertEquals(db.begin("nestedNull", null, null), 0);
+    assertEquals(db.begin("nestedPlain"), 0);
+    db.rollback(voucher);
+  }
+
+
+  @Test
+  public void testNestedBeginWithConflictingWritabilityIsRejected() {
+    Db db = getSession();
+
+    long voucher = db.begin("readWrite", null, TransactionWritability.READ_WRITE);
+    assertThrows(PersistenceException.class,
+                 () -> db.begin("nested", null, TransactionWritability.READ_ONLY));
+    db.rollback(voucher);
+
+    voucher = db.begin("readOnly", null, TransactionWritability.READ_ONLY);
+    assertThrows(PersistenceException.class,
+                 () -> db.begin("nested", null, TransactionWritability.READ_WRITE));
+    db.rollback(voucher);
+  }
+
+}
