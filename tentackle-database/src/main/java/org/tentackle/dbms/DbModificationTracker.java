@@ -53,6 +53,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -321,15 +322,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
+  private final Object shutdownRunnablesLock;                       // guards shutdownRunnables
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
-  private final Set<ListenerEntry> listenerEntries;                 // modification listeners
+  private final Set<ListenerEntry> listenerEntries;                 // modification listeners, sorted by priority
   private final Map<String, TableEntry> tableEntriesByName;         // the table entries mapped by (table)name
   private final Map<Long, TableEntry> tableEntriesById;             // the table entries mapped by ID
   private volatile TableEntry masterEntry;                          // master serial entry
   private final Random timeRandom;                                  // execution time randomizer
-  private final Map<ModificationListener,DelayedEvent> delayedListeners;   // map of delayed listeners
-  private final Set<DelayedEvent> delayedEvents;                    // delayed events
+  private final Map<ModificationListener,DelayedEvent> delayedListeners;   // map of delayed listeners (tracker thread only)
+  private final Set<DelayedEvent> delayedEvents;                    // delayed events (tracker thread only)
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
   private boolean localClientMode;                                  // true if the local session and not a server
@@ -356,14 +358,15 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     setSleepInterval(DEFAULT_POLLING_INTERVAL);
 
     countersByName = new ConcurrentHashMap<>();
-    countersById = new HashMap<>();
-    listenerEntries = new TreeSet<>();
+    countersById = new ConcurrentHashMap<>();
+    listenerEntries = new ConcurrentSkipListSet<>();    // sorted like a TreeSet, but iterable while being modified
     delayedListeners = new HashMap<>();
     delayedEvents = new TreeSet<>();
     tableEntriesByName = new ConcurrentHashMap<>();
     tableEntriesById = new ConcurrentHashMap<>();
     timeRandom = new Random();
     shutdownRunnables = new ArrayList<>();
+    shutdownRunnablesLock = new Object();
   }
 
   /**
@@ -420,8 +423,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param runnable the runnable
    */
   @Override
-  public synchronized void addShutdownRunnable(Runnable runnable) {
-    shutdownRunnables.add(runnable);
+  public void addShutdownRunnable(Runnable runnable) {
+    synchronized (shutdownRunnablesLock) {
+      shutdownRunnables.add(runnable);
+    }
   }
 
   /**
@@ -433,8 +438,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return true if runnable removed, false if no such runnable registered
    */
   @Override
-  public synchronized boolean removeShutdownRunnable(Runnable runnable) {
-    return shutdownRunnables.remove(runnable);
+  public boolean removeShutdownRunnable(Runnable runnable) {
+    synchronized (shutdownRunnablesLock) {
+      return shutdownRunnables.remove(runnable);
+    }
   }
 
   /**
@@ -449,9 +456,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       if (masterEntry == null) {
         configureMaster();
       }
-      synchronized(this) {
-        listenerEntries.add(new ListenerEntry(listener, masterEntry));
-      }
+      listenerEntries.add(new ListenerEntry(listener, masterEntry));
     }
     else  {
       // named listener(s)
@@ -461,9 +466,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
           configureName(name);
           entry = tableEntriesByName.get(name);
         }
-        synchronized (this) {
-          listenerEntries.add(new ListenerEntry(listener, entry));
-        }
+        listenerEntries.add(new ListenerEntry(listener, entry));
       }
     }
   }
@@ -475,7 +478,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return true if listener removed
    */
   @Override
-  public synchronized boolean removeModificationListener(ModificationListener listener) {
+  public boolean removeModificationListener(ModificationListener listener) {
     boolean removed = false;
     Iterator<ListenerEntry> iter = listenerEntries.iterator();
     while (iter.hasNext()) {
@@ -1173,9 +1176,17 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * runs the shutdown runnables
    */
   private void invokeShutdownRunnables() {
-    // run each runnable only once (in case of loops)
-    List<Runnable> tempList = new ArrayList<>(shutdownRunnables);
-    shutdownRunnables.clear();
+    /*
+     * Run each runnable only once (in case of loops).
+     * Notice that cleanup() may be invoked concurrently from the tracker thread and from the thread
+     * terminating it, so taking the runnables over must be atomic. They are run without holding
+     * the lock, since they are application code that may register or remove runnables itself.
+     */
+    List<Runnable> tempList;
+    synchronized (shutdownRunnablesLock) {
+      tempList = new ArrayList<>(shutdownRunnables);
+      shutdownRunnables.clear();
+    }
     for (Runnable r: tempList) {
       try {
         r.run();
