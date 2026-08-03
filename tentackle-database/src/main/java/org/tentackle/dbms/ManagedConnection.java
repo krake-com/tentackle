@@ -1312,8 +1312,7 @@ public class ManagedConnection {
    */
   public void closePreparedStatements(boolean onlyMarkedReady) {
     // close all statements
-    for (Iterator<PreparedStatementWrapper> iter = preparedStatements.values().iterator(); iter.hasNext(); ) {
-      PreparedStatementWrapper stmt = iter.next();
+    for (PreparedStatementWrapper stmt : preparedStatements.values()) {
       if (!stmt.isClosed() &&   // if not already closed
           (!onlyMarkedReady || stmt.isMarkedReady())) { // or all or only pending
         try {
@@ -1326,11 +1325,9 @@ public class ManagedConnection {
           }
         }
       }
-      if (onlyMarkedReady) {
-        iter.remove();
-      }
     }
     if (!onlyMarkedReady) {
+      // drop whatever is left over, for example, statements that could not be closed
       preparedStatements.clear();
     }
   }
@@ -1428,6 +1425,21 @@ public class ManagedConnection {
     PreparedStatementWrapper prepStmt = preparedStatements.get(statementKey);
 
     if (prepStmt == null || prepStmt.isClosed() || alwaysPrepare) {
+      if (prepStmt != null && !prepStmt.isClosed()) {
+        /*
+         * alwaysPrepare: the cached statement is replaced by a freshly prepared one.
+         * It must be closed, else it would be leaked until the physical connection is closed.
+         * Notice that closing removes it from the cache, so this must happen before the put below.
+         */
+        try {
+          prepStmt.close();
+        }
+        catch (RuntimeException ex) {
+          if (!resources.dead) {
+            LOGGER.warning("closing replaced statement failed: " + prepStmt, ex);
+          }
+        }
+      }
       prepStmt = createPreparedStatement(statementKey, sqlSupplier.get(backend).toString(), resultSetType, resultSetConcurrency);
       preparedStatements.put(statementKey, prepStmt);
       LOGGER.finer("statement {0} prepared on {1}", prepStmt, this);
