@@ -45,36 +45,36 @@ public interface SessionInfoFactory {
 
 
   /**
-   * Creates a session info from a username, password and
+   * Creates a session-info from a username, password, and
    * property file holding the connection parameters.
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
    * @param propertiesName name of additional properties resources, null if default
-   * @return the created session info
+   * @return the created session-info
    */
   SessionInfo create(String username, char[] password, String propertiesName);
 
   /**
-   * Creates a session info from a property file holding the connection parameters.
+   * Creates a session-info from a property file holding the connection parameters.
    *
    * @param propertiesName name of the property resources, null if default
-   * @return the created session info
+   * @return the created session-info
    */
   SessionInfo create(String propertiesName);
 
   /**
-   * Creates a session info from a properties object.
+   * Creates a session-info from properties.
    *
    * @param properties the properties
-   * @return the created session info
+   * @return the created session-info
    */
   SessionInfo create(EncryptedProperties properties);
 
   /**
-   * Creates a session info from the default properties holding the connection parameters.
+   * Creates a session-info from the default properties holding the connection parameters.
    *
-   * @return the created session info
+   * @return the created session-info
    */
   SessionInfo create();
 

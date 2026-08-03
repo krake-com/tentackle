@@ -41,7 +41,7 @@ public class MasterSerialListEvent extends ArrayList<MasterSerialEvent> implemen
   private long serial;
 
   /**
-   * Creates a list event.
+   * Creates an event holding a list of events.
    *
    * @param masterSerialEvents the list of events
    */

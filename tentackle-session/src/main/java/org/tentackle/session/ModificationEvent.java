@@ -52,7 +52,7 @@ public class ModificationEvent implements Serializable {
   @SuppressWarnings("serial")
   private final Map<String,ModificationEventDetail> details;    //  null if master event
 
-  /** the modification serial, master or first of details. */
+  /** the modification serial, master, or first of details. */
   private final long serial;
 
   /** the first modification name, null if master. */
@@ -121,16 +121,16 @@ public class ModificationEvent implements Serializable {
   /**
    * Returns whether this is a named single event.
    *
-   * @return true if single event
+   * @return true if a single event
    */
   public boolean isSingleEvent() {
     return !isMasterEvent() && details.size() == 1;
   }
 
   /**
-   * Returns whether this a multi named event.
+   * Returns whether this a multi-named event.
    *
-   * @return true if multi event
+   * @return true if a multi-named event
    */
   public boolean isMultiEvent() {
     return !isMasterEvent() && details.size() > 1;

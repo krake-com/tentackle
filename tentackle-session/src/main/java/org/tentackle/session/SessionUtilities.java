@@ -37,8 +37,9 @@ interface SessionUtilitiesHolder {
   SessionUtilities INSTANCE = ServiceFactory.createService(SessionUtilities.class, SessionUtilities.class);
 }
 
+
 /**
- * Utility methods for session related stuff.
+ * Utility methods for session-related stuff.
  *
  * @author harald
  */
@@ -116,7 +117,6 @@ public class SessionUtilities {
     classNames = new ArrayList<>(sortedNames);
   }
 
-
   /**
    * Gets the table name of a pdo class.
    *
@@ -138,10 +138,10 @@ public class SessionUtilities {
   }
 
   /**
-   * Gets the classid of a pdo class.
+   * Gets the class id of a pdo class.
    *
    * @param pdoClassName the classname of the pdo
-   * @return the classid, 0 if no such class or not annotated with &#64;{@link ClassId}.
+   * @return the class id, 0 if no such class or not annotated with &#64;{@link ClassId}.
    */
   public int getClassId(String pdoClassName) {
     Integer classId = classIdMap.get(pdoClassName);
@@ -149,10 +149,10 @@ public class SessionUtilities {
   }
 
   /**
-   * Gets the classname for a classid.
+   * Gets the classname for a class id.
    *
-   * @param classId the classid
-   * @return the name of the class, null if no such classid
+   * @param classId the class id
+   * @return the name of the class, null if no such class id
    */
   public String getClassName(int classId) {
     return idClassMap.get(classId);
@@ -167,7 +167,6 @@ public class SessionUtilities {
   public Collection<String> getClassNames() {
     return classNames;
   }
-
 
   /**
    * Determines the tablename from the &#64;{@link TableName} annotation.
@@ -191,9 +190,8 @@ public class SessionUtilities {
     return null;   // may be SINGLE-inherited
   }
 
-
   /**
-   * Determines the classid from the &#64;{@link ClassId} annotation.
+   * Determines the class id from the &#64;{@link ClassId} annotation.
    *
    * @param clazz the class
    * @return the class ID, 0 if no such annotation (maybe an abstract class)
@@ -202,7 +200,6 @@ public class SessionUtilities {
     ClassId anno = clazz.getAnnotation(ClassId.class);
     return anno == null ? 0 : anno.value();
   }
-
 
   /**
    * Starts the keep alive thread if not already running.
@@ -214,7 +211,6 @@ public class SessionUtilities {
     }
   }
 
-
   /**
    * Stops all helper threads.
    */
@@ -225,7 +221,6 @@ public class SessionUtilities {
     keepAliveDaemon = null;
   }
 
-
   /**
    * Handles the change of a keep alive interval of a session.
    *
@@ -235,7 +230,6 @@ public class SessionUtilities {
     startKeepAliveDaemonIfNotRunning();
     keepAliveDaemon.keepAliveIntervalChanged(session);
   }
-
 
   /**
    * Replaces exception cause probably not in the jvm's classpath when the stacktrace gets deserialized
@@ -258,10 +252,9 @@ public class SessionUtilities {
     // default does nothing
   }
 
-
   /**
    * Returns whether a rollback should log all statements or not.<br>
-   * The rollback should not be logged, if the root-cause is not a {@link PersistenceException},
+   * The rollback should not be logged if the root-cause is not a {@link PersistenceException},
    * or {@link PersistenceException#isTemporary()} or there is another temporary exception
    * in the exception chain.
    * <p>
@@ -274,7 +267,6 @@ public class SessionUtilities {
     PersistenceException rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t);
     return rootPex == null || rootPex.isTemporary() || ExceptionHelper.extractTemporaryException(true, t) != null;
   }
-
 
   /**
    * Creates the lazy exception message for a {@link PersistenceException}.
@@ -351,7 +343,7 @@ public class SessionUtilities {
    * @return the daemon (not started yet!)
    */
   protected SessionKeepAliveDaemon createKeepAliveDaemon() {
-    return new SessionKeepAliveDaemon(1000);    // 1 second minAliveInterval
+    return new SessionKeepAliveDaemon(1000);    // 1-second minAliveInterval
   }
 
 }

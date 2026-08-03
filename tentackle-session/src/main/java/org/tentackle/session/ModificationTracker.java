@@ -182,7 +182,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Although this mode isn't recommended, it is an option for simple desktop applications
    * with only very few parallel users.
    *
-   * @return true if in local client mode, false if remote client or server
+   * @return true if in local client mode, false for regular mode
    */
   boolean isLocalClientMode();
 

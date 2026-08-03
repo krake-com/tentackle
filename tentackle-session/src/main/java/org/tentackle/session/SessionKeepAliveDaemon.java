@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.log.Logger;
@@ -135,7 +134,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
     return Executors.newCachedThreadPool(runnable -> {
       Thread t = new Thread(threadGroup, runnable, "Keep Alive Thread(" + threadNumber.getAndIncrement() + ")", 0);
       t.setDaemon(true);                    // don't inhibit termination of JVM
-      t.setPriority(Thread.MAX_PRIORITY);   // keep-alive is important!
+      t.setPriority(Thread.MAX_PRIORITY);   // don't miss any keep-alive
       return t;
     });
   }

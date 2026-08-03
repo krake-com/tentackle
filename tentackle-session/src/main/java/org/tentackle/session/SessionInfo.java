@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.common.EncryptedProperties;
@@ -80,7 +79,7 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the password.
    *
-   * @return the password, null if the credentials are not password based
+   * @return the password, null if the credentials are not password-based
    */
   char[] getPassword();
 
@@ -116,7 +115,7 @@ public interface SessionInfo extends Immutable, Serializable {
    * Sets the credentials to authenticate with.
    * <p>
    * This is how a client logs in with something other than a username and a password, for
-   * example with a token obtained from an identity provider.
+   * example, with a token obtained from an identity provider.
    *
    * @param credentials the credentials, null to reset to empty {@link PasswordCredentials}
    */
@@ -229,7 +228,7 @@ public interface SessionInfo extends Immutable, Serializable {
    * to {@link #getPropertiesName()} (if it does not contain an extension already).<br>
    * If there is no such file, the properties will be read as a resource according
    * to the classpath.<br>
-   * If all fails a {@link PersistenceException} is thrown.
+   * If all fails, a {@link PersistenceException} is thrown.
    *
    * @return the connection properties, never null
    */
@@ -252,7 +251,7 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Applies the properties to this session info.<br>
-   * Sets user, password and application-name from properties, if given.
+   * Sets user, password, and application-name from properties, if given.
    */
   void applyProperties();
 
@@ -338,7 +337,7 @@ public interface SessionInfo extends Immutable, Serializable {
   void checkServerVersion(String serverVersion);
 
   /**
-   * Determines whether token-locks are removed when session is closed.<br>
+   * Determines whether token-locks are removed when the session is closed.<br>
    * By default, locks are not removed for cloned sessions.
    *
    * @return true if leave locks untouched, false to remove locks
@@ -346,7 +345,7 @@ public interface SessionInfo extends Immutable, Serializable {
   boolean isLockLingerEnabled();
 
   /**
-   * Sets whether token-locks are removed when session is closed.
+   * Sets whether token-locks are removed when the session is closed.
    *
    * @param enabled true if leave locks untouched, false to remove locks
    */

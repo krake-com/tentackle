@@ -54,7 +54,7 @@ public class SessionValidationUtilities extends ValidationUtilities {
     }
     slotSize *= 10;   // at least one zero between the ordinal and the reflection's index
 
-    // fix validation index, if Persistent annotation is present
+    // fix validation index if Persistent annotation is present
     for (Validator validator : validators) {
       Persistent persistent = validator.getAnnotatedElement().getAnnotation(Persistent.class);
       if (persistent != null) {

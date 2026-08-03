@@ -44,7 +44,7 @@ public class SessionTaskDispatcherLock extends DefaultTaskDispatcherLock {
   }
 
   /**
-   * Gets the session associated to this lock.
+   * Gets the session associated with this lock.
    *
    * @return the session
    */

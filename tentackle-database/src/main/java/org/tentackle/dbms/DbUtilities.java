@@ -76,7 +76,7 @@ public class DbUtilities {
   private volatile String[] preloadDelegateClassNames;   // cached names of the preload candidates
 
   /**
-   * Creates the db utitities.
+   * Creates the db utilities.
    */
   public DbUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -196,7 +196,7 @@ public class DbUtilities {
   /**
    * Creates a reconnection policy.
    *
-   * @param blocking true if reconnection blocks the current thread, else non-blocking in background
+   * @param blocking true if reconnection blocks the current thread, else non-blocking in the background
    * @param millis the (minimum) time in milliseconds between retries
    * @return the policy
    */
@@ -373,7 +373,7 @@ public class DbUtilities {
    * For the setter pattern the DTO class needs a public no-arg constructor.<br>
    * For the record pattern the canonical constructor is used.
    * <p>
-   * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
+   * The method- and column names are matched case-insensitive with all underscores removed.<br>
    * For primitive members of the DTO-class the result set must not contain null values, of course.
    *
    * @param rs the resultset
@@ -386,7 +386,7 @@ public class DbUtilities {
   public <T> List<T> resultSetToList(ResultSetWrapper rs, Class<T> clazz) {
 
     if (rs.isInSkipMode()) {
-      throw new PersistenceException("result set must not be in skipmode");
+      throw new PersistenceException("result set must not be in skipMode");
     }
     if (rs.getColumnOffset() != 0) {
       throw new PersistenceException("column offset must be zero");
@@ -516,9 +516,12 @@ public class DbUtilities {
         else if (recordConstructor != null) {
           dto = retrieveRecordMappings(recordConstructor, recordMappings, rs);
         }
-        else {
+        else if (noArgConstructor != null) {
           dto = noArgConstructor.newInstance();
           retrieveMethodMappings(setterMappings, dto, rs);
+        }
+        else {
+          throw new PersistenceException("no suitable instantiation method found to create a DTO from " + clazz);
         }
         dtos.add(dto);
       }

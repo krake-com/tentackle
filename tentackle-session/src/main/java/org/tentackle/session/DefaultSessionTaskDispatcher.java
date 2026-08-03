@@ -33,7 +33,6 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
   private static final Logger LOGGER = Logger.get(DefaultSessionTaskDispatcher.class);
 
 
-
   private boolean sessionClosedOnTermination;   // true if the session should be closed
   private boolean sessionKeptAlive;             // true if ping to keep the session alive periodically
   private Session session;                      // the session this thread is attached to
@@ -143,7 +142,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
         session.setAlive(true);
       }
       catch (RuntimeException ex) {
-        // some severe exception, e.g. connection lost, backend error, etc...
+        // some severe exception, e.g., connection lost, backend error, etc...
         LOGGER.severe("ping failed -> terminating " + this, ex);
         requestTermination();
       }

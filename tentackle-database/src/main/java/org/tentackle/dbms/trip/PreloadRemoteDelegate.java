@@ -28,11 +28,11 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as a candidate for preloading its remote delegate.<br>
- * Applicable to persistence implementations of entities and operations, i.e. all classes
+ * Applicable to persistence implementations of entities and operations, i.e., all classes
  * registered via {@link org.tentackle.dbms.Db#prepareRemoteDelegate}.
  * <p>
  * Remote delegates are created lazily, one roundtrip per class. For applications with a large
- * entity model running on links with a high latency, this may slow down the application startup
+ * entity model running on links with high latency, this may slow down the application startup
  * substantially. Annotated classes are collected at build time and can be requested by the client
  * in a single roundtrip via {@link org.tentackle.session.Session#preloadRemoteDelegates()}.
  * <p>

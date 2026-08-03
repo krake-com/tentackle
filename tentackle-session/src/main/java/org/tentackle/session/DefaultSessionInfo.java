@@ -112,7 +112,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   /**
-   * Creates a session from a properties object.
+   * Creates a session from properties.
    *
    * @param properties the properties
    */
