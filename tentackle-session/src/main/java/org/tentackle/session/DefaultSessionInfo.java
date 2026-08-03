@@ -373,7 +373,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * Cloned session infos are mutable by default and have no sessionName.
    */
   @Override
-  public DefaultSessionInfo clone() {
+  public synchronized DefaultSessionInfo clone() {    // sync: read the properties as getProperties() writes them
     DefaultSessionInfo sessionInfo;
     try {
       sessionInfo = (DefaultSessionInfo) super.clone();
@@ -423,8 +423,18 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     this.propertiesName = propertiesName;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The properties are loaded lazily on first access. Since a session info is shared between
+   * threads -- by pooled sessions, the keep-alive daemon and the remote server side -- the
+   * lazy load is synchronized, so that all of them end up with the very same properties.
+   * <p>
+   * Notice that this is the one mutation an immutable session info still permits: the loaded
+   * properties are what the info was configured with all along, not a change of its state.
+   */
   @Override
-  public EncryptedProperties getProperties() {
+  public synchronized EncryptedProperties getProperties() {
     if (properties == null) {
       properties = loadProperties(propertiesName);
     }
@@ -432,7 +442,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   @Override
-  public void setProperties(EncryptedProperties properties) {
+  public synchronized void setProperties(EncryptedProperties properties) {
     assertMutable();
     this.properties = properties;
   }

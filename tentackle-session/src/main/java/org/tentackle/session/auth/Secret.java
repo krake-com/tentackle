@@ -67,6 +67,8 @@ public class Secret implements Serializable, Cloneable {
 
   /**
    * Sets the value.
+   * <p>
+   * The value is copied, so the caller keeps ownership of the given array and is free to wipe it.
    *
    * @param value the value, null to unset
    */
@@ -74,17 +76,22 @@ public class Secret implements Serializable, Cloneable {
     cleared = false;
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      encryptedValue = value == null ? null : cryptor.encrypt(value);
+      // encrypt() wipes the array it is given, so hand it a copy and keep the caller's intact
+      encryptedValue = value == null ? null : cryptor.encrypt(value.clone());
       this.value = null;
     }
     else {
-      this.value = value;
+      // copy as well: the caller may wipe its array, and ours must not be wiped from the outside
+      this.value = value == null ? null : value.clone();
       this.encryptedValue = null;
     }
   }
 
   /**
    * Gets the value.
+   * <p>
+   * The returned array is a copy the caller owns and should wipe once done with it.
+   * {@link #clear()} therefore does not reach values handed out earlier.
    *
    * @return the value, null if unset or cleared
    */
@@ -92,7 +99,7 @@ public class Secret implements Serializable, Cloneable {
     if (encryptedValue != null) {
       return Cryptor.getInstance().decryptToChars(encryptedValue);
     }
-    return value;
+    return value == null ? null : value.clone();
   }
 
   /**
