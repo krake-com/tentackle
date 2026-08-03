@@ -26,9 +26,11 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,7 +47,8 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private final long idleMinutes;
   private final long usageMinutes;
 
-  private Map<SessionInfo, MultiPoolImpl> poolMap;              // maintained pools per session info (user), null if shut down
+  private final Map<SessionInfo, MultiPoolImpl> poolMap;        // maintained pools per session info (user)
+  private volatile boolean shutdown;                            // true if this pool has been shut down
   private final AtomicInteger size = new AtomicInteger();       // total number of sessions
   private final AtomicInteger count = new AtomicInteger();      // session pool ID
 
@@ -69,7 +72,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     this.idleMinutes = idleMinutes;
     this.usageMinutes = usageMinutes;
 
-    poolMap = new HashMap<>();
+    poolMap = new ConcurrentHashMap<>();
   }
 
 
@@ -114,15 +117,17 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   @Override
   public synchronized void shutdown() {
     assertNotShutdown();
-    for (SessionPool pool : poolMap.values()) {
+    shutdown = true;
+    // iterate a copy: the sub-pools remove themselves from the map while being shut down
+    for (SessionPool pool : new ArrayList<>(poolMap.values())) {
       pool.shutdown();
     }
-    poolMap = null;
+    poolMap.clear();
   }
 
   @Override
-  public synchronized boolean isShutdown() {
-    return poolMap == null;
+  public boolean isShutdown() {
+    return shutdown;
   }
 
 
@@ -239,9 +244,9 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       SessionInfo sessionInfo = getSessionInfo();
       super.shutdown();
       size.addAndGet(-sz);
-      synchronized (MultiUserDbPool.this) {
-        poolMap.remove(sessionInfo);
-      }
+      // notice that the map is thread-safe: acquiring the monitor of MultiUserDbPool.this here
+      // would invert the locking order and could deadlock, see the comment at poolMap
+      poolMap.remove(sessionInfo);
     }
 
     @Override
