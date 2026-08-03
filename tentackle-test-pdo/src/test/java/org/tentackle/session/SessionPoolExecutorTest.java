@@ -31,6 +31,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -101,6 +103,45 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     }
     Assert.assertEquals(sum.get(), Integer.valueOf(TASK_NUM));
   }
+
+  /**
+   * A session pool of size one must not deadlock.
+   * <p>
+   * The waiter used to be submitted to the very executor that runs the tasks: with a single thread
+   * it blocked that thread forever, so no task ever started and the latch was never counted down.
+   */
+  @Test(timeOut = 60000)
+  public void testSingleSessionPoolDoesNotDeadlock() throws InterruptedException {
+    Reporter.log("SessionPoolExecutorTest.testSingleSessionPoolDoesNotDeadlock <br>", true);
+
+    SessionPool pool = SessionPoolFactory.getInstance().create("singlepool", getSession(), 1,1,1, 1,0,0);
+    SessionPooledExecutor executor = new SessionPooledExecutor(pool);
+    Assert.assertEquals(executor.getThreadPoolSize(), 1);
+
+    List<Supplier<Integer>> runners = new ArrayList<>();
+    for (int i=0; i < 5; i++) {
+      runners.add(this::run);
+    }
+
+    AtomicInteger sum = new AtomicInteger();
+    CountDownLatch done = new CountDownLatch(1);
+    Holder<Collection<RuntimeException>> failures = new Holder<>();
+
+    executor.submit(runners, 0,
+                    successMap -> {
+                      successMap.values().forEach(v -> sum.incrementAndGet());
+                      done.countDown();
+                    },
+                    failedMap -> failures.accept(failedMap.values())
+    );
+
+    Assert.assertTrue(done.await(30, TimeUnit.SECONDS), "parallel execution on a single-session pool deadlocked");
+    executor.shutdown();
+
+    Assert.assertNull(failures.get());
+    Assert.assertEquals(sum.get(), Integer.valueOf(runners.size()));
+  }
+
 
   private Integer run() {
     try {

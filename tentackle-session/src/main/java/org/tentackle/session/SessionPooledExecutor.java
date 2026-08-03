@@ -53,8 +53,8 @@ public class SessionPooledExecutor {
    */
   public SessionPooledExecutor(SessionPool sessionPool) {
     this.sessionPool = sessionPool;
+    threadGroup = createThreadGroup();   // before the executor: createThread() needs it
     executorService = createExecutorService();
-    threadGroup = createThreadGroup();
   }
 
   /**
@@ -109,6 +109,8 @@ public class SessionPooledExecutor {
 
   /**
    * Submits a task for execution in the background by a thread pool.
+   * <p>
+   * Exactly one of the two handlers is invoked, and only after the session was returned to the pool.
    *
    * @param task the task to execute
    * @param successHandler the handler to be invoked when the task finished successfully, null if none
@@ -119,19 +121,19 @@ public class SessionPooledExecutor {
     executorService.submit(() -> {
       Session session = null;
       RuntimeException failEx = null;
+      V value = null;
+      boolean failed = false;
       try {
         session = sessionPool.get();
         session.makeCurrent();
         if (task instanceof SessionDependable) {
           ((SessionDependable) task).setSession(session);
         }
-        V value = task.get();
-        if (successHandler != null) {
-          successHandler.accept(value);
-        }
+        value = task.get();
       }
       catch (RuntimeException rx) {
         failEx = rx;
+        failed = true;
         // run the fail handler _after_ the session was returned to the pool
       }
       catch (Throwable t) {
@@ -142,15 +144,29 @@ public class SessionPooledExecutor {
         }
         // wrap into runtime exception and pass to failHandler
         failEx = new TentackleRuntimeException(t);
+        failed = true;
       }
       finally {
         if (session != null) {
-          session.clearCurrent();
-          sessionPool.put(session);
+          try {
+            session.clearCurrent();
+            sessionPool.put(session);
+          }
+          catch (RuntimeException rx) {
+            // must never escape: a handler has to be invoked on every path, else submitters
+            // waiting for the task's completion (see submit(Collection, ...)) would hang forever
+            if (failed) {
+              LOGGER.severe("returning " + session + " to the pool failed", rx);
+            }
+            else {
+              failEx = rx;
+              failed = true;
+            }
+          }
         }
       }
 
-      if (failEx != null) {
+      if (failed) {
         if (failHandler != null) {
           failHandler.accept(failEx);
         }
@@ -158,12 +174,18 @@ public class SessionPooledExecutor {
           LOGGER.severe("background task failed", failEx);
         }
       }
+      else if (successHandler != null) {
+        successHandler.accept(value);
+      }
     });
   }
 
   /**
    * Submits a collection of tasks for background execution in multiple threads of a thread pool and waits for their termination.<br>
    * If there are failures, the fail handler (if any) will be invoked <em>before</em> the success handler.
+   * <p>
+   * The handlers are invoked from a dedicated waiter thread, not from the thread pool, so that all
+   * of the pool's threads remain available to the tasks themselves.
    *
    * @param tasks the tasks to execute
    * @param timeoutMillis the timeout in milliseconds, &le; 0 if wait infinitely
@@ -176,7 +198,14 @@ public class SessionPooledExecutor {
     Map<Supplier<V>, V> results = new ConcurrentHashMap<>();
     Map<Supplier<V>, RuntimeException> failures = new ConcurrentHashMap<>();
 
-    executorService.submit(() -> {
+    /*
+     * The waiter must not run on executorService! It blocks until all tasks are done, so it would
+     * occupy one of the pool's threads for the whole run, leaving the tasks one thread short of the
+     * parallelism the pool was sized for. Worse, with a pool of one -- or with as many concurrent
+     * submit() calls as there are threads -- no task would ever start and the latch never be
+     * counted down, deadlocking every waiter for good.
+     */
+    Thread waiter = createThread(() -> {
       // wait for all tasks finished
       try {
         if (timeoutMillis <= 0) {
@@ -185,37 +214,53 @@ public class SessionPooledExecutor {
         else if (!latch.await(timeoutMillis, TimeUnit.MILLISECONDS)) {   // 5 minutes should really be enough
           failures.put(() -> null, new PersistenceException("parallel execution timed out"));
         }
-        // all finished or timed out
-        if (failHandler != null && !failures.isEmpty()) {
-          // only invoked if there are failures
-          failHandler.accept(failures);
-        }
-        if (successHandler != null) {
-          // always invoked
-          successHandler.accept(results);
-        }
       }
       catch (InterruptedException ix) {
-        InterruptedRuntimeException irx = new InterruptedRuntimeException(ix);
-        failures.put(() -> null, irx);
-        throw irx;
+        Thread.currentThread().interrupt();    // don't swallow the interrupt
+        failures.put(() -> null, new InterruptedRuntimeException(ix));
+      }
+      // all finished, timed out or interrupted
+      if (failHandler != null && !failures.isEmpty()) {
+        // only invoked if there are failures
+        failHandler.accept(failures);
+      }
+      if (successHandler != null) {
+        // always invoked
+        successHandler.accept(results);
       }
     });
+    waiter.setName(waiter.getName() + " waiter");
+    waiter.start();
 
     for (Supplier<V> task : tasks) {
-      submit(task,
-             result -> {
-               if (result != null) {
-                 results.put(task, result);
-               }
-               latch.countDown();
-             },
-             failure -> {
-               if (failure != null) {
-                 failures.put(task, failure);
-               }
-               latch.countDown();
-             });
+      try {
+        submit(task,
+               result -> {
+                 try {
+                   if (result != null) {
+                     results.put(task, result);
+                   }
+                 }
+                 finally {
+                   latch.countDown();    // on every path, else the waiter never wakes up
+                 }
+               },
+               failure -> {
+                 try {
+                   if (failure != null) {
+                     failures.put(task, failure);
+                   }
+                 }
+                 finally {
+                   latch.countDown();
+                 }
+               });
+      }
+      catch (RuntimeException rx) {
+        // the task could not even be submitted, e.g. the executor service is already shut down
+        failures.put(task, rx);
+        latch.countDown();
+      }
     }
   }
 

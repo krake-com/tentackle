@@ -43,6 +43,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
 
   private final long minAliveInterval;            // the minimum alive-interval
   private final Map<Session,Task> sessionTaskMap; // the session/task map
+  private final Object aliveLock;                 // serializes the compound updates of sessionTaskMap
   private final ExecutorService executorService;  // background executor service
   private final AtomicInteger threadNumber;       // set alive thread number
   private ThreadGroup threadGroup;                // the thread group
@@ -57,6 +58,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
     super("Session Keep Alive Daemon", false, SLEEP_INTERVAL, SLEEP_INTERVAL * 10);
     this.minAliveInterval = minAliveInterval;
     this.sessionTaskMap = new ConcurrentHashMap<>();
+    this.aliveLock = new Object();
     this.executorService = createExecutorService();
     this.threadNumber = new AtomicInteger(1);
     setPriority(MAX_PRIORITY);
@@ -81,22 +83,27 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
    */
   public void keepAliveIntervalChanged(Session session) {
     long interval = session.getKeepAliveInterval();
-    Task task = sessionTaskMap.get(session);
-    if (task != null) {
-      removeTask(task);
-      sessionTaskMap.remove(session);
+    if (interval > 0 && interval < minAliveInterval) {
+      interval = minAliveInterval;
     }
-    if (interval != 0 && session.isOpen()) {
-      if (interval > 0 && interval < minAliveInterval) {
-        interval = minAliveInterval;
+    synchronized (aliveLock) {
+      if (interval != 0 && session.isOpen()) {
+        Task task = createAliveTask(session, interval);
+        /*
+         * The map is the authority on which task is a session's current one: installing the new
+         * task atomically invalidates the old one, even if the old one is running right now and
+         * about to unregister itself, see removeAliveTask(Session, Task).
+         */
+        Task oldTask = sessionTaskMap.put(session, task);
+        if (oldTask != null) {
+          removeTask(oldTask);
+        }
+        addTask(task);
+        LOGGER.info("added keep-alive={0}ms for {1}", interval, session);
       }
-      task = createAliveTask(session, interval);
-      sessionTaskMap.put(session, task);
-      addTask(task);
-      LOGGER.info("added keep-alive={0}ms for {1}", interval, session);
-    }
-    else  {
-      LOGGER.info("removed keep-alive for {0}", session);
+      else  {
+        removeAliveTask(session);
+      }
     }
   }
 
@@ -107,11 +114,40 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
    * @param session the session
    */
   public void removeAliveTask(Session session) {
-    Task task = sessionTaskMap.remove(session);
-    if (task != null) {
-      removeTask(task);
+    synchronized (aliveLock) {
+      Task task = sessionTaskMap.remove(session);
+      if (task != null) {
+        removeTask(task);
+        LOGGER.info("{0} removed from keep-alive", session.getName());
+      }
     }
-    LOGGER.info("{0} removed from keep-alive", session.getName());
+  }
+
+
+  /**
+   * Removes the given task for the given session.
+   * <p>
+   * Unlike {@link #removeAliveTask(Session)} the task is removed only if it still is the session's
+   * current task. This is what a running {@link SessionKeepAliveTask} must use to unregister itself:
+   * another thread may have replaced it via {@link #keepAliveIntervalChanged(Session)} in the
+   * meantime, and removing by session alone would drop that replacement and leave the session
+   * without a keep-alive.
+   * <p>
+   * Deliberately not synchronized on the daemon's alive-lock: the invocation comes from the daemon
+   * thread while executing the task, and the compare-and-remove is atomic in itself.
+   *
+   * @param session the session
+   * @param task the task requesting its own removal
+   * @return true if removed, false if the task no longer is the session's current task
+   */
+  public boolean removeAliveTask(Session session, Task task) {
+    if (sessionTaskMap.remove(session, task)) {
+      removeTask(task);
+      LOGGER.info("{0} removed from keep-alive", session.getName());
+      return true;
+    }
+    LOGGER.fine("{0} was already replaced or removed -> keep-alive left untouched", task);
+    return false;
   }
 
 
