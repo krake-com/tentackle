@@ -34,6 +34,13 @@ import java.util.Arrays;
  * value is kept as a plain character array, which can be wiped via {@link #clear()}.
  * <p>
  * A secret never reveals its value in {@link #toString()}.
+ * <p>
+ * Secrets are threadsafe. They have to be, since a session info is shared between threads and
+ * {@link #clear()} may run while another thread reads the value. Each method is atomic in itself:
+ * a reader either gets the whole value or none of it, never a partially wiped one. Compound
+ * operations are not, so a {@link #get()} following an {@link #isSet()} may still return null.
+ * <p>
+ * Notice that this protects the API only, not the reflective field access a serializer performs.
  *
  * @author harald
  */
@@ -72,7 +79,7 @@ public class Secret implements Serializable, Cloneable {
    *
    * @param value the value, null to unset
    */
-  public final void set(char[] value) {
+  public final synchronized void set(char[] value) {
     cleared = false;
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
@@ -95,7 +102,7 @@ public class Secret implements Serializable, Cloneable {
    *
    * @return the value, null if unset or cleared
    */
-  public char[] get() {
+  public synchronized char[] get() {
     if (encryptedValue != null) {
       return Cryptor.getInstance().decryptToChars(encryptedValue);
     }
@@ -107,7 +114,7 @@ public class Secret implements Serializable, Cloneable {
    *
    * @return true if set
    */
-  public boolean isSet() {
+  public synchronized boolean isSet() {
     return value != null || encryptedValue != null;
   }
 
@@ -116,7 +123,7 @@ public class Secret implements Serializable, Cloneable {
    *
    * @return true if cleared
    */
-  public boolean isCleared() {
+  public synchronized boolean isCleared() {
     return cleared;
   }
 
@@ -124,7 +131,7 @@ public class Secret implements Serializable, Cloneable {
    * Clears the value.<br>
    * Removes it from memory by overwriting each element of the array.
    */
-  public void clear() {
+  public synchronized void clear() {
     if (value != null) {
       Arrays.fill(value, ' ');
       value = null;
@@ -144,7 +151,7 @@ public class Secret implements Serializable, Cloneable {
    * @return the cloned secret
    */
   @Override
-  public Secret clone() {
+  public synchronized Secret clone() {
     Secret secret;
     try {
       secret = (Secret) super.clone();
@@ -167,7 +174,7 @@ public class Secret implements Serializable, Cloneable {
    * @return the description
    */
   @Override
-  public String toString() {
+  public synchronized String toString() {
     if (cleared) {
       return "<cleared>";
     }
