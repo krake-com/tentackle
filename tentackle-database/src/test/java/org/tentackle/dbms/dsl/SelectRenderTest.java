@@ -38,6 +38,7 @@ import static org.testng.Assert.expectThrows;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class SelectRenderTest {
 
   private static final Backend BACKEND = BackendFactory.getInstance().getBackendByName("PostgreSQL");

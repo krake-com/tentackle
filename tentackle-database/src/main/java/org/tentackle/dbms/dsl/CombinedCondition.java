@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Conditions combined by a logical AND or OR.
+ * Conditions combined by a logical {@code AND} or {@code OR}.
  *
  * @author harald
  */
@@ -38,7 +38,7 @@ public class CombinedCondition implements Condition {
    * Creates a combined condition.
    *
    * @param junction the logical operator
-   * @param conditions the conditions, may be empty
+   * @param conditions the conditions; may be empty
    */
   public CombinedCondition(Junction junction, Collection<Condition> conditions) {
     this.junction = Objects.requireNonNull(junction, "junction must be provided");

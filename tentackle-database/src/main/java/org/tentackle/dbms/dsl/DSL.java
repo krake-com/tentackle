@@ -507,6 +507,7 @@ public final class DSL {
    * @return the expression
    */
   @SafeVarargs
+  @SuppressWarnings("varargs")
   public static <T> Expression<T> coalesce(Expression<T> expression, Expression<T>... defaultExpressions) {
     List<Expression<?>> arguments = new ArrayList<>();
     arguments.add(expression);

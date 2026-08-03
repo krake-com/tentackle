@@ -263,6 +263,25 @@ public class Db implements Session, Cloneable {
     return GLOBAL_CLOSE_HANDLERS.remove(closeHandler);
   }
 
+  /**
+   * Prepares a {@link RemoteDelegate}.
+   * <p>
+   * The delegates for the AbstractDbObject-classes "live" in the session, i.e., the remote session.
+   * Thus, delegates are unique per class AND session!
+   * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
+   * the delegates get a unique handle, i.e., an index to an array of delegates, which in
+   * turn is unique among ALL sessions.
+   *
+   * @param clazz is the AbstractDbObject-class
+   * @return the handle
+   */
+  public static synchronized int prepareRemoteDelegate(Class<?> clazz) {
+    Class<?>[] classes = Arrays.copyOf(remoteClasses, remoteClasses.length + 1);
+    classes[classes.length - 1] = clazz;
+    remoteClasses = classes;    // fully built before the volatile store: safely published to readers
+    return classes.length;      // start at 1
+  }
+
 
   /**
    * We keep an internal set of all open sessions via WeakReferences, so the
@@ -338,8 +357,9 @@ public class Db implements Session, Cloneable {
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();  // global session instance counter
 
   // for remote connections
-  private static Class<?>[]         remoteClasses;        // the classes the delegates provide service for
-  private static int                nextDelegateId;       // next handle per class
+  // copy-on-write: replaced as a whole under the class lock, never modified in place.
+  // Readers take a single snapshot without locking, the delegate id is the index + 1.
+  private static volatile Class<?>[] remoteClasses = new Class<?>[0];   // the classes the delegates provide service for
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
@@ -2840,66 +2860,35 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Prepares a {@link RemoteDelegate}.
-   * <p>
-   * The delegates for the AbstractDbObject-classes "live" in the session, i.e., the remote session.
-   * Thus, delegates are unique per class AND session!
-   * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
-   * the delegates get a unique handle, i.e., an index to an array of delegates, which in
-   * turn is unique among ALL sessions.
-   *
-   * @param clazz is the AbstractDbObject-class
-   * @return the handle
-   */
-  public static synchronized int prepareRemoteDelegate (Class<?> clazz) {
-    if (remoteClasses == null)  {
-      remoteClasses = new Class<?>[16];    // start with a reasonable size
-    }
-    if (nextDelegateId >= remoteClasses.length) {
-      Class<?>[] old = remoteClasses;
-      remoteClasses = new Class<?>[old.length << 1];    // double size
-      System.arraycopy(old, 0, remoteClasses, 0, old.length);
-    }
-    remoteClasses[nextDelegateId++] = clazz;
-    return nextDelegateId;    // start at 1
-  }
-
-
-  /**
    * Gets the remote delegate by its id.
    *
    * @param delegateId the handle for the delegate
    * @return the delegate for this session
    */
-  public RemoteDbDelegate getRemoteDelegate (int delegateId)  {
+  public RemoteDbDelegate getRemoteDelegate(int delegateId) {
 
     assertRemote();               // only allowed on remote connections!
     assertRequestedIfPooled();    // same as in attach(), but for remote session pools
 
     delegateId--; // starting from 0
 
-    if (delegateId < 0 || delegateId >= remoteClasses.length) {
+    Class<?>[] classes = remoteClasses;    // single snapshot: consistent for all accesses below
+
+    if (delegateId < 0 || delegateId >= classes.length) {
       throw new PersistenceException(this, "delegate handle out of range");
     }
 
     // enlarge if necessary
     if (delegates == null) {
-      delegates = new RemoteDbDelegate[remoteClasses.length];
-      Arrays.fill(delegates, null);
+      delegates = new RemoteDbDelegate[classes.length];
     }
-    if (delegateId >= delegates.length) {
-      RemoteDbDelegate[] old = delegates;
-      delegates = new RemoteDbDelegate[remoteClasses.length];
-      System.arraycopy(old, 0, delegates, 0, old.length);
-      // set the rest to null
-      for (int i=old.length; i < delegates.length; i++)  {
-        delegates[i] = null;
-      }
+    else if (delegateId >= delegates.length) {
+      delegates = Arrays.copyOf(delegates, classes.length);
     }
 
     // check if delegate already fetched from TRIP-server
     if (delegates[delegateId] == null) {
-      String className = remoteClasses[delegateId].getName();
+      String className = classes[delegateId].getName();
       // check if preloaded, else fetch it from the TRIP-server
       RemoteDbDelegate delegate = preloadedDelegates == null ? null : preloadedDelegates.remove(className);
       if (delegate == null) {

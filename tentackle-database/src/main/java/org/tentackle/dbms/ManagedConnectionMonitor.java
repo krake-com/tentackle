@@ -46,9 +46,9 @@ interface ManagedConnectionMonitorHolder {
 
 /**
  * Maintains a set of all open managed connections.<br>
- * The connections are held by a weak reference and the set is cleaned up once a minute.<br>
+ * The connections are held by a weak reference, and the set is cleaned up once a minute.<br>
  * Optionally, idle connections with {@link ManagedConnection#isConnectionVerificationNecessary()} {@code == true}
- * will be verified (via dummy selects) periodically and to prevent premature closing by the database backend.
+ * will be verified (via dummy SELECTs) periodically and to prevent premature closing by the database backend.
  * This is especially useful for databases running in the cloud, where the idle connection interval
  * cannot be deactivated or made longer than the idle times maintained by the {@link MpxConnectionManager}.
  * <p>

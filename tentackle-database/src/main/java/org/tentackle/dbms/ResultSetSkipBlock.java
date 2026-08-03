@@ -55,7 +55,7 @@ public class ResultSetSkipBlock {
     for (int i = skippedColumns + 1; i <= max; i++) {
       try {
         // append only the first occurrence (from the left).
-        // lowercase because column names are converted to lowercase in model (see AttributeImpl)
+        // lowercase because column names are converted to lowercase in the model (see AttributeImpl)
         columnMap.putIfAbsent(meta.getColumnName(i).toLowerCase(Locale.ROOT), i);
       }
       catch (SQLException e) {
@@ -77,7 +77,7 @@ public class ResultSetSkipBlock {
    * Gets the highest used column index.<br>
    * This will be the skippedColumns of the next skip block.
    *
-   * @return the highest used index.
+   * @return the highest-used index
    */
   public int getMaxColumnIndex() {
     return maxColumnIndex;
@@ -88,7 +88,7 @@ public class ResultSetSkipBlock {
    * <p>
    * If the result set is in skip mode, the first column with that name is found
    * after having skipped some columns according to the last invocation of {@link ResultSetWrapper#skip()}.
-   * Otherwise, the standard JDBC-implementation is used.
+   * Otherwise, the standard JDBC implementation is used.
    *
    * @param name the column name
    * @return the index in the result set

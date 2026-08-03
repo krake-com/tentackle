@@ -62,7 +62,7 @@ import java.util.UUID;
  * The {@code SELECT}, however, and {@code LIMIT/OFFSET} clauses are provided by the query automatically,
  * because they are backend-specific.
  * <p>
- * Instead of writing the SQL-code by hand, projection queries can be built from typed expressions
+ * Instead of writing the SQL code by hand, projection queries can be built from typed expressions
  * by the {@link org.tentackle.dbms.dsl.DSL}, which creates a {@code Query} for the resulting
  * {@link org.tentackle.dbms.dsl.Select}.
  *
@@ -153,7 +153,7 @@ public class Query {
 
 
   /**
-   * Appends an SQL-part and corresponding parameters to this query.
+   * Appends an SQL part and corresponding parameters to this query.
    * <pre>
    * Example: add(" AND CN_ID=?", object.getId());
    *          add(" AND CN_MONEY=?", object.getAmount());
@@ -283,7 +283,7 @@ public class Query {
       StringBuilder sql = createSql(db.getBackend());
       StatementKey key = createStatementKey(sql.toString());
       // prepare if new, else re-use
-      st = db.getPreparedStatement(key, false, resultSetType, resultSetConcurrency, b -> sql);
+      st = db.getPreparedStatement(key, false, resultSetType, resultSetConcurrency, _ -> sql);
     }
     else {
       st = db.createPreparedStatement(this::createSql, resultSetType, resultSetConcurrency);
@@ -292,7 +292,7 @@ public class Query {
     // apply parameters to statement
     apply(db, st);
 
-    // set fetchsize and maxrows if != 0
+    // set fetch size and maximum rows if != 0
     if (fetchSize != 0) {
       st.setFetchSize(fetchSize);
     }
@@ -301,7 +301,7 @@ public class Query {
     }
 
     /*
-     * for postgres: run the query in an extra tx. Otherwise, postgres will ignore fetchsize
+     * for postgres: run the query in an extra tx. Otherwise, postgres will ignore fetch size
      * and load everything into memory.
      */
     ResultSetWrapper rs = null;
@@ -476,7 +476,7 @@ public class Query {
               st.setBigDecimal(ndx++, (BigDecimal) data);
             }
             else {
-              // some other number, for example BigInteger or an atomic type
+              // some other number, for example, BigInteger or an atomic type
               ndx = applyByDataType(st, item, dataIndex, data.getClass(), data, ndx);
             }
           }

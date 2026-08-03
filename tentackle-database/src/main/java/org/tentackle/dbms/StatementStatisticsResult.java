@@ -41,7 +41,7 @@ public class StatementStatisticsResult extends StatisticsResult {
   }
 
   /**
-   * Counts the fetch statistics.
+   * Counts the fetch-statistics.
    *
    * @param duration the duration fetching the result from the database
    * @param rows the number of rows fetched

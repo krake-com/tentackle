@@ -72,22 +72,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
-   * Gets the remote delegate.
-   *
-   * @return the delegate
-   */
-  private static int getRemoteDelegateId() {
-    if (delegateId == 0)  {
-      delegateId = Db.prepareRemoteDelegate(DbModificationTracker.class);
-    }
-    return delegateId;
-  }
-
-  private static int delegateId;
-
-
-
-  /**
    * The listener entries.<br>
    * Sorted according to priority and registration order.
    */
@@ -313,6 +297,27 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   }
 
+
+  private static volatile int remoteDelegateId;   // the remote delegate ID
+
+  /**
+   * Gets the remote delegate.
+   *
+   * @return the delegate
+   */
+  private static int getRemoteDelegateId() {
+    int id = remoteDelegateId;
+    if (id == 0)  {
+      synchronized (DbModificationTracker.class) {
+        id = remoteDelegateId;
+        if (id == 0)  {   // still unprepared: another thread may have won the race
+          id = Db.prepareRemoteDelegate(DbModificationTracker.class);
+          remoteDelegateId = id;
+        }
+      }
+    }
+    return id;
+  }
 
 
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped

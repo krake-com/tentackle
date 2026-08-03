@@ -29,9 +29,9 @@ import java.io.Serializable;
  * Since enums cannot be extended, we're using this interface instead.
  * Application-specific modification types can be introduced as follows:
  * <ul>
- *   <li>create another enum implementing {@link ModificationType}.
+ *   <li>Create another enum implementing {@link ModificationType}.
  *   Make sure to use other character values than in {@link DbModificationType}!</li>
- *   <li>create a new {@link ModificationTypeFactory}, annotated with {@link org.tentackle.common.Service}
+ *   <li>Create a new {@link ModificationTypeFactory}, annotated with {@link org.tentackle.common.Service}
  *   and override the create method.</li>
  * </ul>
  */

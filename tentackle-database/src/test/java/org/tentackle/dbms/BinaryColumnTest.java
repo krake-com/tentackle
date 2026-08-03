@@ -43,6 +43,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author harald
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class BinaryColumnTest extends AbstractDbTest {
 
   private static final String TABLE_NAME = "binarytest";

@@ -43,7 +43,7 @@ public class ModificationTally {
 
   /**
    * Transaction property to rollback pending counts.<br>
-   * Set to {@link Boolean#TRUE} when the session performed a countPending within transaction and
+   * Set to {@link Boolean#TRUE} when the session performed a countPending within a transaction, and
    * that pending count must be adjusted when the transaction is rolled back.
    */
   public static final Object SESSION_COUNT_PENDING = ModificationTally.class;

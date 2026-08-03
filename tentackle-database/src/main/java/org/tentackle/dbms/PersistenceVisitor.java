@@ -41,7 +41,7 @@ import java.io.Serializable;
  * A visitor may also throw a {@link org.tentackle.session.PersistenceException} if the operation must not continue.
  * <p>
  * The effective visit method for the concrete persistence class is determined by reflection.
- * The most specific method will be used, which allows to use a method for a class hierarchy.
+ * The most specific method will be used, which allows using a method for a class hierarchy.
  * <p>
  * Notice that the visit method must use a Character instead of char to be found by the method dispatcher.
  *

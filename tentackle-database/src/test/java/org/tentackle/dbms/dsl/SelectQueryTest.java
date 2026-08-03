@@ -46,6 +46,7 @@ import static org.testng.Assert.expectThrows;
  *
  * @author harald
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class SelectQueryTest extends AbstractDbTest {
 
   private static final String POOL_TABLE = "dslpool";

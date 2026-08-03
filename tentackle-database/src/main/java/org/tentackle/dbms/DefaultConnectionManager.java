@@ -124,7 +124,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * @param iniSize the initial size of the session table
    * @param maxSize the maximum number of connections, 0 = unlimited (dangerous!)
    * @param idOffset the offset for session ids (&gt; 0)
-   * @param minMinutes minimum minutes a connection should be used, 0 if keep connection forever
+   * @param minMinutes minimum minutes a connection should be used, 0 to keep the connection forever
    * @param maxMinutes maximum minutes a connection should be used
    */
   public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset,
@@ -217,7 +217,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Gets the attach-timeout.
    *
-   * @return the max. attach time, 0 if check is disabled (default)
+   * @return the maximum attach-time, 0 for check is disabled (default)
    */
   public synchronized long getAttachTimeout() {
     return attachTimeout;
@@ -226,7 +226,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Sets the attach-timeout.
    *
-   * @param attachTimeout the max. attach time, 0 if check is disabled (default)
+   * @param attachTimeout the maximum attach-time, 0 for check is disabled (default)
    */
   public synchronized void setAttachTimeout(long attachTimeout) {
     this.attachTimeout = attachTimeout;
@@ -375,7 +375,7 @@ public class DefaultConnectionManager implements ConnectionManager {
      */
     ManagedConnection con = attachImpl(session);    // <<-- synchronized
 
-    if (con != null) {    // need reopen
+    if (con != null) {    // need re-open
       // not synchronized -> does not block the connection manager
       try {
         con.close();
@@ -625,7 +625,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     try {
       versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
         try {
-          DatabaseMetaData metaData = con.getMetaData();    // may be a lengthy operation -> cached per URL
+          DatabaseMetaData metaData = con.getMetaData();    // maybe a lengthy operation -> cached per URL
           return new VersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
         }
         catch (SQLException sx) {

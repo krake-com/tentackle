@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  * A value bound to the prepared statement.
  * <p>
- * The value never becomes part of the SQL-code, but is applied to the statement
+ * The value never becomes part of the SQL code but is applied to the statement
  * by {@link org.tentackle.dbms.Query#applyParameters}. Since a value may span more than
  * one column, a question mark is emitted per column, but the value is registered only once.
  *
@@ -36,7 +36,7 @@ import java.util.Objects;
 public class BindValue<T> implements Expression<T> {
 
   private final T value;                // the value, never null
-  private final DataType<T> dataType;   // the datatype, may be null if unknown
+  private final DataType<T> dataType;   // the datatype; may be null if unknown
 
 
   /**

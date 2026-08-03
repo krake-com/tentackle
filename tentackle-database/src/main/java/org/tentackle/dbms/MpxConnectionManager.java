@@ -408,7 +408,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
         }
 
-        // wait for connections to be brought up (even if no request -> may take longer)
+        // wait for connections to be brought up (even if no request: may take longer)
         synchronized (doneMtx) {
           try {
             doneMtx.wait(DONE_MUTEX_MS);
@@ -629,7 +629,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             LOGGER.warning(buf.toString());
           }
           else {
-            // pre warning
+            // pre-warning
             LOGGER.info(msg);
           }
         }

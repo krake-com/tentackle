@@ -20,20 +20,17 @@ package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
 
-
 /**
- * Base implementation for IdSources.
+ * Base implementation for {@link IdSource}s.
  *
  * @author harald
  */
 public abstract class AbstractIdSource implements IdSource {
 
-
   private final String name;    // the source's name
 
-
   /**
-   * Creates an idsource.
+   * Creates an ID source.
    *
    * @param name the name
    */
@@ -51,12 +48,10 @@ public abstract class AbstractIdSource implements IdSource {
     return name;
   }
 
-
   @Override
   public String toString() {
     return name;
   }
-
 
 
   /**
@@ -71,7 +66,7 @@ public abstract class AbstractIdSource implements IdSource {
   }
 
   /**
-   * Asserts that exactly one row is affected by an update.
+   * Asserts that an update affects exactly one row.
    *
    * @param db the session
    * @param rowCount the number of rows affected
@@ -81,4 +76,5 @@ public abstract class AbstractIdSource implements IdSource {
       throw new PersistenceException(db, "unexpected number of rows affected: " + rowCount);
     }
   }
+
 }

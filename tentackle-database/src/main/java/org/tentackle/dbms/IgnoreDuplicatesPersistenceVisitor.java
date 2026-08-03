@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
@@ -44,7 +43,6 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
   private final Set<AbstractDbObject<?>> objectSet;   // all persisted objects so far
   private boolean persistenceOperationAllowed;        // true if allowed
 
-
   /**
    * Creates the visitor.
    */
@@ -65,13 +63,12 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
     persistenceOperationAllowed = objectSet.add(object);
   }
 
-
   /**
-   * Checks whether object has already been persisted.
+   * Checks whether the object has already been persisted.
    *
    * @param object the persistable object
    * @param modType the modification type
-   * @return true if object has not been persisted already
+   * @return true if the object has not been persisted already
    */
   @Override
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {

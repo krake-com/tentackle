@@ -33,7 +33,7 @@ public class StatementId {
   private static final AtomicInteger count = new AtomicInteger();
 
 
-  private final int id;     // the id, cannot be changed once set
+  private final int id;     // the id; cannot be changed once set
 
   /**
    * Creates a unique statement id.<br>

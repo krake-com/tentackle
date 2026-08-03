@@ -22,9 +22,11 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.session.PersistenceException;
 
+
 interface ModificationTypeFactoryHolder {
   ModificationTypeFactory INSTANCE = ServiceFactory.createService(ModificationTypeFactory.class);
 }
+
 
 /**
  * Factory for modification types.<br>
@@ -49,6 +51,7 @@ public class ModificationTypeFactory {
   public ModificationTypeFactory() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
+
 
   /**
    * Maps an external character value to a modification type.<br>

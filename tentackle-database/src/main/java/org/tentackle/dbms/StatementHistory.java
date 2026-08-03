@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Timestamp;
@@ -119,7 +118,7 @@ public class StatementHistory {
   }
 
   /**
-   * Applies the fetch duration and number of rows fetched if statement is a query.
+   * Applies the fetch duration and number of rows fetched if the statement is a query.
    *
    * @param fetchDuration the fetch duration
    * @param fetchCount the number of rows fetched
@@ -141,7 +140,7 @@ public class StatementHistory {
   /**
    * Gets the number of rows fetched from the result set.
    *
-   * @return the fetched rows (only valid if statement was a query)
+   * @return the fetched rows (only valid if the statement was a query)
    * @see #getFetchDuration()
    */
   public int getFetchCount() {
@@ -176,9 +175,9 @@ public class StatementHistory {
   }
 
   /**
-   * Gets the sql string.
+   * Gets the SQL string.
    *
-   * @return the sql string
+   * @return the SQL string
    */
   public String getSql() {
     return sql;

@@ -69,6 +69,7 @@ import static org.testng.Assert.expectThrows;
  *
  * @author harald
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class QueryParameterTest extends AbstractDbTest {
 
   private static final String TABLE_NAME = "querytest";

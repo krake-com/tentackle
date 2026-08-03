@@ -38,9 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+
 interface DbTransactionFactoryHolder {
   DbTransactionFactory INSTANCE = ServiceFactory.createService(DbTransactionFactory.class, DbTransactionFactory.class);
 }
+
 
 /**
  * Factory for transactions.<br>
@@ -65,7 +67,7 @@ public class DbTransactionFactory {
   private static final String TX_IDLE_TIMEOUT = "txIdleTimeout";
 
   private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // the default is to check every second
-  private static final int DEFAULT_TX_IDLE_TIMEOUT = 60;                        // 1 minute idle transaction timeout
+  private static final int DEFAULT_TX_IDLE_TIMEOUT = 60;                        // 1-minute idle transaction timeout
 
 
   private final Map<Long, WeakReference<DbTransaction>> transactions;           // txId::transaction
@@ -312,7 +314,7 @@ public class DbTransactionFactory {
             DbTransaction transaction = entry.getValue().get();
             if (transaction == null) {
               // transactions cannot become unreferenced since the session is always attached when the tx starts. Attached sessions
-              // are referenced by the ManagedConnection until the tx ends, which will remove the tx from the transactions map above.
+              // are referenced by the ManagedConnection until the tx ends, which will remove the tx from the transactions-map above.
               // If we encounter an unreferenced tx, it must have been detached within the transaction or some other weird condition.
               Long txId = entry.getKey();
               TxIdleCounter idleCounter = idleMap.remove(txId);

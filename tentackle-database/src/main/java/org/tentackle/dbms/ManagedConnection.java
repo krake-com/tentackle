@@ -111,7 +111,7 @@ public class ManagedConnection {
   /**
    * Optional limit for the number of statements per transaction.<br>
    * Useful to detect wild running transactions eating up all memory and blowing up the backend.<br>
-   * Default is 0 (disabled).
+   * The default is 0 (disabled).
    */
   private static int maxStatementsPerTransaction;
 
@@ -192,7 +192,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Returns whether to check that requested resulttype and concurrency matches the prepared statement reused.
+   * Returns whether to check that the requested result type and concurrency matches the prepared statement reused.
    *
    * @return true if the check is enabled
    */
@@ -201,7 +201,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Sets whether to check that requested resulttype and concurrency matches the prepared statement reused.
+   * Sets whether to check that the requested result type and concurrency matches the prepared statement reused.
    *
    * @param check true to enable check
    */
@@ -252,7 +252,7 @@ public class ManagedConnection {
   /**
    * Sets the limit for the number of statements per transaction.<br>
    * Useful to detect wild running transactions eating up all memory and blowing up the backend.<br>
-   * Default is 0 (disabled).
+   * The default is 0 (disabled).
    *
    * @param max the max. number of statements within a transaction.
    */
@@ -718,13 +718,13 @@ public class ManagedConnection {
         throw new PersistenceException(db, "db lost current connection " + this + ", count=" + attachCount++);
       }
       if (attachCount < 0) {
-        throw new PersistenceException(db, "connection " + this + " detached too often, attachcount = " + attachCount++);
+        throw new PersistenceException(db, "connection " + this + " detached too often, attach count = " + attachCount++);
       }
     }
   }
 
   /**
-   * Gets tha attached session.
+   * Gets the attached session.
    *
    * @return the session, null if not attached
    */
@@ -1203,7 +1203,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Reads all warnings, logs and clears them.
+   * Reads all warnings, logs, and clears them.
    */
   public void logAndClearWarnings() {
     try {
@@ -1238,7 +1238,7 @@ public class ManagedConnection {
   /**
    * Sets the countForClearWarnings trigger.
    *
-   * @param max the maxcount, 0 = app must eat the warnings
+   * @param max the maximum count, 0 = app must eat the warnings
    */
   public void setMaxCountForClearWarnings(int max) {
     maxCountForClearWarnings = max;
@@ -1247,7 +1247,7 @@ public class ManagedConnection {
   /**
    * Gets the current setting for clearWarnings() trigger.
    *
-   * @return the maxcount, 0 = app must eat the warnings
+   * @return the maximum count, 0 = app must eat the warnings
    */
   public int getMaxCountForClearWarnings()  {
     return maxCountForClearWarnings;
@@ -1445,7 +1445,7 @@ public class ManagedConnection {
 
   /**
    * Checks for a dead communications link.<br>
-   * If the link is down, for example, the database server closed it,
+   * If the link is down, the database server closed it,
    * the connection is marked dead.
    *
    * @param ex the SQL exception
@@ -1573,7 +1573,7 @@ public class ManagedConnection {
         }
         catch (RuntimeException ex) {
           // just log (if not canceled)
-          if (!stmt.isCancelled()) {
+          if (!stmt.isCanceled()) {
             LOGGER.warning("unmarking statement failed: " + stmt, ex);
           }
         }

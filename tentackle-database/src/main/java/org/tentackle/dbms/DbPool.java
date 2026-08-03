@@ -56,7 +56,7 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
    * @param sessionGroupId the session group ID, 0 if none
    * @param initialSize the initial pool size
    * @param incrementSize the number of Db instances to enlarge the pool if all in use
-   * @param minimumSize the minimum number of Db instances to keep in pool, &lt; 0 if auto shutdown pool if all sessions timed out
+   * @param minimumSize the minimum number of Db instances to keep in the pool, &lt; 0 if auto shutdown pool if all sessions timed out
    * @param maximumSize the maximum number of Db instances, 0 = unlimited
    * @param idleMinutes the idle timeout in minutes to close unused Db instances, 0 = unlimited
    * @param usageMinutes the max. used time in minutes, 0 = unlimited

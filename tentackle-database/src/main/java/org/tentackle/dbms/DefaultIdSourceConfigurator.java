@@ -95,22 +95,19 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
       throw new PersistenceException("empty id configuration");
     }
 
-    switch (type) {
-      case SEQUENCE_BASED:
+    return switch (type) {
+      case SEQUENCE_BASED -> {
         if (sequenceMultiplier == null) {   // implies globalMultiplier == null
-          return ObjectSequenceId.get(name);
+          yield ObjectSequenceId.get(name);
         }
         else if (globalMultiplier != null) {
-          return ObjectSequenceId.get(name, sequenceMultiplier, globalMultiplier);
+          yield ObjectSequenceId.get(name, sequenceMultiplier, globalMultiplier);
         }
         throw new PersistenceException("sequenceMultiplier and globalMultiplier must be defined both or not at all");
-
-      case TABLE_BASED:
-        return new ObjectId(name);
-
-      default:
-        throw new PersistenceException("unsupported idSource type: " + type);
-    }
+      }
+      case TABLE_BASED -> new ObjectId(name);
+      default -> throw new PersistenceException("unsupported idSource type: " + type);
+    };
   }
 
 }

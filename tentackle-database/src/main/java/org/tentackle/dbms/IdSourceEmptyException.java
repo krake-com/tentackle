@@ -32,7 +32,7 @@ public class IdSourceEmptyException extends IdSourceException {
 
 
  /**
-   * Constructs a new idsource empty exception for a given session
+   * Constructs a new id source empty exception for a given session
    * with <code>null</code> as its detail message.
    *
    * @param db the session
@@ -41,9 +41,8 @@ public class IdSourceEmptyException extends IdSourceException {
     super(db);
   }
 
-
   /**
-   * Constructs a new idsource empty exception for a given session with the specified detail message.
+   * Constructs a new id source empty exception for a given session with the specified detail message.
    *
    * @param   db the session
    * @param   message   the detail message.
@@ -53,7 +52,7 @@ public class IdSourceEmptyException extends IdSourceException {
   }
 
   /**
-   * Constructs a new idsource empty exception for a given session with the specified detail message and
+   * Constructs a new id source empty exception for a given session with the specified detail message and
    * cause.
    *
    * @param  db the session
@@ -65,7 +64,7 @@ public class IdSourceEmptyException extends IdSourceException {
   }
 
   /**
-   * Constructs a new idsource empty exception for a given session with the specified cause and a
+   * Constructs a new id source empty exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
    * @param  db the session
@@ -75,18 +74,16 @@ public class IdSourceEmptyException extends IdSourceException {
     super(db, cause);
   }
 
-
   /**
-   * Constructs a new idsource empty exception without a session and
+   * Constructs a new id source empty exception without a session and
    * with <code>null</code> as its detail message.
    */
   public IdSourceEmptyException() {
     super();
   }
 
-
   /**
-   * Constructs a new idsource empty exception without a session and with the specified detail message.
+   * Constructs a new id source empty exception without a session and with the specified detail message.
    *
    * @param   message   the detail message.
    */
@@ -95,7 +92,7 @@ public class IdSourceEmptyException extends IdSourceException {
   }
 
   /**
-   * Constructs a new idsource empty exception without a session, but with the specified detail message and
+   * Constructs a new id source empty exception without a session, but with the specified detail message and
    * cause.
    *
    * @param  message the detail message

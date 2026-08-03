@@ -21,9 +21,11 @@ package org.tentackle.dbms;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
+
 interface DbClassVariablesFactoryHolder {
   DbClassVariablesFactory INSTANCE = ServiceFactory.createService(DbClassVariablesFactory.class, DbClassVariablesFactory.class);
 }
+
 
 /**
  * Factory for class variables.
@@ -49,11 +51,11 @@ public class DbClassVariablesFactory {
   }
 
   /**
-   * Creates a classvariable for a db object.
+   * Creates a class variable for a db object.
    *
    * @param clazz is the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
-   * @param tableName is the SQL tablename
+   * @param tableName is the SQL table name
    * @param <P> the persistence type
    */
   public <P extends AbstractDbObject<P>> DbObjectClassVariables<P> dbPoCv(Class<P> clazz, int classId, String tableName) {
@@ -61,8 +63,8 @@ public class DbClassVariablesFactory {
   }
 
   /**
-   * Creates a classvariable for a db object.<br>
-   * Classid and tablename are derived from mapped services in META-INF.
+   * Creates a class variable for a db object.<br>
+   * ClassId and tablename are derived from mapped services in META-INF.
    *
    * @param clazz is the class of the derived AbstractDbObject
    * @param <P> the persistence type
@@ -72,7 +74,7 @@ public class DbClassVariablesFactory {
   }
 
   /**
-   * Creates a classvariable for a db operation.
+   * Creates a class variable for a db operation.
    *
    * @param clazz is the class of the derived AbstractDbOperation
    * @param <P> the persistent operation class
