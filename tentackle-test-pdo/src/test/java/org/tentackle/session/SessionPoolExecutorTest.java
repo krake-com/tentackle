@@ -42,7 +42,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
   private static final int TASK_NUM = 100;
 
 
-  @Test
+  @Test(groups = "local")
   public void testSequential() {
     Reporter.log("SessionPoolExecutorTest.testSequential <br>", true);
 
@@ -70,7 +70,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testParallel() {
     Reporter.log("SessionPoolExecutorTest.testParallel <br>", true);
 
@@ -110,7 +110,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
    * The waiter used to be submitted to the very executor that runs the tasks: with a single thread
    * it blocked that thread forever, so no task ever started and the latch was never counted down.
    */
-  @Test(timeOut = 60000)
+  @Test(groups = "local", timeOut = 60000)
   public void testSingleSessionPoolDoesNotDeadlock() throws InterruptedException {
     Reporter.log("SessionPoolExecutorTest.testSingleSessionPoolDoesNotDeadlock <br>", true);
 
