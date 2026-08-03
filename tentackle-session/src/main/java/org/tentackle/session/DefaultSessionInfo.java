@@ -276,6 +276,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setLocale(Locale locale) {
+    assertMutable();
     this.locale = locale;
   }
 
@@ -287,6 +288,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setVmInfo(String vmInfo) {
+    assertMutable();
     this.vmInfo = vmInfo;
   }
 
@@ -298,6 +300,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setTimeZone(TimeZone timeZone) {
+    assertMutable();
     this.timeZone = timeZone;
   }
 
@@ -309,6 +312,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setOsInfo(String osInfo) {
+    assertMutable();
     this.osInfo = osInfo;
   }
 
@@ -320,6 +324,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setHostInfo(String hostInfo) {
+    assertMutable();
     this.hostInfo = hostInfo;
   }
 
@@ -386,6 +391,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
     sessionInfo.sessionName = null;   // session names should be unique, since they identify a session
     sessionInfo.immutable = false;
+    sessionInfo.finallyImmutable = false;   // else the clone could never be made mutable again
     sessionInfo.cloned = true;
     sessionInfo.lockLinger = true;    // don't remove locks for cloned sessions
 
@@ -462,6 +468,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setApplicationId(long applicationId) {
+    assertMutable();
     this.applicationId = applicationId;
   }
 
@@ -472,6 +479,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setSessionName(String sessionName) {
+    assertMutable();
     this.sessionName = sessionName;
   }
 
