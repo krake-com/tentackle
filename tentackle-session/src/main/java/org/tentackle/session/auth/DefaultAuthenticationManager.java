@@ -43,7 +43,7 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
 
   private static final Logger LOGGER = Logger.get(DefaultAuthenticationManager.class);
 
-  private final List<AuthenticationProvider> providers;    // the provider chain, in evaluation order
+  private final List<AuthenticationProvider> providers;    // the provider chain, in evaluation order, immutable
 
 
   /**
@@ -57,14 +57,18 @@ public class DefaultAuthenticationManager implements AuthenticationManager {
   /**
    * Creates an authentication manager for an explicit chain.<br>
    * Useful for applications that wire their providers themselves, and for tests.
+   * <p>
+   * The chain is copied and frozen: {@link #authenticate(Credentials)} iterates it on every login,
+   * from every request thread, and must never see it change underneath.
    *
    * @param providers the providers, in any order
    */
   protected DefaultAuthenticationManager(List<AuthenticationProvider> providers) {
-    this.providers = new ArrayList<>(providers);
+    List<AuthenticationProvider> chain = new ArrayList<>(providers);
     // we need a predictable evaluation order
-    this.providers.sort(Comparator.comparingInt(AuthenticationProvider::getPriority)
-                                  .thenComparing(provider -> provider.getClass().getName()));
+    chain.sort(Comparator.comparingInt(AuthenticationProvider::getPriority)
+                         .thenComparing(provider -> provider.getClass().getName()));
+    this.providers = List.copyOf(chain);
     if (this.providers.isEmpty()) {
       LOGGER.warning("no authentication provider configured: all logins will be refused");
     }

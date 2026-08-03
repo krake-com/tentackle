@@ -116,6 +116,29 @@ public class DefaultAuthenticationManagerTest {
   }
 
   @Test
+  public void testProviderChainCannotBeModified() {
+    AuthenticationProvider extra = new TestProvider("extra", 0, true, null, null, new ArrayList<>());
+    AuthenticationManager manager = manager(
+        new TestProvider("only", 0, true, null, null, new ArrayList<>()));
+
+    // authenticate() iterates the chain concurrently: a caller must not be able to change it
+    Assert.assertThrows(UnsupportedOperationException.class, () -> manager.getProviders().add(extra));
+    Assert.assertThrows(UnsupportedOperationException.class, () -> manager.getProviders().clear());
+    Assert.assertEquals(manager.getProviders().size(), 1);
+  }
+
+  @Test
+  public void testProviderChainIsDetachedFromTheGivenList() {
+    List<AuthenticationProvider> given = new ArrayList<>();
+    given.add(new TestProvider("only", 0, true, null, null, new ArrayList<>()));
+    AuthenticationManager manager = new DefaultAuthenticationManager(given);
+
+    given.clear();    // must not disarm the manager
+
+    Assert.assertEquals(manager.getProviders().size(), 1);
+  }
+
+  @Test
   public void testUnsupportedProvidersAreNotAsked() {
     List<String> asked = new ArrayList<>();
     Credentials credentials = credentials();

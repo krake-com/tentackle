@@ -68,8 +68,12 @@ public interface AuthenticationManager {
 
   /**
    * Gets the provider chain in the order it is asked.
+   * <p>
+   * The chain is fixed once the manager is created, since {@link #authenticate(Credentials)}
+   * iterates it concurrently. Implementations must therefore not hand out a list a caller
+   * could modify.
    *
-   * @return the providers, never null
+   * @return the providers, never null, unmodifiable
    */
   List<AuthenticationProvider> getProviders();
 
