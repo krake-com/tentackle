@@ -46,7 +46,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private static final int BASE_MS = 50;          // base milliseconds to sleep before the next try
   private static final long REQ_MUTEX_MS = 1000;  // request connections mutex wait timeout
   private static final long DONE_MUTEX_MS = 500;  // done connections mutex wait timeout
-  private static final long JOIN_MS = 5000;       // max. time to wait for the connect thread to terminate
+  private static final long CONNECT_THREAD_JOIN_MS = 5000;   // max. time to wait for the connect thread to terminate
 
 
   // args
@@ -221,7 +221,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       ix = null;
       connectThread.interrupt();
       try {
-        connectThread.join(JOIN_MS);   // wait until the connect-thread terminates
+        connectThread.join(CONNECT_THREAD_JOIN_MS);   // wait until the connect-thread terminates
         break;
       }
       catch (InterruptedException ex) {
