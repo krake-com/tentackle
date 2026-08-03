@@ -126,7 +126,15 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
 
   /**
-   * Session infos are equal if their login credentials are equal.<br>
+   * Session infos are equal if they belong to the same user, i.e. if their usernames are equal.
+   * <p>
+   * The comparison is deliberately restricted to the username. It makes a {@link #clone()} equal to
+   * its original, which is what lets a {@link MultiUserSessionPool} find a user's pool again for a
+   * session handed back to it, and lets {@link MultiUserSessionPool#close(SessionInfo)} address a
+   * user by a session info created just for that purpose. Comparing the credentials -- which are
+   * copied by {@code clone()} and have no value equality -- or any other attribute would break both.
+   * <p>
+   * Consequently, the username must not be changed while the session info serves as a key.
    *
    * @param obj the other object
    * @return true if obj is a SessionInfo and belongs to the same 'user'
@@ -139,6 +147,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Derived from the username alone, see {@link #equals(Object)}.
+   */
   @Override
   public int hashCode() {
     int hash = 3;

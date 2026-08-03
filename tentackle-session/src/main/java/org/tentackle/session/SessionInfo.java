@@ -29,6 +29,11 @@ import java.util.TimeZone;
 
 /**
  * Session information.
+ * <p>
+ * Implementations must define {@code equals} and {@code hashCode} by the username alone, so that
+ * every session info of a user -- the original, its clones, and one created solely to address that
+ * user -- is interchangeable as a key. A {@link MultiUserSessionPool} depends on it to map a user
+ * to its sessions.
  *
  * @author harald
  */
