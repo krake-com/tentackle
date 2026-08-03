@@ -23,6 +23,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.Identifiable;
 
 import java.util.ArrayList;
@@ -45,6 +46,8 @@ interface SessionUtilitiesHolder {
  */
 @Service(SessionUtilities.class)      // defaults to self
 public class SessionUtilities {
+
+  private static final Logger LOGGER = Logger.get(SessionUtilities.class);
 
   /**
    * The singleton.
@@ -203,11 +206,26 @@ public class SessionUtilities {
 
   /**
    * Starts the keep alive thread if not already running.
+   * <p>
+   * If the daemon died on its own -- due to a severe error or the dead-dispatcher detection --
+   * its registrations are handed over to the replacement. Without that, every session registered
+   * so far would silently stop being pinged and be timed out by the remote server, while only the
+   * sessions changing their interval afterwards would recover.
    */
   public synchronized void startKeepAliveDaemonIfNotRunning() {
-    if (keepAliveDaemon == null || !keepAliveDaemon.isAlive()) {
+    if (keepAliveDaemon == null) {
       keepAliveDaemon = createKeepAliveDaemon();
       keepAliveDaemon.start();
+    }
+    else if (!keepAliveDaemon.isAlive()) {
+      Collection<Session> sessions = keepAliveDaemon.getKeepAliveSessions();
+      LOGGER.warning("keep-alive daemon died -> restarting it with {0} session(s)", sessions.size());
+      keepAliveDaemon = createKeepAliveDaemon();
+      keepAliveDaemon.start();
+      for (Session session: sessions) {
+        // re-reads the interval and skips sessions closed in the meantime
+        keepAliveDaemon.keepAliveIntervalChanged(session);
+      }
     }
   }
 

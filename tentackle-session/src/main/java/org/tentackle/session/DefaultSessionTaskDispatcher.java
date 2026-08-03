@@ -33,9 +33,9 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
   private static final Logger LOGGER = Logger.get(DefaultSessionTaskDispatcher.class);
 
 
-  private boolean sessionClosedOnTermination;   // true if the session should be closed
-  private boolean sessionKeptAlive;             // true if ping to keep the session alive periodically
-  private Session session;                      // the session this thread is attached to
+  private volatile boolean sessionClosedOnTermination;  // true if the session should be closed
+  private volatile boolean sessionKeptAlive;            // true if ping to keep the session alive periodically
+  private volatile Session session;                     // the session this thread is attached to
 
 
   /**

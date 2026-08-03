@@ -22,6 +22,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.task.DefaultTaskDispatcher;
 import org.tentackle.task.Task;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -148,6 +150,17 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
     }
     LOGGER.fine("{0} was already replaced or removed -> keep-alive left untouched", task);
     return false;
+  }
+
+
+  /**
+   * Gets the sessions currently kept alive.<br>
+   * Useful to hand the registrations over to another daemon, should this one have died.
+   *
+   * @return a snapshot of the sessions, never null
+   */
+  public Collection<Session> getKeepAliveSessions() {
+    return new ArrayList<>(sessionTaskMap.keySet());
   }
 
 
