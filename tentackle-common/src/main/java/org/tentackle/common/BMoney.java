@@ -285,7 +285,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @return the re-scaled value or the value itself if no rescaling necessary
    */
   protected BMoney alignScale(BMoney val)  {
-    return val.scale() == scale() ? val : new BMoney(val.unscaledValue(), scale());
+    return val.scale() == scale() ? val : new BMoney(val, scale());
   }
 
 }
