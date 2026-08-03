@@ -34,6 +34,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.function.Function;
 
@@ -76,6 +77,10 @@ interface CryptorHolder {
  * Notice: the security of symmetric encryption algorithms in general depends on the confidentiality of the passphrase. Thus, the passphrase
  * should ideally not be part of the application, but provided via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.
  * However, in practice this isn't always doable.
+ * <p>
+ * Cryptors are threadsafe. Since {@link Cipher} is stateful and <em>not</em> threadsafe, each thread gets
+ * its own cipher, created lazily via {@link #getCipher()}. This is essential, because the cryptor is usually
+ * a singleton shared by all threads, for example by the encrypted transports of a server.
  */
 public class Cryptor implements Function<String, String> {
 
@@ -104,18 +109,27 @@ public class Cryptor implements Function<String, String> {
 
 
   private final SecretKey key;
-  private final Cipher cipher;
+
+  /**
+   * The ciphers, one per thread.<br>
+   * {@link Cipher} is stateful and not threadsafe: sharing one instance would make concurrent
+   * en-/decryptions corrupt each other, silently returning wrong data.
+   */
+  private final ThreadLocal<Cipher> ciphers;
 
 
   /**
-   * Creates a cryptor.
+   * Creates a cryptor.<br>
+   * Notice that the given cipher serves as the template for the per-thread ciphers,
+   * i.e. its algorithm and provider are used to create them.
    *
    * @param key the secret key
    * @param cipher the cipher
    */
   public Cryptor(SecretKey key, Cipher cipher) {
     this.key = key;
-    this.cipher = cipher;
+    Objects.requireNonNull(cipher, "cipher");
+    ciphers = ThreadLocal.withInitial(() -> createCipher(cipher));
   }
 
   /**
@@ -143,7 +157,7 @@ public class Cryptor implements Function<String, String> {
     Arrays.fill(salt, (byte) 0);
 
     key = createSecretKeySpec(tmpKey.getEncoded());
-    cipher = getCipher();
+    ciphers = ThreadLocal.withInitial(this::getCipher);
   }
 
   /**
@@ -178,6 +192,7 @@ public class Cryptor implements Function<String, String> {
    */
   public byte[] encrypt(byte[] data) {
     try {
+      Cipher cipher = ciphers.get();
       cipher.init(Cipher.ENCRYPT_MODE, key);
       return cipher.doFinal(data);
     }
@@ -196,6 +211,7 @@ public class Cryptor implements Function<String, String> {
    */
   public byte[] encrypt(byte[] data, int offset, int length) {
     try {
+      Cipher cipher = ciphers.get();
       cipher.init(Cipher.ENCRYPT_MODE, key);
       return cipher.doFinal(data, offset, length);
     }
@@ -214,6 +230,7 @@ public class Cryptor implements Function<String, String> {
    */
   public byte[] decrypt(byte[] encryptedData, int offset, int length) {
     try {
+      Cipher cipher = ciphers.get();
       cipher.init(Cipher.DECRYPT_MODE, key);
       return cipher.doFinal(encryptedData, offset, length);
     }
@@ -230,6 +247,7 @@ public class Cryptor implements Function<String, String> {
    */
   public byte[] decrypt(byte[] encryptedData) {
     try {
+      Cipher cipher = ciphers.get();
       cipher.init(Cipher.DECRYPT_MODE, key);
       return cipher.doFinal(encryptedData);
     }
@@ -399,14 +417,34 @@ public class Cryptor implements Function<String, String> {
   }
 
   /**
-   * Gets the cipher instance.<br>
+   * Creates a cipher instance.<br>
    * The default implementation returns an {@code AES} cipher.
+   * <p>
+   * Invoked once per thread. Implementations must return a new instance each time,
+   * since {@link Cipher} is not threadsafe.
    *
    * @return the cipher
    */
   protected Cipher getCipher() {
     try {
       return Cipher.getInstance("AES");
+    }
+    catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
+      throw new TentackleRuntimeException("creating cipher failed", e);
+    }
+  }
+
+
+  /**
+   * Creates a cipher from a template.<br>
+   * Same algorithm and provider as the template, but a separate instance.
+   *
+   * @param template the cipher to derive the new instance from
+   * @return the cipher
+   */
+  private static Cipher createCipher(Cipher template) {
+    try {
+      return Cipher.getInstance(template.getAlgorithm(), template.getProvider());
     }
     catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
       throw new TentackleRuntimeException("creating cipher failed", e);
