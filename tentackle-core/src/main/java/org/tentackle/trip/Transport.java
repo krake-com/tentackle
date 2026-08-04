@@ -114,11 +114,20 @@ public interface Transport {
 
   /**
    * Gets the dictionary for the server transport per client.
+   * <p>
+   * A dictionary lives as long as at least one connection of its client transport is open and is
+   * garbage collected afterward. Since a client keeps its own dictionary for the lifetime of its
+   * transport, a new dictionary may only be created for a client that does not hold any entry yet.
+   * A client whose dictionary is populated while this side has none would send ordinals this side
+   * never learned, so it is rejected and must establish a new transport. This also covers a client
+   * outliving a restart of the server.
    *
    * @param id the client's transport UUID
-   * @return the dictionary
+   * @param clientDictionaryEmpty true if the client's dictionary is still empty, as told by the
+   *        connection handshake
+   * @return the dictionary; null if the client transport is stale and must be re-established
    */
-  Dictionary getServerDictionary(UUID id);
+  Dictionary getServerDictionary(UUID id, boolean clientDictionaryEmpty);
 
   /**
    * Gets the server's registry.

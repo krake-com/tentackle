@@ -58,6 +58,12 @@ public abstract class AbstractConnection implements Connection {
     bb.putLong(transport.getId().getLeastSignificantBits());
     stream.getSerializer().serialize(bb.array());
 
+    // Tell the server whether our dictionary is still empty. Only then it may create a new
+    // dictionary for this transport. Otherwise, we would send ordinals it never learned.
+    // If another connection of this transport is populating the dictionary right now, the server
+    // still holds it and answers with that one, so the flag does not matter in that case.
+    serializer.serializeBoolean(stream.getDictionary().isEmpty());
+
     serializer.flush();
   }
 

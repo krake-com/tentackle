@@ -25,7 +25,8 @@ public class TripConstants {
 
   /**
    * The 2-byte magic number (TRIP connection header): <code>&raquo; &laquo;</code><br>
-   * Which is followed by the UUID of the transport.
+   * Which is followed by the 16-byte UUID of the transport and a single byte telling
+   * whether the client's dictionary is still empty (see {@link Dictionary#isEmpty()}).
    */
   public static final byte[] MAGIC = new byte[] { (byte) 0xBB, (byte) 0xAB };
 

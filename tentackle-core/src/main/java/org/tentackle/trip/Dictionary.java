@@ -45,6 +45,19 @@ public interface Dictionary {
   boolean isServer();
 
   /**
+   * Returns whether this dictionary does not hold any entry yet.
+   * <p>
+   * A client tells the server in the connection handshake whether its dictionary is still empty.
+   * Only then may the server create a new dictionary for the client's transport. A client that
+   * already holds entries — permanent ones assigned by the server as well as its own temporary
+   * ones — would send ordinals a fresh server-side dictionary never learned.
+   *
+   * @return true if there is no entry at all
+   * @see Transport#getServerDictionary(UUID, boolean)
+   */
+  boolean isEmpty();
+
+  /**
    * Creates a new entry for the given class.
    *
    * @param clazz the class to create an entry for

@@ -141,7 +141,8 @@ public class ConnectionHandler implements Runnable {
     }
 
     UUID id = readUUID();
-    TripStream stream = createStream(id);
+    boolean clientDictionaryEmpty = readDictionaryFlag();
+    TripStream stream = createStream(id, clientDictionaryEmpty);
     TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
     boolean closedByClient = false;
     LOGGER.info("connection " + transportClientInfo + " opened");
@@ -222,13 +223,14 @@ public class ConnectionHandler implements Runnable {
    * Creates a new stream for the given UUID.
    *
    * @param id the UUID of the client's transport
+   * @param clientDictionaryEmpty true if the client's dictionary is still empty
    * @return the trip stream
    */
-  protected TripStream createStream(UUID id) {
+  protected TripStream createStream(UUID id, boolean clientDictionaryEmpty) {
     if (transport.isClosed()) {   // don't use isConnectionAlive since this would block in LoopbackTransport (see override)
       throw new TripStreamClosedException("transport " + transport + " already closed");
     }
-    Dictionary serverDictionary = transport.getServerDictionary(id);
+    Dictionary serverDictionary = transport.getServerDictionary(id, clientDictionaryEmpty);
     if (serverDictionary != null) {
       TripFactory factory = TripFactory.getInstance();
       Serializer serializer = factory.createSerializer(outputStream);
@@ -253,6 +255,19 @@ public class ConnectionHandler implements Runnable {
     }
     catch (IOException e) {
       throw new TripRuntimeException("reading magic failed", e);
+    }
+  }
+
+  private boolean readDictionaryFlag() {
+    try {
+      int flag = inputStream.read();
+      if (flag == -1) {
+        throw new TripStreamClosedException("end of stream while reading the dictionary flag");
+      }
+      return flag != 0;
+    }
+    catch (IOException e) {
+      throw new TripRuntimeException("reading the dictionary flag failed", e);
     }
   }
 

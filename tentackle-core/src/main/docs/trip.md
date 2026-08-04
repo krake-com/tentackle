@@ -113,21 +113,21 @@ value is resolved from up to three sources, in order of precedence:
 3. the standard JSSE **system property** `javax.net.ssl.<name>` as a fallback, so existing
    configurations (e.g. in `backend.properties`) keep working.
 
-| Query key    | `tentackle.ssl.` suffix   | `javax.net.ssl.` fallback | Side   | Description                                                                       |
-|--------------|---------------------------|---------------------------|--------|-----------------------------------------------------------------------------------|
-| `ksfile`     | `keyStore`                | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert |
-| `kspass`     | `keyStorePassword`        | `keyStorePassword`        | both   | keystore password                                                                 |
-| `kstype`     | `keyStoreType`            | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                            |
-| `ksalias`    | `keyStoreAlias`           | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
-| `kmpass`     | `keyPassword`             | `keyPassword`             | both   | private key password (default: keystore password)                                 |
-| `tsfile`     | `trustStore`              | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                 |
-| `tspass`     | `trustStorePassword`      | `trustStorePassword`      | both   | truststore password                                                               |
-| `tstype`     | `trustStoreType`          | `trustStoreType`          | both   | truststore type                                                                   |
-| `protocol`   | `protocol`                | —                         | both   | `SSLContext` protocol (default `TLS`)                                             |
-| `protocols`  | `protocols`               | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                          |
-| `ciphers`    | `cipherSuites`            | —                         | both   | comma-separated enabled cipher suites                                             |
-| `clientauth` | `clientAuth`              | —                         | server | client-certificate policy: `none` (default), `want` or `need`                     |
-| `endpointid` | `endpointIdentification`  | —                         | client | endpoint identification algorithm, e.g. `HTTPS` (default: none)                    |
+| Query key    | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
+|--------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
+| `ksfile`     | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
+| `kspass`     | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
+| `kstype`     | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
+| `ksalias`    | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
+| `kmpass`     | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
+| `tsfile`     | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
+| `tspass`     | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
+| `tstype`     | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
+| `protocol`   | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
+| `protocols`  | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
+| `ciphers`    | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
+| `clientauth` | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
+| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm, e.g. `HTTPS` (default: none)                             |
 
 Example — a server presenting the certificate stored under alias `server` and requiring client
 certificates, with clients verified against a dedicated truststore:
@@ -286,6 +286,33 @@ When an object is first serialized:
    is the main source of truth for type definitions.
 
 This compression is maintained separately per client on the server side and as a single dictionary on the client side.
+
+##### Dictionary lifetime and the connection handshake
+
+Every connection starts with a short preamble:
+
+| Bytes | Meaning                                                           |
+|-------|-------------------------------------------------------------------|
+| 2     | the TRIP magic number, whose second byte is the handshake version |
+| 16    | the UUID of the client's transport                                |
+| 1     | whether the client's dictionary is still empty                    |
+
+The server keeps one dictionary per client transport UUID and holds it only weakly: once the last
+connection of that transport is closed, the dictionary is garbage collected. The client, in
+contrast, keeps its dictionary for the whole lifetime of its transport. That asymmetry is why the
+last byte exists.
+
+When a connection arrives and the server has no dictionary for its transport UUID — because it was
+collected or because the server was restarted — it may only create a new one if the client says
+its own dictionary is still empty. A client that already learned entries would otherwise send
+ordinals the new dictionary never saw, and the receiving side would block until
+`Dictionary.getEntry(int)` times out. Such a client is rejected with *"no such dictionary … (stale
+client transport?)"* and has to establish a new transport, which gives both sides a fresh
+dictionary. Applications that reconnect must therefore build a new `Transport` rather than reuse
+the rejected one.
+
+Because the preamble is part of the wire format, a peer built against a different handshake version
+fails immediately with an *"invalid magic"* error instead of misreading the header.
 
 #### OpCode
 

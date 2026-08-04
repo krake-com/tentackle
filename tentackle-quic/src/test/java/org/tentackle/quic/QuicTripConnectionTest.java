@@ -63,8 +63,9 @@ public class QuicTripConnectionTest {
 
 
   /**
-   * Creating a connection performs the TRIP handshake preamble: the magic number followed by
-   * the client transport's UUID, which the server uses to pick the matching dictionary.
+   * Creating a connection performs the TRIP handshake preamble: the magic number, the client
+   * transport's UUID, which the server uses to pick the matching dictionary, and a flag telling
+   * whether that dictionary is still empty.
    */
   @Test
   public void sendsTheTripPreambleOnCreation() {
@@ -72,15 +73,34 @@ public class QuicTripConnectionTest {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
-    ByteBuffer expected = ByteBuffer.allocate(TripConstants.MAGIC.length + 16);
+    ByteBuffer expected = ByteBuffer.allocate(TripConstants.MAGIC.length + 17);
     expected.put(TripConstants.MAGIC);
     expected.putLong(transport.getId().getMostSignificantBits());
     expected.putLong(transport.getId().getLeastSignificantBits());
+    expected.put((byte) 1);   // a fresh dictionary is empty
     assertEquals(quicStream.getWrittenBytes(), expected.array());
 
     assertSame(connection.getTransport(), transport);
     assertSame(connection.getStream().getDictionary(), dictionary);
     assertTrue(connection.isOpen());
+  }
+
+  /**
+   * A client transport that already learned dictionary entries says so in the preamble, so that
+   * the server can reject it instead of serving it with a new, empty dictionary.
+   */
+  @Test
+  public void reportsAPopulatedDictionaryInThePreamble() {
+    Reporter.log("reportsAPopulatedDictionaryInThePreamble", true);
+    dictionary.addEntry(dictionary.createEntry(String.class));
+    assertFalse(dictionary.isEmpty());
+
+    FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
+    new QuicTripConnection(transport, dictionary, () -> true, quicStream);
+
+    byte[] written = quicStream.getWrittenBytes();
+    assertEquals(written.length, TripConstants.MAGIC.length + 17);
+    assertEquals(written[written.length - 1], (byte) 0);
   }
 
   @Test
