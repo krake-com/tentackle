@@ -205,17 +205,31 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   @Override
-  public synchronized void shutdown() {
-    assertNotShutdown();
-    LOGGER.info("shutting down pool {0}", this);
-    for (PoolSlot<T> slot: slots) {
+  public void shutdown() {
+    PoolSlot<T>[] slotsToClose;
+    long timeout;
+    synchronized (this) {
+      assertNotShutdown();
+      LOGGER.info("shutting down pool {0}", this);
+      slotsToClose = slots;
+      timeout = shutdownTimeout;
+      // mark the pool shut down before closing: get() and put() must not hand out resources anymore
+      slots = null;
+      freeList = null;
+      unusedList = null;
+    }
+    /*
+     * Close the resources without holding the pool's monitor.
+     * close() waits for the closing operation of each resource, and closing a resource may
+     * well need the pool again. Holding the monitor here would block that until the timeout
+     * struck, leaving the resource unclosed - and would stall the shared PoolTimeoutThread,
+     * which invokes this via monitor() and services all other pools as well.
+     */
+    for (PoolSlot<T> slot: slotsToClose) {
       if (slot != null) {
-        slot.close(shutdownTimeout);
+        slot.close(timeout);
       }
     }
-    slots = null;
-    freeList = null;
-    unusedList = null;
   }
 
   @Override
@@ -410,7 +424,29 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   @Override
-  public synchronized void monitor() {
+  public void monitor() {
+    boolean shutdownPool;
+
+    synchronized (this) {
+      if (isShutdown()) {
+        return;   // shut down concurrently: nothing left to monitor
+      }
+      shutdownPool = monitorSlots();
+    }
+
+    if (shutdownPool && !isShutdown()) {
+      // outside the monitor: shutdown() waits for the resources to be closed
+      shutdown();
+    }
+  }
+
+  /**
+   * Closes timed out resources and re-establishes the minimum pool size.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @return true if the pool should be shut down
+   */
+  private boolean monitorSlots() {
     long currentMillis = System.currentTimeMillis();
 
     int i = 0;    // start with the oldest unused
@@ -471,11 +507,10 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     int size = getSize();
     if (minimumSize > 0 && size < minimumSize) {
       createSlots(minimumSize - size);
+      return false;
     }
-    else if (size == 0 && minimumSize < 0) {
-      // minimum size < 0, and all resources closed -> shut down pool
-      shutdown();
-    }
+    // minimum size < 0, and all resources closed -> shut down pool
+    return size == 0 && minimumSize < 0;
   }
 
   /**

@@ -25,6 +25,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
@@ -39,6 +40,9 @@ public class AbstractPoolTest {
 
   /** generous upper bound for the tests that must not hang. */
   private static final long AWAIT_TIMEOUT = 30000;
+
+  /** shutdown timeout used to detect a blocking shutdown(). */
+  private static final long SHUTDOWN_TIMEOUT = 4000;
 
 
   @Test
@@ -133,13 +137,7 @@ public class AbstractPoolTest {
     TestPool pool = new TestPool("spin detection pool");
     pool.put(pool.get());     // first get() registers the pool with the timeout thread
 
-    Thread timeoutThread = null;
-    for (Thread thread : Thread.getAllStackTraces().keySet()) {
-      if (thread.getName().startsWith("Pool Timeout Thread")) {
-        timeoutThread = thread;
-        break;
-      }
-    }
+    Thread timeoutThread = findPoolTimeoutThread();
     assertNotNull(timeoutThread, "pool timeout thread not started");
 
     timeoutThread.interrupt();
@@ -155,16 +153,84 @@ public class AbstractPoolTest {
 
 
   /**
+   * Closing a resource may well need the pool again. {@code shutdown()} must therefore not hold
+   * the pool's monitor while waiting for the resources to be closed: the wait would block until
+   * the timeout struck and leave the resource unclosed - and it would stall the shared
+   * {@link PoolTimeoutThread}, which invokes this via {@code monitor()} for all pools.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void shutdownDoesNotBlockResourcesNeedingThePool() {
+    TestPool pool = new TestPool("reentrant close pool");
+    pool.setShutdownTimeout(SHUTDOWN_TIMEOUT);
+    TestResource resource = pool.get();
+    pool.put(resource);
+    pool.reenterOnClose = true;
+
+    long started = System.currentTimeMillis();
+    pool.shutdown();
+    long elapsed = System.currentTimeMillis() - started;
+
+    assertTrue(pool.isShutdown());
+    assertFalse(resource.isOpen(), "resource was not closed");
+    assertTrue(elapsed < SHUTDOWN_TIMEOUT / 4,
+               "shutdown() blocked the closing resource for " + elapsed + "ms");
+  }
+
+
+  /**
+   * Pools are not required to have unique names, so the monitoring must not be keyed by name:
+   * a colliding registration would silently drop a pool from the monitoring altogether.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void poolsWithTheSameNameAreBothMonitored() {
+    TestPool first = new TestPool("same name pool");
+    TestPool second = new TestPool("same name pool");
+    first.put(first.get());     // the first get() registers with the timeout thread
+    second.put(second.get());
+
+    Thread timeoutThread = findPoolTimeoutThread();
+    assertNotNull(timeoutThread, "pool timeout thread not started");
+
+    // wake it up rather than waiting for its (10s) interval to elapse
+    long deadline = System.currentTimeMillis() + AWAIT_TIMEOUT / 2;
+    while ((first.monitorCount.get() == 0 || second.monitorCount.get() == 0)
+           && System.currentTimeMillis() < deadline) {
+      timeoutThread.interrupt();
+    }
+
+    assertTrue(first.monitorCount.get() > 0, "the first pool was never monitored");
+    assertTrue(second.monitorCount.get() > 0, "the second pool was never monitored");
+  }
+
+
+  /**
+   * Finds the shared pool timeout thread.
+   *
+   * @return the thread, null if not running
+   */
+  private static Thread findPoolTimeoutThread() {
+    for (Thread thread : Thread.getAllStackTraces().keySet()) {
+      if (thread.getName().startsWith("Pool Timeout Thread")) {
+        return thread;
+      }
+    }
+    return null;
+  }
+
+
+  /**
    * A minimal poolable for testing.
    */
   private static class TestResource implements Poolable<TestResource> {
 
     private final int serial;
+    private final TestPool owner;         // the creating pool, needed while closing
     private Pool<TestResource> pool;
     private int poolId;
-    private boolean open;
+    private volatile boolean open;
 
-    private TestResource(int serial, boolean open) {
+    private TestResource(TestPool owner, int serial, boolean open) {
+      this.owner = owner;
       this.serial = serial;
       this.open = open;
     }
@@ -196,6 +262,9 @@ public class AbstractPoolTest {
 
     @Override
     public void close() {
+      if (owner.reenterOnClose) {
+        owner.getSize();    // needs the pool's monitor
+      }
       open = false;
     }
 
@@ -215,6 +284,7 @@ public class AbstractPoolTest {
     private int createdCount;
     private boolean createOpen = true;
     private boolean slotsRemovable = true;
+    private volatile boolean reenterOnClose;    // resources re-enter the pool while closing
 
     private TestPool() {
       this("test pool");
@@ -229,7 +299,9 @@ public class AbstractPoolTest {
     }
 
     @Override
-    public synchronized void monitor() {
+    public void monitor() {
+      // deliberately not synchronized: super.monitor() must be free to shut the pool down
+      // without holding the pool's monitor
       monitorCount.incrementAndGet();
       super.monitor();
     }
@@ -241,7 +313,7 @@ public class AbstractPoolTest {
 
     @Override
     protected PoolSlot<TestResource> createSlot(int slotNumber) {
-      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(++createdCount, createOpen)) {
+      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(this, ++createdCount, createOpen)) {
         @Override
         protected TentackleRuntimeException createException(String msg) {
           return new TentackleRuntimeException(msg);

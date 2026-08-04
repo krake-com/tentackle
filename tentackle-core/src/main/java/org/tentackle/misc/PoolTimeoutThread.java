@@ -23,9 +23,9 @@ import org.tentackle.daemon.Scavenger;
 import org.tentackle.log.Logger;
 
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -41,13 +41,18 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
   private static final Logger LOGGER = Logger.get(PoolTimeoutThread.class);
   private static final long SLEEP_INTERVAL = Constants.SECOND_MS * 10;   // sleep interval for timeout thread
 
-  /** pool name -> pool ref. */
-  private static final Map<String, WeakReference<Pool<?>>> poolMap = new ConcurrentHashMap<>();
+  /**
+   * The monitored pools.
+   * <p>
+   * Deliberately not keyed by the pool name: pools are not required to have unique names
+   * and a colliding registration would silently drop a pool from the monitoring.
+   */
+  private static final Collection<WeakReference<Pool<?>>> pools = new ConcurrentLinkedQueue<>();
 
   /** number of created threads so far. */
   private static final AtomicInteger instanceCount = new AtomicInteger();
 
-  /** the currently running or dead thread, null if no thread started yet. */
+  /** the currently running thread, null if none running. */
   private static PoolTimeoutThread timeoutThread;
 
 
@@ -59,16 +64,19 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
    * @param pool the pool
    */
   public static void register(Pool<?> pool) {
-    poolMap.put(pool.getName(), new WeakReference<>(pool));
-    LOGGER.info("session pool {0} registered", pool);
-    checkAlive();
-  }
-
-  private static synchronized void checkAlive() {
-    if (timeoutThread == null || !timeoutThread.isAlive()) {
-      timeoutThread = new PoolTimeoutThread();
-      timeoutThread.start();
+    /*
+     * Registering and terminating must be mutually exclusive, see run().
+     * Otherwise, a thread that has just decided to terminate is still alive here,
+     * no replacement is started and the pool would never be monitored at all.
+     */
+    synchronized (PoolTimeoutThread.class) {
+      pools.add(new WeakReference<>(pool));
+      if (timeoutThread == null || !timeoutThread.isAlive()) {
+        timeoutThread = new PoolTimeoutThread();
+        timeoutThread.start();
+      }
     }
+    LOGGER.info("session pool {0} registered", pool);
   }
 
 
@@ -93,25 +101,26 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
           // check the termination condition below
         }
 
-        if (poolMap.isEmpty()) {
-          break;    // no more pools -> terminate
+        synchronized (PoolTimeoutThread.class) {
+          if (pools.isEmpty()) {
+            // hand the duty to start a new thread back to register(), which holds the same lock
+            timeoutThread = null;
+            break;    // no more pools -> terminate
+          }
         }
 
-        for (Iterator<WeakReference<Pool<?>>> iter = poolMap.values().iterator(); iter.hasNext(); ) {
+        for (Iterator<WeakReference<Pool<?>>> iter = pools.iterator(); iter.hasNext(); ) {
           Pool<?> pool = iter.next().get();
-          if (pool == null) {
+          if (pool == null || pool.isShutdown()) {
             iter.remove();
           }
           else {
-            synchronized (pool) {
-              if (pool.isShutdown()) {
-                iter.remove();
-              }
-              else {
-                // bring down timed out unused instances
-                pool.monitor();
-              }
-            }
+            /*
+             * Don't hold the pool's monitor here: monitor() may shut the pool down, which waits
+             * for its resources to be closed. Holding it would also invert the locking order
+             * against register(), which is invoked while holding the pool's monitor.
+             */
+            pool.monitor();   // bring down timed out unused instances
           }
         }
       }
