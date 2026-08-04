@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -79,7 +80,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final Object queueLock;                       // makes composite updates of queue + idMap atomic
-  private final List<TaskListener> listeners;           // task listeners
+  private final List<TaskListener> listeners;           // task listeners (notified without holding a lock)
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
   private final Object interruptLock;                   // makes testing and setting delayInterrupt atomic
   private int nonMutexLockCount;                        // non-mutex lock count
@@ -113,7 +114,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     setWaitInterval(deadInterval / 2);
 
     queue = new ConcurrentSkipListSet<>();
-    listeners = new ArrayList<>();
+    /*
+     * fireStarted/fireCompleted iterate the listeners without a lock, and a listener may well
+     * add or remove listeners from within the notification (a one-shot listener deregistering
+     * itself is the obvious case). Iterating a plain list would skip the remaining listeners
+     * or throw a ConcurrentModificationException, which aborts the task execution.
+     * Note this is java.util.concurrent's list, not the copy-once org.tentackle.misc.CopyOnWriteList.
+     */
+    listeners = new CopyOnWriteArrayList<>();
     idMap = new ConcurrentHashMap<>();
     queueLock = new Object();
     interruptMutex = new ReentrantReadWriteLock();
@@ -271,13 +279,13 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  public synchronized void addTaskListener(TaskListener listener) {
+  public void addTaskListener(TaskListener listener) {
     assertNotKilled();
     listeners.add(listener);
   }
 
   @Override
-  public synchronized void removeTaskListener(TaskListener listener) {
+  public void removeTaskListener(TaskListener listener) {
     assertNotKilled();
     listeners.remove(listener);
   }

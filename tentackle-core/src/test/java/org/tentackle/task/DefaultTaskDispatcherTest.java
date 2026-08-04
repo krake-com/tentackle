@@ -598,6 +598,56 @@ public class DefaultTaskDispatcherTest {
 
 
   /**
+   * A listener may well add or remove listeners from within a notification - a one-shot listener
+   * deregistering itself is the obvious case. The notification in progress must not be disturbed:
+   * iterating the live list silently skips the remaining listeners, and a concurrent modification
+   * from another thread throws a ConcurrentModificationException, which aborts the task execution.
+   */
+  @Test
+  public void testListenerMayDeregisterItselfWhileBeingNotified() {
+    startDispatcher("selfRemovingListener");
+
+    AtomicInteger oneShotCount = new AtomicInteger();
+    AtomicInteger observerCount = new AtomicInteger();
+
+    TaskListener oneShot = new TaskListener() {
+      @Override
+      public void started(Task startedTask) {
+        oneShotCount.incrementAndGet();
+        dispatcher.removeTaskListener(this);
+      }
+
+      @Override
+      public void completed(Task completedTask) {
+        // nothing to do
+      }
+    };
+
+    TaskListener observer = new TaskListener() {
+      @Override
+      public void started(Task startedTask) {
+        observerCount.incrementAndGet();
+      }
+
+      @Override
+      public void completed(Task completedTask) {
+        // nothing to do
+      }
+    };
+
+    dispatcher.addTaskListener(oneShot);
+    dispatcher.addTaskListener(observer);
+
+    RecordingTask task = new RecordingTask();
+    dispatcher.addTask(task);
+    await(() -> task.runCount.get() > 0);
+
+    assertEquals(oneShotCount.get(), 1, "the one-shot listener should have been notified once");
+    assertEquals(observerCount.get(), 1, "the listener behind the deregistering one was skipped");
+  }
+
+
+  /**
    * A serializable result value.
    */
   private record Result(String value) implements java.io.Serializable {
