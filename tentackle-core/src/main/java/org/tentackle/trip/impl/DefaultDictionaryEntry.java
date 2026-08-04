@@ -136,6 +136,10 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
 
   @Override
   public TripComponent<?, ?> getTypeComponent(int ordinal) {
+    // the ordinal comes from the stream: don't let a corrupted one escape as an AIOOBE
+    if (ordinal < 0 || ordinal >= tripComponents.length) {
+      throw new TripRuntimeException("component ordinal out of range: " + ordinal + " for dictionary entry " + this);
+    }
     return tripComponents[ordinal];
   }
 
