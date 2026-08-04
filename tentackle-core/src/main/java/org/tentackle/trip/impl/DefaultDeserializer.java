@@ -279,7 +279,7 @@ public class DefaultDeserializer implements Deserializer {
         if (unused > 0) {
           int read = in.read(buf, len, unused);
           if (read == -1) {
-            throw new TripStreamClosedException("end of input stream reached while waiting for " + unused + " bytes");
+            throw new TripStreamClosedException("end of input stream reached while waiting for " + wanted + " bytes");
           }
           len += read;
           wanted -= read;
@@ -295,13 +295,17 @@ public class DefaultDeserializer implements Deserializer {
           pos = 0;
           len = unprocessed;
           if (wanted + unprocessed > buf.length) {
-            throw new TripRuntimeException("buffer too small: required " + wanted + unprocessed + " > " + buf.length);
+            throw new TripRuntimeException("buffer too small: required " + (wanted + unprocessed) + " > " + buf.length);
           }
         }
       }
     }
     catch (IOException e) {
-      throw new TripRuntimeException("filling the buffer from input stream failed", e);
+      // A connection reset, a read timeout or an SSL failure leaves the stream unusable: there is
+      // no framing to resynchronize on. Report it as closed, just like the end of the input stream
+      // above and like DefaultSerializer#flush does for the write side, so that the callers can
+      // tell a broken connection from a serialization problem.
+      throw new TripStreamClosedException("filling the buffer from input stream failed", e);
     }
   }
 

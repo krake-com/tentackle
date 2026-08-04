@@ -159,10 +159,17 @@ public class RemoteInvocationHandler implements InvocationHandler {
       String msg = MessageFormat.format("connection closed by server {0}", transport);
       LOGGER.fine(msg, tc);
       closeConnection(connection);
-      throw new TripStreamClosedException(msg);
+      throw new TripStreamClosedException(msg, tc);
     }
     catch (Throwable t) {
-      stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, t);
+      try {
+        stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, t);
+      }
+      catch (RuntimeException sx) {
+        // the connection is already broken -> there is nothing left to tell the server.
+        // Must not prevent closing the connection below, or it would be handed back to the pool.
+        t.addSuppressed(sx);
+      }
       closeConnection(connection);   // since we don't know what's still in the input stream, discard it
       StringBuilder buf = new StringBuilder("error invoking remote method ").append(method);
       if (call != null) {
