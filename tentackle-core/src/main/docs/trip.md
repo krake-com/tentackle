@@ -291,11 +291,11 @@ This compression is maintained separately per client on the server side and as a
 
 Every connection starts with a short preamble:
 
-| Bytes | Meaning                                                           |
-|-------|-------------------------------------------------------------------|
-| 2     | the TRIP magic number, whose second byte is the handshake version |
-| 16    | the UUID of the client's transport                                |
-| 1     | whether the client's dictionary is still empty                    |
+| Bytes | Meaning                                        |
+|-------|------------------------------------------------|
+| 2     | the TRIP magic number                          |
+| 16    | the UUID of the client's transport             |
+| 1     | whether the client's dictionary is still empty |
 
 The server keeps one dictionary per client transport UUID and holds it only weakly: once the last
 connection of that transport is closed, the dictionary is garbage collected. The client, in
