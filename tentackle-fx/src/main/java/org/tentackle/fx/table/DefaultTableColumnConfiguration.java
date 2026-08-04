@@ -40,6 +40,7 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * Default configuration for a table column.<br>
+ * The setters follow a fluent API style, i.e., they return the current instance.
  *
  * @param <S> type of the objects contained within the table's item list
  * @param <T> type of the content in all cells in this column
@@ -211,11 +212,12 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setDisplayedName(String displayedName) {
+  public TableColumnConfiguration<S, T> setDisplayedName(String displayedName) {
     this.displayedName = displayedName;
     if (tableColumn != null) {
       tableColumn.setText(displayedName);
     }
+    return this;
   }
 
   @Override
@@ -244,14 +246,16 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setCellType(TableCellType<T> cellType) {
+  public TableColumnConfiguration<S, T> setCellType(TableCellType<T> cellType) {
     this.cellType = cellType;
+    return this;
   }
 
   @Override
-  public void setPattern(String pattern) {
+  public TableColumnConfiguration<S, T> setPattern(String pattern) {
     this.pattern = pattern;
     numberFormat = null;
+    return this;
   }
 
   @Override
@@ -299,8 +303,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setAlignment(Pos alignment) {
+  public TableColumnConfiguration<S, T> setAlignment(Pos alignment) {
     this.alignment = alignment;
+    return this;
   }
 
   @Override
@@ -309,8 +314,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setBlankZero(Boolean blankZero) {
+  public TableColumnConfiguration<S, T> setBlankZero(Boolean blankZero) {
     this.blankZero = blankZero;
+    return this;
   }
 
   @Override
@@ -324,8 +330,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setUnsigned(Boolean unsigned) {
+  public TableColumnConfiguration<S, T> setUnsigned(Boolean unsigned) {
     this.unsigned = unsigned;
+    return this;
   }
 
   @Override
@@ -334,8 +341,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setValidChars(String validChars) {
+  public TableColumnConfiguration<S, T> setValidChars(String validChars) {
     this.validChars = validChars;
+    return this;
   }
 
   @Override
@@ -344,13 +352,15 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setInvalidChars(String invalidChars) {
+  public TableColumnConfiguration<S, T> setInvalidChars(String invalidChars) {
     this.invalidChars = invalidChars;
+    return this;
   }
 
   @Override
-  public void setAutoSelect(Boolean autoSelect) {
+  public TableColumnConfiguration<S, T> setAutoSelect(Boolean autoSelect) {
     this.autoSelect = autoSelect;
+    return this;
   }
 
   @Override
@@ -359,8 +369,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setMaxColumns(Integer maxColumns) {
+  public TableColumnConfiguration<S, T> setMaxColumns(Integer maxColumns) {
     this.maxColumns = maxColumns;
+    return this;
   }
 
   @Override
@@ -369,9 +380,10 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setScale(Integer scale) {
+  public TableColumnConfiguration<S, T> setScale(Integer scale) {
     this.scale = scale;
     numberFormat = null;
+    return this;
   }
 
   @Override
@@ -380,8 +392,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setCaseConversion(Boolean caseConversion) {
+  public TableColumnConfiguration<S, T> setCaseConversion(Boolean caseConversion) {
     this.caseConversion = caseConversion;
+    return this;
   }
 
   @Override
@@ -400,8 +413,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setSummable(Boolean summable) {
+  public TableColumnConfiguration<S, T> setSummable(Boolean summable) {
     this.summable = summable;
+    return this;
   }
 
   @Override
@@ -410,8 +424,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setFilterable(Boolean filterable) {
+  public TableColumnConfiguration<S, T> setFilterable(Boolean filterable) {
     this.filterable = filterable;
+    return this;
   }
 
   @Override
@@ -431,8 +446,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setEditable(Boolean editable) {
+  public TableColumnConfiguration<S, T> setEditable(Boolean editable) {
     this.editable = editable;
+    return this;
   }
 
   @Override
@@ -441,13 +457,15 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setEditor(FxComponent editor) {
+  public TableColumnConfiguration<S, T> setEditor(FxComponent editor) {
     this.editor = editor;
+    return this;
   }
 
   @Override
-  public void setBinding(FxTableBinding<S, T> binding) {
+  public TableColumnConfiguration<S, T> setBinding(FxTableBinding<S, T> binding) {
     this.binding = binding;
+    return this;
   }
 
   @Override
