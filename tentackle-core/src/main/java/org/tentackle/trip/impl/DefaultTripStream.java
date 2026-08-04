@@ -56,6 +56,23 @@ public class DefaultTripStream implements TripStream {
   private static final int INITIAL_REF_ARRAY_SIZE = 256;
   private static final int INITIAL_DICTIONARY_ARRAY_SIZE = 64;
 
+  /**
+   * Upper bound of the per-stream dictionary entry caches.<br>
+   * The caches are indexed by an ordinal read from the stream, so their size must not be driven by
+   * it. Way beyond the number of classes any application transfers, so the cache never overflows
+   * in practice. Ordinals above are still valid, they are just looked up in the dictionary itself.
+   */
+  private static final int MAX_CACHED_DICTIONARY_ENTRIES = 1 << 16;
+
+  /**
+   * Upper bound for the reference id of a single message.<br>
+   * The reference array is indexed by an id read from the stream and, unlike the dictionary
+   * caches, it cannot fall back to a lookup elsewhere. The bound is far above the number of
+   * objects a message realistically contains, but keeps a corrupted id from allocating
+   * unbounded memory.
+   */
+  private static final int MAX_REFERENCES = 1 << 24;
+
   private final Dictionary dictionary;
   private final Serializer serializer;
   private final Deserializer deserializer;
@@ -103,6 +120,12 @@ public class DefaultTripStream implements TripStream {
   @Override
   public DictionaryEntry getDictionaryEntry(int ordinal) {
     if (ordinal >= 0) {
+      if (ordinal >= MAX_CACHED_DICTIONARY_ENTRIES) {
+        // Do not size the cache from an ordinal read off the stream: a corrupted one would
+        // allocate gigabytes. Beyond the cache the dictionary is asked every time, which is
+        // where an unknown ordinal is rejected anyway.
+        return dictionary.getEntry(ordinal);
+      }
       if (dictionaryEntries == null) {
         dictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, ordinal)];
       }
@@ -120,7 +143,11 @@ public class DefaultTripStream implements TripStream {
       return entry;
     }
     else {
-      int index = -ordinal - 1;
+      // -ordinal would overflow for Integer.MIN_VALUE, mapping it to a positive index again
+      int index = ordinal == Integer.MIN_VALUE ? MAX_CACHED_DICTIONARY_ENTRIES : -ordinal - 1;
+      if (index >= MAX_CACHED_DICTIONARY_ENTRIES) {
+        return dictionary.getEntry(ordinal);    // see above
+      }
       if (temporaryDictionaryEntries == null) {
         temporaryDictionaryEntries = new DictionaryEntry[alignDictionarySize(INITIAL_DICTIONARY_ARRAY_SIZE, index)];
       }
@@ -484,6 +511,11 @@ public class DefaultTripStream implements TripStream {
 
   private boolean addReference(Reference<?> reference) {
     int referenceId = reference.getReferenceId();
+    if (referenceId >= MAX_REFERENCES) {
+      // The array is indexed by a reference id read from the stream, so a corrupted one would
+      // allocate gigabytes before the first byte of the object arrives.
+      throw new TripRuntimeException("reference id " + referenceId + " exceeds the maximum of " + MAX_REFERENCES);
+    }
     if (referenceId >= references.length) {
       references = Arrays.copyOf(references, Math.max(references.length << 1, referenceId + INITIAL_REF_ARRAY_SIZE / 2));
     }
@@ -511,7 +543,8 @@ public class DefaultTripStream implements TripStream {
 
   private int alignDictionarySize(int currentSize, int ordinal) {
     int newSize = currentSize;
-    while (newSize <= ordinal) {
+    // the bound also stops the doubling from overflowing to a negative size and looping forever
+    while (newSize <= ordinal && newSize < MAX_CACHED_DICTIONARY_ENTRIES) {
       newSize <<= 1;
     }
     return newSize;

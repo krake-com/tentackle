@@ -196,7 +196,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
     }
 
     if (readContent) {
-      int length = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+      int length = checkSize(ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
       opCode = stream.receiveOpCode();
       value = (T) Array.newInstance(getComponentClass(entry), length);
 
@@ -207,6 +207,10 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
       while (opCode != DefaultOpCode.END) {
         int arrayIndex = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+        if (arrayIndex < 0 || arrayIndex >= length) {
+          throw new TripRuntimeException("array index " + arrayIndex + " out of range for " + this +
+                                         " of length " + length);
+        }
         opCode = stream.receiveOpCode();
         TripType<?> elementType = getComponentType();
         if (!elementType.isFinal()) {

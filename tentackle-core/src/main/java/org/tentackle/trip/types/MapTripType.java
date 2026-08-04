@@ -335,8 +335,9 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    * @return the map header
    */
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-    return new MapHeader<>(size, createMap(size));
+    int size = checkSize(MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    // the map grows while its entries are read, so the size is only a capacity hint
+    return new MapHeader<>(size, createMap(limitPreAllocation(size)));
   }
 
 }
