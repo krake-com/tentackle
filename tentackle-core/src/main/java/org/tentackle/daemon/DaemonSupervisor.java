@@ -18,7 +18,6 @@
 
 package org.tentackle.daemon;
 
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.DiagnosticUtilities;
 
@@ -324,9 +323,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * <p>
    * If the number is increased, the corresponding number of
    * daemons is started immediately. If the number is decreased,
-   * the corresponding number of daemons implementing {@link Supervisable}
-   * are killed. If not enough {@link Supervisable}s to kill were found,
-   * a {@link TentackleRuntimeException} is thrown.
+   * the surplus daemons are killed, starting at the tail.
+   * Daemons not implementing {@link Supervisable} cannot be killed directly:
+   * they are interrupted repeatedly until they have terminated.
    *
    * @param daemonNum the number of daemons, 0 for none
    */
@@ -355,25 +354,22 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         Daemon[] newDaemons = new Daemon[daemonNum];
 
         if (daemonDiff < 0) {
-          // kill "from tail"
-          for (int i = oldDaemons.length - 1; i >= 0 && daemonDiff < 0; i--) {
+          /*
+           * Kill "from tail".
+           * Every surplus daemon must be killed, not just the Supervisables: simply dropping
+           * a slot would leave its daemon running unsupervised, outliving even the supervisor.
+           * An ordinary thread cannot be killed directly, but kill() hands it over to the
+           * killed-daemons list, where run() interrupts it until it has terminated.
+           */
+          for (int i = oldDaemons.length - 1; i >= daemonNum; i--) {
             Daemon daemon = oldDaemons[i];
-            if (daemon.supervisable != null && !daemon.supervisable.isKilled()) {
+            if (daemon.supervisedDaemon != null &&
+                (daemon.supervisable == null || !daemon.supervisable.isKilled())) {
               daemon.kill();
             }
-            oldDaemons[i] = null;
-            daemonDiff++;
           }
-          if (daemonDiff < 0) {
-            throw new TentackleRuntimeException("cannot decrease daemonNum: no more supervisables to kill");
-          }
-          // all were killed: the new array will fit
-          int j = 0;
-          for (Daemon oldDaemon : oldDaemons) {
-            if (oldDaemon != null) {
-              newDaemons[j++] = oldDaemon;
-            }
-          }
+          // the surviving daemons keep their slot index
+          System.arraycopy(oldDaemons, 0, newDaemons, 0, daemonNum);
         }
         else {    // daemonDiff > 0
           for (int i = 0; i < daemonNum; i++) {

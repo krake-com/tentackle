@@ -532,6 +532,33 @@ public class DaemonSupervisorTest {
   }
 
   /**
+   * Shrinking must kill the surplus daemons, not just drop their slots: a dropped daemon would
+   * keep running unsupervised and outlive even the supervisor. Ordinary threads cannot be killed
+   * directly, so they are interrupted until they terminate.
+   */
+  @Test
+  public void testDecreaseDaemonNumStopsPlainThreadDaemons() {
+    TestSupervisor supervisor = new TestSupervisor("shrinkPlain", CHECK_INTERVAL, 0, 3);
+    supervisor.plainDaemons = true;
+    try {
+      supervisor.start();
+      assertTrue(await(() -> supervisor.getRunningDaemons().length == 3), "all daemons should start");
+      List<Thread> started = new ArrayList<>(supervisor.plainCreated);
+      assertEquals(started.size(), 3);
+
+      supervisor.setDaemonNum(1);
+      assertEquals(supervisor.getDaemonNum(), 1);
+
+      assertTrue(await(() -> !started.get(1).isAlive() && !started.get(2).isAlive()),
+                 "the surplus daemons should have been stopped");
+      assertTrue(started.get(0).isAlive(), "the remaining daemon should keep running");
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
    * The supervisor starts and clears daemons while holding only the read lock, i.e. concurrently
    * with the accessors of other threads. {@link DaemonSupervisor#getStartedDaemons()} must never
    * blow up or report null entries while that happens.
