@@ -32,6 +32,7 @@ import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeCategory;
 import org.tentackle.trip.impl.DefaultOpCode;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
@@ -374,8 +375,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
                              Reference<T> reference, T value, Consumer<T> initializer,
                              Map<TripComponent<T, ?>, Object> componentValues) {
 
-    int canonicalFieldCount = 0;    // number of canonical fields read from the stream
-    Object[] canonicalArgs = canonicalConstructor == null ? null : new Object[getCanonicalMembers().length];
+    Object[] canonicalArgs = null;           // the canonical constructor's arguments
+    boolean[] canonicalArgsAssigned = null;  // which of them were read from the stream
+    int canonicalArgsMissing = 0;            // how many of them are still missing
+    if (canonicalConstructor != null) {
+      canonicalArgs = createCanonicalArgs();
+      canonicalArgsAssigned = new boolean[canonicalArgs.length];
+      canonicalArgsMissing = canonicalArgs.length;
+    }
     Object canonicalBuilder = null;
     if (canonicalBuilderInfo != null) {
       try {
@@ -448,27 +455,13 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
               int canonicalIndex = getCanonicalIndex(component.getName());
               if (canonicalIndex >= 0) {
                 canonicalArgs[canonicalIndex] = componentValue;
-                if (++canonicalFieldCount == canonicalArgs.length) {
-                  // we got all canonical fields -> create the object
-                  try {
-                    try {
-                      value = canonicalConstructor.newInstance(canonicalArgs);
-                    }
-                    catch (IllegalAccessException ix) {
-                      canonicalConstructor.setAccessible(true);
-                      value = canonicalConstructor.newInstance(canonicalArgs);
-                    }
-                    if (initializer != null) {
-                      initializer.accept(value);
-                    }
-                  }
-                  catch (InaccessibleObjectException | InstantiationException | IllegalAccessException |
-                         InvocationTargetException e) {
-                    throw new TripInstantiationException(getObjectClass(), "cannot create instance via canonical constructor", e);
-                  }
-                  if (reference != null) {
-                    stream.addReference(reference, value, isDeduplicateable(value));
-                    // from now on, components may back-reference the object
+                if (!canonicalArgsAssigned[canonicalIndex]) {
+                  // count each argument once: a repeated ordinal must not create the object early,
+                  // i.e. with arguments that were not read from the stream yet
+                  canonicalArgsAssigned[canonicalIndex] = true;
+                  if (--canonicalArgsMissing == 0) {
+                    // we got all canonical fields -> create the object
+                    value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
                   }
                 }
               }
@@ -481,6 +474,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
       // next component
       opCode = stream.receiveOpCode();
+    }
+
+    if (value == null && canonicalConstructor != null && canonicalBuilderInfo == null && componentValues == null) {
+      // Not all canonical components arrived, for example because the sender's version of the class
+      // does not provide them (anymore). Create the object from what we got instead of returning
+      // null: the missing arguments keep their default value, just like the components of a class
+      // created by its no-args constructor would.
+      value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
     }
 
     if (canonicalBuilderInfo != null) {
@@ -635,6 +636,61 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
     }
     return canonicalMembers;
+  }
+
+  /**
+   * Creates the canonical constructor's argument array, preset with the parameters' default values.
+   * <p>
+   * Arguments that are not provided by the stream keep their default, so that a component missing
+   * from the sender's class does not prevent the object from being created. Without the presets,
+   * a missing primitive argument would make {@link Constructor#newInstance(Object...)} fail.
+   *
+   * @return the arguments, all at their default value
+   */
+  protected Object[] createCanonicalArgs() {
+    Object[] args = new Object[getCanonicalMembers().length];
+    Class<?>[] parameterTypes = canonicalConstructor.getParameterTypes();
+    for (int i = 0; i < args.length && i < parameterTypes.length; i++) {
+      // a fresh array element is the type's default: 0, false, '\0' for primitives, null otherwise
+      args[i] = Array.get(Array.newInstance(parameterTypes[i], 1), 0);
+    }
+    return args;
+  }
+
+  /**
+   * Creates the object from the canonical constructor's arguments.<br>
+   * Applies the initializer and registers the object for back-references, if any.
+   *
+   * @param stream the stream to read from
+   * @param reference the optional reference
+   * @param initializer the object initializer invoked after the new object is created
+   * @param canonicalArgs the constructor's arguments
+   * @return the object, never null
+   */
+  protected T createFromCanonicalArgs(TripStream stream, Reference<T> reference,
+                                      Consumer<T> initializer, Object[] canonicalArgs) {
+    T value;
+    try {
+      try {
+        value = canonicalConstructor.newInstance(canonicalArgs);
+      }
+      catch (IllegalAccessException ix) {
+        canonicalConstructor.setAccessible(true);
+        value = canonicalConstructor.newInstance(canonicalArgs);
+      }
+      if (initializer != null) {
+        initializer.accept(value);
+      }
+    }
+    catch (InaccessibleObjectException | InstantiationException | IllegalAccessException |
+           InvocationTargetException e) {
+      throw new TripInstantiationException(getObjectClass(), "cannot create instance via canonical constructor", e);
+    }
+    if (reference != null) {
+      stream.addReference(reference, value, isDeduplicateable(value));
+      // from now on, components may back-reference the object
+    }
+    return value;
   }
 
   /**

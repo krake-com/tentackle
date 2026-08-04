@@ -35,12 +35,14 @@ import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.reflect.CanonicalConstructor;
 import org.tentackle.reflect.CanonicalField;
+import org.tentackle.trip.impl.CanonicalDto;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
 import org.tentackle.trip.impl.NotReferencableClass;
+import org.tentackle.trip.impl.PartialCanonicalTripType;
 import org.tentackle.trip.impl.PreparedSerializableClass;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestClassWithArray;
@@ -484,6 +486,43 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     TripType<List> tripType = TripFactory.getInstance().getType(ArrayList.class);
     List tunneled = tunnel(list, tripType);
     assertSame(tunneled.get(0), tunneled.get(1));
+  }
+
+  @Test
+  void testCanonicalDto() {
+    TripType<CanonicalDto> tripType = TripFactory.getInstance().getType(CanonicalDto.class);
+    tunnel(new CanonicalDto("John", 42), tripType);
+    tunnel(new CanonicalDto(null, 0), tripType);
+  }
+
+  /**
+   * A component the sender does not provide — because its version of the class does not have it,
+   * or because it is at its default value — must not prevent the object from being created.
+   * The missing argument of the canonical constructor keeps its default value instead of the
+   * deserialization silently yielding null.
+   */
+  @Test
+  void testCanonicalConstructorWithMissingComponents() {
+    TripType<CanonicalDto> reader = TripFactory.getInstance().getType(CanonicalDto.class);
+    CanonicalDto john = new CanonicalDto("John", 42);
+
+    // the primitive component is missing -> keeps its default
+    CanonicalDto withoutAge = tunnelValue(john, new PartialCanonicalTripType("age"), reader);
+    assertNotNull(withoutAge);
+    assertEquals(withoutAge.getName(), "John");
+    assertEquals(withoutAge.getAge(), 0);
+
+    // the reference component is missing -> keeps its default
+    CanonicalDto withoutName = tunnelValue(john, new PartialCanonicalTripType("name"), reader);
+    assertNotNull(withoutName);
+    assertNull(withoutName.getName());
+    assertEquals(withoutName.getAge(), 42);
+
+    // no component at all arrives
+    CanonicalDto empty = tunnelValue(john, new PartialCanonicalTripType("name", "age"), reader);
+    assertNotNull(empty);
+    assertNull(empty.getName());
+    assertEquals(empty.getAge(), 0);
   }
 
   @Test
@@ -1341,6 +1380,30 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
+  /**
+   * Tunnels a value written by one trip type and read back by another, which allows simulating
+   * a sender whose class definition differs from the receiver's.
+   *
+   * @param value the value to write
+   * @param writer the trip type to write with
+   * @param reader the trip type to read with
+   * @return the value read back
+   * @param <T> the type
+   */
+  private <T> T tunnelValue(T value, TripType<T> writer, TripType<T> reader) {
+    try {
+      // each case is a message of its own, or the value would be sent as a back-reference
+      transceiver.clear();
+      writer.write(value, transceiver.getStream());
+      transceiver.echo();
+      OpCode opCode = transceiver.getStream().getDeserializer().deserializeOpCode();
+      return reader.read(transceiver.getStream(), opCode);
+    }
+    finally {
+      transceiver.reset();
+    }
+  }
+
   private <T> T tunnelValue(T value, TripType<T> tripType) {
     try {
       tripType.write(value, transceiver.getStream());
