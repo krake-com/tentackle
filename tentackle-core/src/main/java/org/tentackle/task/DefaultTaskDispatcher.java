@@ -79,6 +79,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private final Object queueLock;                       // makes composite updates of queue + idMap atomic
   private final List<TaskListener> listeners;           // task listeners
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
+  private final Object interruptLock;                   // makes testing and setting delayInterrupt atomic
   private int nonMutexLockCount;                        // non-mutex lock count
   private Object unlockKey;                             // optional key to unlock
   private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
@@ -114,6 +115,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     idMap = new ConcurrentHashMap<>();
     queueLock = new Object();
     interruptMutex = new ReentrantReadWriteLock();
+    interruptLock = new Object();
   }
 
   /**
@@ -416,11 +418,19 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    */
   @Override
   public void interrupt() {
-    if (delayInterrupt) {
-      wasInterrupted = true;
-    }
-    else  {
-      super.interrupt();
+    /*
+     * The interruptLock makes testing 'delayInterrupt' and acting on it atomic with respect
+     * to executeTask, which flips the flag under the same lock. Without it this is a
+     * check-then-act race: this thread could read 'delayInterrupt' as false, be descheduled
+     * while the dispatcher enters a task declared non-interruptable, and interrupt it anyway.
+     */
+    synchronized (interruptLock) {
+      if (delayInterrupt) {
+        wasInterrupted = true;    // re-asserted once the task has finished, see executeTask
+      }
+      else  {
+        super.interrupt();
+      }
     }
   }
 
@@ -674,11 +684,18 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
     synchronized (task) {
       try {
-        if (!task.isInterruptable()) {
-          delayInterrupt = true;
-        }
         interruptMutex.writeLock().lock();
         try {
+          synchronized (interruptLock) {
+            if (!task.isInterruptable()) {
+              delayInterrupt = true;
+              if (Thread.interrupted()) {
+                // an interrupt landed just before the flag was raised: consume it, the task
+                // must not start out with a pending interrupt it declared it cannot handle
+                wasInterrupted = true;
+              }
+            }
+          }
           task.run();
         }
         catch (Throwable t) {
@@ -686,7 +703,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           LOGGER.severe("task '" + task + "', ID=" + task.getId() + " terminated abnormally", t);
         }
         finally {
-          delayInterrupt = false;
+          synchronized (interruptLock) {
+            delayInterrupt = false;
+            if (wasInterrupted) {
+              // deliver what was withheld while the task was running
+              wasInterrupted = false;
+              super.interrupt();
+            }
+          }
           interruptMutex.writeLock().unlock();
         }
 

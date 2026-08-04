@@ -25,6 +25,9 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
@@ -470,6 +473,127 @@ public class DefaultTaskDispatcherTest {
     assertFalse(dispatcher.isAlive());
     assertTrue(dispatcher.isTerminationRequested());
     assertTrue(dispatcher.terminatedAt() >= dispatcher.startedAt());
+  }
+
+
+  // --- interrupt handling ---------------------------------------------------
+
+  /**
+   * A repeating task that is never interruptable and records whether it ever
+   * observed a pending interrupt.
+   */
+  private static class NonInterruptableTask extends AbstractTask {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final AtomicInteger runCount = new AtomicInteger();
+    private final AtomicInteger interruptedCount = new AtomicInteger();
+
+    @Override
+    public boolean isInterruptable() {
+      return false;
+    }
+
+    @Override
+    public void run() {
+      runCount.incrementAndGet();
+      // burn a little time so that concurrent interrupts land while this task is running
+      for (int i = 0; i < 200; i++) {
+        if (Thread.currentThread().isInterrupted()) {
+          interruptedCount.incrementAndGet();
+          Thread.interrupted();   // consume, so one violation is not counted over and over
+          break;
+        }
+        Thread.onSpinWait();
+      }
+    }
+  }
+
+  /**
+   * A task declared non-interruptable must never observe an interrupt, neither one delivered
+   * while it runs nor one that arrived just before it was started.
+   */
+  @Test
+  public void testNonInterruptableTaskIsNeverInterrupted() throws InterruptedException {
+    startDispatcher("nonInterruptable");
+    NonInterruptableTask task = new NonInterruptableTask();
+    task.setRepeatInterval(1);
+    dispatcher.addTask(task);
+    await(() -> task.runCount.get() > 0);
+
+    // hammer the dispatcher with interrupts while it keeps executing the task
+    long deadline = System.currentTimeMillis() + 2000;
+    while (System.currentTimeMillis() < deadline) {
+      dispatcher.interrupt();
+    }
+
+    dispatcher.removeTask(task);
+    assertTrue(task.runCount.get() > 1, "task should have run repeatedly, was " + task.runCount.get());
+    assertEquals(task.interruptedCount.get(), 0,
+                 "non-interruptable task observed " + task.interruptedCount.get() + " interrupt(s)");
+  }
+
+  /**
+   * An interrupt withheld while a non-interruptable task was running must not be swallowed:
+   * it has to be delivered once the task has finished.
+   */
+  @Test
+  public void testDelayedInterruptIsDeliveredAfterTask() {
+    startDispatcher("delayedInterrupt");
+
+    CountDownLatch started = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicBoolean interruptedAfterwards = new AtomicBoolean();
+
+    AbstractTask task = new AbstractTask() {
+      @Serial
+      private static final long serialVersionUID = 1L;
+
+      @Override
+      public boolean isInterruptable() {
+        return false;
+      }
+
+      @Override
+      public void run() {
+        started.countDown();
+        try {
+          release.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    };
+
+    // the dispatcher thread must carry the interrupt flag again once the task returned
+    dispatcher.addTaskListener(new TaskListener() {
+      @Override
+      public void started(Task startedTask) {
+        // nothing to do
+      }
+
+      @Override
+      public void completed(Task completedTask) {
+        interruptedAfterwards.set(Thread.currentThread().isInterrupted());
+      }
+    });
+
+    dispatcher.addTask(task);
+    try {
+      assertTrue(started.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "task did not start");
+    }
+    catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      fail("interrupted while waiting for the task to start");
+    }
+
+    dispatcher.interrupt();     // withheld while the non-interruptable task is running
+    release.countDown();
+
+    await(() -> task.getCompleted() != 0);
+    assertTrue(interruptedAfterwards.get(), "the withheld interrupt was never delivered");
   }
 
 
