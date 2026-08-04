@@ -24,7 +24,9 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 import static org.testng.Assert.assertEquals;
@@ -134,7 +136,8 @@ public class DaemonSupervisorTest {
     private final AtomicInteger cleanupCount = new AtomicInteger();
     private volatile boolean createReturnsNull;
     private volatile boolean oneShotDaemons;
-    private volatile boolean plainDaemons;    // create ordinary threads, not Supervisables
+    private volatile boolean plainDaemons;        // create ordinary threads, not Supervisables
+    private volatile boolean terminateOnCreate;   // request termination from within createDaemon
     private volatile Object terminationCause;
 
     TestSupervisor(String name, long checkInterval, int maxStartCount, int daemonNum) {
@@ -143,6 +146,10 @@ public class DaemonSupervisorTest {
 
     @Override
     public Thread createDaemon(int index) {
+      if (terminateOnCreate) {
+        requestTermination();   // invoked while run() holds the read lock
+        return null;
+      }
       if (createReturnsNull) {
         return null;
       }
@@ -502,6 +509,65 @@ public class DaemonSupervisorTest {
       assertTrue(supervisor.isAlive(), "supervisor should have survived");
       assertNull(supervisor.getRunningDaemon(0), "disabled daemon should not be restarted");
       assertEquals(supervisor.plainCreated.size(), 1, "disabled daemon should not be restarted");
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
+   * {@link DaemonSupervisor#createDaemon(int)} is invoked while run() holds the read lock.
+   * Requesting the termination from there must not try to acquire the write lock, because
+   * a {@link java.util.concurrent.locks.ReentrantReadWriteLock} cannot be upgraded and the
+   * supervisor would end up waiting for itself forever.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void testRequestTerminationFromCreateDaemon() {
+    TestSupervisor supervisor = new TestSupervisor("selfterm", CHECK_INTERVAL, 0, 1);
+    supervisor.terminateOnCreate = true;
+    supervisor.start();
+    // no terminate() in a finally: it would join() (and requestTermination() would block on the
+    // write lock) if the supervisor ever deadlocks again. It is a daemon thread, so leaving it is safe.
+    assertTrue(await(() -> !supervisor.isAlive()), "supervisor should have terminated");
+  }
+
+  /**
+   * The supervisor starts and clears daemons while holding only the read lock, i.e. concurrently
+   * with the accessors of other threads. {@link DaemonSupervisor#getStartedDaemons()} must never
+   * blow up or report null entries while that happens.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void testGetStartedDaemonsWhileDaemonsRestart() throws InterruptedException {
+    TestSupervisor supervisor = new TestSupervisor("hammer", 1, 0, 8);
+    supervisor.oneShotDaemons = true;   // daemons die at once and are restarted every round
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    AtomicBoolean stopReader = new AtomicBoolean();
+
+    Thread reader = new Thread(() -> {
+      try {
+        while (!stopReader.get()) {
+          for (Thread daemon : supervisor.getStartedDaemons()) {
+            assertNotNull(daemon, "getStartedDaemons() must not contain null");
+          }
+        }
+      }
+      catch (Throwable tx) {
+        failure.set(tx);
+      }
+    }, "getStartedDaemons-reader");
+    reader.setDaemon(true);
+
+    try {
+      supervisor.start();
+      reader.start();
+      Thread.sleep(2000);
+      stopReader.set(true);
+      reader.join(AWAIT_TIMEOUT);
+      Throwable thrown = failure.get();
+      if (thrown != null) {
+        fail("concurrent getStartedDaemons() failed: " + thrown, thrown);
+      }
+      assertTrue(supervisor.created.size() > 8, "daemons should have been restarted repeatedly");
     }
     finally {
       supervisor.terminate();

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.daemon;
 
 import org.tentackle.common.TentackleRuntimeException;
@@ -26,6 +25,7 @@ import org.tentackle.misc.DiagnosticUtilities;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -86,16 +86,21 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
   /**
    * Daemon wrapper.
+   * <p>
+   * The mutable state is written by the supervisor thread in {@link #run()} while holding
+   * only the <em>read</em> lock (the write lock is reserved for replacing the daemon array).
+   * Two read-lock holders exclude neither each other nor establish a happens-before edge,
+   * so the state must be published explicitly for the accessors invoked by other threads.
    */
   private class Daemon {
 
-    private Thread supervisedDaemon;              // the managed daemon
-    private final int daemonIndex;                // the slot index
-    private Supervisable supervisable;            // != null if daemon is a Supervisable
-    private int startCount;                       // number of starts
-    private boolean enabled = true;               // true if daemon is enabled (default)
-    private TerminationInfo terminationInfo;      // the termination info, null if daemon running
-    private TerminationInfo lastTerminationInfo;  // the saved termination info, when new daemon was started
+    private volatile Thread supervisedDaemon;              // the managed daemon
+    private final int daemonIndex;                         // the slot index
+    private volatile Supervisable supervisable;            // != null if daemon is a Supervisable
+    private final AtomicInteger startCount;                // number of starts
+    private volatile boolean enabled = true;               // true if daemon is enabled (default)
+    private volatile TerminationInfo terminationInfo;      // the termination info, null if daemon running
+    private volatile TerminationInfo lastTerminationInfo;  // the saved termination info when new daemon was started
 
     /**
      * Creates a daemon wrapper.
@@ -104,6 +109,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      */
     private Daemon(int daemonIndex) {
       this.daemonIndex = daemonIndex;
+      this.startCount = new AtomicInteger();
     }
 
     /**
@@ -122,19 +128,19 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      * @return true if too many starts
      */
     private boolean isStartCountExceeded() {
-      return maxStartCount > 0 && startCount >= maxStartCount;
+      return maxStartCount > 0 && startCount.get() >= maxStartCount;
     }
 
     /**
      * Starts the supervised thread.
      */
     private void start() {
-      startCount++;
+      int attempt = startCount.incrementAndGet();
       LOGGER.info(() -> {
         StringBuilder msg = new StringBuilder("starting ");
         msg.append(this);
         msg.append(" (attempt ");
-        msg.append(startCount);
+        msg.append(attempt);
         if (maxStartCount > 0) {
           msg.append(" of ");
           msg.append(maxStartCount);
@@ -178,7 +184,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      * Clears the start counter.
      */
     private void clearStartCount() {
-      startCount = 0;
+      startCount.set(0);
     }
 
     /**
@@ -190,13 +196,13 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
       if (this.enabled != enabled) {
         this.enabled = enabled;
         if (enabled) {
-          startCount = 0;
+          startCount.set(0);
         }
       }
     }
 
     /**
-     * Returns whether slot is enabled.
+     * Returns whether the slot is enabled.
      *
      * @return true if enabled
      */
@@ -212,9 +218,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
 
-  private long checkInterval;                 // checking interval in milliseconds
-  private int maxStartCount;                  // max. number of restarts, 0 = unlimited
-  private Daemon[] daemons;                   // the daemons under supervision
+  private volatile long checkInterval;        // checking interval in milliseconds
+  private volatile int maxStartCount;         // max. number of restarts, 0 = unlimited
+  private Daemon[] daemons;                   // the daemons under supervision (guarded by lock)
   private final List<Thread> killedDaemons;   // daemons killed but still alive
 
   private volatile boolean stopRequested;     // true if stop has been requested
@@ -298,7 +304,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     LOGGER.info("{0}: max. start count = {1}", this, maxStartCount);
   }
 
-
   /**
    * Gets the number of daemons.
    *
@@ -317,10 +322,10 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Sets the number of daemons.
    * <p>
-   * If the number is increased the corresponding number of
-   * daemons is started immediately. If the number is decreased
+   * If the number is increased, the corresponding number of
+   * daemons is started immediately. If the number is decreased,
    * the corresponding number of daemons implementing {@link Supervisable}
-   * are killed. If not enough supervisables to kill were found,
+   * are killed. If not enough {@link Supervisable}s to kill were found,
    * a {@link TentackleRuntimeException} is thrown.
    *
    * @param daemonNum the number of daemons, 0 for none
@@ -397,9 +402,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   }
 
   /**
-   * Determines whether the daemon for given index is enabled or not.
+   * Determines whether the daemon for the given index is enabled or not.
    * <p>
-   * Only enabled daemons are started. If a running daemon is disabled
+   * Only enabled daemons are started. If a running daemon is disabled,
    * it will be terminated.
    *
    * @param index the daemon index
@@ -410,13 +415,12 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     return daemon != null && daemon.isEnabled();
   }
 
-
   /**
-   * Sets the enabled state for daemon at given index.<br>
+   * Sets the enabled state for daemon at the given index.<br>
    * Setting a daemon to disabled will terminate it if running
    * and prevent the daemon from be (re-)started.
    * By default, all daemons are enabled.
-   * Setting the daemon to enabled will also clear the start counter.
+   * Setting the daemon to "enabled" will also clear the start counter.
    *
    * @param index the daemon index
    * @param enabled true if enabled
@@ -427,7 +431,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
       daemon.setEnabled(enabled);
     }
   }
-
 
   /**
    * Requests to stop this supervisor.<br>
@@ -442,9 +445,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
   /**
    * Terminates the supervisor.<br>
-   * Waits until supervisor has terminated.<br>
+   * Waits until the supervisor has terminated.<br>
    * If the running thread is a {@link Supervisable} the thread
-   * will be "kill()"ed.
+   * will be killed.
    */
   public void terminate() {
     requestTermination();
@@ -460,7 +463,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     }
   }
 
-
   /**
    * Creates a new startable daemon.
    * <p>
@@ -470,10 +472,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * if necessary.
    *
    * @param index the daemon's slot [0 ... daemonNum-1]
-   * @return the daemon, null if wait for interval and try again
+   * @return the daemon, null if wait for the interval and try again
    */
   public abstract Thread createDaemon(int index);
-
 
   /**
    * Gets a currently running daemon thread.
@@ -486,7 +487,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     return t == null || !t.isAlive() ? null : t;
   }
 
-
   /**
    * Gets an already started daemon thread.
    *
@@ -495,9 +495,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    */
   public Thread getStartedDaemon(int index) {
     Daemon daemon = getDaemon(index);
-    return daemon == null || daemon.supervisedDaemon == null ? null : daemon.supervisedDaemon;
+    return daemon == null ? null : daemon.supervisedDaemon;   // read once: may be cleared concurrently
   }
-
 
   /**
    * Gets the latest termination info.
@@ -515,13 +514,12 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     if (daemon != null) {
       info = daemon.terminationInfo;
       if (info == null) {
-        // new daemon started in the meantime? (i.e. current cause cleared)
+        // new daemon started in the meantime? (i.e., current cause cleared)
         info = daemon.lastTerminationInfo;    // try saved cause
       }
     }
     return info;
   }
-
 
   /**
    * Gets all started daemons.
@@ -531,21 +529,21 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   public Thread[] getStartedDaemons() {
     lock.readLock().lock();
     try {
-      // count started ones
-      int startCount = 0;
+      /*
+       * Collect in a single pass and read each slot exactly once.
+       * The supervisor thread starts and clears daemons while holding only the read-lock,
+       * i.e., concurrently with this method: sizing the array in a first pass and filling it
+       * in a second would overflow the array whenever a daemon started in between,
+       * and would leave trailing nulls whenever one terminated in between.
+       */
+      List<Thread> startedThreads = new ArrayList<>(daemons.length);
       for (Daemon daemon: daemons) {
-        if (daemon.supervisedDaemon != null) {
-          startCount++;
+        Thread startedThread = daemon.supervisedDaemon;
+        if (startedThread != null) {
+          startedThreads.add(startedThread);
         }
       }
-      Thread[] startedThreads = new Thread[startCount];
-      startCount = 0;
-      for (Daemon daemon: daemons) {
-        if (daemon.supervisedDaemon != null) {
-          startedThreads[startCount++] = daemon.supervisedDaemon;
-        }
-      }
-      return startedThreads;
+      return startedThreads.toArray(new Thread[0]);
     }
     finally {
       lock.readLock().unlock();
@@ -651,6 +649,53 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     // no default implementation
   }
 
+  /**
+   * Safely interrupt the dispatcher without interrupting any running task.
+   */
+  public void safeInterrupt() {
+    /*
+     * Acquiring the write lock waits until {@link #run()} has left the daemon checking loop,
+     * so that the interrupt hits the supervisor while it is sleeping.
+     * This is impossible if the invoker already holds the read lock, which is the case when
+     * {@link #createDaemon(int)} or {@link #cleanupDaemon(Thread)} request the termination:
+     * a {@link ReentrantReadWriteLock} cannot be upgraded, so the write lock would wait for
+     * the very thread asking for it. The supervisor is obviously not sleeping then,
+     * hence it is interrupted directly.
+     */
+    if (lock.getReadHoldCount() > 0) {
+      interrupt();
+    }
+    else {
+      lock.writeLock().lock();
+      try {
+        interrupt();
+      }
+      finally {
+        lock.writeLock().unlock();
+      }
+    }
+  }
+
+  /**
+   * Gets the daemon for the given index.
+   *
+   * @param index the daemon index
+   * @return the daemon, null if index out of range
+   */
+  private Daemon getDaemon(int index) {
+    lock.readLock().lock();
+    try {
+      int daemonNum = getDaemonNum();
+      if (index < 0 || index >= daemonNum) {
+        return null;
+      }
+      return daemons[index];
+    }
+    finally {
+      lock.readLock().unlock();
+    }
+  }
+
 
   @Override
   public void run() {
@@ -682,7 +727,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
               LOGGER.severe("killing " + daemon.supervisedDaemon + " failed", rex);
               /*
                * If kill() sets isKilled first and then fails, kill will be tried only once.
-               * If kill fails before setting isKilled killing will be retried over and over.
+               * If kill fails before setting isKilled(), killing will be retried over and over.
                * In both cases cleanup() will be invoked on the next round.
                */
             }
@@ -761,50 +806,19 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     }
 
     // shutdown all daemons
-    for (Daemon daemon: daemons) {
-      if (daemon.supervisable != null && !daemon.supervisable.isKilled()) {
-        daemon.kill();
-      }
-    }
-
-    LOGGER.info("daemon supervisor {0} terminated", getClass().getName());
-  }
-
-
-
-  /**
-   * Safely interrupt the dispatcher without interrupting any running task.
-   */
-  public void safeInterrupt() {
-    lock.writeLock().lock();
-    try {
-      interrupt();
-    }
-    finally {
-      lock.writeLock().unlock();
-    }
-  }
-
-
-
-  /**
-   * Gets the daemon for given index.
-   *
-   * @param index the daemon index
-   * @return the daemon, null if index out of range
-   */
-  private Daemon getDaemon(int index) {
     lock.readLock().lock();
     try {
-      int daemonNum = getDaemonNum();
-      if (index < 0 || index >= daemonNum) {
-        return null;
+      for (Daemon daemon: daemons) {
+        if (daemon.supervisable != null && !daemon.supervisable.isKilled()) {
+          daemon.kill();
+        }
       }
-      return daemons[index];
     }
     finally {
       lock.readLock().unlock();
     }
+
+    LOGGER.info("daemon supervisor {0} terminated", getClass().getName());
   }
 
 }
