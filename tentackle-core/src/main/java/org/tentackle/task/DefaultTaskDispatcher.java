@@ -67,13 +67,15 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private static final long DEFAULT_DEAD_INTERVAL = 60000;      // 60s
 
 
-  private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
-  private ReentrantReadWriteLock mutex;                 // mutex lock
-  private long sleepInterval;                           // keepalive in ms
-  private long deadInterval;                            // dead detection interval in ms, 0 if disabled
-  private long waitInterval;                            // timeout for waitForTask, 0 if disabled
-  private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 for permanent
-  private long lastActivity;                            // last activity, 0 if a task is currently executed
+  // the configuration is written by the setters from arbitrary threads and read by the dispatcher
+  private volatile boolean usingMutexLocking;           // true if using a mutex lock, else just a counter
+  private volatile ReentrantReadWriteLock mutex;        // mutex lock
+  private volatile long sleepInterval;                  // keepalive in ms
+  private volatile long deadInterval;                   // dead detection interval in ms, 0 if disabled
+  private volatile long waitInterval;                   // timeout for waitForTask, 0 if disabled
+  private volatile long shutdownIdleTimeout;            // shutdown thread after idle milliseconds, 0 for permanent
+
+  private long lastActivity;                            // last activity, 0 if a task is currently executed (dispatcher thread only)
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final Object queueLock;                       // makes composite updates of queue + idMap atomic
