@@ -50,17 +50,29 @@ public class SocketChannelDispatcher {
 
   /**
    * Holds the resources and state to be cleaned up.
+   * <p>
+   * Nothing reachable from here must reference the {@link SocketChannelDispatcher} this belongs to.
+   * The cleaner holds the cleanup action, so any such reference would keep the dispatcher strongly
+   * reachable and its cleanup would never run.
+   * This is why the accept loop lives in here and not in an inner class of the dispatcher:
+   * the loop runs in the executor below, which in turn is owned by this cleanup action.
    */
   private static class Resources implements Runnable {
 
     private final String name;
+    private final SocketAddress socketAddress;
+    private final Supplier<Consumer<SocketChannel>> handlerFactory;
 
-    private ServerSocketChannel serverChannel;
-    private ExecutorService executorService;
-    private SocketChannelDispatcher me;                    // != null if normal shutdown, else cleanup
+    // written by the cleaner thread, read by the accept loop
+    private volatile ServerSocketChannel serverChannel;
+    private volatile ExecutorService executorService;
+    private volatile boolean shutdownRequested;   // true if closed deliberately, false if a GC cleanup
 
-    Resources(String name, SocketAddress socketAddress, StandardProtocolFamily protocolFamily) {
+    Resources(String name, SocketAddress socketAddress, StandardProtocolFamily protocolFamily,
+              Supplier<Consumer<SocketChannel>> handlerFactory) {
       this.name = name;
+      this.socketAddress = socketAddress;
+      this.handlerFactory = handlerFactory;
       try {
         serverChannel = ServerSocketChannel.open(protocolFamily);
         serverChannel.bind(socketAddress);
@@ -79,50 +91,78 @@ public class SocketChannelDispatcher {
 
     @Override
     public void run() {
+      if (!shutdownRequested) {
+        // no shutdown() and no failed accept loop: the dispatcher was dropped without being closed
+        LOGGER.warning("closing unreferenced channel dispatcher {0}", name);
+        shutdownRequested = true;
+      }
+      shutdownExecutorService();
+      closeServerChannel();
+    }
+
+    /**
+     * Accepts incoming connections until the server channel is closed.
+     */
+    private void accept() {
+      Thread.currentThread().setName(name + "(dispatcher)");
       try {
-        if (me == null) {
-          LOGGER.warning("closing unreferenced channel dispatcher {0}", name);
+        LOGGER.info("accepting connections @ {0}", socketAddress);
+        ExecutorService executor;
+        ServerSocketChannel channel;
+        while ((executor = executorService) != null && (channel = serverChannel) != null) {
+          try {
+            SocketChannel socketChannel = channel.accept();
+            executor.execute(() -> handlerFactory.get().accept(socketChannel));
+          }
+          catch (AsynchronousCloseException ax) {
+            if (shutdownRequested) {
+              break;
+            }
+            LOGGER.warning("channel closed by client unexpectedly", ax);
+          }
         }
-        shutdownExecutorService();
-        closeServerChannel();
+        LOGGER.info("{0} shutdown", name);
+      }
+      catch (IOException | RuntimeException ex) {
+        if (!shutdownRequested) {
+          LOGGER.severe("server communication failure -> shutdown", ex);
+        }
       }
       finally {
-        me = null;    // in case programmatic shutdown
+        shutdownRequested = true;   // released deliberately, not by the GC
+        run();
       }
     }
 
     private void closeServerChannel() {
-      if (serverChannel != null) {
+      ServerSocketChannel channel = serverChannel;
+      serverChannel = null;
+      if (channel != null) {
         try {
-          serverChannel.close();
+          channel.close();
         }
         catch (IOException | RuntimeException cx) {
           LOGGER.warning("closing server socket channel failed", cx);
         }
       }
-      serverChannel = null;
     }
 
     private void shutdownExecutorService() {
-      if (executorService != null) {
+      ExecutorService executor = executorService;
+      executorService = null;
+      if (executor != null) {
         try {
-          executorService.shutdown();
+          executor.shutdown();
         }
         catch (RuntimeException rx) {
           LOGGER.warning("executor service shutdown failed", rx);
         }
       }
-      executorService = null;
     }
   }
 
   private final Resources resources;
   private final Cleaner.Cleanable cleanable;
-  private final String name;
-  private final SocketAddress socketAddress;
-  private final Supplier<Consumer<SocketChannel>> handlerFactory;
-  private final StandardProtocolFamily protocolFamily;
-  private volatile boolean shutdownRequested;
 
 
   /**
@@ -133,9 +173,7 @@ public class SocketChannelDispatcher {
    * @param handlerFactory the socket channel handler factory
    */
   public SocketChannelDispatcher(String name, SocketAddress socketAddress, Supplier<Consumer<SocketChannel>> handlerFactory) {
-    this.name = name;
-    this.socketAddress = socketAddress;
-    this.handlerFactory = handlerFactory;
+    StandardProtocolFamily protocolFamily;
     if (socketAddress instanceof UnixDomainSocketAddress) {
       protocolFamily = StandardProtocolFamily.UNIX;
     }
@@ -151,18 +189,19 @@ public class SocketChannelDispatcher {
       throw new TentackleRuntimeException("unsupported socket address type: " + socketAddress);
     }
 
-    resources = new Resources(name, socketAddress, protocolFamily);
+    resources = new Resources(name, socketAddress, protocolFamily, handlerFactory);
     cleanable = CLEANER.register(this, resources);
 
-    resources.executorService.execute(new Dispatcher());   // dispatcher thread itself runs within the executor's pool
+    // the dispatcher thread itself runs within the executor's pool.
+    // 'resources::accept' captures the resources only, never this dispatcher (see Resources)
+    resources.executorService.execute(resources::accept);
   }
 
   /**
    * Shutdown the dispatcher.
    */
   public void shutdown() {
-    shutdownRequested = true;
-    resources.me = this;      // programmatic close, not a GC cleanup
+    resources.shutdownRequested = true;   // programmatic close, not a GC cleanup
     cleanable.clean();
   }
 
@@ -172,40 +211,7 @@ public class SocketChannelDispatcher {
    * @return true if shutdown completed or in progress
    */
   public boolean isShutdown() {
-    return shutdownRequested;
-  }
-
-
-  private class Dispatcher implements Runnable {
-
-    @Override
-    public void run() {
-      Thread.currentThread().setName(name + "(dispatcher)");
-      try {
-        LOGGER.info("accepting connections @ {0}", socketAddress);
-        ExecutorService executorService;
-        ServerSocketChannel serverChannel;
-        while (((executorService = resources.executorService) != null) && (serverChannel = resources.serverChannel) != null) {
-          try {
-            SocketChannel channel = serverChannel.accept();
-            executorService.execute(() -> handlerFactory.get().accept(channel));
-          }
-          catch (AsynchronousCloseException ax) {
-            if (isShutdown()) {
-              break;
-            }
-            LOGGER.warning("channel closed by client unexpectedly", ax);
-          }
-        }
-        LOGGER.info("{0} shutdown", name);
-      }
-      catch (IOException | RuntimeException ex) {
-        LOGGER.severe("server communication failure -> shutdown", ex);
-      }
-      finally {
-        shutdown();
-      }
-    }
+    return resources.shutdownRequested;
   }
 
 }

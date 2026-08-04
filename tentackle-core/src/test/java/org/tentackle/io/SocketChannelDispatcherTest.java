@@ -23,6 +23,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.SocketAddress;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -101,6 +103,68 @@ public class SocketChannelDispatcherTest {
       dispatcher.shutdown();    // idempotent
       Files.deleteIfExists(socketFile);
       Files.deleteIfExists(dir);
+    }
+  }
+
+  /**
+   * A dispatcher dropped without being shut down must become unreachable, so that the cleaner
+   * can release its server channel and thread pool.
+   * This fails as soon as anything the cleaner holds references the dispatcher itself -
+   * in particular the accept loop, which runs in the dispatcher's own thread pool.
+   */
+  @Test(timeOut = TIMEOUT_MS * 8)
+  public void testAbandonedDispatcherIsCleanedUp() throws IOException, InterruptedException {
+    Path dir = Files.createTempDirectory("scd");
+    Path socketFile = dir.resolve("g");     // kept short: Unix socket paths are length-limited
+    UnixDomainSocketAddress address = UnixDomainSocketAddress.of(socketFile);
+
+    SocketChannelDispatcher dispatcher = new SocketChannelDispatcher("gc-dispatcher", address, () -> channel -> {
+      try {
+        channel.close();
+      }
+      catch (IOException iox) {
+        // ignored, the test only needs the dispatcher to be up
+      }
+    });
+    WeakReference<SocketChannelDispatcher> ref = new WeakReference<>(dispatcher);
+
+    try {
+      assertTrue(canConnect(address), "dispatcher should accept connections");
+
+      dispatcher = null;    // abandoned, without ever calling shutdown()
+
+      long deadline = System.currentTimeMillis() + TIMEOUT_MS * 4;
+      while (ref.get() != null && System.currentTimeMillis() < deadline) {
+        System.gc();
+        Thread.sleep(50);
+      }
+      assertNull(ref.get(), "abandoned dispatcher is still strongly reachable -> the cleaner can never run");
+
+      // becoming unreachable only queues the cleanup: wait until it closed the server channel
+      while (canConnect(address) && System.currentTimeMillis() < deadline) {
+        Thread.sleep(50);
+      }
+      assertFalse(canConnect(address), "cleaner did not close the server channel");
+    }
+    finally {
+      Files.deleteIfExists(socketFile);
+      Files.deleteIfExists(dir);
+    }
+  }
+
+  /**
+   * Tries to connect to the given address.
+   *
+   * @param address the socket address
+   * @return true if a connection could be established
+   */
+  private static boolean canConnect(SocketAddress address) {
+    try (SocketChannel client = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+      client.connect(address);
+      return true;
+    }
+    catch (IOException iox) {
+      return false;
     }
   }
 }
