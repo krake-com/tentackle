@@ -86,8 +86,10 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
           sleep(SLEEP_INTERVAL); // wait for a few seconds
         }
         catch (InterruptedException ex) {
-          LOGGER.warning("interrupted -> keep running", ex);    // is a daemon thread
-          Thread.currentThread().interrupt();
+          // is a daemon thread: an interrupt must not terminate it.
+          // Don't restore the interrupt flag either: the next sleep() would throw
+          // immediately and the loop would spin without ever sleeping again.
+          LOGGER.warning("interrupted -> keep running", ex);
           // check the termination condition below
         }
 

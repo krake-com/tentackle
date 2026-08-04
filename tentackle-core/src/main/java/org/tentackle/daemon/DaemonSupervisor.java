@@ -159,9 +159,15 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
     /**
      * Kills the daemon.
+     * <p>
+     * Daemons are not required to be {@link Supervisable} (see {@link #createDaemon(int)}).
+     * An ordinary thread cannot be killed, so it is just handed over to the killed-daemons
+     * list, where {@link #run()} keeps interrupting it until it has terminated.
      */
     private void kill() {
-      supervisable.kill();
+      if (supervisable != null) {
+        supervisable.kill();
+      }
       synchronized(killedDaemons) {
         killedDaemons.add(supervisedDaemon);
       }

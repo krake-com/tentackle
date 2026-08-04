@@ -437,11 +437,18 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
         }
 
         if (idleTimedOut || usageTimedOut || slot.isObsolete()) {
+          // removePoolable drops index i from the unused list and shifts the remaining
+          // entries left, so the next slot moves into i: don't advance i here
           removePoolable(slot.getPoolable(), index);
         }
         else {
           i++;
         }
+      }
+      else {
+        // the slot must be kept (isSlotRemovable may be overridden to veto removal):
+        // advance, otherwise this loop would never terminate and block the pool forever
+        i++;
       }
     }
 

@@ -22,7 +22,10 @@ import org.testng.annotations.Test;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -33,6 +36,10 @@ import static org.testng.Assert.expectThrows;
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class AbstractPoolTest {
+
+  /** generous upper bound for the tests that must not hang. */
+  private static final long AWAIT_TIMEOUT = 30000;
+
 
   @Test
   public void lendsAndReturnsTheSameResource() {
@@ -99,6 +106,55 @@ public class AbstractPoolTest {
 
 
   /**
+   * {@link AbstractPool#isSlotRemovable} may be overridden to veto the removal of a slot.
+   * Such a slot must be skipped: {@code monitor()} runs in the shared {@link PoolTimeoutThread}
+   * and holds the pool's monitor, so looping on it would block the pool forever.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorSkipsSlotsThatMustNotBeRemoved() {
+    TestPool pool = new TestPool();
+    TestResource resource = pool.get();
+    pool.put(resource);           // sits in the pool's unused list now
+    pool.slotsRemovable = false;  // the application vetoes removal
+
+    pool.monitor();
+
+    assertSame(pool.get(), resource, "vetoed slot must be kept in the pool");
+  }
+
+
+  /**
+   * Interrupting the shared pool timeout thread must not stop it from sleeping.
+   * Restoring the interrupt flag would make every subsequent sleep() throw at once,
+   * turning the thread into a busy loop over all registered pools.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void interruptDoesNotMakeTheTimeoutThreadSpin() throws InterruptedException {
+    TestPool pool = new TestPool("spin detection pool");
+    pool.put(pool.get());     // first get() registers the pool with the timeout thread
+
+    Thread timeoutThread = null;
+    for (Thread thread : Thread.getAllStackTraces().keySet()) {
+      if (thread.getName().startsWith("Pool Timeout Thread")) {
+        timeoutThread = thread;
+        break;
+      }
+    }
+    assertNotNull(timeoutThread, "pool timeout thread not started");
+
+    timeoutThread.interrupt();
+
+    int before = pool.monitorCount.get();
+    Thread.sleep(500);
+    int spins = pool.monitorCount.get() - before;
+
+    // a sleeping thread monitors at most once in 500ms (the interval is 10s),
+    // a spinning one does so thousands of times
+    assertTrue(spins <= 5, "timeout thread is spinning: " + spins + " monitor() calls within 500ms");
+  }
+
+
+  /**
    * A minimal poolable for testing.
    */
   private static class TestResource implements Poolable<TestResource> {
@@ -155,15 +211,32 @@ public class AbstractPoolTest {
    */
   private static class TestPool extends AbstractPool<TestResource> {
 
+    private final AtomicInteger monitorCount = new AtomicInteger();   // number of monitor() invocations
     private int createdCount;
     private boolean createOpen = true;
+    private boolean slotsRemovable = true;
 
     private TestPool() {
-      super("test pool", 1, 1, 1, 0, 0, 0);
+      this("test pool");
+    }
+
+    private TestPool(String name) {
+      super(name, 1, 1, 1, 0, 0, 0);
     }
 
     private int getCreatedCount() {
       return createdCount;
+    }
+
+    @Override
+    public synchronized void monitor() {
+      monitorCount.incrementAndGet();
+      super.monitor();
+    }
+
+    @Override
+    protected boolean isSlotRemovable(PoolSlot<TestResource> slot) {
+      return slotsRemovable && super.isSlotRemovable(slot);
     }
 
     @Override

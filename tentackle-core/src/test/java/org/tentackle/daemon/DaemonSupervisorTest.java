@@ -130,9 +130,11 @@ public class DaemonSupervisorTest {
   private static class TestSupervisor extends DaemonSupervisor {
 
     private final List<TestDaemon> created = Collections.synchronizedList(new ArrayList<>());
+    private final List<Thread> plainCreated = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger cleanupCount = new AtomicInteger();
     private volatile boolean createReturnsNull;
     private volatile boolean oneShotDaemons;
+    private volatile boolean plainDaemons;    // create ordinary threads, not Supervisables
     private volatile Object terminationCause;
 
     TestSupervisor(String name, long checkInterval, int maxStartCount, int daemonNum) {
@@ -143,6 +145,21 @@ public class DaemonSupervisorTest {
     public Thread createDaemon(int index) {
       if (createReturnsNull) {
         return null;
+      }
+      if (plainDaemons) {
+        Thread thread = new Thread(() -> {
+          try {
+            while (!Thread.currentThread().isInterrupted()) {
+              Thread.sleep(5);
+            }
+          }
+          catch (InterruptedException ex) {
+            // requested to stop
+          }
+        }, getName() + "-plain-" + index + "#" + plainCreated.size());
+        thread.setDaemon(true);
+        plainCreated.add(thread);
+        return thread;
       }
       TestDaemon daemon = new TestDaemon(getName() + "-daemon-" + index + "#" + created.size(), oneShotDaemons);
       daemon.terminationCause = terminationCause;
@@ -459,6 +476,32 @@ public class DaemonSupervisorTest {
       assertEquals(info.getName(), expectedName);
       assertSame(info.getCause(), cause);
       assertTrue(info.getSince() > 0);
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
+   * Daemons are not required to be {@link Supervisable} (see {@link DaemonSupervisor#createDaemon(int)}).
+   * Disabling such a daemon must not blow up the supervisor: the exception would escape run()
+   * and silently end the supervision of all other daemons as well.
+   */
+  @Test
+  public void testDisablePlainThreadDaemon() {
+    TestSupervisor supervisor = new TestSupervisor("plain", CHECK_INTERVAL, 0, 1);
+    supervisor.plainDaemons = true;
+    try {
+      supervisor.start();
+      assertTrue(await(() -> !supervisor.plainCreated.isEmpty()), "daemon should start");
+      Thread daemon = supervisor.plainCreated.get(0);
+
+      supervisor.setDaemonEnabled(0, false);
+
+      assertTrue(await(() -> !daemon.isAlive()), "disabled daemon should be interrupted until terminated");
+      assertTrue(supervisor.isAlive(), "supervisor should have survived");
+      assertNull(supervisor.getRunningDaemon(0), "disabled daemon should not be restarted");
+      assertEquals(supervisor.plainCreated.size(), 1, "disabled daemon should not be restarted");
     }
     finally {
       supervisor.terminate();
