@@ -116,7 +116,8 @@ object id — necessary because ids are only unique per class, so a naive `Map<L
 collide across entity types. [`IdentifiableKey<T>`](../java/org/tentackle/misc/IdentifiableKey.java)
 is that composite key, usable for hashing or as a `Comparable`. The map starts as a hash map and
 switches itself to a tree map on the first call to `getAllSorted()`, trading a little speed for
-ordering only when ordering is actually asked for.
+ordering only when ordering is actually asked for. It is not thread-safe: build and consume it
+from a single thread (as `loadComponents()` does), or synchronize externally.
 
 ### Immutable collections
 

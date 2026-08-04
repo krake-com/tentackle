@@ -31,6 +31,11 @@ import java.util.TreeMap;
  * By default, the map uses a hashing key composed by the class and object id.
  * The first invocation of one of the methods {@link #getAllSorted()} or {@link #getAllSorted(Class)}
  * changes the map to treemap (which is a bit slower).
+ * <p>
+ * The map is <em>not</em> thread-safe and is meant to be built and consumed by a single thread,
+ * typically to collect the components of an aggregate. Sharing it between threads requires
+ * external synchronization: already a single {@code add} updates two maps non-atomically,
+ * {@code getAllSorted} lazily creates the sorted one, and {@link #getAll()} hands out a live view.
  *
  * @param <T> the identifiable type
  * @author harald
@@ -57,7 +62,7 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   /**
    * Clears the map.
    */
-  public synchronized void clear() {
+  public void clear() {
     // creating new maps is faster than clear() for large maps
     objectMap = new LinkedHashMap<>();
     sortedObjectMap = null;
