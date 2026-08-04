@@ -505,6 +505,12 @@ public class SharedConfig {
 }
 ```
 
+A back-reference can only be resolved once the object exists on the receiving side. For classes
+built through a `@CanonicalConstructor`, a `@CanonicalBuilder`, or for records, construction is
+delayed until the component values are known, which restricts how far a component may reference
+back to its own object — see
+[delayed construction and back-references](reflect.md#delayed-construction-and-back-references).
+
 #### `@TripSerializeLambda`
 
 By default, TRIP rejects to serialize lambdas, because serializing them would drag in the entire

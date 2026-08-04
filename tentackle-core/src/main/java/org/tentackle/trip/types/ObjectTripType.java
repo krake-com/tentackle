@@ -90,6 +90,22 @@ import java.util.function.Consumer;
  * Another option is to provide a {@link org.tentackle.trip.TripInstanceCreator}. The components
  * could also be configured with a {@link org.tentackle.trip.TripComponentProvider}.
  * <p>
+ * These alternatives delay the construction of the object until some or all of its component values
+ * are known, which limits how far a component may back-reference the object it belongs to:
+ * <ul>
+ *   <li>With a no-args constructor, the object exists before any component is read. Every component
+ *       may back-reference it, directly or indirectly. This is the only case without restrictions.</li>
+ *   <li>With a {@link org.tentackle.reflect.CanonicalConstructor}, the object is created as soon as
+ *       all constructor arguments have been read. The canonical components themselves cannot
+ *       back-reference the object, but all remaining components can, since they are read
+ *       afterward.</li>
+ *   <li>With a {@link org.tentackle.reflect.CanonicalBuilder}, the object does not exist before
+ *       <em>all</em> components have been read. No component can back-reference it (the same
+ *       restriction that applies to records, see {@link RecordTripType}).</li>
+ * </ul>
+ * Violating this results in a "no such reference id" {@link TripRuntimeException} during
+ * deserialization. Objects forming such a cycle must provide a no-args constructor.
+ * <p>
  * Application-specific object types should extend this class and annotate
  * it with @{@link org.tentackle.trip.TripTypeService}.
  *
@@ -477,6 +493,19 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
                                              canonicalBuilderInfo.constructor().getDeclaringClass(),
                                              e);
       }
+      if (componentValues == null) {
+        // if componentValues is set, the instance creator builds the object from the values (see caller)
+        if (initializer != null) {
+          initializer.accept(value);
+        }
+        if (reference != null) {
+          // Register the object so that it can be back-referenced later in the stream.
+          // Unlike the canonical constructor, the object does not exist before all components
+          // are read. Components can therefore not back-reference the object itself
+          // (the same restriction as for records).
+          stream.addReference(reference, value, isDeduplicateable(value));
+        }
+      }
     }
 
     return value;
@@ -490,7 +519,9 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
    * @param entry the dictionary entry
    * @param reference the optional reference
    * @param value the object, null for delayed construction
-   * @param initializer the object initializer invoked after the new object is created
+   * @param initializer the object initializer invoked after the new object is created.
+   *        Notice that a {@link TripInstanceCreator} creating the object from its component values
+   *        replaces the instance the initializer was applied to (see below).
    * @return the object
    */
   protected T readComponents(TripStream stream, OpCode opCode, DictionaryEntry entry,
@@ -508,6 +539,13 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
     if (componentValues != null) {
       value = instanceCreator.create(getObjectClass(), componentValues);
+      if (reference != null) {
+        // The creator returned a new instance, replacing the one the reference was registered for
+        // (either the bare instance from createInitializedDefault() or a canonically constructed one).
+        // Re-register it so that back-references later in the stream resolve to the object
+        // that is actually returned instead of the discarded one.
+        stream.addReference(reference, value, isDeduplicateable(value));
+      }
     }
 
     return value;

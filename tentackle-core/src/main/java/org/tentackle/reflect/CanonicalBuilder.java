@@ -36,6 +36,11 @@ import java.lang.annotation.Target;
  * <p>
  * See the DTO-wurblet with the {@code --canonical} option for an example of
  * properly generated code.
+ * <p>
+ * Notice that a builder-constructed object does not exist until all its component values have been
+ * read. When such an object is deserialized by {@link org.tentackle.trip.types.ObjectTripType},
+ * none of its components may therefore back-reference the object itself, directly or indirectly.
+ * Objects forming such a cycle must provide a no-args constructor instead.
  *
  * @see CanonicalConstructor
  */

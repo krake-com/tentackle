@@ -233,6 +233,25 @@ generates exactly this shape.
 Without a canonical constructor or a no-arg constructor, a class is simply not serializable by TRIP
 — which is why [trip.md](trip.md) recommends adding one as the first remedy.
 
+### Delayed construction and back-references
+
+Delayed construction has one consequence worth knowing: TRIP can only register an object for
+[back-references](trip.md#tripreferencable) once the object exists. How far a component may
+reference back to the object it belongs to therefore depends on how that object is constructed:
+
+| Construction            | When the object exists          | Components that may back-reference it |
+|-------------------------|---------------------------------|---------------------------------------|
+| no-arg constructor      | before any component is read    | all of them                           |
+| `@CanonicalConstructor` | once all constructor args are read | every non-canonical component      |
+| `@CanonicalBuilder`     | after *all* components are read | none                                  |
+| record                  | after *all* components are read | none                                  |
+
+A component that reaches back to its own object outside these bounds — directly or through another
+object — fails deserialization with a `no such reference id` `TripRuntimeException`. This is rarely
+hit in practice, since immutable values that need a canonical constructor or a builder are normally
+leaves of the object graph rather than cycle participants. Where a genuine cycle is unavoidable, the
+class must provide a no-arg constructor.
+
 
 ## Caches, Visitors, and Helpers
 

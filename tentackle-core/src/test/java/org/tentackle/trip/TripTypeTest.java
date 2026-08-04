@@ -53,6 +53,7 @@ import org.tentackle.trip.impl.TestProxyTarget;
 import org.tentackle.trip.impl.TestRecord;
 import org.tentackle.trip.impl.TestSubClass;
 import org.tentackle.trip.impl.ValidateSerializableClass;
+import org.tentackle.trip.impl.ValuesInstantiatable;
 import org.tentackle.trip.types.CollectionTripType;
 import org.tentackle.trip.types.ImmutableCollectionTripType;
 
@@ -470,6 +471,40 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   void testCanonicalBuilder() {
     DtoWithCanonicalBuilder john = DtoWithCanonicalBuilder.builder().userId(100).userName("John").build();
     tunnel(john, TripFactory.getInstance().getType(DtoWithCanonicalBuilder.class));
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void testCanonicalBuilderReference() {
+    // the same instance twice -> the second occurrence is sent as a back-reference
+    DtoWithCanonicalBuilder john = DtoWithCanonicalBuilder.builder().userId(100).userName("John").build();
+    List<DtoWithCanonicalBuilder> list = new ArrayList<>();
+    list.add(john);
+    list.add(john);
+    TripType<List> tripType = TripFactory.getInstance().getType(ArrayList.class);
+    List tunneled = tunnel(list, tripType);
+    assertSame(tunneled.get(0), tunneled.get(1));
+  }
+
+  @Test
+  void testValuesInstanceCreator() {
+    ValuesInstantiatable john = new ValuesInstantiatable("John", 42);
+    tunnel(john, TripFactory.getInstance().getType(ValuesInstantiatable.class));
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void testValuesInstanceCreatorReference() {
+    // the same instance twice -> the second occurrence is sent as a back-reference and
+    // must resolve to the object created by the instance creator, not to the bare instance
+    ValuesInstantiatable john = new ValuesInstantiatable("John", 42);
+    List<ValuesInstantiatable> list = new ArrayList<>();
+    list.add(john);
+    list.add(john);
+    TripType<List> tripType = TripFactory.getInstance().getType(ArrayList.class);
+    List tunneled = tunnel(list, tripType);
+    assertSame(tunneled.get(0), tunneled.get(1));
+    assertEquals(tunneled.get(1), john);
   }
 
   @Test
