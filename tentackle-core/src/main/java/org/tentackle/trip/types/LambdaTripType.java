@@ -47,14 +47,58 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
   private static final String READ_RESOLVE_METHOD = "readResolve";
   private static final String CAPTURING_CLASS_FIELD = "capturingClass";
 
-  private static boolean initialized;
-  private static Method readResolveMethod;
-  private static Field capturingClassField;
+  /**
+   * The lazily initialized trip types and reflective accessors.<br>
+   * They cannot be determined in the constructor of {@link LambdaTripType}, since this would fail
+   * with an NPE via {@link DefaultOpCode}. Deferring them to a holder leaves the initialization to
+   * the JVM's class initialization, which is thread-safe and runs exactly once, on the first
+   * lambda being serialized or deserialized.
+   * <p>
+   * In modular applications the reflective lookups will always evaluate to the fallbacks
+   * unless explicitly allowed via a command line option.
+   */
+  private static final class LambdaTypeHolder {
 
-  private static TripType<Integer> INTEGER;
-  private static TripType<String> STRING;
-  @SuppressWarnings("rawtypes")
-  private static TripType<Class> CLASS;
+    private static final TripType<Integer> INTEGER;
+    private static final TripType<String> STRING;
+    @SuppressWarnings("rawtypes")
+    private static final TripType<Class> CLASS;
+
+    /** The readResolve method of SerializedLambda, null if inaccessible. */
+    private static final Method READ_RESOLVE;
+
+    /** The capturingClass field of SerializedLambda, null if inaccessible. */
+    private static final Field CAPTURING_CLASS;
+
+    static {
+      TripFactory factory = TripFactory.getInstance();
+      INTEGER = factory.getType(Integer.TYPE);
+      STRING = factory.getType(String.class);
+      CLASS = factory.getType(Class.class);
+
+      Method readResolve;
+      try {
+        readResolve = SerializedLambda.class.getDeclaredMethod(READ_RESOLVE_METHOD);
+        readResolve.setAccessible(true);
+      }
+      catch (Exception ex) {
+        readResolve = null;
+        LOGGER.warning(ex.getMessage() + " -> using fallback " + LAMBDA_DESERIALIZE_METHOD);
+      }
+      READ_RESOLVE = readResolve;
+
+      Field capturingClass;
+      try {
+        capturingClass = SerializedLambda.class.getDeclaredField(CAPTURING_CLASS_FIELD);
+        capturingClass.setAccessible(true);
+      }
+      catch (Exception ex) {
+        capturingClass = null;
+        LOGGER.warning(ex.getMessage() + " -> using fallback Class.forName()");
+      }
+      CAPTURING_CLASS = capturingClass;
+    }
+  }
 
 
   /**
@@ -62,7 +106,6 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
    */
   public LambdaTripType() {
     super(Object.class);
-    // initialize() cannot be called here, since it will fail due to NPE via DefaultOpCode
   }
 
   @Override
@@ -82,7 +125,6 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
 
   @Override
   public void write(Object value, TripStream stream) {
-    initialize();
     SerializedLambda wrapper = createWrapper(value);
     Serializer serializer = stream.getSerializer();
 
@@ -93,18 +135,18 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
     }
 
     serializer.serializeOpCode(DefaultOpCode.LAMBDA);
-    CLASS.write(capturingClass, stream);
-    STRING.write(wrapper.getFunctionalInterfaceClass(), stream);
-    STRING.write(wrapper.getFunctionalInterfaceMethodName(), stream);
-    STRING.write(wrapper.getFunctionalInterfaceMethodSignature(), stream);
-    INTEGER.write(wrapper.getImplMethodKind(), stream);
-    STRING.write(wrapper.getImplClass(), stream);
-    STRING.write(wrapper.getImplMethodName(), stream);
-    STRING.write(wrapper.getImplMethodSignature(), stream);
-    STRING.write(wrapper.getInstantiatedMethodType(), stream);
+    LambdaTypeHolder.CLASS.write(capturingClass, stream);
+    LambdaTypeHolder.STRING.write(wrapper.getFunctionalInterfaceClass(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getFunctionalInterfaceMethodName(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getFunctionalInterfaceMethodSignature(), stream);
+    LambdaTypeHolder.INTEGER.write(wrapper.getImplMethodKind(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getImplClass(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getImplMethodName(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getImplMethodSignature(), stream);
+    LambdaTypeHolder.STRING.write(wrapper.getInstantiatedMethodType(), stream);
 
     int argCount = wrapper.getCapturedArgCount();
-    INTEGER.write(argCount, stream);
+    LambdaTypeHolder.INTEGER.write(argCount, stream);
     for (int i = 0; i < argCount; i++) {
       Object arg = wrapper.getCapturedArg(i);
       TripType<Object> type = stream.getType(arg.getClass());
@@ -114,19 +156,18 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
 
   @Override
   public Object read(TripStream stream, OpCode opCode) {
-    initialize();
     if (opCode == DefaultOpCode.LAMBDA) {
-      Class<?> capturingClass = CLASS.read(stream, stream.receiveOpCode());
-      String functionalInterfaceClassName = STRING.read(stream, stream.receiveOpCode());
-      String functionalInterfaceMethodName = STRING.read(stream, stream.receiveOpCode());
-      String functionalInterfaceMethodSignature = STRING.read(stream, stream.receiveOpCode());
-      int implMethodKind = INTEGER.read(stream, stream.receiveOpCode());
-      String implClassName = STRING.read(stream, stream.receiveOpCode());
-      String implMethodName = STRING.read(stream, stream.receiveOpCode());
-      String implMethodSignature = STRING.read(stream, stream.receiveOpCode());
-      String instantiatedMethodType = STRING.read(stream, stream.receiveOpCode());
+      Class<?> capturingClass = LambdaTypeHolder.CLASS.read(stream, stream.receiveOpCode());
+      String functionalInterfaceClassName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      String functionalInterfaceMethodName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      String functionalInterfaceMethodSignature = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      int implMethodKind = LambdaTypeHolder.INTEGER.read(stream, stream.receiveOpCode());
+      String implClassName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      String implMethodName = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      String implMethodSignature = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
+      String instantiatedMethodType = LambdaTypeHolder.STRING.read(stream, stream.receiveOpCode());
 
-      int argCount = INTEGER.read(stream, stream.receiveOpCode());
+      int argCount = LambdaTypeHolder.INTEGER.read(stream, stream.receiveOpCode());
       Object[] args = new Object[argCount];
       for (int i = 0; i < argCount; i++) {
         opCode = stream.receiveOpCode();
@@ -160,9 +201,9 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
   }
 
   private static Class<?> getCapturingClass(SerializedLambda wrapper, TripStream stream) {
-    if (capturingClassField != null) {
+    if (LambdaTypeHolder.CAPTURING_CLASS != null) {
       try {
-        return (Class<?>) capturingClassField.get(wrapper);
+        return (Class<?>) LambdaTypeHolder.CAPTURING_CLASS.get(wrapper);
       }
       catch (Exception ex) {
         LOGGER.warning("access to SerializedLambda#capturingClass denied unexpectedly -> using fallback Class.forName()", ex);
@@ -172,9 +213,9 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
   }
 
   private Object readResolve (Class<?> capturingClass, SerializedLambda wrapper) {
-    if (readResolveMethod != null) {
+    if (LambdaTypeHolder.READ_RESOLVE != null) {
       try {
-        return readResolveMethod.invoke(wrapper);
+        return LambdaTypeHolder.READ_RESOLVE.invoke(wrapper);
       }
       catch (Exception ex) {
         throw new TripRuntimeException("readResolve failed for lambda " + wrapper, ex);
@@ -189,42 +230,6 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
       catch (Exception ex) {
         throw new TripRuntimeException("deserialization failed for lambda " + wrapper, ex);
       }
-    }
-  }
-
-
-  /**
-   * Initializes the static fields.<br>
-   * In modular applications this will always evaluate to the fallbacks
-   * unless explicitly allowed via a command line option.
-   */
-  private static void initialize() {
-    if (!initialized) {
-      TripFactory factory = TripFactory.getInstance();
-      INTEGER = factory.getType(Integer.TYPE);
-      STRING = factory.getType(String.class);
-      CLASS = factory.getType(Class.class);
-      if (readResolveMethod == null) {
-        try {
-          readResolveMethod = SerializedLambda.class.getDeclaredMethod(READ_RESOLVE_METHOD);
-          readResolveMethod.setAccessible(true);
-        }
-        catch (Exception ex) {
-          readResolveMethod = null;
-          LOGGER.warning(ex.getMessage() + " -> using fallback " + LAMBDA_DESERIALIZE_METHOD);
-        }
-      }
-      if (capturingClassField == null) {
-        try {
-          capturingClassField = SerializedLambda.class.getDeclaredField(CAPTURING_CLASS_FIELD);
-          capturingClassField.setAccessible(true);
-        }
-        catch (Exception ex) {
-          capturingClassField = null;
-          LOGGER.warning(ex.getMessage() + " -> using fallback Class.forName()");
-        }
-      }
-      initialized = true;
     }
   }
 
