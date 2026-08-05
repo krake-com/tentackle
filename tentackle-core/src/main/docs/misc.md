@@ -255,6 +255,13 @@ the box only [`DefaultPropertiesResource`](../java/org/tentackle/misc/DefaultPro
 environment variables, a YAML file, or anywhere else — see the
 [service API](../../../../tentackle-common/src/main/docs/services.md).
 
+[`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) is a `Properties` whose
+defaults survive [TRIP](trip.md). A plain `Properties` keeps its defaults in a `java.util` field,
+which TRIP must not reflect into, so it arrives with its own entries only — silently dropping
+everything it inherited. `ChainedProperties` exposes the chain through a `@CanonicalGetter` and
+takes it back through a `@CanonicalConstructor`, so the whole chain travels. The entire chain must
+consist of `ChainedProperties`, and must not be cyclic.
+
 [`PropertySupport`](../java/org/tentackle/misc/PropertySupport.java),
 [`PropertyEvent`](../java/org/tentackle/misc/PropertyEvent.java) and
 [`PropertyListener`](../java/org/tentackle/misc/PropertyListener.java) replace
@@ -272,7 +279,7 @@ environment variables, a YAML file, or anywhere else — see the
 | Formatting        | `FormatHelper`, `DateTimeUtilities`, `CsvConverter`, `SubString`, `CompoundValue`                                                  |
 | Utilities         | `ObjectUtilities`, `DiagnosticUtilities`, `ConcurrencyHelper`, `TimeKeeper`, `Canonicalizer`, `CommandLine`, `XUUID`, `NamedCounter`, `NamedValue`, `InheritableThreadLocalHashTable`, `UserHomeJavaDir`, `IdSerialTuple`, `IdSerialNameTuple` |
 | Holders           | `Holder`, `VolatileHolder`, `BlockingHolder`                                                                                      |
-| Properties        | `PropertiesUtilities`, `PropertiesResource`, `DefaultPropertiesResource`, `PropertiesResourceService`, `PropertySupport`, `PropertyEvent`, `PropertyListener` |
+| Properties        | `PropertiesUtilities`, `PropertiesResource`, `DefaultPropertiesResource`, `PropertiesResourceService`, `ChainedProperties`, `PropertySupport`, `PropertyEvent`, `PropertyListener` |
 | `misc.time`       | `SmartDateTimeParser`, the shortcuts (`Now`, `Add`, `Number`, `Zone`, `Offset`), the filters (`Date`, `Zone`, `Offset`), the missing-value handlers |
 
 

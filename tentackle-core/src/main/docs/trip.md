@@ -426,6 +426,15 @@ receiving side the collection is rebuilt through its sized (or no-args) construc
 Consequently, everything the JDK keeps in a private field is *not* transported unless a dedicated
 `TripType` takes care of it.
 
+A subclass can transport such state itself: annotate a getter for it with `@CanonicalGetter` and the
+constructor taking it back with `@CanonicalConstructor` (see
+[canonical construction](reflect.md#canonical-construction)). TRIP then creates the map or
+collection through that constructor and sends its components *ahead* of the entries, since the
+container cannot exist before its constructor arguments are known.
+[`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) does exactly this for the
+`defaults` of a `Properties`. A map or collection with only a canonical constructor — neither sized
+nor no-args — is serializable this way as well.
+
 The full matrix is verified by `JdkCollectionsTest`. In short:
 
 **Round trip faithfully** — the concrete class, the content, the iteration order, null elements,
@@ -464,7 +473,9 @@ order are identical.
 
 - the capacity of the bounded queues is reduced to the number of elements,
 - the access-order flag of a `LinkedHashMap` (LRU caches) is lost,
-- the `defaults` of a `Properties` are lost,
+- the `defaults` of a `Properties` are lost — use
+  [`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) instead, which transports
+  the whole chain,
 - the backing map of `Collections.newSetFromMap` becomes a `LinkedHashMap`,
 - the `Collections` wrappers are rebuilt around an `ArrayList`, hence the `RandomAccess`
   variant of the wrapper is delivered.

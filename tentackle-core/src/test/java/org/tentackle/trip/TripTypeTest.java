@@ -29,6 +29,7 @@ import org.tentackle.common.I18NText;
 import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
+import org.tentackle.misc.ChainedProperties;
 import org.tentackle.misc.CopyOnWriteCollection;
 import org.tentackle.misc.CopyOnWriteList;
 import org.tentackle.misc.ImmutableArrayList;
@@ -37,6 +38,7 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.reflect.CanonicalConstructor;
 import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.impl.CanonicalDto;
+import org.tentackle.trip.impl.CanonicalList;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
@@ -1202,7 +1204,8 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertTrue(tunnel(new Properties(), type).isEmpty());
     assertNull(tunnel(null, type));
 
-    // known limitation: the defaults live in a java.util field and are therefore not transported
+    // known limitation: the defaults live in a java.util field and are therefore not transported.
+    // Use ChainedProperties instead, see testChainedProperties().
     Properties defaults = new Properties();
     defaults.setProperty("inherited", "value");
     Properties withDefaults = new Properties(defaults);
@@ -1211,6 +1214,95 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     Properties tunneledWithDefaults = tunnel(withDefaults, type);
     assertEquals(tunneledWithDefaults.getProperty("own"), "value");
     assertNull(tunneledWithDefaults.getProperty("inherited"));
+  }
+
+  /**
+   * {@link ChainedProperties} exposes the defaults of a {@link Properties} through a
+   * {@code @CanonicalGetter} and takes them back through a {@code @CanonicalConstructor}.
+   * The map is thus created from its components, which precede the entries in the stream.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testChainedProperties() {
+    ChainedProperties root = new ChainedProperties();
+    root.setProperty("level", "root");
+    root.setProperty("fromRoot", "yes");
+    ChainedProperties middle = new ChainedProperties(root);
+    middle.setProperty("level", "middle");
+    middle.setProperty("fromMiddle", "yes");
+    ChainedProperties leaf = new ChainedProperties(middle);
+    leaf.setProperty("level", "leaf");
+    leaf.put("count", 42);    // Hashtable accepts non-string values
+
+    TripType<ChainedProperties> type = TripFactory.getInstance().getType(ChainedProperties.class);
+    ChainedProperties tunneled = tunnel(leaf, type);
+    assertNotSame(tunneled, leaf);
+    // the whole chain arrived
+    assertEquals(tunneled.getProperty("level"), "leaf");
+    assertEquals(tunneled.getProperty("fromMiddle"), "yes");
+    assertEquals(tunneled.getProperty("fromRoot"), "yes");
+    assertEquals(tunneled.get("count"), 42);
+    assertEquals(tunneled.stringPropertyNames(), Set.of("level", "fromMiddle", "fromRoot"));
+    // ... including its structure
+    assertNotNull(tunneled.getDefaults());
+    assertEquals(tunneled.getDefaults().getProperty("level"), "middle");
+    assertNotNull(tunneled.getDefaults().getDefaults());
+    assertEquals(tunneled.getDefaults().getDefaults().getProperty("level"), "root");
+    assertNull(tunneled.getDefaults().getDefaults().getDefaults());
+    assertSame(tunnel(leaf, type), tunneled);
+
+    // without defaults
+    ChainedProperties plain = new ChainedProperties();
+    plain.setProperty("own", "value");
+    ChainedProperties tunneledPlain = tunnel(plain, type);
+    assertNull(tunneledPlain.getDefaults());
+    assertEquals(tunneledPlain.getProperty("own"), "value");
+    assertTrue(tunnel(new ChainedProperties(), type).isEmpty());
+    assertNull(tunnel(null, type));
+
+    // shared defaults must arrive as one object, not as two copies
+    ChainedProperties shared = new ChainedProperties();
+    shared.setProperty("shared", "value");
+    List<ChainedProperties> chains = new ArrayList<>();
+    chains.add(new ChainedProperties(shared));
+    chains.add(new ChainedProperties(shared));
+    TripType<List> listType = TripFactory.getInstance().getType(chains.getClass());
+    List<ChainedProperties> tunneledChains = tunnel(chains, (TripType) listType);
+    assertEquals(tunneledChains.getFirst().getProperty("shared"), "value");
+    assertSame(tunneledChains.getFirst().getDefaults(), tunneledChains.get(1).getDefaults());
+  }
+
+  /**
+   * A collection providing neither a sized nor a no-args constructor, but a canonical one.<br>
+   * {@code name} becomes a component of its own, {@code capacity} is transient and is
+   * transported by its {@code @CanonicalGetter}.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testCanonicalCollection() {
+    CanonicalList<Object> list = new CanonicalList<>("the name", 4711);
+    list.add("one");
+    list.add(null);
+    list.add("two");
+    list.add(list);   // the element back-references the collection itself
+
+    TripType<CanonicalList> type = TripFactory.getInstance().getType(CanonicalList.class);
+    CanonicalList<Object> tunneled = tunnelNoEquals(list, (TripType) type);
+    assertNotSame(tunneled, list);
+    assertEquals(tunneled.getName(), "the name");
+    assertEquals(tunneled.getCapacity(), 4711);
+    assertEquals(tunneled.size(), 4);
+    assertEquals(tunneled.get(0), "one");
+    assertNull(tunneled.get(1));
+    assertEquals(tunneled.get(2), "two");
+    assertSame(tunneled.get(3), tunneled);
+
+    // the canonical defaults must survive as well
+    CanonicalList<Object> empty = new CanonicalList<>(null, 0);
+    CanonicalList<Object> tunneledEmpty = tunnelNoEquals(empty, (TripType) type);
+    assertNull(tunneledEmpty.getName());
+    assertEquals(tunneledEmpty.getCapacity(), 0);
+    assertTrue(tunneledEmpty.isEmpty());
   }
 
   /**

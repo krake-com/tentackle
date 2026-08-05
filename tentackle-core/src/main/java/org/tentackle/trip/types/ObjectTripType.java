@@ -24,6 +24,7 @@ import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.TripComponent;
+import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
@@ -39,6 +40,8 @@ import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -90,6 +93,12 @@ import java.util.function.Consumer;
  * and the corresponding fields are annotated with {@link org.tentackle.reflect.CanonicalField}.
  * Another option is to provide a {@link org.tentackle.trip.TripInstanceCreator}. The components
  * could also be configured with a {@link org.tentackle.trip.TripComponentProvider}.
+ * <p>
+ * A canonical member that is not backed by a serializable field &ndash; because the field is transient
+ * or declared in a JDK class, for example &ndash; gets a component of its own, provided the member is
+ * a {@link org.tentackle.reflect.CanonicalGetter}. This is how a {@link MapTripType} or
+ * {@link CollectionTripType} transports state that lives in a JDK field, see
+ * {@link org.tentackle.misc.ChainedProperties}.
  * <p>
  * These alternatives delay the construction of the object until some or all of its component values
  * are known, which limits how far a component may back-reference the object it belongs to:
@@ -301,28 +310,64 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
   protected TripComponent<T, ?>[] createComponents(T object) {
     TripComponent<T, ?>[] tripComponents = super.createComponents(object);
     if (object == null) {
+      Member[] members = getCanonicalMembers();
       // canonical components must come first (ordered according to the canonical constructor)
-      TripComponent<T, ?>[] allComponents = new TripComponent[tripComponents.length];
-      int otherIndex = getCanonicalMembers().length;    // offset for all other components
+      TripComponent<T, ?>[] canonicalComponents = new TripComponent[members.length];
+      Collection<TripComponent<T, ?>> otherComponents = new ArrayList<>();
       for (TripComponent<T, ?> tripComponent : tripComponents) {
         int canonicalIndex = getCanonicalIndex(tripComponent.getName());
         if (canonicalIndex >= 0) {
-          allComponents[canonicalIndex] = tripComponent;
+          canonicalComponents[canonicalIndex] = tripComponent;
         }
         else {
-          if (otherIndex >= allComponents.length) {
-            // Some components could not be assigned to canonical members.
-            // For example, a @CanonicalMethod name does not correspond to any of the declared fields
-            // In such a case a TripComponentProvider must be used!
-            throw new TripRuntimeException("unmatched canonical members in " + getObjectClass());
-          }
-          allComponents[otherIndex++] = tripComponent;
+          otherComponents.add(tripComponent);
         }
+      }
+      // The ordinals of the components above are already taken, so the synthesized ones continue
+      // after them. Only the array order is canonical: the ordinals stay as they are, since
+      // they address the components within the dictionary entry.
+      int ordinal = tripComponents.length;
+      for (int i = 0; i < canonicalComponents.length; i++) {
+        if (canonicalComponents[i] == null) {
+          canonicalComponents[i] = createCanonicalComponent(members[i], i, ordinal++);
+        }
+      }
+      TripComponent<T, ?>[] allComponents = new TripComponent[canonicalComponents.length + otherComponents.size()];
+      System.arraycopy(canonicalComponents, 0, allComponents, 0, canonicalComponents.length);
+      int otherIndex = canonicalComponents.length;
+      for (TripComponent<T, ?> tripComponent : otherComponents) {
+        allComponents[otherIndex++] = tripComponent;
       }
       return allComponents;
     }
     // no canonical fields
     return tripComponents;
+  }
+
+  /**
+   * Creates a component for a canonical member that is not covered by a component of its own.
+   * <p>
+   * This is the case if the member's field is not serializable, for example, because it is
+   * transient or declared in a JDK class (see {@link MapTripType#isFieldSerializable(Field)}).
+   * If the member is a {@link org.tentackle.reflect.CanonicalGetter}, the getter provides the value.
+   * The component needs no setter, since its value is passed to the canonical constructor.
+   *
+   * @param member the canonical member
+   * @param canonicalIndex the index of the member within the canonical constructor's parameters
+   * @param ordinal the ordinal to assign to the component
+   * @return the component
+   */
+  protected TripComponent<T, ?> createCanonicalComponent(Member member, int canonicalIndex, int ordinal) {
+    if (member instanceof Method getter) {
+      // the default is the parameter type's default, just as in createCanonicalArgs()
+      Class<?> parameterType = canonicalConstructor == null ? getter.getReturnType() :
+                               canonicalConstructor.getParameterTypes()[canonicalIndex];
+      Object defaultValue = Array.get(Array.newInstance(parameterType, 1), 0);
+      return TripFactory.getInstance().createComponent(this, ordinal, getter, null, true, defaultValue);
+    }
+    // A field member without a component, i.e., the field is not serializable.
+    // Provide a @CanonicalGetter or a TripComponentProvider!
+    throw new TripRuntimeException("unmatched canonical member " + member + " in " + getObjectClass());
   }
 
   /**

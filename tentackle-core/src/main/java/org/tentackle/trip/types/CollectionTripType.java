@@ -48,6 +48,13 @@ interface CollectionTypeHolder {
  * Therefore, we serialize the collection's elements only. If collections explicitly
  * need additional fields to be serialized, a {@link TripComponentProvider} must
  * be created.
+ * <p>
+ * The collection is rebuilt through its sized (or no-args) constructor and refilled with the
+ * elements. Collections providing neither, but a {@link org.tentackle.reflect.CanonicalConstructor}
+ * instead, are created by that constructor once its arguments arrive. Since the collection cannot
+ * exist before, its components precede the elements in the stream in this case, the other way round
+ * otherwise. Either way the collection is created before its elements are read, so the elements may
+ * back-reference the collection itself.
  *
  * @param <T> the collection type
  */
@@ -67,7 +74,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    */
   public CollectionTripType(Class<T> clazz) {
     super(clazz);
-    if (isInstantiable()) {
+    if (isInstantiable() && !isDelayedConstruction()) {
       try {
         sizedConstructor = clazz.getDeclaredConstructor(Integer.TYPE);
       }
@@ -77,12 +84,13 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
           noArgsConstructor = clazz.getDeclaredConstructor();
         }
         catch (NoSuchMethodException ex) {
-          throw new TripInstantiationException(clazz, "no sized or a no-args constructor", ex);
+          throw new TripInstantiationException(clazz, "no sized, no-args or canonical constructor", ex);
         }
       }
     }
-    // else: interface or abstract. Since the concrete type is not known yet,
-    // it will be determined when serialized. Therefore, read() and write() won't be invoked.
+    // else: - interface or abstract. Since the concrete type is not known yet,
+    //         it will be determined when serialized. Therefore, read() and write() won't be invoked.
+    //       - or delayed construction, i.e., the collection is created by its canonical constructor or builder.
   }
 
   /**
@@ -104,7 +112,6 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void write(T value, TripStream stream) {
     stream.getSerializer().serializeOpCode(getOpCode());
     sendDictionary(stream);
@@ -116,18 +123,18 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       if (reference == null || reference.isObjectFollowing()) {
         prepareWrite(value);
         writeHeader(value, stream);
-        for (Object element : value) {
-          if (element == null) {
-            sendNull(stream);   // collection allows null elements, obviously
-          }
-          else {
-            TripType elementType = stream.getType(element.getClass());
-            elementType.write(element, stream);
-          }
-        }
-        if (getComponents().length > 0) {
-          // additional members (TripComponentProvider!)
+        if (isDelayedConstruction()) {
+          // the canonical constructor's arguments must arrive before the elements,
+          // since the collection does not exist yet. Unconditional: the reader expects the end opcode.
           writeComponents(value, stream);
+          writeElements(value, stream);
+        }
+        else {
+          writeElements(value, stream);
+          if (getComponents().length > 0) {
+            // additional members (TripComponentProvider!)
+            writeComponents(value, stream);
+          }
         }
       }
     }
@@ -179,39 +186,29 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       CollectionHeader<T> header = readHeader(stream, opCode);
       int size = header.size();
       value = header.value();
-      if (initializer != null) {
-        initializer.accept(value);
-      }
 
-      if (reference != null && !isConverted()) {
-        // register before reading the elements, so that elements may back-reference the collection itself
-        stream.addReference(reference, value, isDeduplicateable(value));
-        reference.markReceived();
-      }
-
-      if (size > 0) {
-        opCode = stream.receiveOpCode();
-        int elementCount = 0;
-        while (elementCount < size) {
-          if (opCode == DefaultOpCode.NULL) {
-            value.add(null);  // collection allows null elements, obviously
-          }
-          else {
-            TripType<?> elementType = stream.deriveType(opCode);
-            if (elementType.isDictionaryBased()) {
-              opCode = stream.receiveOpCode();
-            }
-            value.add(elementType.read(stream, opCode));
-          }
-          if (++elementCount < size) {
-            // opcode for the next element
-            opCode = stream.receiveOpCode();
-          }
-        }
-      }
-
-      if (getComponents().length > 0) {
+      if (isDelayedConstruction()) {
+        // the collection does not exist yet: the canonical constructor creates it from the components,
+        // applies the initializer and registers the reference (see ObjectTripType).
         value = readComponents(stream, stream.receiveOpCode(), entry, reference, value, initializer);
+        readElements(stream, value, size);
+      }
+      else {
+        if (initializer != null) {
+          initializer.accept(value);
+        }
+
+        if (reference != null && !isConverted()) {
+          // register before reading the elements, so that elements may back-reference the collection itself
+          stream.addReference(reference, value, isDeduplicateable(value));
+          reference.markReceived();
+        }
+
+        readElements(stream, value, size);
+
+        if (getComponents().length > 0) {
+          value = readComponents(stream, stream.receiveOpCode(), entry, reference, value, initializer);
+        }
       }
 
       value = convert(value);
@@ -223,6 +220,59 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       }
     }
     return value;
+  }
+
+  /**
+   * Writes the elements of the collection.
+   *
+   * @param value the collection instance
+   * @param stream the stream to write to
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected void writeElements(T value, TripStream stream) {
+    for (Object element : value) {
+      if (element == null) {
+        sendNull(stream);   // collection allows null elements, obviously
+      }
+      else {
+        TripType elementType = stream.getType(element.getClass());
+        elementType.write(element, stream);
+      }
+    }
+  }
+
+  /**
+   * Reads the elements of the collection.
+   * <p>
+   * The next opcode is unread both on entry and on return, so that the elements can be read
+   * before or after the components (see {@link #read(TripStream, OpCode, Consumer)}).
+   *
+   * @param stream the stream to read from
+   * @param value the collection instance to fill
+   * @param size the number of elements
+   */
+  @SuppressWarnings("unchecked")
+  protected void readElements(TripStream stream, T value, int size) {
+    if (size > 0) {
+      OpCode opCode = stream.receiveOpCode();
+      int elementCount = 0;
+      while (elementCount < size) {
+        if (opCode == DefaultOpCode.NULL) {
+          value.add(null);  // collection allows null elements, obviously
+        }
+        else {
+          TripType<?> elementType = stream.deriveType(opCode);
+          if (elementType.isDictionaryBased()) {
+            opCode = stream.receiveOpCode();
+          }
+          value.add(elementType.read(stream, opCode));
+        }
+        if (++elementCount < size) {
+          // opcode for the next element
+          opCode = stream.receiveOpCode();
+        }
+      }
+    }
   }
 
   /**
@@ -255,7 +305,9 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   }
 
   /**
-   * Creates a new collection instance.
+   * Creates a new collection instance.<br>
+   * Not invoked for delayed construction, i.e., if the collection is created by its
+   * canonical constructor or builder.
    *
    * @param size the size of the collection
    * @return the collection instance
@@ -285,7 +337,8 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   @Override
   protected boolean isFieldSerializable(Field field) {
     // The fields in the java collections must not be serialized, since the components are serialized instead.
-    // Otherwise, we would get exceptions "module java.base does not open java.util to module org.tentackle.core"
+    // Otherwise, we would get exceptions "module java.base does not open java.util to module org.tentackle.core".
+    // Such a field can still be transported by a @CanonicalGetter, see ChainedProperties.
     return super.isFieldSerializable(field) && !field.getDeclaringClass().getName().startsWith("java.");
   }
 
@@ -303,13 +356,17 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
    * Returned by {@link #readHeader(TripStream, OpCode)}.
    *
    * @param size the size of the collection
-   * @param value the collection instance
+   * @param value the collection instance, null for delayed construction
    * @param <T> the collection type
    */
   protected record CollectionHeader<T>(int size, T value) {}
 
   /**
    * Reads the collection header and creates a new collection instance.
+   * <p>
+   * Subclasses overriding this method must return a header with a null instance for
+   * delayed construction, since the collection is created by its canonical constructor
+   * or builder from the components that follow.
    *
    * @param stream the stream to read from
    * @param opCode the opcode to read (already read from the stream)
@@ -318,7 +375,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
     int size = checkSize(CollectionTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     // the collection grows while its elements are read, so the size is only a capacity hint
-    return new CollectionHeader<>(size, createCollection(limitPreAllocation(size)));
+    return new CollectionHeader<>(size, isDelayedConstruction() ? null : createCollection(limitPreAllocation(size)));
   }
 
 }
