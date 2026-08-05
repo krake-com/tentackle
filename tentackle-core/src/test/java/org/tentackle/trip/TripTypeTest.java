@@ -24,6 +24,7 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.I18NText;
 import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
@@ -1173,6 +1174,47 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     Map<String, Integer> tunneledMap = tunnel(map, type);
     assertNotSame(tunneledMap, map);
     assertSame(tunnel(map, type), tunneledMap);
+  }
+
+  /**
+   * {@link EncryptedProperties} is a JDK map with fields of its own.<br>
+   * The entries are serialized by the {@link org.tentackle.trip.types.MapTripType}, the fields
+   * as its components. Notice that {@link java.util.Hashtable#equals} compares the entries only,
+   * so the fields must be asserted explicitly.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testEncryptedProperties() {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.setName("backend.properties");
+    properties.setProperty("user", "hugo");
+    // no @Service(Cryptor.class) configured in this module, hence the encrypted value is set verbatim
+    properties.setProperty("password", "~c29tZSBzZWNyZXQ=");
+    properties.setProperty("escaped", "\\~not encrypted");
+    properties.setProperty("MixedCase", "value");
+
+    TripType<EncryptedProperties> type = TripFactory.getInstance().getType(EncryptedProperties.class);
+    EncryptedProperties tunneled = tunnel(properties, type);
+    assertNotSame(tunneled, properties);
+    assertEquals(tunneled.getName(), "backend.properties");
+    assertNull(tunneled.getKeyPrefix());
+    // the encrypted value must arrive untouched, i.e. neither decrypted nor re-encrypted
+    assertEquals(tunneled.getPropertyBlunt("password"), "~c29tZSBzZWNyZXQ=");
+    assertEquals(tunneled.getProperty("user"), "hugo");
+    assertEquals(tunneled.getProperty("escaped"), "~not encrypted");
+    // the key case map is transient and must be rebuilt lazily on the receiving side
+    assertEquals(tunneled.getPropertyIgnoreCase("mixedcase"), "value");
+    assertSame(tunnel(properties, type), tunneled);
+
+    // the key prefix must survive as well and still translate the keys
+    EncryptedProperties prefixed = new EncryptedProperties();
+    prefixed.setKeyPrefix("org.tentackle.");
+    prefixed.setProperty("user", "hugo");
+    assertNotNull(prefixed.getPropertyBlunt("user"));
+    EncryptedProperties tunneledPrefixed = tunnel(prefixed, type);
+    assertEquals(tunneledPrefixed.getKeyPrefix(), "org.tentackle.");
+    assertEquals(tunneledPrefixed.getProperty("user"), "hugo");
+    assertEquals(tunneledPrefixed.get("org.tentackle.user"), "hugo");
   }
 
   @Test
