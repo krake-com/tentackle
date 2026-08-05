@@ -371,8 +371,9 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
     - Records → `RecordTripType`
     - Enums → `EnumTripType` (constants with class bodies are mapped to their enum class)
     - Collections/Maps → `CollectionTypeBuilder` / `MapTypeBuilder`, including the JDK types
-      without usable constructors: the `Collections` wrappers (`unmodifiable*`, `empty*`,
-      `singleton*`), `Arrays.asList`, `EnumSet` and `EnumMap`
+      without usable constructors: the `Collections` wrappers (`unmodifiable*`, `synchronized*`,
+      `empty*`, `singleton*`, `nCopies`, `newSetFromMap`), `Arrays.asList`,
+      `ConcurrentHashMap.newKeySet`, `EnumSet` and `EnumMap`
 
 4. **Component construction**: For `ObjectTripType`, the builder scans the class for serializable fields:
     - Skips `transient`, `static`, and fields annotated with `@TripIgnore`
@@ -416,6 +417,55 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
    invoke validate() method if TripSerializable.validate() is set
    return instance
    ```
+
+### JDK collections and maps
+
+Java collections hold internal delegates that cannot be instantiated directly, so TRIP serializes
+their *elements* only, never their fields — see `CollectionTripType#isFieldSerializable`. On the
+receiving side the collection is rebuilt through its sized (or no-args) constructor and refilled.
+Consequently, everything the JDK keeps in a private field is *not* transported unless a dedicated
+`TripType` takes care of it.
+
+The full matrix is verified by `JdkCollectionsTest`. In short:
+
+**Round trip faithfully** — the concrete class, the content, the iteration order, null elements,
+null keys and null values, shared references and cycles:
+
+| Kind        | Types                                                                                     |
+|-------------|-------------------------------------------------------------------------------------------|
+| Lists       | `ArrayList`, `LinkedList`, `Vector`, `Stack`, `CopyOnWriteArrayList`                       |
+| Sets        | `HashSet`, `LinkedHashSet`, `TreeSet`, `EnumSet`, `CopyOnWriteArraySet`, `ConcurrentSkipListSet` |
+| Queues      | `ArrayDeque`, `PriorityQueue`, `ConcurrentLinked{Queue,Deque}`, `LinkedBlocking{Queue,Deque}`, `ArrayBlockingQueue`, `PriorityBlockingQueue`, `LinkedTransferQueue` |
+| Maps        | `HashMap`, `LinkedHashMap`, `TreeMap`, `Hashtable`, `Properties`, `ConcurrentHashMap`, `ConcurrentSkipListMap`, `IdentityHashMap`, `WeakHashMap`, `EnumMap` |
+| Immutable   | `List.of`, `Set.of`, `Map.of` and their `copyOf` variants                                  |
+| Wrappers    | `Collections.{unmodifiable,synchronized,empty,singleton}*`, `nCopies`, `newSetFromMap`, `Arrays.asList`, `ConcurrentHashMap.newKeySet` |
+
+The `SortedSet`s and `SortedMap`s — `TreeSet`, `TreeMap`, `ConcurrentSkipListSet`,
+`ConcurrentSkipListMap` — and the `Collections` wrappers of sorted sets and maps transport their
+`Comparator` as part of the header (`SortedSetTripType`, `SortedMapTripType`,
+`WrappedSortedSetTripType`, `WrappedSortedMapTripType`). This requires a comparator constructor,
+which every JDK implementation provides. The comparator must be serializable itself, i.e., a static
+or top-level class — an anonymous inner class would expect the enclosing instance as a constructor
+argument.
+
+**Round trip, but arrive reconfigured** — the content is intact, the setup is not:
+
+- the `Comparator` of `PriorityQueue` and `PriorityBlockingQueue` is lost, since they are no
+  `SortedSet`s; the receiver falls back to natural ordering,
+- the capacity of the bounded queues is reduced to the number of elements,
+- the access-order flag of a `LinkedHashMap` (LRU caches) is lost,
+- the `defaults` of a `Properties` are lost,
+- the backing map of `Collections.newSetFromMap` becomes a `LinkedHashMap`,
+- the `Collections` wrappers are rebuilt around an `ArrayList`, hence the `RandomAccess`
+  variant of the wrapper is delivered.
+
+**Are rejected** with a `TripInstantiationException`, since they cannot be reconstructed without
+their backing collection or type token — copy them into a regular collection before sending:
+
+- the views: `List#subList`, `Map#keySet`, `Map#values`, `Map#entrySet`,
+  `NavigableMap#descendingMap`, `NavigableSet#descendingSet`,
+- `Collections.checked*`,
+- `Map.entry` (`java.util.KeyValueHolder`) and `BitSet`, which are neither collections nor maps.
 
 ### Annotation-driven customization
 

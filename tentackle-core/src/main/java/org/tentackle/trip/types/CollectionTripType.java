@@ -263,7 +263,10 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   protected T createCollection(int size) {
     try {
       if (sizedConstructor != null) {
-        return sizedConstructor.newInstance(size);
+        // Some JDK collections reject a capacity of zero, such as the bounded queues
+        // (ArrayBlockingQueue, LinkedBlockingQueue) and the priority queues.
+        // Since the size is only a capacity hint, requesting one element instead is safe.
+        return sizedConstructor.newInstance(Math.max(size, 1));
       }
       else {
         return noArgsConstructor.newInstance();

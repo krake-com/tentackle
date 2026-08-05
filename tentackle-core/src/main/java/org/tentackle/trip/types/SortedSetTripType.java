@@ -27,32 +27,62 @@ import org.tentackle.trip.TripType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Comparator;
+import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 
-interface TreeSetTypeHolder {
+interface SortedSetTypeHolder {
   TripType<Integer> INTEGER_TRIP_TYPE = TripFactory.getInstance().getType(Integer.TYPE);
-  TripType<Boolean> BOOLEAN_TRIP_TYPE = TripFactory.getInstance().getType(Boolean.TYPE);
 }
 
 
 /**
- * Trip type for {@link TreeSet}.
+ * Trip type for {@link SortedSet}s, i.e. {@link TreeSet} and {@link ConcurrentSkipListSet}.
+ * <p>
+ * The {@link Comparator} is serialized as part of the header. It lives in a JDK-internal field
+ * and would be lost otherwise (see {@link CollectionTripType}), leaving the receiver to silently
+ * re-sort by natural ordering, or to fail altogether for elements that are not {@link Comparable}.
+ * The comparator itself must be serializable, i.e., a static or a top-level class, since an
+ * anonymous inner class would expect the enclosing instance as a constructor argument.
+ * <p>
+ * Only sorted sets providing a comparator constructor can be handled this way,
+ * see {@link #isApplicable(Class)}.
  *
- * @param <T> the type of the tree set
+ * @param <T> the sorted set type
  */
 // created by CollectionTypeBuilder, not mapped by @TripTypeService
 @SuppressWarnings("rawtypes")
-public class TreeSetTripType<T extends TreeSet> extends CollectionTripType<T> {
+public class SortedSetTripType<T extends SortedSet> extends CollectionTripType<T> {
+
+  /**
+   * Tells whether the given class can be handled by this trip type.
+   *
+   * @param clazz the class
+   * @return true if it is a sorted set providing a comparator constructor
+   */
+  public static boolean isApplicable(Class<?> clazz) {
+    if (SortedSet.class.isAssignableFrom(clazz)) {
+      try {
+        clazz.getDeclaredConstructor(Comparator.class);
+        return true;
+      }
+      catch (NoSuchMethodException e) {
+        // no comparator constructor: the comparator could not be restored anyway
+      }
+    }
+    return false;
+  }
+
 
   private final Constructor<T> comparatorConstructor;
 
   /**
    * Creates the type.
    *
-   * @param clazz the tree set's class
+   * @param clazz the sorted set's class
    */
-  public TreeSetTripType(Class<T> clazz) {
+  public SortedSetTripType(Class<T> clazz) {
     super(clazz);
     try {
       comparatorConstructor = clazz.getDeclaredConstructor(Comparator.class);
@@ -74,28 +104,15 @@ public class TreeSetTripType<T extends TreeSet> extends CollectionTripType<T> {
   @Override
   protected void writeHeader(T value, TripStream stream) {
     super.writeHeader(value, stream);
-    Comparator comparator = value.comparator();
-    if (comparator == null) {
-      TreeSetTypeHolder.BOOLEAN_TRIP_TYPE.write(false, stream);
-    }
-    else {
-      TreeSetTypeHolder.BOOLEAN_TRIP_TYPE.write(true, stream);
-      TripType<Comparator> type = stream.getType(comparator.getClass());
-      type.write(comparator, stream);
-    }
+    ComparatorSupport.write(value.comparator(), stream);
   }
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = TreeSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-    boolean hasComparator = TreeSetTypeHolder.BOOLEAN_TRIP_TYPE.read(stream, stream.receiveOpCode());
-    if (hasComparator) {
-      // get the type from the stream (either new dictionary entry or ordinal)
-      stream.receiveOpCode();   // skip OBJECT
-      TripType<Comparator> type = (TripType<Comparator>) stream.receiveDictionary().getType();
-      // the next opcode is a reference or the handler data
-      Comparator comparator = type.read(stream, stream.receiveOpCode());
+    int size = checkSize(SortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    Comparator comparator = ComparatorSupport.read(stream);
+    if (comparator != null) {
       try {
         return new CollectionHeader<>(size, comparatorConstructor.newInstance(comparator));
       }
