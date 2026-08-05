@@ -42,8 +42,11 @@ public abstract class AbstractTripType<T> implements TripType<T> {
    * Global flag to enable/disable deduplication.<br>
    * Deduplication is enabled by default and should not be disabled in most cases.
    * Provided for testing purposes only.
+   * <p>
+   * Volatile, since trip types are shared singletons: a change must become visible
+   * to all threads currently serializing or deserializing.
    */
-  public static boolean deduplicationEnabled = true;
+  public static volatile boolean deduplicationEnabled = true;
 
   /**
    * Upper bound for pre-allocating from a size read off the stream.<br>
