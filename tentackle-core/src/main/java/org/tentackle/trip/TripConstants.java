@@ -24,11 +24,17 @@ package org.tentackle.trip;
 public class TripConstants {
 
   /**
-   * The 2-byte magic number (TRIP connection header): <code>&raquo; &laquo;</code><br>
+   * The 2-byte magic number (TRIP connection header): <code>&laquo; &raquo;</code><br>
    * Which is followed by the 16-byte UUID of the transport and a single byte telling
    * whether the client's dictionary is still empty (see {@link Dictionary#isEmpty()}).
    */
-  public static final byte[] MAGIC = new byte[] { (byte) 0xBB, (byte) 0xAB };
+  public static final byte[] MAGIC = new byte[] { (byte) 0xAB, (byte) 0xBB };
+
+  /**
+   * Previous version header, w/o the dictionary byte.<br>
+   * (Tentackle version <= 25.18.2.1)
+   */
+  public static final byte[] MAGIC_1 = new byte[] { (byte) 0xBB, (byte) 0xAB };
 
   /**
    * Maximum value for unsigned bytes.

@@ -126,8 +126,15 @@ public class ConnectionHandler implements Runnable {
    */
   @Override
   public void run() {
+    int versionSkip;
     try {
-      readMagic();
+      versionSkip = readMagic();
+      if (versionSkip != 0) {
+        // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
+        // The client then updates itself and automatically uses the latest protocol.
+        LOGGER.warning("client connection {0} uses an outdated version of TRIP: {1} version behind",
+                       new TransportClientInfo(transport, connectionName), versionSkip);
+      }
     }
     catch (TripRuntimeException e) {
       if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
@@ -141,7 +148,10 @@ public class ConnectionHandler implements Runnable {
     }
 
     UUID id = readUUID();
-    boolean clientDictionaryEmpty = readDictionaryFlag();
+    boolean clientDictionaryEmpty = true;
+    if (versionSkip == 0) {
+      clientDictionaryEmpty = readDictionaryFlag();
+    }
     TripStream stream = createStream(id, clientDictionaryEmpty);
     TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
     boolean closedByClient = false;
@@ -243,15 +253,19 @@ public class ConnectionHandler implements Runnable {
   }
 
 
-  private void readMagic() {
+  private int readMagic() {
     try {
       byte[] magic = inputStream.readNBytes(2);
       if (magic.length != 2) {
         throw new TripStreamClosedException("end of stream while reading magic");
       }
-      if (magic[0] != TripConstants.MAGIC[0] || magic[1] != TripConstants.MAGIC[1]) {
-        throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
+      if (magic[0] == TripConstants.MAGIC[0] && magic[1] == TripConstants.MAGIC[1]) {
+        return 0;   // current version
       }
+      else if (magic[0] == TripConstants.MAGIC_1[0] && magic[1] == TripConstants.MAGIC_1[1]) {
+        return 1;  // one version behind w/o the dictionary flag
+      }
+      throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
     }
     catch (IOException e) {
       throw new TripRuntimeException("reading magic failed", e);
