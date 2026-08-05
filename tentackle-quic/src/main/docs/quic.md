@@ -117,7 +117,8 @@ contract. Server and client responsibilities are clearly separated.
    keystore alias auto-selection apply to QUIC too (see below).
 2. **Connection config** — `maxOpenPeerInitiatedBidirectionalStreams` is set from
    the `maxstreams` parameter (default 128), capping how many concurrent streams
-   a single client may open.
+   a single client may open. The flow control windows are set from `streamwindow`
+   (see [Flow control](#flow-control)).
 3. **Bind address** — the host/port come from the URI. A host of `"0"` binds all
    interfaces (IPv4 and IPv6) via `withPort(port)`; any other host binds a
    specific `DatagramSocket`.
@@ -212,7 +213,7 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&certcheck=...][&connecttimeout=...][&quicidle=...][&keepalive=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&quicidle=...][&keepalive=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
@@ -230,6 +231,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `kmpass`      | server          | the keystore password (`kspass`)                 | Private key password, if it differs from the keystore password.                                |
 | `alpnid`      | both            | the URI scheme (`tripq` / `tripcq`)              | ALPN application-protocol identifier. Client and server must match.                            |
 | `maxstreams`  | server          | `128`                                            | Maximum concurrent peer-initiated bidirectional streams per connection.                        |
+| `streamwindow`| both            | `250000`                                         | Flow control window per stream in bytes; must be >= 1500. See below.                           |
 | `certcheck`   | client          | `false`                                          | When `true`, the client validates the server certificate. When `false`, validation is skipped. |
 | `connecttimeout` | client       | `10`                                             | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                          |
 | `quicidle`    | both            | `30`                                             | QUIC max idle timeout in **seconds**. See below.                                               |
@@ -260,6 +262,26 @@ re-establishes the QUIC connection on the next request.
 
 The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
 are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
+
+### Flow control
+
+QUIC limits how much data a peer may send before the receiving side grants further credits
+([RFC-9000, 4](https://www.rfc-editor.org/rfc/rfc9000.html#name-flow-control)), both per stream and per
+connection. `streamwindow` configures the per-stream window on **both** ends &mdash; on the server it bounds
+the size of an incoming remote call, on the client the size of the response &mdash; and the connection window
+is ten times that value.
+
+Both ends are configured explicitly, because KWIK's defaults are asymmetric: its client advertises 250kB per
+stream, while its server falls back to the 5kB *minimum* of `ApplicationProtocolSettings` unless the buffer
+sizes are set. A call larger than the window still succeeds, but has to squeeze through it in stop-and-go
+fashion, one credit update per window, which costs a round-trip each time. The default is therefore chosen
+to cover ordinary calls in full, and only needs raising when calls routinely carry payloads larger than it.
+
+> Do not size the connection window down to the stream window. Both limits would then be exhausted at the
+> very same offset, and since KWIK never retransmits a lost `MAX_DATA` frame and ignores an incoming
+> `DATA_BLOCKED` frame, a dropped datagram carrying that update would wedge the stream permanently: the
+> receiver waits for data the sender is not allowed to send. Keeping the connection window a multiple of
+> the stream window makes the stream limit the binding one, and `MAX_STREAM_DATA` *is* retransmitted.
 
 ---
 

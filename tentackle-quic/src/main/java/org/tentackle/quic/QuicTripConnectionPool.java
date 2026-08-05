@@ -88,7 +88,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
                                             .uri(uri)  // only host and port are used
                                             .applicationProtocol(alpnId)
                                             .connectTimeout(Duration.ofSeconds(connectTimeout))
-                                            .maxIdleTimeout(Duration.ofSeconds(transport.getMaxIdleSeconds()));
+                                            .maxIdleTimeout(Duration.ofSeconds(transport.getMaxIdleSeconds()))
+                                            // the window the server may use for its responses, configured
+                                            // explicitly so that both directions are symmetric
+                                            .defaultStreamReceiveBufferSize((long) transport.getStreamWindow());
     if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
       connectionBuilder.noServerCertificateCheck();
     }

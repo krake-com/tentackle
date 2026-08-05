@@ -58,6 +58,33 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public static final int DEFAULT_MAX_IDLE_SECONDS = 30;
 
+  /**
+   * The default flow control window per stream in bytes, applied if the URI does not specify {@code streamwindow}.
+   * <p>
+   * This is the same value KWIK's client uses by default, so that both directions are configured symmetrically.
+   */
+  public static final int DEFAULT_STREAM_WINDOW = 250_000;
+
+  /**
+   * The factor by which the connection's flow control window exceeds the window of a single stream.
+   * <p>
+   * The connection window must be larger than the stream window, or both limits would be exhausted at the very
+   * same offset. KWIK does not retransmit a lost {@code MAX_DATA} frame and ignores an incoming
+   * {@code DATA_BLOCKED} frame, so a connection-level limit that is reached in lockstep with the stream-level
+   * limit cannot be recovered from once the datagram carrying the update is lost: the peer would wait for data
+   * the sender is not allowed to send. Keeping the connection window a multiple of the stream window makes the
+   * stream limit the binding one, and that one <em>is</em> retransmitted.
+   */
+  public static final int CONNECTION_WINDOW_FACTOR = 10;
+
+  /**
+   * The smallest flow control window accepted for {@code streamwindow}.
+   * <p>
+   * A window must hold at least one maximum-sized QUIC packet. This is KWIK's {@code MIN_RECEIVER_BUFFER_SIZE},
+   * which is not accessible from here because its package is not exported.
+   */
+  public static final int MIN_STREAM_WINDOW = 1500;
+
 
   private ServerConnector serverConnector;    // the running KWIK server connector, null if not accepting
   private boolean accepting;
@@ -95,12 +122,19 @@ public class QuicTripTransport extends AbstractTransport {
         "keystore-file (ksfile) and certificate-alias (ksalias, or a single-entry keystore) must be specified");
     }
 
+    int streamWindow = getStreamWindow();
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
                             .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 128))
                             // configured explicitly so that both ends agree instead of relying on
                             // the differing KWIK client- and server defaults
                             .maxIdleTimeoutInSeconds(getMaxIdleSeconds())
+                            // Without an explicit window, KWIK falls back to the minimum of 5kB advertised by
+                            // ApplicationProtocolSettings, while its client advertises 250kB. Every call larger
+                            // than 5kB would then have to squeeze through the window in stop-and-go fashion,
+                            // driven by the server reading and granting credits in small increments.
+                            .maxBidirectionalStreamBufferSize(streamWindow)
+                            .maxConnectionBufferSize((long) streamWindow * CONNECTION_WINDOW_FACTOR)
                             .build();
 
     DatagramSocket socket = null;       // the UDP socket bound here, owned by the connector once it is built
@@ -167,6 +201,25 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public int getMaxIdleSeconds() {
     return getUriPars().getOrDefault("quicidle", DEFAULT_MAX_IDLE_SECONDS);
+  }
+
+  /**
+   * Gets the flow control window per stream in bytes.<br>
+   * A peer may send at most that many bytes on a stream before the receiving side has to grant further credits
+   * (see RFC-9000, 4). The window applies to the data a <em>client</em> sends to this server, i.e., to the
+   * size of the remote calls, and should be at least as large as the largest call to be transferred without
+   * intermediate credit updates. The connection window is a multiple of it, see {@link #CONNECTION_WINDOW_FACTOR}.
+   *
+   * @return the window in bytes
+   */
+  public int getStreamWindow() {
+    int streamWindow = getUriPars().getOrDefault("streamwindow", DEFAULT_STREAM_WINDOW);
+    if (streamWindow < MIN_STREAM_WINDOW) {
+      throw new TripRuntimeException(
+        "QUIC stream window must be >= " + MIN_STREAM_WINDOW + " bytes, got " + streamWindow +
+        " from URI " + getUri());
+    }
+    return streamWindow;
   }
 
   /**
