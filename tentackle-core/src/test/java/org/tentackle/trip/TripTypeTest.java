@@ -84,6 +84,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -1174,6 +1175,42 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     Map<String, Integer> tunneledMap = tunnel(map, type);
     assertNotSame(tunneledMap, map);
     assertSame(tunnel(map, type), tunneledMap);
+  }
+
+  /**
+   * {@link Properties} is a plain JDK map: all its fields are declared in {@code java.util},
+   * so none of them is serializable (see {@code MapTripType#isFieldSerializable}) and the
+   * entries are all that travels.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testProperties() {
+    Properties properties = new Properties();
+    properties.setProperty("user", "hugo");
+    properties.setProperty("empty", "");
+    properties.put("count", 42);    // Hashtable accepts non-string values
+
+    TripType<Properties> type = TripFactory.getInstance().getType(Properties.class);
+    Properties tunneled = tunnel(properties, type);
+    assertNotSame(tunneled, properties);
+    assertEquals(tunneled.getProperty("user"), "hugo");
+    assertEquals(tunneled.getProperty("empty"), "");
+    assertEquals(tunneled.get("count"), 42);
+    assertEquals(tunneled.stringPropertyNames(), Set.of("user", "empty"));
+    assertSame(tunnel(properties, type), tunneled);
+
+    assertTrue(tunnel(new Properties(), type).isEmpty());
+    assertNull(tunnel(null, type));
+
+    // known limitation: the defaults live in a java.util field and are therefore not transported
+    Properties defaults = new Properties();
+    defaults.setProperty("inherited", "value");
+    Properties withDefaults = new Properties(defaults);
+    withDefaults.setProperty("own", "value");
+    assertEquals(withDefaults.getProperty("inherited"), "value");
+    Properties tunneledWithDefaults = tunnel(withDefaults, type);
+    assertEquals(tunneledWithDefaults.getProperty("own"), "value");
+    assertNull(tunneledWithDefaults.getProperty("inherited"));
   }
 
   /**
