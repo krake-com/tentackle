@@ -126,14 +126,14 @@ public class ConnectionHandler implements Runnable {
    */
   @Override
   public void run() {
-    int versionSkip;
+    int versionSkew;
     try {
-      versionSkip = readMagic();
-      if (versionSkip != 0) {
+      versionSkew = readMagic();
+      if (versionSkew != 0) {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
-        LOGGER.warning("client connection {0} uses an outdated version of TRIP: {1} version behind",
-                       new TransportClientInfo(transport, connectionName), versionSkip);
+        LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
+                       new TransportClientInfo(transport, connectionName), versionSkew);
       }
     }
     catch (TripRuntimeException e) {
@@ -149,7 +149,7 @@ public class ConnectionHandler implements Runnable {
 
     UUID id = readUUID();
     boolean clientDictionaryEmpty = true;
-    if (versionSkip == 0) {
+    if (versionSkew == 0) {
       clientDictionaryEmpty = readDictionaryFlag();
     }
     TripStream stream = createStream(id, clientDictionaryEmpty);
@@ -220,6 +220,7 @@ public class ConnectionHandler implements Runnable {
     LOGGER.info("connection {0} closed{1}", transportClientInfo, closedByClient ? " by client" : "");
   }
 
+
   /**
    * Checks whether the connection is still alive.
    *
@@ -253,6 +254,11 @@ public class ConnectionHandler implements Runnable {
   }
 
 
+  /**
+   * Reads the magic number and derives the version-skew.
+   *
+   * @return the version-skew, 0 if the client is using the current version
+   */
   private int readMagic() {
     try {
       byte[] magic = inputStream.readNBytes(2);
@@ -272,6 +278,11 @@ public class ConnectionHandler implements Runnable {
     }
   }
 
+  /**
+   * Reads the dictionary flag.
+   *
+   * @return true if the client's dictionary is empty, false otherwise
+   */
   private boolean readDictionaryFlag() {
     try {
       int flag = inputStream.read();
@@ -285,6 +296,11 @@ public class ConnectionHandler implements Runnable {
     }
   }
 
+  /**
+   * Reads the UUID of the client's transport.
+   *
+   * @return the UUID of the client's transport
+   */
   private UUID readUUID() {
     try {
       byte[] uuidBytes = inputStream.readNBytes(16);
