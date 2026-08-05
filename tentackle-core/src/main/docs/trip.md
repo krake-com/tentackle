@@ -431,27 +431,37 @@ The full matrix is verified by `JdkCollectionsTest`. In short:
 **Round trip faithfully** — the concrete class, the content, the iteration order, null elements,
 null keys and null values, shared references and cycles:
 
-| Kind        | Types                                                                                     |
-|-------------|-------------------------------------------------------------------------------------------|
-| Lists       | `ArrayList`, `LinkedList`, `Vector`, `Stack`, `CopyOnWriteArrayList`                       |
-| Sets        | `HashSet`, `LinkedHashSet`, `TreeSet`, `EnumSet`, `CopyOnWriteArraySet`, `ConcurrentSkipListSet` |
-| Queues      | `ArrayDeque`, `PriorityQueue`, `ConcurrentLinked{Queue,Deque}`, `LinkedBlocking{Queue,Deque}`, `ArrayBlockingQueue`, `PriorityBlockingQueue`, `LinkedTransferQueue` |
-| Maps        | `HashMap`, `LinkedHashMap`, `TreeMap`, `Hashtable`, `Properties`, `ConcurrentHashMap`, `ConcurrentSkipListMap`, `IdentityHashMap`, `WeakHashMap`, `EnumMap` |
-| Immutable   | `List.of`, `Set.of`, `Map.of` and their `copyOf` variants                                  |
-| Wrappers    | `Collections.{unmodifiable,synchronized,empty,singleton}*`, `nCopies`, `newSetFromMap`, `Arrays.asList`, `ConcurrentHashMap.newKeySet` |
+| Kind      | Types                                                                                                                                                               |
+|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Lists     | `ArrayList`, `LinkedList`, `Vector`, `Stack`, `CopyOnWriteArrayList`                                                                                                |
+| Sets      | `HashSet`, `LinkedHashSet`, `TreeSet`, `EnumSet`, `CopyOnWriteArraySet`, `ConcurrentSkipListSet`                                                                    |
+| Queues    | `ArrayDeque`, `PriorityQueue`, `ConcurrentLinked{Queue,Deque}`, `LinkedBlocking{Queue,Deque}`, `ArrayBlockingQueue`, `PriorityBlockingQueue`, `LinkedTransferQueue` |
+| Maps      | `HashMap`, `LinkedHashMap`, `TreeMap`, `Hashtable`, `Properties`, `ConcurrentHashMap`, `ConcurrentSkipListMap`, `IdentityHashMap`, `WeakHashMap`, `EnumMap`         |
+| Immutable | `List.of`, `Set.of`, `Map.of` and their `copyOf` variants                                                                                                           |
+| Wrappers  | `Collections.{unmodifiable,synchronized,empty,singleton}*`, `nCopies`, `newSetFromMap`, `Arrays.asList`, `ConcurrentHashMap.newKeySet`                              |
 
-The `SortedSet`s and `SortedMap`s — `TreeSet`, `TreeMap`, `ConcurrentSkipListSet`,
-`ConcurrentSkipListMap` — and the `Collections` wrappers of sorted sets and maps transport their
-`Comparator` as part of the header (`SortedSetTripType`, `SortedMapTripType`,
-`WrappedSortedSetTripType`, `WrappedSortedMapTripType`). This requires a comparator constructor,
-which every JDK implementation provides. The comparator must be serializable itself, i.e., a static
-or top-level class — an anonymous inner class would expect the enclosing instance as a constructor
-argument.
+Every collection ordered by a `Comparator` transports it as part of the header, since it lives in
+a JDK-internal field and would otherwise leave the receiver re-sorting by natural ordering — or
+failing outright for elements that are not `Comparable`:
+
+| Types                                                             | Trip type                  |
+|-------------------------------------------------------------------|----------------------------|
+| `TreeSet`, `ConcurrentSkipListSet`                                | `SortedSetTripType`        |
+| `TreeMap`, `ConcurrentSkipListMap`                                | `SortedMapTripType`        |
+| `PriorityQueue`, `PriorityBlockingQueue`                          | `PriorityQueueTripType`    |
+| `Collections.{unmodifiable,synchronized}{SortedSet,NavigableSet}` | `WrappedSortedSetTripType` |
+| `Collections.{unmodifiable,synchronized}{SortedMap,NavigableMap}` | `WrappedSortedMapTripType` |
+
+This requires a comparator constructor, which every JDK implementation provides. The comparator
+must be serializable itself, i.e., a static or top-level class — an anonymous inner class would
+expect the enclosing instance as a constructor argument.
+
+A priority queue restores its *heap*, not the heap's layout: the elements are re-inserted one by
+one, so the iteration order may differ from the sender's. The head of the queue and the polling
+order are identical.
 
 **Round trip, but arrive reconfigured** — the content is intact, the setup is not:
 
-- the `Comparator` of `PriorityQueue` and `PriorityBlockingQueue` is lost, since they are no
-  `SortedSet`s; the receiver falls back to natural ordering,
 - the capacity of the bounded queues is reduced to the number of elements,
 - the access-order flag of a `LinkedHashMap` (LRU caches) is lost,
 - the `defaults` of a `Properties` are lost,

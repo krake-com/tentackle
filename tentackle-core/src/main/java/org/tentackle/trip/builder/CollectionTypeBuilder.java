@@ -27,6 +27,7 @@ import org.tentackle.trip.types.CollectionTripType;
 import org.tentackle.trip.types.EnumSetTripType;
 import org.tentackle.trip.types.ImmutableCollectionTripType;
 import org.tentackle.trip.types.ObjectTripType;
+import org.tentackle.trip.types.PriorityQueueTripType;
 import org.tentackle.trip.types.SortedSetTripType;
 import org.tentackle.trip.types.WrappedCollectionTripType;
 import org.tentackle.trip.types.WrappedSortedSetTripType;
@@ -145,6 +146,10 @@ public class CollectionTypeBuilder<T extends Collection<?>> implements TripTypeB
     if (SortedSetTripType.isApplicable(clazz)) {
       // TreeSet, ConcurrentSkipListSet: must retain their comparator
       return new SortedSetTripType(clazz);
+    }
+    if (PriorityQueueTripType.isApplicable(clazz)) {
+      // PriorityQueue, PriorityBlockingQueue: must retain their comparator as well
+      return new PriorityQueueTripType(clazz);
     }
     if (ReflectionHelper.isImmutableCollection(clazz)) {
       return new ImmutableCollectionTripType<>(clazz);

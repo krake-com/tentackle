@@ -347,6 +347,18 @@ public class JdkCollectionsTest {
     assertNotNull(tunneledSkipListMap.comparator());
     assertEquals(new ArrayList<>(tunneledSkipListMap.keySet()), new ArrayList<>(skipListMap.keySet()));
 
+    PriorityQueue<String> priorityQueue = new PriorityQueue<>(REVERSE);
+    priorityQueue.addAll(ELEMENTS);
+    PriorityQueue<String> tunneledPriorityQueue = roundTrip(priorityQueue);
+    assertNotNull(tunneledPriorityQueue.comparator());
+    assertEquals(polled(tunneledPriorityQueue), polled(priorityQueue));
+
+    PriorityBlockingQueue<String> blockingQueue = new PriorityBlockingQueue<>(11, REVERSE);
+    blockingQueue.addAll(ELEMENTS);
+    PriorityBlockingQueue<String> tunneledBlockingQueue = roundTrip(blockingQueue);
+    assertNotNull(tunneledBlockingQueue.comparator());
+    assertEquals(polled(tunneledBlockingQueue), polled(blockingQueue));
+
     SortedSet<String> sortedSet = Collections.unmodifiableSortedSet(treeSet);
     SortedSet<String> tunneledSortedSet = roundTrip(sortedSet);
     assertNotNull(tunneledSortedSet.comparator());
@@ -502,24 +514,6 @@ public class JdkCollectionsTest {
   // elements are serialized, never the JDK-internal fields (see CollectionTripType#isFieldSerializable).
   // The assertions below pin the current behavior so that a change becomes visible.
   // ------------------------------------------------------------------------------------------
-
-  /**
-   * The priority queues keep a comparator too, but they are no {@link SortedSet}s and are
-   * therefore not covered by {@code SortedSetTripType}. They fall back to natural ordering.
-   * ({@code PriorityBlockingQueue} could not be covered anyway: it provides a
-   * capacity/comparator constructor only.)
-   */
-  @Test
-  void testComparatorIsLostForPriorityQueues() {
-    PriorityQueue<String> priorityQueue = new PriorityQueue<>(REVERSE);
-    priorityQueue.addAll(ELEMENTS);
-    assertEquals(priorityQueue.peek(), "two");                  // reverse order
-    assertEquals(roundTrip(priorityQueue).peek(), "one");       // natural order
-
-    PriorityBlockingQueue<String> blockingQueue = new PriorityBlockingQueue<>(11, REVERSE);
-    blockingQueue.addAll(ELEMENTS);
-    assertNull(roundTrip(blockingQueue).comparator());
-  }
 
   /**
    * A bounded queue arrives with its capacity reduced to the number of elements, i.e. full.
@@ -744,6 +738,21 @@ public class JdkCollectionsTest {
       Map<?, ?> emptyMap = Map.of();
       return emptyMap.getClass() == clazz ? emptyMap : null;
     }
+  }
+
+  /**
+   * Drains a queue, which is the only order a priority queue actually guarantees:
+   * its iteration order is the heap layout, not the polling order.
+   *
+   * @param queue the queue, drained on return
+   * @return the elements in polling order
+   */
+  private List<String> polled(Queue<String> queue) {
+    List<String> elements = new ArrayList<>();
+    while (!queue.isEmpty()) {
+      elements.add(queue.poll());
+    }
+    return elements;
   }
 
   private List<String> sorted(Collection<?> collection) {
