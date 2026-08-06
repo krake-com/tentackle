@@ -74,7 +74,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Stream;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertNull;
@@ -96,7 +95,7 @@ import static org.testng.Assert.expectThrows;
  *   <li>the unsupported types: what is rejected, and rejected loudly.</li>
  * </ol>
  */
-@SuppressWarnings({ "unchecked", "rawtypes", "missing-explicit-ctor" })
+@SuppressWarnings({ "unchecked", "rawtypes", "missing-explicit-ctor", "exports" })
 public class JdkCollectionsTest {
 
   /**

@@ -39,7 +39,9 @@ public class DefaultAuthentication implements Authentication {
 
   private String name;                          // the principal's name
   private Credentials credentials;              // the verified credentials
+  @SuppressWarnings("serial")
   private Map<String, Object> attributes;       // the principal's attributes
+  @SuppressWarnings("serial")
   private Set<String> roles;                    // the external roles
   private String providerName;                  // the authenticating provider
   private long expiresAt;                       // expiry in epochal millis, 0 if none

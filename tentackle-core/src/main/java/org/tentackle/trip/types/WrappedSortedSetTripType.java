@@ -19,12 +19,20 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripType;
 
 import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
+
+
+interface WrappedSortedSetTypeHolder {
+  TripType<Integer> INTEGER_TRIP_TYPE = TripFactory.getInstance().getType(Integer.TYPE);
+}
+
 
 /**
  * Trip type for the {@link java.util.Collections} wrappers of sorted sets, i.e.
@@ -91,7 +99,7 @@ public class WrappedSortedSetTripType<T extends Collection> extends CollectionTr
   @Override
   @SuppressWarnings("unchecked")
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(CollectionTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(WrappedSortedSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     return new CollectionHeader<>(size, (T) new TreeSet<>(ComparatorSupport.read(stream)));
   }
 

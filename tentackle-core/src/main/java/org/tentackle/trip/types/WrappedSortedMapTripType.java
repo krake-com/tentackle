@@ -19,12 +19,20 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripType;
 
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+
+
+interface WrappedSortedMapTypeHolder {
+  TripType<Integer> INTEGER_TRIP_TYPE = TripFactory.getInstance().getType(Integer.TYPE);
+}
+
 
 /**
  * Trip type for the {@link java.util.Collections} wrappers of sorted maps, i.e.
@@ -91,7 +99,7 @@ public class WrappedSortedMapTripType<T extends Map> extends MapTripType<T> {
   @Override
   @SuppressWarnings("unchecked")
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = checkSize(MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    int size = checkSize(WrappedSortedMapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
     return new MapHeader<>(size, (T) new TreeMap<>(ComparatorSupport.read(stream)));
   }
 

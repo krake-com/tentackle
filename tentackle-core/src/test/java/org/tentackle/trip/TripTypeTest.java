@@ -1550,7 +1550,6 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertEquals(tunnelValue(value, tripType), value);
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
   /**
    * Tunnels a value written by one trip type and read back by another, which allows simulating
    * a sender whose class definition differs from the receiver's.
@@ -1561,6 +1560,7 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
    * @return the value read back
    * @param <T> the type
    */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   private <T> T tunnelValue(T value, TripType<T> writer, TripType<T> reader) {
     try {
       // each case is a message of its own, or the value would be sent as a back-reference
@@ -1575,6 +1575,7 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     }
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   private <T> T tunnelValue(T value, TripType<T> tripType) {
     try {
       tripType.write(value, transceiver.getStream());

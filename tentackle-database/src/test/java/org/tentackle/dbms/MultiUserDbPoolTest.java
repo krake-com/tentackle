@@ -36,6 +36,7 @@ import static org.testng.Assert.assertTrue;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class MultiUserDbPoolTest {
 
   private static final int USER_COUNT = 3;    // must be > 1 to shut down more than one sub-pool

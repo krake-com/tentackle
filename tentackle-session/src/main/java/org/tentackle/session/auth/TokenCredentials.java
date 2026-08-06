@@ -49,11 +49,12 @@ public class TokenCredentials implements Credentials, Cloneable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private String tokenType;             // the token type, e.g. "Bearer"
-  private Secret token;                 // the token itself
-  private Secret refreshToken;          // the optional refresh token (client side only)
-  private String issuer;                // the optional issuer that minted the token
-  private long expiresAt;               // epochal millis the token expires, 0 if unknown
+  private String tokenType;                 // the token type, e.g. "Bearer"
+  private Secret token;                     // the token itself
+  private Secret refreshToken;              // the optional refresh token (client side only)
+  private String issuer;                    // the optional issuer that minted the token
+  private long expiresAt;                   // epochal millis the token expires, 0 if unknown
+  @SuppressWarnings("serial")
   private Map<String, String> parameters;   // optional additional parameters
 
 

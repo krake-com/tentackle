@@ -35,6 +35,7 @@ import static org.testng.Assert.assertTrue;
  *
  * @author harald
  */
+@SuppressWarnings("exports")
 public class TransactionWritabilityTest extends AbstractDbTest {
 
   public TransactionWritabilityTest() {

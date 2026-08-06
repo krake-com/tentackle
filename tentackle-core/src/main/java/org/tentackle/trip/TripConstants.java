@@ -32,7 +32,7 @@ public class TripConstants {
 
   /**
    * Previous version header, w/o the dictionary byte.<br>
-   * (Tentackle version <= 25.18.2.1)
+   * (Tentackle version &le; 25.18.2.1)
    */
   public static final byte[] MAGIC_1 = new byte[] { (byte) 0xBB, (byte) 0xAB };
 

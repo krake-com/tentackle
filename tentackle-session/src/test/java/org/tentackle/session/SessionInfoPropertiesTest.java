@@ -17,10 +17,10 @@
  */
 package org.tentackle.session;
 
-import org.tentackle.common.EncryptedProperties;
-
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import org.tentackle.common.EncryptedProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +41,7 @@ public class SessionInfoPropertiesTest {
   /**
    * A session info counting how often its properties were loaded.
    */
+  @SuppressWarnings("serial")
   private static class CountingSessionInfo extends DefaultSessionInfo {
 
     private final AtomicInteger loadCount = new AtomicInteger();
