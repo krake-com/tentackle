@@ -574,7 +574,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           cv.foreignReferencesInitializer = null;
         }
       }
-      referenced = cv.isReferencedImpl(db, id, cv.foreignReferences);
+      // iterate a snapshot: isReferencedImpl() queries the database per reference (see getForeignReferences)
+      referenced = cv.isReferencedImpl(db, id, cv.getForeignReferences());
       cv = cv.superClassVariables;
     }
     return referenced;

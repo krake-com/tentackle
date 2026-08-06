@@ -503,7 +503,26 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return true if referenced
    */
   public boolean isReferenced(Db db, long id) {
-    return isReferencedImpl(db, id, foreignReferences);
+    return isReferencedImpl(db, id, getForeignReferences());
+  }
+
+
+  /**
+   * Gets a snapshot of the foreign references.
+   * <p>
+   * The references are copied while holding the monitor of {@code foreignReferences}, which is the
+   * same monitor {@link #addReferencingClass} and {@link #removeReferencingClass} write under.
+   * {@link #isReferencedImpl} queries the database for every reference, so it must iterate a copy:
+   * holding the monitor for the duration of those queries would block registration of further
+   * referencing classes, and iterating the live set without it risks a
+   * {@link java.util.ConcurrentModificationException}.
+   *
+   * @return the unmodifiable collection of foreign references, never null
+   */
+  protected Collection<ForeignReference> getForeignReferences() {
+    synchronized (foreignReferences) {
+      return List.copyOf(foreignReferences);    // the TreeSet's order is retained
+    }
   }
 
 
