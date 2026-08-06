@@ -130,6 +130,27 @@ public class AbstractDomainObjectTest {
   }
 
   @Test
+  public void testToGenericStringOfUnlinkedDelegate() {
+    // the factory instantiates the delegate before the linker sets the PDO: it must stay printable
+    DemoPdoDomainImpl unlinked = new DemoPdoDomainImpl();
+    assertNull(unlinked.getPdo(), "not linked to a PDO yet");
+    assertEquals(unlinked.toGenericString(), DemoPdoDomainImpl.class.getName() + "[unlinked]");
+  }
+
+  @Test
+  public void testToStringOfUnlinkedDelegateDoesNotThrow() {
+    /*
+     * toString() is used for logging and debugging and must never propagate an exception -- least
+     * of all in the window between instantiating the delegate and linking it, where it would mask
+     * whatever went wrong during the linking.
+     */
+    DemoPdoDomainImpl unlinked = new DemoPdoDomainImpl();
+    String str = unlinked.toString();
+    assertTrue(str.startsWith(DemoPdoDomainImpl.class.getName() + "[unlinked]("), str);
+    assertTrue(str.endsWith(")"), str);
+  }
+
+  @Test
   public void testToStringOfComponentIsTheSingular() {
     persistence.setRootEntity(false);
     assertEquals(domain.toString(), "DemoPdo");

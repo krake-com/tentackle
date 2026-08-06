@@ -294,7 +294,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   private volatile int remoteDelegateId;
 
   /**
-   * class properties.
+   * class properties.<br>
+   * Lazily loaded by {@link #getProperties()} and guarded by this instance's monitor.
    */
   private Properties properties;
 
@@ -351,7 +352,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @return the properties, never null
    */
-  public Properties getProperties() {
+  public synchronized Properties getProperties() {
     if (properties == null) {
       // load properties, if any, from file or resource
       String propertiesName = clazz.getName().replace('.', '/');

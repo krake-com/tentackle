@@ -113,13 +113,20 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
     return pdo.getPersistenceDelegate().getSession();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The generic string is the diagnostic fallback used whenever {@link #toString()} may fail
+   * (see {@code DomainException}, for example), so it must stay printable even for a delegate
+   * that is not linked to its PDO yet &mdash; which is exactly the state it tends to be logged in.
+   */
   @Override
   public String toGenericString() {
+    T thisPdo = me();
     return  getClass().getName() +
             '[' +
-            me().getId() +
-            '/' +
-            me().getSerial() +
+            (thisPdo == null ? "unlinked"
+                             : String.valueOf(thisPdo.getId()) + '/' + thisPdo.getSerial()) +
             ']';
   }
 
@@ -146,7 +153,17 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
       }
     }
     catch (RuntimeException re) {
-      buf.append(toGenericString());
+      /*
+       * The fallback dereferences the PDO once more, so it can fail for the very same reason the
+       * attempt above did (an unlinked delegate, a missing persistence delegate). Guard it: this
+       * method is used for logging and debugging, where throwing would mask the actual problem.
+       */
+      try {
+        buf.append(toGenericString());
+      }
+      catch (RuntimeException ignored) {
+        buf.append(getClass().getName());
+      }
       buf.append("(");
       buf.append(re);
       buf.append(")");

@@ -28,6 +28,8 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -237,6 +239,34 @@ public class SecurityDomainImplTest {
   public void testSingularAndPlural() {
     assertEquals(rule.getSingular(), "security rule");
     assertEquals(rule.getPlural(), "security rules");
+  }
+
+  @Test
+  public void testPermissionsAreParsedOnceAndKept() {
+    rule.setPermissions("READ, WRITE");
+    SecurityDomainImpl domain = (SecurityDomainImpl) rule.getDomainDelegate();
+
+    Class<? extends Permission>[] first = domain.getPermissions();
+    assertEquals(first.length, 2);
+    assertSame(domain.getPermissions(), first, "parsed once and cached");
+  }
+
+  /**
+   * The cached permissions must be published safely.
+   * <p>
+   * Security rules are loaded from the PDO cache, so one {@link SecurityDomainImpl} is shared by
+   * every thread evaluating a permission, and the array is built lazily by whichever request thread
+   * gets there first. Without volatile, a racing thread may see the array reference before the
+   * writes of its elements and hit a null entry while checking the permissions.
+   * <p>
+   * The reordering is permitted but practically unobservable on demand (and never on x86), so the
+   * declaration itself is asserted.
+   */
+  @Test
+  public void testPermissionsFieldIsVolatile() throws NoSuchFieldException {
+    Field field = SecurityDomainImpl.class.getDeclaredField("permissions");
+    assertTrue(Modifier.isVolatile(field.getModifiers()),
+               "permissions is lazily built on a shared domain delegate and must be volatile");
   }
 
 }

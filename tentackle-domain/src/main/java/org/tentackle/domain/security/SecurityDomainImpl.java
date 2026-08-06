@@ -48,8 +48,17 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * The permissions, lazily parsed from the persistence object.
+   * <p>
+   * Volatile, and that is essential here: security rules are loaded from the PDO cache
+   * (see {@code DefaultSecurityManager}), so this delegate is shared by every thread evaluating a
+   * permission, and the array is built by whichever request thread gets there first. Published by
+   * a plain write, a racing thread could see the array reference before the writes of its elements
+   * and trip over a null entry while checking the permissions.
+   */
   @SuppressWarnings("stateful-domain-logic")
-  private Class<? extends Permission>[] permissions;      // lazily initialized permissions
+  private volatile Class<? extends Permission>[] permissions;
 
 
   public SecurityDomainImpl(Security pdo) {
@@ -131,12 +140,14 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected Class<? extends Permission>[] getPermissions() {
-    if (permissions == null) {
-      if (po().getPermissions() == null) {
-        permissions = new Class[0];
+    Class<? extends Permission>[] permissionClasses = permissions;    // read the volatile once
+    if (permissionClasses == null) {
+      String permissionNames = po().getPermissions();
+      if (permissionNames == null) {
+        permissionClasses = new Class[0];
       }
       else  {
-        StringTokenizer stok = new StringTokenizer(po().getPermissions(), ", ");
+        StringTokenizer stok = new StringTokenizer(permissionNames, ", ");
         List<Class<? extends Permission>> perms = new ArrayList<>();
         while (stok.hasMoreTokens()) {
           String permissionName = stok.nextToken();
@@ -146,10 +157,12 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
           }
           perms.add(permission);
         }
-        permissions = perms.toArray(new Class[0]);
+        permissionClasses = perms.toArray(new Class[0]);
       }
+      // publish the fully built array; two threads racing here parse the same names to equal arrays
+      permissions = permissionClasses;
     }
-    return permissions;
+    return permissionClasses;
   }
 
   /**

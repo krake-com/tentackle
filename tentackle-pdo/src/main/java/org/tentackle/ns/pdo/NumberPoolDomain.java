@@ -30,6 +30,14 @@ public interface NumberPoolDomain extends DomainObject<NumberPool> {
   /**
    * Get the current range.<br>
    * This is the first non-empty range with the lowest "begin".
+   * <p>
+   * Despite its name, the method <strong>modifies the pool</strong>: exhausted ranges are removed
+   * from {@link NumberPool#getNumberRangeList()} along the way and are deleted from the database
+   * when the pool is next persisted. This also happens when the pool turns out to be empty, i.e.,
+   * before the {@link org.tentackle.ns.NumberSourceEmptyException} is thrown.
+   * <p>
+   * Invoke it only within a transaction that persists the pool afterward or is rolled back, and
+   * with the pool locked, as {@code DefaultNumberSource} does. It performs no locking itself.
    *
    * @return the current range
    * @throws org.tentackle.ns.NumberSourceEmptyException if no more non-empty range found
