@@ -26,7 +26,6 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.sql.JoinType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -37,6 +36,12 @@ import java.util.function.BiConsumer;
  * Joins two PDOs within the same select.<br>
  * Used by eager joins and explicit domain-driven joins.<br>
  * Works for composite and non-composite relations.
+ * <p>
+ * A join is an immutable description of <em>how</em> to join, not of a running query: the eager
+ * joins of an entity are created once in the static class variables of its persistence class and
+ * are therefore shared by all threads. The PDOs joined while a result set is read are consequently
+ * kept in the per-query {@link JoinState} owned by the {@link JoinedSelect}, never in the join
+ * itself.
  *
  * @author harald
  * @param <T> the PDO type holding the relation to the joined PDO
@@ -97,11 +102,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final boolean explicitIdAliasRequired;
 
   /**
-   * Holds the joined pdos per pdo that gets the join.
-   */
-  private final Map<T, Map<Long, J>> lastJoinedPdoMap;
-
-  /**
    * Optional SQL code.
    */
   private final String extraSql;
@@ -111,8 +111,8 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * Creates a join.
    *
    * @param type the join type
-   * @param columnName the column name of the PDO (includung table alias!)
-   * @param joinedColumnName the column name of the joined PDO (includung table alias!)
+   * @param columnName the column name of the PDO (including table alias!)
+   * @param joinedColumnName the column name of the joined PDO (including table alias!)
    * @param joinedClass the joined class
    * @param joinAlias the alias of the joined pdo
    * @param extraSql optional SQL code (usually a WHERE clause)
@@ -131,7 +131,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
     this.extraSql = extraSql;
 
     joins = new ArrayList<>();
-    lastJoinedPdoMap = new HashMap<>();
     listJoin = columnName.endsWith(ENDS_WITH_ID);
     explicitIdAliasRequired = !listJoin &&
                               ((AbstractPersistentObject) PdoFactory.getInstance().createPersistenceDelegate(joinedClass.getName())).isExplicitIdAliasRequiredInJoins();
@@ -141,8 +140,8 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * Creates a join.
    *
    * @param type the join type
-   * @param columnName the column name of the PDO (includung table alias!)
-   * @param joinedColumnName the column name of the joined PDO (includung table alias!)
+   * @param columnName the column name of the PDO (including table alias!)
+   * @param joinedColumnName the column name of the joined PDO (including table alias!)
    * @param joinedClass the joined class
    * @param joinAlias the alias of the joined pdo
    * @param joiner the joiner
@@ -163,16 +162,16 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   }
 
   /**
-   * Returns whether joined to list or object.
+   * Returns whether joined to a list or an object.
    *
-   * @return true if to list
+   * @return true if to list, false if to object
    */
   public boolean isListJoin() {
     return listJoin;
   }
 
   /**
-   * Returns whether an extra ID-alias must be added to the joined select statement.
+   * Returns whether an extra ID alias must be added to the joined select statement.
    * This is true for multi-table inherited object relations.
    *
    * @return true if ID alias necessary
@@ -229,12 +228,11 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   /**
    * Gets optional SQL code.
    *
-   * @return sql code, null or empty if none
+   * @return SQL code, null or empty if none
    */
   public String getExtraSql() {
     return extraSql;
   }
-
 
   /**
    * Adds a cascaded join.
@@ -256,17 +254,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
     return joins;
   }
 
-
-  /**
-   * Initializes the join.
-   */
-  public void initialize() {
-    lastJoinedPdoMap.clear();
-    for (Join<J,?> join : joins) {
-      join.initialize();    // recursively initialize all subjoins
-    }
-  }
-
   /**
    * Creates a new PDO to join to given pdo.
    *
@@ -279,13 +266,16 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
 
   /**
    * Joins a pdo with another pdo.<br>
+   * The PDOs joined so far are tracked in the given per-query state; hence the same join
+   * can be used by concurrently running selects.
    *
+   * @param joinState the state of the running joined select
    * @param pdo the pdo that gets the join
    * @param pdoToJoin the pdo to join, null to finish the joining process
    * @return the new or already joined pdo
    */
-  public J join(T pdo, J pdoToJoin) {
-    Map<Long, J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, _ -> new HashMap<>());
+  public J join(JoinState joinState, T pdo, J pdoToJoin) {
+    Map<Long, J> lastJoined = joinState.getJoinedPdos(this, pdo);
     J joinedPdo = lastJoined.putIfAbsent(pdoToJoin.getId(), pdoToJoin);
     if (joinedPdo == null) {
       // if not already added

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -172,14 +173,34 @@ public class JoinedSelectTest {
     DemoEntity entity = createEntity(1);
     DemoComponent component = Pdo.create(DemoComponent.class);
     ((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).setId(10);
-    join.join(entity, component);
+    join.join(js.getJoinState(), entity, component);
 
     js.initialize(new ArrayList<>());
 
     DemoComponent sameIdComponent = Pdo.create(DemoComponent.class);
     ((DemoComponentPersistenceImpl) sameIdComponent.getPersistenceDelegate()).setId(10);
-    assertSame(join.join(entity, sameIdComponent), sameIdComponent,
+    assertSame(join.join(js.getJoinState(), entity, sameIdComponent), sameIdComponent,
                "the joins must be initialized along with the joined select");
+  }
+
+  @Test
+  public void testEachJoinedSelectHasItsOwnJoinState() {
+    // the joins are shared (static class variables), the state must not be
+    Join<DemoEntity, DemoComponent> join = createJoin();
+    JoinedSelect<DemoEntity> first = new JoinedSelect<DemoEntity>().addJoin(join);
+    JoinedSelect<DemoEntity> second = new JoinedSelect<DemoEntity>().addJoin(join);
+
+    assertNotSame(first.getJoinState(), second.getJoinState());
+
+    DemoEntity entity = createEntity(1);
+    DemoComponent component = Pdo.create(DemoComponent.class);
+    ((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).setId(10);
+    DemoComponent sameIdComponent = Pdo.create(DemoComponent.class);
+    ((DemoComponentPersistenceImpl) sameIdComponent.getPersistenceDelegate()).setId(10);
+
+    assertSame(join.join(first.getJoinState(), entity, component), component);
+    assertSame(join.join(second.getJoinState(), entity, sameIdComponent), sameIdComponent,
+               "a concurrent select must not observe the PDOs joined by another one");
   }
 
 }

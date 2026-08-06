@@ -50,10 +50,14 @@ public class JoinTest {
       (entity, component) -> joinedPairs.add(entity.getPersistenceDelegate().getId() + "<-" +
                                              component.getPersistenceDelegate().getId());
 
+  /** the per-query state the joins collect into. */
+  private JoinState joinState;
+
 
   @BeforeMethod
   public void clearJoinedPairs() {
     joinedPairs.clear();    // TestNG shares the instance among all test methods
+    joinState = new JoinState();
   }
 
 
@@ -151,8 +155,8 @@ public class JoinTest {
     DemoComponent component = createComponent(10);
     DemoComponent sameIdComponent = createComponent(10);
 
-    assertSame(join.join(entity, component), component, "the first one is joined");
-    assertSame(join.join(entity, sameIdComponent), component,
+    assertSame(join.join(joinState, entity, component), component, "the first one is joined");
+    assertSame(join.join(joinState, entity, sameIdComponent), component,
                "a component with an already joined ID must not be joined twice");
     assertEquals(joinedPairs, List.of("1<-10"), "the joiner is invoked once per joined PDO");
   }
@@ -162,8 +166,8 @@ public class JoinTest {
     Join<DemoEntity, DemoComponent> join = createListJoin();
     DemoEntity entity = createEntity(1);
 
-    join.join(entity, createComponent(10));
-    join.join(entity, createComponent(11));
+    join.join(joinState, entity, createComponent(10));
+    join.join(joinState, entity, createComponent(11));
     assertEquals(joinedPairs, List.of("1<-10", "1<-11"));
   }
 
@@ -174,14 +178,14 @@ public class JoinTest {
     DemoEntity second = createEntity(2);
     DemoComponent component = createComponent(10);
 
-    join.join(first, component);
-    assertSame(join.join(second, component), component,
+    join.join(joinState, first, component);
+    assertSame(join.join(joinState, second, component), component,
                "the same component ID joined to another entity is a new join");
     assertEquals(joinedPairs, List.of("1<-10", "2<-10"));
   }
 
   @Test
-  public void testInitializeForgetsTheJoinedPdos() {
+  public void testClearingTheStateForgetsTheJoinedPdos() {
     Join<DemoEntity, DemoComponent> join = createListJoin();
     Join<DemoComponent, DemoComponent> subJoin =
         new Join<>(JoinType.LEFT, "e_1.id", "e_2.rootid", DemoComponent.class, "e_2",
@@ -190,14 +194,31 @@ public class JoinTest {
 
     DemoEntity entity = createEntity(1);
     DemoComponent component = createComponent(10);
-    join.join(entity, component);
-    subJoin.join(component, createComponent(20));
+    join.join(joinState, entity, component);
+    subJoin.join(joinState, component, createComponent(20));
 
-    join.initialize();    // must recursively clear the cascaded joins as well
+    joinState.clear();    // clears the cascaded joins as well, since all share the state
 
-    assertSame(join.join(entity, component), component, "joined again after initialize()");
-    subJoin.join(component, createComponent(20));
+    assertSame(join.join(joinState, entity, component), component, "joined again after clear()");
+    subJoin.join(joinState, component, createComponent(20));
     assertEquals(joinedPairs, List.of("1<-10", "sub", "1<-10", "sub"));
+  }
+
+  @Test
+  public void testJoinsAreTrackedPerStateAndNotPerJoin() {
+    // the eager joins live in the static class variables and are used by concurrent selects,
+    // hence a join must not remember anything: each state joins independently
+    Join<DemoEntity, DemoComponent> join = createListJoin();
+    DemoEntity entity = createEntity(1);
+    JoinState otherState = new JoinState();
+
+    DemoComponent component = createComponent(10);
+    DemoComponent sameIdComponent = createComponent(10);
+
+    assertSame(join.join(joinState, entity, component), component);
+    assertSame(join.join(otherState, entity, sameIdComponent), sameIdComponent,
+               "another select must not see the PDOs joined by the first one");
+    assertEquals(joinedPairs, List.of("1<-10", "1<-10"), "the joiner runs once per select");
   }
 
   @Test

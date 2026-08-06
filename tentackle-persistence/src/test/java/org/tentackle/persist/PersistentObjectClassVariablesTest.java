@@ -22,7 +22,9 @@ import org.testng.annotations.Test;
 
 import org.tentackle.sql.JoinType;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
@@ -30,6 +32,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * Unit tests for {@link PersistentObjectClassVariables} and {@link PersistentClassVariablesFactory}.
@@ -257,6 +260,38 @@ public class PersistentObjectClassVariablesTest {
   public void testToString() {
     assertTrue(createEntityVariables().toString().startsWith(DemoEntity.class.getName() + "/"),
                "the PDO class leads the description");
+  }
+
+  /**
+   * The lazily determined fields must be volatile.
+   * <p>
+   * Class variables are static and therefore shared by all threads. A lazily computed value and its
+   * "pending" flag are two separate writes: without volatile a thread may observe the cleared flag
+   * but not yet the value and would then silently work with null - which is a legitimate value for
+   * most of these fields, so it cannot even be detected at runtime.
+   * <p>
+   * A multithreaded test cannot guard this: the reordering is permitted but rarely observed, and
+   * never at all on x86. Hence the declaration itself is asserted.
+   */
+  @Test
+  public void testLazilyDeterminedFieldsAreVolatile() {
+    for (String fieldName : List.of("topSuperClassVariables", "topSuperClassVariablesPending",
+                                    "effectiveTableName", "effectiveTableNamePending",
+                                    "effectiveTableAlias", "effectiveTableAliasPending",
+                                    "effectiveEagerJoins", "effectiveEagerJoinsPending",
+                                    "securityEnabled", "securityEnabledPending",
+                                    "revertAttributesToSnapshotMethod",
+                                    "createComponentsInSnapshotMethod",
+                                    "revertComponentsToSnapshotMethod")) {
+      try {
+        Field field = PersistentObjectClassVariables.class.getDeclaredField(fieldName);
+        assertTrue(Modifier.isVolatile(field.getModifiers()),
+                   field.getName() + " is determined lazily from arbitrary threads and must be volatile");
+      }
+      catch (NoSuchFieldException nsx) {
+        fail("no such field: " + fieldName, nsx);
+      }
+    }
   }
 
 }

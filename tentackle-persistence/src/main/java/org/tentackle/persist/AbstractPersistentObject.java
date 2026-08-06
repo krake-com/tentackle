@@ -1771,12 +1771,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     rs.skip(nextPo.getColumnCount());
 
     for (Join<? super T,?> join: js.getJoins()) {
-      readJoin(rs, nextPdo, (Join<T,?>) join);
+      readJoin(rs, js.getJoinState(), nextPdo, (Join<T,?>) join);
     }
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, J nextPdo, Join<? super J,?> join) {
+  private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, JoinState joinState,
+                                                              J nextPdo, Join<? super J,?> join) {
     PersistentDomainObject joinedPdo = join.createJoinedPdo(nextPdo);
     AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
 
@@ -1787,7 +1788,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       joinedPo = joinedPo.readFromResultSetWrapper(rs);
       joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
       if (joinedPdo != null) {
-        joinedPdo = ((Join) join).join(nextPdo, joinedPdo);
+        joinedPdo = ((Join) join).join(joinState, nextPdo, joinedPdo);
       }
     }
 
@@ -1800,7 +1801,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     // recursively read the joined joins
     for (Join<?,?> subJoin: join.getJoins()) {
-      readJoin(rs, joinedPdo, (Join) subJoin);
+      readJoin(rs, joinState, joinedPdo, (Join) subJoin);
     }
   }
 

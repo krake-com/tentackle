@@ -38,6 +38,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -116,7 +117,7 @@ public class DefaultLockManager implements LockManager {
 
 
   /**
-   * PdoKey for a transaction in flight.
+   * Key for a transaction in flight.
    */
   private static class TransactionKey {
     final long txNo;
@@ -214,32 +215,39 @@ public class DefaultLockManager implements LockManager {
   public void cleanupUserTokens(Db session, long userId) {
     if (enabled) {
       DomainContext context = Pdo.createDomainContext(session);
-      synchronized (lockMap) {    // make sure that no other user grabs a timed-out lock!
-        for (Lock lock : new ArrayList<>(lockMap.values())) {
-          DbTokenLock dbTokenLock = lock.tokenLock;
-          if (dbTokenLock.getLockedBy() == userId) {
-            if (isTokenLockToKeep(dbTokenLock, context)) {
-              LOGGER.warning("kept tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
-                             dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
-                             dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
-            }
-            else {
+
+      // Take a snapshot of the user's locks while holding the monitor, but do the database work
+      // later to avoid a potential deadlock.
+      List<DbTokenLock> userTokenLocks;
+      synchronized (lockMap) {
+        userTokenLocks = lockMap.values().stream()
+                                .map(Lock::tokenLock)
+                                .filter(dbTokenLock -> dbTokenLock.getLockedBy() == userId)
+                                .toList();
+      }
+
+      for (DbTokenLock dbTokenLock : userTokenLocks) {
+        if (isTokenLockToKeep(dbTokenLock, context)) {
+          LOGGER.warning("kept tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
+                         dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
+                         dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
+        }
+        else {
+          try {
+            session.transaction("cleanup user locks", () -> {
               try {
-                session.transaction("cleanup user locks", () -> {
-                  try {
-                    dbTokenLock.setSession(session);
-                    removeStaleTokenLock(dbTokenLock, context);  // this will remove from lockMap as well
-                    return null;
-                  }
-                  finally {
-                    dbTokenLock.setSession(null);  // in case remove failed
-                  }
-                });
+                dbTokenLock.setSession(session);
+                // this will remove from lockMap as well
+                removeStaleTokenLock(dbTokenLock, context, userId);
+                return null;
               }
-              catch (RuntimeException rx) {
-                LOGGER.severe("cleanup stale locktoken failed", rx);
+              finally {
+                dbTokenLock.setSession(null);  // in case remove failed
               }
-            }
+            });
+          }
+          catch (RuntimeException rx) {
+            LOGGER.severe("cleanup stale locktoken failed", rx);
           }
         }
       }
@@ -249,31 +257,45 @@ public class DefaultLockManager implements LockManager {
   @Override
   public void initialize(Db session) {
     if (enabled) {
-      synchronized (lockMap) {
-        DomainContext context = Pdo.createDomainContext(session);
+      DomainContext context = Pdo.createDomainContext(session);
 
-        for (DbTokenLock dbTokenLock : createTokenLock(session).selectAllObjects()) {
-          if (isTokenLockToKeep(dbTokenLock, context)) {
-            // add as tainted lock since we don't know the context name
-            lockMap.put(new PdoKey(dbTokenLock), new Lock(dbTokenLock));
-            dbTokenLock.setSession(null);    // remove link to session to allow GC
-            LOGGER.warning("added tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
-                           dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
-                           dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
-          }
-          else {
-            try {
-              session.transaction("initialize lockmanager", () -> {
-                removeStaleTokenLock(dbTokenLock, context);
-                return null;
-              });
-            }
-            catch (RuntimeException rx) {
-              LOGGER.severe("removing locktoken failed", rx);
-            }
-          }
+      // classify outside the monitor: isTokenLockToKeep() is an application hook and may hit the database
+      List<DbTokenLock> keptTokenLocks = new ArrayList<>();
+      List<DbTokenLock> staleTokenLocks = new ArrayList<>();
+      for (DbTokenLock dbTokenLock : createTokenLock(session).selectAllObjects()) {
+        if (isTokenLockToKeep(dbTokenLock, context)) {
+          keptTokenLocks.add(dbTokenLock);
         }
+        else {
+          staleTokenLocks.add(dbTokenLock);
+        }
+      }
 
+      synchronized (lockMap) {
+        for (DbTokenLock dbTokenLock : keptTokenLocks) {
+          // add as tainted lock since we don't know the context name
+          lockMap.put(new PdoKey(dbTokenLock), new Lock(dbTokenLock));
+          dbTokenLock.setSession(null);    // remove link to session to allow GC
+          LOGGER.warning("added tokenlock for class {0}, id {1}, userId {2}, since {3}, expiry {4}",
+                         dbTokenLock.getPdoClassId(), dbTokenLock.getPdoId(),
+                         dbTokenLock.getLockedBy(), dbTokenLock.getLockedSince(), dbTokenLock.getLockExpiry());
+        }
+      }
+
+      // again, never hold the monitor across a transaction (see cleanupUserTokens)
+      for (DbTokenLock dbTokenLock : staleTokenLocks) {
+        try {
+          session.transaction("initialize lockmanager", () -> {
+            removeStaleTokenLock(dbTokenLock, context, 0);   // no owner check: no clients yet
+            return null;
+          });
+        }
+        catch (RuntimeException rx) {
+          LOGGER.severe("removing locktoken failed", rx);
+        }
+      }
+
+      synchronized (lockMap) {
         if (lockMap.isEmpty()) {
           LOGGER.info("lock manager initialized");
         }
@@ -526,7 +548,7 @@ public class DefaultLockManager implements LockManager {
     if (taintCount > 0) {
       // tainted locks created!
       // This will disable all domain context name checks for those remaining active locks,
-      // which is probably desirable to prevent subsequent excessive errors.
+      // which is probably desirable to prevent later excessive errors.
       // At least, all those operations will be logged as warnings (lock is tainted...).
       LOGGER.warning("{0} locks reloaded in total, {1} tainted!", lockMap.size(), taintCount);
     }
@@ -538,22 +560,31 @@ public class DefaultLockManager implements LockManager {
 
   /**
    * Removes a stale token lock from the lock table and the PDO.
-   * Must be invoked from within sync on lockMap!
+   * <p>
+   * Must be invoked from within a transaction and <em>without</em> holding the monitor of
+   * {@code lockMap}: the method updates the PDO and thus acquires database row locks, which must
+   * never happen while the monitor is held (see {@link #cleanupUserTokens} for the deadlock this
+   * would cause). The map itself is accessed under short, self-contained synchronizations.
    *
    * @param dbTokenLock the token lock
    * @param context the application's domain context
+   * @param expectedUserId the user the token must still belong to, 0 to remove it regardless
    */
-  private void removeStaleTokenLock(DbTokenLock dbTokenLock, DomainContext context) {
+  private void removeStaleTokenLock(DbTokenLock dbTokenLock, DomainContext context, long expectedUserId) {
     String className = SessionUtilities.getInstance().getClassName(dbTokenLock.getPdoClassId());
     if (className == null) {
       throw new PersistenceException(context.getSession(), "no PDO class for classId " + dbTokenLock.getPdoClassId());
     }
     PdoKey pdoKey = new PdoKey(dbTokenLock);
 
-    Lock lock = lockMap.get(pdoKey);
-    if (lock != null && !context.isWithinContext(lock.contextName)) {
+    String contextName;
+    synchronized (lockMap) {
+      Lock lock = lockMap.get(pdoKey);
+      contextName = lock == null ? null : lock.contextName;
+    }
+    if (contextName != null && !context.isWithinContext(contextName)) {
       // upgrade the domain context to avoid exception
-      context = context.clone(lock.contextName);
+      context = context.clone(contextName);
     }
 
     PersistentDomainObject<?> pdo = Pdo.create(className, context).select(dbTokenLock.getId());
@@ -562,11 +593,19 @@ public class DefaultLockManager implements LockManager {
       poStr = className + "[" + dbTokenLock.getId() + "]";
       LOGGER.severe("missing {0} in {1}", poStr, context.getSession());
       // just remove from map
-      lockMap.remove(pdoKey);
+      synchronized (lockMap) {
+        lockMap.remove(pdoKey);
+      }
     }
     else {
       AbstractPersistentObject<?, ?> po = (AbstractPersistentObject<?, ?>) pdo.getPersistenceDelegate();
       poStr = po.toGenericString();
+      if (expectedUserId != 0 && po.getEditedBy() != expectedUserId) {
+        // another user took the token over in the meantime: leave it alone, it's not stale anymore
+        LOGGER.warning("tokenlock for {0} taken over by userId {1}: stale token of userId {2} not removed",
+                       poStr, po.getEditedBy(), expectedUserId);
+        return;
+      }
       po.clearTokenLock();
       po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map and set DbTokenLock.session to null
     }
@@ -592,7 +631,7 @@ public class DefaultLockManager implements LockManager {
     DbTokenLock dbTokenLock = lock.tokenLock;
     TransactionKey txKey = new TransactionKey(dbTokenLock.getSession());
     PdoKey key = new PdoKey(dbTokenLock);
-    createdLocksInFlight.computeIfAbsent(txKey, tk -> new HashMap<>()).put(key, lock);
+    createdLocksInFlight.computeIfAbsent(txKey, _ -> new HashMap<>()).put(key, lock);
     Map<PdoKey, Lock> updatedLocks = updatedLocksInFlight.get(txKey);
     if (updatedLocks != null) {
       updatedLocks.remove(key);
@@ -618,7 +657,7 @@ public class DefaultLockManager implements LockManager {
     copyTokenLock.setLockedSince(dbTokenLock.getLockedSince());
     copyTokenLock.setLockExpiry(dbTokenLock.getLockExpiry());
     // add the first update only
-    updatedLocksInFlight.computeIfAbsent(new TransactionKey(dbTokenLock.getSession()), tk -> new HashMap<>())
+    updatedLocksInFlight.computeIfAbsent(new TransactionKey(dbTokenLock.getSession()), _ -> new HashMap<>())
                         .putIfAbsent(new PdoKey(copyTokenLock), new Lock(copyTokenLock, lock.contextName));
   }
 
@@ -642,7 +681,7 @@ public class DefaultLockManager implements LockManager {
         return;
       }
     }
-    removedLocksInFlight.computeIfAbsent(txKey, tk -> new HashMap<>()).put(pdoKey, lock);
+    removedLocksInFlight.computeIfAbsent(txKey, _ -> new HashMap<>()).put(pdoKey, lock);
   }
 
   /**
@@ -652,7 +691,7 @@ public class DefaultLockManager implements LockManager {
    */
   private void rebuildIfFailed(Db session) {
     if (rebuild) {
-      // we can only rebuild if there are no locks in flight (i.e. no locking relevant transactions running)
+      // we can only rebuild if there are no locks in flight (i.e., no locking relevant transactions running)
       if (isTxMapEmpty(createdLocksInFlight) &&
           isTxMapEmpty(updatedLocksInFlight) &&
           isTxMapEmpty(removedLocksInFlight)) {
@@ -664,7 +703,7 @@ public class DefaultLockManager implements LockManager {
   }
 
   /**
-   * Checks if in-flight map is empty and removes dummy weak references.
+   * Checks if the in-flight map is empty and removes dummy weak references.
    *
    * @param txMap the in-flight map
    * @return true if empty
