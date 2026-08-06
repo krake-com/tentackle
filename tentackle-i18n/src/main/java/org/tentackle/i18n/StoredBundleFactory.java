@@ -23,11 +23,14 @@ import org.tentackle.common.BundleSupport;
 import org.tentackle.common.DefaultBundleFactory;
 import org.tentackle.common.Service;
 import org.tentackle.i18n.pdo.StoredBundle;
+import org.tentackle.log.Logger;
+import org.tentackle.session.Session;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Factory for stored bundles.<br>
@@ -36,13 +39,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service(BundleFactory.class)
 public class StoredBundleFactory extends DefaultBundleFactory {
 
+  private static final Logger LOGGER = Logger.get(StoredBundleFactory.class);
+
   /**
-   * Controls whether loading bundles from backend is enabled at all.
+   * Controls whether loading bundles from the backend is enabled at all.
    */
   private static boolean enabled = true;
 
   /**
-   * Returns whether loading bundles from backend is enabled at all.
+   * Returns whether loading bundles from the backend is enabled at all.
    *
    * @return true if enabled (default)
    */
@@ -51,7 +56,7 @@ public class StoredBundleFactory extends DefaultBundleFactory {
   }
 
   /**
-   * Sets whether loading bundles from backend is enabled at all.
+   * Sets whether loading bundles from the backend is enabled at all.
    *
    * @param enabled true if enabled (default)
    */
@@ -62,6 +67,7 @@ public class StoredBundleFactory extends DefaultBundleFactory {
 
   private final Map<StoredBundle.StoredBundleUDK, ResourceBundle> bundleMap;      // bundlename_locale..._... : stored bundle
   private final StoredBundleControl control;                                      // bundle control used to load the stored bundle
+  private volatile boolean sessionSeen;                                           // true once a session has become available
 
   /**
    * Creates the bundle factory.
@@ -78,35 +84,86 @@ public class StoredBundleFactory extends DefaultBundleFactory {
   }
 
   @Override
+  public ResourceBundle findBundle(String baseName, Locale locale) {
+    discardBundlesCachedWithoutSession();
+    return super.findBundle(baseName, locale);
+  }
+
+  @Override
+  public ResourceBundle findBundle(String baseName, Locale locale, ClassLoader loader) {
+    discardBundlesCachedWithoutSession();
+    return super.findBundle(baseName, locale, loader);
+  }
+
+
+  @Override
   protected ResourceBundle getBundle(BundleSupport support, Locale locale) {
-    if (enabled) {
-      StoredBundle.StoredBundleUDK topKey = control.createUDK(support.getBundleName(), locale);
-      return bundleMap.computeIfAbsent(topKey, storedBundleUDK -> {
-        StoredBundle.StoredBundleUDK key = storedBundleUDK;
-        StoredResourceBundle bundle = control.loadStoredBundle(key);
-        while (bundle == null && (key = createParentKey(key)) != null) {
-          // try parent
-          bundle = control.loadStoredBundle(key);
-        }
-        if (bundle == null) {
-          // fallback to standard ResourceBundle
-          return super.getBundle(support, locale);
-        }
-        // set parents, if any
-        StoredResourceBundle currentBundle = bundle;
-        while ((key = createParentKey(key)) != null) {
-          StoredResourceBundle parentBundle = control.loadStoredBundle(key);
-          if (parentBundle == null) {
-            break;
-          }
+    if (!enabled || Session.getCurrentSession() == null) {
+      // Without a session nothing can be loaded from the backend. Fall back to the standard ResourceBundle,
+      // but don't remember it: the stored bundles must take over as soon as a session becomes available.
+      return super.getBundle(support, locale);
+    }
+
+    StoredBundle.StoredBundleUDK topKey = control.createUDK(support.getBundleName(), locale);
+    return bundleMap.computeIfAbsent(topKey, storedBundleUDK -> {
+      StoredResourceBundle bundle = loadStoredBundleChain(storedBundleUDK, control::loadStoredBundle);
+      // fallback to standard ResourceBundle if nothing stored at all
+      return bundle == null ? super.getBundle(support, locale) : bundle;
+    });
+  }
+
+  /**
+   * Loads the stored bundle for a key and chains the stored bundles of the parent locales to it.
+   * <p>
+   * Locales without a stored bundle are skipped, both when looking for the bundle itself and when linking
+   * its parents, just as {@link ResourceBundle} does for its list of candidate locales. A stored
+   * {@code Texts_de_DE}, for example, gets a stored {@code Texts} as its parent if there is no
+   * {@code Texts_de}.
+   *
+   * @param topKey the key of the requested bundle
+   * @param loader loads the stored bundle for a key, returns null if there is no such bundle
+   * @return the bundle with its parents linked, null if nothing is stored for the key or any of its parent locales
+   */
+  protected StoredResourceBundle loadStoredBundleChain(StoredBundle.StoredBundleUDK topKey,
+                                                       Function<StoredBundle.StoredBundleUDK, StoredResourceBundle> loader) {
+    StoredBundle.StoredBundleUDK key = topKey;
+    StoredResourceBundle bundle = loader.apply(key);
+    while (bundle == null && (key = createParentKey(key)) != null) {
+      // try parent
+      bundle = loader.apply(key);
+    }
+    if (bundle != null) {
+      // set parents, if any
+      StoredResourceBundle currentBundle = bundle;
+      while ((key = createParentKey(key)) != null) {
+        StoredResourceBundle parentBundle = loader.apply(key);
+        if (parentBundle != null) {
           currentBundle.setParent(parentBundle);
           currentBundle = parentBundle;
         }
-        return bundle;
-      });
+        // else: nothing stored for that locale -> skip the level and link the next bundle found
+      }
     }
-    else {
-      return super.getBundle(support, locale);
+    return bundle;
+  }
+
+
+  /**
+   * Discards all bundles cached while no session was available.
+   * <p>
+   * As long as there is no session, nothing can be loaded from the backend and bundle lookups fall back to
+   * the property files. Such results must not survive the transition, because otherwise the stored bundles
+   * would never be picked up for bundles already looked up during application startup,
+   * for example, by the login dialog.
+   * <p>
+   * Must not be invoked while a bundle is being computed in {@link #bundleMap}, since clearing a
+   * {@link ConcurrentHashMap} from within one of its own mapping functions is not allowed.
+   */
+  private void discardBundlesCachedWithoutSession() {
+    if (enabled && !sessionSeen && Session.getCurrentSession() != null) {
+      sessionSeen = true;
+      clearCache();
+      LOGGER.info("bundle caches cleared: stored bundles are available from now on");
     }
   }
 
@@ -131,4 +188,5 @@ public class StoredBundleFactory extends DefaultBundleFactory {
     }
     return parentKey;
   }
+
 }
