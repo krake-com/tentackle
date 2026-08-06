@@ -21,6 +21,7 @@ package org.tentackle.i18n;
 import org.testng.annotations.Test;
 
 import org.tentackle.i18n.pdo.StoredBundle;
+import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.pdo.Pdo;
 
 import java.util.Collections;
@@ -58,6 +59,43 @@ public class StoredResourceBundleTest {
     return bundle;
   }
 
+
+  /**
+   * Adds a bundle key directly, bypassing {@code setTranslation}.
+   * <p>
+   * Simulates a row that reached the database without validation — {@code key} and {@code value} are
+   * both {@code @NotNull} in the model, so this cannot be produced through the regular domain API.
+   *
+   * @param bundle the stored bundle
+   * @param key the key, null to simulate a missing key
+   * @param value the value, null to simulate a missing value
+   */
+  private static void addKeyBluntly(StoredBundle bundle, String key, String value) {
+    StoredBundleKey bundleKey = Pdo.create(StoredBundleKey.class);
+    bundleKey.setKey(key);
+    bundleKey.setValue(value);
+    bundle.getKeys().add(bundleKey);
+  }
+
+
+  @Test
+  public void testEntryWithoutAValueIsIgnoredButTheBundleStillWorks() {
+    StoredBundle bundle = createBundle("DemoBundle", null, "greeting", "hello");
+    addKeyBluntly(bundle, "broken", null);
+    StoredResourceBundle resourceBundle = new StoredResourceBundle(bundle);
+    assertEquals(resourceBundle.getString("greeting"), "hello");
+    assertNull(resourceBundle.handleGetObject("broken"));
+    assertEquals(Collections.list(resourceBundle.getKeys()), Collections.singletonList("greeting"));
+  }
+
+  @Test
+  public void testEntryWithoutAKeyIsIgnoredButTheBundleStillWorks() {
+    StoredBundle bundle = createBundle("DemoBundle", null, "greeting", "hello");
+    addKeyBluntly(bundle, null, "orphan");
+    StoredResourceBundle resourceBundle = new StoredResourceBundle(bundle);
+    assertEquals(resourceBundle.getString("greeting"), "hello");
+    assertEquals(Collections.list(resourceBundle.getKeys()), Collections.singletonList("greeting"));
+  }
 
   @Test
   public void testGetString() {
@@ -98,7 +136,7 @@ public class StoredResourceBundleTest {
     StoredResourceBundle parent = new StoredResourceBundle(
             createBundle("DemoBundle", null, "greeting", "hello", "farewell", "bye"));
     StoredResourceBundle child = new StoredResourceBundle(createBundle("DemoBundle", "de", "greeting", "hallo"));
-    child.setParent(parent);
+    child.setParentBundle(parent);
     assertEquals(child.getString("greeting"), "hallo");    // overridden by the child
     assertEquals(child.getString("farewell"), "bye");      // inherited from the parent
   }
@@ -108,7 +146,7 @@ public class StoredResourceBundleTest {
     StoredResourceBundle parent = new StoredResourceBundle(
             createBundle("DemoBundle", null, "greeting", "hello", "farewell", "bye"));
     StoredResourceBundle child = new StoredResourceBundle(createBundle("DemoBundle", "de", "greeting", "hallo"));
-    child.setParent(parent);
+    child.setParentBundle(parent);
     assertEquals(Collections.list(child.getKeys()).size(), 2);
     assertEquals(new HashSet<>(Collections.list(child.getKeys())), Set.of("greeting", "farewell"));
   }
@@ -117,7 +155,7 @@ public class StoredResourceBundleTest {
   public void testUnknownKeyWithParent() {
     StoredResourceBundle parent = new StoredResourceBundle(createBundle("DemoBundle", null, "greeting", "hello"));
     StoredResourceBundle child = new StoredResourceBundle(createBundle("DemoBundle", "de", "greeting", "hallo"));
-    child.setParent(parent);
+    child.setParentBundle(parent);
     expectThrows(MissingResourceException.class, () -> child.getString("nosuchkey"));
   }
 

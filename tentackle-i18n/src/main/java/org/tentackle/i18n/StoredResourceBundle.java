@@ -20,10 +20,12 @@ package org.tentackle.i18n;
 
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.i18n.pdo.StoredBundleKey;
+import org.tentackle.log.Logger;
 
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.ResourceBundle;
 
 /**
@@ -33,7 +35,9 @@ import java.util.ResourceBundle;
  */
 public class StoredResourceBundle extends ResourceBundle {
 
-  private final Properties props;
+  private static final Logger LOGGER = Logger.get(StoredResourceBundle.class);
+
+  private final Map<String, String> translations;   // immutable: read concurrently, never modified
   private final String name;
 
   /**
@@ -42,31 +46,61 @@ public class StoredResourceBundle extends ResourceBundle {
    * @param bundle the stored bundle
    */
   public StoredResourceBundle(StoredBundle bundle) {
-    props = new Properties();
     name = bundle.toString();
+    Map<String, String> map = new HashMap<>();
     for (StoredBundleKey bundleKey : bundle.getKeys()) {
-      props.setProperty(bundleKey.getKey(), bundleKey.getValue());
+      String key = bundleKey.getKey();
+      String value = bundleKey.getValue();
+      if (key != null && value != null) {
+        map.put(key, value);
+      }
+      else {
+        // both are @NotNull in the model, so the row must have reached the database without validation.
+        // Skip it: a single bad row must not take down all texts of this bundle.
+        LOGGER.warning("stored bundle {0} contains an entry without {1} -> translation ignored",
+                       name, key == null ? "a key" : "a value");
+      }
     }
+    translations = Map.copyOf(map);
   }
 
   /**
-   * Sets the parent stored bundle.
+   * Sets the parent bundle.
+   * <p>
+   * Cannot be named {@code setParent}: {@link ResourceBundle#setParent(ResourceBundle)} is protected,
+   * and an override may not reduce its visibility.
    *
-   * @param parent the parent bundle
+   * @param parent the parent bundle, a stored bundle of the next locale or the property-file fallback
    */
-  void setParent(StoredResourceBundle parent) {
+  protected void setParentBundle(ResourceBundle parent) {
     super.setParent(parent);
+  }
+
+  /**
+   * Gets the last stored bundle in the chain of parents.
+   * <p>
+   * That is the bundle of the least specific locale, i.e. the one a fallback to the property files
+   * has to be appended to.
+   *
+   * @return the last stored bundle, this if it has no stored parent
+   */
+  protected StoredResourceBundle getLastStoredParent() {
+    StoredResourceBundle last = this;
+    while (last.parent instanceof StoredResourceBundle storedParent) {
+      last = storedParent;
+    }
+    return last;
   }
 
   @Override
   protected Object handleGetObject(String key) {
-    return props.get(Objects.requireNonNull(key, "key"));
+    return translations.get(Objects.requireNonNull(key, "key"));
   }
 
   @Override
   public Enumeration<String> getKeys() {
     ResourceBundle p = this.parent;
-    return new BundleEnumeration(props.stringPropertyNames(), p != null ? p.getKeys() : null);
+    return new BundleEnumeration(translations.keySet(), p != null ? p.getKeys() : null);
   }
 
   @Override

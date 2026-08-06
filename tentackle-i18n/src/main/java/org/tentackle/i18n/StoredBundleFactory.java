@@ -28,6 +28,7 @@ import org.tentackle.session.Session;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -42,9 +43,10 @@ public class StoredBundleFactory extends DefaultBundleFactory {
   private static final Logger LOGGER = Logger.get(StoredBundleFactory.class);
 
   /**
-   * Controls whether loading bundles from the backend is enabled at all.
+   * Controls whether loading bundles from the backend is enabled at all.<br>
+   * Volatile: switched at runtime from arbitrary threads.
    */
-  private static boolean enabled = true;
+  private static volatile boolean enabled = true;
 
   /**
    * Returns whether loading bundles from the backend is enabled at all.
@@ -105,11 +107,68 @@ public class StoredBundleFactory extends DefaultBundleFactory {
     }
 
     StoredBundle.StoredBundleUDK topKey = control.createUDK(support.getBundleName(), locale);
-    return bundleMap.computeIfAbsent(topKey, storedBundleUDK -> {
-      StoredResourceBundle bundle = loadStoredBundleChain(storedBundleUDK, control::loadStoredBundle);
-      // fallback to standard ResourceBundle if nothing stored at all
-      return bundle == null ? super.getBundle(support, locale) : bundle;
-    });
+    ResourceBundle bundle = bundleMap.get(topKey);
+    if (bundle == null) {
+      // Load outside the map, never from within computeIfAbsent: loading walks the whole parent chain,
+      // and each step hits the database or even a remote server. A ConcurrentHashMap holds the bin lock
+      // while the mapping function runs, which would block unrelated lookups mapped to the same bin for
+      // the duration of the query. Worse, anything reached from the load may look up a bundle itself,
+      // for example, for a validation or error message, and re-entering the map from within its own
+      // mapping function is answered with an IllegalStateException ("Recursive update").
+      StoredResourceBundle storedBundle;
+      try {
+        storedBundle = loadStoredBundleChain(topKey, control::loadStoredBundle);
+      }
+      catch (RuntimeException rx) {
+        // The backend is unreachable or the query failed. Texts must keep working nevertheless, all the
+        // more since the message of the very exception being reported is itself looked up in a bundle.
+        // The fallback is deliberately not cached: it must not outlive the failure.
+        LOGGER.warning("loading stored bundle " + topKey.name() + " failed -> falling back to properties", rx);
+        return super.getBundle(support, locale);
+      }
+      if (storedBundle == null) {
+        // nothing stored at all
+        if (!StoredBundleControl.isFallbackToProperties()) {
+          throw new MissingResourceException("no stored bundle for " + topKey.name() +
+                                             ", locale " + locale, topKey.name(), "");
+        }
+        bundle = super.getBundle(support, locale);
+      }
+      else {
+        // Let keys that none of the stored bundles defines fall through to the property files, the same
+        // way the standard ResourceBundle machinery does for the non-modular path. Without it, a key
+        // added to a property file but not yet pushed to the database would be unresolvable.
+        if (StoredBundleControl.isFallbackToProperties()) {
+          appendPropertiesFallback(storedBundle, support, locale);
+        }
+        bundle = storedBundle;
+      }
+      ResourceBundle cachedBundle = bundleMap.putIfAbsent(topKey, bundle);
+      if (cachedBundle != null) {
+        // another thread was faster: use its bundle and drop ours.
+        // Loading is idempotent, so both are equivalent and all callers end up with the same instance.
+        bundle = cachedBundle;
+      }
+    }
+    return bundle;
+  }
+
+  /**
+   * Appends the bundle loaded from the property files to the end of a chain of stored bundles.
+   * <p>
+   * Does nothing if there is no property file at all: a bundle may well live only in the database.
+   *
+   * @param storedBundle the head of the chain of stored bundles
+   * @param support the bundle support
+   * @param locale the locale
+   */
+  private void appendPropertiesFallback(StoredResourceBundle storedBundle, BundleSupport support, Locale locale) {
+    try {
+      storedBundle.getLastStoredParent().setParentBundle(super.getBundle(support, locale));
+    }
+    catch (MissingResourceException mrx) {
+      LOGGER.fine("no properties for {0} -> stored bundles only", support.getBundleName());
+    }
   }
 
   /**
@@ -138,7 +197,7 @@ public class StoredBundleFactory extends DefaultBundleFactory {
       while ((key = createParentKey(key)) != null) {
         StoredResourceBundle parentBundle = loader.apply(key);
         if (parentBundle != null) {
-          currentBundle.setParent(parentBundle);
+          currentBundle.setParentBundle(parentBundle);
           currentBundle = parentBundle;
         }
         // else: nothing stored for that locale -> skip the level and link the next bundle found
@@ -156,8 +215,8 @@ public class StoredBundleFactory extends DefaultBundleFactory {
    * would never be picked up for bundles already looked up during application startup,
    * for example, by the login dialog.
    * <p>
-   * Must not be invoked while a bundle is being computed in {@link #bundleMap}, since clearing a
-   * {@link ConcurrentHashMap} from within one of its own mapping functions is not allowed.
+   * Clears the caches only once, on the first lookup that sees a session. Two threads racing here
+   * would simply clear twice, which is harmless.
    */
   private void discardBundlesCachedWithoutSession() {
     if (enabled && !sessionSeen && Session.getCurrentSession() != null) {

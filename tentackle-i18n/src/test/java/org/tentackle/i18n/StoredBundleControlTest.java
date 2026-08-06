@@ -29,6 +29,7 @@ import java.util.ResourceBundle;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
@@ -81,6 +82,24 @@ public class StoredBundleControlTest {
     assertEquals(control.getFormats(BUNDLE), ResourceBundle.Control.FORMAT_DEFAULT);
   }
 
+  /**
+   * Bundles must stay cached by {@link ResourceBundle} as long as loading them did not fail.
+   * <p>
+   * Only a failed backend load switches to {@link ResourceBundle.Control#TTL_DONT_CACHE}, so that the
+   * properties fallback does not outlive the failure. Returning that unconditionally would re-read every
+   * bundle on every single lookup.
+   */
+  @Test
+  public void testTimeToLiveIsTheStandardOneWithoutAFailedLoad() {
+    assertEquals(control.getTimeToLive(BUNDLE, Locale.ROOT), ResourceBundle.Control.TTL_NO_EXPIRATION_CONTROL);
+  }
+
+  @Test
+  public void testTimeToLiveIsTheStandardOneAfterASuccessfulLoad() throws Exception {
+    control.newBundle(BUNDLE, Locale.ROOT, "java.properties", getClass().getClassLoader(), false);
+    assertEquals(control.getTimeToLive(BUNDLE, Locale.ROOT), ResourceBundle.Control.TTL_NO_EXPIRATION_CONTROL);
+  }
+
   @Test
   public void testCreateUdkForTheDefaultLocale() {
     assertEquals(control.createUDK(BUNDLE, Locale.ROOT), new StoredBundleUDK(BUNDLE, null));
@@ -94,6 +113,34 @@ public class StoredBundleControlTest {
   @Test
   public void testCreateUdkForALanguageAndCountry() {
     assertEquals(control.createUDK(BUNDLE, Locale.GERMANY), new StoredBundleUDK(BUNDLE, "de_DE"));
+  }
+
+  @Test
+  public void testCreateUdkNormalizesASlashedBasename() {
+    assertEquals(control.createUDK("org/tentackle/i18n/ControlBundle", Locale.GERMAN),
+                 new StoredBundleUDK(BUNDLE, "de"));
+  }
+
+  /**
+   * A base name may contain underscores itself, so the locale must be taken from the locale,
+   * not from the first underscore found in the name.
+   */
+  @Test
+  public void testCreateUdkForABasenameContainingAnUnderscore() {
+    assertEquals(control.createUDK("org.tentackle.i18n.Control_Bundle", Locale.ROOT),
+                 new StoredBundleUDK("org.tentackle.i18n.Control_Bundle", null));
+    assertEquals(control.createUDK("org.tentackle.i18n.Control_Bundle", Locale.GERMANY),
+                 new StoredBundleUDK("org.tentackle.i18n.Control_Bundle", "de_DE"));
+  }
+
+  /**
+   * {@code Texts_de} for the default locale and {@code Texts} for German are different bundles
+   * and must not collapse onto the same key.
+   */
+  @Test
+  public void testCreateUdkDoesNotConfuseABasenameSuffixWithALocale() {
+    assertNotEquals(control.createUDK(BUNDLE + "_de", Locale.ROOT),
+                    control.createUDK(BUNDLE, Locale.GERMAN));
   }
 
   @Test

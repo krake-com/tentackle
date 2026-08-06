@@ -26,10 +26,13 @@ import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.Pdo;
 
 import java.util.HashMap;
+import java.util.ListResourceBundle;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.expectThrows;
 
 /**
@@ -138,6 +141,67 @@ public class StoredBundleChainTest {
     store(null, "greeting", "hello");
     store("de_DE", "greeting", "gruezi");
     expectThrows(java.util.MissingResourceException.class, () -> load("de_DE").getString("nosuchkey"));
+  }
+
+  /**
+   * The last stored bundle of the chain is where the property-file fallback gets appended.
+   */
+  @Test
+  public void testLastStoredParentOfAChain() {
+    store(null, "greeting", "hello");
+    store("de", "greeting", "hallo");
+    store("de_DE", "greeting", "gruezi");
+    StoredResourceBundle bundle = load("de_DE");
+    assertEquals(bundle.toString(), NAME + "_de_DE");
+    assertEquals(bundle.getLastStoredParent().toString(), NAME);
+  }
+
+  @Test
+  public void testLastStoredParentOfASingleBundleIsItself() {
+    store("de_DE", "greeting", "gruezi");
+    StoredResourceBundle bundle = load("de_DE");
+    assertSame(bundle.getLastStoredParent(), bundle);
+  }
+
+  /**
+   * Keys that none of the stored bundles defines must fall through to the property files, the way
+   * {@link StoredBundleFactory} appends them to the end of the chain. Otherwise a key added to a
+   * property file but not yet pushed to the database would be unresolvable.
+   */
+  @Test
+  public void testKeysMissingFromTheStoredChainFallThroughToTheProperties() {
+    store(null, "greeting", "hello");
+    store("de_DE", "greeting", "gruezi");
+    StoredResourceBundle bundle = load("de_DE");
+    bundle.getLastStoredParent().setParentBundle(propertiesBundle());
+    assertEquals(bundle.getString("greeting"), "gruezi");             // stored wins over properties
+    assertEquals(bundle.getString("onlyInProperties"), "from file");  // not stored anywhere
+  }
+
+  @Test
+  public void testStoredBundlesTakePrecedenceOverThePropertiesAtEveryLevel() {
+    store(null, "greeting", "hello");
+    StoredResourceBundle bundle = load(null);
+    bundle.getLastStoredParent().setParentBundle(propertiesBundle());
+    // the properties define "greeting" too, but the stored default bundle wins
+    assertEquals(bundle.getString("greeting"), "hello");
+  }
+
+  /**
+   * A stand-in for the bundle loaded from the property files.
+   *
+   * @return the bundle
+   */
+  private static ResourceBundle propertiesBundle() {
+    return new ListResourceBundle() {
+      @Override
+      protected Object[][] getContents() {
+        return new Object[][] {
+          {"greeting", "from file too"},
+          {"onlyInProperties", "from file"}
+        };
+      }
+    };
   }
 
   @Test
