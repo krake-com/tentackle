@@ -419,7 +419,11 @@ public class DefaultLockManager implements LockManager {
         // Some severe internal error occurred: reload the maps as soon as there are no more transactions in flight.
         // This will keep the server running in a reasonable way, but must be fixed a.s.a.p. in the application's code.
         // See also the note regarding tainted locks in reloadLocks() below.
-        rebuild = true;
+        // The monitor was released along with the try-block above, so re-acquire it: rebuild is read
+        // by rebuildIfFailed() under the monitor and would otherwise be missed by the committing thread.
+        synchronized (lockMap) {
+          rebuild = true;
+        }
         throw rx;   // triggers a rollback, hopefully...
       }
     }
