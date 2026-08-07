@@ -287,8 +287,11 @@ public class Document {
       }
 
       // parsing error.
-      throw new ModelException("cannot determine line type @ " +
-                               getSourceInfo().add(getLineNumber(offset) - 1, 0) +
+      // notice that there is no source info if the model source does not start with ORIGIN_INFO_LEAD,
+      // which is the case for model sources loaded from a jar or the classpath
+      SourceInfo lineInfo = getSourceInfo() == null ? null : getSourceInfo().add(getLineNumber(offset) - 1, 0);
+      throw new ModelException("cannot determine line type" +
+                               (lineInfo == null ? "" : ModelException.AT_ELEMENT + lineInfo) +
                                ": '" + lineText + "'");
     }
 

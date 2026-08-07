@@ -26,6 +26,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
@@ -279,5 +282,120 @@ public class DocumentTest {
       fail(me.toString());
     }
 
+  }
+
+
+  /**
+   * An unparsable line must be reported as a {@link ModelException}, even if the model source
+   * provides no source info, which is the case for model sources loaded from a jar or the classpath.
+   */
+  @Test
+  public void unparsableLineWithoutSourceInfo() {
+
+    String modelText = "name := Invoice\n@Foo: bar\n";
+
+    try {
+      new Document(modelText).getLines();
+      fail("unparsable line not detected");
+    }
+    catch (ModelException me) {
+      assertTrue(me.getMessage().contains("cannot determine line type"), me.getMessage());
+      assertFalse(me.getMessage().contains("null"), "no source info must not show up as 'null': " + me.getMessage());
+    }
+
+    // with source info the location is part of the message
+    try {
+      new Document("#@Invoice.java:0\n" + modelText).getLines();
+      fail("unparsable line not detected");
+    }
+    catch (ModelException me) {
+      // the model block starts at java source line 1, the offending line is the next one
+      assertTrue(me.getMessage().contains("Invoice.java[2]"), me.getMessage());
+    }
+  }
+
+
+  /**
+   * The size and/or scale may be separated from the java type by whitespaces,
+   * and may contain whitespaces itself.
+   */
+  @Test
+  public void parseSizeAndScaleWithBlanks() throws ModelException {
+
+    String[] types = { "Double(10,2)", "Double (10,2)", "Double (10,2 )", "Double ( 10,2 )",
+                       "Double (10, 2)", "Double ( 10 , 2 )" };
+
+    for (String type : types) {
+      AttributeLine line = attributeLine(type + "  someDouble  some_double  digits with scale");
+      assertEquals(line.getJavaType(), "Double", type);
+      assertEquals(line.getSize(), Integer.valueOf(10), type);
+      assertEquals(line.getScale(), Integer.valueOf(2), type);
+      assertEquals(line.getJavaName(), "someDouble", type);
+      assertEquals(line.getColumnName(), "some_double", type);
+      assertEquals(line.getComment(), "digits with scale", type);
+    }
+
+    // size only, with and without a blank
+    for (String type : new String[] { "String(20)", "String (20)", "String ( 20 )" }) {
+      AttributeLine line = attributeLine(type + "  name  name  the name");
+      assertEquals(line.getJavaType(), "String", type);
+      assertEquals(line.getSize(), Integer.valueOf(20), type);
+      assertNull(line.getScale(), type);
+      assertEquals(line.getJavaName(), "name", type);
+      assertEquals(line.getColumnName(), "name", type);
+    }
+
+    // an unterminated size group is a syntax error
+    try {
+      attributeLine("Double (10,2  someDouble  some_double");
+      fail("unterminated size group not detected");
+    }
+    catch (ModelException me) {
+      assertTrue(me.getMessage().contains("syntax error"), me.getMessage());
+    }
+  }
+
+
+  /**
+   * Parses a single attribute line.
+   *
+   * @param text the attribute line
+   * @return the parsed line
+   * @throws ModelException if parsing failed
+   */
+  private AttributeLine attributeLine(String text) throws ModelException {
+    Document document = new Document("#@Invoice.java:0\nname := Invoice\n" + text + "\n");
+    List<Line> lines = document.getLines();
+    Line line = lines.get(lines.size() - 1);
+    assertEquals(line.getLineType(), LineType.ATTRIBUTE, text);
+    return (AttributeLine) line;
+  }
+
+
+  /**
+   * Errors reported for a single line must not show a missing source info as 'null' either.
+   */
+  @Test
+  public void lineErrorWithoutSourceInfo() {
+
+    // an attribute line lacking the column name
+    String modelText = "name := Invoice\nlong subsidiaryId\n";
+
+    try {
+      new Document(modelText).getLines();
+      fail("mangled attribute line not detected");
+    }
+    catch (ModelException me) {
+      assertTrue(me.getMessage().contains("syntax error"), me.getMessage());
+      assertFalse(me.getMessage().contains("null"), "no source info must not show up as 'null': " + me.getMessage());
+    }
+
+    try {
+      new Document("#@Invoice.java:0\n" + modelText).getLines();
+      fail("mangled attribute line not detected");
+    }
+    catch (ModelException me) {
+      assertTrue(me.getMessage().contains("Invoice.java[2]"), me.getMessage());
+    }
   }
 }
