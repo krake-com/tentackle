@@ -24,6 +24,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Relation;
+import org.tentackle.model.SourceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,12 +85,14 @@ public class EntityPrinter {
         buf.append(" * @> ").append(entity.getTableName()).append(".map\n");
       }
     }
-    else {
-      // if used as model input: set the complete source info as if from a wurbelizer here-doc
-      buf.append("#@").append(entity.getSourceInfo().getFileName());
-      if (entity.getSourceInfo().getLineNumber() > 0) {
+    else if (entity.getSourceInfo() != null) {
+      // if used as model input: set the complete source info as if from a wurbelizer here-doc.
+      // there is no such info if the model source was loaded from a jar or the classpath -> omit the line
+      SourceInfo sourceInfo = entity.getSourceInfo();
+      buf.append("#@").append(sourceInfo.getFileName());
+      if (sourceInfo.getLineNumber() > 0) {
         // wurbelizer source element offsets start at 0
-        buf.append(':').append(entity.getSourceInfo().getLineNumber() - 1);
+        buf.append(':').append(sourceInfo.getLineNumber() - 1);
       }
       buf.append('\n');
     }
