@@ -61,6 +61,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -429,8 +430,9 @@ public class ModelImpl implements Model {
   public synchronized Collection<Entity> getAllEntities() throws ModelException {
     List<Entity> list = new ArrayList<>();
 
-    boolean refreshed = false;
+    boolean refreshed;
     do {
+      refreshed = false;    // must be cleared for each attempt, else the loop would never terminate
       for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
         if (entityInfo.hasChanged()) {
           refreshModel();
@@ -689,7 +691,9 @@ public class ModelImpl implements Model {
     // set inheritance entities links
 
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      entityInfo.getEntity().getSubEntities().clear();
+      EntityImpl entity = (EntityImpl) entityInfo.getEntity();
+      entity.getSubEntities().clear();
+      entity.setSuperEntity(null);   // links are rebuilt below, don't keep stale ones
     }
 
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
@@ -709,6 +713,12 @@ public class ModelImpl implements Model {
                     "no such super entity '" + entity.getSuperEntityName() +
                     "' to be extended by '" + entity + "'"));
           }
+        }
+        else if (createsInheritanceCycle(entity, superEntity)) {
+          // never link a cycle: walking up the hierarchy would not terminate
+          errors.add(new ModelError(entity,
+                  "cyclic inheritance: '" + entity + "' extends '" + superEntity +
+                  "', which already extends '" + entity + "'"));
         }
         else  {
           ((EntityImpl) entity).setSuperEntity(superEntity);
@@ -1320,6 +1330,26 @@ public class ModelImpl implements Model {
   }
 
   /**
+   * Checks whether extending the given super entity would create a cycle in the inheritance hierarchy.<br>
+   * Walking up such a hierarchy would never terminate, so the link must not be established at all.
+   *
+   * @param entity the entity to extend the super entity
+   * @param superEntity the super entity to be extended
+   * @return true if the link would create a cycle
+   */
+  protected boolean createsInheritanceCycle(Entity entity, Entity superEntity) {
+    Set<Entity> visited = new HashSet<>();
+    Entity current = superEntity;
+    while (current != null && visited.add(current)) {   // visited also guards against pre-existing cycles
+      if (current.equals(entity)) {
+        return true;
+      }
+      current = current.getSuperEntity();
+    }
+    return false;
+  }
+
+  /**
    * Applies the table alias if unique and valid.
    *
    * @param aliasMap the map holding the aliases mapped to entities
@@ -1375,7 +1405,8 @@ public class ModelImpl implements Model {
     for (Relation relation: entity.getAllRelations()) {
       if (relation.isComposite()) {
         Entity foreignEntity = relation.getForeignEntity();
-        if (foreignEntity != null && !foreignEntity.equals(entity)) {
+        if (foreignEntity != null && !foreignEntity.equals(entity) && !compositePath.contains(relation)) {
+          // a relation already within the path would mean a cyclic composition -> stop, else endless recursion
           List<Relation> newPath = new ArrayList<>(compositePath);
           newPath.add(relation);
           updateCompositePath(newPath, foreignEntity);
@@ -1497,6 +1528,23 @@ public class ModelImpl implements Model {
    * @param errors the collected model errors
    */
   protected void validateComponents(Entity entity, Integrity integrity, Set<ModelError> errors) {
+    validateComponents(entity, integrity, errors, new HashSet<>());
+  }
+
+  /**
+   * Verifies that the integrity is the same within a given composite hierarchy.
+   *
+   * @param entity the entity to check
+   * @param integrity the integrity type
+   * @param errors the collected model errors
+   * @param processedEntities the already processed entities (to avoid endless recursion on cyclic compositions)
+   */
+  private void validateComponents(Entity entity, Integrity integrity, Set<ModelError> errors,
+                                  Set<Entity> processedEntities) {
+
+    if (!processedEntities.add(entity)) {
+      return;   // already checked, may be a cyclic composition
+    }
 
     if (entity.getIntegrity() != integrity) {
       errors.add(new ModelError(entity,
@@ -1508,7 +1556,7 @@ public class ModelImpl implements Model {
       if (relation.isComposite()) {
         Entity foreignEntity = relation.getForeignEntity();
         if (foreignEntity != null && !foreignEntity.equals(entity)) {
-          validateComponents(foreignEntity, integrity, errors);
+          validateComponents(foreignEntity, integrity, errors, processedEntities);
         }
       }
     }
