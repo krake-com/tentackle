@@ -144,14 +144,15 @@ public class EntityFactoryImpl implements EntityFactory {
     EntityImpl entity = createEntity(document.getSourceInfo());
 
     if (modelDefaults != null) {
+      // pass the default's value, not just "on": the defaults may turn an option off as well (e.g. "!bind")
       if (modelDefaults.getBind() != null) {
-        entity.getOptions().applyOption(CommonOptionsImpl.OPTION_BIND, true);
+        entity.getOptions().applyOption(CommonOptionsImpl.OPTION_BIND, modelDefaults.getBind());
       }
       if (modelDefaults.getSize() != null) {
-        entity.getOptions().applyOption(CommonOptionsImpl.BIND_SIZE, true);
+        entity.getOptions().applyOption(CommonOptionsImpl.BIND_SIZE, modelDefaults.getSize());
       }
       if (modelDefaults.getAutoSelect()!= null) {
-        entity.getOptions().applyOption(Constants.BIND_AUTOSELECT, true);
+        entity.getOptions().applyOption(Constants.BIND_AUTOSELECT, modelDefaults.getAutoSelect());
       }
     }
 
@@ -221,8 +222,8 @@ public class EntityFactoryImpl implements EntityFactory {
           processRelationOption(entity, (OptionLine) line);
           break;
 
-        default: throw new ModelException("unknown line type " + line.getLineType() + ModelException.AT_ELEMENT +
-                                          document.getSourceInfo().add(line.getLineNumber() - 1, 0));
+        // the line itself knows its source location, and that there may be none at all
+        default: throw line.createModelException("unknown line type " + line.getLineType());
       }
     }
 
