@@ -33,9 +33,8 @@ import org.tentackle.session.SessionPool;
  * {@code register() - initialize() - login() - configure() - finishStartup()}. Everything but the
  * registration talks to a backend, reads preferences and starts the modification tracker, none of
  * which says anything about the web bridge. The steps are therefore overridden away, while
- * {@code startup()}, {@code finishStartup()} and {@code cleanup()} - the three methods
- * {@code WebApplication} actually contributes - run for real, so the key cache is created, started
- * and terminated by production code.
+ * {@code startup()}, {@code finishStartup()} and {@code cleanup()} run for real, so the key cache's
+ * eviction thread is started and terminated by production code.
  * <p>
  * The session and the two pools are injected instead of being built by a login, which is what
  * lets a single test switch between the two deployment shapes: DB-connected (a {@link SessionPool})
@@ -63,6 +62,17 @@ public class TestWebApplication extends WebApplication<String> {
     properties = new EncryptedProperties();
     // the modification tracker is a JVM-wide singleton with a polling thread - keep it out of the tests
     properties.setProperty(DISABLE_MODIFICATION_TRACKER, "");
+  }
+
+  /**
+   * Runs the startup sequence.
+   * <p>
+   * Widened to public: {@code startup()} is declared protected in {@code AbstractServerApplication},
+   * in another package, so the tests cannot drive it through a {@code WebApplication} reference.
+   */
+  @Override
+  public void startup() {
+    super.startup();
   }
 
   @Override

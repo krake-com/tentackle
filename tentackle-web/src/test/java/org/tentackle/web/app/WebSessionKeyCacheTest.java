@@ -25,6 +25,7 @@ import org.testng.annotations.Test;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.session.SessionInfo;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -121,6 +122,56 @@ public class WebSessionKeyCacheTest {
     internalMap(cache).put("JSESSIONID-1", collectedReference());
     assertNull(cache.getSessionInfo("JSESSIONID-1"));
     assertTrue(internalMap(cache).isEmpty(), "the dead entry must be dropped on lookup");
+  }
+
+
+  /**
+   * Evicting a collected entry must not throw away a login that happened in the meantime.<br>
+   * The window is between reading the reference and removing it: a request that finds the entry
+   * dead is exactly the request that makes the caller re-authenticate and re-register the key, so
+   * a blind {@code remove(key)} would delete the fresh mapping it just triggered.
+   */
+  @Test
+  public void keepsAReplacedEntryWhenEvictingOnLookup() {
+    SessionInfo relogin = sessionInfo("alice");
+    internalMap(cache).put("JSESSIONID-1", reappearingReference("JSESSIONID-1", relogin));
+
+    assertNull(cache.getSessionInfo("JSESSIONID-1"), "the dead reference must report a miss");
+    assertSame(cache.getSessionInfo("JSESSIONID-1"), relogin, "the re-login must have survived");
+  }
+
+  /**
+   * The reverse scan sweeps dead entries too, and must lose the same race.
+   */
+  @Test
+  public void keepsAReplacedEntryWhenEvictingWhileScanning() {
+    SessionInfo relogin = sessionInfo("alice");
+    internalMap(cache).put("browser-1", reappearingReference("browser-1", relogin));
+
+    cache.getSessionKeys(relogin);
+
+    assertSame(cache.getSessionInfo("browser-1"), relogin, "the re-login must have survived");
+  }
+
+  /**
+   * A soft reference that appears collected, but re-registers its key the moment it is read.<br>
+   * This is the deterministic stand-in for a concurrent login slipping in between the read and the
+   * eviction - the very window the conditional removal has to protect.
+   *
+   * @param sessionKey the key to re-register
+   * @param relogin the session info of the re-login
+   * @return the reference
+   */
+  private SoftReference<SessionInfo> reappearingReference(String sessionKey, SessionInfo relogin) {
+    SoftReference<SessionInfo> reference = new SoftReference<>(sessionInfo("collected")) {
+      @Override
+      public SessionInfo get() {
+        cache.addSessionInfo(sessionKey, relogin);    // the concurrent login wins the race ...
+        return null;                                  // ... but this reader still sees a dead entry
+      }
+    };
+    reference.clear();
+    return reference;
   }
 
 
@@ -232,6 +283,19 @@ public class WebSessionKeyCacheTest {
   @Test
   public void refusesToTerminateACacheThatWasNeverStarted() {
     expectThrows(TentackleRuntimeException.class, cache::terminate);
+  }
+
+  /**
+   * Since terminating an unstarted cache is an error, callers whose startup may have been cut
+   * short - such as {@link WebApplication#cleanup()} - need to be able to ask first.
+   */
+  @Test
+  public void reportsWhetherItIsRunning() {
+    assertFalse(cache.isRunning(), "a cache that was never started is not running");
+    cache.startup(50);
+    assertTrue(cache.isRunning());
+    cache.terminate();
+    assertFalse(cache.isRunning(), "a terminated cache is not running anymore");
   }
 
   @Test

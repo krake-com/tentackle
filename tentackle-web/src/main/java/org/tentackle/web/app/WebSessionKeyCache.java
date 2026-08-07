@@ -25,7 +25,6 @@ import org.tentackle.session.SessionInfo;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -110,6 +109,17 @@ public class WebSessionKeyCache<T> {
 
 
   /**
+   * Returns whether the session key cache has been started.<br>
+   * Only a started cache can be {@link #terminate}d.
+   *
+   * @return true if {@link #startup} has been invoked and {@link #terminate} not yet
+   */
+  public boolean isRunning() {
+    return cleanupThread != null;
+  }
+
+
+  /**
    * Terminates the session cache.
    * <p>
    * Throws TentackleRuntimeException if the cleanup thread is not running at all.
@@ -177,7 +187,8 @@ public class WebSessionKeyCache<T> {
         // not cleared so far: we can use it
         return sessionInfo;
       }
-      removeSessionInfo(sessionKey);
+      // drop the dead entry, but only if a concurrent login didn't replace it meanwhile
+      sessionInfoMap.remove(sessionKey, sessionInfoRef);
     }
     return null;
   }
@@ -191,11 +202,11 @@ public class WebSessionKeyCache<T> {
    */
   public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
     Collection<T> sessionKeys = new ArrayList<>();
-    for (Iterator<Map.Entry<T, SoftReference<SessionInfo>>> iter = sessionInfoMap.entrySet().iterator(); iter.hasNext();) {
-      Map.Entry<T,SoftReference<SessionInfo>> entry = iter.next();
+    for (Map.Entry<T, SoftReference<SessionInfo>> entry: sessionInfoMap.entrySet()) {
       SessionInfo info = entry.getValue().get();
       if (info == null) {
-        iter.remove();
+        // drop the dead entry, but only if a concurrent login didn't replace it meanwhile
+        sessionInfoMap.remove(entry.getKey(), entry.getValue());
       }
       else if (info.equals(sessionInfo)) {
         sessionKeys.add(entry.getKey());

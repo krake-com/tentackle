@@ -23,6 +23,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.app.Application;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.dbms.Db;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
@@ -33,10 +34,12 @@ import java.util.List;
 import java.util.Set;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 import static org.tentackle.web.app.WebTestSupport.sessionInfo;
 
 /**
@@ -101,8 +104,8 @@ public class WebApplicationTest {
 
 
   /**
-   * {@code startup()} creates the key cache before anything else, so the web layer can register
-   * sessions as soon as the node is up.
+   * The key cache exists from the very beginning, so the web layer can register sessions as soon
+   * as the node is up.
    */
   @Test
   public void createsTheKeyCacheOnStartup() {
@@ -110,6 +113,33 @@ public class WebApplicationTest {
     SessionInfo alice = sessionInfo("alice");
     application.addWebSession(WEB_KEY, alice);
     assertEquals(application.getSessionKeys(alice), List.of(WEB_KEY));
+  }
+
+  /**
+   * A web container drains in-flight requests concurrently with the application's lifecycle, so
+   * the bridge must answer - with the documented "no such session" - rather than blow up when a
+   * request arrives before the node is up or after it has been cleaned up.
+   */
+  @Test
+  public void answersRequestsOutsideTheApplicationLifecycle() {
+    application = new TestWebApplication(session, null, null);   // no pool: nothing to hand out
+    SessionInfo alice = sessionInfo("alice");
+
+    // before startup
+    application.addWebSession(WEB_KEY, alice);
+    assertEquals(application.getSessionKeys(alice), List.of(WEB_KEY));
+    assertNull(application.getSession(WEB_KEY));
+
+    application.startup();
+    application.cleanup();
+
+    // after cleanup
+    assertNull(application.getSession(WEB_KEY));
+    application.removeWebSession(WEB_KEY);
+    assertTrue(application.getSessionKeys(alice).isEmpty());
+
+    application.unregister();
+    application = null;   // already cleaned up
   }
 
   @Test
@@ -257,13 +287,47 @@ public class WebApplicationTest {
    */
   @Test
   public void startsAndStopsTheKeyCacheWithTheApplication() {
-    startDbConnectedNode();
+    RecordingSessionPool pool = startDbConnectedNode();
 
     WebSessionKeyCache<?> cache = keyCache(application);
     assertNotNull(WebTestSupport.cleanupThread(cache), "finishStartup must have started the eviction thread");
 
     application.cleanup();
     assertNull(WebTestSupport.cleanupThread(cache), "cleanup must have terminated the eviction thread");
+    assertTrue(pool.isShutdown(), "cleanup must have released the session pool");
+    assertFalse(session.isOpen(), "cleanup must have closed the backend session");
+
+    application.unregister();
+    application = null;   // already cleaned up
+  }
+
+  /**
+   * A node that never came up - an unreachable database, a wrong backend password - still has to
+   * release everything it did acquire.
+   * <p>
+   * {@code startup()} is what creates the key cache, but its eviction thread is only started at
+   * the very end, in {@code finishStartup()}. A failing login therefore leaves an unstarted cache
+   * behind, and terminating one of those is an error. The cleanup must not trip over that: it is
+   * invoked from {@code stop()}, which swallows what it throws, so an exception here would
+   * silently skip closing the session, shutting down the pools and deregistering the JDBC drivers
+   * - and inside a container there is no {@code System.exit()} to clean up after it.
+   */
+  @Test
+  public void cleansUpAfterAFailedStartup() {
+    application = new TestWebApplication(session, new RecordingSessionPool(session), null) {
+      @Override
+      protected void login() {
+        throw new TentackleRuntimeException("backend unreachable");
+      }
+    };
+
+    TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class, application::startup);
+    assertEquals(ex.getMessage(), "backend unreachable", "the real cause must not be masked");
+    assertNull(WebTestSupport.cleanupThread(keyCache(application)), "the eviction thread never started");
+
+    application.cleanup();    // must not throw
+
+    assertFalse(session.isOpen(), "cleanup must have closed the backend session");
 
     application.unregister();
     application = null;   // already cleaned up
