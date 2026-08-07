@@ -151,18 +151,19 @@ public class DefaultScriptRunner implements ScriptRunner {
     int offset = 0;
     List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
 
-    boolean oldReadOnly = false;
-    boolean oldTransactional = false;
+    boolean readOnlySet = false;          // true if the connection was switched to read-only by this runner
+    boolean transactionStarted = false;   // true if the transaction started by this runner
+    boolean commit = false;               // true if the transaction started by this runner must be committed
 
     try (Statement statement = createStatement(connection)) {
 
-      oldReadOnly = connection.isReadOnly();
-      if (!oldReadOnly && readOnly) {
+      if (readOnly && !connection.isReadOnly()) {
         connection.setReadOnly(true);
+        readOnlySet = true;
       }
-      oldTransactional = !connection.getAutoCommit();
-      if (!oldTransactional && transactional) {
+      if (transactional && connection.getAutoCommit()) {
         connection.setAutoCommit(false);
+        transactionStarted = true;
       }
 
       statement.setEscapeProcessing(escapeProcessing);
@@ -225,6 +226,8 @@ public class DefaultScriptRunner implements ScriptRunner {
         scriptRunnerResults.add(result);
         fireResultListeners(result);
       }
+      // a canceled script is rolled back as well: transactional means all or nothing
+      commit = !canceled.get();
       return scriptRunnerResults;
     }
     catch (SQLException ex) {
@@ -239,12 +242,19 @@ public class DefaultScriptRunner implements ScriptRunner {
     }
     finally {
       try {
-        if (connection.getAutoCommit() == oldTransactional) {
-          // commit the transaction if it was started by this script runner
+        if (transactionStarted) {
+          // Terminate the transaction explicitly. A failed statement does not roll back the
+          // transaction on all backends, and setAutoCommit(true) would silently commit
+          // whatever the script managed to execute before the error.
+          if (commit) {
+            connection.commit();
+          }
+          else {
+            connection.rollback();
+          }
           connection.setAutoCommit(true);
-          // if there was an SQLException during script execution, the transaction is already rolled back
         }
-        if (connection.isReadOnly() != oldReadOnly) {
+        if (readOnlySet) {
           // switch back to read-write if read-only was set by this script runner
           connection.setReadOnly(false);
         }
