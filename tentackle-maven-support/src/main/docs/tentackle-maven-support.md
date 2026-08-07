@@ -179,6 +179,9 @@ inspect classes from the project being built. It exposes `addURL` publicly.
 package scan: the package name, the owning Maven project, and the directory path. `isContainingFiles()` underpins
 split-package detection, and `getEmptyDuplicates()`/`setEmptyDuplicates(...)` track empty package directories that
 occur in several modules (which cannot be used in profiles, since the generator could not decide which to pick).
+Hidden files are ignored by both the scan and `isContainingFiles()`, so a leftover directory holding nothing but
+a `.gitignore` stays an empty package. `PackageInfo.isHidden(File)` decides this, treating a leading dot as hidden
+on all platforms, since Windows only knows the DOS hidden attribute.
 
 ---
 
