@@ -182,6 +182,30 @@ public class ForeignKeyMetaData {
 
 
   /**
+   * Extracts the foreign key name from a row of the database metadata result.<br>
+   * The name is converted to lowercase, and the optional schema prefix is cut off.
+   * <p>
+   * Since a foreign key spans one row per column, this is the value all rows
+   * belonging to the same foreign key have in common.
+   *
+   * @param resultSet the foreign key column result set
+   * @return the foreign key name, null if the backend does not provide one
+   * @throws SQLException the processing the result set failed
+   */
+  public static String extractForeignKeyName(ResultSet resultSet) throws SQLException {
+    String foreignKeyName = StringHelper.toLower(resultSet.getString("FK_NAME"));
+    if (foreignKeyName != null) {
+      // cut off schema name, if any
+      int dotNdx = foreignKeyName.indexOf('.');
+      if (dotNdx >= 0) {
+        foreignKeyName = foreignKeyName.substring(dotNdx + 1);
+      }
+    }
+    return foreignKeyName;
+  }
+
+
+  /**
    * Sets up the foreign key from the database metadata result.
    *
    * @param resultSet the foreign key column result set
@@ -190,12 +214,7 @@ public class ForeignKeyMetaData {
   public void setupForeignKeyFromMetaData(ResultSet resultSet) throws SQLException {
     foreignKeySchema = StringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
     foreignKeyTable = StringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
-    foreignKeyName = StringHelper.toLower(resultSet.getString("FK_NAME"));
-    // cut off schema name, if any
-    int dotNdx = foreignKeyName.indexOf('.');
-    if (dotNdx >= 0) {
-      foreignKeyName = foreignKeyName.substring(dotNdx + 1);
-    }
+    foreignKeyName = extractForeignKeyName(resultSet);
     primaryKeySchema = StringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
     primaryKeyTable = StringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
     updateRule = ForeignKeyAction.createFromAction(resultSet.getShort("UPDATE_RULE"));
