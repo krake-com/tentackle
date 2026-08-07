@@ -77,11 +77,19 @@ public class PackageInfo {
   /**
    * Determines whether this package contains any files.<br>
    * The method is used to detect split packages which are forbidden in JPMS.
+   * <p>
+   * Only the files directly within the package directory count, and hidden files are ignored,
+   * just as when the package was collected (a directory holding nothing but a {@code .gitignore}
+   * is an empty package).
    *
    * @return true if not empty, false if no files found
    */
   public boolean isContainingFiles() {
-    String[] files = path.list((dir, nam) -> dir.isFile());
+    // notice: the first argument of a FilenameFilter is the directory, not the file!
+    String[] files = path.list((dir, nam) -> {
+      File file = new File(dir, nam);
+      return file.isFile() && !file.isHidden();
+    });
     return files != null && files.length > 0;
   }
 
