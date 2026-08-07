@@ -28,10 +28,12 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -202,6 +204,60 @@ public class ClientUpdateUtilitiesTest {
     assertTrue(ex.getMessage().contains(wrongChecksum));
   }
 
+  /**
+   * The hash is hex, so its case carries no information: {@code sha256sum} writes it lowercase,
+   * while {@code certutil -hashfile} on Windows writes it uppercase. Rejecting the update because
+   * of the case would look exactly like a tampered download to the user.
+   */
+  @Test
+  public void acceptsAnUppercaseChecksum() throws Exception {
+    File updateDir = tempDir.resolve("update").toFile();
+    File zipFile = utilities.downloadZip(updateInfo(checksum.toUpperCase(Locale.ROOT)), updateDir, null);
+    assertEquals(Files.readAllBytes(zipFile.toPath()), zipContent);
+  }
+
+  /**
+   * The checksum is a token of a text file, so it may well carry trailing whitespace.
+   */
+  @Test
+  public void acceptsAChecksumWithSurroundingWhitespace() throws Exception {
+    File updateDir = tempDir.resolve("update").toFile();
+    File zipFile = utilities.downloadZip(updateInfo("  " + checksum + "\n"), updateDir, null);
+    assertEquals(Files.readAllBytes(zipFile.toPath()), zipContent);
+  }
+
+  /**
+   * A digest with a leading zero byte is one hex character short and must be padded to the
+   * digest's own length - not to the length of whatever the server happened to send.
+   */
+  @Test
+  public void verifiesAChecksumWithALeadingZero() throws Exception {
+    byte[] content = contentHashingToALeadingZero();
+    server.serve(ZIP_PATH, content);
+    String expectedChecksum = UpdateTestSupport.sha256(content);
+    assertTrue(expectedChecksum.startsWith("0"), expectedChecksum);
+    assertEquals(expectedChecksum.length(), UpdateTestSupport.SHA256_HEX_LENGTH);
+
+    File updateDir = tempDir.resolve("update").toFile();
+    UpdateInfo info = new UpdateInfo("2.1.0", server.getBaseUrl() + ZIP_PATH, expectedChecksum,
+                                     content.length, "update.sh");
+    assertEquals(Files.readAllBytes(utilities.downloadZip(info, updateDir, null).toPath()), content);
+  }
+
+  /**
+   * Without a checksum there is nothing to verify, so the download must be refused
+   * rather than accepted unverified.
+   */
+  @Test
+  public void refusesADownloadWithoutAChecksum() {
+    File updateDir = tempDir.resolve("update").toFile();
+    for (String noChecksum : new String[] { null, "", "   " }) {
+      TentackleRuntimeException ex = expectThrows(
+        TentackleRuntimeException.class, () -> utilities.downloadZip(updateInfo(noChecksum), updateDir, null));
+      assertTrue(ex.getMessage().startsWith("no checksum provided"), ex.getMessage());
+    }
+  }
+
   @Test
   public void reportsAnUnreachableDownload() throws Exception {
     File updateDir = tempDir.resolve("update").toFile();
@@ -245,6 +301,22 @@ public class ClientUpdateUtilitiesTest {
     assertEquals(updateDir.list().length, 1);
   }
 
+
+  /**
+   * Searches content whose SHA-256 starts with a zero byte.<br>
+   * One in 256 candidates qualifies, so this returns almost immediately.
+   *
+   * @return the content
+   */
+  private byte[] contentHashingToALeadingZero() {
+    for (int candidate = 0; candidate < 100_000; candidate++) {
+      byte[] content = ("update-" + candidate).getBytes(StandardCharsets.UTF_8);
+      if (UpdateTestSupport.sha256(content).startsWith("0")) {
+        return content;
+      }
+    }
+    throw new AssertionError("no content with a leading zero in its hash found");
+  }
 
   /**
    * Creates a complete, writable jlink image layout.

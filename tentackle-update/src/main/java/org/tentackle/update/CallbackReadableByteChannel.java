@@ -20,6 +20,7 @@ package org.tentackle.update;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -31,7 +32,8 @@ public class CallbackReadableByteChannel implements ReadableByteChannel {
   private final Consumer<Double> progressConsumer;
   private final long expectedSize;
 
-  private int size;   // size read so far
+  // Size read so far. A long because the images may well exceed 2GB.
+  private final AtomicLong size = new AtomicLong();
 
   /**
    * Creates a callback read channel.
@@ -50,9 +52,9 @@ public class CallbackReadableByteChannel implements ReadableByteChannel {
   public int read(ByteBuffer dst) throws IOException {
     int n;
     if ((n = channel.read(dst)) > 0) {
-      size += n;
+      long sz = size.addAndGet(n);
       if (progressConsumer != null) {
-        double progress = size > 0 ? (double) size / (double) expectedSize : 0.0;
+        double progress = sz > 0 ? (double) sz / (double) expectedSize : 0.0;
         progressConsumer.accept(progress);
       }
     }
@@ -74,8 +76,8 @@ public class CallbackReadableByteChannel implements ReadableByteChannel {
    *
    * @return the size
    */
-  public int getSize() {
-    return size;
+  public long getSize() {
+    return size.get();
   }
 
 }

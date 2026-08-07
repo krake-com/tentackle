@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.IOException;
 import java.net.URL;
 
 import static org.testng.Assert.assertEquals;
@@ -196,6 +197,51 @@ public class AbstractUpdateServiceImplTest {
     server.withoutContentLength(ZIP_PATH);
     AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
     assertEquals(service.determineDownloadSize(server.url(ZIP_PATH)), -1L);
+  }
+
+  /**
+   * An unknown size must not be cached: the metadata cache is never invalidated, so the artifact
+   * would be answered with an indeterminate size until the server is restarted.
+   */
+  @Test
+  public void doesNotCacheAnUnknownDownloadSize() throws Exception {
+    server.withoutContentLength(ZIP_PATH);
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    URL zipURL = server.url(ZIP_PATH);
+    assertEquals(service.determineDownloadSize(zipURL), -1L);
+
+    server.serve(ZIP_PATH, zipContent);   // now with a content-length again
+    assertEquals(service.determineDownloadSize(zipURL), zipContent.length);
+  }
+
+  /**
+   * The response of a missing artifact carries a content-length as well - of the error page.
+   * Caching that as the size of the ZIP would misreport it forever, even after publishing.
+   */
+  @Test
+  public void doesNotCacheTheSizeOfAnUnpublishedArtifact() throws Exception {
+    server.serveError(ZIP_PATH, "404 Not Found", "<html>not found</html>");
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    URL zipURL = server.url(ZIP_PATH);
+
+    IOException ex = expectThrows(IOException.class, () -> service.determineDownloadSize(zipURL));
+    assertTrue(ex.getMessage().contains("404"), ex.getMessage());
+
+    server.serve(ZIP_PATH, zipContent);   // published now
+    assertEquals(service.determineDownloadSize(zipURL), zipContent.length);
+  }
+
+  /**
+   * The ZIP is served by a CDN, so a 5xx of the edge must not end up as the download size either.
+   */
+  @Test
+  public void rejectsAServerErrorAsTheDownloadSize() throws Exception {
+    server.serveError(ZIP_PATH, "503 Service Unavailable", "<html>try again later</html>");
+    AbstractUpdateServiceImpl service = new TestUpdateServiceImpl(server.getBaseUrl() + BASE_PATH);
+    URL zipURL = server.url(ZIP_PATH);
+
+    IOException ex = expectThrows(IOException.class, () -> service.determineDownloadSize(zipURL));
+    assertTrue(ex.getMessage().contains("503"), ex.getMessage());
   }
 
 

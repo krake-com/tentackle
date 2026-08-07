@@ -61,6 +61,33 @@ public class CallbackReadableByteChannelTest {
   }
 
   /**
+   * jlink images are hundreds of megabytes and may well grow past 2GB, so the counter must not
+   * be an int: it would wrap into the negative and the progress bar would drop back to zero
+   * for the rest of the download.
+   */
+  @Test
+  public void countsBeyondTwoGigabytes() throws Exception {
+    long total = 3L * 1024 * 1024 * 1024;   // 3GB
+    List<Double> progress = new ArrayList<>();
+    try (CallbackReadableByteChannel channel = new CallbackReadableByteChannel(
+             new EndlessChannel(total), total, progress::add)) {
+
+      ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
+      while (channel.read(buffer) > 0) {
+        buffer.clear();
+      }
+
+      assertEquals(channel.getSize(), total);
+      assertEquals(progress.getLast().doubleValue(), 1.0);
+      double previous = 0.0;
+      for (double value : progress) {
+        assertTrue(value > previous && value <= 1.0, "progress went backwards to " + value);
+        previous = value;
+      }
+    }
+  }
+
+  /**
    * The consumer is optional - the download itself must work without a progress bar.
    */
   @Test
@@ -119,6 +146,41 @@ public class CallbackReadableByteChannelTest {
       content[i] = (byte) i;
     }
     return content;
+  }
+
+
+  /**
+   * A channel delivering the given number of bytes without ever materializing them.<br>
+   * The buffer is only advanced, which keeps a multi-gigabyte test cheap.
+   */
+  private static class EndlessChannel implements ReadableByteChannel {
+
+    private long remaining;
+
+    EndlessChannel(long total) {
+      remaining = total;
+    }
+
+    @Override
+    public int read(ByteBuffer dst) {
+      if (remaining <= 0) {
+        return -1;
+      }
+      int count = (int) Math.min(dst.remaining(), remaining);
+      dst.position(dst.position() + count);
+      remaining -= count;
+      return count;
+    }
+
+    @Override
+    public boolean isOpen() {
+      return true;
+    }
+
+    @Override
+    public void close() {
+      // nothing to close
+    }
   }
 
 

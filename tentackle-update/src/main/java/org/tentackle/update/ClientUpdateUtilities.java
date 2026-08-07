@@ -246,6 +246,12 @@ public class ClientUpdateUtilities {
       }
 
       // check the hash
+      String expectedChecksum = updateInfo.checksum();
+      if (expectedChecksum == null || expectedChecksum.isBlank()) {
+        throw new TentackleRuntimeException("no checksum provided to verify the download of " + updateInfo.urlStr());
+      }
+      expectedChecksum = expectedChecksum.trim();
+
       byte[] buffer = new byte[8192];
       int count;
       MessageDigest digest = getMessageDigest();
@@ -254,9 +260,11 @@ public class ClientUpdateUtilities {
           digest.update(buffer, 0, count);
         }
       }
-      String expectedChecksum = updateInfo.checksum();
-      String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedChecksum.length(), '0');
-      if (!foundChecksum.equals(expectedChecksum)) {
+      // pad to the digest's own hex length, not to the length of whatever the server sent
+      byte[] digestBytes = digest.digest();
+      String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digestBytes).toString(16), digestBytes.length * 2, '0');
+      // the hash is hex, so the case carries no information: sha256sum writes it lowercase, certutil uppercase
+      if (!foundChecksum.equalsIgnoreCase(expectedChecksum)) {
         throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);
       }
 

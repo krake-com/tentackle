@@ -55,6 +55,9 @@ public final class TestHttpServer implements AutoCloseable {
   /** Paths served without a content-length header. */
   private final Map<String, Boolean> withoutContentLength = new ConcurrentHashMap<>();
 
+  /** Paths answered with an error status instead of 200. */
+  private final Map<String, String> errorStatus = new ConcurrentHashMap<>();
+
   /**
    * Creates and starts a server bound to an ephemeral port on the loopback interface.
    *
@@ -74,6 +77,8 @@ public final class TestHttpServer implements AutoCloseable {
    */
   public TestHttpServer serve(String path, byte[] content) {
     resources.put(path, content);
+    errorStatus.remove(path);       // a previously failing path is published now
+    withoutContentLength.remove(path);
     return this;
   }
 
@@ -98,6 +103,22 @@ public final class TestHttpServer implements AutoCloseable {
    */
   public TestHttpServer withoutContentLength(String path) {
     withoutContentLength.put(path, Boolean.TRUE);
+    return this;
+  }
+
+  /**
+   * Answers the given path with an error status and a body.<br>
+   * This is what a CDN or a reverse proxy looks like when the artifact is not published (yet):
+   * the response carries a perfectly valid {@code content-length} - of the error page.
+   *
+   * @param path the absolute request path
+   * @param status the status line, e.g. {@code "404 Not Found"}
+   * @param body the error page
+   * @return this server
+   */
+  public TestHttpServer serveError(String path, String status, String body) {
+    resources.put(path, body.getBytes(StandardCharsets.UTF_8));
+    errorStatus.put(path, status);
     return this;
   }
 
@@ -190,7 +211,8 @@ public final class TestHttpServer implements AutoCloseable {
         writeHeader(out, "404 Not Found", 0, false);
       }
       else {
-        writeHeader(out, "200 OK", content.length, withoutContentLength.containsKey(path));
+        String status = errorStatus.get(path);
+        writeHeader(out, status == null ? "200 OK" : status, content.length, withoutContentLength.containsKey(path));
         if (!"HEAD".equals(method)) {
           out.write(content);
         }
