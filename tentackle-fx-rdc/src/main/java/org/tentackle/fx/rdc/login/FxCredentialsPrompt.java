@@ -23,6 +23,7 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.session.auth.CredentialsPrompt;
@@ -106,6 +107,12 @@ public class FxCredentialsPrompt implements CredentialsPrompt {
 
   @Override
   public char[] promptSecret(String label) {
+    if (Platform.isFxApplicationThread()) {
+      // We would post the dialog to the FX thread and then block that very thread waiting for it:
+      // the dialog would never be shown and the application would hang forever.
+      // Fail loudly instead, as FxUtilities.runAndWait does.
+      throw new RdcRuntimeException("calling thread is the FX application thread");
+    }
     // we are on a background thread: let the FX thread do the dialog and wait for the answer
     CompletableFuture<char[]> answer = new CompletableFuture<>();
     Platform.runLater(() -> {

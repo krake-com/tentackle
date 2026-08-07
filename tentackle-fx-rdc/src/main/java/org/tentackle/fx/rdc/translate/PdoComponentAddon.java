@@ -155,7 +155,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
           }
         }
       }
-      if (!dropped) {
+      if (dropped) {
+        // consume only what we handled (as in the DRAG_OVER handler above):
+        // a drop we did not accept must go on bubbling to a parent that may handle it
         e.consume();
       }
     });

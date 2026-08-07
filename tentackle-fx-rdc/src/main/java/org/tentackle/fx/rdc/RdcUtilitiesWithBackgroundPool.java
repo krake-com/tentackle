@@ -31,7 +31,9 @@ import javafx.application.Platform;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -155,18 +157,17 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
                     finishedUI,
                     failedMap -> {
 
-      StringBuilder buf = new StringBuilder();
+      // we are already within the FX event queue here (see the method above), so the dialog
+      // must not be posted again: that would show it _after_ finishedUI, which is documented
+      // to run last.
+      Set<String> messages = new LinkedHashSet<>();
       for (RuntimeException rx : failedMap.values()) {
         String msg = rx.getLocalizedMessage();
-        if (msg != null && !buf.toString().contains(msg)) {
-          if (!buf.isEmpty()) {
-            buf.append('\n');
-          }
-          buf.append(rx.getLocalizedMessage());
+        if (msg != null) {
+          messages.add(msg);
         }
       }
-      String msg = buf.toString();
-      Platform.runLater(() -> Fx.warning(node, msg));
+      Fx.warning(node, String.join("\n", messages));
     });
   }
 
@@ -206,14 +207,15 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Restores the cursor to the default.
+   * Restores the cursor the node had before the wait cursor was set.
    *
    * @param node the node, null if none
-   * @param oldCursor the old cursor of the node (null, if it was the default cursor)
+   * @param oldCursor the old cursor of the node (null, if the node had no cursor of its own)
    */
   protected void restoreDefaultCursor(Node node, Cursor oldCursor) {
     if (node != null) {
-      node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
+      // restore what the node had before, which may be null, i.e. inherited from its parent
+      node.setCursor(oldCursor);
     }
   }
 

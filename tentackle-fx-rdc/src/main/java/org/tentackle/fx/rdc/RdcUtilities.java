@@ -560,7 +560,8 @@ public class RdcUtilities {
 
         private void restoreCursor() {
           if (node != null) {
-            node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
+            // restore what the node had before, which may be null, i.e. inherited from its parent
+            node.setCursor(oldCursor);
           }
         }
       };
@@ -697,7 +698,14 @@ public class RdcUtilities {
 
     FileChooser fc = new FileChooser();
     if (lastName != null) {
-      fc.setInitialFileName(lastName);
+      // the preference holds an absolute path: the chooser wants the directory and the
+      // plain filename separately, else the whole path ends up in the filename field
+      File lastFile = new File(lastName);
+      fc.setInitialFileName(lastFile.getName());
+      File lastDirectory = lastFile.getParentFile();
+      if (lastDirectory != null && lastDirectory.isDirectory()) {
+        fc.setInitialDirectory(lastDirectory);
+      }
     }
     fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(fileType, fileExtension));
     File selectedFile = fc.showSaveDialog(owner);

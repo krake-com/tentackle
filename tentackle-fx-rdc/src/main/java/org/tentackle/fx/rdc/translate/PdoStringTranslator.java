@@ -282,21 +282,23 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   /**
    * Gets the {@link Bindable} annotation of the unique domain key.
    * <p>
-   * If the UDK consists of more than one member, the first Bindable annotation is returned.
+   * If the UDK consists of more than one member, the annotation of the member whose getter
+   * comes first alphabetically is returned. {@link Class#getMethods()} delivers the methods
+   * in no particular order, so picking whatever comes first would apply different options
+   * from one JVM to the next.
    *
    * @param proxy the PDO class to inspect
    * @return the annotation, null if not annotated with Bindable
    */
   protected Bindable getBindableAnnotation(T proxy) {
+    Method firstMethod = null;
     for (Method method: proxy.getEffectiveClass().getMethods()) {
-      if (method.isAnnotationPresent(DomainKey.class)) {
-        Bindable bindable = method.getAnnotation(Bindable.class);
-        if (bindable != null) {
-          return bindable;
-        }
+      if (method.isAnnotationPresent(DomainKey.class) && method.isAnnotationPresent(Bindable.class) &&
+          (firstMethod == null || method.getName().compareTo(firstMethod.getName()) < 0)) {
+        firstMethod = method;
       }
     }
-    return null;
+    return firstMethod == null ? null : firstMethod.getAnnotation(Bindable.class);
   }
 
 }

@@ -514,12 +514,18 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Saves the current PDO.
+   * Saves the current PDO.<br>
+   * The PDO is <em>not</em> saved if the form is invalid, if a PDO with the same unique domain key
+   * already exists, or if another user modified it meanwhile. The user is informed in all those
+   * cases and the editor keeps the pending changes, which is why callers that go on to discard
+   * the editor's contents must check the result.
+   *
+   * @return true if the PDO has been saved, false if it has not
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public void save() {
+  public boolean save() {
     try {
-      getPdo().getSession().transaction(() -> {   // validate and save within transaction!
+      return Boolean.TRUE.equals(getPdo().getSession().transaction(() -> {   // validate and save within transaction!
         if (getEditor().validateForm()) {
           T dup = getPdo().isUniqueDomainKeyProvided() ? getPdo().findDuplicate() : null;
           if (dup != null) {
@@ -545,10 +551,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
               getEditor().requestInitialFocus();
             }
             eventProxy.fireEvent(new PdoEvent(pdo, getView(), pdo.getSerial() == 1 ? PdoEvent.CREATE : PdoEvent.UPDATE));
+            return Boolean.TRUE;
           }
         }
-        return null;
-      });
+        return Boolean.FALSE;    // invalid form or duplicate: the user was told and stays in the editor
+      }));
     }
     catch (ValidationFailedException ex) {
       showValidationResults(ex);
@@ -562,6 +569,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         setPdo(pdo);
       }
     }
+    return false;
   }
 
   /**
@@ -625,8 +633,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       if (getContainer().isViewModified()) {
         Rdc.showSaveDiscardCancelDialog(getView(), answer -> {
           if (Boolean.TRUE.equals(answer)) {    // save
-            save();   // this also removes the token lock
-            released.accept(Boolean.TRUE);
+            // release only if the PDO really has been saved (this also removes the token lock).
+            // If it has not, the user has been informed why and the pending changes must survive,
+            // so the caller must not go on to close the window or replace the PDO.
+            released.accept(save());
           }
           else if (Boolean.FALSE.equals(answer)) {    // discard changes
             if (!oldPdo.isNew() && oldPdo.isTokenLockableByMe()) {
