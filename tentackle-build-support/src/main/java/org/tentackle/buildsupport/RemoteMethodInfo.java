@@ -52,9 +52,10 @@ import java.util.regex.Pattern;
 public class RemoteMethodInfo {
 
   /**
-   * File-format version
+   * File-format version.<br>
+   * 2.1 escapes the whitespace within type strings, see {@link AnnotationProcessingHelper#escapeToken(String)}.
    */
-  public static final String INFO_FILE_VERSION = "2.0";
+  public static final String INFO_FILE_VERSION = "2.1";
 
   /**
    * all remote method info files end with .remote
@@ -134,12 +135,12 @@ public class RemoteMethodInfo {
               info.setClassName(stok.nextToken());
             }
             else if (type.equals("superclass")) {
-              info.setSuperClassName(stok.nextToken());
+              info.setSuperClassName(AnnotationProcessingHelper.unescapeToken(stok.nextToken()));
             }
             else if (type.equals("returns")) {
-              info.setReturnType(stok.nextToken());
+              info.setReturnType(AnnotationProcessingHelper.unescapeToken(stok.nextToken()));
               String gType = stok.nextToken();
-              info.setGenericReturnType(gType.equals(".") ? "" : gType);
+              info.setGenericReturnType(gType.equals(".") ? "" : AnnotationProcessingHelper.unescapeToken(gType));
               info.setReturningDbObject(Boolean.parseBoolean(stok.nextToken()));
               info.setReturningDbObjectCollection(Boolean.parseBoolean(stok.nextToken()));
               info.setReturningPdo(Boolean.parseBoolean(stok.nextToken()));
@@ -638,10 +639,11 @@ public class RemoteMethodInfo {
       writer.println(TYPE_METHOD + ": " + methodName);
       writer.println(TYPE_CLASS + ": " + className);
       if (superClassName != null) {
-        writer.println("superclass: " + superClassName);
+        writer.println("superclass: " + AnnotationProcessingHelper.escapeToken(superClassName));
       }
-      writer.println("returns: " + returnType + " " +
-                     (genericReturnType == null || genericReturnType.isEmpty() ? "." : genericReturnType) +
+      writer.println("returns: " + AnnotationProcessingHelper.escapeToken(returnType) + " " +
+                     (genericReturnType == null || genericReturnType.isEmpty() ?
+                      "." : AnnotationProcessingHelper.escapeToken(genericReturnType)) +
                      " " + returningDbObject +
                      " " + returningDbObjectCollection +
                      " " + returningPdo +

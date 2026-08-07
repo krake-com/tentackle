@@ -140,9 +140,15 @@ small record into an info file that a wurblet deserializes in a later build step
   [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
   for how the wurblet consumes it.
 
-Each info type defines its own `INFO_FILE_VERSION`, writes itself through a, and reads itself back
+Each info type defines its own `INFO_FILE_VERSION`, writes itself through a `PrintWriter` and reads itself back
 from a `LineNumberReader`, so the write side (this module, during analyze) and the read side (the wurblets) agree
 on a stable on-disk format.
+
+The format is line- and whitespace-separated, but type strings are not whitespace-free — javac renders a wildcard
+bound as `? extends Foo` and a type annotation as `@Bar Foo`. Types are therefore escaped on the way out and
+unescaped on the way in (`AnnotationProcessingHelper.escapeToken()`: whitespace becomes `\s`, a backslash `\\`).
+Since a java type never contains a backslash, unescaping is a no-op for info files written before the escaping was
+introduced, and a stale `target/analyze` from an older build still reads correctly.
 
 ---
 

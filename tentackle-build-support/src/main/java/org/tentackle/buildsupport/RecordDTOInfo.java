@@ -39,9 +39,10 @@ import java.util.StringTokenizer;
 public class RecordDTOInfo {
 
   /**
-   * File-format version
+   * File-format version.<br>
+   * 1.1 escapes the whitespace within type strings, see {@link AnnotationProcessingHelper#escapeToken(String)}.
    */
-  public static final String INFO_FILE_VERSION = "1.0";
+  public static final String INFO_FILE_VERSION = "1.1";
 
   /**
    * Name of all record DTO info files.

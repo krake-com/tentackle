@@ -74,7 +74,7 @@ public class RemoteMethodInfoParameter {
   public RemoteMethodInfoParameter(RemoteMethodInfo info, StringTokenizer stok) {
     this.info = info;
     name = stok.nextToken();
-    type = stok.nextToken();
+    type = AnnotationProcessingHelper.unescapeToken(stok.nextToken());
     instanceOfSession = Boolean.parseBoolean(stok.nextToken());
     instanceOfContext = Boolean.parseBoolean(stok.nextToken());
     instanceOfDbObject = Boolean.parseBoolean(stok.nextToken());
@@ -182,7 +182,7 @@ public class RemoteMethodInfoParameter {
     StringBuilder buf = new StringBuilder();
     buf.append(name);
     buf.append(' ');
-    buf.append(type);
+    buf.append(AnnotationProcessingHelper.escapeToken(type));
     buf.append(' ');
     buf.append(instanceOfSession);
     buf.append(' ');

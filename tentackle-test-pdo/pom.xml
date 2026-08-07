@@ -84,6 +84,14 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!-- for AnalyzeClassNamesTest: build-support cannot depend on the modules
+           its ClassNames.properties refers to, so the check has to live here -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-build-support</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 

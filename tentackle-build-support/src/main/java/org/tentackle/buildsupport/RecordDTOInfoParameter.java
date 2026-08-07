@@ -52,7 +52,7 @@ public class RecordDTOInfoParameter {
    */
   public RecordDTOInfoParameter(RecordDTOInfo info, StringTokenizer stok) {
     this.info = info;
-    type = stok.nextToken();
+    type = AnnotationProcessingHelper.unescapeToken(stok.nextToken());
     name = stok.nextToken();
   }
 
@@ -87,7 +87,8 @@ public class RecordDTOInfoParameter {
    * @param writer the writer bound to the infofile
    */
   public void write(PrintWriter writer) {
-    writer.print(this);
+    // the type must be escaped: the info file is whitespace-separated, types are not whitespace-free
+    writer.print(AnnotationProcessingHelper.escapeToken(type) + " " + name);
   }
 
   @Override
