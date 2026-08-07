@@ -67,7 +67,7 @@ public class OptionParser {
     StringBuilder option = new StringBuilder();
     while (pos < max) {
       char c = text.charAt(pos++);
-      if (c == '\\' && pos < max - 1) {
+      if (c == '\\' && pos < max) {    // pos already points to the escaped character
         // escape if next char is not []()
         c = text.charAt(pos++);
         if (optionLevel > 0) {

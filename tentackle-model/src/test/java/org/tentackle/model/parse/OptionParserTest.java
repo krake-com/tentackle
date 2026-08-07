@@ -57,4 +57,26 @@ public class OptionParserTest {
     assertEquals(comment.toString(),"blah ...[] and some other stuff");
   }
 
+  /**
+   * An escape sequence at the very end of the text must be honored as well.
+   */
+  @Test
+  public void parseEscapeAtEndOfText() {
+
+    // the escaped comma does not separate the options (and keeps its backslash, as it is no bracket)
+    OptionParser parser = new OptionParser("x\\,", null);
+    assertEquals(parser.nextOption(), "x\\,");
+    assertNull(parser.nextOption());
+
+    // the escaped bracket does not close the option (and loses its backslash)
+    parser = new OptionParser("abc\\]", null);
+    assertEquals(parser.nextOption(), "abc]");
+    assertNull(parser.nextOption());
+
+    // a trailing lone backslash is no escape at all
+    parser = new OptionParser("abc\\", null);
+    assertEquals(parser.nextOption(), "abc\\");
+    assertNull(parser.nextOption());
+  }
+
 }
