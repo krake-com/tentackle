@@ -21,6 +21,13 @@ package org.tentackle.fx.rdc.poi;
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.BMoney;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -52,6 +59,13 @@ public class SpreadsheetRow {
   private BMoney tax;         // scale 0: needs its own cell style
   private Date date;
   private Calendar calendar;
+  private LocalDate localDate;
+  private LocalDateTime localDateTime;
+  private LocalTime localTime;
+  private Instant instant;
+  private OffsetDateTime offsetDateTime;
+  private OffsetTime offsetTime;
+  private ZonedDateTime zonedDateTime;
   private Status status;
 
   /**
@@ -230,6 +244,139 @@ public class SpreadsheetRow {
    */
   public void setCalendar(Calendar calendar) {
     this.calendar = calendar;
+  }
+
+  /**
+   * Gets the local date.
+   *
+   * @return the local date
+   */
+  @Bindable
+  public LocalDate getLocalDate() {
+    return localDate;
+  }
+
+  /**
+   * Sets the local date.
+   *
+   * @param localDate the local date
+   */
+  public void setLocalDate(LocalDate localDate) {
+    this.localDate = localDate;
+  }
+
+  /**
+   * Gets the local date and time.
+   *
+   * @return the local date and time
+   */
+  @Bindable
+  public LocalDateTime getLocalDateTime() {
+    return localDateTime;
+  }
+
+  /**
+   * Sets the local date and time.
+   *
+   * @param localDateTime the local date and time
+   */
+  public void setLocalDateTime(LocalDateTime localDateTime) {
+    this.localDateTime = localDateTime;
+  }
+
+  /**
+   * Gets the local time.
+   *
+   * @return the local time
+   */
+  @Bindable
+  public LocalTime getLocalTime() {
+    return localTime;
+  }
+
+  /**
+   * Sets the local time.
+   *
+   * @param localTime the local time
+   */
+  public void setLocalTime(LocalTime localTime) {
+    this.localTime = localTime;
+  }
+
+  /**
+   * Gets the instant.
+   *
+   * @return the instant
+   */
+  @Bindable
+  public Instant getInstant() {
+    return instant;
+  }
+
+  /**
+   * Sets the instant.
+   *
+   * @param instant the instant
+   */
+  public void setInstant(Instant instant) {
+    this.instant = instant;
+  }
+
+  /**
+   * Gets the offset date and time.
+   *
+   * @return the offset date and time
+   */
+  @Bindable
+  public OffsetDateTime getOffsetDateTime() {
+    return offsetDateTime;
+  }
+
+  /**
+   * Sets the offset date and time.
+   *
+   * @param offsetDateTime the offset date and time
+   */
+  public void setOffsetDateTime(OffsetDateTime offsetDateTime) {
+    this.offsetDateTime = offsetDateTime;
+  }
+
+  /**
+   * Gets the offset time.
+   *
+   * @return the offset time
+   */
+  @Bindable
+  public OffsetTime getOffsetTime() {
+    return offsetTime;
+  }
+
+  /**
+   * Sets the offset time.
+   *
+   * @param offsetTime the offset time
+   */
+  public void setOffsetTime(OffsetTime offsetTime) {
+    this.offsetTime = offsetTime;
+  }
+
+  /**
+   * Gets the zoned date and time.
+   *
+   * @return the zoned date and time
+   */
+  @Bindable
+  public ZonedDateTime getZonedDateTime() {
+    return zonedDateTime;
+  }
+
+  /**
+   * Sets the zoned date and time.
+   *
+   * @param zonedDateTime the zoned date and time
+   */
+  public void setZonedDateTime(ZonedDateTime zonedDateTime) {
+    this.zonedDateTime = zonedDateTime;
   }
 
   /**

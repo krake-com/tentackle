@@ -222,14 +222,18 @@ public class TableUtilities {
       List<String> rowValues = new ArrayList<>();
       for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
         if (isColumnVisible(tc)) {
+          String text = "";
           FxTableBinding<S, ?> binding = tc.getBinding();
           if (binding != null) {
             binding.setBoundRootObject(item);
             Object value = binding.getModelValue();
             if (value != null) {
-              rowValues.add(getText(tc, value));
+              text = getText(tc, value);
             }
           }
+          // one value per visible column, even if empty: leaving it out would move
+          // all following values of this row under the wrong column header
+          rowValues.add(text);
         }
       }
       values.add(rowValues);

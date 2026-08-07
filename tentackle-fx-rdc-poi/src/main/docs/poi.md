@@ -47,16 +47,31 @@ Only two methods are overridden:
 
 The exporter walks each visible column's binding and maps the model value to a typed cell:
 
-| Model value            | Cell rendering                                                        |
-|------------------------|-----------------------------------------------------------------------|
-| `Boolean`              | boolean cell                                                          |
-| `BMoney`               | numeric cell with a `#,##0[.0…]` format matching the money scale       |
-| any other `Number`     | numeric cell                                                          |
-| `Date` / `Calendar`    | date cell with the built-in `m/d/yy` format                           |
-| anything else (`!= null`) | rich-text string from `toString()`                                 |
+| Model value                                        | Cell rendering                                                        |
+|----------------------------------------------------|-----------------------------------------------------------------------|
+| `Boolean`                                          | boolean cell                                                          |
+| `BMoney`                                           | numeric cell with a `#,##0[.0…]` format matching the money scale       |
+| any other `Number`                                 | numeric cell                                                          |
+| `Date` / `Calendar` / `LocalDate`                  | date cell with the built-in `m/d/yy` format                           |
+| `LocalDateTime`                                    | date cell with the built-in `m/d/yy h:mm` format                      |
+| `OffsetDateTime` / `ZonedDateTime`                 | as `LocalDateTime`: a spreadsheet has no notion of a time zone         |
+| `Instant`                                          | as `LocalDateTime`, resolved in the JVM's default zone                 |
+| `LocalTime` / `OffsetTime`                         | numeric cell holding the fraction of a day, format `h:mm:ss`           |
+| anything else (`!= null`)                          | rich-text string from `toString()`                                    |
 
 Column headers are written as a bold, italic, centered first row. Number formats are cached and
 reused per scale, so a large export does not create one cell style per row.
+
+Note that a spreadsheet time has no sub-second precision, and that the value of an enum is written
+as its `toString()` rather than the localized text the table shows.
+
+## Sheet limits
+
+The `.xls` (BIFF8) format holds at most **65,536 rows** (the header included) and **256 columns**.
+`toSpreadsheet(...)` checks both up front and throws an `RdcRuntimeException` naming the limit,
+rather than letting POI fail with an `IllegalArgumentException` that names nothing but the offending
+index. Invisible columns don't count. Exports that big need one of the OOXML formats
+(`XSSFWorkbook`, or `SXSSFWorkbook` for streaming), which this module does not currently use.
 
 ## JPMS / POI caveat
 

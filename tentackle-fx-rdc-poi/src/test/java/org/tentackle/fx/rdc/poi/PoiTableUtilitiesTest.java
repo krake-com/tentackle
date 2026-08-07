@@ -25,6 +25,7 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.testng.annotations.AfterMethod;
@@ -43,7 +44,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +67,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Unit tests for {@link PoiTableUtilities}.
@@ -70,6 +82,12 @@ public class PoiTableUtilitiesTest {
 
   /** the date format of exported dates: the builtin "m/d/yy". */
   private static final short DATE_FORMAT = HSSFDataFormat.getBuiltinFormat("m/d/yy");
+
+  /** the format of exported date-and-time values: the builtin "m/d/yy h:mm". */
+  private static final short DATE_TIME_FORMAT = HSSFDataFormat.getBuiltinFormat("m/d/yy h:mm");
+
+  /** the format of exported time values: the builtin "h:mm:ss". */
+  private static final short TIME_FORMAT = HSSFDataFormat.getBuiltinFormat("h:mm:ss");
 
   private PoiTableUtilities utilities;
   private Path file;
@@ -262,6 +280,111 @@ public class PoiTableUtilitiesTest {
 
     assertEquals(cells.getCell(1).getCellStyle().getIndex(), cells.getCell(0).getCellStyle().getIndex(),
                  "dates and calendars share one style");
+  }
+
+  @Test
+  public void testJavaTimeDatesUseTheBuiltinDateFormats() throws IOException {
+    SpreadsheetRow row = new SpreadsheetRow();
+    row.setLocalDate(LocalDate.of(2026, 8, 7));
+    row.setLocalDateTime(LocalDateTime.of(2026, 8, 7, 14, 30));
+
+    HSSFRow cells = export(createConfiguration("localDate", "localDateTime"), row).getRow(1);
+
+    // a date must become a real date cell, not the text of its toString()
+    assertEquals(cells.getCell(0).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(0).getLocalDateTimeCellValue(), LocalDate.of(2026, 8, 7).atStartOfDay());
+    assertEquals(cells.getCell(0).getCellStyle().getDataFormat(), DATE_FORMAT);
+
+    assertEquals(cells.getCell(1).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(1).getLocalDateTimeCellValue(), LocalDateTime.of(2026, 8, 7, 14, 30));
+    assertEquals(cells.getCell(1).getCellStyle().getDataFormat(), DATE_TIME_FORMAT);
+  }
+
+  @Test
+  public void testZonedAndOffsetDatesAreExportedAsLocalDateTime() throws IOException {
+    LocalDateTime local = LocalDateTime.of(2026, 8, 7, 9, 15);
+    ZoneOffset offset = ZoneOffset.ofHours(3);
+    SpreadsheetRow row = new SpreadsheetRow();
+    row.setOffsetDateTime(OffsetDateTime.of(local, offset));
+    row.setZonedDateTime(ZonedDateTime.of(local, offset));
+    // a spreadsheet has no notion of a time zone: the instant is resolved in the default zone
+    Instant instant = local.atZone(ZoneId.systemDefault()).toInstant();
+    row.setInstant(instant);
+
+    HSSFRow cells = export(createConfiguration("offsetDateTime", "zonedDateTime", "instant"), row).getRow(1);
+
+    for (int index = 0; index < 3; index++) {
+      assertEquals(cells.getCell(index).getCellType(), CellType.NUMERIC, "cell " + index);
+      assertEquals(cells.getCell(index).getLocalDateTimeCellValue(), local, "cell " + index);
+      assertEquals(cells.getCell(index).getCellStyle().getDataFormat(), DATE_TIME_FORMAT, "cell " + index);
+    }
+  }
+
+  @Test
+  public void testTimesAreExportedAsFractionOfADay() throws IOException {
+    SpreadsheetRow row = new SpreadsheetRow();
+    row.setLocalTime(LocalTime.of(6, 0));                                  // a quarter of a day
+    row.setOffsetTime(OffsetTime.of(LocalTime.of(18, 0), ZoneOffset.UTC)); // three quarters
+
+    HSSFRow cells = export(createConfiguration("localTime", "offsetTime"), row).getRow(1);
+
+    assertEquals(cells.getCell(0).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(0).getNumericCellValue(), 0.25);
+    assertEquals(cells.getCell(0).getCellStyle().getDataFormat(), TIME_FORMAT);
+
+    assertEquals(cells.getCell(1).getCellType(), CellType.NUMERIC);
+    assertEquals(cells.getCell(1).getNumericCellValue(), 0.75);
+    assertEquals(cells.getCell(1).getCellStyle().getDataFormat(), TIME_FORMAT);
+  }
+
+  @Test
+  public void testTooManyRowsAreRejectedWithAClearMessage() {
+    DefaultTableConfiguration<SpreadsheetRow> config = createConfiguration("name");
+    // one row too many: the header takes the last free line of the sheet
+    List<SpreadsheetRow> items = Collections.nCopies(SpreadsheetVersion.EXCEL97.getMaxRows(), new SpreadsheetRow());
+
+    RdcRuntimeException ex = expectThrows(RdcRuntimeException.class,
+        () -> utilities.toSpreadsheet(config.getColumnConfigurations(), file.toFile(), items));
+    assertTrue(ex.getMessage().contains("too many rows"), ex.getMessage());
+  }
+
+  @Test
+  public void testMaximumNumberOfRowsIsAccepted() throws IOException {
+    DefaultTableConfiguration<SpreadsheetRow> config = createConfiguration("name");
+    List<SpreadsheetRow> items = Collections.nCopies(SpreadsheetVersion.EXCEL97.getMaxRows() - 1, new SpreadsheetRow());
+
+    utilities.toSpreadsheet(config.getColumnConfigurations(), file.toFile(), items);
+
+    try (InputStream in = Files.newInputStream(file)) {
+      workbook = new HSSFWorkbook(in);
+      assertEquals(workbook.getSheetAt(0).getLastRowNum(), SpreadsheetVersion.EXCEL97.getLastRowIndex());
+    }
+  }
+
+  @Test
+  public void testTooManyColumnsAreRejectedWithAClearMessage() {
+    DefaultTableConfiguration<SpreadsheetRow> config = createConfiguration("name");
+    // unbound columns are enough here, the limit is checked before anything is written
+    for (int index = 0; index < SpreadsheetVersion.EXCEL97.getMaxColumns(); index++) {
+      config.addColumn("filler" + index, "FILLER" + index);
+    }
+
+    RdcRuntimeException ex = expectThrows(RdcRuntimeException.class,
+        () -> utilities.toSpreadsheet(config.getColumnConfigurations(), file.toFile(),
+                                      List.of(new SpreadsheetRow())));
+    assertTrue(ex.getMessage().contains("too many columns"), ex.getMessage());
+  }
+
+  @Test
+  public void testInvisibleColumnsDoNotCountTowardsTheColumnLimit() throws IOException {
+    DefaultTableConfiguration<SpreadsheetRow> config = createConfiguration("name");
+    for (int index = 0; index < SpreadsheetVersion.EXCEL97.getMaxColumns(); index++) {
+      config.addColumn("filler" + index, "FILLER" + index).getTableColumn().setVisible(false);
+    }
+
+    HSSFSheet sheet = export(config, new SpreadsheetRow());
+
+    assertEquals(sheet.getRow(0).getLastCellNum(), 1, "only the visible column is exported");
   }
 
   @Test
