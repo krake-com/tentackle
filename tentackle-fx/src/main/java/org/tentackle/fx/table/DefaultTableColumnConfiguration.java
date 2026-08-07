@@ -152,6 +152,12 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Integer scale;
 
   /**
+   * True if the scale was derived from the pattern by {@link #getNumberFormat()}
+   * instead of being configured by the application.
+   */
+  private boolean scaleDerivedFromPattern;
+
+  /**
    * Case conversion.
    */
   private Boolean caseConversion;
@@ -255,6 +261,13 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   public TableColumnConfiguration<S, T> setPattern(String pattern) {
     this.pattern = pattern;
     numberFormat = null;
+    dateTimeFormatter = null;   // both formats are derived from the pattern
+    if (scaleDerivedFromPattern) {
+      // drop a scale derived from the previous pattern, else it would override the new one.
+      // A scale configured by the application is kept, since that is what it asked for.
+      scale = null;
+      scaleDerivedFromPattern = false;
+    }
     return this;
   }
 
@@ -266,20 +279,20 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public DecimalFormat getNumberFormat() {
     if (numberFormat == null && (pattern != null || scale != null)) {
-      // scale or pattern given
-      if (pattern == null) {
-        pattern = FormatHelper.getIntegerPattern();
-      }
-      numberFormat = new DecimalFormat(pattern);
+      // scale or pattern given.
+      // Don't store a defaulted pattern in the pattern field: the field is shared with the
+      // date/time formatter and must keep describing what the application configured.
+      String numberPattern = pattern == null ? FormatHelper.getIntegerPattern() : pattern;
+      numberFormat = new DecimalFormat(numberPattern);
       if (scale == null) {
         // determine from format
         scale = 0;
-        String p = getPattern();
-        int dotNdx = p.lastIndexOf('.');
+        scaleDerivedFromPattern = true;
+        int dotNdx = numberPattern.lastIndexOf('.');
         if (dotNdx >= 0)  {
           // count zeros after dot
-          for (++dotNdx; dotNdx < p.length(); dotNdx++)  {
-            if (p.charAt(dotNdx) != '0') {
+          for (++dotNdx; dotNdx < numberPattern.length(); dotNdx++)  {
+            if (numberPattern.charAt(dotNdx) != '0') {
               break;
             }
             scale++;
@@ -382,6 +395,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public TableColumnConfiguration<S, T> setScale(Integer scale) {
     this.scale = scale;
+    scaleDerivedFromPattern = false;    // configured by the application
     numberFormat = null;
     return this;
   }

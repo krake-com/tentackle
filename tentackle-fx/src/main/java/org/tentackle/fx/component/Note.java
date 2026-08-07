@@ -114,7 +114,7 @@ public class Note extends PopupControl {
 
 
   /**
-   * display position relative to linked node.
+   * display position relative to the linked node.
    */
   public enum Position {
     /**
@@ -329,7 +329,8 @@ public class Note extends PopupControl {
    */
   public ObjectProperty<Node> contentNodeProperty() {
     if (contentNodeProperty == null) {
-      contentNodeProperty = new SimpleObjectProperty<>(this, "contentNode");
+      // must be initialized with the current content, else it would be lost
+      contentNodeProperty = new SimpleObjectProperty<>(this, "contentNode", contentNode);
     }
     return contentNodeProperty;
   }

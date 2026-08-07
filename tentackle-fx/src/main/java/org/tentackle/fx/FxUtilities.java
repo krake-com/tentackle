@@ -1554,7 +1554,9 @@ public class FxUtilities {
 
 
   /**
-   * Applies a single binding option to a text component.
+   * Applies a single binding option to a text component.<br>
+   * The option's key is uppercased, but a value following the {@code =} is passed on
+   * as written, since options such as {@code FILLER='a'} are case-sensitive.
    *
    * @param comp the component
    * @param member the binding member
@@ -1669,16 +1671,14 @@ public class FxUtilities {
         if (value.isBlank()) {
           comp.setFiller(' ');    // default
         }
-        else {
-          if (value.charAt(0) == '\'' && value.length() == 3 && value.charAt(2) == '\'') {
-            comp.setFiller(value.charAt(1));
-          }
-          else {
-            int fillCode = Integer.decode(value);
-            comp.setFiller((char) fillCode);
-          }
-          processed = true;
+        else if (value.charAt(0) == '\'' && value.length() == 3 && value.charAt(2) == '\'') {
+          comp.setFiller(value.charAt(1));
         }
+        else {
+          int fillCode = Integer.decode(value);
+          comp.setFiller((char) fillCode);
+        }
+        processed = true;
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_FILLER + " @Bindable option \"" +
@@ -1767,6 +1767,20 @@ public class FxUtilities {
     return processed;
   }
 
+
+  /**
+   * Normalizes a single binding option.<br>
+   * The key is uppercased so that options can be written in any case, but a value following
+   * the {@code =} is left untouched: {@code FILLER='a'} must not become {@code FILLER='A'}.
+   *
+   * @param option the option as written by the application
+   * @return the normalized option
+   */
+  private String normalizeBindingOption(String option) {
+    int ndx = option.indexOf('=');
+    return ndx < 0 ? option.toUpperCase(Locale.ROOT)
+                   : option.substring(0, ndx + 1).toUpperCase(Locale.ROOT) + option.substring(ndx + 1);
+  }
 
   /**
    * Updates the maximum column width.
@@ -1969,9 +1983,9 @@ public class FxUtilities {
   @SuppressWarnings("rawtypes")
   private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     if (options != null) {
-      StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
+      StringTokenizer stok = new StringTokenizer(options, ",");
       while (stok.hasMoreTokens()) {
-        String token = stok.nextToken().trim();
+        String token = normalizeBindingOption(stok.nextToken().trim());
         boolean processed;
         if (comp != null) {
           processed = applyBindingOption(comp, member, token);

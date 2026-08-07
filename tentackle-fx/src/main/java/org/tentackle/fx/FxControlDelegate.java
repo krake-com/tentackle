@@ -101,7 +101,10 @@ public abstract class FxControlDelegate implements FxControl {
 
   @Override
   public void setChangeable(boolean changeable) {
-    if (changeableProperty != null) {
+    if (changeableProperty != null && !changeableProperty.isBound()) {
+      // If the property is bound, it follows the control's disabled- or editable property
+      // (see createChangeableProperty in the component delegates) and setting it would throw.
+      // updateChangeable() below drives that property instead, which propagates to the binding.
       changeableProperty.set(changeable);
     }
     this.changeable = changeable;   // always keep the last setting (see isControlChangeable())
@@ -110,7 +113,7 @@ public abstract class FxControlDelegate implements FxControl {
 
   /**
    * Gets the last intended changeability for this control.<br>
-   * Might differ from effective changeability if container changed its changeability.
+   * Might differ from effective changeability if the container changed its changeability.
    *
    * @return the control's changeability regardless of the effective changeability
    */
@@ -146,6 +149,9 @@ public abstract class FxControlDelegate implements FxControl {
 
   /**
    * Creates the changeable property.<br>
+   * Implementations may bind the property to the property the changeability is mapped to,
+   * such as the disabled- or the editable property. {@link #setChangeable(boolean)} then
+   * leaves the property alone and updates the mapped property via {@link #updateChangeable(boolean)}.
    *
    * @param changeable the initial value
    * @return the property

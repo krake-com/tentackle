@@ -41,10 +41,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Adds the column filter UI to a table or treetable view.<p>
@@ -66,7 +68,7 @@ import java.util.Objects;
  * whose children are filtered out still shows its disclosure arrow, since being a leaf is determined
  * by the tree item itself.
  *
- * @param <S> type of the objects contained within the table's or treetable's items list
+ * @param <S> type of the objects contained within the table's or treetable's item list
  * @author harald
  */
 public class TableFilterSupport<S> {
@@ -519,7 +521,7 @@ public class TableFilterSupport<S> {
    * Collects the values selectable in the filter popup of a column.<p>
    * As in spreadsheet applications, the values are those of the rows passing the filters of all
    * <em>other</em> columns. For treetable views, only the materialized part of the tree is scanned,
-   * i.e. the value list grows as the user expands the tree.
+   * i.e., the value list grows as the user expands the tree.
    *
    * @param <T> the column's value type
    * @param columnFilter the column filter
@@ -529,9 +531,10 @@ public class TableFilterSupport<S> {
     TableColumnConfiguration<S,T> columnConfig = columnFilter.getColumnConfiguration();
     FxTableBinding<S,T> binding = columnConfig.getBinding();
     Map<String, T> valuesByText = new LinkedHashMap<>();
+    // the texts beyond the maximum are counted here: they must not be counted twice,
+    // and they are no longer in valuesByText to tell them apart
+    Set<String> droppedTexts = new HashSet<>();
     boolean blankFound = false;
-    boolean truncated = false;
-    int distinctCount = 0;
 
     if (binding != null) {
       for (S row : collectRows()) {
@@ -545,16 +548,18 @@ public class TableFilterSupport<S> {
           blankFound = true;
         }
         else if (!valuesByText.containsKey(text)) {
-          distinctCount++;
           if (valuesByText.size() < maxDistinctValues) {
             valuesByText.put(text, value);
           }
           else {
-            truncated = true;
+            droppedTexts.add(text);
           }
         }
       }
     }
+
+    boolean truncated = !droppedTexts.isEmpty();
+    int distinctCount = valuesByText.size() + droppedTexts.size();
 
     List<Map.Entry<String, T>> entries = new ArrayList<>(valuesByText.entrySet());
     entries.sort(this::compareValues);
