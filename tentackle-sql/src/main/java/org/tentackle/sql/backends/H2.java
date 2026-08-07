@@ -76,7 +76,7 @@ public class H2 extends AbstractSql92Backend {
   };
 
   /** set of reserved words (built only once). */
-  private static Set<String> reservedWords;
+  private Set<String> reservedWords;
 
 
   /**
