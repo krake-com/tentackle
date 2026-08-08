@@ -21,6 +21,7 @@ package org.tentackle.quic;
 import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.PoolSlot;
@@ -34,6 +35,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * The QUIC client connection pool.
@@ -43,6 +48,11 @@ import java.util.Map;
  * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is way shorter than
  * the pool's idle timeout, it is kept alive by sending PING frames. Otherwise, the pool would hand
  * out connections belonging to a QUIC connection that is long gone.
+ * <p>
+ * Because each pooled connection holds one of the streams the peer allows for the whole time it is
+ * in the pool, the pool's maximum size defaults to {@link QuicTripTransport#getMaxStreams()} instead
+ * of being unlimited. Running into the peer's stream limit does not fail an individual request. It
+ * blocks the requesting thread indefinitely, and with it every other thread using this transport.
  */
 public class QuicTripConnectionPool extends AbstractConnectionPool {
 
@@ -54,12 +64,21 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    */
   public static final int DEFAULT_CONNECT_TIMEOUT = 10;
 
+  /**
+   * The default stream timeout in seconds, applied if the URI does not specify {@code streamtimeout}.
+   * <p>
+   * This is the timeout for opening a stream on an established QUIC connection, i.e., for waiting until
+   * the peer grants the credits to do so.
+   */
+  public static final int DEFAULT_STREAM_TIMEOUT = 10;
+
   private static final Logger LOGGER = Logger.get(QuicTripConnectionPool.class);
 
 
   private final QuicTripTransport transport;
   private final QuicClientConnection.Builder connectionBuilder;
   private final int keepAliveSeconds;
+  private final int streamTimeoutSeconds;
   private QuicClientConnection connection;
 
   /**
@@ -80,6 +99,21 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       throw new IllegalArgumentException(
         "QUIC connect timeout must be > 0 seconds, got " + connectTimeout + " from URI " + uri);
     }
+    streamTimeoutSeconds = transport.getUriPars().getOrDefault("streamtimeout", DEFAULT_STREAM_TIMEOUT);
+    if (streamTimeoutSeconds <= 0) {
+      throw new IllegalArgumentException(
+        "QUIC stream timeout must be > 0 seconds, got " + streamTimeoutSeconds + " from URI " + uri);
+    }
+    /*
+     * The peer grants at most maxstreams concurrent streams per QUIC connection, and every pooled
+     * connection holds one of them for as long as it sits in the pool. An unlimited pool would
+     * therefore keep enlarging itself until it runs into that limit, where KWIK's createStream()
+     * waits for credits that can only become available when a pooled connection is closed - which
+     * the pool cannot do while a thread is stuck in createStream() holding its monitor.
+     */
+    if (getMaximumSize() == 0) {    // not configured in the URI: unlimited
+      setMaximumSize(transport.getMaxStreams());
+    }
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     String alpnId = queryParameters.getOrDefault("alpnid", scheme);
@@ -99,10 +133,24 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     connect();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Deliberately not synchronized: {@link org.tentackle.misc.AbstractPool#shutdown()} closes the pooled
+   * connections without holding the pool's monitor, on purpose, since it waits for each of them. Only
+   * accessing the QUIC connection needs the monitor.
+   */
   @Override
-  public synchronized void shutdown() {
-    super.shutdown();
-    connection.close();
+  public void shutdown() {
+    try {
+      super.shutdown();
+    }
+    finally {
+      synchronized (this) {
+        // the QUIC connection must be released even if closing the pooled streams failed
+        closeConnection();
+      }
+    }
   }
 
 
@@ -110,9 +158,18 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   protected PoolSlot<Connection> createSlot(int slotNumber) {
     QuicStream quicStream = createQuicStream();   // may re-establish the QUIC connection
     QuicClientConnection quicConnection = connection;
-    return new ConnectionPoolSlot(this, slotNumber,
-                                  new QuicTripConnection(transport, getDictionary(),
-                                                         quicConnection::isConnected, quicStream));
+    try {
+      return new ConnectionPoolSlot(this, slotNumber,
+                                    new QuicTripConnection(transport, getDictionary(),
+                                                           quicConnection::isConnected, quicStream));
+    }
+    catch (RuntimeException e) {
+      // The connection did not take ownership of the stream because sending the TRIP preamble failed.
+      // Dropping the stream would keep one of the peer's stream slots occupied until the whole QUIC
+      // connection is gone, so repeated failures would run the pool out of streams for good.
+      closeQuietly(quicStream);
+      throw e;
+    }
   }
 
   /**
@@ -122,23 +179,78 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * @return the quic stream
    */
   protected QuicStream createQuicStream() {
-    if (!connection.isConnected()) {
-      // idle timeout, peer restarted, network loss, ...
+    QuicClientConnection quicConnection = connection;
+    if (quicConnection == null || !quicConnection.isConnected()) {
+      // idle timeout, peer restarted, network loss, ... (or a previous connect attempt failed)
       LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
       connect();
+      quicConnection = connection;
     }
+    return createQuicStream(quicConnection);
+  }
+
+  /**
+   * Opens a bidirectional stream on the given QUIC connection, bounded by {@code streamtimeout}.
+   * <p>
+   * KWIK's {@code createStream} blocks until the peer grants the credits to open another stream, and the
+   * only way to get them is closing one of the streams already open. Since all of them belong to pooled
+   * connections and this method runs with the pool's (and the transport's) monitor held, no other thread
+   * could return one: the wait must be bounded, or the whole client transport deadlocks.
+   * <p>
+   * Under normal circumstances the limit is never reached because the pool's maximum size is capped to
+   * the number of streams the peer allows. It can only happen if the peer grants fewer streams than this
+   * client's {@code maxstreams} says, so the timeout is a safety net for a configuration mismatch.
+   *
+   * @param quicConnection the established QUIC connection
+   * @return the quic stream
+   */
+  protected QuicStream createQuicStream(QuicClientConnection quicConnection) {
+    CompletableFuture<QuicStream> future = new CompletableFuture<>();
+    Thread creator = Thread.ofVirtual().name("QUIC stream creator " + getTransport().getUri()).start(() -> {
+      try {
+        QuicStream quicStream = quicConnection.createStream(true);
+        if (!future.complete(quicStream)) {
+          // we were too late: close the stream instead of leaking it (and one of the peer's stream slots)
+          closeQuietly(quicStream);
+        }
+      }
+      catch (Throwable t) {
+        future.completeExceptionally(t);
+      }
+    });
     try {
-      return connection.createStream(true);
+      return future.get(streamTimeoutSeconds, TimeUnit.SECONDS);
     }
-    catch (IOException e) {
-      throw new TripRuntimeException("creating QUIC stream failed", e);
+    catch (TimeoutException e) {
+      future.completeExceptionally(e);    // marks the stream abandoned, should it still show up
+      creator.interrupt();                // KWIK aborts a blocked createStream when interrupted
+      TripRuntimeException tex = new TripRuntimeException(
+        "no QUIC stream available on " + getTransport().getUri() + " within " + streamTimeoutSeconds +
+        " seconds: the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
+      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
+      throw tex;
+    }
+    catch (ExecutionException e) {
+      throw new TripRuntimeException("creating QUIC stream failed", e.getCause());
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new InterruptedRuntimeException(e);
     }
   }
 
   /**
-   * Establishes the QUIC connection all pooled connections are multiplexed over.
+   * Establishes the QUIC connection all pooled connections are multiplexed over.<br>
+   * A previously established connection is closed first.
    */
   protected void connect() {
+    /*
+     * KWIK shuts a connection's keep-alive thread down when the connection is closed explicitly, but not
+     * when it is terminated silently (idle timeout, peer close, network loss). Simply dropping the old
+     * connection here would leak that thread - a non-daemon one - for every connection ever lost, and
+     * keep the JVM from terminating.
+     */
+    closeConnection();
     URI uri = getTransport().getUri();
     try {
       QuicClientConnection quicConnection = connectionBuilder.build();
@@ -151,6 +263,37 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (IOException e) {
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
+    }
+  }
+
+  /**
+   * Closes the QUIC connection if there is one.<br>
+   * Closing is best effort: the connection may be gone already.
+   */
+  protected void closeConnection() {
+    QuicClientConnection quicConnection = connection;
+    connection = null;
+    if (quicConnection != null) {
+      try {
+        quicConnection.close();
+      }
+      catch (RuntimeException e) {
+        LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+      }
+    }
+  }
+
+  /**
+   * Closes a quic stream, ignoring any errors.
+   *
+   * @param quicStream the stream to close
+   */
+  private void closeQuietly(QuicStream quicStream) {
+    try {
+      QuicTripTransport.closeStream(quicStream);
+    }
+    catch (IOException e) {
+      LOGGER.warning("closing " + quicStream + " failed", e);
     }
   }
 

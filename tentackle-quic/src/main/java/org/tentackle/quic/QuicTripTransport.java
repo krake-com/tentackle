@@ -59,6 +59,12 @@ public class QuicTripTransport extends AbstractTransport {
   public static final int DEFAULT_MAX_IDLE_SECONDS = 30;
 
   /**
+   * The default maximum number of concurrent peer-initiated bidirectional streams, applied if the URI
+   * does not specify {@code maxstreams}.
+   */
+  public static final int DEFAULT_MAX_STREAMS = 128;
+
+  /**
    * The default flow control window per stream in bytes, applied if the URI does not specify {@code streamwindow}.
    * <p>
    * This is the same value KWIK's client uses by default, so that both directions are configured symmetrically.
@@ -74,6 +80,14 @@ public class QuicTripTransport extends AbstractTransport {
    * limit cannot be recovered from once the datagram carrying the update is lost: the peer would wait for data
    * the sender is not allowed to send. Keeping the connection window a multiple of the stream window makes the
    * stream limit the binding one, and that one <em>is</em> retransmitted.
+   * <p>
+   * Note that the connection window is shared by <em>all</em> streams of the connection, so the stream limit is
+   * the binding one only as long as fewer than this many streams transfer at full window at the same time.
+   * Beyond that, the connection limit can become binding again. The factor cannot simply be raised to cover all
+   * {@link #getMaxStreams()} streams, because it must match on both ends and KWIK's client hardcodes exactly
+   * this factor in {@code defaultStreamReceiveBufferSize()}, without offering a way to configure it. Sizing
+   * {@code streamwindow} so that ordinary calls fit into it keeps the number of streams that are blocked on
+   * flow control &mdash; and thus the exposure &mdash; small.
    */
   public static final int CONNECTION_WINDOW_FACTOR = 10;
 
@@ -86,8 +100,8 @@ public class QuicTripTransport extends AbstractTransport {
   public static final int MIN_STREAM_WINDOW = 1500;
 
 
-  private ServerConnector serverConnector;    // the running KWIK server connector, null if not accepting
-  private boolean accepting;
+  private ServerConnector serverConnector;      // the running KWIK server connector, null if not accepting
+  private volatile boolean accepting;           // volatile: isAccepting() is not synchronized
 
   /**
    * Creates a new QUIC transport.
@@ -125,7 +139,7 @@ public class QuicTripTransport extends AbstractTransport {
     int streamWindow = getStreamWindow();
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
-                            .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 128))
+                            .maxOpenPeerInitiatedBidirectionalStreams(getMaxStreams())
                             // configured explicitly so that both ends agree instead of relying on
                             // the differing KWIK client- and server defaults
                             .maxIdleTimeoutInSeconds(getMaxIdleSeconds())
@@ -139,6 +153,7 @@ public class QuicTripTransport extends AbstractTransport {
 
     DatagramSocket socket = null;       // the UDP socket bound here, owned by the connector once it is built
     ServerConnector connector = null;   // the connector, owned by this transport once it is accepting
+    boolean started = false;            // true once this transport owns the connector
 
     try {
       ServerConnector.Builder builder =
@@ -166,12 +181,14 @@ public class QuicTripTransport extends AbstractTransport {
       connector.start();
       serverConnector = connector;
       accepting = true;
+      started = true;
     }
     catch (CertificateException | IOException e) {
       throw new TripRuntimeException("starting QUIC service failed", e);
     }
     finally {
-      if (!accepting) {
+      // a local flag, not the instance field: the cleanup must apply to what this invocation built
+      if (!started) {
         // building or starting the connector failed: give the UDP port back instead of leaking it
         if (connector != null) {
           connector.close();    // closes the socket as well, whoever created it
@@ -201,6 +218,23 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public int getMaxIdleSeconds() {
     return getUriPars().getOrDefault("quicidle", DEFAULT_MAX_IDLE_SECONDS);
+  }
+
+  /**
+   * Gets the maximum number of concurrent peer-initiated bidirectional streams per QUIC connection.<br>
+   * On the server this is the limit advertised to the clients. On the client it bounds the size of the
+   * connection pool, since every pooled connection holds one stream for as long as it is in the pool
+   * (see {@link QuicTripConnectionPool}).
+   *
+   * @return the maximum number of streams, always &ge; 1
+   */
+  public int getMaxStreams() {
+    int maxStreams = getUriPars().getOrDefault("maxstreams", DEFAULT_MAX_STREAMS);
+    if (maxStreams < 1) {
+      throw new TripRuntimeException(
+        "QUIC maxstreams must be >= 1, got " + maxStreams + " from URI " + getUri());
+    }
+    return maxStreams;
   }
 
   /**
@@ -245,6 +279,40 @@ public class QuicTripTransport extends AbstractTransport {
       connector.close();
     }
     super.close();
+  }
+
+  /**
+   * Closes both halves of a QUIC stream.
+   * <p>
+   * Both are closed even if closing one of them fails, because a half-closed stream is never released
+   * by the peer: it keeps one of the peer's stream slots occupied until the whole QUIC connection is gone.
+   * The failures are reported combined, the first one carrying the others as suppressed exceptions.
+   *
+   * @param quicStream the stream to close
+   * @throws IOException if closing one or both halves failed
+   */
+  public static void closeStream(QuicStream quicStream) throws IOException {
+    IOException failure = null;
+    try {
+      quicStream.getOutputStream().close();
+    }
+    catch (IOException e) {
+      failure = e;
+    }
+    try {
+      quicStream.getInputStream().close();
+    }
+    catch (IOException e) {
+      if (failure == null) {
+        failure = e;
+      }
+      else if (e != failure) {    // addSuppressed rejects self-suppression
+        failure.addSuppressed(e);
+      }
+    }
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   /**

@@ -103,6 +103,25 @@ public class QuicProtocolConnectionTest {
   }
 
   /**
+   * A stream that cannot be dispatched at all must be closed right away.
+   * <p>
+   * KWIK calls this from a shared callback thread and discards whatever it throws, so the failure
+   * would go unnoticed, and the client would wait for an answer on that stream forever.
+   */
+  @Test
+  public void closesTheStreamWhenItCannotBeDispatched() throws Exception {
+    Reporter.log("closesTheStreamWhenItCannotBeDispatched", true);
+    FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
+    // a transport that never entered server mode has no connection thread pool to dispatch to
+    QuicTripTransport closedTransport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
+
+    new QuicProtocolConnection(closedTransport).acceptPeerInitiatedStream(quicStream);
+
+    assertTrue(quicStream.isOutputClosed(), "the QUIC output stream was not closed");
+    assertTrue(quicStream.isInputClosed(), "the QUIC input stream was not closed");
+  }
+
+  /**
    * Waits until both halves of the stream are closed, which happens asynchronously on the
    * virtual thread after the handler returned.
    */

@@ -34,10 +34,13 @@ public class QuicTripConnection extends AbstractConnection {
 
   private final BooleanSupplier connectionAlive;
   private final QuicStream quicStream;
-  private boolean closed;
+  private volatile boolean closed;    // volatile: closed by the pool's closing thread, read by the pool
 
   /**
    * Creates a new QUIC connection.
+   * <p>
+   * Notice: the constructor sends the TRIP preamble, so it may well fail. The stream is only owned by the
+   * connection once the constructor returned; until then, closing it is up to the caller.
    *
    * @param transport the transport associated with this connection
    * @param dictionary the dictionary associated with this connection
@@ -62,8 +65,7 @@ public class QuicTripConnection extends AbstractConnection {
   public void close() {
     closed = true;    // even if closing the streams fails: the connection must not be used anymore
     try {
-      quicStream.getOutputStream().close();
-      quicStream.getInputStream().close();
+      QuicTripTransport.closeStream(quicStream);
     }
     catch (IOException e) {
       throw new TripRuntimeException("closing " + quicStream + " failed", e);

@@ -135,6 +135,11 @@ public class QuicTripConnectionTest {
     TripRuntimeException exception = expectThrows(TripRuntimeException.class, connection::close);
     assertSame(exception.getCause(), failure);
     assertFalse(connection.isOpen());    // closed even though closing the stream failed
+
+    // Both halves are closed, even though closing the first one failed. A half-closed stream would
+    // stay allocated at the peer until the whole QUIC connection is gone.
+    assertTrue(quicStream.isOutputClosed());
+    assertTrue(quicStream.isInputClosed());
   }
 
   /**

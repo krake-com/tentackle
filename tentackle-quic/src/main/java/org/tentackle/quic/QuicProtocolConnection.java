@@ -24,7 +24,12 @@ import tech.kwik.core.server.ApplicationProtocolConnection;
 import org.tentackle.log.Logger;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
+/**
+ * The server side of a QUIC connection.<br>
+ * Dispatches each stream a client opens to a TRIP connection handler running on a virtual thread.
+ */
 public class QuicProtocolConnection implements ApplicationProtocolConnection {
 
   private static final Logger LOGGER = Logger.get(QuicProtocolConnection.class);
@@ -32,34 +37,62 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
 
   private final QuicTripTransport transport;
 
+  /**
+   * Creates a protocol connection.
+   *
+   * @param transport the transport the streams belong to
+   */
   public QuicProtocolConnection(QuicTripTransport transport) {
     this.transport = transport;
   }
 
   @Override
   public void acceptPeerInitiatedStream(QuicStream quicStream) {
-    transport.getConnectionThreadPool().execute(() -> {
-      try {
-        String connectionName = quicStream.toString();
-        transport.createConnectionHandler(connectionName, quicStream.getInputStream(), quicStream.getOutputStream()).run();
+    try {
+      ExecutorService connectionThreadPool = transport.getConnectionThreadPool();
+      if (connectionThreadPool == null) {
+        throw new IllegalStateException("transport " + transport + " is not accepting connections (anymore)");
       }
-      catch (Exception e) {
-        LOGGER.warning("cannot handle QUIC stream: " + quicStream, e);
-      }
-      catch (Throwable t) {
-        LOGGER.severe("unexpected error in connection handler thread: " + quicStream, t);
-      }
-      finally {
-        // connection is closed, some server error, whatever
+      connectionThreadPool.execute(() -> {
         try {
-          quicStream.getOutputStream().close();
-          quicStream.getInputStream().close();
+          String connectionName = quicStream.toString();
+          transport.createConnectionHandler(connectionName, quicStream.getInputStream(), quicStream.getOutputStream()).run();
         }
-        catch (IOException e) {
-          LOGGER.warning("cannot close QUIC stream: " + quicStream, e);
+        catch (Exception e) {
+          LOGGER.warning("cannot handle QUIC stream: " + quicStream, e);
         }
-      }
-    });
+        catch (Throwable t) {
+          LOGGER.severe("unexpected error in connection handler thread: " + quicStream, t);
+        }
+        finally {
+          // connection is closed, some server error, whatever
+          closeStream(quicStream);
+        }
+      });
+    }
+    catch (RuntimeException e) {
+      /*
+       * KWIK invokes this method from a shared callback thread and discards whatever it throws, so an
+       * unhandled failure - the transport being closed concurrently, the thread pool rejecting the task -
+       * would leave the stream open with nobody handling it: the client would wait for an answer forever.
+       */
+      LOGGER.warning("cannot dispatch QUIC stream: " + quicStream, e);
+      closeStream(quicStream);
+    }
+  }
+
+  /**
+   * Closes both halves of the stream, logging instead of propagating a failure.
+   *
+   * @param quicStream the stream to close
+   */
+  private void closeStream(QuicStream quicStream) {
+    try {
+      QuicTripTransport.closeStream(quicStream);
+    }
+    catch (IOException e) {
+      LOGGER.warning("cannot close QUIC stream: " + quicStream, e);
+    }
   }
 
 }
