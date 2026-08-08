@@ -35,12 +35,15 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.transport.AbstractTransport;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Transport implementation for QUIC.
@@ -99,9 +102,21 @@ public class QuicTripTransport extends AbstractTransport {
    */
   public static final int MIN_STREAM_WINDOW = 1500;
 
+  /**
+   * The default write timeout in seconds, applied if the URI does not specify {@code writetimeout}.
+   * <p>
+   * Deliberately generous: it is a safety net for a wedged connection, not a quality-of-service limit.
+   * Both peers read a call or a response in one go, so a write that makes no progress at all for that
+   * long means the connection is unusable, not that the peer is slow.
+   */
+  public static final int DEFAULT_WRITE_TIMEOUT = 60;
+
 
   private ServerConnector serverConnector;      // the running KWIK server connector, null if not accepting
   private volatile boolean accepting;           // volatile: isAccepting() is not synchronized
+  // volatile: read by the watchdog thread, which must not have to wait for this transport's monitor
+  private volatile QuicTripConnectionPool clientPool;   // the client's pool, null if not a client transport
+  private ScheduledExecutorService watchdog;    // the write watchdog, created with the first guarded stream
 
   /**
    * Creates a new QUIC transport.
@@ -257,6 +272,80 @@ public class QuicTripTransport extends AbstractTransport {
   }
 
   /**
+   * Gets the number of seconds a single write to a QUIC stream may block before the stream is given up on.
+   * <p>
+   * A write blocks while the peer's flow control window is exhausted, and it may block forever if the
+   * credit update that would reopen it is lost, since KWIK neither retransmits a lost {@code MAX_DATA}
+   * frame nor reacts to the {@code DATA_BLOCKED} frame the blocked sender sends (see
+   * {@link GuardedQuicOutputStream}). This timeout turns such a deadlock into a failed call on a
+   * discarded connection, which the pool re-establishes on the next request.
+   *
+   * @return the timeout in seconds, {@code 0} if writes are not guarded at all
+   */
+  public int getWriteTimeoutSeconds() {
+    int writeTimeout = getUriPars().getOrDefault("writetimeout", DEFAULT_WRITE_TIMEOUT);
+    if (writeTimeout < 0) {
+      throw new TripRuntimeException(
+        "QUIC write timeout must be >= 0 seconds, got " + writeTimeout + " from URI " + getUri());
+    }
+    return writeTimeout;
+  }
+
+  /**
+   * Creates the output stream to write to a QUIC stream.
+   * <p>
+   * Unless the write timeout is disabled, the stream is wrapped in a {@link GuardedQuicOutputStream}, so
+   * that a write cannot block forever on a QUIC connection whose flow control got wedged.
+   *
+   * @param quicStream the QUIC stream to write to
+   * @param stallAction invoked when a write stalled, to discard the wedged QUIC connection
+   * @return the output stream
+   */
+  public OutputStream createOutputStream(QuicStream quicStream, Runnable stallAction) {
+    int writeTimeout = getWriteTimeoutSeconds();
+    if (writeTimeout == 0) {
+      return quicStream.getOutputStream();
+    }
+    return new GuardedQuicOutputStream(quicStream, writeTimeout, getWatchdog(), stallAction);
+  }
+
+  /**
+   * Discards the QUIC connection of the client's connection pool.
+   * <p>
+   * Invoked when a write on one of the pooled streams stalled. Since the flow control credits of a
+   * wedged connection cannot be recovered, every stream multiplexed over it is lost, not just the one
+   * that ran into it. Dropping the connection makes the pool discard its connections and establish a
+   * replacement on the next request.
+   */
+  protected void abortClientConnection() {
+    QuicTripConnectionPool pool = clientPool;
+    if (pool != null) {
+      pool.abortConnection();
+    }
+  }
+
+  /**
+   * Gets the scheduler running the write watchdogs.<br>
+   * Created on demand, since only guarded streams need it.
+   *
+   * @return the scheduler
+   */
+  protected synchronized ScheduledExecutorService getWatchdog() {
+    if (watchdog == null) {
+      ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, runnable -> {
+        Thread thread = new Thread(runnable, "QUIC write watchdog " + getUri());
+        thread.setDaemon(true);   // must never keep the JVM alive
+        return thread;
+      });
+      // the alarm is cancelled by every write that completes in time, i.e. by nearly all of them:
+      // without this, the cancelled tasks would pile up in the queue until their delay elapsed
+      executor.setRemoveOnCancelPolicy(true);
+      watchdog = executor;
+    }
+    return watchdog;
+  }
+
+  /**
    * {@inheritDoc}
    * <p>
    * Overridden to shut down the KWIK server connector, which releases the UDP socket and
@@ -270,15 +359,26 @@ public class QuicTripTransport extends AbstractTransport {
   @Override
   public void close() {
     ServerConnector connector;
+    ScheduledExecutorService writeWatchdog;
     synchronized (this) {
       connector = serverConnector;
       serverConnector = null;
       accepting = false;
+      writeWatchdog = watchdog;
+      watchdog = null;
     }
     if (connector != null) {
       connector.close();
     }
-    super.close();
+    try {
+      super.close();
+    }
+    finally {
+      if (writeWatchdog != null) {
+        // after the streams are gone: a write still running must keep its guard until it returns
+        writeWatchdog.shutdownNow();
+      }
+    }
   }
 
   /**
@@ -325,14 +425,16 @@ public class QuicTripTransport extends AbstractTransport {
   public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
     return factory.createStream(dictionary,
-                                factory.createSerializer(quicStream.getOutputStream()),
+                                factory.createSerializer(createOutputStream(quicStream, this::abortClientConnection)),
                                 factory.createDeserializer(quicStream.getInputStream()));
   }
 
 
   @Override
   protected Pool<Connection> createClientConnectionPool() {
-    return new QuicTripConnectionPool(this, getClientDictionary());
+    // invoked with this transport's monitor held, see AbstractTransport#getConnection
+    clientPool = new QuicTripConnectionPool(this, getClientDictionary());
+    return clientPool;
   }
 
 }

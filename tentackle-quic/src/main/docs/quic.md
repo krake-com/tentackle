@@ -176,7 +176,7 @@ The single integration point with TRIP serialization is `createStream`:
 public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
     return factory.createStream(dictionary,
-        factory.createSerializer(quicStream.getOutputStream()),
+        factory.createSerializer(createOutputStream(quicStream, this::abortClientConnection)),
         factory.createDeserializer(quicStream.getInputStream()));
 }
 ```
@@ -185,6 +185,11 @@ A `QuicStream` exposes ordinary `InputStream`/`OutputStream` objects; wrapping
 them in a TRIP `Serializer`/`Deserializer` is all that is needed to run the full
 TRIP protocol — dictionary compression, back-references, deduplication, and remote
 proxying — over QUIC.
+
+The output side goes through `createOutputStream`, which adds a
+[`GuardedQuicOutputStream`](#stalled-writes) unless `writetimeout=0` turns the guard off.
+The server side does the same when it dispatches an incoming stream, so writing a call and
+writing a response are guarded alike.
 
 ---
 
@@ -214,7 +219,7 @@ shape is used on both client and server (with host `0` / `0.0.0.0` selecting the
 server bind-all case).
 
 ```
-tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&quicidle=...][&keepalive=...]
+tripq://<host>:<port>?ksfile=...&kspass=...&ksalias=...[&kstype=...][&alpnid=...][&maxstreams=...][&streamwindow=...][&certcheck=...][&connecttimeout=...][&streamtimeout=...][&writetimeout=...][&quicidle=...][&keepalive=...]
 tripcq://<host>:<port>?...same as tripq...&mincompress=1024
 ```
 
@@ -236,7 +241,8 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `certcheck`      | client          | `false`                                                                   | When `true`, the client validates the server certificate. When `false`, validation is skipped.    |
 | `connecttimeout` | client          | `10`                                                                      | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                             |
 | `streamtimeout`  | client          | `10`                                                                      | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below. |
-| `quicidle`       | both            | `30`                                                                      | QUIC max idle timeout in **seconds**. See below.                                                  |
+| `writetimeout`   | both            | `60`                                                                      | Seconds a single write to a stream may block before the QUIC connection is given up on. `0` disables the guard. See below. |
+| `quicidle`       | both            | `30`                                                                      | QUIC max idle timeout in **seconds**; must be >= 2 unless `keepalive=0`. See below.               |
 | `keepalive`      | client          | unlimited                                                                 | Seconds to keep the QUIC connection alive. `0` disables the keep-alive. See below.                |
 | `mincompress`    | both (`tripcq`) | `1024`                                                                    | Minimum block size in bytes before deflate compression is applied.                                |
 
@@ -264,6 +270,12 @@ re-establishes the QUIC connection on the next request. The connection it replac
 explicitly: KWIK stops a connection's keep-alive actor when the connection is closed, but not when it
 is terminated silently, and that actor runs on a non-daemon thread that would otherwise keep the JVM
 from terminating.
+
+The PING interval is not configurable — KWIK derives it as `quicidle / 2`, truncated to whole seconds.
+A `quicidle` below 2 therefore yields an interval of *zero*, and the actor reschedules itself with no
+delay at all: it sends PING frames as fast as a core can produce them, saturating the link and provoking
+exactly the datagram loss that [stalled writes](#stalled-writes) are about. `quicidle` values below 2 are
+rejected for that reason, unless `keepalive=0` switches the actor off.
 
 The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
 are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).
@@ -312,6 +324,47 @@ to cover ordinary calls in full, and only needs raising when calls routinely car
 > it has to match on both ends and KWIK's client hardcodes exactly this factor in
 > `defaultStreamReceiveBufferSize()`, with no way to configure it. Sizing `streamwindow` so that ordinary
 > calls fit into it keeps the number of streams blocked on flow control — and with it the exposure — small.
+
+### Stalled writes
+
+Sizing the windows makes running into the connection-level limit *rare*, but it cannot make it
+impossible, and running into it is one lost datagram away from a permanent deadlock:
+
+- a sender that used up its connection-level credits stops and sends `DATA_BLOCKED`, which KWIK
+  **ignores** — it only logs the frame;
+- the receiver drains everything it has and emits one last cumulative `MAX_DATA`;
+- KWIK registers **no** lost-frame callback for `MAX_DATA`, so if the datagram carrying that last
+  update is dropped, it is never re-sent — and nothing will regenerate it either, because
+  `updateConnectionFlowControl()` only runs while the receiver is *reading*, and there is nothing
+  left to read.
+
+Both peers then wait for each other forever. Nothing notices: the QUIC connection stays established
+because acknowledgements keep flowing, so neither peer's `quicidle` timeout ever fires, and the QUIC
+output stream simply parks the calling thread. A dropped datagram is not exotic — an overloaded machine
+overflows its UDP receive buffer even on loopback — so on a slow or heavily loaded host this eventually
+wedges a client thread for good. (Note the asymmetry: the *stream*-level `MAX_STREAM_DATA` **is**
+retransmitted, which is why sizing the connection window above the stream window helps in the first place.)
+
+`writetimeout` closes that hole. Every write to a QUIC stream is guarded by a watchdog
+(`GuardedQuicOutputStream`); if a single write makes no progress within the timeout, the guard
+
+1. resets the QUIC stream, which unblocks the parked writer with an `IOException` — TRIP turns that
+   into a `TripStreamClosedException` and drops the TRIP connection, so the *call* fails instead of
+   hanging, and
+2. discards the whole QUIC connection. The lost credits cannot be recovered, and since every pooled
+   connection is a stream on that one QUIC connection, all of them are affected, not just the one that
+   ran into the limit. Dropping it makes `QuicTripConnection.isOpen()` report `false` for the others, so
+   the pool discards them instead of handing them out, and the next request re-establishes the
+   connection with a fresh set of credits.
+
+The guard applies to both directions: the client guards writing a call, the server guards writing a
+response — a client that stops reading would otherwise pin a server-side connection handler, and with it
+the call thread it is waiting for, forever.
+
+The default is deliberately generous. It is a safety net for a wedged connection, not a
+quality-of-service limit: both peers read a call or a response in one go, so a write making *no*
+progress at all for a minute means the connection is unusable rather than the peer being slow. Set
+`writetimeout=0` to switch the guard off entirely.
 
 ---
 

@@ -242,7 +242,9 @@ public class QuicTripTransportTest {
       TripStream stream = transport.createStream(dictionary, quicStream);
 
       assertSame(stream.getDictionary(), dictionary);
-      assertSame(stream.getSerializer().getOutputStream(), quicStream.getOutputStream());
+      // the serializer writes through the stall guard, which passes everything on to the QUIC stream
+      assertTrue(stream.getSerializer().getOutputStream() instanceof GuardedQuicOutputStream,
+                 "expected a guarded output stream, got " + stream.getSerializer().getOutputStream());
       assertSame(stream.getDeserializer().getInputStream(), quicStream.getInputStream());
 
       // the plain transport must not touch the payload: it appears verbatim in the QUIC stream

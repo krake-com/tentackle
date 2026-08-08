@@ -97,6 +97,46 @@ public class QuicTripConnectionPoolTest {
   }
 
   /**
+   * KWIK derives the keep-alive's PING interval as {@code quicidle / 2} truncated to whole seconds, and
+   * an interval of zero makes its actor spin, flooding the link with PING frames. Such a configuration
+   * must be refused rather than silently turning the keep-alive into a denial of service.
+   */
+  @Test
+  public void rejectsAnIdleTimeoutTooShortForTheKeepAlive() {
+    Reporter.log("rejectsAnIdleTimeoutTooShortForTheKeepAlive", true);
+    QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?quicidle=1"));
+    try {
+      IllegalArgumentException exception =
+        expectThrows(IllegalArgumentException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      assertTrue(exception.getMessage().contains("quicidle must be >= 2"),
+                 "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  /**
+   * The same timeout is fine as long as the keep-alive is switched off, so it must not be rejected then.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsAShortIdleTimeoutWithoutTheKeepAlive() {
+    Reporter.log("acceptsAShortIdleTimeoutWithoutTheKeepAlive", true);
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:12345?quicidle=1&keepalive=0&connecttimeout=1"));
+    try {
+      // nothing is listening on that port, so connecting fails - but not because of the idle timeout
+      TripRuntimeException exception =
+        expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(transport, dictionary()));
+      assertTrue(exception.getMessage().contains("creating QUIC connection"),
+                 "unexpected message: " + exception.getMessage());
+    }
+    finally {
+      transport.close();
+    }
+  }
+
+  /**
    * {@code connecttimeout} must actually bound how long connecting to an unresponsive server takes.
    * <p>
    * Nothing listens on the port, and a UDP datagram into the void produces no answer, so KWIK

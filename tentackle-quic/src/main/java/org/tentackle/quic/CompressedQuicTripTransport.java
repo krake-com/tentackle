@@ -62,8 +62,9 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   @Override
   public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
+    OutputStream outputStream = createOutputStream(quicStream, this::abortClientConnection);
     return factory.createStream(dictionary,
-                                factory.createSerializer(createCompressedOutputStream(quicStream.getOutputStream())),
+                                factory.createSerializer(createCompressedOutputStream(outputStream)),
                                 factory.createDeserializer(createCompressedInputStream(quicStream.getInputStream())));
   }
 

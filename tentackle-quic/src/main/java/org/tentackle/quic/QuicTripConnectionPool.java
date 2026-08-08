@@ -72,6 +72,17 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    */
   public static final int DEFAULT_STREAM_TIMEOUT = 10;
 
+  /**
+   * The smallest QUIC max idle timeout the keep-alive can work with, in seconds.
+   * <p>
+   * KWIK derives the PING interval of its keep-alive actor as {@code idleTimeout / 2}, truncated to whole
+   * seconds. Below this, the interval comes out as <em>zero</em> and the actor reschedules itself without
+   * any delay: it then sends PING frames as fast as a CPU core can produce them, saturating the link and
+   * making the datagram loss that QUIC flow control does not recover from (see {@link GuardedQuicOutputStream})
+   * far more likely. Since there is no way to configure the interval, {@code quicidle} has to stay above this.
+   */
+  public static final int MIN_KEEP_ALIVE_IDLE_SECONDS = 2;
+
   private static final Logger LOGGER = Logger.get(QuicTripConnectionPool.class);
 
 
@@ -118,6 +129,11 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     String alpnId = queryParameters.getOrDefault("alpnid", scheme);
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    if (keepAliveSeconds != 0 && transport.getMaxIdleSeconds() < MIN_KEEP_ALIVE_IDLE_SECONDS) {
+      throw new IllegalArgumentException(
+        "QUIC quicidle must be >= " + MIN_KEEP_ALIVE_IDLE_SECONDS + " seconds when the keep-alive is enabled, got " +
+        transport.getMaxIdleSeconds() + " from URI " + uri + " (or set keepalive=0)");
+    }
     connectionBuilder = QuicClientConnection.newBuilder()
                                             .uri(uri)  // only host and port are used
                                             .applicationProtocol(alpnId)
@@ -150,6 +166,25 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
         // the QUIC connection must be released even if closing the pooled streams failed
         closeConnection();
       }
+    }
+  }
+
+
+  /**
+   * Discards the QUIC connection all pooled connections are multiplexed over.
+   * <p>
+   * Invoked when a write on one of the pooled streams stalled because the QUIC connection's flow control
+   * got wedged (see {@link GuardedQuicOutputStream}). The credits of such a connection cannot be
+   * recovered, so all of its streams are lost, not just the one that ran into it. Closing it makes
+   * {@link QuicTripConnection#isOpen()} report {@code false} for every connection still in the pool, so
+   * that they are dropped rather than handed out, and the next request establishes a replacement.
+   * <p>
+   * Runs on the watchdog thread, which is not the one that is stuck: the stream is reset first, so the
+   * blocked writer is on its way out and releases the pool's monitor if it happens to hold it.
+   */
+  public void abortConnection() {
+    synchronized (this) {
+      closeConnection();
     }
   }
 

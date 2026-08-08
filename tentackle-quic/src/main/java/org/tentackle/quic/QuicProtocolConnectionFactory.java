@@ -32,7 +32,7 @@ public class QuicProtocolConnectionFactory implements ApplicationProtocolConnect
 
   @Override
   public ApplicationProtocolConnection createConnection(String protocol, QuicConnection quicConnection) {
-    return new QuicProtocolConnection(transport);
+    return new QuicProtocolConnection(transport, quicConnection);
   }
 
   @Override
