@@ -98,7 +98,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected classname, null if an entity
    */
   @Persistent(ordinal=0, comment="the protected classname, null if an entity")
-  @Bindable
+  @Bindable(ordinal=0)
   String getObjectClassName();
 
   /**
@@ -106,7 +106,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param objectClassName the protected classname, null if an entity
    */
-  @Bindable
+  @Bindable(ordinal=0)
   void setObjectClassName(String objectClassName);
 
   /**
@@ -115,7 +115,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected object's class id, 0 if not an entity
    */
   @Persistent(ordinal=1, comment="the protected object's class id, 0 if not an entity")
-  @Bindable
+  @Bindable(ordinal=1)
   int getObjectClassId();
 
   /**
@@ -123,7 +123,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param objectClassId the protected object's class id, 0 if not an entity
    */
-  @Bindable
+  @Bindable(ordinal=1)
   void setObjectClassId(int objectClassId);
 
   /**
@@ -132,7 +132,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the id of the protected object, 0 if all instances or not an entity
    */
   @Persistent(ordinal=2, comment="the id of the protected object, 0 if all instances or not an entity")
-  @Bindable
+  @Bindable(ordinal=2)
   long getObjectId();
 
   /**
@@ -140,7 +140,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param objectId the id of the protected object, 0 if all instances or not an entity
    */
-  @Bindable
+  @Bindable(ordinal=2)
   void setObjectId(long objectId);
 
   /**
@@ -149,7 +149,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the class id of the DomainContext's context entity, 0 if all contexts
    */
   @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if all contexts")
-  @Bindable
+  @Bindable(ordinal=3)
   int getDomainContextClassId();
 
   /**
@@ -157,7 +157,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param domainContextClassId the class id of the DomainContext's context entity, 0 if all contexts
    */
-  @Bindable
+  @Bindable(ordinal=3)
   void setDomainContextClassId(int domainContextClassId);
 
   /**
@@ -166,7 +166,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the id of DomainContext's context object, 0 if all instances
    */
   @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if all instances")
-  @Bindable
+  @Bindable(ordinal=4)
   long getDomainContextId();
 
   /**
@@ -174,7 +174,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param domainContextId the id of DomainContext's context object, 0 if all instances
    */
-  @Bindable
+  @Bindable(ordinal=4)
   void setDomainContextId(long domainContextId);
 
   /**
@@ -183,7 +183,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the class id of the entity the permissions are granted to, 0 if all classes
    */
   @Persistent(ordinal=5, comment="the class id of the entity the permissions are granted to, 0 if all classes")
-  @Bindable
+  @Bindable(ordinal=5)
   int getGranteeClassId();
 
   /**
@@ -191,7 +191,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param granteeClassId the class id of the entity the permissions are granted to, 0 if all classes
    */
-  @Bindable
+  @Bindable(ordinal=5)
   void setGranteeClassId(int granteeClassId);
 
   /**
@@ -200,7 +200,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the id of the entity the permissions are granted to, 0 if all grantees
    */
   @Persistent(ordinal=6, comment="the id of the entity the permissions are granted to, 0 if all grantees")
-  @Bindable
+  @Bindable(ordinal=6)
   long getGranteeId();
 
   /**
@@ -208,7 +208,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param granteeId the id of the entity the permissions are granted to, 0 if all grantees
    */
-  @Bindable
+  @Bindable(ordinal=6)
   void setGranteeId(long granteeId);
 
   /**
@@ -217,7 +217,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the priority or evaluation order, 0 is highest or first
    */
   @Persistent(ordinal=7, comment="the priority or evaluation order, 0 is highest or first")
-  @Bindable
+  @Bindable(ordinal=7)
   int getPriority();
 
   /**
@@ -225,7 +225,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param priority the priority or evaluation order, 0 is highest or first
    */
-  @Bindable
+  @Bindable(ordinal=7)
   void setPriority(int priority);
 
   /**
@@ -234,7 +234,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the permissions as a comma-separated list
    */
   @Persistent(ordinal=8, comment="the permissions as a comma-separated list")
-  @Bindable
+  @Bindable(ordinal=8)
   String getPermissions();
 
   /**
@@ -242,7 +242,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param permissions the permissions as a comma-separated list
    */
-  @Bindable
+  @Bindable(ordinal=8)
   void setPermissions(String permissions);
 
   /**
@@ -251,7 +251,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the false if denied, true if allowed
    */
   @Persistent(ordinal=9, comment="the false if denied, true if allowed")
-  @Bindable
+  @Bindable(ordinal=9)
   boolean isAllowed();
 
   /**
@@ -259,7 +259,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param allowed the false if denied, true if allowed
    */
-  @Bindable
+  @Bindable(ordinal=9)
   void setAllowed(boolean allowed);
 
   /**
@@ -268,7 +268,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the user message
    */
   @Persistent(ordinal=10, comment="the user message")
-  @Bindable
+  @Bindable(ordinal=10)
   String getMessage();
 
   /**
@@ -276,7 +276,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param message the user message
    */
-  @Bindable
+  @Bindable(ordinal=10)
   void setMessage(String message);
 
   //</editor-fold>//GEN-END:methods

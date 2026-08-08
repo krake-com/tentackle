@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import org.tentackle.common.StringHelper;
@@ -85,7 +84,7 @@ public class DefaultBindableCache implements BindableCache {
 
 
   /**
-   * Gets the map of bindables for given class.
+   * Gets the map of bindables for the given class.
    *
    * @param clazz the class to retrieve the bindables for
    * @param declaredOnly true if only declared elements, else inherited as well
@@ -237,6 +236,7 @@ public class DefaultBindableCache implements BindableCache {
               element = bindingFactory.createBindableElement(field.getType(), camelName);
               element.setField(field);
               element.setBindingOptions(bindingOptions);
+              element.setOrdinal(annotation.ordinal());
               bindableMap.put(elementKey, element);
             }
           }

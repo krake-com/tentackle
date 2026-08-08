@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import java.lang.annotation.Documented;
@@ -52,13 +51,14 @@ public @interface Bindable {
 
   /**
    * An optional number to sort the bindings.<br>
-   * The binder processes the bindings sorted by ordinal + name of the binding member.
+   * The binder processes the bindings sorted by ordinal plus the name of the binding member.
    * Useful when configurations are automatically created according to the binding,
-   * for example to control the column-order in table configurations.
+   * for example, to control the column-order in table configurations.
+   * <p>
+   * Important: if the element's getter and setter are annotated with {@code @Bindable}, the ordinals must be equal!
    *
    * @return the ordinal
    */
   int ordinal() default 0;
 
 }
-
