@@ -500,7 +500,11 @@ public class DaemonSupervisorTest {
     supervisor.plainDaemons = true;
     try {
       supervisor.start();
-      assertTrue(await(() -> !supervisor.plainCreated.isEmpty()), "daemon should start");
+      // wait until the daemon is really running: createDaemon() registers the thread before the
+      // supervisor starts it, so a plain "has been created" check could observe an unstarted thread.
+      // The termination check below would then pass trivially (an unstarted thread is not alive)
+      // and the daemon would be started right afterwards.
+      assertTrue(await(() -> supervisor.getRunningDaemon(0) != null), "daemon should start");
       Thread daemon = supervisor.plainCreated.get(0);
 
       supervisor.setDaemonEnabled(0, false);
