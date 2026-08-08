@@ -282,9 +282,11 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   /**
    * Gets the {@link Bindable} annotation of the unique domain key.
    * <p>
-   * If the UDK consists of more than one member, the annotation of the member whose getter
-   * comes first alphabetically is returned. {@link Class#getMethods()} delivers the methods
-   * in no particular order, so picking whatever comes first would apply different options
+   * If the UDK consists of more than one member, the annotation of the member that comes first
+   * according to the binding order is returned, i.e., sorted by {@link Bindable#ordinal()} and
+   * the getter's name, just like the binder processes the bindings.
+   * The name is only a tie-breaker for equal ordinals: {@link Class#getMethods()} delivers the
+   * methods in no particular order, so picking whatever comes first would apply different options
    * from one JVM to the next.
    *
    * @param proxy the PDO class to inspect
@@ -292,13 +294,29 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    */
   protected Bindable getBindableAnnotation(T proxy) {
     Method firstMethod = null;
+    Bindable firstBindable = null;
     for (Method method: proxy.getEffectiveClass().getMethods()) {
-      if (method.isAnnotationPresent(DomainKey.class) && method.isAnnotationPresent(Bindable.class) &&
-          (firstMethod == null || method.getName().compareTo(firstMethod.getName()) < 0)) {
-        firstMethod = method;
+      if (method.isAnnotationPresent(DomainKey.class)) {
+        Bindable bindable = method.getAnnotation(Bindable.class);
+        if (bindable != null) {
+          if (firstBindable == null) {
+            firstMethod = method;
+            firstBindable = bindable;
+          }
+          else {
+            int rv = Integer.compare(bindable.ordinal(), firstBindable.ordinal());
+            if (rv == 0) {
+              rv = method.getName().compareTo(firstMethod.getName());
+            }
+            if (rv < 0) {
+              firstMethod = method;
+              firstBindable = bindable;
+            }
+          }
+        }
       }
     }
-    return firstMethod == null ? null : firstMethod.getAnnotation(Bindable.class);
+    return firstBindable;
   }
 
 }
