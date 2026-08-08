@@ -22,6 +22,7 @@ import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
@@ -84,17 +85,17 @@ public class SessionsView extends AbstractFxController {
   @FXML
   private void initialize() {
     securityButton.setGraphic(Fx.createGraphic("security"));
-    securityButton.setOnAction(e -> showSecurityDialog());
+    securityButton.setOnAction(_ -> showSecurityDialog());
 
     refreshButton.setGraphic(Fx.createGraphic("reload"));
-    refreshButton.setOnAction(e -> refresh());
+    refreshButton.setOnAction(_ -> refresh());
 
     logoutButton.setGraphic(Fx.createGraphic("exit"));
-    logoutButton.setOnAction(e -> killSessions(false));
+    logoutButton.setOnAction(_ -> killSessions(false));
     logoutButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
     killButton.setGraphic(Fx.createGraphic("cancel"));
-    killButton.setOnAction(e -> killSessions(true));
+    killButton.setOnAction(_ -> killSessions(true));
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
     sessionsNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -183,7 +184,8 @@ public class SessionsView extends AbstractFxController {
    */
   private void refresh() {
     sessions = adminExt.getSessions();
-    sessionsNode.getItems().setAll(sessions);
+    // the items are wrapped in transformation lists if filtering is enabled -> modify the root source
+    FxUtilities.getInstance().getRootSource(sessionsNode.getItems()).setAll(sessions);
     sessionsNode.getSelectionModel().clearSelection();
   }
 
@@ -195,16 +197,19 @@ public class SessionsView extends AbstractFxController {
   private void killSessions(boolean kill) {
     Set<SessionData> sessionData = new LinkedHashSet<>();
     // include all sessions of a group, even if not all are selected
-    for (SessionData session : sessionsNode.getSelectionModel().getSelectedItems()) {
+    // (copied, since the selection is modified below)
+    for (SessionData session : List.copyOf(sessionsNode.getSelectionModel().getSelectedItems())) {
       sessionData.add(session);
       if (session.getSessionGroup() != 0) {
-        int row = 0;
         for (SessionData otherSession: sessions) {
           if (otherSession.getSessionGroup() == session.getSessionGroup() && otherSession.getUserId() == session.getUserId()) {
             sessionData.add(otherSession);
-            sessionsNode.getSelectionModel().select(row, null);
+            // the row index refers to the view, which may be filtered and sorted (-1 if not visible)
+            int row = sessionsNode.getItems().indexOf(otherSession);
+            if (row >= 0) {
+              sessionsNode.getSelectionModel().select(row, null);
+            }
           }
-          row++;
         }
       }
     }

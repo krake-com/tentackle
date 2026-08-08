@@ -128,7 +128,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   private ObservableList<T> items = new SortedList<>(FXCollections.observableArrayList());
 
-  private InvalidationListener itemsListener;   // listener for items totals change
+  private InvalidationListener itemsListener;   // listener for item totals change
   private PdoFinder<T> finder;                  // the finder
   private boolean viewSelectionPending;         // true if initial tree- or table view selection pending
   private PdoCrud<T> pdoCrud;                   // the CRUD view
@@ -137,7 +137,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
   private FxTreeView<T> treeView;               // the tree showing the results
   private boolean treeShown;                    // true if the tree shown, else table
-  private TreeItem<T> rootItem;                 // root item to detect top level nodes
+  private TreeItem<T> rootItem;                 // root item to detect the top level nodes
   private boolean tableViewInvalid;             // true if tableview is invalid
   private boolean treeViewInvalid;              // true if tree-view is invalid
   private boolean singleSelectMode;             // true if in (modal) single selection mode
@@ -637,7 +637,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     else {
       tableView.setItems(items);
-      // the table may wrap the items again, for example if column filters are enabled
+      // the table may wrap the items again, for example, if column filters are enabled
       items = tableView.getItems();
       if (items.isEmpty()) {
         Node placeHolder = createPlaceHolder();
