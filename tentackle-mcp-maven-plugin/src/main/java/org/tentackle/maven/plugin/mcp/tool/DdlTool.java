@@ -68,7 +68,9 @@ public class DdlTool implements ModelTool {
         Renders CREATE TABLE, CREATE INDEX and foreign key statements for one or more entities and a given \
         database backend. This is text for reading, not for running: nothing is executed and no database is \
         contacted. Requires the plugin's 'backends' parameter to be configured. Omit 'entity' to render the \
-        whole model.""";
+        whole model. Only entities with a table of their own are rendered: an entity of a single- or \
+        multi-table hierarchy is stored in the table of its hierarchy root, and a 'provided' table is \
+        maintained outside the application.""";
   }
 
   @Override
@@ -116,9 +118,17 @@ public class DdlTool implements ModelTool {
     buf.append("-- backend: ").append(backend.getName()).append('\n');
 
     for (Entity entity : entities) {
-      if (entity.isAbstract() || entity.getTableProvidingEntity() != null
-                                 && entity.getTableProvidingEntity() != entity) {
-        continue;     // no table of its own
+      if (!Entities.providesTable(entity)) {
+        // stored in another entity's table, or maintained externally: say so if the caller asked for it by name
+        if (!specs.isEmpty()) {
+          Entity tableProvider = entity.getTableProvidingEntity();
+          buf.append("\n-- ").append(entity.getName()).append(": no table of its own, ")
+             .append(tableProvider == null ? "not mapped to a table"
+                     : tableProvider == entity ? "declared as 'provided' and maintained externally"
+                     : "stored in the table of " + tableProvider.getName())
+             .append('\n');
+        }
+        continue;
       }
       if (contains(parts, "table")) {
         buf.append('\n').append(entity.sqlCreateTable(backend)).append('\n');

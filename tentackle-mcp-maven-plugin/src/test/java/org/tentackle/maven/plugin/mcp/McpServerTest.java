@@ -25,15 +25,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import io.helidon.webserver.WebServer;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -48,8 +41,7 @@ public class McpServerTest {
 
   private ModelSession session;
   private WebServer server;
-  private HttpClient client;
-  private String sessionId;
+  private McpTestClient client;
 
   @BeforeClass
   public void startServer() throws Exception {
@@ -61,8 +53,7 @@ public class McpServerTest {
             McpFeatureFactory.create(session, PATH, "tentackle-model-test", "1.0", 1000)))
         .build()
         .start();
-    client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-    sessionId = initialize();
+    client = new McpTestClient(server, PATH);
   }
 
   @AfterClass(alwaysRun = true)
@@ -77,56 +68,9 @@ public class McpServerTest {
   }
 
 
-  private URI endpoint() {
-    return URI.create("http://localhost:" + server.port() + PATH);
-  }
-
-  private HttpRequest.Builder request() {
-    return HttpRequest.newBuilder(endpoint())
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json, text/event-stream")
-        .timeout(Duration.ofSeconds(30));
-  }
-
-  private String initialize() throws Exception {
-    HttpResponse<String> response = client.send(
-        request().POST(HttpRequest.BodyPublishers.ofString("""
-            {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18",\
-            "capabilities":{},"clientInfo":{"name":"test","version":"1"}}}""")).build(),
-        HttpResponse.BodyHandlers.ofString());
-    assertEquals(response.statusCode(), 200, response.body());
-    assertTrue(response.body().contains("\"serverInfo\""), response.body());
-    String id = response.headers().firstValue("Mcp-Session-Id").orElse(null);
-    assertNotNull(id, "the server must open a session");
-
-    // a notification carries no result, so the server acknowledges it with 202 rather than 200
-    HttpResponse<String> accepted = post("""
-        {"jsonrpc":"2.0","method":"notifications/initialized"}""", id);
-    assertEquals(accepted.statusCode(), 202, accepted.body());
-    return id;
-  }
-
-  private HttpResponse<String> post(String body, String id) throws Exception {
-    return client.send(
-        request().header("Mcp-Session-Id", id).POST(HttpRequest.BodyPublishers.ofString(body)).build(),
-        HttpResponse.BodyHandlers.ofString());
-  }
-
-  private String rpc(String method, String params) throws Exception {
-    HttpResponse<String> response =
-        post("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"" + method + "\",\"params\":" + params + '}', sessionId);
-    assertEquals(response.statusCode(), 200, response.body());
-    return response.body();
-  }
-
-  private String callTool(String name, String arguments) throws Exception {
-    return rpc("tools/call", "{\"name\":\"" + name + "\",\"arguments\":" + arguments + '}');
-  }
-
-
   @Test
   public void announcesEveryTool() throws Exception {
-    String body = rpc("tools/list", "{}");
+    String body = client.rpc("tools/list", "{}");
     for (String tool : new String[] { "model_overview", "model_list_entities", "model_find",
                                       "model_describe_entity", "model_source", "model_paths",
                                       "model_ddl", "model_validate", "model_reload" }) {
@@ -136,15 +80,40 @@ public class McpServerTest {
   }
 
   @Test
+  public void announcesWhichToolsOnlyReadTheModel() throws Exception {
+    String body = client.rpc("tools/list", "{}");
+    assertTrue(annotationsOf(body, "model_overview").contains("\"readOnlyHint\":true"), body);
+    assertTrue(annotationsOf(body, "model_describe_entity").contains("\"readOnlyHint\":true"), body);
+    // the two that reload the model change what the other tools see, even though they write nothing
+    assertTrue(annotationsOf(body, "model_reload").contains("\"readOnlyHint\":false"), body);
+    assertTrue(annotationsOf(body, "model_validate").contains("\"readOnlyHint\":false"), body);
+  }
+
+  /**
+   * Gets the annotations a tool is announced with.
+   *
+   * @param toolsList the body of a tools/list response
+   * @param toolName the tool name
+   * @return the annotations object as JSON
+   */
+  private String annotationsOf(String toolsList, String toolName) {
+    int tool = toolsList.indexOf("\"name\":\"" + toolName + '"');
+    assertTrue(tool > 0, toolName + " is missing from tools/list");
+    int annotations = toolsList.indexOf("\"annotations\":{", tool);
+    assertTrue(annotations > 0, toolName + " is announced without annotations");
+    return toolsList.substring(annotations, toolsList.indexOf('}', annotations) + 1);
+  }
+
+  @Test
   public void announcesTheResourcesAndThePrompt() throws Exception {
-    assertTrue(rpc("resources/list", "{}").contains("tentackle-model://index"));
-    assertTrue(rpc("resources/templates/list", "{}").contains("tentackle-model://entity/{name}"));
-    assertTrue(rpc("prompts/list", "{}").contains("new-entity"));
+    assertTrue(client.rpc("resources/list", "{}").contains("tentackle-model://index"));
+    assertTrue(client.rpc("resources/templates/list", "{}").contains("tentackle-model://entity/{name}"));
+    assertTrue(client.rpc("prompts/list", "{}").contains("new-entity"));
   }
 
   @Test
   public void servesTheGrammarResource() throws Exception {
-    String body = rpc("resources/read", "{\"uri\":\"tentackle-model://grammar/model-definition\"}");
+    String body = client.rpc("resources/read", "{\"uri\":\"tentackle-model://grammar/model-definition\"}");
     assertTrue(body.contains("Model Definition"), "the packaged grammar must be served, got: " +
                                                   body.substring(0, Math.min(400, body.length())));
     assertFalse(body.contains("not packaged with this plugin"), "the grammar is missing from the jar");
@@ -152,37 +121,71 @@ public class McpServerTest {
 
   @Test
   public void servesAnEntityByResourceTemplate() throws Exception {
-    String body = rpc("resources/read", "{\"uri\":\"tentackle-model://entity/Product\"}");
+    String body = client.rpc("resources/read", "{\"uri\":\"tentackle-model://entity/Product\"}");
     assertTrue(body.contains("name := Product"), body);
   }
 
   @Test
   public void answersAToolCall() throws Exception {
-    String body = callTool("model_overview", "{}");
+    String body = client.callTool("model_overview", "{}");
     assertTrue(body.contains("entities:       4"), body);
     assertTrue(body.contains("\"isError\":false"), body);
   }
 
   @Test
   public void passesArgumentsThrough() throws Exception {
-    String body = callTool("model_describe_entity",
-                           "{\"entity\":\"Order\",\"sections\":[\"aggregate\"],\"scope\":\"own\"}");
+    String body = client.callTool("model_describe_entity",
+                                  "{\"entity\":\"Order\",\"sections\":[\"aggregate\"],\"scope\":\"own\"}");
     assertTrue(body.contains("Customer"), body);
     assertTrue(body.contains("## aggregate"), body);
   }
 
   @Test
+  public void acceptsABareStringWhereTheSchemaAsksForAnArray() throws Exception {
+    // agents send a single value unwrapped often enough that failing the call would be a regular occurrence
+    String body = client.callTool("model_find", "{\"pattern\":\"customer_id\",\"kinds\":\"column\"}");
+    assertTrue(body.contains("\"isError\":false"), body);
+    assertTrue(body.contains("customer_id"), body);
+  }
+
+  @Test
+  public void acceptsACommaSeparatedStringWhereTheSchemaAsksForAnArray() throws Exception {
+    String body = client.callTool("model_describe_entity", "{\"entity\":\"Order\",\"sections\":\"aggregate,udk\"}");
+    assertTrue(body.contains("\"isError\":false"), body);
+    assertTrue(body.contains("## aggregate"), body);
+    assertTrue(body.contains("## unique domain key"), body);
+  }
+
+  @Test
+  public void acceptsANumberAndABooleanSentAsStrings() throws Exception {
+    String body = client.callTool("model_list_entities", "{\"limit\":\"2\"}");
+    assertTrue(body.contains("\"isError\":false"), body);
+    assertTrue(body.contains("4 of 4 entities, showing the first 2"), body);
+
+    String source = client.callTool("model_source",
+                                    "{\"entity\":\"Product\",\"format\":\"compact\",\"asComment\":\"true\"}");
+    assertTrue(source.contains("@>"), source);
+  }
+
+  @Test
+  public void reportsAnArgumentOfTheWrongTypeAsAToolError() throws Exception {
+    String body = client.callTool("model_list_entities", "{\"limit\":\"many\"}");
+    assertTrue(body.contains("\"isError\":true"), body);
+    assertTrue(body.contains("not a number"), body);
+  }
+
+  @Test
   public void reportsAToolFailureAsAToolError() throws Exception {
-    String body = callTool("model_describe_entity", "{\"entity\":\"NoSuchEntity\"}");
+    String body = client.callTool("model_describe_entity", "{\"entity\":\"NoSuchEntity\"}");
     assertTrue(body.contains("\"isError\":true"), body);
     assertTrue(body.contains("model_describe_entity failed"), body);
   }
 
   @Test
   public void validatesACandidateOverTheWire() throws Exception {
-    String body = callTool("model_validate",
-                           "{\"source\":\"name := Wire\\ntable := wire\\nid := 9001\\nintegrity := none\\n" +
-                           "alias := wire\\n\\n## attributes\\nString(10)  a  acol  a column\\n\"}");
+    String body = client.callTool("model_validate",
+                                  "{\"source\":\"name := Wire\\ntable := wire\\nid := 9001\\nintegrity := none\\n" +
+                                  "alias := wire\\n\\n## attributes\\nString(10)  a  acol  a column\\n\"}");
     assertTrue(body.contains("duplicate entity id 9001"), body);
   }
 

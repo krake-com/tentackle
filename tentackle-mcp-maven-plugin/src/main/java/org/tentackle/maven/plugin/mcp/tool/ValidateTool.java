@@ -103,6 +103,11 @@ public class ValidateTool implements ModelTool {
     return validateCandidate(session, source, entityName);
   }
 
+  @Override
+  public boolean isReadOnly() {
+    return false;     // without a candidate it reloads the model, which changes what the other tools see
+  }
+
   private String validateLoaded(ModelSession session) throws ModelException {
     List<String> changed = session.reload(true);
     StringBuilder buf = new StringBuilder(512);
@@ -165,6 +170,10 @@ public class ValidateTool implements ModelTool {
       for (Path dir : dirs) {
         candidateModel.loadFromDirectory(dir.toString(), false);
       }
+      if (config.fromResources()) {
+        // the same sources the live model has: without them every relation into a dependency model fails here
+        candidateModel.loadFromResources(false);
+      }
       candidateModel.updateRelations();
 
       StringBuilder buf = new StringBuilder(512);
@@ -189,7 +198,7 @@ public class ValidateTool implements ModelTool {
         candidateModel.clearModel();
         ModelManager.getInstance().removeModel(candidateModel);
       }
-      deleteRecursively(scratch);
+      deleteRecursively(session, scratch);
     }
   }
 
@@ -239,7 +248,16 @@ public class ValidateTool implements ModelTool {
     }
   }
 
-  private void deleteRecursively(Path path) {
+  /**
+   * Removes the scratch area.
+   * <p>
+   * Runs while the result is on its way out, so a failure is reported rather than thrown: leaving a directory
+   * behind in the temp area is worth a warning, not the validation result the caller is waiting for.
+   *
+   * @param session the model session
+   * @param path the scratch directory, null if it was never created
+   */
+  private void deleteRecursively(ModelSession session, Path path) {
     if (path == null || !Files.exists(path)) {
       return;
     }
@@ -249,7 +267,7 @@ public class ValidateTool implements ModelTool {
       }
     }
     catch (IOException iox) {
-      throw new UncheckedIOException("cannot remove the scratch directory " + path, iox);
+      session.addWarning("cannot remove the scratch directory " + path + ": " + iox.getMessage());
     }
   }
 

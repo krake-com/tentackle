@@ -1,0 +1,11 @@
+# an entity of a "dependency model": loaded from the classpath, not from a model directory
+name := Warehouse
+id := 8501
+table := warehouse
+alias := wh
+integrity := none
+
+## attributes
+[root, remote, tracked]
+
+String(40)     name            wname             what it is called

@@ -93,7 +93,7 @@ public class FindTool implements ModelTool {
     NamePattern pattern = new NamePattern(args.requiredString("pattern"));
     List<String> kinds = args.list("kinds", List.of(KINDS));
     boolean comments = args.bool("comments", false);
-    int limit = Math.min(args.integer("limit", maxResults), maxResults);
+    int limit = Math.clamp(args.integer("limit", maxResults), 1, maxResults);
 
     for (String kind : kinds) {
       if (!List.of(KINDS).contains(kind.toLowerCase(Locale.ROOT))) {

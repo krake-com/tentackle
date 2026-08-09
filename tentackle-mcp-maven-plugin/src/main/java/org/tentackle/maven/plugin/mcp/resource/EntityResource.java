@@ -83,7 +83,8 @@ public class EntityResource implements McpResource {
       }));
     }
     catch (Exception ex) {
-      return McpResourceResult.create(ex.getMessage());
+      String message = ex.getMessage();
+      return McpResourceResult.create(message == null || message.isBlank() ? ex.toString() : message);
     }
   }
 

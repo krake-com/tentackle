@@ -129,12 +129,20 @@ public class EntityDescriber {
   }
 
   private void appendHeader(StringBuilder buf) {
-    buf.append(entity.getName())
-       .append("  (id ").append(entity.getClassId())
-       .append(", table ").append(entity.getTableName())
-       .append(", alias ").append(entity.getTableAlias())
-       .append(", integrity ").append(entity.getIntegrity())
-       .append(')');
+    buf.append(entity.getName()).append("  (id ").append(entity.getClassId());
+    // an entity mapped into another entity's table has no table name of its own: name the provider instead
+    Entity tableProvider = entity.getTableProvidingEntity();
+    if (tableProvider == null) {
+      buf.append(", no table of its own");
+    }
+    else {
+      buf.append(", table ").append(tableProvider.getTableName())
+         .append(", alias ").append(tableProvider.getTableAlias());
+      if (tableProvider != entity) {
+        buf.append(" (provided by ").append(tableProvider.getName()).append(')');
+      }
+    }
+    buf.append(", integrity ").append(entity.getIntegrity()).append(')');
     List<String> flags = Flags.of(entity);
     if (!flags.isEmpty()) {
       buf.append("\nflags:   ").append(Flags.join(flags));
@@ -346,6 +354,21 @@ public class EntityDescriber {
     appendSection(buf, "ddl");
     if (backends.isEmpty()) {
       buf.append("no backends configured: set the plugin's 'backends' parameter to render DDL\n");
+      return;
+    }
+    if (!Entities.providesTable(entity)) {
+      // rendering it anyway would print a CREATE TABLE the build never generates, with a null table name
+      Entity tableProvider = entity.getTableProvidingEntity();
+      if (tableProvider == null) {
+        buf.append("no table of its own: this entity is not mapped to a table\n");
+      }
+      else if (tableProvider != entity) {
+        buf.append("no table of its own: stored in the table of ").append(tableProvider.getName())
+           .append(", describe that entity to see its ddl\n");
+      }
+      else {
+        buf.append("declared as 'provided': the table is maintained externally and no ddl is generated for it\n");
+      }
       return;
     }
     for (Backend backend : backends) {

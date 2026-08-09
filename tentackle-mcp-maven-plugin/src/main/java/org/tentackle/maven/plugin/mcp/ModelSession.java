@@ -52,7 +52,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *     requests on virtual threads, so a whole invocation runs under {@link #call(ModelOperation)} and a refresh can
  *     never land halfway through a description.</li>
  * <li><strong>Staleness.</strong> The server outlives many builds. Model files are re-scanned, at most once per
- *     staleness interval, and the model is refreshed when they are moved.</li>
+ *     staleness interval, and the model is refreshed when they are moved. Sources that do not load leave the
+ *     loaded model alone, so a build in progress never turns into a model with entities missing from it.</li>
  * </ul>
  *
  * @author harald
@@ -65,16 +66,21 @@ public class ModelSession {
   /** Default minimum delay between two checks for changed model files in milliseconds. */
   public static final long DEFAULT_STALENESS_CHECK_MILLIS = 1000;
 
+  /** The name suffix of the scratch model a reload is verified in. */
+  public static final String VERIFY_MODEL_SUFFIX = "-mcp-verify";
+
   private final ModelConfiguration config;
   private final long stalenessCheckMillis;
   private final ReentrantLock lock;
   private final List<String> warnings;
   private final Collection<Backend> backends;
+  private final Set<String> unreportedChanges;
 
   private Model model;
   private Map<String, Long> fileState;
   private Map<String, String> entitySources;
   private long lastStalenessCheck;
+  private String loadFailure;
 
   /**
    * Creates a session.
@@ -88,6 +94,7 @@ public class ModelSession {
     this.lock = new ReentrantLock();
     this.warnings = new ArrayList<>();
     this.backends = new ArrayList<>();
+    this.unreportedChanges = new TreeSet<>();
     this.fileState = new HashMap<>();
     this.entitySources = new HashMap<>();
   }
@@ -119,11 +126,17 @@ public class ModelSession {
    * @param operation the operation
    * @return the result of the operation
    * @throws ModelException if the model is inconsistent
+   * @throws IllegalStateException if the last load left the model incomplete
    */
   public <T> T call(ModelOperation<T> operation) throws ModelException {
     lock.lock();
     try {
       checkStale();
+      if (loadFailure != null) {
+        // answering from a fragment would look like entities were deleted: say what happened instead
+        throw new IllegalStateException("the model is incomplete because loading it failed: " + loadFailure +
+                                        ". Fix the model sources; the server picks them up by itself");
+      }
       return operation.execute();
     }
     finally {
@@ -214,10 +227,22 @@ public class ModelSession {
   }
 
   /**
-   * Loads the model.
+   * Adds a warning to be reported with every overview and validation result.
+   *
+   * @param warning the warning
+   */
+  public void addWarning(String warning) {
+    if (!warnings.contains(warning)) {
+      warnings.add(warning);
+    }
+  }
+
+  /**
+   * Loads the model from scratch.
    * <p>
-   * All sources are loaded without resolving relations, then {@link Model#updateRelations()} wires the whole set
-   * at once. This is the only order in which relations across dependency models resolve.
+   * Clears the model before reading the first source, so a failure leaves a fragment behind that no tool may
+   * answer from. Callers that have a loaded model to lose go through {@link #reload(boolean)}, which reads the
+   * sources into a scratch model first.
    *
    * @throws ModelException if the model is inconsistent
    */
@@ -225,16 +250,12 @@ public class ModelSession {
     lock.lock();
     try {
       model = ModelManager.getInstance().getModel(config.modelName());
-      model.clearModel();
 
       warnings.clear();
       if (config.modelDefaults() == null) {
         warnings.add("no model defaults configured: the model is loaded exactly as written, which usually " +
                      "differs from what the build sees and may show integrity errors that do not exist in the build");
       }
-      model.setModelDefaults(config.modelDefaults());
-      model.setEntityAliases(config.entityAliases());
-      model.setSchemaNameMapped(config.schemaNameMapped());
 
       backends.clear();
       if (config.backendNames() == null) {
@@ -243,7 +264,6 @@ public class ModelSession {
       else {
         try {
           backends.addAll(BackendFactory.getInstance().getBackends(config.backendNames()));
-          model.getEntityFactory().setBackends(backends);
         }
         catch (BackendException bex) {
           throw new ModelException("backends '" + config.backendNames() + "': " + bex.getMessage() +
@@ -251,17 +271,20 @@ public class ModelSession {
         }
       }
 
-      for (String modelDir : config.modelDirs()) {
-        model.loadFromDirectory(modelDir, false);
+      try {
+        populate(model);
+        fileState = scanModelDirs();
+        entitySources = snapshotSources();
+        loadFailure = null;
       }
-      if (config.fromResources()) {
-        model.loadFromResources(false);
+      catch (ModelException mex) {
+        // clearModel() already happened: what is loaded now is a fragment and must not be answered from
+        loadFailure = mex.getMessage();
+        throw mex;
       }
-      model.updateRelations();
-
-      fileState = scanModelDirs();
-      entitySources = snapshotSources();
-      lastStalenessCheck = System.currentTimeMillis();
+      finally {
+        lastStalenessCheck = System.currentTimeMillis();
+      }
     }
     finally {
       lock.unlock();
@@ -269,7 +292,58 @@ public class ModelSession {
   }
 
   /**
+   * Loads the configured sources into a model.
+   * <p>
+   * All sources are loaded without resolving relations, then {@link Model#updateRelations()} wires the whole set
+   * at once. This is the only order in which relations across dependency models resolve.
+   *
+   * @param target the model to populate
+   * @throws ModelException if the model is inconsistent
+   */
+  private void populate(Model target) throws ModelException {
+    target.clearModel();
+    target.setModelDefaults(config.modelDefaults());
+    target.setEntityAliases(config.entityAliases());
+    target.setSchemaNameMapped(config.schemaNameMapped());
+    if (!backends.isEmpty()) {
+      target.getEntityFactory().setBackends(backends);
+    }
+    for (String modelDir : config.modelDirs()) {
+      target.loadFromDirectory(modelDir, false);
+    }
+    if (config.fromResources()) {
+      target.loadFromResources(false);
+    }
+    target.updateRelations();
+  }
+
+  /**
+   * Verifies that what is on disk can be loaded.
+   * <p>
+   * {@link #load()} clears the model before reading the first file, so a source that does not parse would leave
+   * a fragment of a model behind - and the moment that is most likely, a build rewriting the model directory, is
+   * exactly when a staleness check fires. The sources are therefore read into a scratch model first and the
+   * loaded model is only replaced once they are known to be good.
+   *
+   * @throws ModelException if the model on disk is inconsistent
+   */
+  private void verifyLoadable() throws ModelException {
+    Model scratch = ModelManager.getInstance().getModel(config.modelName() + VERIFY_MODEL_SUFFIX);
+    try {
+      populate(scratch);
+    }
+    finally {
+      scratch.clearModel();
+      ModelManager.getInstance().removeModel(scratch);
+    }
+  }
+
+  /**
    * Reloads the model.
+   * <p>
+   * The result includes what an automatic staleness refresh picked up since the last reload: that refresh runs
+   * before every tool call, so without this a caller of {@code model_reload} would be told that nothing changed
+   * moments after the change was loaded.
    *
    * @param full true for a complete reload, false to refresh changed files only
    * @return the names of the entities whose source changed, never null
@@ -279,6 +353,7 @@ public class ModelSession {
     lock.lock();
     try {
       Map<String, String> before = entitySources;
+      verifyLoadable();     // never touch the loaded model for sources that do not load
       if (full) {
         load();
       }
@@ -288,7 +363,10 @@ public class ModelSession {
         entitySources = snapshotSources();
         lastStalenessCheck = System.currentTimeMillis();
       }
-      return changedEntities(before, entitySources);
+      Set<String> changed = new TreeSet<>(unreportedChanges);
+      unreportedChanges.clear();
+      changed.addAll(changedEntities(before, entitySources));
+      return List.copyOf(changed);
     }
     finally {
       lock.unlock();
@@ -320,11 +398,14 @@ public class ModelSession {
         return List.of();
       }
       boolean removed = !current.keySet().containsAll(fileState.keySet());
-      return reload(removed);
+      List<String> changed = reload(removed);
+      unreportedChanges.addAll(changed);   // reload() consumed them: keep them for the next explicit reload
+      return changed;
     }
     catch (ModelException mex) {
       // the model on disk became inconsistent: keep serving the last good one, but say so
-      addWarning("model files changed but could not be reloaded: " + mex.getMessage());
+      addWarning("model files changed but could not be reloaded, still serving the model loaded before: " +
+                 mex.getMessage());
       return List.of();
     }
     finally {
@@ -351,17 +432,6 @@ public class ModelSession {
     return fileState.size();
   }
 
-
-  /**
-   * Adds a warning to be reported with every overview and validation result.
-   *
-   * @param warning the warning
-   */
-  protected void addWarning(String warning) {
-    if (!warnings.contains(warning)) {
-      warnings.add(warning);
-    }
-  }
 
   private Map<String, Long> scanModelDirs() {
     Map<String, Long> state = new HashMap<>();

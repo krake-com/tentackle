@@ -105,7 +105,8 @@ public class PathsTool implements ModelTool {
     String kind = args.string("kind", "relations").toLowerCase(Locale.ROOT);
     String direction = args.string("direction", "both").toLowerCase(Locale.ROOT);
     int maxDepth = Math.max(1, args.integer("maxDepth", DEFAULT_MAX_DEPTH));
-    int limit = Math.min(args.integer("limit", maxResults), maxResults);
+    // a limit below 1 would end the search before it starts and report a path as missing
+    int limit = Math.clamp(args.integer("limit", maxResults), 1, maxResults);
 
     if (!List.of(KINDS).contains(kind)) {
       throw new IllegalArgumentException("unknown kind '" + kind + "', expected one of " + String.join(", ", KINDS));

@@ -106,6 +106,21 @@ public final class Entities {
   }
 
   /**
+   * Returns whether an entity gets a table of its own in the generated DDL.
+   * <p>
+   * Neither "is abstract" nor "has a table name" is the criterion: the abstract root of a {@code single}- or
+   * {@code multi}-table hierarchy provides the table its concrete sub entities are stored in, and a
+   * {@code provided} entity is mapped to a table maintained elsewhere. This is the rule the
+   * {@code tentackle-sql-maven-plugin} generates by, so that what is rendered here is what the build creates.
+   *
+   * @param entity the entity
+   * @return true if the entity provides its own table
+   */
+  public static boolean providesTable(Entity entity) {
+    return entity.getTableProvidingEntity() == entity && !entity.getOptions().isProvided();
+  }
+
+  /**
    * Renders a relation as a short, readable phrase.
    *
    * @param relation the relation
@@ -114,7 +129,7 @@ public final class Entities {
   public static String describe(org.tentackle.model.Relation relation) {
     StringBuilder buf = new StringBuilder(64);
     buf.append(relation.getEntity().getName()).append('.').append(relation.getName())
-       .append(" -> ").append(relation.getForeignEntity().getName());
+       .append(" -> ").append(target(relation));
     List<String> flags = Flags.of(relation);
     if (!flags.isEmpty()) {
       buf.append(" (").append(Flags.join(flags)).append(')');
@@ -135,9 +150,21 @@ public final class Entities {
     StringBuilder buf = new StringBuilder(80);
     buf.append(path.getFirst().getEntity().getName());
     for (org.tentackle.model.Relation relation : path) {
-      buf.append(" --").append(relation.getName()).append("--> ").append(relation.getForeignEntity().getName());
+      buf.append(" --").append(relation.getName()).append("--> ").append(target(relation));
     }
     return buf.toString();
+  }
+
+  /**
+   * Names what a relation points at.
+   * <p>
+   * A relation to a class outside the model has no foreign entity, only the class name it was written with.
+   *
+   * @param relation the relation
+   * @return the name of the foreign entity, or the class name it refers to
+   */
+  private static String target(org.tentackle.model.Relation relation) {
+    return relation.getForeignEntity() == null ? relation.getClassName() : relation.getForeignEntity().getName();
   }
 
 }

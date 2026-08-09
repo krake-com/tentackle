@@ -177,7 +177,7 @@ context than the model. Two collapses do most of the work:
 | `model_describe_entity` | One entity, with `scope` and `sections`. See below.                                                                              |
 | `model_source`          | The model definition as text: `raw`, `canonical` or `compact`, optionally as a `@> … @<` block and with the variables kept.       |
 | `model_paths`           | How entities are connected: the relation graph between two of them, their direct neighbors, the composite paths or the embedding paths. |
-| `model_ddl`             | `CREATE TABLE`, `CREATE INDEX` and foreign key statements for a backend. Text only — nothing is executed.                         |
+| `model_ddl`             | `CREATE TABLE`, `CREATE INDEX` and foreign key statements for a backend, for the entities that own a table — the same rule the SQL plugin generates by. Text only — nothing is executed. |
 | `model_validate`        | Validates the loaded model, or a **candidate** definition that has not been written anywhere. See below.                          |
 | `model_reload`          | Refreshes changed files, or clears and reloads. Needed after deleting or renaming an entity.                                      |
 
@@ -227,11 +227,15 @@ entities, check the class id, validate the candidate, and only then write the fi
 ### How It Behaves
 
 - **Read-only.** Nothing is written, no database connection is opened, no application class is loaded. The
-  server parses model text.
+  server parses model text. Every tool is announced with a `readOnlyHint`, and only `model_reload` and
+  `model_validate` clear it — they reload the model, which changes what the other tools see.
 - **Self-refreshing.** Model files are re-scanned before each call, at most once per `stalenessCheckMillis`, and
   the model is reloaded when they moved. A rebuild in another terminal is picked up without a restart. A
   *removed* file forces a full reload, because a refresh alone keeps entities whose source is gone — that is what
   `model_reload` with `full` is for.
+- **Never half a model.** Sources are read into a scratch model before the loaded one is replaced, so a build
+  that is halfway through writing the model directory leaves the server on the model it had, and says so in its
+  warnings. An answer is never a model with entities silently missing from it.
 - **Consistent.** The model implementation synchronizes individual methods, which makes a single getter safe but
   not a tool call that walks an entity through a hundred of them. A whole invocation therefore runs under one
   lock, so a refresh can never land halfway through a description.

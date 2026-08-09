@@ -216,6 +216,19 @@ public class ModelToolTest {
   }
 
   @Test
+  public void findsThePathWithAnUnusableLimit() throws Exception {
+    // a limit below one must not end the search before it starts and report the path as missing
+    String text = call("model_paths", Map.of("from", "Customer", "to", "OrderItem", "limit", 0));
+    assertTrue(text.contains("Customer --Order--> Order --OrderItem--> OrderItem"), text);
+  }
+
+  @Test
+  public void listsAtLeastOneRowWithAnUnusableLimit() throws Exception {
+    String text = call("model_list_entities", Map.of("limit", 0));
+    assertTrue(text.startsWith("4 of 4 entities, showing the first 1"), text);
+  }
+
+  @Test
   public void reportsThatThereIsNoPath() throws Exception {
     String text = call("model_paths", Map.of("from", "Product", "to", "Customer"));
     assertTrue(text.startsWith("no path from Product to Customer"), text);

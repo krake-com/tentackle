@@ -82,7 +82,7 @@ public class ListEntitiesTool implements ModelTool {
   public String execute(ModelSession session, ToolArguments args) throws ModelException {
     NamePattern pattern = new NamePattern(args.string("pattern", null));
     List<String> filters = args.list("filter", List.of());
-    int limit = Math.min(args.integer("limit", maxResults), maxResults);
+    int limit = Math.clamp(args.integer("limit", maxResults), 1, maxResults);
 
     TextTable table = new TextTable("ENTITY", "ID", "TABLE", "EXTENDS", "FLAGS");
     int matched = 0;

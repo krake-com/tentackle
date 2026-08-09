@@ -53,12 +53,27 @@ public final class McpFeatureFactory {
    */
   public static McpServerFeature create(ModelSession session, String path, String name, String version,
                                         int maxResults) {
+    return create(session, new ToolRegistry(maxResults), path, name, version);
+  }
+
+  /**
+   * Creates the feature with the given tools.
+   *
+   * @param session the model session
+   * @param registry the tools to offer
+   * @param path the path of the MCP endpoint
+   * @param name the server name reported during initialization
+   * @param version the server version reported during initialization
+   * @return the feature
+   */
+  public static McpServerFeature create(ModelSession session, ToolRegistry registry, String path, String name,
+                                        String version) {
     McpServerConfig.Builder builder = McpServerFeature.builder()
         .path(path)
         .name(name)
         .version(version);
 
-    for (ModelTool tool : new ToolRegistry(maxResults).getTools()) {
+    for (ModelTool tool : registry.getTools()) {
       builder.addTool(new ToolAdapter(tool, session));
     }
 

@@ -1,0 +1,10 @@
+# a concrete sub entity: no table of its own, stored in the table of Vehicle
+name := Car
+id := 8002
+integrity := none
+extends := Vehicle
+
+## attributes
+[remote, tracked]
+
+int            doors           doors             the number of doors
