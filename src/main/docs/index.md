@@ -115,9 +115,10 @@ topic-grouped listing of every document, see the
 
 - **MasterSerialEvent (server-to-client events)** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Maven plugins** — [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md), [Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md)
+- **MCP server (coding agents, model introspection)** — [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
 - **Migration (RMI → TRIP)** — [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 - **Mixins (multiple-inheritance emulation)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
-- **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md)
+- **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
 - **Modification tracking** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **ModuleHook** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-modulehook), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
 - **Module ordering / service precedence (`@ModuleOrdinal`, `@ClasspathFirst`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#ordering-and-overriding)

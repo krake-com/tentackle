@@ -1,0 +1,25 @@
+# a customer, the aggregate root of the test model
+name := Customer
+id := 9001
+table := customer
+alias := cust
+integrity := composite
+
+## attributes
+[root, remote, tracked]
+
+String(60)     name            cname             the customer name [key]
+String(80)     email           email             the email address [MAPNULL]
+boolean        active          active            true if the customer is active
+
+## indexes
+unique index udk := cname
+
+## validations
+name: @NotNull
+
+## relations
+
+Order:
+ relation = composite list,
+ delete = cascade

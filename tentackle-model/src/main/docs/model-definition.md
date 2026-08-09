@@ -909,3 +909,4 @@ the `<wurbletProperties>` section in the project's parent pom.
 - [Cache](../../../../tentackle-pdo/src/main/docs/cache.md) — the `cached` entity option.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migrations from the model.
 - [Tentackle Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — the interactive PDO/operation wizard.
+- [Tentackle MCP Maven Plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves this document and the loaded model to coding agents, and validates a candidate definition without a build.

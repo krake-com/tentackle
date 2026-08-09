@@ -1,0 +1,19 @@
+# a product, a standalone root entity referencing nothing
+name := Product
+id := 9004
+table := product
+alias := prod
+integrity := none
+
+## attributes
+[root, remote, tracked]
+
+String(40)     sku             sku               the stock keeping unit [key]
+String(200)    description     descr             what it is
+BMoney(12,2)   price           price             the list price
+
+## indexes
+unique index udk := sku
+
+## validations
+sku: @NotNull

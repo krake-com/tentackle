@@ -166,6 +166,7 @@ nav:
       - I18N Maven Plugin: tentackle-i18n-maven-plugin.md
       - Jlink/Jpackage Maven Plugin: jlinkpackage.md
       - Wizard Maven Plugin: tentackle-wizard-maven-plugin.md
+      - MCP Maven Plugin: tentackle-mcp-maven-plugin.md
   - Testing:
       - tentackle-test-pdo: tentackle-test-pdo.md
       - tentackle-test-fx-rdc: tentackle-test-fx-rdc.md

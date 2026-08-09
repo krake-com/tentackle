@@ -138,6 +138,7 @@ the [Index](./index.md).
 - [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) — syncs database-backed bundles with resource bundles.
 - [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — builds self-contained application images.
 - [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — interactive PDO/operation wizard.
+- [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves the model to coding agents over MCP.
 
 ## Testing
 

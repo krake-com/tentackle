@@ -45,6 +45,7 @@
     <module>tentackle-maven-support</module>
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
+    <module>tentackle-mcp-maven-plugin</module>
     <module>tentackle-core</module>
     <module>tentackle-quic</module>
     <module>tentackle-check-maven-plugin</module>
@@ -90,6 +91,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <groovy.version>5.0.7</groovy.version>
     <h2.version>2.4.240</h2.version>
+    <helidon.mcp.version>1.2.0</helidon.mcp.version>
     <ikonli.version>12.4.0</ikonli.version>
     <javafx.version>26.0.1</javafx.version>
     <jruby.version>10.1.0.0</jruby.version>
@@ -294,6 +296,13 @@
         <groupId>tech.kwik</groupId>
         <artifactId>kwik</artifactId>
         <version>${kwik.version}</version>
+      </dependency>
+
+      <!-- the MCP server: pulls the helidon webserver, jsonrpc, sse and json artifacts -->
+      <dependency>
+        <groupId>io.helidon.extensions.mcp</groupId>
+        <artifactId>helidon4-extensions-mcp-server</artifactId>
+        <version>${helidon.mcp.version}</version>
       </dependency>
 
       <dependency>
@@ -731,7 +740,7 @@
             </reports>
             <configuration>
               <!-- aggregate does not allow mixing modular and non-modular artifacts: exclude automatic modules -->
-              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi</skippedModules>
+              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-mcp-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi</skippedModules>
             </configuration>
           </reportSet>
         </reportSets>

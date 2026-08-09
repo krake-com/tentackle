@@ -288,3 +288,4 @@ chosen feature isn't supported by every active `Backend`). `CodeFactory` supplie
 - [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates and migrates DDL from this model.
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — drives the build that extracts and runs the model.
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the runtime pattern the model describes.
+- [MCP Maven Plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves this model to coding agents.

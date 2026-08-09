@@ -1,0 +1,21 @@
+# a single line of an order, a deep component of Customer
+name := OrderItem
+id := 9003
+table := orderitem
+alias := oitem
+integrity := composite
+
+## attributes
+[remote, tracked]
+
+long           orderId         order_id          the order id
+int            quantity        quantity          the ordered quantity
+String(200)    description     descr             what was ordered
+
+## indexes
+index order := order_id
+
+## relations
+Order:
+   relation = serialized,
+   name = Order

@@ -1,0 +1,28 @@
+# an order, a component of Customer
+name := Order
+id := 9002
+table := ordr
+alias := ordr
+integrity := composite
+
+## attributes
+[remote, tracked]
+
+long           customerId      customer_id       the customer id
+String(20)     number          onumber           the order number [key]
+BMoney(12,2)   total           ototal            the order total
+
+## indexes
+index customer := customer_id
+
+## validations
+number: @NotNull
+
+## relations
+Customer:
+   relation = serialized,
+   name = Customer
+
+OrderItem:
+ relation = composite list,
+ delete = cascade
