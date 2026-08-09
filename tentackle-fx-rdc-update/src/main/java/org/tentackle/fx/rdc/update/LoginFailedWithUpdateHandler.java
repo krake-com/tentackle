@@ -32,6 +32,7 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.app.DesktopApplication;
+import org.tentackle.fx.rdc.app.FxApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.app.LoginFailedHandler;
 import org.tentackle.log.Logger;
@@ -67,6 +68,12 @@ import java.util.function.Consumer;
  * @author harald
  */
 public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
+
+  /**
+   * Exit value if the application terminated because it is outdated or the update failed.<br>
+   * Differs from the exit value 98 used by the standard {@link LoginFailedHandler} for other login failures.
+   */
+  public static final int EXIT_VALUE_OUTDATED = 97;
 
   private static final Logger LOGGER = Logger.get(LoginFailedWithUpdateHandler.class);
 
@@ -110,7 +117,15 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         }
       }
       else {
-        LOGGER.info("client not running within an updatable directory", ex);
+        /*
+         * The client cannot update itself, and the user is told to call the administrator.
+         * However, an SSL handshake error is not necessarily an outdated client: it may as well be
+         * an expired or untrusted certificate, an intercepting proxy or a protocol mismatch.
+         * Since the standard handler is not reached, log the cause and provide it as the stop reason,
+         * or else it would be lost completely.
+         */
+        LOGGER.severe("client not running within an updatable directory", ex);
+        setStopReason(ex);
         terminate(MessageFormat.format(UpdateFxRdcBundle.getString(
             "{0}_{1}_OUTDATED_CALL_ADMIN"), getApplication().getName(), getApplication().getVersion()), null);
         return null;
@@ -136,10 +151,20 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   protected Runnable createUpdateRunnable(ClientInfo clientInfo, UpdateInfo updateInfo, InstallationType installationType) {
     return () -> {
       BlockingHolder<Boolean> answer = new BlockingHolder<>();    // wait for result!
-      Platform.runLater(() -> showUpdateDialog(
-        getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                        clientInfo.application(), clientInfo.version(), updateInfo.version()),
-        answer));
+      Platform.runLater(() -> {
+        try {
+          showUpdateDialog(
+            getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
+                                            clientInfo.application(), clientInfo.version(), updateInfo.version()),
+            answer);
+        }
+        catch (RuntimeException rx) {
+          // the dialog could not be shown (window already gone, for example):
+          // answer NO instead of leaving the invoking thread blocked in get() forever
+          LOGGER.severe("showing the update dialog failed", rx);
+          answer.accept(Boolean.FALSE);
+        }
+      });
       if (answer.get()) {
         update(updateInfo, installationType);
       }
@@ -150,7 +175,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Shows an update dialog to ask the user whether to update or not.
+   * Shows an update dialog to ask the user whether to update or not.<br>
+   * Invoked from within the FX thread.
+   * <p>
+   * Implementations must either invoke the answer consumer or throw, since the invoking thread
+   * is blocked until the answer is provided (see {@link #createUpdateRunnable}).
    *
    * @param owner the dialog owner
    * @param message the message
@@ -161,7 +190,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     FxButton goButton = Fx.create(Button.class);
     goButton.setText(FxFxBundle.getString("YES"));
     Timeline countdown = createCountdownTimeline(goButton);
-    Popup popup = new Popup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
@@ -236,7 +265,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
-   * Runs the update.
+   * Runs the update.<br>
+   * Downloads and unzips the new version and launches the update script, which replaces the
+   * running image after this application has terminated.
+   * If anything goes wrong, the update is aborted via {@link #terminate(String, Throwable)}.
    *
    * @param updateInfo the update info
    * @param installationType the installation type
@@ -245,18 +277,20 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     File updateDir = createUpdateDirectory(installationType);
     LOGGER.info("using update directory: {0}", updateDir);
 
-    File zipFile = ClientUpdateUtilities.getInstance().downloadZip(updateInfo, updateDir,
-                   progress -> getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("DOWNLOADING"), progress));
-
-    LOGGER.info("download successful: {0}", zipFile);
-
     try {
+      // the download is part of the update: a failure must be reported like any other
+      File zipFile = ClientUpdateUtilities.getInstance().downloadZip(updateInfo, updateDir,
+                     progress -> getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("DOWNLOADING"), progress));
+
+      LOGGER.info("download successful: {0}", zipFile);
+
       String updatePath = updateDir.getCanonicalPath();
       FileHelper.unzip(zipFile, updateDir, file -> {
         String fileName;    // shortened name
         try {
           fileName = file.getCanonicalPath();
-          if (fileName.startsWith(updatePath)) {
+          // the length check covers zip entries such as "./", which resolve to the update directory itself
+          if (fileName.length() > updatePath.length() && fileName.startsWith(updatePath)) {
             fileName = fileName.substring(updatePath.length() + 1);   // +1 due to File.separator
           }
         }
@@ -294,6 +328,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     }
     catch (RuntimeException | IOException iox) {
       terminate(UpdateFxRdcBundle.getString("UPDATE_FAILED"), iox);
+      return;   // don't tell the user that the update succeeded and don't kill the error dialog by exiting below
     }
 
     getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("UPDATE_COMPLETE"), 1.0);
@@ -304,7 +339,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       // we terminate anyway...
     }
 
-    System.exit(0);   // terminate in any case...
+    System.exit(0);   // terminate to let the update script replace the running image
   }
 
   /**
@@ -331,12 +366,27 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
   /**
+   * Records why the application is going to terminate.<br>
+   * The exit value and the stacktrace are picked up when the last window is closed.
+   *
+   * @param t the throwable that made the application terminate, null if none
+   * @see #EXIT_VALUE_OUTDATED
+   */
+  protected void setStopReason(Throwable t) {
+    FxApplication fxApplication = getApplication().getFxApplication();
+    if (t != null && fxApplication != null) {
+      fxApplication.setStopReason(EXIT_VALUE_OUTDATED, t);
+    }
+  }
+
+  /**
    * Terminates the application.
    *
    * @param msg the message shown to the user
    * @param t the throwable
    */
   protected void terminate(String msg, Throwable t) {
+    setStopReason(t);   // before showing the dialog: the reason must survive a failing dialog
     Platform.runLater(() -> {
       if (msg != null) {
         if (t != null) {

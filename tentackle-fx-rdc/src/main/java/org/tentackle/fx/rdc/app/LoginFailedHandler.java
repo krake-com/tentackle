@@ -44,6 +44,12 @@ public class LoginFailedHandler {
 
   private static final Logger LOGGER = Logger.get(LoginFailedHandler.class);
 
+  /**
+   * Login failed exit-value.
+   */
+  public static final int EXIT_LOGIN_FAILED = 98;
+
+
   private final DesktopApplication<?> application;  // the desktop application
   private final Parent view;                        // the FX view
   private final SessionInfo sessionInfo;            // the session info
@@ -141,7 +147,7 @@ public class LoginFailedHandler {
       LOGGER.severe("login failed", ex);
       Platform.runLater(() -> {
         if (application.getFxApplication() != null) {
-          application.getFxApplication().setStopReason(98, ex);
+          application.getFxApplication().setStopReason(EXIT_LOGIN_FAILED, ex);
         }
         Fx.error(view,
                  AppFxRdcBundle.getString("LOGIN FAILED!") +
