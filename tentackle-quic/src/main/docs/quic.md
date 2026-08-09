@@ -368,7 +368,7 @@ progress at all for a minute means the connection is unusable rather than the pe
 
 ---
 
-## Build, packaging, and jlink notes
+## Build and packaging
 
 The module declares its dependencies as:
 
