@@ -146,6 +146,7 @@ the [Index](./index.md).
 
 ## Testing
 
+- [tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — mock delegates for database-less PDO and operation unit tests.
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — TestNG support for the PDO layer.
 - [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support for the rich desktop client.
 

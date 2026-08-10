@@ -192,7 +192,8 @@ extending the base classes here.
 ## Related Documentation
 
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain object pattern and the domain/persistence delegate split this module implements.
-- [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — the mock delegates and the database-backed test base classes.
+- [tentackle-pdo-mock](../../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — the mock delegates used to unit-test domain logic without a database.
+- [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — the database-backed test base classes.
 - [Operations](../../../../tentackle-pdo/src/main/docs/operation.md) — operations backed by `AbstractDomainOperation`.
 - [Persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) — the persistence half that pairs with this module's domain half.
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — the session/context the domain object reaches through the PDO.

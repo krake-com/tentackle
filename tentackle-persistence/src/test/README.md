@@ -7,7 +7,7 @@ without a database, a session or a connection.
 
 The recipe mirrors the one of [tentackle-domain](../../../../tentackle-domain/src/main/docs/domain.md#unit-testing-domain-logic),
 with the halves swapped: the **real persistence delegate** is paired with a **mock domain delegate**
-from [`tentackle-pdo-mock`](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates):
+from [`tentackle-pdo-mock`](../../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md):
 
 ```java
 // a hand-written equivalent of the generated persistence implementation

@@ -16,8 +16,9 @@ Twenty artifacts — every module an application ships with, plus `tentackle-mod
 
 The remaining artifacts declare an `Automatic-Module-Name` in their JAR manifest instead. Those are
 the build-time modules (the Maven plugins, `tentackle-maven-support`, `tentackle-build-support`, the
-wurblets), the test-support modules (`tentackle-pdo-mock`, `tentackle-test-pdo`,
-`tentackle-test-fx-rdc`) and the three providers whose third-party backends are themselves not
+wurblets), the test-support modules (`tentackle-test-pdo`, `tentackle-test-fx-rdc`; the pure
+test-scope `tentackle-pdo-mock` declares none, as it is only ever used on the test class path)
+and the three providers whose third-party backends are themselves not
 modularized (`tentackle-script-groovy`, `tentackle-script-ruby`, `tentackle-fx-rdc-poi`). They carry
 a stable module name, so a modular application can `requires` them, but no compile-time module
 descriptor. `tentackle-bom` and `tentackle-project-archetype` ship no code at all.
@@ -31,7 +32,7 @@ derives the right packaging category for each artifact by itself.
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
-and the test-support modules ([tentackle-pdo-mock](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates),
+and the test-support modules ([tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md),
 [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md),
 [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md))
 round out the set but are omitted from the diagram.
@@ -95,7 +96,7 @@ Not part of the layered diagram, but each ships its own docs:
 - [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the Atlanta JavaFX theme.
 - [tentackle-project-archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — project scaffolding ([walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)).
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support.
-- [tentackle-pdo-mock](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates) — mock PDO/operation delegates for database-less unit tests, usable by the domain- and persistence layer themselves.
+- [tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — mock PDO/operation delegates for database-less unit tests, usable by the domain- and persistence layer themselves.
 
 Full per-module API documentation is published under the
 [Tentackle site docs](https://tentackle.org/tentackle/).

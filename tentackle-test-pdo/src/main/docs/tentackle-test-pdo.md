@@ -127,7 +127,9 @@ by a *domain* delegate and a *persistence* delegate. The mocks supply trivial st
 > `tentackle-pdo`. It sits *below* the domain- and persistence layer, so those modules can use the mocks in their
 > own unit tests — a dependency on `tentackle-test-pdo` would be a cycle, because this module depends on them.
 > Downstream projects need not care: `tentackle-test-pdo` depends on `tentackle-pdo-mock`, so the classes arrive
-> transitively under their unchanged package and class names.
+> transitively under their unchanged package and class names. See
+> [Tentackle PDO Mocks](../../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) for the full description of the
+> mocks — what they implement, how to write and generate one, and the Mockito alternative.
 
 | Mock                         | Stands in for                                                                            |
 |------------------------------|------------------------------------------------------------------------------------------|

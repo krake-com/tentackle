@@ -1,7 +1,7 @@
 ## Unit Testing Domain Logic
 
 Domain logic is tested without a database by pairing the real domain delegate with a **mock persistence
-delegate** from [`tentackle-pdo-mock`](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#the-mock-delegates)
+delegate** from [`tentackle-pdo-mock`](../../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md)
 and letting the ordinary factory build the PDO. This module's own tests (`src/test/java`) follow that recipe
 and double as worked examples:
 

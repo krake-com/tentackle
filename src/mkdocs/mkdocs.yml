@@ -170,6 +170,7 @@ nav:
   - AI Agent Support:
       - AI Agent Tooling Support: ai-agents.md
   - Testing:
+      - tentackle-pdo-mock: pdo-mock.md
       - tentackle-test-pdo: tentackle-test-pdo.md
       - tentackle-test-fx-rdc: tentackle-test-fx-rdc.md
   - Legacy:
