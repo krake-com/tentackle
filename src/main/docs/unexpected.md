@@ -136,6 +136,26 @@ The framework's first commitment is [fail loudly and early rather than corrupt q
 - **Even resource bundles and validation annotations are build-checked** by the
   [check plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md).
 
+## The model is queryable — and the tooling runs headless
+
+A model that lives in a comment block raises an obvious objection: how does any tool — or any coding
+agent — see it? Tentackle answers with [tooling of its own](./ai-agents.md):
+
+- **The model is served to coding agents over MCP.** `mvn tentackle-mcp:serve` holds the model
+  loaded and *relation-resolved* — as the code generators see it, not as the `.java` source spells
+  it with `$classname`, `$classid` and `$mapping` still unexpanded — and answers over Streamable
+  HTTP. It is read-only: it writes no file, opens no database connection, and loads no application
+  class.
+- **Model authoring becomes a sub-second loop.** `model_validate` stages a *candidate* definition
+  into a scratch copy of the model, resolves relations across the whole set, and reports the errors
+  that would otherwise surface as a `WurbelTerminationException` after a full reactor build. The
+  live model is untouched and nothing is written.
+- **The JavaFX wizards all run headless.** `tentackle-wizard:pdo` scaffolds an entity's whole set of
+  source files from a directory of model definitions, `:browse` turns persisted records into Java
+  fixture code, and `:script` runs real application code (`on()`, `op()`) against a live backend —
+  the same three tools a developer clicks through, driven entirely from the command line. Six
+  ready-made agent skills ship as templates under the plugins' `src/skills/`.
+
 ## A full-stack JavaFX framework
 
 Tentackle is one of the very few frameworks that cover a JavaFX application **full-stack** — the
@@ -218,3 +238,4 @@ mainstream framework is the better fit is
 - [Multi-Tier Cascade](./tiers.md) — nested servers, stacked caches, and CQRS.
 - [TRIP](../../../tentackle-core/src/main/docs/trip.md) — the wire protocol.
 - [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — build-time service resolution.
+- [AI Agent Tooling Support](./ai-agents.md) — the MCP server, the headless batch modes, and the bundled agent skills.
