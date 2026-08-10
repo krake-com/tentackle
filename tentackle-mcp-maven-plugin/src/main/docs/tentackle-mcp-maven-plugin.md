@@ -257,8 +257,11 @@ Codex prompt, or in whatever the tool calls its project context.
 
 The [wizard plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-skills)
 ships three more, one per headless goal: `tentackle-pdo-wizard`, `tentackle-pdo-browser` and
-`tentackle-script-runner`. Together with this one they cover the whole loop — inspect the model, scaffold
-the entity, run code against a backend, build fixtures.
+`tentackle-script-runner`, and the
+[SQL plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-skills)
+two further ones, `tentackle-sql-migrator` and `tentackle-sql-runner`. Together with this one they cover
+the whole loop — inspect the model, scaffold the entity, migrate the database, run code against a
+backend, build fixtures, drop down to SQL.
 
 ### Further Reading
 

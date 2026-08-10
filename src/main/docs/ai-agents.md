@@ -2,8 +2,8 @@
 
 Tentackle ships tooling that lets a coding agent work on a Tentackle application the way a developer
 does: inspect the entity model as the code generators see it, scaffold new
-[PDOs](../../../tentackle-pdo/src/main/docs/pdo.md), turn persisted records into Java code, and run
-real application code against a live backend.
+[PDOs](../../../tentackle-pdo/src/main/docs/pdo.md), turn persisted records into Java code, run real
+application code against a live backend, and go down to plain SQL when that is what the question needs.
 
 This document is the map. It explains *which* tool answers *which* question, how the pieces fit into
 one workflow, and what an agent must know before using them. The details of each tool live in its own
@@ -30,7 +30,7 @@ the third is that the `pdo`, `browse` and `script` goals of the
 [wizard plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 all have a **batch mode** that runs headless and is driven entirely from the command line.
 
-## The Four Capabilities at a Glance
+## The Six Capabilities at a Glance
 
 | Task                                                | Tool                                                  | Mode                             | Touches the database |
 |-----------------------------------------------------|--------------------------------------------------------|-----------------------------------|----------------------|
@@ -38,10 +38,24 @@ all have a **batch mode** that runs headless and is driven entirely from the com
 | Create the source files for new entities            | `tentackle-wizard:pdo -DbatchDir=…`                    | headless, one-shot                | no                   |
 | Turn persisted records into Java fixture code       | `tentackle-wizard:browse -Dpdo=… -Doutput=…`           | headless, one-shot                | reads                |
 | Run application code against a backend              | `tentackle-wizard:script -Dscript=…`                   | headless, one-shot                | whatever the script does |
+| Bring the database in line with the model           | `tentackle-sql:migrate` / `:validate`                  | headless, one-shot                | reads metadata       |
+| Run plain SQL against a *development* database      | `tentackle-sql:run -Dscript=…`                         | headless, one-shot                | whatever the SQL does |
 
 The first is read-only and can be left running all day. The second writes Java sources into the
-reactor. The third reads from a backend and writes one file. The fourth runs arbitrary code with the
-full domain model at hand — it is the only one that can change data.
+reactor. The third reads from a backend and writes one file. The fifth only *generates* a migration
+script — applying it is the sixth's job. The fourth and the sixth can change data: one through the
+domain model, the other underneath it.
+
+They also form a ladder of abstraction, and picking the right rung is most of the skill: the MCP server
+answers *how is this mapped*, the script goal *what does the application do with it*, and the SQL goals
+*what is actually stored*.
+
+> **`tentackle-sql:create` is not on this list.** It emits the DDL of the *whole* schema from scratch —
+> every table, index, foreign key and schema of the model, in one script. That is a bootstrapping tool
+> for an empty database, wired into a profile that initializes a test database, and it is essentially
+> never the right answer to "the model changed". For an existing database, `tentackle-sql:migrate`
+> generates the incremental script instead. An agent should reach for `create` only when explicitly
+> asked to produce a fresh-schema script.
 
 ## Prerequisites
 
@@ -55,13 +69,15 @@ full domain model at hand — it is the only one that can change data.
 
 - All goals are **aggregator goals**: run them from the reactor root, so the whole model is visible and
   generated files land in the right modules.
-- `browse` and `script` additionally need a reachable backend (database or remote server).
+- `browse` and `script` additionally need a reachable backend (database or remote server), and the SQL
+  goals a connectable database. `tentackle-sql:run` is the one goal that does **not** need the model;
+  `tentackle-sql:migrate` needs it to be current, so build before comparing.
 
 Projects generated from the
 [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)
-come with both plugins configured — the MCP plugin with the project's `tentackle.modelDefaults` and
-backends, the wizard plugin with the PDO/operation profiles and the backend credentials — so the
-commands below work as written.
+come with all three plugins configured — the MCP plugin with the project's `tentackle.modelDefaults` and
+backends, the wizard plugin with the PDO/operation profiles and the backend credentials, the SQL plugin
+with the backends it migrates — so the commands below work as written.
 
 ---
 
@@ -344,9 +360,118 @@ FreeMarker exposes four variables to the harness: `content` (the fragment), `imp
 
 ---
 
+## Following the Model: `tentackle-sql:migrate`
+
+When the model changes, the database has to follow. The
+[SQL plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) reads the
+database's metadata through JDBC, compares it table by table against the model, and **writes the SQL
+that would bring it in line** — added, altered, renamed and dropped columns and indexes, foreign keys,
+renamed and dropped tables.
+
+```bash
+mvn tentackle-sql:migrate       # generate target/sql/<backend>/migratemodel.sql
+mvn tentackle-sql:validate      # same comparison, but fail the build if anything differs
+```
+
+**It generates; it does not apply.** Nothing is executed against the database. That separation is the
+whole point: the script is meant to be read, then **committed as a versioned migration** and applied by
+the project's migration tool — [Flyway](https://www.red-gate.com/products/flyway/), Liquibase or
+whatever it uses — which tracks what each database has already had applied. `tentackle-sql:run` is for
+trying the script out on a development database; it is not the rollout path.
+
+`validate` is the cheap form of the question *is this database still in sync with the model?* — worth
+running after pulling changes, and the goal CI uses to guard deployed databases.
+
+### What an Agent Should Know
+
+- **A required migration does not fail the build.** `migrate` logs `database meta data differs from
+  object model` as a *warning* and exits successfully. A green build says nothing about whether the
+  database is in sync; `validate` is what turns the difference into a failure.
+- **Renamed columns keep their data.** The migrator preserves what it can: it pairs added attributes
+  with disappeared columns — unambiguously by SQL type first, then by syllable distance among the
+  candidates of the same type — and emits a `RENAME` rather than a drop plus an add. Even bulk renames
+  usually come out right in one go (`x_position → position_x`, `y_position → position_y`,
+  `z_position → position_z`). Where it guesses, the alternative `ADD` and `DROP` statements are written
+  into the script as comments, so a wrong guess is visible and correctable. **Table** renames are the
+  exception — those are not guessed and need a hint.
+- **Migration hints are for what cannot be derived**: a renamed or deliberately dropped *table*, data
+  that has to be converted (a string column becoming a number — the migrator then emits the `ALTER`
+  commented out instead of a statement that would fail, and the conversion SQL goes into a
+  `migrate <table>#<col>` hint), a wrong rename guess, and ordering between dependent tables. They are
+  plain text files supplied per backend.
+- **Always read the script before applying it.** It is a plain file under `target/sql/<backend>/`, and
+  reading it is the only review step there is — in particular the `DROP` statements and the
+  commented-out alternatives.
+- **One script per backend.** Each configured backend gets its own comparison and its own file; they are
+  not interchangeable.
+- **Tables not in the model** are reported as unexpected. Declare the legitimate ones as `alienTables`
+  rather than dropping them.
+- **The model must be current.** The comparison uses the generated model under `target/wurbel/model`, so
+  a model edit that has not been through a build simply does not exist yet.
+
+---
+
+## Plain SQL: `tentackle-sql:run`
+
+The same plugin's `run` goal is the odd one out: it simply executes an SQL script against the backends
+the plugin is already configured for, and logs every statement's result. It is how you try out the
+migration the previous section generated — and, just as usefully, how you answer a question about the
+data.
+
+> **Development only.** `run` knows nothing about which scripts a database has already seen: no
+> versioning, no checksums, no rollback, no record that it ran. It belongs on a developer's database
+> and on a build's test database. Migrations reach staging and production through the committed script
+> and a migration tool, never through this goal.
+
+```bash
+mvn tentackle-sql:run -Dscript=target/query.sql
+```
+
+`-Dscript` is the only parameter and is required — there is no inline-SQL form, so the statements go
+into a file first. Result sets are printed as an aligned table with column headers and updates as their
+update count, which makes a `SELECT` a perfectly good way for an agent to *look* at the database
+without writing a line of Java:
+
+```
+[INFO] SELECT name, COUNT(*) FROM ... ->
+name                 count
+Krake Softwaretechnik    17
+...
+```
+
+The script is split on the backend's statement separator (`;`), with `--` line comments and `/* … */`
+block comments stripped before anything reaches the database and quoted strings respected. It is a JDBC
+script runner, not a database CLI: `psql`- or `sqlplus`-style client commands do not work.
+
+Backend configuration is inherited from the `migrate` goal, which is convenient — and the source of the
+one thing to be careful about.
+
+### What an Agent Should Know
+
+- **It runs against *every* configured connectable backend**, one after the other. A project that
+  configures PostgreSQL and H2 gets the script executed twice, against both. Read the plugin
+  configuration and state which databases will be hit before running anything that writes.
+- **There is no transaction.** The connection is opened with autocommit on and the runner is not
+  transactional, so each statement commits as it executes. A script failing on statement 7 leaves 1–6
+  committed and the build red. Add explicit `BEGIN`/`COMMIT` if the backend supports it in a script.
+- **It bypasses the domain layer entirely** — no validation, no optimistic locking, no `serial` bump,
+  no token locks, no modification tracking, no cache invalidation. Running clients will not notice the
+  change. For data fixes against a live system,
+  [`tentackle-wizard:script`](#running-application-code-tentackle-wizardscript-in-batch-mode) is almost
+  always the better tool; `tentackle-sql:run` is for inspection, for bulk work, and for executing the
+  migration scripts the plugin generated.
+- **Names are the mapped ones**, schema-qualified as in the model (`td.order`) or flattened when
+  `mapSchemas` is set for a backend without schemas. Get them from `model_ddl` or the `ddl` section of
+  `model_describe_entity` rather than guessing from the entity name.
+- **Structural changes belong in the model**, not in a hand-written `ALTER`. Change the model, let
+  `tentackle-sql:migrate` generate the migration, then run *that*. Otherwise the next
+  `tentackle-sql:validate` fails and the database drifts away from the model.
+
+---
+
 ## The Bundled Skills
 
-Each of the four capabilities ships with a ready-made **agent skill** — a `SKILL.md` describing when to
+Each of the six capabilities ships with a ready-made **agent skill** — a `SKILL.md` describing when to
 reach for the tool, the order of steps that works, and the failure modes that are specific to running it
 headless:
 
@@ -356,6 +481,8 @@ headless:
 | `tentackle-pdo-wizard`    | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:pdo`          |
 | `tentackle-pdo-browser`   | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:browse`       |
 | `tentackle-script-runner` | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:script`       |
+| `tentackle-sql-migrator`  | `tentackle-sql-maven-plugin/src/skills/`                     | `tentackle-sql:migrate` / `:validate` |
+| `tentackle-sql-runner`    | `tentackle-sql-maven-plugin/src/skills/`                     | `tentackle-sql:run`             |
 
 They are **templates**, not something the build installs. Copy the ones you want into your project and
 adapt them — the profile names, the target backend and the harnesses are yours, not the framework's:
@@ -364,6 +491,7 @@ adapt them — the profile names, the target backend and the harnesses are yours
 mkdir -p .claude/skills
 cp -r path/to/tentackle-mcp-maven-plugin/src/skills/* .claude/skills/
 cp -r path/to/tentackle-wizard-maven-plugin/src/skills/* .claude/skills/
+cp -r path/to/tentackle-sql-maven-plugin/src/skills/* .claude/skills/
 ```
 
 Agents without skill support can be pointed at the same files as plain instructions — in `AGENTS.md`, in
@@ -388,10 +516,18 @@ A realistic end-to-end run, adding an entity to an existing application:
    profile.
 7. **Build** — `mvn install`, so the wurblets generate the persistence and domain layers and the SQL
    plugin the DDL. Then `model_reload` on the server.
-8. **Write the logic**, then verify against a real backend with
+8. **Bring the database along** — write the migration hints first if a table was renamed or data has to
+   be converted, then `mvn tentackle-sql:migrate` and read `target/sql/<backend>/migratemodel.sql`. Try
+   it on your own database with `mvn tentackle-sql:run -Dscript=…`, confirm with
+   `mvn tentackle-sql:validate` that nothing is left over, then commit the script as a versioned
+   migration for the migration tool to roll out.
+9. **Write the logic**, then verify against a real backend with
    `mvn tentackle-wizard:script -Dscript=…`.
-9. **Build fixtures** — once records exist, `mvn tentackle-wizard:browse -Dpdo=… -Doutput=…` turns them
-   into test code.
+10. **Build fixtures** — once records exist, `mvn tentackle-wizard:browse -Dpdo=… -Doutput=…` turns them
+    into test code. The object ids it needs usually come out of a `SELECT` run with
+    `mvn tentackle-sql:run -Dscript=…`.
+11. **Check the database if something looks wrong** — `tentackle-sql:run` shows what was really stored,
+    which is the fastest way to tell a mapping problem from a domain-logic problem.
 
 Steps 2–5 are the loop that pays for itself: they replace "write a model block, run the reactor, read
 the stack trace" with a sub-second answer.
@@ -404,11 +540,20 @@ the stack trace" with a sub-second answer.
 | `tentackle-wizard:pdo`   | Java sources across the reactor      | never connects               |
 | `tentackle-wizard:browse`| one output file                      | reads only                   |
 | `tentackle-wizard:script`| whatever the script writes           | whatever the script does     |
+| `tentackle-sql:migrate`  | one SQL script per backend           | reads metadata only          |
+| `tentackle-sql:run`      | never                                | whatever the SQL does, on every configured backend |
 
-Two more notes:
+Four more notes:
 
 - **The MCP server has no authentication** and binds to `localhost` by default. It exposes your data
   *model*, not your data — keep it that way unless you know what you are doing.
+- **None of these goals is a deployment tool.** They all run against whatever the POM points them at,
+  which is meant to be a development or test database. Bringing a real environment forward is the job
+  of the committed migration script and a migration tool that tracks what each database has applied.
+- **The two script goals are not interchangeable.** `tentackle-wizard:script` goes *through* the domain
+  model — validation, locking, tracking, caches. `tentackle-sql:run` goes *underneath* it. Choosing the
+  second for convenience when the first is meant is how a database ends up inconsistent with the
+  application that owns it.
 - **The `.java` source and the MCP server disagree, and both are right.** The block in the PDO interface
   still contains `$classname`, `$classid` and `$mapping`; the server shows the expanded, resolved form.
   Write the variables back when editing the interface.
@@ -421,5 +566,5 @@ Two more notes:
 - [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the API the server exposes.
 - [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md) — the pluggable scripting API behind the `script` goal.
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — where the generated fixture code goes.
-- [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — dumping a model in the format the `pdo` batch mode reads.
+- [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — the `run` goal, the migrations it generates, and dumping a model in the format the `pdo` batch mode reads.
 - [Quickstart](./quickstart.md) — generating, building and running a multi-tier application.

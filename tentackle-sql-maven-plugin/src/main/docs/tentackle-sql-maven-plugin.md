@@ -154,12 +154,40 @@ The default output file is `createmodel.sql` (`tentackle.createSqlFile`). Import
 
 Connects to each connectable backend, reads its metadata via JDBC, compares it table by table against
 the model, and generates the SQL needed to bring the database in line: adding/altering/dropping columns
-and indexes, adjusting foreign keys, and renaming or dropping tables where migration hints say so. If
-nothing differs, the script just records that no migration is necessary.
+and indexes, renaming columns whose data should be preserved, adjusting foreign keys, and renaming or
+dropping tables where migration hints say so. If nothing differs, the script just records that no
+migration is necessary.
+
+#### How columns are matched
+
+The migrator preserves data wherever it can. Columns that exist under the same name are altered in
+place. For the rest — attributes the model added and columns the database still has — it looks for
+pairs and generates a `RENAME` (or a combined rename and type change) instead of a drop plus an add:
+
+1. an **unambiguous match by SQL type**: exactly one disappeared column has the type of the added
+   attribute;
+2. otherwise the **best match by syllable distance** among the candidates of the same type, starting
+   with the longest names, which is why bulk renames such as `x_position → position_x`,
+   `y_position → position_y` and `z_position → position_z` are usually paired correctly in one pass.
+
+Wherever the migrator guesses, it writes the alternative `ADD` and `DROP` statements into the script as
+comments, so a wrong guess can be corrected instead of silently applied. Only columns left without a
+counterpart become a real `DROP` or `ADD`. Type changes a backend cannot perform in place are likewise
+emitted as a comment rather than as a statement that would fail or lose data.
+
+Table renames, by contrast, are never guessed — they need a `rename` hint.
 
 ```bash
 mvn tentackle-sql:migrate
 ```
+
+The goal **generates, it does not apply**: the script is written to
+`${project.build.directory}/sql/<backend>/migratemodel.sql`, one per backend, and executing it is a
+separate step. The intended lifecycle is to review the generated script, **commit it to the
+repository** as a versioned migration, and let a migration tool such as
+[Flyway](https://www.red-gate.com/products/flyway/) or Liquibase apply it to the databases it manages;
+`tentackle-sql:run` is for trying it out locally, not for rolling it out. Note also that a necessary
+migration is only a *warning* — the build stays green unless `validate` is set.
 
 The default output file is `migratemodel.sql` (`tentackle.migrateSqlFile`). Important parameters:
 
@@ -182,10 +210,11 @@ The default output file is `migratemodel.sql` (`tentackle.migrateSqlFile`). Impo
 
 #### Migration hints
 
-The automatic migrator handles structural changes that can be derived mechanically, but some changes
-need human guidance — renaming a table or column (which otherwise looks like a drop plus an add),
-ordering migrations that depend on each other, choosing between alternative automatic migrations, or
-injecting handwritten SQL. This is what *migration hints* are for.
+The automatic migrator handles structural changes that can be derived mechanically — including column
+renames, see above — but some changes need human guidance: renaming or dropping a *table*, converting
+the data when a column changes its type (a string becoming a number, say), correcting a rename the
+migrator guessed wrong, ordering migrations that depend on each other, choosing between alternative
+automatic migrations, or injecting handwritten SQL. This is what *migration hints* are for.
 
 Hints are plain text files supplied per backend via the `<migrationHints>` file sets inside a
 `<backend>`. Each file is a sequence of sections; a section starts at the beginning of a line with a
@@ -256,11 +285,46 @@ Executes a single SQL script against every configured connectable backend, using
 runner. It inherits the same backend configuration as `migrate`, which is convenient because the
 target database is usually the same.
 
+> **A development tool.** `run` is meant for the database on a developer's machine and for the test
+> database of a build — trying out a generated migration, fixing up local data, looking at what is
+> stored. It has no notion of which scripts a database has already seen, no versioning, no checksums
+> and no rollback. **Regular migrations belong to a migration tool such as
+> [Flyway](https://www.red-gate.com/products/flyway/) or Liquibase**, running the migration scripts
+> that `migrate` generated and that you committed to the repository. That is what makes a migration
+> reproducible across staging and production, and auditable afterwards.
+
 ```bash
 mvn tentackle-sql:run -Dscript=src/sql/myscript.sql
 ```
 
 - `script` (`script`, required): the SQL file to execute.
+
+Every statement's outcome is logged: result sets as an aligned table with column headers, other
+statements as their update count. The script is split on the backend's statement separator (`;`), and
+`--` line comments and `/* … */` block comments are stripped before anything is sent to the database.
+
+Two properties of the goal are easy to miss. It executes the script against **every** configured
+connectable backend, one after another — a project configuring PostgreSQL and H2 runs it twice. And it
+runs **without a transaction**: the connection is in autocommit mode, so a script that fails halfway
+leaves the statements before the failure committed and fails the build.
+
+### The Skills
+
+`src/skills/` in this module holds two ready-made agent skills: `tentackle-sql-migrator` for
+`migrate`/`validate` — generating the migration, what the migrator matches by itself, when a hint is
+needed, and reading the script before it runs — and `tentackle-sql-runner` for `run`, i.e. when to
+prefer plain SQL over the
+domain-model tools and what to watch out for. There is deliberately none for `create`: it emits the DDL
+of the whole schema and belongs to bootstrapping an empty database, not to changing an existing one.
+They are templates; copy them into your project:
+
+```bash
+mkdir -p .claude/skills
+cp -r path/to/tentackle-sql-maven-plugin/src/skills/* .claude/skills/
+```
+
+See [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) for how it fits together with the
+model MCP server and the headless wizard goals.
 
 ### How It Fits Into the Build
 
@@ -276,6 +340,8 @@ For a typical Tentackle application, the database tooling builds on the output o
 
 ### Further Reading
 
+- [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — the `run` goal as one of the five
+  tools a coding agent can drive, and when to prefer the others
 - [Model definition](../../../../tentackle-model/src/main/docs/model-definition.md) — how entities and
   their relations are described
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —

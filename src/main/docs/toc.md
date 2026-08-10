@@ -142,7 +142,7 @@ the [Index](./index.md).
 
 ## AI Agent Support
 
-- [AI Agent Tooling Support](./ai-agents.md) — the map: analyzing the model over MCP, and the headless batch modes of the wizard goals that scaffold entities, generate fixture code and run application code.
+- [AI Agent Tooling Support](./ai-agents.md) — the map: analyzing the model over MCP, the headless batch modes of the wizard goals that scaffold entities, generate fixture code and run application code, and the database side via `tentackle-sql:migrate` and `tentackle-sql:run`.
 
 ## Testing
 
