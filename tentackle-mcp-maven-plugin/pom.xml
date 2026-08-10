@@ -36,6 +36,10 @@
       <groupId>io.helidon.extensions.mcp</groupId>
       <artifactId>helidon4-extensions-mcp-server</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.helidon.logging</groupId>
+      <artifactId>helidon-logging-jul</artifactId>
+    </dependency>
   </dependencies>
 
   <properties>

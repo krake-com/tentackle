@@ -92,6 +92,7 @@
     <groovy.version>5.0.7</groovy.version>
     <h2.version>2.4.240</h2.version>
     <helidon.mcp.version>1.2.0</helidon.mcp.version>
+    <helidon.version>4.5.0</helidon.version>
     <ikonli.version>12.4.0</ikonli.version>
     <javafx.version>26.0.1</javafx.version>
     <jruby.version>10.1.0.0</jruby.version>
@@ -298,11 +299,17 @@
         <version>${kwik.version}</version>
       </dependency>
 
-      <!-- the MCP server: pulls the helidon webserver, jsonrpc, sse and json artifacts -->
+      <!-- the MCP server: pulls the helidon webserver, JSON-RPC, SSE and JSON artifacts -->
       <dependency>
         <groupId>io.helidon.extensions.mcp</groupId>
         <artifactId>helidon4-extensions-mcp-server</artifactId>
         <version>${helidon.mcp.version}</version>
+      </dependency>
+      <!-- the logging implementation must be loaded explicitly -->
+      <dependency>
+        <groupId>io.helidon.logging</groupId>
+        <artifactId>helidon-logging-jul</artifactId>
+        <version>${helidon.version}</version>
       </dependency>
 
       <dependency>

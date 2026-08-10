@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.mcp;
 
 import io.helidon.extensions.mcp.server.McpServerFeature;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -86,6 +87,7 @@ public class ServeMojo extends AbstractMcpMojo {
       throw new MojoFailureException("cannot determine entities: " + mex.getMessage(), mex);
     }
 
+    LogConfig.configureRuntime();
     McpServerFeature feature = McpFeatureFactory.create(session, path, serverName,
                                                         getMavenProject().getVersion(), maxResults);
 
