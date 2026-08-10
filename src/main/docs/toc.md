@@ -140,6 +140,10 @@ the [Index](./index.md).
 - [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — interactive PDO/operation wizard.
 - [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves the model to coding agents over MCP.
 
+## AI Agent Support
+
+- [AI Agent Tooling Support](./ai-agents.md) — the map: analyzing the model over MCP, and the headless batch modes of the wizard goals that scaffold entities, generate fixture code and run application code.
+
 ## Testing
 
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — TestNG support for the PDO layer.

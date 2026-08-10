@@ -255,8 +255,15 @@ cp path/to/tentackle-mcp-maven-plugin/src/skills/tentackle-model/SKILL.md .claud
 Agents that do not support skills can be pointed at the same file as plain instructions — in `AGENTS.md`, in a
 Codex prompt, or in whatever the tool calls its project context.
 
+The [wizard plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-skills)
+ships three more, one per headless goal: `tentackle-pdo-wizard`, `tentackle-pdo-browser` and
+`tentackle-script-runner`. Together with this one they cover the whole loop — inspect the model, scaffold
+the entity, run code against a backend, build fixtures.
+
 ### Further Reading
 
+- [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — how this server and the headless
+  wizard goals fit into one agent workflow.
 - [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the API the server exposes.
 - [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL an agent writes back.
 - [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — the same

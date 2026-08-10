@@ -409,7 +409,7 @@ When weaving, FreeMarker exposes four variables to the harness template:
 - `language`: the scripting language name,
 - `harness`: the harness filename.
 
-An example Groovy harness (`example.ftl`) is installed alongside the `pdo`/`operation` templates (see
+An example Groovy harness (`groovy-example.ftl`) is installed alongside the `pdo`/`operation` templates (see
 *Templates* below) and can be used as a starting point.
 
 Parameters:
@@ -447,7 +447,8 @@ live under the `templateDir` parameter (default `${project.basedir}/templates`),
 categories matching the goals: `pdo/`, `operation/`, and `script/`. The `pdo/` and `operation/`
 categories hold one `*.ftl` per generated artifact, e.g. `pdo/PdoInterface.ftl`,
 `pdo/DomainImplementation.ftl`, `operation/OperationInterface.ftl`, and so on. The `script/` category
-holds a single `example.ftl` — an example Groovy harness you can copy and adapt for the `script` goal.
+holds a single `groovy-example.ftl` — an example Groovy harness you can copy and adapt for the `script`
+goal.
 
 Because the templates are plain files in your project, you can customize them — adjust the license
 header, add house-style javadoc, change default imports — and every subsequently generated file will
@@ -513,7 +514,7 @@ mvn tentackle-wizard:browse -Dpdo=Customer[17878,221221,333] -Doutput=target/fix
 # run scripts against a backend interactively (edit + run in a window)
 mvn tentackle-wizard:script
 
-# run a single script fragment headless, weaving it into example.ftl
+# run a single script fragment headless, weaving it into groovy-example.ftl
 mvn tentackle-wizard:script -Dscript=src/scripts/fix-orders.groovy
 
 # restore the default templates
@@ -521,6 +522,31 @@ mvn tentackle-wizard:init
 ```
 
 Run these from the aggregator (parent) directory so the wizard can place files into all modules.
+
+### The Skills
+
+The three goals that run headless are the ones a coding agent can drive, and `src/skills/` in this
+module holds one ready-made agent skill per goal, describing when and how to use it and what goes wrong
+in batch mode:
+
+| Skill                     | Goal                       |
+|---------------------------|----------------------------|
+| `tentackle-pdo-wizard`    | `tentackle-wizard:pdo`     |
+| `tentackle-pdo-browser`   | `tentackle-wizard:browse`  |
+| `tentackle-script-runner` | `tentackle-wizard:script`  |
+
+They are templates: copy the ones you want into your own project, alongside the `tentackle-model` skill
+of the [MCP plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md).
+
+```bash
+mkdir -p .claude/skills
+cp -r path/to/tentackle-wizard-maven-plugin/src/skills/* .claude/skills/
+```
+
+Agents that do not support skills can be pointed at the same files as plain instructions — in
+`AGENTS.md`, in `CLAUDE.md`, or in whatever the tool calls its project context. See
+[AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) for how the goals fit together into
+one workflow.
 
 ### How It Fits Into the Workflow
 
@@ -535,6 +561,8 @@ The wizard is a one-shot authoring tool, not part of the regular build lifecycle
 
 ### Further Reading
 
+- [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — driving the `pdo`, `browse` and
+  `script` goals headless from a coding agent, together with the model MCP server
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md)
 - [Operation — Behavior Without an Entity](../../../../tentackle-pdo/src/main/docs/operation.md)
 - [Tentackle Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md)

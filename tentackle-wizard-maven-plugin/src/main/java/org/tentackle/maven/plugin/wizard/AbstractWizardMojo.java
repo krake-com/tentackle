@@ -352,7 +352,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     installTemplate(Constants.CATEGORY_OPERATION, "RemoteInterface.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "RemoteImplementation.ftl");
 
-    installTemplate(Constants.CATEGORY_SCRIPT, "example.ftl");
+    installTemplate(Constants.CATEGORY_SCRIPT, "groovy-example.ftl");
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {

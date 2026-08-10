@@ -8,6 +8,7 @@ topic-grouped listing of every document, see the
 ## A
 
 - **Aggregates** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md)
+- **AI agents / coding agents (MCP, batch modes, skills)** — [AI Agent Tooling Support](./ai-agents.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 - **Application bootstrap / lifecycle** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
 - **Annotation analysis (`@Analyze`, META-INF generation)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md), [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 - **Annotation processors (compile-time validation)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md)
@@ -23,6 +24,7 @@ topic-grouped listing of every document, see the
 
 - **Backend properties (`backend.properties`, connection/server/client keys)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Background execution (`Rdc.bg`, session pool)** — [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+- **Batch mode (headless wizard goals: `pdo`, `browse`, `script`)** — [AI Agent Tooling Support](./ai-agents.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 - **Batching (JDBC statement batching, `batchsize`)** — [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Binding (models to views)** — [Binding](../../../tentackle-core/src/main/docs/binding.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
@@ -115,7 +117,7 @@ topic-grouped listing of every document, see the
 
 - **MasterSerialEvent (server-to-client events)** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Maven plugins** — [Tentackle Maven Plugin](../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md), [Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md), [Build Support](../../../tentackle-build-support/src/main/docs/build-support.md)
-- **MCP server (coding agents, model introspection)** — [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
+- **MCP server (coding agents, model introspection)** — [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md), [AI Agent Tooling Support](./ai-agents.md)
 - **Migration (RMI → TRIP)** — [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 - **Mixins (multiple-inheritance emulation)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
@@ -146,7 +148,7 @@ topic-grouped listing of every document, see the
 ## P
 
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
-- **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser)
+- **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser), [AI Agent Tooling Support](./ai-agents.md#java-code-from-the-database-tentackle-wizardbrowse-in-batch-mode)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
@@ -227,5 +229,5 @@ topic-grouped listing of every document, see the
 
 - **Walkthrough (generated application)** — [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)
 - **Web integration** — [Tentackle Web](../../../tentackle-web/src/main/docs/web.md)
-- **Wizard (PDO/operation generator)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+- **Wizard (PDO/operation generator)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md), [AI Agent Tooling Support](./ai-agents.md) (headless batch modes)
 - **Wurblets / Wurbelizer** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
