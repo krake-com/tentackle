@@ -32,6 +32,8 @@ all have a **batch mode** that runs headless and is driven entirely from the com
 
 ## The Six Capabilities at a Glance
 
+![Tentackle AI Agent Tooling](./assets/tentackle-ai-agents.png)
+
 | Task                                                | Tool                                                  | Mode                             | Touches the database |
 |-----------------------------------------------------|--------------------------------------------------------|-----------------------------------|----------------------|
 | Understand and validate the entity model            | `tentackle-mcp:serve`                                  | long-running MCP server           | no                   |
