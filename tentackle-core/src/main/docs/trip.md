@@ -35,8 +35,7 @@ compact, pluggable protocol:
   There is no need to explicitly export or unexport remote objects since
   the remote delegates and client proxies are automatically managed.
 - **SD-WAN compatible**: unlike RMI, TRIP does not send IP addresses, host names, or port numbers back to the client
-  when exposing remote objects.
-  This allows NAT and also saves one network round-trip for each new remote proxy.
+  when exposing remote objects, which wouldn't work with NAT.
 
 
 
