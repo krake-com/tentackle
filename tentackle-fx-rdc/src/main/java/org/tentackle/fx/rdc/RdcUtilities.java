@@ -531,7 +531,7 @@ public class RdcUtilities {
         node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
       }
       else {
-        oldCursor = null;
+        oldCursor = Cursor.DEFAULT;
       }
 
       task = new AbstractSessionTask() {

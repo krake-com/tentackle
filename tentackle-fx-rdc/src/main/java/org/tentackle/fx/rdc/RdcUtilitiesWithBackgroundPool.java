@@ -88,7 +88,7 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
       node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
     }
     else {
-      oldCursor = null;
+      oldCursor = Cursor.DEFAULT;
     }
     executor.submit(runner,
                     value -> Platform.runLater(() -> {
