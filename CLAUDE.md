@@ -25,6 +25,7 @@ Entry points (all under `src/main/docs/`):
 - [`toc.md`](src/main/docs/toc.md) — every document, grouped by topic.
 - [`index.md`](src/main/docs/index.md) — alphabetical concept → document map.
 - [`README.md`](README.md) — the public-facing overview ("Why Tentackle?").
+- [`ai-agents.md`](src/main/docs/ai-agents.md) — the tooling an agent can drive here: the MCP model server, the headless batch modes of the wizard goals, and the SQL plugin's `migrate`/`run`.
 
 Conceptual deep-dives worth knowing: [`correctness-first.md`](src/main/docs/correctness-first.md), [`tiers.md`](src/main/docs/tiers.md) (multi-tier cascade), [`modules.md`](src/main/docs/modules.md), and [`pdo-vs-orm.md`](tentackle-pdo/src/main/docs/pdo-vs-orm.md).
 
@@ -77,7 +78,7 @@ Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US
 
 ## Module Architecture
 
-This is a 38-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
+This is a 39-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
 
 ```
 UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
@@ -90,8 +91,8 @@ Common (build+runtime): tentackle-common, tentackle-sql
 Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentackle-build-support,
                         tentackle-sql-maven-plugin, tentackle-i18n-maven-plugin,
                         tentackle-jlink-maven-plugin, tentackle-check-maven-plugin,
-                        tentackle-wizard-maven-plugin, tentackle-model,
-                        tentackle-wurblets, tentackle-persistence-wurblets
+                        tentackle-wizard-maven-plugin, tentackle-mcp-maven-plugin,
+                        tentackle-model, tentackle-wurblets, tentackle-persistence-wurblets
 Aggregation/scaffold:   tentackle-bom, tentackle-project-archetype
 Test support:           tentackle-pdo-mock, tentackle-test-pdo, tentackle-test-fx-rdc
 ```
@@ -108,7 +109,8 @@ Key modules:
 - `tentackle-pdo` — Persistent Domain Object interfaces (entities, aggregates, components, operations, security, number sources).
 - `tentackle-domain` — domain-logic layer base classes (PDO domain side).
 - `tentackle-persistence` — PDO-aware persistence layer (PDO persistence side).
-- `tentackle-model` — the model API describing the application's entities and relationships; consumed by the wurblets, the PDO wizard and the SQL plugin.
+- `tentackle-model` — the model API describing the application's entities and relationships; consumed by the wurblets, the PDO wizard, the SQL plugin and the MCP server.
+- `tentackle-mcp-maven-plugin` — serves the loaded, relation-resolved model to coding agents over MCP (`mvn tentackle-mcp:serve`).
 - `tentackle-fx-rdc` — Rich Desktop Client framework (tables, trees, forms) built on PDOs and operations.
 - `tentackle-bom` — Bill of Materials for downstream projects.
 - `tentackle-project-archetype` — Maven archetype for scaffolding new multi-tier projects.
