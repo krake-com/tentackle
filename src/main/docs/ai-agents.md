@@ -26,11 +26,11 @@ contains them.
 script editor are JavaFX applications. An agent cannot click through them.
 
 The answer to the first two is the [MCP server](#analyzing-the-model-the-mcp-server); the answer to
-the third is that the `pdo`, `browse` and `script` goals of the
+the third is that the `pdo`, `operation`, `browse` and `script` goals of the
 [wizard plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
 all have a **batch mode** that runs headless and is driven entirely from the command line.
 
-## The Six Capabilities at a Glance
+## The Seven Capabilities at a Glance
 
 ![Tentackle AI Agent Tooling](./assets/tentackle-ai-agents.png)
 
@@ -38,15 +38,16 @@ all have a **batch mode** that runs headless and is driven entirely from the com
 |-----------------------------------------------------|--------------------------------------------------------|-----------------------------------|----------------------|
 | Understand and validate the entity model            | `tentackle-mcp:serve`                                  | long-running MCP server           | no                   |
 | Create the source files for new entities            | `tentackle-wizard:pdo -DbatchDir=…`                    | headless, one-shot                | no                   |
+| Create the source files for a new operation         | `tentackle-wizard:operation -DoperationName=…`         | headless, one-shot                | no                   |
 | Turn persisted records into Java fixture code       | `tentackle-wizard:browse -Dpdo=… -Doutput=…`           | headless, one-shot                | reads                |
 | Run application code against a backend              | `tentackle-wizard:script -Dscript=…`                   | headless, one-shot                | whatever the script does |
 | Bring the database in line with the model           | `tentackle-sql:migrate` / `:validate`                  | headless, one-shot                | reads metadata       |
 | Run plain SQL against a *development* database      | `tentackle-sql:run -Dscript=…`                         | headless, one-shot                | whatever the SQL does |
 
-The first is read-only and can be left running all day. The second writes Java sources into the
-reactor. The third reads from a backend and writes one file. The fifth only *generates* a migration
-script — applying it is the sixth's job. The fourth and the sixth can change data: one through the
-domain model, the other underneath it.
+The first is read-only and can be left running all day. The second and third write Java sources into
+the reactor. The fourth reads from a backend and writes one file. The sixth only *generates* a
+migration script — applying it is the seventh's job. The fifth and the seventh can change data: one
+through the domain model, the other underneath it.
 
 They also form a ladder of abstraction, and picking the right rung is most of the skill: the MCP server
 answers *how is this mapped*, the script goal *what does the application do with it*, and the SQL goals
@@ -258,6 +259,46 @@ The generated files are scaffolding. The model block is filled in, but the busin
 is the part a human or an agent writes next. Then run the build, which drives
 `tentackle:analyze` → Wurbelizer → compiler and produces the persistence mappings and the SQL. Once
 the build is through, call `model_reload` so the MCP server sees the new entities.
+
+---
+
+## Creating Operations: `tentackle-wizard:operation` in Batch Mode
+
+An [operation](../../../tentackle-pdo/src/main/docs/operation.md) is behavior that is not bound to a
+persistent entity, and the `operation` goal scaffolds its five source files: the operation interface,
+the domain and persistence interfaces, and their two implementations.
+
+Operations are **not part of the model** — they carry no class id and appear in no `.map` file. There
+is therefore nothing to read a batch definition from, and everything the dialog would ask for is given
+on the command line instead. One invocation creates one operation:
+
+```bash
+mvn tentackle-wizard:operation \
+    -DoperationName=SendInvoice \
+    -Dcomment="sends an invoice to the customer"
+```
+
+| Property                    | Purpose                                                                                          |
+|-----------------------------|----------------------------------------------------------------------------------------------------|
+| `operationName`             | The operation interface name. **Setting it enables batch mode.**                                   |
+| `profile`                   | The `OperationProfile`, case-insensitive. Can be omitted if only one is configured.                |
+| `comment`                   | The short description. Mandatory.                                                                  |
+| `longComment`               | The long description.                                                                              |
+| `remote`                    | Whether remoting is supported. Defaults to the project's model defaults.                           |
+| `superOperation`            | The super operation, determining all five super types.                                             |
+| `abstract`                  | Generate an abstract operation.                                                                    |
+| `domainInterface`, `persistenceInterface`, `domainImplementation`, `persistenceImplementation` | Override the names derived from the operation name. An empty value or `-` suppresses that file; suppressing an interface suppresses its implementation too. |
+| `overwrite`                 | Regenerate over existing files (default `false`).                                                  |
+
+Unlike the `pdo` goal, this one **fails instead of warning**: an incomplete operation aborts the build
+with the validation messages, an unknown profile with the list of configured profiles, and existing
+target files abort it unless `-Doverwrite=true` is given. Since nothing else can detect that an
+operation already exists, that last guard is what keeps a re-run from destroying business logic
+written into a previously generated operation.
+
+Afterwards, the same rule as for entities applies: the files are scaffolding, the business logic is
+what an agent writes next. If the operation went into a package that is new to its module, add the
+`exports` to that module's `module-info.java` — no wizard goal touches it.
 
 ---
 
@@ -473,18 +514,19 @@ one thing to be careful about.
 
 ## The Bundled Skills
 
-Each of the six capabilities ships with a ready-made **agent skill** — a `SKILL.md` describing when to
+Each of the seven capabilities ships with a ready-made **agent skill** — a `SKILL.md` describing when to
 reach for the tool, the order of steps that works, and the failure modes that are specific to running it
 headless:
 
-| Skill                     | Lives in                                                     | Covers                          |
-|---------------------------|--------------------------------------------------------------|---------------------------------|
-| `tentackle-model`         | `tentackle-mcp-maven-plugin/src/skills/`                     | `tentackle-mcp:serve`           |
-| `tentackle-pdo-wizard`    | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:pdo`          |
-| `tentackle-pdo-browser`   | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:browse`       |
-| `tentackle-script-runner` | `tentackle-wizard-maven-plugin/src/skills/`                  | `tentackle-wizard:script`       |
-| `tentackle-sql-migrator`  | `tentackle-sql-maven-plugin/src/skills/`                     | `tentackle-sql:migrate` / `:validate` |
-| `tentackle-sql-runner`    | `tentackle-sql-maven-plugin/src/skills/`                     | `tentackle-sql:run`             |
+| Skill                        | Lives in                                                  | Covers                          |
+|------------------------------|-----------------------------------------------------------|---------------------------------|
+| `tentackle-model`            | `tentackle-mcp-maven-plugin/src/skills/`                  | `tentackle-mcp:serve`           |
+| `tentackle-pdo-wizard`       | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:pdo`          |
+| `tentackle-operation-wizard` | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:operation`    |
+| `tentackle-pdo-browser`      | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:browse`       |
+| `tentackle-script-runner`    | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:script`       |
+| `tentackle-sql-migrator`     | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:migrate` / `:validate` |
+| `tentackle-sql-runner`       | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:run`             |
 
 They are **templates**, not something the build installs. Copy the ones you want into your project and
 adapt them — the profile names, the target backend and the harnesses are yours, not the framework's:
@@ -534,12 +576,18 @@ A realistic end-to-end run, adding an entity to an existing application:
 Steps 2–5 are the loop that pays for itself: they replace "write a model block, run the reactor, read
 the stack trace" with a sub-second answer.
 
+Adding an **operation** instead of an entity skips steps 3–6 entirely: there is no model block to
+draft, validate or find a class id for. It collapses to one
+`mvn tentackle-wizard:operation -DoperationName=… -Dcomment=…`, followed by the build and the business
+logic.
+
 ## Boundaries Worth Stating
 
 | Tool                     | Writes files                         | Touches the database        |
 |--------------------------|--------------------------------------|------------------------------|
 | `tentackle-mcp:serve`    | never                                | never connects               |
 | `tentackle-wizard:pdo`   | Java sources across the reactor      | never connects               |
+| `tentackle-wizard:operation` | up to five Java sources          | never connects               |
 | `tentackle-wizard:browse`| one output file                      | reads only                   |
 | `tentackle-wizard:script`| whatever the script writes           | whatever the script does     |
 | `tentackle-sql:migrate`  | one SQL script per backend           | reads metadata only          |

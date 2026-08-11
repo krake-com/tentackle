@@ -11,8 +11,8 @@ It scaffolds the Java source files for new
 [operations](../../../../tentackle-pdo/src/main/docs/operation.md), filling in the boilerplate
 (interfaces, implementations, the remote layer, the model comment block, class IDs, package
 declarations, wurblet anchors) so that all you have to do afterward is describe the attributes and write the business
-logic. Its goals open an interactive JavaFX wizard, but the `pdo`, `browse`, and `script` goals can
-also run unattended in batch mode.
+logic. Its goals open an interactive JavaFX wizard, but the `pdo`, `operation`, `browse`, and `script`
+goals can also run unattended in batch mode.
 
 All goals share the prefix `tentackle-wizard`, so they can be invoked directly from the command line,
 e.g. `mvn tentackle-wizard:pdo`.
@@ -23,8 +23,8 @@ The plugin requires the same JDK and Maven versions as the rest of the framework
 (JDK >= 25, Maven >= 3.9.0). Because the wizards are JavaFX applications, the interactive goals
 (`pdo`, `operation`, `browse`, `script`) need a graphical desktop; the `browse` and `script` goals
 additionally need a reachable Tentackle backend (database or remote server). The `init` goal and the
-batch variants of `pdo`, `browse`, and `script` run headless (the batch variant of `browse` still
-needs a reachable backend).
+batch variants of `pdo`, `operation`, `browse`, and `script` run headless (the batch variant of
+`browse` still needs a reachable backend).
 
 All goals are **aggregator goals** and operate on the whole reactor. They are therefore best invoked
 from the directory of the project's maven parent (the aggregator pom), so that the wizard sees every
@@ -35,7 +35,7 @@ module and can place the generated files into the correct ones.
 | Goal        | Mode                | Purpose                                                                        |
 |-------------|---------------------|--------------------------------------------------------------------------------|
 | `pdo`       | interactive / batch | Create the source files for a new Persistent Domain Object.                    |
-| `operation` | interactive         | Create the source files for a new Operation (behavior without an entity).      |
+| `operation` | interactive / batch | Create the source files for a new Operation (behavior without an entity).      |
 | `browse`    | interactive / batch | Connect to a backend, browse persisted PDOs and generate test code.            |
 | `script`    | interactive / batch | Connect to a backend and run scripts (Groovy, Ruby, …) against it.             |
 | `init`      | headless            | (Re)install the default code-generation templates into the template directory. |
@@ -139,13 +139,54 @@ At least one `PdoProfile` must be configured or the goal fails.
 ### The `operation` Goal
 
 The counterpart to `pdo` for [operations](../../../../tentackle-pdo/src/main/docs/operation.md) —
-domain behavior that is not bound to a persistent entity. It opens the *Operation Wizard* and
-generates the operation interface, the domain and persistence interfaces, their implementations, and,
-where applicable, the remote layer. Configuration mirrors `pdo` but uses `OperationProfile`s; at
-least one must be configured. There is no batch mode and no class-ID handling (operations have no
-class IDs).
+domain behavior that is not bound to a persistent entity. It generates the operation interface, the
+domain and persistence interfaces and their implementations. Configuration mirrors `pdo` but uses
+`OperationProfile`s; at least one must be configured. There is no class-ID handling (operations have
+no class IDs).
+
+**Interactive mode** (the default) opens the *Operation Wizard*. You pick a profile, enter the
+operation name and a description, optionally a super operation, and decide whether the operation is
+abstract and whether remoting is supported. The names of the four generated types are derived from
+the operation name as you type; clearing one of them suppresses the corresponding file.
 
 ![The Operation Wizard](../../../../src/main/docs/assets/operation-wizard.png)
+
+**Batch mode** is entered as soon as `operationName` is set. Since operations are not part of the
+model, there is no input file to read from: every value the dialog would ask for is given as a
+parameter, and one invocation generates exactly one operation.
+
+```bash
+mvn tentackle-wizard:operation \
+    -DoperationName=SendInvoice \
+    -Dcomment="sends an invoice to the customer" \
+    -Dremote=true
+```
+
+| Parameter (`-D…`)           | Meaning                                                                                             |
+|-----------------------------|-----------------------------------------------------------------------------------------------------|
+| `operationName`             | The operation interface name. **Setting it enables batch mode.**                                    |
+| `profile`                   | The `OperationProfile` to use, matched case-insensitively. Optional if only one is configured.      |
+| `comment`                   | The short description. Mandatory — the generator rejects an operation without one.                  |
+| `longComment`               | The long description.                                                                               |
+| `remote`                    | Whether remoting is supported. Defaults to the `remote` option of the project's model defaults.     |
+| `superOperation`            | The super operation, determining all five super types. Defaults to the profile / framework types.   |
+| `abstract`                  | Generate an abstract operation (default `false`).                                                   |
+| `domainInterface`           | Override the derived name. An empty value or `-` generates no domain interface and no domain implementation. |
+| `persistenceInterface`      | Likewise for the persistence side. Suppressing it also disables remoting.                           |
+| `domainImplementation`      | Override the derived name; an empty value or `-` generates the interface without an implementation. |
+| `persistenceImplementation` | Likewise for the persistence implementation.                                                        |
+| `overwrite`                 | Allow regenerating over existing files (default `false`).                                           |
+
+At least one of the domain and persistence sides must remain, otherwise the goal fails.
+
+Two differences to the `pdo` goal are worth knowing:
+
+- **The goal fails, it does not warn.** An invalid or incomplete operation aborts the build with the
+  validation messages, and an unknown profile name aborts it with the list of configured profiles.
+- **Existing files are not overwritten.** Because an operation is not part of the model, nothing else
+  can detect that it already exists; the goal therefore checks the target files up front and fails
+  unless `-Doverwrite=true` is given. This protects business logic added to a previously generated
+  operation.
 
 ### The `browse` Goal
 
@@ -505,6 +546,9 @@ mvn tentackle-wizard:pdo
 # scaffold a new operation interactively
 mvn tentackle-wizard:operation
 
+# scaffold a new operation headless, everything from the command line
+mvn tentackle-wizard:operation -DoperationName=SendInvoice -Dcomment="sends an invoice"
+
 # browse a backend and generate test code interactively
 mvn tentackle-wizard:browse
 
@@ -525,15 +569,16 @@ Run these from the aggregator (parent) directory so the wizard can place files i
 
 ### The Skills
 
-The three goals that run headless are the ones a coding agent can drive, and `src/skills/` in this
+The goals that run headless are the ones a coding agent can drive, and `src/skills/` in this
 module holds one ready-made agent skill per goal, describing when and how to use it and what goes wrong
 in batch mode:
 
-| Skill                     | Goal                       |
-|---------------------------|----------------------------|
-| `tentackle-pdo-wizard`    | `tentackle-wizard:pdo`     |
-| `tentackle-pdo-browser`   | `tentackle-wizard:browse`  |
-| `tentackle-script-runner` | `tentackle-wizard:script`  |
+| Skill                        | Goal                          |
+|------------------------------|-------------------------------|
+| `tentackle-pdo-wizard`       | `tentackle-wizard:pdo`        |
+| `tentackle-operation-wizard` | `tentackle-wizard:operation`  |
+| `tentackle-pdo-browser`      | `tentackle-wizard:browse`     |
+| `tentackle-script-runner`    | `tentackle-wizard:script`     |
 
 They are templates: copy the ones you want into your own project, alongside the `tentackle-model` skill
 of the [MCP plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md).
@@ -561,8 +606,8 @@ The wizard is a one-shot authoring tool, not part of the regular build lifecycle
 
 ### Further Reading
 
-- [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — driving the `pdo`, `browse` and
-  `script` goals headless from a coding agent, together with the model MCP server
+- [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — driving the `pdo`, `operation`,
+  `browse` and `script` goals headless from a coding agent, together with the model MCP server
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md)
 - [Operation — Behavior Without an Entity](../../../../tentackle-pdo/src/main/docs/operation.md)
 - [Tentackle Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md)
