@@ -41,7 +41,9 @@ the [Index](./index.md).
 - [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL embedded in a PDO interface.
 - [Wurblets — Interface-Level Code Generation](../../../tentackle-wurblets/src/main/docs/wurblets.md) — generating the PDO/operation interfaces.
 - [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md) — generating data transfer objects from a property model or an annotated record.
+- [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — the `org.tentackle.wurblet` classes: wurblet base classes, the argument mini-language, the join model.
 - [Persistence Wurblets — Implementation-Level Code Generation](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generating the persistence implementation.
+- [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md) — the `org.tentackle.persist.wurblet` classes: `DbModelWurblet`, the clause generators, the remoting helpers.
 - [PdoSelectList and PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) — generating query methods.
 - [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — fetching related entities via outer joins.
 

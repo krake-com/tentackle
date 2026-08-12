@@ -86,7 +86,9 @@ nav:
       - Model Definition Syntax: model-definition.md
       - Wurblets — Interface-Level Generation: wurblets.md
       - The DTO Wurblet and @RecordDTO: dto-wurblet.md
+      - The Wurblet API — Class Reference: wurblet-api.md
       - Persistence Wurblets: persistence-wurblets.md
+      - The Persistence Wurblet API — Class Reference: persistence-wurblet-api.md
       - PdoSelectList and PdoSelectUnique: pdo-select.md
       - Eager Relations: eager-relations.md
       - Embedded Entities vs. DataTypes: embedded-vs-datatype.md

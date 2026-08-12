@@ -89,6 +89,9 @@ the model loading and target resolution it inherits, it adds:
 Two `@{config ...}@` flags adjust how a template's arguments are parsed: `pathAllowed` (the `WHERE` expression may
 follow relation paths) and `groupArgs` (the update wurblets accept a second group of `<values>` after a `|`).
 
+Each of these methods — and the rest of `DbModelWurblet`'s API — is documented in
+[The Persistence Wurblet API](persistence-wurblet-api.md#dbmodelwurblet).
+
 ---
 
 ## The Wurblets
@@ -261,6 +264,10 @@ the shared preamble with the imports and `@{extends DbModelWurblet}`.
 | [`JoinClauseGenerator`](../java/org/tentackle/persist/wurblet/JoinClauseGenerator.java)   | Emits the SQL for eager-loading joins, including filtered joins.                                                                                                               |
 | [`RemoteIncludes`](../java/org/tentackle/persist/wurblet/RemoteIncludes.java)             | Creates and updates the generated TRIP remote interface/implementation files (from FreeMarker templates) used by `AssertRemote`.                                               |
 | [`RemoteMethodHelper`](../java/org/tentackle/persist/wurblet/RemoteMethodHelper.java)     | Extracts the wurblet tags for a `@RemoteMethod` from the compiled class file.                                                                                                  |
+| [`DslDeclarationFactory`](../java/org/tentackle/persist/wurblet/DslDeclarationFactory.java) | Builds the query-DSL `Table`/`Field` constant declarations consumed by the `QueryDSL` wurblet.                                                                                |
+
+For the complete class reference — the query model, the SQL/JDBC code builders, the `EXISTS` clause generation and
+the remoting helpers — see [The Persistence Wurblet API](persistence-wurblet-api.md).
 
 ---
 
@@ -309,7 +316,9 @@ running application.
 
 ## Related Documentation
 
+- [The Persistence Wurblet API](persistence-wurblet-api.md) — the `org.tentackle.persist.wurblet` classes the templates compile against.
 - [Tentackle Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — the interface-side counterpart, the wurblet anchor mechanism, and the wurblet-argument query language.
+- [The Wurblet API](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — `ModelWurblet`, the argument mini-language and the join model this module builds on.
 - [`PdoSelectList` / `PdoSelectUnique`](pdo-select.md) — generating finder methods, including eager-loading `*` load joins.
 - [Eager Relations](eager-relations.md) — model-level `select = eager` vs. domain-level load joins, and why eager loading never cascades.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets consume.

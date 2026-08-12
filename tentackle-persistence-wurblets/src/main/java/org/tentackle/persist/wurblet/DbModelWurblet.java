@@ -1768,7 +1768,7 @@ public class DbModelWurblet extends ModelWurblet {
         eagerRelations.add(relation);
       }
     }
-    return eagerRelations.isEmpty() ? null : eagerRelations;
+    return eagerRelations;
   }
 
 }

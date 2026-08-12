@@ -48,7 +48,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
       }
-      else if (joins != null) {
+      else if (!joins.isEmpty()) {
 ]@
   \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
@@ -61,7 +61,7 @@ For more options, see {\@link DbModelWurblet}.
                     @(strAlias)@,
                     @(superCV)@,
 @[
-      if (joins != null) {
+      if (!joins.isEmpty()) {
         String poImpl = deriveClassNameForEntity(getEntity());
 ]@
                     List.of(
