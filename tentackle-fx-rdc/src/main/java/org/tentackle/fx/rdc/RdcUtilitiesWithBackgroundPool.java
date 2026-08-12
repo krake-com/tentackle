@@ -214,7 +214,14 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
    */
   protected void restoreDefaultCursor(Node node, Cursor oldCursor) {
     if (node != null) {
-      // restore what the node had before, which may be null, i.e. inherited from its parent
+      // restore what the node had before, which may be null, i.e., inherited from its parent
+      if (FxUtilities.getInstance().getWaitCursor(node).equals(oldCursor)) {
+        // If more than one background task is running, the wait cursor may be set multiple times,
+        // and since the restores are done in arbitrary order, we may end up with a wait cursor.
+        // (This cannot happen with the default background runner using the ModificationTracker
+        // because it always executes the background tasks strictly sequentially.)
+        oldCursor = FxUtilities.getInstance().getDefaultCursor(node);
+      }
       node.setCursor(oldCursor);
     }
   }
