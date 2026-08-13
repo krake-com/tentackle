@@ -238,12 +238,6 @@ These build the code `PdoRelations` and `ClassVariables` weave into the persiste
 | `createRelationSetFirstArgMethodName` / `getFirstMethodAttribute` | The setter for a single-argument relation; both raise a `ModelException` on a relation whose method arguments do not fit. |
 | `getEagerRelations()` | The relations eligible for the persistence layer's optimized single-join eager select. |
 
-> **`getEagerRelations()` returns `null`, not an empty list, when nothing qualifies** — its Javadoc says
-> "empty list if no optimization possible", so iterating the result directly would throw a
-> `NullPointerException`. The scan also aborts at the first relation that fails a check (a sub-entity with an
-> eager relation, or an eager relation inside one of the components), returning whatever it had collected up to
-> that point rather than starting over.
-
 ---
 
 ## WhereClauseGenerator
