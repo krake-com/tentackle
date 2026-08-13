@@ -148,7 +148,7 @@ needs. A query-by-form dialog, however, restricts by whatever the user actually 
 to be assembled per invocation. Marking a condition with `?<boolean>` does that:
 
 ```java
-// @wurblet findMatching PdoSelectList --private --sort name?withName code?withCode
+// @wurblet findMatching PdoSelectList --private name?withName code?withCode
 ```
 
 ```java
