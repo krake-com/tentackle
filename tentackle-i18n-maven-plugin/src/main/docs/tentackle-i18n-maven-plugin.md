@@ -176,4 +176,4 @@ mvn tentackle-i18n:cleanup
   the `analyze` goal that records the `@Bundle` annotations this plugin relies on
 - [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md) —
   the GUI tool translators use to edit the stored bundles between `push` and `pull`
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-i18n-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-i18n-maven-plugin/plugin-info.html)

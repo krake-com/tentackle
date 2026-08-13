@@ -274,4 +274,4 @@ backend, build fixtures, drop down to SQL.
 - [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) —
   the interactive counterpart for humans.
 - [Model Context Protocol](https://modelcontextprotocol.io/) — the protocol specification.
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-mcp-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-mcp-maven-plugin/plugin-info.html)

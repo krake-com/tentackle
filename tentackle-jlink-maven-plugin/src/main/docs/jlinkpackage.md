@@ -347,7 +347,7 @@ The templates refer to a _model_ that provides variables. Besides `mainModule`, 
 system properties, the maven properties and your own `<variables>`, each converted to camelCase (`os.name` becomes
 `osName`). `osName` is the one you'll reach for most, since it is how a template derives the platform.
 For more details, names of the variables, how to define your own, etc... please refer to the
-[plugin docs](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/plugin-info.html). 
+[plugin docs](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/plugin-info.html). 
 By using templates, we keep the maven poms free from platform-specific stuff and don't need 
 to fiddle with maven profiles.
 
@@ -591,14 +591,14 @@ you select here is the Java version your users will actually be running.
 ### Extending the Plugin
 
 The plugin delegates the actual creation of an artifact to an
-[ArtifactCreator](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/ArtifactCreator.html),
+[ArtifactCreator](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/ArtifactCreator.html),
 so if you have special requirements — building several variants of your application in one run (e.g., a full client
 and a view-only client), emitting an additional archive format, or post-processing the image — you can supply your
 own implementation instead of the built-in one. Because the rest of the pipeline (dependency analysis, runtime
 assembly, template model) stays in place, an extension only has to override the step that differs.
 
 Likewise, the template model itself is pluggable via a
-[TemplateModelFactory](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/TemplateModelFactory.html)
+[TemplateModelFactory](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/TemplateModelFactory.html)
 if the built-in variables aren't enough for your scripts.
 
 ### Auto Update Feature
@@ -633,11 +633,11 @@ The feature is based on 3 components:
    downloads the archive, verifies the checksum, unpacks it, invokes the update script, and terminates itself.
    
 The API to implement the server- and client update service is located in the module
-[tentackle-update](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-update/apidocs/org.tentackle.update/org/tentackle/update/package-summary.html).
+[tentackle-update](https://tentackle.org/tentackle/tentackle-update/apidocs/org.tentackle.update/org/tentackle/update/package-summary.html).
 Although made for Tentackle applications, it can be used as a blueprint to other applications
 as well.
 
-The UI part is implemented in [tentackle-fx-rdc-update](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-fx-rdc-update/apidocs/org.tentackle.fx.rdc.update/org/tentackle/fx/rdc/update/package-summary.html),
+The UI part is implemented in [tentackle-fx-rdc-update](https://tentackle.org/tentackle/tentackle-fx-rdc-update/apidocs/org.tentackle.fx.rdc.update/org/tentackle/fx/rdc/update/package-summary.html),
 which is based on [JavaFX](https://openjfx.io/) and the [Tentackle](https://tentackle.org)
 framework. As such, it cannot be used by any other kind of application. 
 But it's a good starting point for your own update service.

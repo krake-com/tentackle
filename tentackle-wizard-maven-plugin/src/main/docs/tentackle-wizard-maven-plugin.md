@@ -613,5 +613,5 @@ The wizard is a one-shot authoring tool, not part of the regular build lifecycle
 - [Tentackle Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md)
 - [The Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 - [Validation](../../../../tentackle-core/src/main/docs/validation.md)
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-wizard-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-wizard-maven-plugin/plugin-info.html)
 ```

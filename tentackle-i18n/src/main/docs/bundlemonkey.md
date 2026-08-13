@@ -49,16 +49,13 @@ application, not a library or a Maven plugin, so it is **not published to Maven 
 
 It is distributed as a self-contained, platform-specific
 [jlink](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) image that bundles its
-own Java runtime — nothing else needs to be installed. Download and unpack the ZIP for your platform:
-
-- [Linux](https://tentackle.org/static-content/downloads/bundlemonkey/bundlemonkey-jlink-client-1.0.0-linux-amd64.zip)
-- [Windows](https://tentackle.org/static-content/downloads/bundlemonkey/bundlemonkey-jlink-client-1.0.0-windows-amd64.zip)
-- [macOS](https://tentackle.org/static-content/downloads/bundlemonkey/bundlemonkey-jlink-client-1.0.0-macosx-x86_64.zip)
-
-Start it from the `bin` folder via `bundlemonkey.sh` (Linux/macOS) or `bundlemonkey.cmd` (Windows).
+own Java runtime — nothing else needs to be installed.
 
 To build the image yourself, clone the repository and run `mvn clean install -Prelease,jlink`; the
 ZIP is produced under `jlink/target/`.
+
+Start it from the `bin` folder via `bundlemonkey.sh` (Linux/macOS) or `bundlemonkey.cmd` (Windows).
+
 
 ## Connecting to a Database
 

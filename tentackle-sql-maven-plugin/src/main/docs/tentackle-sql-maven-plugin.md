@@ -347,4 +347,4 @@ For a typical Tentackle application, the database tooling builds on the output o
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) —
   the companion plugin for service- and Java metadata generation
 - [Wurbelizer](https://wurbelizer.org/) — the code generation engine that produces the model
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-sql-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-sql-maven-plugin/plugin-info.html)
