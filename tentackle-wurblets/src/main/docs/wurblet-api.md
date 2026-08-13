@@ -378,8 +378,8 @@ template reads, and takes the first positional argument as the file name (a miss
 This is the compact query notation used by the select/update/delete generators:
 
 ```
-@wurblet selectUpTo PdoSelectList --remote   processed:=:null or processed:>=   +id   *address
-                                  └──────── expression ───────────┘  └ sort ┘  └ join ┘
+@wurblet selectUpTo PdoSelectList --remote   processed:=:null or processed:>=   +id     *address
+                                             └──────── expression ──────────┘ └ sort ┘  └ join ┘
 ```
 
 Four classes carry the grammar: `WurbletArgumentType` defines what each kind of argument may contain,
