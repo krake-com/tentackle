@@ -21,11 +21,11 @@ never shipped inside a running application. It is packaged with an `Automatic-Mo
 
 ### Who consumes these classes
 
-| Consumer | Uses |
-|---|---|
-| The templates in `tentackle-wurblets/src/main/wurblets` (`AttributeNames`, `ColumnNames`, `Methods`, `Relations`, …) | `ModelWurblet` (via [`header.incl`](../wurblets/org/tentackle/wurblet/header.incl)), `AnnotationOption`, `ModelCommentSupport` |
+| Consumer                                                                                                                                                                                                              | Uses                                                                                                                                                                                                           |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| The templates in `tentackle-wurblets/src/main/wurblets` (`AttributeNames`, `ColumnNames`, `Methods`, `Relations`, …)                                                                                                  | `ModelWurblet` (via [`header.incl`](../wurblets/org/tentackle/wurblet/header.incl)), `AnnotationOption`, `ModelCommentSupport`                                                                                 |
 | [`tentackle-persistence-wurblets`](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — `DbModelWurblet`, `WhereClauseGenerator`, `JoinClauseGenerator` and the `Pdo*`/`Db*` templates | the whole argument and join model: `WurbletArgumentParser`, `WurbletArgument`, `WurbletArgumentExpression`, `WurbletArgumentOperator`, `CodeGenerator`, `WurbletRelation`, `Join`, `JoinPath`, `ComponentInfo` |
-| Your own project wurblets | anything here — `ModelWurblet` in particular is the documented extension point |
+| Your own project wurblets                                                                                                                                                                                             | anything here — `ModelWurblet` in particular is the documented extension point                                                                                                                                 |
 
 ---
 
@@ -68,26 +68,26 @@ org.wurbelizer.wurblet.AbstractWurblet                  (wurbelizer)
   TentackleWurbletsModel    @Service(Model.class) — heap files + deferred load errors
 ```
 
-| Class | Kind | Role |
-|---|---|---|
-| [`ModelWurblet`](../java/org/tentackle/wurblet/ModelWurblet.java) | class | Base for all model-driven wurblets: loads the model, locates the target PDO/operation, parses options, provides the template helper toolkit. |
-| [`DTOWurblet`](../java/org/tentackle/wurblet/DTOWurblet.java) | class | Base for the `DTO` wurblet: parses the property model (here-doc or `@RecordDTO` record) and the DTO options. |
-| [`IncludeWurblet`](../java/org/tentackle/wurblet/IncludeWurblet.java) | class | Base for the `Include` wurblet: parses its four options and deletes the included file on cleanup. |
-| [`WurbletArgument`](../java/org/tentackle/wurblet/WurbletArgument.java) | class | One parsed argument of the mini-language: attribute + relop + value, sort key, or load join. |
-| [`WurbletArgumentType`](../java/org/tentackle/wurblet/WurbletArgumentType.java) | enum | The four argument kinds and the grammar rules each one permits. |
-| [`WurbletArgumentParser`](../java/org/tentackle/wurblet/WurbletArgumentParser.java) | class | Parses a whole argument list into an expression tree plus sorting, extra and join arguments. |
-| [`WurbletArgumentExpression`](../java/org/tentackle/wurblet/WurbletArgumentExpression.java) | class | A node of the boolean expression tree: *n* operands joined by *n-1* operators. |
-| [`WurbletArgumentOperand`](../java/org/tentackle/wurblet/WurbletArgumentOperand.java) | interface | Marker implemented by `WurbletArgument` and `WurbletArgumentExpression`. |
-| [`WurbletArgumentOperator`](../java/org/tentackle/wurblet/WurbletArgumentOperator.java) | enum | `AND`, `OR`, `NOT`, `ANDNOT`, `ORNOT` and their `Backend.SQL_*` constant names. |
-| [`WurbletRelation`](../java/org/tentackle/wurblet/WurbletRelation.java) | class | One element of a relation path: a model `Relation` plus an optional parsed filter. |
-| [`Join`](../java/org/tentackle/wurblet/Join.java) | class | A single load join — a `WurbletRelation` plus the generated SQL alias. |
-| [`JoinPath`](../java/org/tentackle/wurblet/JoinPath.java) | class | A tree of joins: a chain of `Join` elements plus continuation paths. |
-| [`JoinPathFactory`](../java/org/tentackle/wurblet/JoinPathFactory.java) | class | `@Service` singleton that consolidates and names join paths. |
-| [`ComponentInfo`](../java/org/tentackle/wurblet/ComponentInfo.java) | class | Resolves how to join an aggregate component back to its root (the `rootId` column and its table). |
-| [`AnnotationOption`](../java/org/tentackle/wurblet/AnnotationOption.java) | class | Parses the `=`/`+`/`~` modifiers carried by model annotation strings. |
-| [`ModelCommentSupport`](../java/org/tentackle/wurblet/ModelCommentSupport.java) | class | Static printers rendering an entity's relationship graph for the `ModelComment` wurblet. |
-| [`TentackleWurbletsModel`](../java/org/tentackle/wurblet/TentackleWurbletsModel.java) | class | `Model` implementation understanding heap files and deferring load errors. |
-| [`CodeGenerator<T>`](../java/org/tentackle/wurblet/CodeGenerator.java) | interface | Functional interface for rendering nested structures to code. |
+| Class                                                                                       | Kind      | Role                                                                                                                                         |
+|---------------------------------------------------------------------------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ModelWurblet`](../java/org/tentackle/wurblet/ModelWurblet.java)                           | class     | Base for all model-driven wurblets: loads the model, locates the target PDO/operation, parses options, provides the template helper toolkit. |
+| [`DTOWurblet`](../java/org/tentackle/wurblet/DTOWurblet.java)                               | class     | Base for the `DTO` wurblet: parses the property model (here-doc or `@RecordDTO` record) and the DTO options.                                 |
+| [`IncludeWurblet`](../java/org/tentackle/wurblet/IncludeWurblet.java)                       | class     | Base for the `Include` wurblet: parses its four options and deletes the included file on cleanup.                                            |
+| [`WurbletArgument`](../java/org/tentackle/wurblet/WurbletArgument.java)                     | class     | One parsed argument of the mini-language: attribute + relop + value, sort key, or load join.                                                 |
+| [`WurbletArgumentType`](../java/org/tentackle/wurblet/WurbletArgumentType.java)             | enum      | The four argument kinds and the grammar rules each one permits.                                                                              |
+| [`WurbletArgumentParser`](../java/org/tentackle/wurblet/WurbletArgumentParser.java)         | class     | Parses a whole argument list into an expression tree plus sorting, extra and join arguments.                                                 |
+| [`WurbletArgumentExpression`](../java/org/tentackle/wurblet/WurbletArgumentExpression.java) | class     | A node of the boolean expression tree: *n* operands joined by *n-1* operators.                                                               |
+| [`WurbletArgumentOperand`](../java/org/tentackle/wurblet/WurbletArgumentOperand.java)       | interface | Marker implemented by `WurbletArgument` and `WurbletArgumentExpression`.                                                                     |
+| [`WurbletArgumentOperator`](../java/org/tentackle/wurblet/WurbletArgumentOperator.java)     | enum      | `AND`, `OR`, `NOT`, `ANDNOT`, `ORNOT` and their `Backend.SQL_*` constant names.                                                              |
+| [`WurbletRelation`](../java/org/tentackle/wurblet/WurbletRelation.java)                     | class     | One element of a relation path: a model `Relation` plus an optional parsed filter.                                                           |
+| [`Join`](../java/org/tentackle/wurblet/Join.java)                                           | class     | A single load join — a `WurbletRelation` plus the generated SQL alias.                                                                       |
+| [`JoinPath`](../java/org/tentackle/wurblet/JoinPath.java)                                   | class     | A tree of joins: a chain of `Join` elements plus continuation paths.                                                                         |
+| [`JoinPathFactory`](../java/org/tentackle/wurblet/JoinPathFactory.java)                     | class     | `@Service` singleton that consolidates and names join paths.                                                                                 |
+| [`ComponentInfo`](../java/org/tentackle/wurblet/ComponentInfo.java)                         | class     | Resolves how to join an aggregate component back to its root (the `rootId` column and its table).                                            |
+| [`AnnotationOption`](../java/org/tentackle/wurblet/AnnotationOption.java)                   | class     | Parses the `=`/`+`/`~` modifiers carried by model annotation strings.                                                                        |
+| [`ModelCommentSupport`](../java/org/tentackle/wurblet/ModelCommentSupport.java)             | class     | Static printers rendering an entity's relationship graph for the `ModelComment` wurblet.                                                     |
+| [`TentackleWurbletsModel`](../java/org/tentackle/wurblet/TentackleWurbletsModel.java)       | class     | `Model` implementation understanding heap files and deferring load errors.                                                                   |
+| [`CodeGenerator<T>`](../java/org/tentackle/wurblet/CodeGenerator.java)                      | interface | Functional interface for rendering nested structures to code.                                                                                |
 
 ---
 
@@ -133,14 +133,14 @@ run()
 Steps 4 and 5 read from the wurbelizer's `PROPSPACE_EXTRA` property space, which the
 [Tentackle Maven plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) populates:
 
-| Property | Meaning |
-|---|---|
-| `model` | The current Maven module's model directory. Mandatory — a missing property aborts the wurblet. Created if it does not exist. |
-| `otherModels` | Whitespace/comma-separated model directories of dependency modules. Loaded **before** the own model. |
-| `modelName` | Selects a named `Model` via `ModelManager`; defaults to `Model.getInstance()`. |
-| `backends` | The target [backends](../../../../tentackle-sql/src/main/docs/sql.md) used to validate the model and to answer `getBackends()`. |
-| `modelDefaults` | Parsed into `ModelDefaults` and applied to the model. |
-| `entityAliases` | Parsed into `EntityAliases` and applied to the model. |
+| Property        | Meaning                                                                                                                         |
+|-----------------|---------------------------------------------------------------------------------------------------------------------------------|
+| `model`         | The current Maven module's model directory. Mandatory — a missing property aborts the wurblet. Created if it does not exist.    |
+| `otherModels`   | Whitespace/comma-separated model directories of dependency modules. Loaded **before** the own model.                            |
+| `modelName`     | Selects a named `Model` via `ModelManager`; defaults to `Model.getInstance()`.                                                  |
+| `backends`      | The target [backends](../../../../tentackle-sql/src/main/docs/sql.md) used to validate the model and to answer `getBackends()`. |
+| `modelDefaults` | Parsed into `ModelDefaults` and applied to the model.                                                                           |
+| `entityAliases` | Parsed into `EntityAliases` and applied to the model.                                                                           |
 
 > `modelDefaults` and `entityAliases` must be identical for the own model and all `otherModels`, since they are
 > set on the single shared `Model` instance before loading.
@@ -163,13 +163,13 @@ the whole wurbel run:
 `getPdoClassName()` figures out which entity the anchor belongs to by inspecting the parsed Java source, trying
 four strategies in order and caching the outcome:
 
-| # | Source evidence | Result |
-|---|---|---|
-| 1 | A `@DomainObjectService(Xyz.class)` or `@PersistentObjectService(Xyz.class)` annotation | `pdoClassName = Xyz`, `isPdo = true` |
-| 2 | A `@DomainOperationService(Xyz.class)` or `@PersistentOperationService(Xyz.class)` annotation | `pdoClassName = Xyz`, `isOperation = true` (**`isPdo` stays `false`**) |
-| 3 | An interface `extends SomePersistentObject<Xyz>` — the first `extends` clause's type parameter | `pdoClassName = Xyz`, `isPdo = true`, `isInterface = true` |
-| 4 | A class definition, e.g. `extends AbstractPersistentObject<Adresse, AdressePersistenceImpl>` or a generified `<T extends UmzugsListe<T>, …>` | the first type argument / the bound of `T`, `isPdo = true` |
-| 5 | Fallback: the interface name itself (manually implemented PDOs, TT1 migrations) | the interface name; `isPdo` remains `false` |
+| # | Source evidence                                                                                                                              | Result                                                                 |
+|---|----------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| 1 | A `@DomainObjectService(Xyz.class)` or `@PersistentObjectService(Xyz.class)` annotation                                                      | `pdoClassName = Xyz`, `isPdo = true`                                   |
+| 2 | A `@DomainOperationService(Xyz.class)` or `@PersistentOperationService(Xyz.class)` annotation                                                | `pdoClassName = Xyz`, `isOperation = true` (**`isPdo` stays `false`**) |
+| 3 | An interface `extends SomePersistentObject<Xyz>` — the first `extends` clause's type parameter                                               | `pdoClassName = Xyz`, `isPdo = true`, `isInterface = true`             |
+| 4 | A class definition, e.g. `extends AbstractPersistentObject<Adresse, AdressePersistenceImpl>` or a generified `<T extends UmzugsListe<T>, …>` | the first type argument / the bound of `T`, `isPdo = true`             |
+| 5 | Fallback: the interface name itself (manually implemented PDOs, TT1 migrations)                                                              | the interface name; `isPdo` remains `false`                            |
 
 If none matches, a `WurbelException` is thrown. Two consequences are worth remembering when writing a template:
 
@@ -196,11 +196,11 @@ String       getOption(String)  // "" for a flag, the value for --opt=value, nul
 
 Options understood by `ModelWurblet` itself:
 
-| Option | Effect |
-|---|---|
-| `--method=<name>` | Name of the generated method. Defaults to the wurblet tag (`getGuardName()`), see `getMethodName()`. |
-| `--model=<mapping>` | The entity model to use. If it contains a file separator it is treated as a path and loaded from that URL; otherwise it is an entity name. Defaults to `getPdoClassName()`. |
-| `--remote` / `--noremote` | Force remoting on/off. Otherwise taken from the entity's options, falling back to `ModelDefaults`. |
+| Option                    | Effect                                                                                                                                                                      |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--method=<name>`         | Name of the generated method. Defaults to the wurblet tag (`getGuardName()`), see `getMethodName()`.                                                                        |
+| `--model=<mapping>`       | The entity model to use. If it contains a file separator it is treated as a path and loaded from that URL; otherwise it is an entity name. Defaults to `getPdoClassName()`. |
+| `--remote` / `--noremote` | Force remoting on/off. Otherwise taken from the entity's options, falling back to `ModelDefaults`.                                                                          |
 
 ### The template helper toolkit
 
@@ -208,53 +208,53 @@ Everything below is `public` and meant to be called from inside a `.wrbl` Java b
 
 **Model access**
 
-| Method | Purpose |
-|---|---|
-| `getEntity()` | The resolved `Entity` (may be `null` under `missingModelOk`). |
-| `getModelDirName()`, `getModelFileName()`, `getModelDefaults()` | The model context. |
-| `getBackends()` | The target backends — never `null`, possibly empty. |
-| `isPartOfInheritanceHierarchy()` | True when the entity's top super-entity is abstract. |
-| `isMuteOptionSet(Entity)` | True if at least one attribute carries `[MUTE]` and is not already excluded by `noConstant`/`noDeclare`/`fromSuper`. |
-| `orderByInheritanceLevelAndClassId(List<Entity>)` | Sorts in place by `ordinal`, then `classId`; returns the same list. |
-| `getEmbeddedTableAttributes()` | The embedded attributes among the entity's table attributes. |
+| Method                                                          | Purpose                                                                                                              |
+|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `getEntity()`                                                   | The resolved `Entity` (may be `null` under `missingModelOk`).                                                        |
+| `getModelDirName()`, `getModelFileName()`, `getModelDefaults()` | The model context.                                                                                                   |
+| `getBackends()`                                                 | The target backends — never `null`, possibly empty.                                                                  |
+| `isPartOfInheritanceHierarchy()`                                | True when the entity's top super-entity is abstract.                                                                 |
+| `isMuteOptionSet(Entity)`                                       | True if at least one attribute carries `[MUTE]` and is not already excluded by `noConstant`/`noDeclare`/`fromSuper`. |
+| `orderByInheritanceLevelAndClassId(List<Entity>)`               | Sorts in place by `ordinal`, then `classId`; returns the same list.                                                  |
+| `getEmbeddedTableAttributes()`                                  | The embedded attributes among the entity's table attributes.                                                         |
 
 **Names and types**
 
-| Method | Purpose |
-|---|---|
-| `getEffectiveDataType(Attribute)` | The attribute's effective `DataType`, resolving `ConvertibleType`s. Wraps `ModelException` into `WurbelException`. |
-| `getColumnName(Attribute, int columnIndex)` | The column name; `columnIndex < 0` means "no suffix". |
-| `getColumnNameConstant(Attribute, int columnIndex)` | The `CN_…` constant name. Rejects backend-specific types when a column index is given, because their column count varies per backend. |
-| `getNonPrimitiveJavaType(Attribute)` | The boxed Java type. |
-| `deriveClassNameForEntity(Entity)` | Applies this class's naming pattern to another entity: with `getClassName() == "MyFirmaPersistenceImpl"` and entity `Firma`, `deriveClassNameForEntity(Kontakt)` yields `"MyKontaktPersistenceImpl"`. Throws if the current class name does not contain the entity name. |
-| `determinePackageName(String simpleName)` | Scans the source's `import` statements for the package of a simple class name, defaulting to the current package. Costly, and backed by a **static cache keyed by the simple name alone** — so use it only when the package cannot be derived by rule. |
-| `isIdAttribute`, `isSerialAttribute`, `isIdOrSerialAttribute`, `isAttributeDerived` | Attribute classification shortcuts. |
+| Method                                                                              | Purpose                                                                                                                                                                                                                                                                  |
+|-------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `getEffectiveDataType(Attribute)`                                                   | The attribute's effective `DataType`, resolving `ConvertibleType`s. Wraps `ModelException` into `WurbelException`.                                                                                                                                                       |
+| `getColumnName(Attribute, int columnIndex)`                                         | The column name; `columnIndex < 0` means "no suffix".                                                                                                                                                                                                                    |
+| `getColumnNameConstant(Attribute, int columnIndex)`                                 | The `CN_…` constant name. Rejects backend-specific types when a column index is given, because their column count varies per backend.                                                                                                                                    |
+| `getNonPrimitiveJavaType(Attribute)`                                                | The boxed Java type.                                                                                                                                                                                                                                                     |
+| `deriveClassNameForEntity(Entity)`                                                  | Applies this class's naming pattern to another entity: with `getClassName() == "MyFirmaPersistenceImpl"` and entity `Firma`, `deriveClassNameForEntity(Kontakt)` yields `"MyKontaktPersistenceImpl"`. Throws if the current class name does not contain the entity name. |
+| `determinePackageName(String simpleName)`                                           | Scans the source's `import` statements for the package of a simple class name, defaulting to the current package. Costly, and backed by a **static cache keyed by the simple name alone** — so use it only when the package cannot be derived by rule.                   |
+| `isIdAttribute`, `isSerialAttribute`, `isIdOrSerialAttribute`, `isAttributeDerived` | Attribute classification shortcuts.                                                                                                                                                                                                                                      |
 
 **Relation method names**
 
-| Method | Produces |
-|---|---|
-| `createRelationSelectMethodName(Relation)` | `select` + `By…` for list relations (explicit method name, or the concatenated foreign attribute names), or `selectCached` for cached object relations. |
-| `createListRelationDeleteMethodName(Relation)` | `deleteBy` + the explicit method name or the concatenated foreign attribute names. |
-| `createDeclaredArgsForSelectOrDeleteMethod(Relation)` | The comma-separated `Type name` parameter list derived from the relation's method arguments. |
+| Method                                                | Produces                                                                                                                                                |
+|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `createRelationSelectMethodName(Relation)`            | `select` + `By…` for list relations (explicit method name, or the concatenated foreign attribute names), or `selectCached` for cached object relations. |
+| `createListRelationDeleteMethodName(Relation)`        | `deleteBy` + the explicit method name or the concatenated foreign attribute names.                                                                      |
+| `createDeclaredArgsForSelectOrDeleteMethod(Relation)` | The comma-separated `Type name` parameter list derived from the relation's method arguments.                                                            |
 
 **Code and comment emission**
 
-| Method | Purpose |
-|---|---|
+| Method                                                          | Purpose                                                                                                                                                                                                                                                                                                                                                        |
+|-----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `createAccessorCode(Entity, String path, boolean createSetter)` | Turns a dotted path into chained accessor code, e.g. `invoice.customer.name` → `getInvoice().getCustomer().getName`. A `#` selects a single column of a multi-column datatype (`period#from`). The trailing parentheses are **not** emitted, so the caller appends `()` or `(value)`. Multi-column types are immutable, so a setter path with `#` is rejected. |
-| `createMultiLineComment(String lead, String comment)` | Renders a multi-line comment into a Javadoc block, prefixing each line with `<br>` and the given lead. |
-| `createDocTagComment(String \| Attribute \| Relation)` | Normalizes a comment for `@param`/`@return`: makes it start with a lowercase `the …`. Boolean attributes are returned unchanged; an all-caps `THE ` prefix is left alone. |
-| `firstToLowerCase(String)` | Lowercases the first character *only* when the second is not uppercase — so `ID` and `URL` survive intact. |
-| `appendCommaSeparated`, `prependCommaSeparated` | Build comma-separated lists in a `StringBuilder`. |
+| `createMultiLineComment(String lead, String comment)`           | Renders a multi-line comment into a Javadoc block, prefixing each line with `<br>` and the given lead.                                                                                                                                                                                                                                                         |
+| `createDocTagComment(String \| Attribute \| Relation)`          | Normalizes a comment for `@param`/`@return`: makes it start with a lowercase `the …`. Boolean attributes are returned unchanged; an all-caps `THE ` prefix is left alone.                                                                                                                                                                                      |
+| `firstToLowerCase(String)`                                      | Lowercases the first character *only* when the second is not uppercase — so `ID` and `URL` survive intact.                                                                                                                                                                                                                                                     |
+| `appendCommaSeparated`, `prependCommaSeparated`                 | Build comma-separated lists in a `StringBuilder`.                                                                                                                                                                                                                                                                                                              |
 
 **Validation and structure**
 
-| Method | Purpose |
-|---|---|
+| Method                                                                           | Purpose                                                                                                                                                                                                                                                                                                                                      |
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `assertSupportedByBackends(String feature, Function<Backend,Boolean> validator)` | Runs the validator against every active backend. A `false` result or a thrown `RuntimeException` marks that backend as unsupported; if any fail, a single `WurbelException` naming all of them (with their messages) aborts the build. This is how a template refuses to generate code for a feature the project's databases cannot execute. |
-| `createComponentInfo(Entity component)` | Builds a [`ComponentInfo`](#componentinfo) for joining one of the entity's components. |
-| `getAnnotationOptions(List<String> annotations, String annotationType)` | Filters the model's annotation strings by (simple) annotation type and wraps each in an [`AnnotationOption`](#annotationoption). |
+| `createComponentInfo(Entity component)`                                          | Builds a [`ComponentInfo`](#componentinfo) for joining one of the entity's components.                                                                                                                                                                                                                                                       |
+| `getAnnotationOptions(List<String> annotations, String annotationType)`          | Filters the model's annotation strings by (simple) annotation type and wraps each in an [`AnnotationOption`](#annotationoption).                                                                                                                                                                                                             |
 
 ---
 
@@ -298,13 +298,13 @@ inheritance prefix).
 Each property's *prefix* is everything before the first character that can start a Java identifier, so prefixes
 combine freely and order does not matter (`+!Foo bar` is the same as `!+Foo bar`).
 
-| Prefix | Field set | Meaning |
-|---|---|---|
-| `^` | `inherited` | Passed up to the super class's constructor. |
-| `=` | `mutable` | A setter is generated. |
-| `~` | `mutable` + `unserialized` | Mutable and `transient`. |
-| `!` | `required` | Builder mode only: `build()` fails if never set. Implies immutable. |
-| `+` | `withFrom` | Also generate a `fromX(…)`/`withX(…)` copy method. |
+| Prefix | Field set                  | Meaning                                                             |
+|--------|----------------------------|---------------------------------------------------------------------|
+| `^`    | `inherited`                | Passed up to the super class's constructor.                         |
+| `=`    | `mutable`                  | A setter is generated.                                              |
+| `~`    | `mutable` + `unserialized` | Mutable and `transient`.                                            |
+| `!`    | `required`                 | Builder mode only: `build()` fails if never set. Implies immutable. |
+| `+`    | `withFrom`                 | Also generate a `fromX(…)`/`withX(…)` copy method.                  |
 
 `^`, `=`, `~` and `!` are evaluated as an if/else chain **in that order**, so a property carrying more than one of
 them keeps the first: `=~Foo bar` is mutable but *not* transient. `+` is independent and combines with any of them.
@@ -322,30 +322,30 @@ they never reach the generated source.
 
 Derived names the template uses directly:
 
-| Method | Yields |
-|---|---|
-| `getGetterName()` | `isX` for `boolean`, else `getX`. |
-| `getSetterName()` | `setX`. |
-| `getFromName()` | `withX` when `--with` was given, else `fromX`. |
-| `getBuilderName()` | The builder method name — `builderPrefix` + `X`, or the bare property name when no prefix is configured. |
-| `getConstant()` | `PN_<NAME>` — the property-name constant emitted under `--names`. |
-| `isPrimitive()` | Heuristic: the type's first character is lowercase. |
+| Method                    | Yields                                                                                                                                        |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `getGetterName()`         | `isX` for `boolean`, else `getX`.                                                                                                             |
+| `getSetterName()`         | `setX`.                                                                                                                                       |
+| `getFromName()`           | `withX` when `--with` was given, else `fromX`.                                                                                                |
+| `getBuilderName()`        | The builder method name — `builderPrefix` + `X`, or the bare property name when no prefix is configured.                                      |
+| `getConstant()`           | `PN_<NAME>` — the property-name constant emitted under `--names`.                                                                             |
+| `isPrimitive()`           | Heuristic: the type's first character is lowercase.                                                                                           |
 | `getHashCodeInvocation()` | `Double.hashCode(x)` / `Float.hashCode(x)` / `Long.hashCode(x)` / the bare field for other primitives / `Objects.hashCode(x)` for references. |
 
 ### Options
 
-| Option | Field | Notes |
-|---|---|---|
-| `--builder`, `--builder[@Anno]` | `withBuilder`, `builderAnnotation` | The bracketed form attaches an annotation to the generated builder. |
-| `--builderScope=<scope>` | `builderScope` | `AccessScope` of the builder's constructor; defaults to `PROTECTED`. Implies `--builder`. |
-| `--builderPrefix=<prefix>` | `builderPrefix` | Prefix for builder setter methods. Implies `--builder`. |
-| `--from` / `--with` | `withFrom`, `asWithers` | Force copy factories for all properties; `--with` names them `withX` instead of `fromX`. |
-| `--equals`, `--hashCode` | `withEquals`, `withHashCode` | Rejected for records (which get them for free). |
-| `--validate[=<code>]` | `validate` | Validate after construction. Defaults to `ValidationUtilities.getInstance().validate(this)`; rejected for records. See [validation](../../../../tentackle-core/src/main/docs/validation.md). |
-| `--names` | `withNames` | Emit the `PN_*` constants. |
-| `--canonical` | `canonical` | Emit `@Canonical*` annotations for [TRIP](../../../../tentackle-core/src/main/docs/trip.md). |
-| `--nofinal` | `noFinal` | Serialization-friendly non-final fields (JEP-500). |
-| `--nott` | `nott` | No Tentackle dependency in the generated code. **Mutually exclusive with `--canonical`.** |
+| Option                          | Field                              | Notes                                                                                                                                                                                        |
+|---------------------------------|------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--builder`, `--builder[@Anno]` | `withBuilder`, `builderAnnotation` | The bracketed form attaches an annotation to the generated builder.                                                                                                                          |
+| `--builderScope=<scope>`        | `builderScope`                     | `AccessScope` of the builder's constructor; defaults to `PROTECTED`. Implies `--builder`.                                                                                                    |
+| `--builderPrefix=<prefix>`      | `builderPrefix`                    | Prefix for builder setter methods. Implies `--builder`.                                                                                                                                      |
+| `--from` / `--with`             | `withFrom`, `asWithers`            | Force copy factories for all properties; `--with` names them `withX` instead of `fromX`.                                                                                                     |
+| `--equals`, `--hashCode`        | `withEquals`, `withHashCode`       | Rejected for records (which get them for free).                                                                                                                                              |
+| `--validate[=<code>]`           | `validate`                         | Validate after construction. Defaults to `ValidationUtilities.getInstance().validate(this)`; rejected for records. See [validation](../../../../tentackle-core/src/main/docs/validation.md). |
+| `--names`                       | `withNames`                        | Emit the `PN_*` constants.                                                                                                                                                                   |
+| `--canonical`                   | `canonical`                        | Emit `@Canonical*` annotations for [TRIP](../../../../tentackle-core/src/main/docs/trip.md).                                                                                                 |
+| `--nofinal`                     | `noFinal`                          | Serialization-friendly non-final fields (JEP-500).                                                                                                                                           |
+| `--nott`                        | `nott`                             | No Tentackle dependency in the generated code. **Mutually exclusive with `--canonical`.**                                                                                                    |
 
 `needConstructor` is set as soon as any property is immutable.
 
@@ -390,20 +390,16 @@ Four classes carry the grammar: `WurbletArgumentType` defines what each kind of 
 
 The enum is a table of grammar rules. Each constant declares which parts an argument of that kind may carry:
 
-| Type | Produced by | Path | Attribute | `[name]` | `:relop` | `?boolean` |
-|---|---|---|---|---|---|---|
-| `CONDITION` | the default inside the expression | optional | **required** | yes | yes | yes |
-| `EXTRA` | an argument after `\|` when argument grouping is on (typically a SQL `UPDATE` assignment) | not allowed | **required** | yes | no | no |
-| `SORT` | a leading `+` / `-` (or a bare argument after the expression when grouping is off) | optional | **required** | no | no | no |
-| `JOIN` | a leading `*` | **required** | not allowed | no | no | no |
+| Type        | Produced by                                                                               | Path         | Attribute    | `[name]` | `:relop` | `?boolean` |
+|-------------|-------------------------------------------------------------------------------------------|--------------|--------------|----------|----------|------------|
+| `CONDITION` | the default inside the expression                                                         | optional     | **required** | yes      | yes      | yes        |
+| `EXTRA`     | an argument after `\|` when argument grouping is on (typically a SQL `UPDATE` assignment) | not allowed  | **required** | yes      | no       | no         |
+| `SORT`      | a leading `+` / `-` (or a bare argument after the expression when grouping is off)        | optional     | **required** | no       | no       | no         |
+| `JOIN`      | a leading `*`                                                                             | **required** | not allowed  | no       | no       | no         |
 
 The predicates are `isPathOptional/Required/Allowed`, `isAttributeOptional/Required/Allowed`, `isNameOptional`,
 `isRelopOptional` and `isConditionOptional`; `WurbletArgument`'s constructor consults them to produce precise
 error messages such as *"relops not allowed for SORT-argument '…'"*.
-
-> Note a discrepancy worth knowing: `SORT` declares `pathOptional = true`, so a sort key reached through a
-> relation path parses successfully, even though the class comment on `WurbletArgument` describes relation paths
-> as illegal for sorting.
 
 ### WurbletArgument
 
@@ -421,11 +417,11 @@ The constructor parses it strictly left to right:
 2. **Relop and value.** Everything after the first `:`. A second `:` introduces a bind value, a `#` introduces a
    literal value spliced straight into the SQL text. The relop is then normalized:
 
-   | Written | Becomes |
-   |---|---|
-   | `:null` / `:notnull` | `IS NULL` / `IS NOT NULL` (as a literal, no bind parameter) |
-   | `:like` / `:notlike` | `LIKE` / `NOT LIKE` |
-   | `:in` / `:notin` | array operators `IN (?)` / `NOT IN (?)` — no other operator may be combined |
+   | Written                         | Becomes                                                                                                              |
+   |---------------------------------|----------------------------------------------------------------------------------------------------------------------|
+   | `:null` / `:notnull`            | `IS NULL` / `IS NOT NULL` (as a literal, no bind parameter)                                                          |
+   | `:like` / `:notlike`            | `LIKE` / `NOT LIKE`                                                                                                  |
+   | `:in` / `:notin`                | array operators `IN (?)` / `NOT IN (?)` — no other operator may be combined                                          |
    | a relop ending in `any` / `all` | array operators `ANY(?)` / `ALL(?)`, keeping the leading comparison (`:>=any`), defaulting to `=` when none is given |
 
 3. **Optional-condition marker.** `?<name>` names the boolean method argument that switches the condition on.
@@ -575,12 +571,12 @@ JoinPath
  └── paths    : List<JoinPath>   continuations branching off the end of that trunk
 ```
 
-| Method | Purpose |
-|---|---|
-| `isFiltered(boolean componentsOnly)` | Whether any join in this path's trunk carries a filter. With `componentsOnly`, scanning stops at the first non-composite relation. |
-| `findJoin(Entity component)` | Locates the join whose foreign entity is the given component, searching the trunk and all sub-paths. Throws a `WurbelException` if the component is reachable through more than one path. |
-| `findJoin(List<WurbletRelation> path)` | Locates the join matching a concrete relation path, descending into sub-paths for the remainder. Returns `null` when the path does not exist here. |
-| `normalize()` | Rewrites the tree so every node's trunk holds exactly **one** element, pushing trailing elements into nested single-element paths. Applied recursively, depth first. |
+| Method                                 | Purpose                                                                                                                                                                                   |
+|----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `isFiltered(boolean componentsOnly)`   | Whether any join in this path's trunk carries a filter. With `componentsOnly`, scanning stops at the first non-composite relation.                                                        |
+| `findJoin(Entity component)`           | Locates the join whose foreign entity is the given component, searching the trunk and all sub-paths. Throws a `WurbelException` if the component is reachable through more than one path. |
+| `findJoin(List<WurbletRelation> path)` | Locates the join matching a concrete relation path, descending into sub-paths for the remainder. Returns `null` when the path does not exist here.                                        |
+| `normalize()`                          | Rewrites the tree so every node's trunk holds exactly **one** element, pushing trailing elements into nested single-element paths. Applied recursively, depth first.                      |
 
 ### JoinPathFactory
 
@@ -617,12 +613,12 @@ Created via `ModelWurblet.createComponentInfo(Entity)`. Given a component of the
 
 The constructor resolves:
 
-| Accessor | Meaning |
-|---|---|
-| `getJoinedEntity()` | The right-hand side of the join. |
-| `getRootIdColumnName()` | The Java expression naming the column that holds the root id — either `<Impl>.CN_<ROOTATTR>` when some ancestor supplies a root attribute, or the plain `CN_ROOTID` constant. |
-| `getRootIdClassName()` | The implementation class that declares that constant, derived with `deriveClassNameForEntity(…)`. |
-| `isExtraJoinNecessary()` / `getExtraClassName()` | True when multi-table inheritance puts the joined attribute in a different table than the root id, so an extra join by `id` is required. |
+| Accessor                                         | Meaning                                                                                                                                                                       |
+|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `getJoinedEntity()`                              | The right-hand side of the join.                                                                                                                                              |
+| `getRootIdColumnName()`                          | The Java expression naming the column that holds the root id — either `<Impl>.CN_<ROOTATTR>` when some ancestor supplies a root attribute, or the plain `CN_ROOTID` constant. |
+| `getRootIdClassName()`                           | The implementation class that declares that constant, derived with `deriveClassNameForEntity(…)`.                                                                             |
+| `isExtraJoinNecessary()` / `getExtraClassName()` | True when multi-table inheritance puts the joined attribute in a different table than the root id, so an extra join by `id` is required.                                      |
 
 For a `PLAIN` (single-table) hierarchy the entity itself is the top entity; otherwise the search starts at
 `getTopSuperEntity()`. Walking upwards stops as soon as an entity either provides an explicit `rootId` column or
@@ -634,11 +630,11 @@ the concepts.
 Model attributes may carry annotations with a single-character modifier right after the `@`. `AnnotationOption`
 strips those modifiers (up to two of them) and exposes the result:
 
-| Modifier | Predicate | Meaning |
-|---|---|---|
-| `=` | `isSetterOnly()` | The annotation applies to the setter only. |
-| `+` | `isSetterAndGetter()` | The annotation applies to both accessors. |
-| `~` | `isHidden()` | Applies to the implementation layer only, not to the interface. |
+| Modifier | Predicate             | Meaning                                                         |
+|----------|-----------------------|-----------------------------------------------------------------|
+| `=`      | `isSetterOnly()`      | The annotation applies to the setter only.                      |
+| `+`      | `isSetterAndGetter()` | The annotation applies to both accessors.                       |
+| `~`      | `isHidden()`          | Applies to the implementation layer only, not to the interface. |
 
 `getAnnotation()` returns the cleaned annotation string, `getAnnotationType()` the type name without the `@` and
 without parameters (lazily computed). `ModelWurblet.getAnnotationOptions(annotations, type)` filters a model's
@@ -650,13 +646,13 @@ Used by `Methods`, `Relations`, `MethodsImpl` and `PdoRelations`.
 A static utility class (private constructor) holding the rendering logic for the `ModelComment` wurblet, which
 emits a Javadoc block describing how an entity is embedded in the model. Every method writes to a `PrintStream`.
 
-| Method | Renders |
-|---|---|
-| `printVia(relation, out)` | How the link is established: ` embedded`, or ` via <attribute>` / ` via <Entity>.<attribute>`, with additional method arguments joined by ` & `. |
-| `printReferencedBy(entity, relation, indent, out)` | An incoming reference: the referencing entity, its root entities, `deeply` for deep references, `composite`, the alias, and the cardinality tag `[1:1]`, `[1:N]` or `[N:M]`. |
-| `printComponents(allRelations, compositeRelations, subEntities, indent, out)` | The aggregate tree, recursively: `+` for components, `^` for sub-entities. The `allRelations` set breaks recursion loops; an already-printed composite is abbreviated with a trailing `...`. |
-| `printSubEntities(subEntities, indent, out)` | The inheritance tree below an entity. |
-| `printNonCompositeRelations(entity, relations, rootsFromForeignEntity, indent, out)` | Outgoing non-composite relations, sorted by foreign entity name, annotated with roots, `from <SubEntity>`, `reversed`, `deeply` and the cardinality tag. |
+| Method                                                                               | Renders                                                                                                                                                                                      |
+|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `printVia(relation, out)`                                                            | How the link is established: ` embedded`, or ` via <attribute>` / ` via <Entity>.<attribute>`, with additional method arguments joined by ` & `.                                             |
+| `printReferencedBy(entity, relation, indent, out)`                                   | An incoming reference: the referencing entity, its root entities, `deeply` for deep references, `composite`, the alias, and the cardinality tag `[1:1]`, `[1:N]` or `[N:M]`.                 |
+| `printComponents(allRelations, compositeRelations, subEntities, indent, out)`        | The aggregate tree, recursively: `+` for components, `^` for sub-entities. The `allRelations` set breaks recursion loops; an already-printed composite is abbreviated with a trailing `...`. |
+| `printSubEntities(subEntities, indent, out)`                                         | The inheritance tree below an entity.                                                                                                                                                        |
+| `printNonCompositeRelations(entity, relations, rootsFromForeignEntity, indent, out)` | Outgoing non-composite relations, sorted by foreign entity name, annotated with roots, `from <SubEntity>`, `reversed`, `deeply` and the cardinality tag.                                     |
 
 Sorting by name throughout keeps the generated comment stable across builds, so regeneration produces no
 spurious diffs.
@@ -682,11 +678,11 @@ rather than to whichever file happened to be wurbled first.
 
 Three wurbelizer exception types are used deliberately and mean different things:
 
-| Exception | Thrown when | Effect |
-|---|---|---|
-| `WurbelException` | A normal generation error: a malformed argument, an unknown attribute, an unsupported backend feature. | Fails this wurblet. |
-| `WurbelTerminationException` | The model itself is broken (`ModelWurblet.run()`). | Aborts the entire wurbel run, so a single model error does not scatter follow-up errors across every generated file. |
-| `WurbelDiscardException` | `DTOWurblet` in record mode when the analyze info is missing *and* a compile-error log exists. | The source did not compile; the generated region is discarded rather than replaced with garbage. |
+| Exception                    | Thrown when                                                                                            | Effect                                                                                                               |
+|------------------------------|--------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `WurbelException`            | A normal generation error: a malformed argument, an unknown attribute, an unsupported backend feature. | Fails this wurblet.                                                                                                  |
+| `WurbelTerminationException` | The model itself is broken (`ModelWurblet.run()`).                                                     | Aborts the entire wurbel run, so a single model error does not scatter follow-up errors across every generated file. |
+| `WurbelDiscardException`     | `DTOWurblet` in record mode when the analyze info is missing *and* a compile-error log exists.         | The source did not compile; the generated region is discarded rather than replaced with garbage.                     |
 
 `ModelException`s from the model API are consistently wrapped into `WurbelException` with a message naming the
 offending attribute, relation or datatype.

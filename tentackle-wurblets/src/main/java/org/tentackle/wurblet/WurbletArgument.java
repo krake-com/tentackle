@@ -59,7 +59,7 @@ import java.util.Set;
  *  </ul>
  * </li>
  * <li>relation-path: list of relations.<br>
- * Optional for conditions, required for load joins. Illegal for updates and sorting.<br>
+ * Optional for conditions, required for load joins. Illegal for updates.<br>
  * If the current entity is a root-entity, the path starts with a dot and is followed by the name of
  * a pointsToComponent, the pointsToComponent is replaced by its relation path, if there is only one path.<br>
  * For load joins, asterisks must be used between joins.
