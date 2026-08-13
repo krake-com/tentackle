@@ -27,6 +27,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   /**
    * Returns whether properties should be tried if no stored bundle found.
    *
-   * @return true if use resources from properties (default)
+   * @return true for using resources from properties (default)
    */
   public static boolean isFallbackToProperties() {
     return fallbackToProperties;
@@ -141,7 +142,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       }
       catch (RuntimeException rx) {
         // The backend is unreachable or the query failed. Fall back to the properties below instead of
-        // letting a database hiccup break every text lookup, but remember the failure so that the
+        // letting database hiccups break every text lookup, but remember the failure so that the
         // fallback does not get cached (see getTimeToLive).
         LOGGER.warning("loading stored bundle " + key.name() + " failed -> falling back to properties", rx);
         LOAD_FAILED.set(Boolean.TRUE);
@@ -191,7 +192,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    * Loads the bundle from storage.
    *
    * @param key the unique domain key
-   * @return the stored resource bundle or null if no such bundle in database
+   * @return the stored resource bundle or null if no such bundle in the database
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
     if (Session.getCurrentSession() == null) {
@@ -210,12 +211,25 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       }
     }
 
-    registerModificationListener();
+    try {
+      registerModificationListener();
 
-    StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
-    if (bundle != null) {
-      LOGGER.info("stored bundle {0} loaded", bundle);
-      return new StoredResourceBundle(bundle);
+      StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
+      if (bundle != null) {
+        LOGGER.info("stored bundle {0} loaded", bundle);
+        return new StoredResourceBundle(bundle);
+      }
+    }
+    catch (PersistenceException px) {
+      if (px.isTemporary()) {
+        // ModificationTracker not running yet, no session configured yet, try again later.
+        // This is not a warning, since it happens regularly during client startup (login).
+        LOGGER.fine("stored bundle {0} temporarily not loadable -> fallback to Properties ({1})",
+                    key, px.getMessage());
+      }
+      else {
+        throw px;
+      }
     }
     return null;
   }

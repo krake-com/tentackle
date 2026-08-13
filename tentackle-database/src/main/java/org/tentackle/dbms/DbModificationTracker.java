@@ -394,7 +394,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public Db getSession() {
     Db db = (Db) super.getSession();
     if (db == null) {
-      throw new PersistenceException("no session configured for " + this);
+      PersistenceException ex = new PersistenceException("no session configured for " + this);
+      ex.setTemporary(true);    // try again later when everything is up and running
+      throw ex;
     }
     return db;
   }
@@ -784,7 +786,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Used in remote clients only.
    * <p>
    * If the master serial implements {@link MasterSerialEvent}, the corresponding
-   * handler will be invoked (if any), before returning the serial.
+   * handler will be invoked (if any) before returning the serial.
    *
    * @param masterSerial the master serial object
    * @return the long serial
@@ -1184,7 +1186,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * <p>
    * Configuration tasks lazily create the entries and counters. They must be serialized against
    * each other, since two threads requesting the same entry concurrently would otherwise create
-   * it twice: the loser's instance is replaced in the maps, but is still referenced by the
+   * it twice: the loser's instance is replaced in the maps but is still referenced by the
    * {@link ListenerEntry} created for it. Its serial would never be updated again by {@link #poll()},
    * so the listener would fire on every poll from then on.
    * <p>
