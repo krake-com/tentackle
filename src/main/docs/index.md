@@ -34,7 +34,8 @@ topic-grouped listing of every document, see the
 
 ## C
 
-- **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md)
+- **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md), [Multi-Tier Cascade](./tiers.md)
+- **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
@@ -158,6 +159,7 @@ topic-grouped listing of every document, see the
 - **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
 - **Preferenzr (preferences editor)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md#preferenzr--browsing-and-editing-the-store)
+- **Preloading PDO caches (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Preloading remote delegates (`@PreloadRemoteDelegate`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#returning-several-remote-objects-at-once)
 - **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
 

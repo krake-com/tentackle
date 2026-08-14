@@ -151,12 +151,21 @@ guess, because the order is exactly what distinguishes the tiers.
 | `initialize()` | Applies properties, initializes scripting, logs the discovered module hooks. The first step, always. |
 | `login()` | *(subclass)* Creates the `SessionInfo`, obtains the [credentials](../../../../tentackle-session/src/main/docs/authentication.md), opens the session, makes it current, sets the root domain context. |
 | `configure()` | Calls `configureModificationTracker()`, `configurePreferences()`, `configureSecurityManager()`. Runs **after** the connection exists. |
-| `finishStartup()` | Activates statistics if asked, starts the [modification tracker](../../../../tentackle-session/src/main/docs/session.md), registers its emergency-shutdown hook. |
+| `finishStartup()` | Activates statistics if asked, preloads the [PDO caches](cache.md#preloading-caches-at-startup-preloadcache) marked `@PreloadCache`, starts the [modification tracker](../../../../tentackle-session/src/main/docs/session.md), registers its emergency-shutdown hook. |
 | `cleanup()` | Terminates PDO helper threads and closes the session. |
 
 The split between `configure()` and `finishStartup()` matters: `configure()` prepares
 singletons that need a live session, `finishStartup()` starts the threads that use
 them. Subclasses override individual steps rather than the sequence.
+
+`finishStartup()` opens with the overridable `preloadCaches()`, which fills the
+[read-only `PRELOAD` caches](cache.md#preloading-caches-at-startup-preloadcache) annotated
+with `@PreloadCache` — in one roundtrip when the session is remote, which is what makes an
+interactive client usable over a slow link. It returns a `CountDownLatch`, or `null` if it
+ran synchronously: remote tiers and interactive local clients preload in a background thread
+on a cloned session, so startup is not blocked, while a plain daemon or batch job simply
+loads inline. A **server** is the exception — it waits on the latch before continuing, because
+its own clients preload from it and would otherwise inherit its cold-start cost.
 
 `initializeScripting()` is a small but load-bearing default: if no default scripting
 language is set and exactly one provider is on the module path, it becomes the
@@ -169,7 +178,7 @@ default. Most applications therefore never configure
 
 | Property | Effect                                                                                                                                  |
 |----------|-----------------------------------------------------------------------------------------------------------------------------------------|
-| `notracker` | Don't start the modification tracker — and disable [PDO caching](cache.md) globally, since a cache without invalidation would go stale. |
+| `notracker` | Don't start the modification tracker — and disable [PDO caching](cache.md) globally, since a cache without invalidation would go stale. Cache preloading is skipped along with it. |
 | `nosecurity` | Disable the [security manager](security.md).                                                                                            |
 | `statistics` | Collect PDO/operation method invocation statistics and TRIP/SQL/Transaction statistics (if server). Recommended during development.     |
 | `scripting=<lang>` | Set the default scripting language.                                                                                                     |

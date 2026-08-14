@@ -118,8 +118,8 @@ rollback correction, operation modes, the poll loop, delayed listeners and maste
   global PDO changes. It maintains its own session (and is both a `SessionTaskDispatcher` and an
   `ExclusiveSessionProvider`). Code calls `countModification(session, name)` when it modifies data, and
   `addDeletion(...)` for deletes; listeners are registered via `addModificationListener(...)`. It exposes the
-  current `getSerial(class | name)`, can `invalidate()` itself, and reports `isLocalClientMode()` (clients
-  directly on the DB, no middle tier). Convenience statics `submit(...)` / `transaction(...)` schedule work on the
+  current `getIdSerialForClass(...)` / `getIdSerialForName(...)`, can `invalidate()` itself, and reports
+  `isLocalClientMode()` (clients directly on the DB, no middle tier). Convenience statics `submit(...)` / `transaction(...)` schedule work on the
   tracker's own session.
 - [`ModificationListener`](../java/org/tentackle/session/ModificationListener.java) — listens for changes by
   *name* (usually a table name, but any application name is allowed; `null` = listen to everything). Beyond

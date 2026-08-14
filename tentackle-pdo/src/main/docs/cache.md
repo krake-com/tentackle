@@ -28,6 +28,12 @@ The whole subsystem lives in `tentackle-pdo`:
 | [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)                                                                                   | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`.   |
 | [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches.                    |
 | [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java)                                                                                 | Signals a cache inconsistency (triggers invalidation).  |
+| [`PdoCacheOperation`](../java/org/tentackle/pdo/PdoCacheOperation.java)                                                                                 | Remoting-capable operation that preloads the caches at startup. |
+| [`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java) / [`PdoCachePreloadTableInfo`](../java/org/tentackle/pdo/PdoCachePreloadTableInfo.java) | The DTOs carrying a preloaded cache and its serial baseline over the wire. |
+
+The [`@PreloadCache`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/PreloadCache.java)
+annotation that drives the preloading lives in `tentackle-persistence`, since it marks a persistence
+implementation class — see *Preloading Caches at Startup* below.
 
 Application code rarely touches these directly. It calls the **generated
 `selectCached…` methods** on the PDO; the model declares the cache and the
@@ -355,6 +361,117 @@ caches (client → middle-tier → database) coherent.
 
 ---
 
+## Preloading Caches at Startup (`@PreloadCache`)
+
+A `PRELOAD` cache is filled **lazily** — the first `selectCached…` that misses pulls the whole
+table. That is unnoticeable next to a local database, but expensive on a slow link: each cached
+entity costs a roundtrip of its own carrying a complete table, plus — whenever the
+[`ModificationTracker`](../../../../tentackle-session/src/main/docs/modification-tracking.md) does not
+already know the table — another one to establish its baseline serial. And the user pays all of it
+interactively, at the moment of first use.
+
+`@PreloadCache` moves that cost to startup and collapses it into **a single roundtrip** that carries
+every preloading cache's content *and* the server's serial baseline. It is the content-level
+counterpart to
+[`@PreloadRemoteDelegate`](../../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates),
+which solves the same problem for the delegate lookups. The two pair naturally: first the delegates,
+then the data they serve.
+
+### Declaring it
+
+[`@PreloadCache`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/PreloadCache.java)
+is placed on the **persistence implementation class** — not in the model and not on the wurblet line:
+
+```java
+@PersistentObjectService(Security.class)
+@PreloadRemoteDelegate
+@PreloadCache
+public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, SecurityPersistenceImpl> { ... }
+```
+
+The annotation is meta-annotated with `@Service`, so the
+[build](../../../../tentackle-common/src/main/docs/services.md) collects the annotated class names in
+`META-INF/services/org.tentackle.persist.PreloadCache`.
+`PersistenceUtilities.getPreloadCacheClassNames()` reads them as plain strings — the classes
+themselves are not loaded for the lookup — and `getPreloadingCaches()` instantiates and validates
+them. Tentackle itself annotates `SecurityPersistenceImpl` and `StoredBundlePersistenceImpl`: the
+[security rules](security.md) and the [database-backed resource bundles](../../../../tentackle-i18n/src/main/docs/i18n.md)
+are read at login on every tier, so nobody ever benefits from loading them lazily.
+
+### How it runs
+
+[`AbstractApplication.finishStartup()`](../java/org/tentackle/app/AbstractApplication.java) calls the
+overridable `preloadCaches()`, which creates a
+[`PdoCacheOperation`](../java/org/tentackle/pdo/PdoCacheOperation.java) and invokes
+`preloadPdoCaches()`. What that does depends on the tier:
+
+| Session | Behavior |
+|---------|----------|
+| **Remote** — a client, or a server that is itself a client of another server | `preloadCachesFromRemote` in a background thread; **one** `getPreloadingCachesContent` call fetches every cache at once. |
+| **Local + interactive** — a desktop client connected directly to the database | `preloadCachesFromDatabase` in a background thread, so the login window appears immediately. |
+| **Local + non-interactive** — server, daemon or batch job | `preloadCachesFromDatabase` synchronously, on the main thread. |
+
+The two background variants run on a **cloned session** (`clone("PL")`, grouped with the parent's
+session id). Preloading may take a while and must not hold the main session long enough to risk a
+timeout; grouping ties the clone's lifetime to its parent so it cannot be orphaned. They return a
+`CountDownLatch` to wait on — the synchronous case returns `null`.
+
+A **server** blocks on that latch before `finishStartup()` returns. Its own clients preload from it
+and expect its caches to be initialized already; bringing the remote services up cold would simply
+push the load time onto whichever client connects first.
+
+> Preloading is skipped entirely when the `notracker` property is set — without the modification
+> tracker all caches are [globally disabled](application.md) anyway.
+
+### What travels — and why the serials travel with it
+
+`PdoCache.getPreloadContent(context)` snapshots a cache into a
+[`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java): the PDO list plus
+one [`PdoCachePreloadTableInfo`](../java/org/tentackle/pdo/PdoCachePreloadTableInfo.java) per table,
+holding the table name and the `IdSerialTuple` — the modification row id **and** serial — the
+server's tracker had at that moment. (A cache for a `MULTI`-table inheritance hierarchy has more than
+one table, hence the array.) Both records are `@TripDeduplicatable(NEVER)` / `@TripReferencable(NEVER)`:
+records are deduplicated and back-referenced by default, but each of these occurs exactly once in the
+transfer, so [TRIP](../../../../tentackle-core/src/main/docs/trip.md) would keep that bookkeeping for
+nothing.
+
+The serials are the point. `applyPreloadContent` builds the cache's `SerialInfo`s from the
+**transmitted** `idSerial` rather than asking the local tracker — which would cost another roundtrip
+per table and, worse, could pick up a serial newer than the data it is being paired with. The client
+then feeds the same values into its own tracker through
+`PdoModificationTracker.setIdSerialForName(...)`
+(see [Modification Tracking](../../../../tentackle-session/src/main/docs/modification-tracking.md#seeding-serials-without-a-roundtrip)).
+Cache and tracker therefore start from the exact baseline the server held when it took the snapshot:
+no serial gap that would invalidate the freshly filled cache, and no modification silently skipped.
+From there the ordinary machinery described under *Coherency* takes over.
+
+### Guards
+
+- Only caches that are **preloading**, **read-only** and **enabled** are preloaded. A `@PreloadCache`
+  on a class with an `LRU`/`LFU`/`FORGET`, `--mutable` or absent cache is a mistake: it is skipped and
+  logged as a warning naming the class and asking you to remove the annotation. A merely *disabled*
+  cache is skipped quietly, at info level — that is a configuration choice, not an error.
+- `applyPreloadContent` throws a `PdoCacheException` if the cache is already initialized
+  (`isInitialized()`, i.e. it has serial infos) or if the content is for a different PDO class.
+- If a cache happens to be initialized by regular use while the preload is in flight, its content is
+  discarded with a warning rather than merged — the running cache is already coherent.
+
+### When to preload
+
+- **Yes — the handful of caches a client touches at startup or login, over a high-latency or
+  low-bandwidth WAN link.** This is the case the feature exists for, and it is the same startup set
+  you would weigh for `@PreloadRemoteDelegate`.
+- **Yes — a middle-tier server whose [read model](#preload-for-large-tables-an-in-memory-read-model-cqrs)
+  must be warm before the first client connects.** The server-side latch exists precisely for this.
+- **No — the whole entity model.** Every annotated class costs server work, bandwidth and client heap
+  on *every* startup, and converts a lazy miss that might never happen into a mandatory upfront
+  transfer. Preloading a large table to every client is usually a net loss.
+- **No — anything that is not a read-only `PRELOAD` cache.** Those are rejected by design.
+- On a directly-connected, non-interactive tier this is **cache warming**, not latency avoidance: the
+  gain is a predictable startup cost instead of a first-user penalty.
+
+---
+
 ## Security
 
 Cache persistence operations run on behalf of the **current thread's user**, so
@@ -413,6 +530,9 @@ debugging or batch jobs).
 - **Treat cache searches as eventually consistent.** Other JVMs' changes appear only
   after a small propagation delay, so a cache scan may be momentarily stale. Read or
   re-validate inside the transaction when gating a write on the current state.
+- **Over a slow link, `@PreloadCache` the startup set — and only that.** Filling the caches a client
+  needs at login in one roundtrip removes the per-entity latency the user would otherwise feel;
+  annotating the whole model just moves the cost to every startup.
 - **Use `ViewPermission`, not `ReadPermission`, on cached entities.**
 
 ## See Also
@@ -421,5 +541,8 @@ debugging or batch jobs).
 - [immutable.md](../../../../tentackle-core/src/main/docs/immutable.md) — why and how cached PDOs are made immutable.
 - [snapshot.md](snapshot.md) — `copy()` a cached PDO to get an editable instance.
 - [session.md](../../../../tentackle-session/src/main/docs/session.md) — the `ModificationTracker`, tableserial and operation modes.
+- [modification-tracking.md](../../../../tentackle-session/src/main/docs/modification-tracking.md) — the serials the cache expires on, and how a preload seeds them.
+- [database.md](../../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates) — `@PreloadRemoteDelegate`, the companion of `@PreloadCache` for slow links.
+- [application.md](application.md) — where `preloadCaches()` runs in the startup sequence.
 - [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md) — the `cached` / `tableserial` model options.
 - [persistence-wurblets.md](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — the `PdoCache` wurblet that generates the cache.

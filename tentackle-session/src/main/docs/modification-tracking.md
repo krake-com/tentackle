@@ -127,7 +127,7 @@ exactly one `UPDATE` on the modification table, flushed by the next poll.
 
 The price is that `countModification()` cannot return the definitive serial. It returns
 `lastSerial + pendingCount` — the *guessed lowest* value, documented as "could be higher already". Callers
-that need certainty read the serial after the fact via `getSerial(...)`.
+that need certainty read the serial after the fact via [`getIdSerialForName(...)`](#reading-serials-directly).
 
 ### Rollback correction
 
@@ -567,20 +567,42 @@ runs as a task on the tracker thread, or directly if called from that thread or 
 
 ## Reading Serials Directly
 
-Not everything needs a callback. The current serial is readable at any time:
+Not everything needs a callback. The current state is readable at any time:
 
 ```java
-long s1 = ModificationTracker.getInstance().getSerial("customer");    // by tracked name
-long s2 = ModificationTracker.getInstance().getSerial(Customer.class); // by class
+IdSerialTuple t1 = ModificationTracker.getInstance().getIdSerialForName("customer");     // by tracked name
+IdSerialTuple t2 = ModificationTracker.getInstance().getIdSerialForClass(Customer.class); // by class
+
+long serial = t1.getSerial();   // the table serial
+long rowId  = t1.getId();       // the id of the entry in the modification table
 ```
 
-`getSerial(Class)` resolves the name for you: `DbModificationTracker` uses the `@TableName` annotation (falling
-back to instantiating the object to ask it), and `PdoModificationTracker` overrides this to resolve PDO
+Both return an [`IdSerialTuple`](../../../../tentackle-core/src/main/java/org/tentackle/misc/IdSerialTuple.java),
+not a bare `long`, because the **row id** is part of the tracker's state too: it is what identifies the entry
+in [modification events](#the-event), and it is what a client must be told when its caches are
+[preloaded from an upstream server](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache) —
+serial without id would leave the client unable to match incoming events to the tables it just received.
+
+`getIdSerialForClass(Class)` resolves the name for you: `DbModificationTracker` uses the `@TableName` annotation
+(falling back to instantiating the object to ask it), and `PdoModificationTracker` overrides this to resolve PDO
 interfaces through `PdoUtilities`. Asking for a name the tracker has not seen yet configures it on the spot —
-including creating its row — so `getSerial(...)` never returns a meaningless zero for an unknown name.
+including creating its row — so neither method ever returns a meaningless zero for an unknown name.
 
 This is how [`PdoCache`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoCache.java) establishes
 its baseline `minTableSerial` when it starts up, before any event has ever fired.
+
+### Seeding serials without a roundtrip
+
+`DbModificationTracker.setIdSerialForName(name, idSerial)` is the write-side counterpart, and exists **solely
+for [cache preloading](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache)**.
+When a client receives a preloaded cache, the content arrives together with the id/serial pairs the *server's*
+tracker held at snapshot time. Applying them locally lets the client adopt that baseline without asking the
+server table by table — which would cost a roundtrip each, and could pair the received rows with a serial that
+has already moved on.
+
+Note that the serial is applied **unconditionally**: if an entry for the name already exists, its serial is
+overwritten rather than kept. That is correct here — the incoming value belongs to the data being installed —
+but it is why nothing else should call this method.
 
 ---
 
@@ -589,6 +611,7 @@ its baseline `minTableSerial` when it starts up, before any event has ever fired
 | Consumer | What it does |
 |---|---|
 | [`PdoCache`](../../../../tentackle-pdo/src/main/docs/cache.md) | expires cached PDOs via `expire(ModificationEvent)`; consults `TableSerialHistory` for gaps; checks `isLocalClientMode()` |
+| [`PdoCacheOperation`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoCacheOperation.java) | [preloads the caches](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache) at startup and seeds the tracker with the upstream baseline via `setIdSerialForName` |
 | [`DefaultSecurityManager`](../../../../tentackle-pdo/src/main/java/org/tentackle/security/DefaultSecurityManager.java) | a `PdoListener(Security.class)` invalidates the permission rules when they change |
 | [`StoredBundleControl`](../../../../tentackle-i18n/src/main/java/org/tentackle/i18n/StoredBundleControl.java) | a `PdoListener(StoredBundle.class)` clears the bundle cache, so a translator's edit reaches every JVM |
 | [`DesktopApplication`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | uses the tracker as a background worker via `ModificationTracker.submit(...)` |
@@ -618,7 +641,7 @@ For application-specific server→client notifications, though, you almost never
 ## Related Documentation
 
 - [Tentackle Session](session.md) — the session, the `SessionInfo`, and the tracker's place among them.
-- [PDO Caching](../../../../tentackle-pdo/src/main/docs/cache.md) — the tracker's biggest consumer; table serials, expiration and operation modes.
+- [PDO Caching](../../../../tentackle-pdo/src/main/docs/cache.md) — the tracker's biggest consumer; table serials, expiration, operation modes and `@PreloadCache`.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — the `tableserial` and `serial` columns the tracker counts.
 - [Tentackle Database](../../../../tentackle-database/src/main/docs/database.md) — where `DbModificationTracker`, `ModificationTally` and `DbModification` live.
 - [Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — why a tracker polls a tracker polls a database.
