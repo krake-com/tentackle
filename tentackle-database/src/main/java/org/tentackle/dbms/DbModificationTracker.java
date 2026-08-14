@@ -298,29 +298,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   }
 
-
-  private static volatile int remoteDelegateId;   // the remote delegate ID
-
-  /**
-   * Gets the remote delegate.
-   *
-   * @return the delegate
-   */
-  private static int getRemoteDelegateId() {
-    int id = remoteDelegateId;
-    if (id == 0)  {
-      synchronized (DbModificationTracker.class) {
-        id = remoteDelegateId;
-        if (id == 0)  {   // still unprepared: another thread may have won the race
-          id = Db.prepareRemoteDelegate(DbModificationTracker.class);
-          remoteDelegateId = id;
-        }
-      }
-    }
-    return id;
-  }
-
-
+  private volatile int remoteDelegateId;                            // the delegate ID
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
   private final Object shutdownRunnablesLock;                       // guards shutdownRunnables
   private final Object configurationLock;                           // serializes configuration tasks if the tracker isn't running
@@ -546,26 +524,42 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return entry.serial;
   }
 
-  /**
-   * Gets the pair of id/serial for a given table name.<br>
-   * Used in remote connections.
-   *
-   * @param tableName the table to lookup
-   * @return the id/serial pair for the table name, never null
-   */
-  public IdSerialTuple getIdSerialForName(String tableName) {
-    if (tableName == null) {
+  @Override
+  public IdSerialTuple getIdSerialForName(String name) {
+    if (name == null) {
       throw new PersistenceException("tableName must be given");
     }
-    TableEntry entry = tableEntriesByName.get(tableName);
+    TableEntry entry = tableEntriesByName.get(name);
     if (entry == null) {
-      entry = configureName(tableName);
+      entry = configureName(name);
     }
     return new IdSerialTuple(entry.id, entry.serial);
   }
 
+  /**
+   * Sets the row id and serial for a given name.<br>
+   * The method is provided for cache preloading only
+   * and avoids a roundtrip.
+   * <p>
+   * Important: the serial will always be applied, even if the table entry already exists!
+   *
+   * @param name the name to set
+   * @param idSerial the id/serial pair to set
+   */
+   public synchronized void setIdSerialForName(String name, IdSerialTuple idSerial) {
+    TableEntry entry = tableEntriesByName.get(name);
+    if (entry == null) {
+      entry = new TableEntry(name, idSerial.getId(), idSerial.getSerial());
+      tableEntriesByName.put(name, entry);
+      tableEntriesById.put(idSerial.getId(), entry);
+    }
+    else {
+      entry.serial = idSerial.getSerial();
+    }
+  }
+
   @Override
-  public long getSerial(Class<?> clazz) {
+  public IdSerialTuple getIdSerialForClass(Class<?> clazz) {
     String name = SessionUtilities.getInstance().getTableName(clazz.getName());
     if (name == null) {
       // not annotated with @TableName: try to instantiate and get from AbstractDbObject
@@ -574,12 +568,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         name = obj.getTableName();
       }
     }
-    return getSerial(name);
-  }
-
-  @Override
-  public long getSerial(String name) {
-    return getIdSerialForName(name).getSerial();
+    return getIdSerialForName(name);
   }
 
   /**
@@ -846,8 +835,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected long selectMasterSerial() {
     Db session = getSession();
     if (session.isRemote()) {
-      return extractMasterSerial(((DbModificationTrackerRemoteDelegate)
-                                    session.getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
+      return extractMasterSerial(getRemoteDelegate(session).selectMasterSerial());
     }
     else {
       return masterModification.selectMasterSerial();
@@ -865,7 +853,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected List<IdSerialNameTuple> selectAllIdSerialNames() {
     Db session = getSession();
     if (session.isRemote()) {
-      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerialNames();
+      return getRemoteDelegate(session).selectAllIdSerialNames();
     }
     else {
       List<IdSerialNameTuple> tuples = new ArrayList<>();
@@ -886,7 +874,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected List<IdSerialTuple> selectAllIdSerials() {
     Db session = getSession();
     if (session.isRemote()) {
-      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerials();
+      return getRemoteDelegate(session).selectAllIdSerials();
     }
     else {
       return masterModification.selectAllIdSerial();
@@ -905,13 +893,48 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       IdSerialTuple tuple = getRemoteIdSerial(tableName);   // try fast lookup first (to save a roundtrip)
       if (tuple == null) {
         // not in the initial map? -> get it from the remote server (and optionally create it)
-        tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
+        tuple = getRemoteDelegate(session).selectIdSerialForName(tableName);
       }
       return tuple;
     }
     else {
       return masterModification.selectIdSerial(tableName);
     }
+  }
+
+  /**
+   * Gets the remote delegate.
+   * <p>
+   * Although the ModificationTracker is a singleton, the remote delegate is an instance variable.
+   * If the application accidentally creates multiple instances of the ModificationTracker,
+   * bypassing the ServiceFinder, each gets its own remote delegate.
+   * So the old one is wasted, but the application does not fail with a ClassCastException if
+   * the delegates are of different types.
+   *
+   * @return the delegate
+   */
+  protected int getRemoteDelegateId() {
+    int id = remoteDelegateId;
+    if (id == 0) {
+      synchronized (this) {
+        id = remoteDelegateId;
+        if (id == 0) {
+          id = Db.prepareRemoteDelegate(getClass());
+          remoteDelegateId = id;
+        }
+      }
+    }
+    return id;
+  }
+
+  /**
+   * Gets the remote delegate.
+   *
+   * @param session the session
+   * @return the delegate
+   */
+  protected DbModificationTrackerRemoteDelegate getRemoteDelegate(Db session) {
+    return (DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId());
   }
 
   /**
@@ -931,13 +954,14 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   private void poll() {
 
-    boolean isLocalSession = !getSession().isRemote();
+    Db session = getSession();
+    boolean isLocalSession = !session.isRemote();
     if (isLocalSession) {
       performPendingCounts();
     }
     else if (remoteConfigPending) {
       // do that only once!
-      ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).configureRemoteSession();
+      getRemoteDelegate(session).configureRemoteSession();
       remoteConfigPending = false;
     }
 

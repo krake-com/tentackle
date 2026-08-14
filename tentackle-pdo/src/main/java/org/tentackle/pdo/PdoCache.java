@@ -185,16 +185,24 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     private final String tableName;                   // the table name
     private final Class<T> pdoClass;                  // the effective PDO class
     private final Map<Session, TxIdSet> tsInTx;       // tableSerials expired within the current transaction
+    private final long modificationId;                // row id of the modification table for this table
     private long minTableSerial;                      // min tableserial to use for update check
     private long maxTableSerial;                      // max tableserial to use for update check
     private long tableSerial;                         // highest tableserial of all objects in the cache
     private long expiredTableSerial;                  // > 0 if delayed expire check
 
-    private SerialInfo(String tableName, Class<T> pdoClass) {
+    private SerialInfo(String tableName, Class<T> pdoClass, IdSerialTuple idSerial) {
       this.tableName = tableName;
       this.pdoClass = pdoClass;
-      minTableSerial = ModificationTracker.getInstance().getSerial(tableName);
-      tsInTx = new WeakHashMap<>();  // keys are weak! Db does not override equals!
+      this.modificationId = idSerial.getId();
+      this.minTableSerial = idSerial.getSerial();
+      // keys are weak!
+      // Db made equals/hashCode final to guarantee the default implementation from Object
+      tsInTx = new WeakHashMap<>();
+    }
+
+    private SerialInfo(String tableName, Class<T> pdoClass) {
+      this(tableName, pdoClass, ModificationTracker.getInstance().getIdSerialForName(tableName));
     }
 
     private void addExpiredInTx(Session session, long tableSerial) {
@@ -764,6 +772,79 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     }
   }
 
+  /**
+   * Gets the preloaded content for this cache.<br>
+   * Only for preloading, read-only caches!
+   * <p>
+   * Throws a {@link PdoCacheException} if caching is disabled or the cache is not a preloading read-only cache.
+   *
+   * @param context the domain context
+   * @return the preloaded content, never null
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public synchronized PdoCachePreloadContent<T> getPreloadContent(DomainContext context) {
+    assertPreloadingReadOnly();
+    List<T> pdoList = refreshList(context);
+    if (pdoList == null) {
+      throw new PdoCacheException(this + ": caching is disabled");
+    }
+    PdoCachePreloadTableInfo<T>[] tableInfos = new PdoCachePreloadTableInfo[serialInfos.size()];
+    int i = 0;
+    for (Map.Entry<String, SerialInfo> serialInfoEntry : serialInfos.entrySet()) {
+      SerialInfo serialInfo = serialInfoEntry.getValue();
+      tableInfos[i++] = new PdoCachePreloadTableInfo<>(
+        serialInfo.tableName, serialInfo.pdoClass,
+        new IdSerialTuple(serialInfo.modificationId, serialInfo.minTableSerial));
+    }
+    return new PdoCachePreloadContent<>(clazz, pdoList, tableInfos);
+  }
+
+  /**
+   * Applies the given preload content to this cache.<br>
+   * Only for preloading, read-only caches, uninitialized caches!
+   *
+   * @param context the domain context
+   * @param preloadContent the preload content from the remote server
+   * @return the number of objects loaded from the preload content
+   */
+  public synchronized int applyPreloadContent(DomainContext context, PdoCachePreloadContent<T> preloadContent) {
+    assertPreloadingReadOnly();
+    if (isInitialized()) {
+      throw new PdoCacheException(this + ": cache is already initialized");
+    }
+    if (preloadContent.pdoClass() != clazz) {
+      throw new PdoCacheException(this + ": preload content for wrong class: " + preloadContent.pdoClass());
+    }
+
+    // create the serialInfos first with the mintableserial from the preload content (don't ask the ModificationTracker!)
+    for (PdoCachePreloadTableInfo<T> tableInfo : preloadContent.tableInfo()) {
+      serialInfos.put(tableInfo.tableName(), new SerialInfo(tableInfo.tableName(), tableInfo.pdoClass(), tableInfo.idSerial()));
+    }
+    // add the PDOs to the cache, all indexes, and update the serial infos
+    return createAndAddSelectAllList(processContext(context), preloadContent.pdoList()).list.size();
+  }
+
+  /**
+   * Returns whether this cache is initialized.<br>
+   *
+   * @return true if cache is initialized, false otherwise
+   */
+  public synchronized boolean isInitialized() {
+    return !serialInfos.isEmpty();
+  }
+
+
+  /**
+   * Asserts that the cache is a preloading read-only cache.<br>
+   */
+  protected void assertPreloadingReadOnly() {
+    if (!isPreloading()) {
+      throw new PdoCacheException(this + ": is not a preloading cache");
+    }
+    if (!isReadOnly()) {
+      throw new PdoCacheException(this + ": is not a read-only cache");
+    }
+  }
 
   /**
    * Adds an index if not already added.
@@ -958,24 +1039,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           maxSize = newMaxSize;
         }
 
-        sal = new SelectAllList<>(sList.size());
-
-        // add cacheable objects to all indexes
-        for (T pdo : sList) {
-          PersistentObject<T> pd = pdo.getPersistenceDelegate();
-          if (pd.isCacheable()) {
-            sal.list.add(pdo);
-            for (PdoCacheIndex<T, ?> index : indexes) {
-              index.add(pdo);   // this will replace the object if already in the index
-            }
-            pd.markCacheAccess();
-            updateSerialInfo(pdo);
-          }
-        }
-
-        // add to the List of lists
-        DomainContext clonedContext = effectiveContext.clone();  // clone to avoid further modification
-        saLists.put(clonedContext, sal);
+        sal = createAndAddSelectAllList(effectiveContext, sList);
       }
       else if (sal.isExpired()) {
         // the list was handed out to the application before, so refresh a copy of it, not the list itself
@@ -1150,6 +1214,39 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     return deleteCount < 3 || listSize * deleteCount < 100000;
   }
 
+
+  /**
+   * Creates and add a new SelectAllList for the given context and PDOs.
+   * <ul>
+   *   <li>adds each cachable PDO to all indexes</li>
+   *   <li>updates the serial infos</li>
+   * </ul>
+   *
+   * @param effectiveContext the effective domain context
+   * @param pdoList the PDOs to add
+   * @return the new SelectAllList
+   */
+  private SelectAllList<T> createAndAddSelectAllList(DomainContext effectiveContext, List<T> pdoList) {
+    SelectAllList<T> sal = new SelectAllList<>(pdoList.size());
+
+    // add cacheable objects to all indexes
+    for (T pdo : pdoList) {
+      PersistentObject<T> pd = pdo.getPersistenceDelegate();
+      if (pd.isCacheable()) {
+        sal.list.add(pdo);
+        for (PdoCacheIndex<T, ?> index : indexes) {
+          index.add(pdo);   // this will replace the object if already in the index
+        }
+        pd.markCacheAccess();
+        updateSerialInfo(pdo);
+      }
+    }
+
+    // add to the List of lists
+    DomainContext clonedContext = effectiveContext.clone();  // clone to avoid further modification
+    saLists.put(clonedContext, sal);
+    return sal;
+  }
 
   /**
    * Implementation with nesting level to detect loops.

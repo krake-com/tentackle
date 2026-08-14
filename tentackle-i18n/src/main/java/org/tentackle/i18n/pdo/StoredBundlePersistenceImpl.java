@@ -37,6 +37,7 @@ import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.Join;
 import org.tentackle.persist.JoinedSelect;
 import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.PreloadCache;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
@@ -57,6 +58,7 @@ import java.util.Objects;
  */
 @PersistentObjectService(StoredBundle.class)
 @PreloadRemoteDelegate
+@PreloadCache
 public class StoredBundlePersistenceImpl extends AbstractPersistentObject<StoredBundle, StoredBundlePersistenceImpl> implements StoredBundlePersistence {
 
   @Serial
@@ -642,7 +644,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
 
   //</editor-fold>//GEN-END:findByName
-
 
   // @wurblet findByNameAndLocale PdoSelectUnique name locale *Keys
 

@@ -389,6 +389,14 @@ public class DefaultDomainContext implements DomainContext {
   }
 
   @Override
+  public DefaultDomainContext clone(Session session) {
+    DefaultDomainContext context = clone();
+    context.session = session;
+    context.sessionValid = true;
+    return context;
+  }
+
+  @Override
   public DefaultDomainContext cloneKeepRoot(String name) {
     if (StringHelper.isAllWhitespace(name) || name.contains(":")) {
       throw new DomainException("illegal context name: '" + name + "'");

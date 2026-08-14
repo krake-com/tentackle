@@ -20,6 +20,7 @@ package org.tentackle.persist;
 
 import org.tentackle.app.Application;
 import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
@@ -27,11 +28,20 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
+import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.PersistentObject;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPoolProvider;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Persistence utility methods.<br>
@@ -42,6 +52,9 @@ import org.tentackle.session.SessionPoolProvider;
  */
 @Service(DbUtilities.class)
 public class PersistenceUtilities extends DbUtilities {
+
+  private static final Logger LOGGER = Logger.get(PersistenceUtilities.class);
+
 
   /**
    * Creates the persistence utilities.
@@ -155,4 +168,54 @@ public class PersistenceUtilities extends DbUtilities {
     super.notifyCommit(session, txNumber);
     LockManager.getInstance().commit(session, txNumber);
   }
+
+  /**
+   * Gets the names of the classes to preload the caches for.<br>
+   * By default, these are the classes annotated with {@link PreloadCache}, collected
+   * at build time and looked up via the service API. The classes are not loaded.
+   * <p>
+   * Since the caches are only loaded once per JVM, this method does not cache the result.
+   *
+   * @return the class names, never null
+   */
+  public String[] getPreloadCacheClassNames() {
+    Set<String> names = ServiceFactory.getServiceFinder()
+                                      .findServiceConfigurations(PreloadCache.class.getName()).keySet();
+    return names.toArray(new String[0]);
+  }
+
+  /**
+   * Gets the caches to preload the PDOs for.
+   *
+   * @return the caches, never null
+   */
+  public List<PdoCache<? extends PersistentDomainObject<?>>> getPreloadingCaches() {
+    List<PdoCache<? extends PersistentDomainObject<?>>> caches = new ArrayList<>();
+    for (String persImplClassName : getPreloadCacheClassNames()) {
+      try {
+        PersistentObject<?> po = (PersistentObject<?>) Class.forName(persImplClassName).getConstructor().newInstance();
+        PdoCache<?> cache = po.getCache();
+        if (cache == null) {
+          LOGGER.warning("{0} has no cache -> please remove @PreloadCache!", persImplClassName);
+        }
+        else if (cache.isPreloading() && cache.isReadOnly()) {
+          if (cache.isEnabled()) {
+            caches.add(cache);
+          }
+          else {
+            LOGGER.info("{0} is disabled -> skipped", cache);
+          }
+        }
+        else {
+          LOGGER.warning("{0} is not a preloading, read-only cache -> please remove @PreloadCache!", cache);
+        }
+      }
+      catch (InstantiationException | ClassNotFoundException | IllegalAccessException |
+             InvocationTargetException | NoSuchMethodException e) {
+        throw new PersistenceException("cannot instantiate PersistentObject for " + persImplClassName, e);
+      }
+    }
+    return caches;
+  }
+
 }

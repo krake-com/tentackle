@@ -19,6 +19,7 @@
 package org.tentackle.session;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.task.AbstractTask;
 
 
@@ -159,15 +160,16 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * @param clazz the tracked class
    * @return the table serial
    */
-  long getSerial(Class<?> clazz);
+  IdSerialTuple getIdSerialForClass(Class<?> clazz);
 
   /**
-   * Gets the serial for a given modification name.
+   * Gets the pair of id/serial for a given modification name.<br>
+   * Used in remote connections.
    *
-   * @param name the modification name
-   * @return the table serial
+   * @param name the name to lookup
+   * @return the id/serial pair for the table name, never null
    */
-  long getSerial(String name);
+  IdSerialTuple getIdSerialForName(String name);
 
   /**
    * Invalidates the tracker.<br>

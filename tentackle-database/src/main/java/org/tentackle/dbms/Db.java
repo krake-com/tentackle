@@ -881,12 +881,12 @@ public class Db implements Session, Cloneable {
   }
 
   @Override
-  public final boolean equals(Object obj) {
+  public final boolean equals(Object obj) {   // must not be overridden!
     return super.equals(obj);
   }
 
   @Override
-  public final int hashCode() {
+  public final int hashCode() {   // must not be overridden!
     return super.hashCode();
   }
 

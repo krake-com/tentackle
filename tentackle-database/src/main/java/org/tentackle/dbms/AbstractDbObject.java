@@ -2070,7 +2070,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the modification counter
    */
   public long getModificationCount () {
-    return ModificationTracker.getInstance().getSerial(getTableName());
+    return ModificationTracker.getInstance().getIdSerialForName(getTableName()).getSerial();
   }
 
   /**

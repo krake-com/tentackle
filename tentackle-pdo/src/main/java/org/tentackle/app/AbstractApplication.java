@@ -19,6 +19,7 @@
 package org.tentackle.app;
 
 import org.tentackle.common.EncryptedProperties;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
@@ -30,6 +31,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoCacheOperation;
 import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.script.ScriptFactory;
@@ -46,6 +48,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import java.util.prefs.Preferences;
 
@@ -597,6 +600,11 @@ public abstract class AbstractApplication implements Application {
 
     // start the modification tracker
     if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
+      // Runs in a parallel thread on a cloned session for remote applications or
+      // for local interactive applications (desktop).
+      // In all other cases, it runs on the main thread.
+      CountDownLatch latch = preloadCaches();
+
       ModificationTracker.getInstance().start();
       // add a shutdown handler in case the modification tracker terminates unexpectedly
       ModificationTracker.getInstance().addShutdownRunnable(() -> {
@@ -609,10 +617,35 @@ public abstract class AbstractApplication implements Application {
           AbstractApplication.this.stop(2, null);
         }
       });
+
+      if (isServer() && latch != null) {
+        // don't bring up the remote services before the preload has finished,
+        // since the clients preload as well and expect the preloading caches
+        // already initialized. Otherwise, the first client has to wait too long.
+        try {
+          LOGGER.info("waiting for cache preload to finish ...");
+          latch.await();
+          LOGGER.info("cache preload finished: continuing with server startup");
+        }
+        catch (InterruptedException e) {
+          throw new InterruptedRuntimeException("cache preload interrupted", e);
+        }
+      }
     }
     else  {
       PdoCache.setAllEnabled(false);    // disable caching globally
     }
+  }
+
+  /**
+   * Preloads the caches.<br>
+   * Invoked from {@link #finishStartup()} after initializing the modification tracker.
+   *
+   * @return a countdown latch that can be used to wait for the preload to finish, null if no parallel download
+   */
+  protected CountDownLatch preloadCaches() {
+    // don't use op() since the context's session is not set and the session is not thread-local (yet)
+    return Pdo.createOperation(PdoCacheOperation.class, getDomainContext().clone(getSession())).preloadPdoCaches();
   }
 
   /**
