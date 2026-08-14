@@ -175,12 +175,11 @@ public class QuicRemoteInvocationTest {
   @Test
   public void survivesAnIdlePeriodLongerThanTheQuicIdleTimeout() throws Exception {
     Reporter.log("survivesAnIdlePeriodLongerThanTheQuicIdleTimeout", true);
-    // quicidle=2 is the shortest timeout the keep-alive can work with, see MIN_KEEP_ALIVE_IDLE_SECONDS
     try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"),
-                                              "&quicidle=2")) {
+                                              "&quicidle=1")) {
       EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
       assertEquals(remote.add(1, 2), 3);
-      Thread.sleep(5000);   // safely longer than quicidle
+      Thread.sleep(3000);   // safely longer than quicidle
       assertEquals(remote.add(20, 22), 42);
     }
   }

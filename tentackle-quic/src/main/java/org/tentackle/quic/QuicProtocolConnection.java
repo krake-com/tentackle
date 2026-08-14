@@ -18,7 +18,6 @@
 
 package org.tentackle.quic;
 
-import tech.kwik.core.QuicConnection;
 import tech.kwik.core.QuicStream;
 import tech.kwik.core.server.ApplicationProtocolConnection;
 
@@ -37,17 +36,14 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
 
 
   private final QuicTripTransport transport;
-  private final QuicConnection quicConnection;
 
   /**
    * Creates a protocol connection.
    *
    * @param transport the transport the streams belong to
-   * @param quicConnection the QUIC connection of the client, all streams are multiplexed over it
    */
-  public QuicProtocolConnection(QuicTripTransport transport, QuicConnection quicConnection) {
+  public QuicProtocolConnection(QuicTripTransport transport) {
     this.transport = transport;
-    this.quicConnection = quicConnection;
   }
 
   @Override
@@ -60,12 +56,7 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
       connectionThreadPool.execute(() -> {
         try {
           String connectionName = quicStream.toString();
-          // Writing the response is guarded just as the client guards writing the call: a client whose
-          // flow control window never reopens would otherwise pin this handler - and the call thread it
-          // waits for - forever. Discarding the QUIC connection is what the server can do about it;
-          // everything multiplexed over a wedged connection is lost anyway.
-          transport.createConnectionHandler(connectionName, quicStream.getInputStream(),
-                                            transport.createOutputStream(quicStream, this::abortConnection)).run();
+          transport.createConnectionHandler(connectionName, quicStream.getInputStream(), quicStream.getOutputStream()).run();
         }
         catch (Exception e) {
           LOGGER.warning("cannot handle QUIC stream: " + quicStream, e);
@@ -88,17 +79,6 @@ public class QuicProtocolConnection implements ApplicationProtocolConnection {
       LOGGER.warning("cannot dispatch QUIC stream: " + quicStream, e);
       closeStream(quicStream);
     }
-  }
-
-  /**
-   * Discards the client's QUIC connection because writing to one of its streams stalled.
-   * <p>
-   * Runs on the watchdog thread. The client notices the connection going away and establishes
-   * a replacement on its next request.
-   */
-  private void abortConnection() {
-    LOGGER.warning("discarding the wedged QUIC connection {0}", quicConnection);
-    quicConnection.close();
   }
 
   /**

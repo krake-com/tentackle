@@ -73,13 +73,11 @@ public class QuicProtocolConnectionTest {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     transport.expectHandler();
 
-    new QuicProtocolConnection(transport, null).acceptPeerInitiatedStream(quicStream);
+    new QuicProtocolConnection(transport).acceptPeerInitiatedStream(quicStream);
 
     assertTrue(transport.awaitHandler(), "the connection handler was not invoked");
     assertSame(transport.inputStream.get(), quicStream.getInputStream());
-    // the response is written through the stall guard, not straight to the QUIC stream
-    assertTrue(transport.outputStream.get() instanceof GuardedQuicOutputStream,
-               "expected a guarded output stream, got " + transport.outputStream.get());
+    assertSame(transport.outputStream.get(), quicStream.getOutputStream());
     assertEquals(transport.connectionName.get(), quicStream.toString());
 
     // the handler ran on a virtual thread from the transport's connection thread pool
@@ -98,7 +96,7 @@ public class QuicProtocolConnectionTest {
     transport.expectHandler();
     transport.failWith(new IllegalStateException("handler exploded"));
 
-    new QuicProtocolConnection(transport, null).acceptPeerInitiatedStream(quicStream);
+    new QuicProtocolConnection(transport).acceptPeerInitiatedStream(quicStream);
 
     assertTrue(transport.awaitHandler(), "the connection handler was not invoked");
     awaitStreamClosed(quicStream);
@@ -117,7 +115,7 @@ public class QuicProtocolConnectionTest {
     // a transport that never entered server mode has no connection thread pool to dispatch to
     QuicTripTransport closedTransport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
 
-    new QuicProtocolConnection(closedTransport, null).acceptPeerInitiatedStream(quicStream);
+    new QuicProtocolConnection(closedTransport).acceptPeerInitiatedStream(quicStream);
 
     assertTrue(quicStream.isOutputClosed(), "the QUIC output stream was not closed");
     assertTrue(quicStream.isInputClosed(), "the QUIC input stream was not closed");
