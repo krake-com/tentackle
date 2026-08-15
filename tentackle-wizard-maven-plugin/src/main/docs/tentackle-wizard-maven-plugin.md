@@ -467,9 +467,20 @@ Parameters:
   interactive editor opens instead.
 
 **Interactive mode** opens a window with a combo box to choose the harness, a text area to edit the
-fragment, and three buttons: *Close*, *Run*, and *Interrupt*. *Run* executes the edited fragment on a
-worker thread; *Interrupt* interrupts that thread. Interruption is cooperative — a long-running
-fragment must check `Thread.currentThread().isInterrupted()` in its loops to be interruptible.
+fragment, and the buttons *Load*, *Save*, *Save as*, *copy*, *Run*, *Interrupt* and *Close*. *Run*
+executes the edited fragment on a worker thread; *Interrupt* interrupts that thread. Interruption is
+cooperative — a long-running fragment must check `Thread.currentThread().isInterrupted()` in its loops
+to be interruptible. *copy* puts the generated script — the fragment woven into the selected harness —
+on the clipboard.
+
+The fragment can be kept on disk: *Load* reads it from a file, *Save* writes it back to the file it
+came from (asking for one if there is none), and *Save as* always asks. Files are read and written as
+UTF-8. The name of the current file is shown next to the harness combo box, followed by an asterisk
+while there are unsaved changes; closing the editor with unsaved changes asks for confirmation. The
+file used last is remembered per user and project and is reloaded the next time the editor comes up,
+so a session can be continued where it left off. A saved fragment is exactly what batch mode expects,
+which makes for a natural round trip: develop the fragment interactively, save it, then run it
+unattended with `-Dscript=<file>`.
 
 **Batch mode** (`-Dscript=<file>`) reads the fragment from disk and runs it once, failing the build
 with the script error if compilation or execution fails.

@@ -7,13 +7,16 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 
-<BorderPane prefHeight="480.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.ScriptEditor">
+<BorderPane prefHeight="640.0" prefWidth="832.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.ScriptEditor">
   <top>
     <HBox alignment="CENTER_LEFT" spacing="5.0">
       <children>
         <Label text="Harness:" />
         <ChoiceBox fx:id="harnessField" prefWidth="250.0" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Label fx:id="fileLabel" />
       </children>
       <padding>
         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -30,7 +33,10 @@
   <bottom>
     <HBox alignment="CENTER_RIGHT" spacing="5.0">
       <children>
-            <Button fx:id="copyScriptButton" mnemonicParsing="false" text="copy" />
+        <Button fx:id="loadButton" mnemonicParsing="false" text="Load" />
+        <Button fx:id="saveButton" mnemonicParsing="false" text="Save" />
+        <Button fx:id="saveAsButton" mnemonicParsing="false" text="Save as" />
+        <Button fx:id="copyScriptButton" mnemonicParsing="false" text="copy" />
         <Button fx:id="runButton" mnemonicParsing="false" text="Run" />
         <Button fx:id="interruptButton" mnemonicParsing="false" text="Interrupt" />
         <Button fx:id="closeButton" mnemonicParsing="false" text="Close" />

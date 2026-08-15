@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.prefs.Preferences;
 
 /**
  * Runs a {@link org.tentackle.script.Script} using the application's dependencies.<br>
@@ -213,6 +214,17 @@ public class ScriptMojo extends AbstractWizardMojo {
    */
   public String getHarness() {
     return harness;
+  }
+
+  /**
+   * Gets the preferences of the script editor.<br>
+   * The preferences are per user and project, since they refer to files
+   * belonging to the project the goal runs in.
+   *
+   * @return the preferences node
+   */
+  public Preferences getPreferences() {
+    return Preferences.userNodeForPackage(ScriptMojo.class).node(getMavenProject().getArtifactId());
   }
 
 
