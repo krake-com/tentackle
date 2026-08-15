@@ -42,6 +42,8 @@ import org.tentackle.trip.impl.CanonicalList;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
+import org.tentackle.trip.impl.Employees;
+import org.tentackle.trip.impl.EmployeesArray;
 import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
 import org.tentackle.trip.impl.NotReferencableClass;
@@ -734,6 +736,94 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     TestRecord dedupChild = new TestRecord("kerrin", 29, false, null, null, "blah-blah");
     TestRecord tunneledDedup = tunnel(dedupChild, tripType);
     assertSame(tunneledDedup, tunneledRecord.child());
+  }
+
+  /**
+   * Records nested in records, each holding a list of the next level.<br>
+   * The whole graph must arrive component by component, including the empty and the {@code null} list.
+   */
+  @Test
+  void testNestedRecords() {
+    TripType<Employees> tripType = TripFactory.getInstance().getType(Employees.class);
+
+    Employees.Attribute shared = new Employees.Attribute("department", "development");
+    Employees employees = new Employees(
+      List.of(new Employees.Employee("kerrin", 29,
+                                     List.of(shared, new Employees.Attribute("room", "1.02"))),
+              new Employees.Employee("kathrin", 59,
+                                     // an equal but distinct attribute of another employee
+                                     List.of(new Employees.Attribute("department", "development"))),
+              new Employees.Employee("hugo", 42, List.of()),
+              new Employees.Employee(null, null, null)));
+
+    Employees tunnelled = tunnel(employees, tripType);
+    assertNotSame(tunnelled, employees);
+    assertEquals(tunnelled.employees().size(), 4);
+    assertEquals(tunnelled.employees().getFirst().attributes().getFirst().value(), "development");
+    assertTrue(tunnelled.employees().get(2).attributes().isEmpty());
+    assertNull(tunnelled.employees().get(3).name());
+    assertNull(tunnelled.employees().get(3).age());
+    assertNull(tunnelled.employees().get(3).attributes());
+
+    // equal records are deduplicated, no matter how deep they are nested
+    assertSame(tunnelled.employees().getFirst().attributes().getFirst(),
+               tunnelled.employees().get(1).attributes().getFirst());
+
+    // the whole object graph is a reference of its own
+    assertSame(tunnel(employees, tripType), tunnelled);
+
+    tunnel(new Employees(List.of()), tripType);
+    tunnel(new Employees(null), tripType);
+    tunnel(null, tripType);
+  }
+
+  /**
+   * The same as {@link #testNestedRecords()}, but with arrays instead of lists.<br>
+   * Notice that the array components make the records fall back to identity equals,
+   * hence the graph must be asserted component by component.
+   */
+  @Test
+  void testNestedRecordsWithArrays() {
+    TripType<EmployeesArray> tripType = TripFactory.getInstance().getType(EmployeesArray.class);
+
+    EmployeesArray.Attribute shared = new EmployeesArray.Attribute("department", "development");
+    EmployeesArray employees = new EmployeesArray(
+      new EmployeesArray.Employee[] {
+        new EmployeesArray.Employee("kerrin", 29,
+                                    new EmployeesArray.Attribute[] {
+                                      shared, new EmployeesArray.Attribute("room", "1.02")}),
+        new EmployeesArray.Employee("kathrin", 59,
+                                    // an equal but distinct attribute of another employee
+                                    new EmployeesArray.Attribute[] {
+                                      new EmployeesArray.Attribute("department", "development")}),
+        new EmployeesArray.Employee("hugo", 42, new EmployeesArray.Attribute[0]),
+        new EmployeesArray.Employee(null, null, null),
+        null});
+
+    EmployeesArray tunnelled = tunnelNoEquals(employees, tripType);
+    assertNotSame(tunnelled, employees);
+    assertEquals(tunnelled.employees().getClass().getComponentType(), EmployeesArray.Employee.class);
+    assertEquals(tunnelled.employees().length, 5);
+    assertEquals(tunnelled.employees()[0].name(), "kerrin");
+    assertEquals(tunnelled.employees()[0].age(), Integer.valueOf(29));
+    assertEquals(tunnelled.employees()[0].attributes(), employees.employees()[0].attributes());   // assertEquals is aware of arrays!
+    assertEquals(tunnelled.employees()[0].attributes().getClass().getComponentType(), EmployeesArray.Attribute.class);
+    assertEquals(tunnelled.employees()[2].attributes().length, 0);
+    assertNull(tunnelled.employees()[3].name());
+    assertNull(tunnelled.employees()[3].age());
+    assertNull(tunnelled.employees()[3].attributes());
+    assertNull(tunnelled.employees()[4]);
+
+    // equal records are deduplicated, no matter how deep they are nested
+    assertSame(tunnelled.employees()[0].attributes()[0], tunnelled.employees()[1].attributes()[0]);
+
+    // the whole object graph is a reference of its own
+    assertSame(tunnelNoEquals(employees, tripType), tunnelled);
+
+    EmployeesArray empty = tunnelNoEquals(new EmployeesArray(new EmployeesArray.Employee[0]), tripType);
+    assertEquals(empty.employees().length, 0);
+    assertNull(tunnelNoEquals(new EmployeesArray(null), tripType).employees());
+    assertNull(tunnel(null, tripType));
   }
 
   @Test

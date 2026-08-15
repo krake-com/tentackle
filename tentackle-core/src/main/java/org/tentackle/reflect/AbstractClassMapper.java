@@ -192,8 +192,7 @@ public abstract class AbstractClassMapper<S> {
           break;    // is an interface or record, or we reached Object.class
         }
         // continue with the name of superclass
-        className = superClass.getEnclosingClass() != null && superClass.isMemberClass() ?
-                      superClass.getName() : superClass.getCanonicalName();
+        className = ReflectionHelper.getMappingName(superClass);
       }
       // no mapping found for class and all superclasses: try interfaces
       while (initialClass != null && initialClass != Object.class) {

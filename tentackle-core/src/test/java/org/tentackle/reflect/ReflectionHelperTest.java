@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.testng.annotations.Test;
@@ -44,7 +43,6 @@ import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-
 /**
  * Tests the reflection helper.
  *
@@ -52,6 +50,9 @@ import static org.testng.Assert.fail;
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class ReflectionHelperTest {
+
+  private static final String MY_CLASS = "org.tentackle.reflect.ReflectionHelperTest$MyClass";
+  private static final String MY_RECORD = "org.tentackle.reflect.ReflectionHelperTest$MyRecord";
 
   @SuppressWarnings("missing-explicit-ctor")
   public static class MyClass {
@@ -63,6 +64,12 @@ public class ReflectionHelperTest {
       return "MyClass";
     }
   }
+
+
+  /**
+   * A member record, which adds {@link Record} to the superclass chain.
+   */
+  public record MyRecord(String name) {}
 
 
   public MyClass otherClass;
@@ -111,6 +118,31 @@ public class ReflectionHelperTest {
   public void testPackagePathName() {
     assertEquals(ReflectionHelper.getPackagePathName(getClass()), "/org/tentackle/reflect");
     assertEquals(ReflectionHelper.getPackagePathName(String.class), "/java/lang");
+  }
+
+  @Test
+  public void testMappingName() {
+    // top level classes and primitives are named by their canonical name
+    assertEquals(ReflectionHelper.getMappingName(String.class), "java.lang.String");
+    assertEquals(ReflectionHelper.getMappingName(String[].class), "java.lang.String[]");
+    assertEquals(ReflectionHelper.getMappingName(Object[].class), "java.lang.Object[]");
+    assertEquals(ReflectionHelper.getMappingName(int[].class), "int[]");
+
+    // a member class must keep the $xxx of its binary name to stay loadable by Class.forName()
+    assertEquals(ReflectionHelper.getMappingName(MyClass.class), MY_CLASS);
+    assertEquals(ReflectionHelper.getMappingName(Map.Entry.class), "java.util.Map$Entry");
+
+    // an array is neither a member class nor does it have an enclosing class:
+    // the component class determines the name
+    assertEquals(ReflectionHelper.getMappingName(MyClass[].class), MY_CLASS + "[]");
+    assertEquals(ReflectionHelper.getMappingName(MyClass[][].class), MY_CLASS + "[][]");
+    assertEquals(ReflectionHelper.getMappingName(MyRecord[].class), MY_RECORD + "[]");
+    assertEquals(ReflectionHelper.getMappingName(Map.Entry[].class), "java.util.Map$Entry[]");
+
+    // classes without a canonical name fall back to their binary name
+    Runnable anonymous = () -> { };
+    assertNull(anonymous.getClass().getCanonicalName());
+    assertEquals(ReflectionHelper.getMappingName(anonymous.getClass()), anonymous.getClass().getName());
   }
 
 

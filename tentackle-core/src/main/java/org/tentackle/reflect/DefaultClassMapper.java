@@ -186,18 +186,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
 
   @Override
   public Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException {
-    String name;
-    if (clazz.getEnclosingClass() != null && clazz.isMemberClass()) {
-      name = clazz.getName();   // inner class must keep the $xxx to be loadable by Class.forName()
-    }
-    else {
-      name = clazz.getCanonicalName();
-      if (name == null) {
-        // local class (or anonymous or hidden -> useless but better than null name)
-        name = clazz.getName();
-      }
-    }
-    return mapLenient(name);
+    return mapLenient(ReflectionHelper.getMappingName(clazz));
   }
 
   @Override
