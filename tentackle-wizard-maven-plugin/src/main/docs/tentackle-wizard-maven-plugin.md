@@ -474,6 +474,12 @@ fragment must check `Thread.currentThread().isInterrupted()` in its loops to be 
 **Batch mode** (`-Dscript=<file>`) reads the fragment from disk and runs it once, failing the build
 with the script error if compilation or execution fails.
 
+Since the goal runs with the application's dependencies on the classpath, starting it as a **debug
+session from within the IDE** lets you debug any code in the application's code base. Set a breakpoint,
+let the script run into it, and inspect or evaluate whatever you need — for example, evaluate a
+`Permission` with the [`SecurityManager`](../../../../tentackle-pdo/src/main/docs/security.md) right
+in the debugger.
+
 ### The `init` Goal
 
 Copies the bundled default templates into the template directory, **overwriting** any existing files
