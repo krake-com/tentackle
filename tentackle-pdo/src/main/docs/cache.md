@@ -21,15 +21,15 @@ domain keys. It transparently:
 
 The whole subsystem lives in `tentackle-pdo`:
 
-| Class                                                                                                                                                   | Role                                                    |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| [`PdoCache`](../java/org/tentackle/pdo/PdoCache.java)                                                                                                   | The cache itself: indexes, lists, strategy, expiration. |
-| [`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java)                                                                                         | One unique-key → PDO mapping (ID index is mandatory).   |
-| [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)                                                                                   | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`.   |
-| [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches.                    |
-| [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java)                                                                                 | Signals a cache inconsistency (triggers invalidation).  |
-| [`PdoCacheOperation`](../java/org/tentackle/pdo/PdoCacheOperation.java)                                                                                 | Remoting-capable operation that preloads the caches at startup. |
-| [`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java) / [`PdoCachePreloadTableInfo`](../java/org/tentackle/pdo/PdoCachePreloadTableInfo.java) | The DTOs carrying a preloaded cache and its serial baseline over the wire. |
+| Class                                                                                                                                                   | Role                                                                      |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [`PdoCache`](../java/org/tentackle/pdo/PdoCache.java)                                                                                                   | The cache itself: indexes, lists, strategy, expiration.                   |
+| [`PdoCacheIndex`](../java/org/tentackle/pdo/PdoCacheIndex.java)                                                                                         | One unique-key → PDO mapping (ID index is mandatory).                     |
+| [`PdoCacheStrategy`](../java/org/tentackle/pdo/PdoCacheStrategy.java)                                                                                   | The eviction mode: `PRELOAD`, `LRU`, `LFU`, `FORGET`.                     |
+| [`PdoCacheFactory`](../java/org/tentackle/pdo/PdoCacheFactory.java) / [`DefaultPdoCacheFactory`](../java/org/tentackle/pdo/DefaultPdoCacheFactory.java) | SPI factory; registry of all caches.                                      |
+| [`PdoCacheException`](../java/org/tentackle/pdo/PdoCacheException.java)                                                                                 | Signals a cache inconsistency (triggers invalidation).                    |
+| [`PdoCacheOperation`](../java/org/tentackle/pdo/PdoCacheOperation.java)                                                                                 | Remoting-capable operation that preloads the caches at startup.           |
+| [`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java)                                                                       | The DTO carrying a preloaded cache and its serial baseline over the wire. |
 
 The [`@PreloadCache`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/PreloadCache.java)
 annotation that drives the preloading lives in `tentackle-persistence`, since it marks a persistence
@@ -405,11 +405,11 @@ overridable `preloadCaches()`, which creates a
 [`PdoCacheOperation`](../java/org/tentackle/pdo/PdoCacheOperation.java) and invokes
 `preloadPdoCaches()`. What that does depends on the tier:
 
-| Session | Behavior |
-|---------|----------|
-| **Remote** — a client, or a server that is itself a client of another server | `preloadCachesFromRemote` in a background thread; **one** `getPreloadingCachesContent` call fetches every cache at once. |
-| **Local + interactive** — a desktop client connected directly to the database | `preloadCachesFromDatabase` in a background thread, so the login window appears immediately. |
-| **Local + non-interactive** — server, daemon or batch job | `preloadCachesFromDatabase` synchronously, on the main thread. |
+| Session                                                                       | Behavior                                                                                                                 |
+|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| **Remote** — a client, or a server that is itself a client of another server  | `preloadCachesFromRemote` in a background thread; **one** `getPreloadingCachesContent` call fetches every cache at once. |
+| **Local + interactive** — a desktop client connected directly to the database | `preloadCachesFromDatabase` in a background thread, so the login window appears immediately.                             |
+| **Local + non-interactive** — server, daemon or batch job                     | `preloadCachesFromDatabase` synchronously, on the main thread.                                                           |
 
 The two background variants run on a **cloned session** (`clone("PL")`, grouped with the parent's
 session id). Preloading may take a while and must not hold the main session long enough to risk a
@@ -427,7 +427,7 @@ push the load time onto whichever client connects first.
 
 `PdoCache.getPreloadContent(context)` snapshots a cache into a
 [`PdoCachePreloadContent`](../java/org/tentackle/pdo/PdoCachePreloadContent.java): the PDO list plus
-one [`PdoCachePreloadTableInfo`](../java/org/tentackle/pdo/PdoCachePreloadTableInfo.java) per table,
+one `PdoCachePreloadContent.TableInfo` per table,
 holding the table name and the `IdSerialTuple` — the modification row id **and** serial — the
 server's tracker had at that moment. (A cache for a `MULTI`-table inheritance hierarchy has more than
 one table, hence the array.) Both records are `@TripDeduplicatable(NEVER)` / `@TripReferencable(NEVER)`:

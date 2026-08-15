@@ -788,11 +788,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     if (pdoList == null) {
       throw new PdoCacheException(this + ": caching is disabled");
     }
-    PdoCachePreloadTableInfo<T>[] tableInfos = new PdoCachePreloadTableInfo[serialInfos.size()];
+    PdoCachePreloadContent.TableInfo<T>[] tableInfos = new PdoCachePreloadContent.TableInfo[serialInfos.size()];
     int i = 0;
     for (Map.Entry<String, SerialInfo> serialInfoEntry : serialInfos.entrySet()) {
       SerialInfo serialInfo = serialInfoEntry.getValue();
-      tableInfos[i++] = new PdoCachePreloadTableInfo<>(
+      tableInfos[i++] = new PdoCachePreloadContent.TableInfo<>(
         serialInfo.tableName, serialInfo.pdoClass,
         new IdSerialTuple(serialInfo.modificationId, serialInfo.minTableSerial));
     }
@@ -817,7 +817,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     }
 
     // create the serialInfos first with the mintableserial from the preload content (don't ask the ModificationTracker!)
-    for (PdoCachePreloadTableInfo<T> tableInfo : preloadContent.tableInfo()) {
+    for (PdoCachePreloadContent.TableInfo<T> tableInfo : preloadContent.tableInfo()) {
       serialInfos.put(tableInfo.tableName(), new SerialInfo(tableInfo.tableName(), tableInfo.pdoClass(), tableInfo.idSerial()));
     }
     // add the PDOs to the cache, all indexes, and update the serial infos

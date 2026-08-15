@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.trip.TripDeduplicatable;
 import org.tentackle.trip.TripReferencable;
 
@@ -35,5 +36,21 @@ import java.util.List;
 @TripDeduplicatable(TripDeduplicatable.NEVER)
 @TripReferencable(TripReferencable.NEVER)
 public record PdoCachePreloadContent<T extends PersistentDomainObject<T>>
-                (Class<T> pdoClass, List<T> pdoList, PdoCachePreloadTableInfo<T>[] tableInfo) {
+                (Class<T> pdoClass, List<T> pdoList, TableInfo<T>[] tableInfo) {
+
+  /**
+   * Table serial information.
+   * <p>
+   * Notice that the cache of an entity with multi-table inheritance has more than one table!
+   *
+   * @param tableName the table name (as used by the modification tracker, including the schema)
+   * @param idSerial the modification tracker's row id and serial of the table from the modification tracker
+   * @param <S> the PDO subtype (same as T if no multi-table inheritance)
+   */
+  @TripDeduplicatable(TripDeduplicatable.NEVER)
+  @TripReferencable(TripReferencable.NEVER)
+  public record TableInfo<S extends PersistentDomainObject<S>>
+    (String tableName, Class<S> pdoClass, IdSerialTuple idSerial) {
+  }
+
 }

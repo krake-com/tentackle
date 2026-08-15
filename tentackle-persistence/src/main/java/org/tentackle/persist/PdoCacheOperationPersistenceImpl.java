@@ -27,7 +27,6 @@ import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoCacheOperation;
 import org.tentackle.pdo.PdoCacheOperationPersistence;
 import org.tentackle.pdo.PdoCachePreloadContent;
-import org.tentackle.pdo.PdoCachePreloadTableInfo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentOperationService;
 import org.tentackle.persist.trip.PdoCacheOperationRemoteDelegate;
@@ -186,7 +185,7 @@ public class PdoCacheOperationPersistenceImpl
       }
       else {
         int count = cache.applyPreloadContent(context, cacheContent);
-        for (PdoCachePreloadTableInfo<?> tableInfo : cacheContent.tableInfo()) {
+        for (PdoCachePreloadContent.TableInfo<?> tableInfo : cacheContent.tableInfo()) {
           ((PdoModificationTracker) ModificationTracker.getInstance()).setIdSerialForName(tableInfo.tableName(), tableInfo.idSerial());
         }
         LOGGER.info("{0} PDOs preloaded into {1} from remote", count, cache);
