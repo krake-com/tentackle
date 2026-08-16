@@ -96,6 +96,24 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <dependencies>
+          <!--
+            Override auto detection of junit. The module offers both a TestNG and a JUnit
+            flavor and therefore has both on the classpath, whereupon surefire picks the
+            JUnit platform provider - which finds nothing, because the tests below extend
+            the TestNG base classes.
+          -->
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-testng</artifactId>
+            <version>${maven.surefire.plugin.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
