@@ -153,7 +153,7 @@
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
     <tentackle.sqlDir>${wurbel.wurbelDir}/sql</tentackle.sqlDir>
 
-    <!-- CI test database -->
+    <!-- CI test database (postgres-related tests only, not used for the build)-->
     <dbUrl>jdbc:postgresql://localhost/tentackle</dbUrl>
     <dbUser>tentackle</dbUser>
     <dbPasswd>tentackle</dbPasswd>
