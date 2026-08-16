@@ -47,7 +47,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author harald
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class H2Test {
 
   private static final String SELECT = "SELECT * FROM h2test WHERE 1=1";
