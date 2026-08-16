@@ -100,6 +100,17 @@ public class TestServer extends ServerApplication {
     return null;    // not used
   }
 
+  /**
+   * Builds the schema right after the session was opened.<br>
+   * It has to happen before {@code configure()}, which initializes the modification tracker and
+   * therefore expects the tables to be there.
+   */
+  @Override
+  protected void login() {
+    super.login();
+    InMemoryServerSchema.createTablesIfInMemory(getSession());
+  }
+
 
   /**
    * Waits until the parent closes our standard input (EOF) or the safety timeout elapses.

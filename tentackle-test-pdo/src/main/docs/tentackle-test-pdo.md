@@ -177,8 +177,9 @@ wants itself.
 ## The Module's Own Tests
 
 Although primarily a *support* library, the module also **contains PDO tests** (under `src/test/java`) that exercise
-the framework end-to-end against H2 (in-memory) and PostgreSQL (multi-process). They double as worked examples of
-the base classes above. Coverage spans, among others:
+the framework end-to-end against the in-memory H2 database — including the multi-process ones, whose database
+lives inside the forked server. They double as worked examples of the base classes above. Coverage spans, among
+others:
 
 | Area                       | Example test(s)                                                                                    |
 |----------------------------|----------------------------------------------------------------------------------------------------|
@@ -196,13 +197,31 @@ the factory and [interceptor](../../../../tentackle-core/src/main/docs/intercept
 running the code generator.
 
 The `testng.xml` suite runs three groups — `local`, `remote1`, `remote2` — single-threaded, over the whole
-`org.tentackle.*` package tree; the `remote*` groups drive the out-of-process server.
+`org.tentackle.*` package tree; the `remote*` groups drive the out-of-process server. A fourth group,
+`postgres`, is excluded by default and added by `testng-postgres.xml` under `mvn -Ppostgres test`.
+
+> **A test method without a group never runs.** Because the suite selects methods by group, a plain `@Test` is
+> silently skipped. Annotate new tests with `groups = "local"` unless they belong in one of the others.
 
 ### Test configuration
 
-Connection parameters come from filtered resources (`backend.properties`, `client.properties`) substituting the
-`dbUrl`/`dbUser`/`dbPasswd`/`dbService` build properties, with `h2.properties` selecting the in-memory default
-(`jdbc:h2:mem:default`). Logging is routed to `target/logs/test.log` via
+`backend.properties` — the file every test picks up by default — selects the **in-memory H2 database**
+(`jdbc:h2:mem:default;DB_CLOSE_DELAY=-1`), so the suite is self-contained and needs no database setup.
+`DB_CLOSE_DELAY=-1` keeps the database alive while no connection is held, which matters for the pool tests.
+`client.properties` holds the TRIP URL of the forked server (`${dbService}`), and `backend.properties` also
+carries the matching `service=` entry the server listens on.
+
+The forked server JVMs get their *own* empty in-memory database, so `TestServer` and `AddAndRemovePrefsInServer`
+build the schema themselves in `finishStartup()` via `InMemoryServerSchema` — the counterpart of what
+`AbstractPdoTest` does for the test JVM.
+
+`postgres.properties` (filtered from `dbUrl`/`dbUser`/`dbPasswd`) points at a real PostgreSQL server. Only
+`PostgresScriptRunnerTest` uses it: cancelling a running script needs a statement that blocks (`PG_SLEEP`) and
+asserts PostgreSQL's own abort message, and it is the only coverage of `PostgresScriptRunner`. It belongs to the
+`postgres` group, which `testng.xml` excludes; run it with `mvn -Ppostgres test`, which switches the suite to
+`testng-postgres.xml`.
+
+Logging is routed to `target/logs/test.log` via
 [`tentackle-log-log4j2v`](../../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md) because the
 console is contended by parallel processes on Windows.
 

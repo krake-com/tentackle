@@ -377,7 +377,7 @@ public class ManagedConnection {
     cleanable = CLEANER.register(this, resources);
 
     defaultTxIsolation = txIsolation = getTransactionIsolation();
-    defaultReadOnly = readOnly = isReadOnly();
+    defaultReadOnly = readOnly = readConnectionReadOnly();
 
     ManagedConnectionMonitor.getInstance().registerManagedConnection(this);
   }
@@ -994,11 +994,28 @@ public class ManagedConnection {
 
   /**
    * Gets the read-only mode.
+   * <p>
+   * Returns the mode this connection was last {@link #setReadOnly(boolean) put into}, not what
+   * the driver reports. Drivers are free to treat {@link Connection#setReadOnly(boolean)} as a
+   * hint: H2, for example, accepts it silently and keeps answering {@code false}, because its
+   * {@link Connection#isReadOnly()} describes the database, not the session. Asking the driver
+   * would therefore make {@link TransactionWritability#READ_ONLY} unenforceable on such a
+   * backend and let a nested read-write transaction slip into a read-only one unnoticed.
+   *
+   * @return true if read-only
+   * @see #readConnectionReadOnly()
+   */
+  public boolean isReadOnly() {
+    return readOnly;
+  }
+
+  /**
+   * Gets the read-only mode as reported by the driver.
    *
    * @return true if read-only
    * @see Connection#isReadOnly()
    */
-  public boolean isReadOnly() {
+  private boolean readConnectionReadOnly() {
     try {
       return getConnection().isReadOnly();
     }

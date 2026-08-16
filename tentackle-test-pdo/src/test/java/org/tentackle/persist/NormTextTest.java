@@ -52,7 +52,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testNullInputMatchesAll() {
     Reporter.log("NormTextTest.testNullInputMatchesAll <br>", true);
 
@@ -63,7 +63,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testEmptyInputMatchesAll() {
     Reporter.log("NormTextTest.testEmptyInputMatchesAll <br>", true);
 
@@ -74,7 +74,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testPunctuationOnlyMatchesAll() {
     Reporter.log("NormTextTest.testPunctuationOnlyMatchesAll <br>", true);
 
@@ -86,7 +86,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testPlainWord() {
     Reporter.log("NormTextTest.testPlainWord <br>", true);
 
@@ -97,7 +97,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testPatternIsWrappedWithWildcards() {
     Reporter.log("NormTextTest.testPatternIsWrappedWithWildcards <br>", true);
 
@@ -108,7 +108,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testInvertedWithExclamationMark() {
     Reporter.log("NormTextTest.testInvertedWithExclamationMark <br>", true);
 
@@ -122,7 +122,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testInvertedWithMinusSign() {
     Reporter.log("NormTextTest.testInvertedWithMinusSign <br>", true);
 
@@ -133,7 +133,7 @@ public class NormTextTest {
   }
 
 
-  @Test
+  @Test(groups = "local")
   public void testInvertedButEmptyStillMatchesAll() {
     Reporter.log("NormTextTest.testInvertedButEmptyStillMatchesAll <br>", true);
 

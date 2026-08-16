@@ -67,12 +67,15 @@ mvn -Dtest=TestClassName#methodName test
 # Build a specific module (with its reactor dependencies)
 mvn -pl :tentackle-core -am clean install
 
-# Initialize/populate the test database
-mvn -Pinitdb test
+# Additionally run the tests that need a real PostgreSQL server
+mvn -Ppostgres test
 ```
 
-**Requirements:** Java JDK >= 25, Maven >= 3.9.0, PostgreSQL >= 9.
+**Requirements:** Java JDK >= 25, Maven >= 3.9.0.
 (Older LTS lines live on the `java21`, `java17`, `java11` and `java8` branches.)
+
+The build needs **no database**: the tests run against H2 (see [Testing](#testing)).
+PostgreSQL >= 9 is only required for `-Ppostgres`.
 
 Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US`).
 
@@ -154,6 +157,20 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
 ## Testing
 
 - TestNG is the default test framework (JUnit 5 also supported).
-- H2 in-memory database is used for integration tests; PostgreSQL is used for integration tests with multiple processes running in parallel.
-- Test database credentials are configured via filtered resources in test modules.
+- **H2 is the default backend for every test, and no database has to be set up to build the
+  reactor.** `backend.properties` of the test modules points at H2; the test base classes
+  (`AbstractPdoTest`, `TestApplication`, `AbstractDbTest`) create the schema themselves when the
+  backend is H2, so a plain `mvn clean install` is self-contained.
+  - `tentackle-test-pdo` and `tentackle-test-fx-rdc` use an in-memory database
+    (`jdbc:h2:mem:default`) and build the schema from the model via `DbTestUtilities`.
+  - `tentackle-database` uses a file-backed database in `AUTO_SERVER` mode under `target/`,
+    because `MultiJVMPreferencesTest` shares it with a second JVM, and builds the schema from
+    the DDL its own build generates into `META-INF/sql/H2/createttmodel.sql`. Cross-JVM access
+    needs `-Dh2.bindAddress=localhost`, which `AbstractDbTest` sets and passes on to the
+    children it spawns.
+- **PostgreSQL is opt-in** via `mvn -Ppostgres test`, which adds the `postgres` TestNG group.
+  Only `PostgresScriptRunnerTest` is in it — cancelling a statement needs a server that can
+  sleep. That run needs a `tentackle` database created from the generated DDL beforehand; its
+  credentials come from the `dbUrl`/`dbUser`/`dbPasswd` properties, filtered into the test
+  modules' `postgres.properties`.
 - `tentackle-test-pdo` and `tentackle-test-fx-rdc` provide TestNG support for the PDO layer and the rich desktop client respectively.

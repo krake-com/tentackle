@@ -236,6 +236,18 @@ Two products deviate from the others far enough to warrant their own document:
 Both refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12, MySQL 8.0,
 MariaDB 10.3.
 
+**H2 is the backend Tentackle's own tests run on** (see
+[tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)), so two of its
+deviations from PostgreSQL are worth knowing when reading a generated script:
+
+- **Paging and locking follow the SQL standard**, not PostgreSQL's order: `buildSelectSql` emits
+  `OFFSET ? ROWS FETCH FIRST ? ROWS ONLY FOR UPDATE`. H2 rejects any other order as a syntax error, which is why
+  the trailing parameters are bound offset-first.
+- **An unsized `DECIMAL` needs a precision.** A bare `DECIMAL` is `DECIMAL(100000,0)` in H2 and would silently
+  round away every fraction digit, so `getDefaultSize` supplies 19 — the same remedy the MySQL backend applies
+  (see [Decimals](mysql.md#decimals)). As there, only PostgreSQL and Oracle keep the scale of a decimal column
+  the model declares no size for.
+
 ---
 
 ## How It Fits Together

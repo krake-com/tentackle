@@ -36,7 +36,7 @@ import java.util.TreeSet;
  */
 public class IllegalModelNamesTest {
 
-  @Test
+  @Test(groups = "local")
   public void createMethodNames() {
     Reporter.log("IllegalModelNamesTest.createMethodNames <br>", true);
     Set<String> illegalNames = new TreeSet<>();

@@ -74,6 +74,10 @@ public class QueryParameterTest extends AbstractDbTest {
 
   private static final String TABLE_NAME = "querytest";
 
+  // size and scale for the DECIMAL columns, see createTestTable()
+  private static final int DECIMAL_SIZE = 19;
+  private static final int DECIMAL_SCALE = 6;
+
   private static final LocalDateTime LOCAL_DATE_TIME = LocalDateTime.of(2026, 7, 31, 12, 34, 56);
   private static final ZoneId ZONE_ID = ZoneId.of("Europe/Berlin");
   private static final ZoneOffset ZONE_OFFSET = ZONE_ID.getRules().getOffset(LOCAL_DATE_TIME);
@@ -172,9 +176,18 @@ public class QueryParameterTest extends AbstractDbTest {
       for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
         String columnName = "c" + valueIndex + "_" + columnIndex;
         SqlType sqlType = dataType.getSqlType(backend, columnIndex);
+        int size = dataType.getSize(backend, columnIndex, null);
+        int scale = dataType.getScale(backend, columnIndex, null);
+        if (sqlType == SqlType.DECIMAL && scale == 0) {
+          // An unsized DECIMAL keeps the fraction digits of the value on PostgreSQL and Oracle
+          // only. H2 and MySQL read it as scale 0 and round the value away, so the round-trip
+          // below would not find the row again. A real model declares size and scale for a
+          // decimal attribute; do the same here to keep the test backend independent.
+          size = DECIMAL_SIZE;
+          scale = DECIMAL_SCALE;
+        }
         ddl.append("    ").append(backend.sqlCreateColumn(
-            columnName, null, sqlType,
-            dataType.getSize(backend, columnIndex, null), dataType.getScale(backend, columnIndex, null),
+            columnName, null, sqlType, size, scale,
             true, null, false,
             valueIndex < values.length - 1 || columnIndex < columnCount - 1));
         columns.add(columnName);

@@ -49,7 +49,10 @@ public class H2 extends AbstractSql92Backend {
   // maximum length for identifiers, names, etc...
   private static final int MAX_NAME_LENGTH = 256;
 
-  /** postgres' default schema. */
+  // default size of a DECIMAL if the model does not provide one
+  private static final int DEFAULT_DECIMAL_SIZE = 19;
+
+  /** H2's default schema. */
   public static final String DEFAULT_SCHEMA = "public";
 
   /** LIMIT string. */
@@ -162,19 +165,25 @@ public class H2 extends AbstractSql92Backend {
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * H2 follows the SQL standard here, unlike postgres: the OFFSET clause precedes the
+   * FETCH FIRST clause and the locking clause comes last. Any other order is a syntax error.
+   */
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
     }
-    if (writeLock) {
-      sqlBuilder.append(SQL_FOR_UPDATE);
+    if (offset > 0) {
+      sqlBuilder.append(SQL_OFFSET_PAR);
     }
     if (limit > 0) {
       sqlBuilder.append(SQL_FETCH_FIRST_PAR);
     }
-    if (offset > 0) {
-      sqlBuilder.append(SQL_OFFSET_PAR);
+    if (writeLock) {
+      sqlBuilder.append(SQL_FOR_UPDATE);
     }
   }
 
@@ -185,11 +194,12 @@ public class H2 extends AbstractSql92Backend {
 
   @Override
   public int setTrailingSelectParameters(BackendPreparedStatement stmt, int index, int limit, int offset) {
-    if (limit > 0) {
-      stmt.setInt(index++, limit);
-    }
+    // same order as in buildSelectSql: offset first, then limit
     if (offset > 0) {
       stmt.setInt(index++, offset);
+    }
+    if (limit > 0) {
+      stmt.setInt(index++, limit);
     }
     return index;
   }
@@ -201,6 +211,13 @@ public class H2 extends AbstractSql92Backend {
       case VARCHAR -> 1048576;
       default -> super.getMaxSize(sqlType);
     };
+  }
+
+  @Override
+  public int getDefaultSize(SqlType sqlType) {
+    // without an explicit size H2 reads a bare DECIMAL as DECIMAL(100000,0) and silently
+    // rounds away all fraction digits, just like mysql does with its DECIMAL(10,0)
+    return sqlType == SqlType.DECIMAL ? DEFAULT_DECIMAL_SIZE : super.getDefaultSize(sqlType);
   }
 
   @Override

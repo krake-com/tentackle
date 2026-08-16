@@ -33,7 +33,7 @@ import static org.testng.Assert.fail;
  */
 public class H2ConnectionTest {
 
-  @Test
+  @Test(groups = "local")
   public void openSession() {
     Reporter.log("H2ConnectionTest.openSession <br>", true);
 

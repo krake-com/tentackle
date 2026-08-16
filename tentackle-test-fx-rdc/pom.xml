@@ -64,6 +64,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <!-- the default test backend -->
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- only needed when the tests are pointed at postgres.properties -->
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
@@ -75,8 +82,14 @@
     <!-- backend properties -->
     <testResources>
       <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
         <directory>src/test/filtered-resources</directory>
         <filtering>true</filtering>
+      </testResource>
+      <testResource>
+        <directory>${tentackle.testServiceDir}</directory>
       </testResource>
     </testResources>
 

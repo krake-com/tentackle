@@ -31,6 +31,7 @@ import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.testng.ServerProcessWrapper;
 import org.tentackle.persist.app.ServerApplication;
+import org.tentackle.persist.server.InMemoryServerSchema;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.RemotePreferencesTest;
 import org.tentackle.session.AbstractSessionTask;
@@ -106,6 +107,17 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   @Override
   public <U extends Identifiable> U getUser(DomainContext context, long userId) {
     return null;    // not used
+  }
+
+  /**
+   * Builds the schema right after the session was opened.<br>
+   * It has to happen before {@code configure()}, which initializes the modification tracker and
+   * therefore expects the tables to be there.
+   */
+  @Override
+  protected void login() {
+    super.login();
+    InMemoryServerSchema.createTablesIfInMemory(getSession());
   }
 
   @Override

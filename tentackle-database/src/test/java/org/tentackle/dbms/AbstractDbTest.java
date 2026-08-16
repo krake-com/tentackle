@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
@@ -27,15 +28,19 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfoFactory;
+import org.tentackle.sql.Backend;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static org.testng.Assert.fail;
@@ -63,6 +68,26 @@ public abstract class AbstractDbTest {
     NONE
   }
 
+  /**
+   * System property telling H2 which address to bind its server to.
+   * <p>
+   * By default H2 binds the server of an {@code AUTO_SERVER=TRUE} database to the host's
+   * network address and writes that address into the lock file. A second JVM then connects to
+   * it from what H2 considers a remote address and gets rejected with a bare {@code EOF},
+   * because remote access is disabled unless explicitly allowed. Pinning the address to
+   * localhost keeps the connection local and is what makes the multi-JVM tests work.
+   * <p>
+   * The property must be set before the H2 driver is loaded, hence the static initializer,
+   * and it must be handed to every JVM spawned by {@link #runClass(Class)}.
+   */
+  private static final String H2_BIND_ADDRESS_PROPERTY = "h2.bindAddress";
+
+  static {
+    if (System.getProperty(H2_BIND_ADDRESS_PROPERTY) == null) {
+      System.setProperty(H2_BIND_ADDRESS_PROPERTY, "localhost");
+    }
+  }
+
   private static Session session;           // session for all methods in all test classes
 
   private final TransactionType txType;     // transaction handling
@@ -77,10 +102,20 @@ public abstract class AbstractDbTest {
   }
 
 
+  /**
+   * Opens the session and, if the test owns the schema, creates the tables.<br>
+   * The tracker is started afterwards, so that it finds its modification table in place.
+   *
+   * @throws Exception if failed
+   * @see #createDatabaseTables(Db)
+   */
   @BeforeSuite
   public void openSessionsAndStartPdoTracker() throws Exception {
-    session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.makeCurrent();
+    session = openSession();
+
+    if (session instanceof Db db && isSchemaOwnedByTest(db)) {
+      createDatabaseTables(db);
+    }
 
     ModificationTracker tracker = ModificationTracker.getInstance();
     tracker.setSession(session.clone(null));
@@ -90,8 +125,84 @@ public abstract class AbstractDbTest {
 
   @AfterSuite
   public void closeSessionsAndTerminatePdoTracker() throws Exception {
-    ModificationTracker.getInstance().terminate();
-    session.close();
+    if (session != null) {
+      ModificationTracker.getInstance().terminate();
+      session.close();
+    }
+  }
+
+
+  /**
+   * Opens the session.
+   *
+   * @return the thread-local session
+   */
+  protected Session openSession() {
+    Session s;
+    try {
+      s = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
+    }
+    catch (PersistenceException ex) {
+      // no database? wrong database? whatever: testing environment incomplete
+      throw new SkipException("no backend found -> no tests", ex);
+    }
+    s.makeCurrent();
+    return s;
+  }
+
+
+  /**
+   * Returns whether the tests own the database schema and must create it themselves.<br>
+   * This is the case for H2, which is the default test backend: both the in-memory and the
+   * file-backed AUTO_SERVER variants start out empty (or stale, if a previous run left a file
+   * behind). A shared database such as the PostgreSQL CI instance is prepared out-of-band and
+   * must never be dropped by a test run.
+   *
+   * @param db the low-level database session
+   * @return true if {@link #createDatabaseTables(Db)} should be invoked
+   */
+  protected boolean isSchemaOwnedByTest(Db db) {
+    return "H2".equals(db.getBackend().getName());
+  }
+
+
+  /**
+   * Creates the database tables of this module.<br>
+   * Runs the DDL generated at build time by the SQL maven plugin, which is on the test
+   * classpath as {@code META-INF/sql/<backend>/createttmodel.sql}.
+   * <p>
+   * Notice that this module sits below {@code tentackle-test-pdo} in the reactor and thus
+   * cannot use its {@code DbTestUtilities}, which would build the same script from the model.
+   * <p>
+   * Only invoked for H2 (see {@link #isSchemaOwnedByTest(Db)}), whose {@code DROP ALL OBJECTS}
+   * this relies on.
+   *
+   * @param db the low-level database session
+   */
+  protected void createDatabaseTables(Db db) {
+    // the generated script holds no DROP statements, so wipe whatever a previous run left over
+    db.runScript("drop", "DROP ALL OBJECTS;");
+    db.runScript("populate", loadCreateScript(db.getBackend()));
+  }
+
+
+  /**
+   * Loads the generated DDL for the given backend from the test classpath.
+   *
+   * @param backend the backend
+   * @return the SQL script
+   */
+  private String loadCreateScript(Backend backend) {
+    String resource = "/META-INF/sql/" + backend.getName() + "/createttmodel.sql";
+    try (InputStream is = getClass().getResourceAsStream(resource)) {
+      if (is == null) {
+        throw new IOException("no such resource");
+      }
+      return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    }
+    catch (IOException ix) {
+      throw new PersistenceException("cannot load the DDL from " + resource, ix);
+    }
   }
 
   @BeforeClass
@@ -182,6 +293,8 @@ public abstract class AbstractDbTest {
     }
     String[] cmd = {
         javaHome + File.separator + "bin" + File.separator + "java",
+        // the child connects to the same H2 AUTO_SERVER database and needs the same binding
+        "-D" + H2_BIND_ADDRESS_PROPERTY + "=" + System.getProperty(H2_BIND_ADDRESS_PROPERTY),
         "-cp",
         classPath,
         testClass.getName()
