@@ -48,6 +48,7 @@
     <module>tentackle-mcp-maven-plugin</module>
     <module>tentackle-core</module>
     <module>tentackle-quic</module>
+    <module>tentackle-quiche</module>
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>
@@ -103,6 +104,7 @@
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
     <postgresql.version>42.7.13</postgresql.version>
+    <quiche.native.version>0.29.3</quiche.native.version>
     <slf4j.version>2.0.18</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
@@ -297,6 +299,14 @@
         <groupId>tech.kwik</groupId>
         <artifactId>kwik</artifactId>
         <version>${kwik.version}</version>
+      </dependency>
+
+      <!-- the Cloudflare quiche native libraries, built by the Jetty project.
+           Resources only: tentackle-quiche binds them via the FFM API. -->
+      <dependency>
+        <groupId>org.mortbay.jetty.quiche</groupId>
+        <artifactId>jetty-quiche-native</artifactId>
+        <version>${quiche.native.version}</version>
       </dependency>
 
       <!-- the MCP server: pulls the helidon webserver, JSON-RPC, SSE and JSON artifacts -->

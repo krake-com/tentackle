@@ -68,7 +68,8 @@ the [Index](./index.md).
 ## Remoting
 
 - [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — binary serialization and RPC.
-- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport.
+- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport, on KWIK.
+- [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md) — the same transport on Cloudflare quiche.
 - [I/O and Networking](../../../tentackle-core/src/main/docs/io.md) — packet-framed compressing/encrypting streams and the reconnection machinery.
 
 ## Core Foundations

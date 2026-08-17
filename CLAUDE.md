@@ -81,14 +81,14 @@ Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US
 
 ## Module Architecture
 
-This is a 39-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
+This is a 40-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
 
 ```
 UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
                         tentackle-fx-rdc-poi, tentackle-fx-rdc-update, tentackle-web
 Application (runtime):  tentackle-pdo, tentackle-domain, tentackle-persistence, tentackle-update
 Database (runtime):     tentackle-database, tentackle-session
-Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic,
+Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic, tentackle-quiche,
                         log/script providers (log-slf4j, log-log4j2v, script-groovy/ruby/jsr)
 Common (build+runtime): tentackle-common, tentackle-sql
 Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentackle-build-support,
@@ -137,7 +137,7 @@ See [`pdo.md`](tentackle-pdo/src/main/docs/pdo.md) and [`pdo-vs-orm.md`](tentack
 See [`correctness-first.md`](src/main/docs/correctness-first.md). Optimistic (`serial`) and token locking are always on ([`locking.md`](tentackle-persistence/src/main/docs/locking.md)), validation is declarative and travels with the object ([`validation.md`](tentackle-core/src/main/docs/validation.md)), shared objects can be made immutable ([`immutable.md`](tentackle-core/src/main/docs/immutable.md)), and aggregates revert atomically via snapshots ([`snapshot.md`](tentackle-pdo/src/main/docs/snapshot.md)).
 
 ### TRIP (Tentackle Remote Invocation Protocol)
-Custom binary serialization/RPC framework in `tentackle-core` replacing RMI and JOS — compact, pluggable and SD-WAN-friendly. Used for client-server and server-server communication; PDOs travel between JVMs serialized via TRIP. Requires `opens` in `module-info.java` for reflection access. QUIC (RFC-9000) is a pluggable transport (`tentackle-quic`). See [`trip.md`](tentackle-core/src/main/docs/trip.md) and [`tiers.md`](src/main/docs/tiers.md).
+Custom binary serialization/RPC framework in `tentackle-core` replacing RMI and JOS — compact, pluggable and SD-WAN-friendly. Used for client-server and server-server communication; PDOs travel between JVMs serialized via TRIP. Requires `opens` in `module-info.java` for reflection access. QUIC (RFC-9000) is a pluggable transport, provided twice: `tentackle-quic` on the pure-Java KWIK stack (`tripq`/`tripcq`) and `tentackle-quiche` on Cloudflare quiche, bound via the JDK's FFM API (`tripj`/`tripcj`). Both interoperate. See [`trip.md`](tentackle-core/src/main/docs/trip.md), [`quiche.md`](tentackle-quiche/src/main/docs/quiche.md) and [`tiers.md`](src/main/docs/tiers.md).
 
 ### Wurbelizer Code Generation
 Wurblets are code generation templates processed at build time by the third-party `wurbelizer-maven-plugin` (see https://wurbelizer.org/). Generated code is woven into the source within guarded code-folding regions; analysis metadata lands in `target/wurbel/`. `tentackle-wurblets` generates the PDO/operation interfaces and DTOs; `tentackle-persistence-wurblets` generates the persistence implementation and query methods (`PdoSelectList`/`PdoSelectUnique`, eager relations). The model definition DSL is documented in [`model-definition.md`](tentackle-model/src/main/docs/model-definition.md).

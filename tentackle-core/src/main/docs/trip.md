@@ -82,16 +82,18 @@ The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**
 
-| Scheme   | Description                                             |
-|----------|---------------------------------------------------------|
-| `trip`   | Plain TCP sockets                                       |
-| `trips`  | TCP with SSL/TLS encryption                             |
-| `tripe`  | TCP with pre-shared key (PSK) encryption                |
-| `tripc`  | TCP with deflate compression                            |
-| `tripcs` | TCP with both SSL and compression                       |
-| `tripce` | TCP with both PSK and compression                       |
-| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module) |
-| `tripcq` | UDP QUIC protocol with compression                      |
+| Scheme   | Description                                                                    |
+|----------|--------------------------------------------------------------------------------|
+| `trip`   | Plain TCP sockets                                                              |
+| `trips`  | TCP with SSL/TLS encryption                                                    |
+| `tripe`  | TCP with pre-shared key (PSK) encryption                                       |
+| `tripc`  | TCP with deflate compression                                                   |
+| `tripcs` | TCP with both SSL and compression                                              |
+| `tripce` | TCP with both PSK and compression                                              |
+| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module)                        |
+| `tripcq` | UDP QUIC protocol with compression                                             |
+| `tripj`  | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module) |
+| `tripcj` | UDP QUIC protocol on Cloudflare quiche, with compression                       |
 
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
 `org.tentackle.io` — see [io.md](io.md).

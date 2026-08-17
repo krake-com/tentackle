@@ -111,6 +111,7 @@ nav:
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md
+      - TRIP over Cloudflare quiche: quiche.md
       - I/O and Networking: io.md
   - Core Foundations:
       - Tentackle Core: core.md

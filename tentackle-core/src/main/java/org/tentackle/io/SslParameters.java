@@ -115,6 +115,7 @@ public class SslParameters {
   private final String endpointIdentification;  // client-side endpoint identification, null for none
 
   private KeyStore keyStore;                    // lazily loaded, shared keystore
+  private KeyStore trustStore;                  // lazily loaded, shared truststore
   private SSLContext sslContext;                // lazily built, shared context
 
   /**
@@ -185,6 +186,35 @@ public class SslParameters {
       }
     }
     return keyStore;
+  }
+
+  /**
+   * Loads the truststore the peer's certificate is verified against.<br>
+   * The truststore is loaded once and cached; the same instance is shared between the SSL context and
+   * any other consumer (such as the QUIC transports, which hand it to their own TLS stack).
+   *
+   * @return the truststore, or null if none is configured and the JSSE default applies
+   * @throws TentackleRuntimeException if the truststore cannot be loaded
+   */
+  public synchronized KeyStore getTrustStore() {
+    if (trustStore == null && trustStoreFile != null) {
+      try {
+        trustStore = loadKeyStore(trustStoreFile, trustStoreType, trustStorePassword);
+      }
+      catch (GeneralSecurityException | IOException e) {
+        throw new TentackleRuntimeException("cannot load truststore " + trustStoreFile + " for " + uri, e);
+      }
+    }
+    return trustStore;
+  }
+
+  /**
+   * Gets the configured truststore path.
+   *
+   * @return the truststore path, or null if none is configured
+   */
+  public String getTrustStoreFile() {
+    return trustStoreFile;
   }
 
   /**

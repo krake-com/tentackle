@@ -166,7 +166,7 @@ topic-grouped listing of every document, see the
 ## Q
 
 - **Query DSL (typed `SELECT`s, aggregates, joins)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md)
-- **QUIC transport** — [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **QUIC transport** — [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Quickstart** — [Quickstart](./quickstart.md)
 
 ## R
@@ -177,7 +177,7 @@ topic-grouped listing of every document, see the
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup, preloading)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates)
-- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
+- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
 - **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
@@ -216,8 +216,8 @@ topic-grouped listing of every document, see the
 - **Token locks** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **Tokens (bearer, refresh, expiry)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
-- **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md)
-- **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
+- **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
+- **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 
 ## U
 

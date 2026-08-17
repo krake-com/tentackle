@@ -58,6 +58,7 @@ A node's role is determined by the URL of the session it opens to its backend
 | `tripcs://…`                | TRIP + compression + SSL                         | remote                                |
 | `tripe://…` / `tripce://…`  | TRIP + pre-shared-key encryption (+ compression) | remote                                |
 | `tripq://…` / `tripcq://…`  | TRIP over QUIC (RFC-9000) (+ compression)        | remote                                |
+| `tripj://…` / `tripcj://…`  | TRIP over QUIC on Cloudflare quiche (+ compr.)   | remote                                |
 
 [`Session.isRemote()`](../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) reports the result.
 A *local* session executes JDBC directly in this JVM; a *remote* session routes every `begin`/`commit`/query/PDO

@@ -160,6 +160,9 @@ import java.util.function.Consumer;
  *   <li>{@code tripq}: trip over QUIC/RFC9000 (using kwik, the module {@code tentackle-quic} must
  *   be configured as a runtime dependency for the transport to be found)</li>
  *   <li>{@code tripcq}: compressed + QUIC</li>
+ *   <li>{@code tripj}: trip over QUIC/RFC9000 (using Cloudflare quiche, the module
+ *   {@code tentackle-quiche} must be configured as a runtime dependency for the transport to be found)</li>
+ *   <li>{@code tripcj}: compressed + QUIC on quiche</li>
  * </ul>
  * Further transports can easily be provided by implementing the {@link Transport} interface.
  * <p>

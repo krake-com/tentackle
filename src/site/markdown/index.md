@@ -33,7 +33,8 @@ Tentackle is a multi-module reactor. Modules fall into a few layers (see the
 |--------|-------------|
 | [tentackle-core](tentackle-core/) | Runtime foundation: TRIP (serialization/RPC), validation, binding, reflection, logging and scripting APIs, tasks, preferences. |
 | [tentackle-i18n](tentackle-i18n/) | Internationalization support. |
-| [tentackle-quic](tentackle-quic/) | QUIC (RFC-9000) pluggable transport for TRIP. |
+| [tentackle-quic](tentackle-quic/) | QUIC (RFC-9000) pluggable transport for TRIP, on the pure-Java KWIK stack. |
+| [tentackle-quiche](tentackle-quiche/) | The same QUIC transport on Cloudflare quiche, bound via the FFM API. |
 | [tentackle-log-slf4j](tentackle-log-slf4j/) | SLF4J logging provider. |
 | [tentackle-log-log4j2v](tentackle-log-log4j2v/) | Log4j2 logging provider. |
 | [tentackle-script-jsr](tentackle-script-jsr/) | JSR-223 scripting provider. |
