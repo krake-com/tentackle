@@ -208,7 +208,15 @@ tripj://host:port/service?parameter=value&...
 A QUIC connection is discarded silently by both peers once it stays idle longer than the smaller of the
 two idle timeouts (RFC-9000, 10.1). That is far shorter than the pool's own idle timeout, so a pooled
 connection would otherwise belong to a QUIC connection that is long gone. The client therefore sends
-ack-eliciting packets every `quicidle / 3` seconds by default.
+ack-eliciting packets every `quicidle / 3` seconds by default, at least every 500 ms, but never less often
+than twice per idle timeout.
+
+That last bound is what makes the keep-alive reliable, and it matters for a `keepalive` configured by hand
+as well: a keep-alive falling due together with the idle timeout comes too late, because the endpoint's
+event loop runs the timeout first &mdash; once the idle timeout has expired, the peer has dropped the
+connection anyway. Every packet the connection sends on its own (a loss probe, an ack) re-bases the idle
+timer, so an interval without a comfortable margin below `quicidle` will keep the connection alive most of
+the time and lose it occasionally.
 
 Note that `quicidle` (seconds, QUIC level) has nothing to do with `idle` (minutes, pool level).
 

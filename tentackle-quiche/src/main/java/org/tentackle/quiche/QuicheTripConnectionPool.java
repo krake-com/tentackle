@@ -66,6 +66,14 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
    */
   public static final int DEFAULT_CONNECT_TIMEOUT = 10;
 
+  /**
+   * The shortest keep-alive interval derived from the QUIC max idle timeout.
+   * <p>
+   * Keeps the keep-alive traffic reasonable for the usual idle timeouts of tens of seconds. It is a lower
+   * bound only: a short idle timeout wins over it, see {@link #determineKeepAliveMillis()}.
+   */
+  private static final long MIN_KEEP_ALIVE_MILLIS = 500;
+
   private static final Logger LOGGER = Logger.get(QuicheTripConnectionPool.class);
 
 
@@ -251,12 +259,37 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       throw e;
     }
     if (keepAliveSeconds != 0) {
-      // negative means: derive it from the idle timeout, so the connection never times out unnoticed
-      long interval = keepAliveSeconds < 0 ? Math.max(transport.getMaxIdleSeconds() * 1000L / 3, 1000)
-                                           : keepAliveSeconds * 1000L;
-      quicConnection.setKeepAliveMillis(interval);
+      quicConnection.setKeepAliveMillis(determineKeepAliveMillis());
     }
     connection = quicConnection;
+  }
+
+  /**
+   * Determines how often a keep-alive packet is to be sent.
+   * <p>
+   * An explicitly configured {@code keepalive} is taken as it is. Otherwise the interval is a third of the
+   * QUIC max idle timeout, so that two keep-alives in a row may be lost before the connection is at risk,
+   * but never more than half of it: the keep-alive must fall due safely <em>before</em> the idle timeout,
+   * never together with it. {@link QuicheConnection#runDueWork()} processes the timeout first, on purpose,
+   * so a keep-alive that is due at the same moment comes too late and the connection is torn down instead
+   * of being kept alive. The margin has to be large enough to absorb the drift of the idle timer, which
+   * every packet the connection sends on its own &mdash; a loss probe, an ack &mdash; re-bases.
+   *
+   * @return the interval in milliseconds, 0 to send no keep-alive packets
+   */
+  private long determineKeepAliveMillis() {
+    long idleMillis = transport.getMaxIdleSeconds() * 1000L;
+    if (keepAliveSeconds > 0) {
+      long interval = keepAliveSeconds * 1000L;
+      if (idleMillis > 0 && interval >= idleMillis / 2) {
+        LOGGER.warning("the keep-alive interval of " + keepAliveSeconds + " seconds configured in " +
+                       getTransport().getUri() + " is too close to the QUIC max idle timeout of " +
+                       transport.getMaxIdleSeconds() + " seconds: the connection may time out anyway");
+      }
+      return interval;
+    }
+    // derived: no idle timeout at all (quicidle=0) means there is nothing to keep alive
+    return Math.min(Math.max(idleMillis / 3, MIN_KEEP_ALIVE_MILLIS), idleMillis / 2);
   }
 
   /**

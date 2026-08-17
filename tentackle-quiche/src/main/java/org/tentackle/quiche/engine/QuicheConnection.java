@@ -470,6 +470,11 @@ public class QuicheConnection implements AutoCloseable {
   /**
    * Runs whatever became due: the quiche timeout, the keep-alive, or both.
    * <p>
+   * The timeout is processed first, deliberately: if the idle timeout has expired, the peer discarded the
+   * connection at the same moment, and a keep-alive would only pretend it were still alive. Keeping the
+   * connection is therefore the job of an interval that is safely shorter than the idle timeout, not of
+   * the order in which the two are handled here.
+   * <p>
    * Invoked by the endpoint's event loop only.
    */
   public void runDueWork() {
