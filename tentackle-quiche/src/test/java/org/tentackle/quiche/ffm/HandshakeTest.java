@@ -108,9 +108,13 @@ public class HandshakeTest {
     assertTrue(key.startsWith("-----BEGIN PRIVATE KEY-----\n"), "the key must be PKCS#8");
     assertTrue(key.trim().endsWith("-----END PRIVATE KEY-----"));
 
-    Reporter.log("the private key file is readable by nobody but its owner", true);
-    var permissions = Files.getPosixFilePermissions(privateKey);
-    assertEquals(permissions.size(), 2, "unexpected permissions " + permissions);
+    // PemExporter falls back to a plain createTempFile if the filesystem has no POSIX permissions
+    // (Windows), where the temporary directory is owner-only anyway. Nothing to assert there.
+    if (privateKey.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+      Reporter.log("the private key file is readable by nobody but its owner", true);
+      var permissions = Files.getPosixFilePermissions(privateKey);
+      assertEquals(permissions.size(), 2, "unexpected permissions " + permissions);
+    }
   }
 
   @Test
