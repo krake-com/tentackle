@@ -185,6 +185,40 @@ public class QuicRemoteInvocationTest {
   }
 
   /**
+   * A remote invocation must survive an interrupt of the calling thread.
+   * <p>
+   * Tentackle's task dispatchers interrupt their own thread whenever work is queued, in order to cut a
+   * pending sleep short, and such an interrupt regularly lands while that thread is inside a remote
+   * invocation &mdash; {@code DbModificationTracker} polls from its dispatcher thread. A blocking socket
+   * ignores the interrupt status entirely, and this transport has to do the same instead of failing the
+   * call: opening a pooled stream waits for the peer's credits, which used to be given up on an
+   * interrupt that had nothing to do with the connection.
+   */
+  @Test
+  public void survivesAnInterruptOfTheCallingThread() throws Exception {
+    Reporter.log("survivesAnInterruptOfTheCallingThread", true);
+    try (Endpoints endpoints = startEndpoints(QuicTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
+      try {
+        // pending before anything is connected, so it hits the connect and the stream creation as well
+        Thread.currentThread().interrupt();
+        EchoService remote = endpoints.client().lookup(EchoService.class, "echo");
+        assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
+
+        assertEquals(remote.add(17, 25), 42);
+        assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
+
+        // larger than the flow control window, so the argument cannot be written in one go: KWIK has to
+        // wait for credits, which is exactly where it used to fail on a pending interrupt
+        assertEquals(remote.duplicate(Payload.of("interrupted", 700_000)).text(), "interrupted-copy");
+        assertTrue(Thread.currentThread().isInterrupted(), "the interrupt was swallowed");
+      }
+      finally {
+        Thread.interrupted();   // never leave the flag behind for whatever runs next
+      }
+    }
+  }
+
+  /**
    * Client and server must agree on the ALPN id, otherwise the QUIC handshake is refused.
    */
   @Test

@@ -38,6 +38,7 @@ import java.util.UUID;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -230,20 +231,23 @@ public class QuicTripTransportTest {
 
   /**
    * The only integration point with TRIP serialization: a {@code QuicStream}'s input/output streams
-   * must end up as the deserializer/serializer of the returned {@code TripStream}.
+   * must end up as the deserializer/serializer of the returned {@code TripStream}, wrapped so that KWIK
+   * never sees the interrupt status of the calling thread.
    */
   @Test
-  public void createsTripStreamOnTopOfTheQuicStream() {
+  public void createsTripStreamOnTopOfTheQuicStream() throws Exception {
     Reporter.log("createsTripStreamOnTopOfTheQuicStream", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
     try {
-      FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
+      FakeQuicStream quicStream = new FakeQuicStream(new byte[] { 42 });
       Dictionary dictionary = TripFactory.getInstance().createDictionary(UUID.randomUUID(), false);
       TripStream stream = transport.createStream(dictionary, quicStream);
 
       assertSame(stream.getDictionary(), dictionary);
-      assertSame(stream.getSerializer().getOutputStream(), quicStream.getOutputStream());
-      assertSame(stream.getDeserializer().getInputStream(), quicStream.getInputStream());
+      // wrapped, see InterruptAgnosticStreams - but reading and writing must pass straight through
+      assertNotSame(stream.getSerializer().getOutputStream(), quicStream.getOutputStream());
+      assertNotSame(stream.getDeserializer().getInputStream(), quicStream.getInputStream());
+      assertEquals(stream.getDeserializer().getInputStream().read(), 42);
 
       // the plain transport must not touch the payload: it appears verbatim in the QUIC stream
       byte[] payload = "the quick brown fox".getBytes();
@@ -256,6 +260,7 @@ public class QuicTripTransportTest {
       transport.close();
     }
   }
+
 
   /**
    * Finds the first occurrence of {@code needle} within {@code haystack}.

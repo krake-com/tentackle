@@ -35,6 +35,8 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.transport.AbstractTransport;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.URI;
@@ -325,8 +327,34 @@ public class QuicTripTransport extends AbstractTransport {
   public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
     return factory.createStream(dictionary,
-                                factory.createSerializer(quicStream.getOutputStream()),
-                                factory.createDeserializer(quicStream.getInputStream()));
+                                factory.createSerializer(outputStream(quicStream)),
+                                factory.createDeserializer(inputStream(quicStream)));
+  }
+
+  /**
+   * Gets the stream to read a QUIC stream's data from.
+   * <p>
+   * Wrapped so that the interrupt status of the reading thread does not reach KWIK, which would otherwise
+   * consume it &mdash; see {@link InterruptAgnosticStreams}.
+   *
+   * @param quicStream the QUIC stream
+   * @return the input stream
+   */
+  protected InputStream inputStream(QuicStream quicStream) {
+    return InterruptAgnosticStreams.wrap(quicStream.getInputStream());
+  }
+
+  /**
+   * Gets the stream to write a QUIC stream's data to.
+   * <p>
+   * Wrapped so that the interrupt status of the writing thread does not reach KWIK, which would otherwise
+   * fail a write that has to wait for flow control credits &mdash; see {@link InterruptAgnosticStreams}.
+   *
+   * @param quicStream the QUIC stream
+   * @return the output stream
+   */
+  protected OutputStream outputStream(QuicStream quicStream) {
+    return InterruptAgnosticStreams.wrap(quicStream.getOutputStream());
   }
 
 

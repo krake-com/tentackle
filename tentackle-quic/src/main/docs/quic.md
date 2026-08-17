@@ -184,7 +184,39 @@ public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
 A `QuicStream` exposes ordinary `InputStream`/`OutputStream` objects; wrapping
 them in a TRIP `Serializer`/`Deserializer` is all that is needed to run the full
 TRIP protocol — dictionary compression, back-references, deduplication, and remote
-proxying — over QUIC.
+proxying — over QUIC. The streams handed to TRIP are the KWIK ones wrapped by
+`inputStream`/`outputStream`, see [Interrupts](#interrupts).
+
+### Interrupts
+
+Everything a remote invocation blocks on here — the handshake, opening a pooled
+stream, and the stream reads and writes — is **interrupt-agnostic**, exactly like
+the blocking socket streams of the TCP transports: an interrupt of the calling
+thread neither aborts the operation nor gets lost. It is withheld for the duration
+of the call and re-asserted before returning.
+
+This is not a detail. Tentackle's [task dispatchers](../../../tentackle-core/src/main/docs/tasks-daemon.md)
+interrupt their own thread whenever work is queued, to cut a pending sleep
+short — see `DefaultTaskDispatcher.interrupt()`. Such an interrupt regularly lands
+while the thread is inside a remote invocation (`DbModificationTracker` polls from
+its dispatcher thread), and a transport that treated it as a cancellation would tear
+down a perfectly healthy TRIP connection.
+
+KWIK itself does not cooperate: its `connect()` aborts the handshake and throws a
+bare `RuntimeException`, `createStream` reports a `TimeoutException`, a write waiting
+for flow control credits fails with an `InterruptedIOException`, and a blocked read
+consumes the interrupt without restoring it. Hence
+
+- `connect()` runs KWIK's handshake on a thread of its own and waits for it with an
+  absolute deadline (`connecttimeout` plus `CONNECT_TIMEOUT_GRACE`),
+- `createQuicStream` does the same for `createStream` (which it has to do anyway to
+  bound the wait for stream credits, see [Stream limit](#stream-limit)),
+- and `InterruptAgnosticStreams` keeps the interrupt status away from KWIK's stream
+  operations, restoring it once they return.
+
+An interrupt that arrives *while* KWIK is already blocked is still KWIK's to handle,
+which no wrapper can change. The `tentackle-quiche` transport does not have that
+limitation because it implements the blocking streams itself.
 
 ---
 
