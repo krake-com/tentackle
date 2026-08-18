@@ -117,6 +117,8 @@ public class QuicTripTransportTest {
       "tripq://localhost:" + QuicTestSupport.freeUdpPort() + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     try {
       transport.accept();
+      // wait for the server to start accepting connections, otherwise the client will fail to connect
+      Thread.sleep(1000);
       assertTrue(transport.isAccepting());
       assertNotNull(transport.getRegistry());
       assertNotNull(transport.getConnectionThreadPool());
@@ -141,6 +143,8 @@ public class QuicTripTransportTest {
 
     QuicTripTransport first = new QuicTripTransport(URI.create(uri));
     first.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
     assertTrue(first.isAccepting());
     first.close();
     assertFalse(first.isAccepting());
@@ -150,6 +154,8 @@ public class QuicTripTransportTest {
     QuicTripTransport second = new QuicTripTransport(URI.create(uri));
     try {
       second.accept();
+      // wait for the server to start accepting connections, otherwise the client will fail to connect
+      Thread.sleep(1000);
       assertTrue(second.isAccepting());
     }
     finally {
@@ -199,6 +205,8 @@ public class QuicTripTransportTest {
     QuicTripTransport serverSide = new QuicTripTransport(URI.create(
       "tripq://localhost:" + QuicTestSupport.freeUdpPort() + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     serverSide.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
     serverSide.close();
     serverSide.close();
     assertFalse(serverSide.isAccepting());

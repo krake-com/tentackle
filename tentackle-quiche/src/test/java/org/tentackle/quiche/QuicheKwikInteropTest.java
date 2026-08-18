@@ -18,14 +18,14 @@
 
 package org.tentackle.quiche;
 
-import org.tentackle.trip.Transport;
-import org.tentackle.trip.TripFactory;
-
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import org.tentackle.trip.Transport;
+import org.tentackle.trip.TripFactory;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -114,6 +114,8 @@ public class QuicheKwikInteropTest {
       QuicheTestSupport.keyStoreParameters(keyStore)));
     try {
       server.accept();
+      // wait for the server to start accepting connections, otherwise the client will fail to connect
+      Thread.sleep(1000);   // only necessary for the KWIK server
       assertTrue(server.isAccepting());
       server.getRegistry().register(service, "echo");
 
