@@ -122,7 +122,7 @@ public class QuicTripConnectionTest {
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
     QuicTripConnection connection = new QuicTripConnection(transport, dictionary, () -> true, quicStream);
 
-    assertEquals(connection.toString(), transport.toString() + quicStream);
+    assertEquals(connection.toString(), quicStream.toString());
   }
 
   @Test
