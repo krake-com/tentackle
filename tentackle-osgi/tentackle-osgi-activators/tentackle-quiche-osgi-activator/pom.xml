@@ -8,11 +8,11 @@
     <version>25.0.0</version>
   </parent>
 
-  <artifactId>tentackle-log-log4j-osgi-activator</artifactId>
+  <artifactId>tentackle-quiche-osgi-activator</artifactId>
   <packaging>jar</packaging>
 
-  <name>Tentackle Logging Log4J OSGi Bundle Activator</name>
-  <description>OSGi Activator for the Tentackle Logging Log4J Module</description>
+  <name>Tentackle QUICHE OSGi Bundle Activator</name>
+  <description>OSGi Activator for the Tentackle QUICHE Module</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
