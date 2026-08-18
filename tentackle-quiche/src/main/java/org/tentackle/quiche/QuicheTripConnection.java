@@ -73,7 +73,7 @@ public class QuicheTripConnection extends AbstractConnection {
 
   @Override
   public String toString() {
-    return getTransport() + " " + quicStream;
+    return quicStream.toString();
   }
 
 }
