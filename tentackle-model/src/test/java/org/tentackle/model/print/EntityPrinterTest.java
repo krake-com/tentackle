@@ -33,6 +33,8 @@ import java.util.List;
 
 import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 
 /**
  * Entity printer test.
@@ -131,5 +133,34 @@ public class EntityPrinterTest {
      String text = new EntityPrinter(entity, configuration).print();
      System.out.println(text);
      assertEquals(text, EXPECTED);
+   }
+
+   /**
+    * A model source without a source info line (as loaded from a jar or the classpath) must be
+    * printable as model input as well: the {@code #@}-header is simply omitted.
+    */
+   @Test
+   public void printEntityWithoutSourceInfo() throws Exception {
+     String modelSource = """
+                          name := Simple
+                          id := 1
+                          table := simple
+                          integrity := none
+
+                          []
+                          String(10)  code  code  the code
+                          """;
+     Document model = new Document(modelSource);
+     assertNull(model.getSourceInfo());
+     Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
+
+     PrintConfiguration configuration = new PrintConfiguration(false, false, false, null, new ArrayList<>(), 2);
+     String text = new EntityPrinter(entity, configuration).print();
+     assertFalse(text.contains(Document.ORIGIN_INFO_LEAD), "there is no source info to print:\n" + text);
+
+     // the printed model must still be readable, and again without source info
+     Document reparsed = new Document(text);
+     assertNull(reparsed.getSourceInfo());
+     assertEquals(Model.getInstance().getEntityFactory().createEntity(reparsed, null).getName(), "Simple");
    }
 }

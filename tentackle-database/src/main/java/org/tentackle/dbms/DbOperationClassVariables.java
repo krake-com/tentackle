@@ -33,7 +33,7 @@ import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
   /**
-   * Creates a classvariable for a db operation.
+   * Creates a class variable for a db operation.
    *
    * @param clazz is the class of the derived AbstractDbOperation
    * @param <P> the persistent operation class
@@ -52,14 +52,16 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
    */
   public final String className;
 
+
   /**
-   * ID for the remote delegate for this class.
+   * ID for the remote delegate for this class.<br>
+   * Volatile, since lazily initialized by {@link #getRemoteDelegateId()} from arbitrary threads.
    */
-  public int remoteDelegateId;
+  private volatile int remoteDelegateId;
 
 
   /**
-   * Gets the delegateId of the class, i.e. subclass of AbstractDbOperation.
+   * Gets the delegateId of the class, i.e., subclass of AbstractDbOperation.
    * If the remoteDelegateId is 0, it will be prepared
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote Db's.
@@ -68,10 +70,17 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
    * @return the delegate id
    */
   public int getRemoteDelegateId() {
-    if (remoteDelegateId == 0)  {
-      remoteDelegateId = Db.prepareRemoteDelegate(clazz);
+    int id = remoteDelegateId;
+    if (id == 0)  {
+      synchronized (this) {
+        id = remoteDelegateId;
+        if (id == 0)  {   // still unprepared: another thread may have won the race
+          id = Db.prepareRemoteDelegate(clazz);
+          remoteDelegateId = id;
+        }
+      }
     }
-    return remoteDelegateId;
+    return id;
   }
 
   /**
@@ -86,7 +95,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
 
   /**
-   * constructs a classvariable.
+   * Constructs a class variable.<br>
    * Throws IllegalStateException if already constructed.
    *
    * @param clazz is the class of the derived AbstractDbOperation

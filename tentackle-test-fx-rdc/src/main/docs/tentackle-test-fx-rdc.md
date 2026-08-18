@@ -158,12 +158,25 @@ public class TestGuiProviders extends GuiProviderTest {
 ```
 
 These are exactly the example tests shipped in this module's own `src/test/java` (`org.tentackle.test.fx.rdc`),
-which double as the canonical usage reference. Database connection parameters come from the filtered
-`backend.properties` (`dbUrl`/`dbUser`/`dbPasswd` build properties), inherited from the
-[test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) session machinery.
+which double as the canonical usage reference. Database connection parameters come from
+`backend.properties`, which selects the in-memory H2 database, inherited from the
+[test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) session machinery. Unlike
+test-pdo's, the URL deliberately carries **no `DB_CLOSE_DELAY=-1`**: `TestApplication` opens its session and
+creates the schema *per test class*, and H2 discards an in-memory database when its last connection closes, so
+each class starts from an empty one. Keeping the database alive across classes would make the second
+`CREATE SEQUENCE` fail.
 
 > Because the tests start a real JavaFX toolkit, they **self-skip on headless build agents**. To run them in CI, you
 > need a display (or a virtual one such as `Xvfb`); otherwise the suite reports as skipped, not failed.
+
+> ### ⚠️ The surefire provider has to be pinned
+>
+> This module puts **both** TestNG and JUnit Jupiter on the classpath, because it offers a base class for each.
+> Surefire's auto-detection then picks the JUnit platform provider, which finds nothing — the tests above extend
+> the *TestNG* base classes — and the module silently reports `Tests run: 0` while the build stays green. The POM
+> therefore declares `surefire-testng` as a plugin dependency, exactly as
+> [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) does. A downstream project that
+> depends on both flavors needs to do the same.
 
 ---
 

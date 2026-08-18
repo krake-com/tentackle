@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>25.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-quiche</artifactId>
+  <packaging>jar</packaging>
+  <name>Tentackle TRIP over Cloudflare quiche</name>
+  <description>UDP QUIC transport for the Tentackle Remote Invocation Protocol, based on Cloudflare quiche</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-core</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't modify dependency chain! -->
+    </dependency>
+    <dependency>
+      <groupId>org.mortbay.jetty.quiche</groupId>
+      <artifactId>jetty-quiche-native</artifactId>
+    </dependency>
+
+    <!-- test only: QuicheKwikInteropTest runs this module's transport against the KWIK-based one,
+         which is the only way to show that both really speak RFC-9000 and not just to themselves.
+         Used through the transport SPI, never imported, so this creates no compile dependency. -->
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-quic</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Repeats the parent's argLine because it is replaced, not appended to.
+               Loading libquiche and calling into it are restricted operations: without the flag every
+               run is drowned in warnings, and a future JDK will refuse them outright. The tests are
+               patched into the module, so the calling module is org.tentackle.quiche - not ALL-UNNAMED. -->
+          <!-- -da:tech.kwik.core.recovery... is for QuicheKwikInteropTest and nothing else.
+               KWIK's LossDetector asserts that kTimeThreshold * max(smoothedRtt, latestRtt) is > 0.
+               quiche acknowledges the handshake in well under a millisecond on loopback, so KWIK's
+               first RTT sample rounds to 0 ms and the assertion fires - which aborts the connection
+               under -ea, while in production (assertions off) a loss delay of 0 is harmless. It is a
+               latent bug in KWIK, not in this module, so its assertions are turned off rather than
+               this module's. Assertions stay enabled everywhere else. -->
+          <argLine>-Duser.language=en -Duser.region=US --enable-native-access=org.tentackle.quiche
+                    -da:tech.kwik.core.recovery...</argLine>
+        </configuration>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>

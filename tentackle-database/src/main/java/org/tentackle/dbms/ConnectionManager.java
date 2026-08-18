@@ -23,9 +23,9 @@ import java.util.Collection;
 /**
  * Connection Manager for local connections.<br>
  *
- * JDBC-connections are never used directly. Instead, sessions refer to a ConnectionManager
- * in order to use a connection. The usage of a connection is initiated by an attach-operation.
- * After completion of the task (transaction, one-shot, etc...) the session will be detached.
+ * JDBC connections are never used directly. Instead, sessions refer to a ConnectionManager
+ *  to use a connection. The usage of a connection is initiated by an attach-operation.
+ * After completion of the task (transaction, one-shot, etc...), the session will be detached.
  * The connection manager as a broker in between the session and a connection gives the opportunity to
  * multiplex connections. This is especially useful in application servers.
  * Note that connection managers are not used in remote sessions.
@@ -41,12 +41,11 @@ public interface ConnectionManager {
    */
   String getName();
 
-
   /**
    * Logs in a session.<br>
    * It is up to the connection manager how to verify whether the session is allowed to open,
-   * a real connection is initiated or just an application level authorization
-   * is performed. Note that the session-ID may be recycled by the manager after a
+   * a real connection is initiated, or just an application level authorization
+   * is performed. Note that the manager may recycle the session-ID after a
    * session is logged out.
    * <p>
    * Throws a {@link org.tentackle.session.PersistenceException} if the login failed.
@@ -55,7 +54,6 @@ public interface ConnectionManager {
    * @return the unique ID of the session (&gt; 0)
    */
   int login(Db session);
-
 
   /**
    * Logs out a session.<br>
@@ -68,20 +66,18 @@ public interface ConnectionManager {
    */
   void logout(Db session);
 
-
   /**
    * Cleans up any resources for the given session ID.<br>
    * Connection managers should not keep references to the sessions.
    * Instead, they map connections via a session ID which is unique for each session.
    * If, for whatever reason, the session is garbage collected (see {@link java.lang.ref.Cleaner}),
    * the connection manager must be notified that the session ID is no longer valid and the
-   * connection is no more associated to a session.
+   * connection is no more associated with a session.
    *
    * @param sessionId the session ID given by the connection manager
    * @param connection the connection
    */
   void cleanup(int sessionId, ManagedConnection connection);
-
 
   /**
    * Gets the maximum number of allowed sessions managed by this manager.
@@ -89,7 +85,6 @@ public interface ConnectionManager {
    * @return max. number of concurrent logins, 0 = unlimited
    */
   int getMaxSessions();
-
 
   /**
    * Gets the minimum session id.
@@ -99,14 +94,12 @@ public interface ConnectionManager {
    */
   int getSessionIdOffset();
 
-
   /**
    * Gets the number of sessions.
    *
    * @return the number of concurrent logins
    */
   int getNumSessions();
-
 
   /**
    * Shuts down this connection manager.<br>
@@ -120,10 +113,10 @@ public interface ConnectionManager {
    * A Db must be attached before it can use any statements.
    * The framework will attach at the beginning of a transaction or when getting a prepared
    * statement or when getting a one-shot non-prepared statement.
-   * Note that attachments can be nested to any depth, i.e. only the first attach really binds
+   * Note that attachments can be nested to any depth, i.e., only the first attach operation really binds
    * the connection to the Db.
    * <p>
-   * Upon return the session will reference the connection.
+   * Upon return, the session will reference the connection.
    * <p>
    * Throws a {@link org.tentackle.session.PersistenceException} if attach failed.
    *
@@ -131,13 +124,12 @@ public interface ConnectionManager {
    */
   void attach(Db session);
 
-
   /**
    * Detaches a connection from a {@link Db}.<br>
    * A Db must be detached to release the connection for use of other Db instances.
    * The framework will detach the db on every commit or rollback, after executeUpdate
    * or after a ResultSet is closed for an executeQuery.
-   * Note that attachments can be nested to any depth, i.e. only the last detach really
+   * Note that attachments can be nested to any depth, i.e., only the last detach operation really
    * unbinds the connection from the Db.
    * <p>
    * Throws a {@link org.tentackle.session.PersistenceException} if detach failed.
@@ -145,7 +137,6 @@ public interface ConnectionManager {
    * @param session the session
    */
   void detach(Db session);
-
 
   /**
    * Detaches but also scans for pending statements to clean up.
@@ -156,14 +147,12 @@ public interface ConnectionManager {
    */
   void forceDetach(Db session);
 
-
   /**
    * Gets the maximum number of connections.
    *
    * @return max. number of concurrent connections, 0 = unlimited
    */
   int getMaxConnections();
-
 
   /**
    * Gets the number of open connections.

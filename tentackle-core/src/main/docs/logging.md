@@ -153,7 +153,8 @@ min/max/total durations** — used, for instance, to profile remote-delegate cal
   writes into a logger; handy to capture `e.printStackTrace(stream)` output.
 - [`Loggable`](../java/org/tentackle/log/Loggable.java) — an interface objects (notably exceptions) implement to
   declare *how* they want to be logged (level, with/without stacktrace); honored e.g. by the remote-invocation
-  handler.
+  handler. See [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md#loggable-how-much-of-an-exception-to-log)
+  for why a denied permission or a failed login should not fill a server log with stack traces.
 
 ---
 

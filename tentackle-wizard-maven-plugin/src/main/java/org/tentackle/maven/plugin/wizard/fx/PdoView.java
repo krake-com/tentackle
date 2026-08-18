@@ -142,9 +142,12 @@ public class PdoView extends AbstractFxController {
     MenuItem copyTableItem = Fx.create(MenuItem.class);
     copyTableItem.setOnAction(e -> PdoBrowserUtils.copyTableName(getSelectedDataNode()));
     MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(e -> PdoBrowserUtils.copySql(getSelectedDataNode()));
+    MenuItem findReferencesItem = PdoBrowserUtils.createFindReferencesItem(
+                                    e -> PdoBrowserUtils.copyReferencingSql(getSelectedDataNode()));
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
     copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDataNode()));
     contextMenu.getItems().addFirst(copyClassIdItem);
+    contextMenu.getItems().addFirst(findReferencesItem);
     contextMenu.getItems().addFirst(copySqlItem);
     contextMenu.getItems().addFirst(copyTableItem);
     contextMenu.getItems().addFirst(copyFQCNItem);
@@ -152,7 +155,8 @@ public class PdoView extends AbstractFxController {
     contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> {
       diffOnlyItem.setVisible(diff != null && diff.isRightPresent());
       diffOnlyItem.setText(diffOnly ? "show all lines" : "show differences only");
-      PdoBrowserUtils.configureContextMenu(getSelectedDataNode(), copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem);
+      PdoBrowserUtils.configureContextMenu(getSelectedDataNode(), copyFQCNItem, copyTableItem, copyClassIdItem,
+                                           copySqlItem, findReferencesItem);
     });
   }
 

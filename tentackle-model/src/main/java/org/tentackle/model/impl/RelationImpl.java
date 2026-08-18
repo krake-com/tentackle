@@ -851,8 +851,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           throw createModelException("object relations cannot have extra args");
         }
 
-        if (!isReversed() && !isEmbedding() && methodArgs.isEmpty() &&
-            (getForeignRelation() == null || !getForeignRelation().isEmbedding())) {
+        // the linking attribute is the first method arg, which is created in parse() and
+        // holds null if there is no such attribute in the entity
+        if (!isReversed() && !isEmbedding() &&
+            (getForeignRelation() == null || !getForeignRelation().isEmbedding()) &&
+            (methodArgs.isEmpty() || methodArgs.getFirst().getAttribute() == null)) {
           String aName = getVariableName() + "Id";
           if (entity.getAttributeByJavaName(aName, true) == null) {
             throw createModelException("missing attribute '" + aName + "' in entity " + getEntity());

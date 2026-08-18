@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -41,7 +40,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
@@ -50,6 +48,13 @@ import java.util.List;
  * @author harald
  */
 public abstract class AbstractTentackleAnnotationProcessingMojo extends AbstractTentackleMojo {
+
+  /**
+   * The diagnostic code javac assigns to messages printed by an annotation processor's
+   * {@link javax.annotation.processing.Messager}.<br>
+   * This is how an analyze error is told apart from an error in the (not yet wurbeled) sources.
+   */
+  private static final String PROCESSOR_DIAGNOSTIC_CODE = "compiler.err.proc.messager";
 
   /**
    * Show compile output.
@@ -313,6 +318,44 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
+   * Returns whether a diagnostic is an error reported by one of the annotation processors.
+   * <p>
+   * Analyze errors fail the build, whereas errors in the sources are reported as a warning only,
+   * because the sources have not been wurbeled yet at this point of the build.
+   * <p>
+   * If a future compiler no longer marks the messages of a {@link javax.annotation.processing.Messager}
+   * with {@value #PROCESSOR_DIAGNOSTIC_CODE}, analyze errors are counted as compilation errors again,
+   * i.e., the build is lenient rather than failing for the wrong reason.
+   *
+   * @param diag the diagnostic
+   * @return true if reported by an annotation processor
+   */
+  protected boolean isAnalyzeError(Diagnostic<? extends JavaFileObject> diag) {
+    return diag.getKind() == Diagnostic.Kind.ERROR && PROCESSOR_DIAGNOSTIC_CODE.equals(diag.getCode());
+  }
+
+
+  /**
+   * Formats a diagnostic for the build log.
+   *
+   * @param diag the diagnostic
+   * @return the message, prefixed with {@code file:line:column} if the diagnostic refers to a source file
+   */
+  protected String formatDiagnostic(Diagnostic<? extends JavaFileObject> diag) {
+    JavaFileObject source = diag.getSource();
+    if (source == null) {
+      return diag.getMessage(null);
+    }
+    String filename = source.getName();
+    int ndx = filename.lastIndexOf(File.separatorChar);
+    if (ndx > 0) {
+      filename = filename.substring(ndx + 1);
+    }
+    return filename + ":" + diag.getLineNumber() + ":" + diag.getColumnNumber() + ": " + diag.getMessage(null);
+  }
+
+
+  /**
    * Process all files in a fileset.
    *
    * @param fileSet the set of files
@@ -337,7 +380,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       getLog().info("analyzing files in " + dirName);
     }
 
-    int errorCount = 0;           // compiler errors
+    int errorCount = 0;           // analyze errors, i.e., reported by the annotation processors
     int compileErrorCount = 0;    // source compilation errors
 
     String[] fileNames = getIncludedFiles(fileSet);
@@ -413,25 +456,25 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
       // extract errors
       for (Diagnostic<? extends JavaFileObject> diag: diagnosticCollector.getDiagnostics()) {
-        if (showCompileOutput) {
-          JavaFileObject source = diag.getSource();
-          String msg;
-          if (source == null) {
-            msg = diag.getMessage(null);
+        boolean analyzeError = isAnalyzeError(diag);
+        if (analyzeError || showCompileOutput) {
+          String msg = formatDiagnostic(diag);
+          if (analyzeError) {
+            // always report it: the build is going to fail because of it
+            getLog().error(msg);
           }
-          else  {
-            String filename = source.getName();
-            int ndx = filename.lastIndexOf(File.separatorChar);
-            if (ndx > 0) {
-              filename = filename.substring(ndx + 1);
-            }
-            msg = filename + ":" + diag.getLineNumber() + ":" + diag.getColumnNumber() + ": " + diag.getMessage(null);
+          else {
+            getLog().info(msg);
           }
-          getLog().info(msg);
           compileErrorLog.append(msg).append('\n');
         }
         if (diag.getKind() == Diagnostic.Kind.ERROR) {
-          compileErrorCount++;
+          if (analyzeError) {
+            errorCount++;
+          }
+          else {
+            compileErrorCount++;
+          }
         }
       }
     }

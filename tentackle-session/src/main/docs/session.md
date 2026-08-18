@@ -118,8 +118,8 @@ rollback correction, operation modes, the poll loop, delayed listeners and maste
   global PDO changes. It maintains its own session (and is both a `SessionTaskDispatcher` and an
   `ExclusiveSessionProvider`). Code calls `countModification(session, name)` when it modifies data, and
   `addDeletion(...)` for deletes; listeners are registered via `addModificationListener(...)`. It exposes the
-  current `getSerial(class | name)`, can `invalidate()` itself, and reports `isLocalClientMode()` (clients
-  directly on the DB, no middle tier). Convenience statics `submit(...)` / `transaction(...)` schedule work on the
+  current `getIdSerialForClass(...)` / `getIdSerialForName(...)`, can `invalidate()` itself, and reports
+  `isLocalClientMode()` (clients directly on the DB, no middle tier). Convenience statics `submit(...)` / `transaction(...)` schedule work on the
   tracker's own session.
 - [`ModificationListener`](../java/org/tentackle/session/ModificationListener.java) — listens for changes by
   *name* (usually a table name, but any application name is allowed; `null` = listen to everything). Beyond
@@ -208,6 +208,7 @@ These annotations let the persistence layer examine the generated model by refle
 - [`@TableName`](../java/org/tentackle/session/TableName.java) — the database table name for a PDO, with
   build-time options `mapSchema` (replace dots by underscores) and `prefix` (configurable via the Wurbelizer
   plugin's `wurbletProperties`, e.g. `tablePrefix`), to retarget schemas/tables without touching the model.
+  See [Table Names](table-names.md) for the full picture, including the corresponding maven parameters.
 
 [`SessionValidationUtilities`](../java/org/tentackle/session/SessionValidationUtilities.java) (a `@Service`
 overriding the core `ValidationUtilities`) uses the `@Persistent` ordinal so validators fire in priority plus
@@ -293,6 +294,8 @@ another.
   `@MasterSerialEventService(YourEvent.class)`. The server stays oblivious to handlers; clients bind their own.
 - **Custom session info:** provide a `SessionInfo`/`SessionInfoFactory` implementation via the SPI to carry extra
   per-session attributes between client and server.
+- **Custom authentication:** register an `AuthenticationProvider` to verify a new kind of credentials on the server,
+  and a `CredentialsProvider` to obtain them on the client — see [Authentication](authentication.md).
 - **Reacting to session lifecycle:** register a `SessionCloseHandler` (per session, or globally via the
   `SessionFactory`) — but keep it non-blocking, as it runs during close.
 
@@ -313,6 +316,7 @@ another.
 ## Related Documentation
 
 - [Backend Properties](backend-properties.md) — the reference of all session configuration keys (`url`, credentials, timeouts, server endpoints, …).
+- [Authentication](authentication.md) — the credentials a `SessionInfo` carries and the provider chain verifying them at login.
 - [Modification Tracking](modification-tracking.md) — the `ModificationTracker`, its listeners and the master serial events, in depth.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the database backend layer beneath the local session implementation.
 - [PDO / Operations](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain objects that run on top of sessions.
@@ -320,3 +324,4 @@ another.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol that carries a remote session's calls and its `SessionInfo` between JVMs.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — token locks, whose `lockLingerEnabled` flag is carried on the `SessionInfo`.
 - [Database](../../../../tentackle-database/src/main/docs/database.md) — the module providing the concrete local `Session` implementation.
+- [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md) — `PersistenceException` and the session it points at, lazy messages, and the `SessionUtilities` alignment hooks.

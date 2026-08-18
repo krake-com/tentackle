@@ -148,8 +148,14 @@ public class CsvConverter {
     StringBuilder buf = new StringBuilder();
 
     for (Collection<String> line : lines) {
+      boolean firstValue = true;
       for (String value : line) {
-        if (!buf.isEmpty()) {
+        if (firstValue) {
+          // don't use buf.isEmpty() to detect the first value: leading empty values
+          // would not be separated at all and the line would lose them
+          firstValue = false;
+        }
+        else {
           buf.append(separator);
         }
         if (value.contains(separator) ||

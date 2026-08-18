@@ -65,7 +65,7 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
   }
 
   /**
-   * Returns whether configuration is loaded from preferences.
+   * Returns whether the configuration is loaded from preferences.
    *
    * @return true if persisted, false if just created in memory only
    */
@@ -74,7 +74,7 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
   }
 
   /**
-   * Sets whether configuration is loaded from preferences.
+   * Sets whether the configuration is loaded from preferences.
    *
    * @param persisted true if persisted, false if just created in memory only
    */

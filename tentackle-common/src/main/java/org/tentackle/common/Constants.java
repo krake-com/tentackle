@@ -73,11 +73,18 @@ public class Constants {
   /** property key for username. */
   public static final String BACKEND_USER = "user";
 
-  /** property key for the password. */
+  /** property key for the password and the default value for {@link #BACKEND_AUTHENTICATION}. */
   public static final String BACKEND_PASSWORD = "password";
 
   /** property key to enable autologin (only for desktop applications). */
   public static final String BACKEND_AUTOLOGIN = "autologin";
+
+  /**
+   * Property key for the name of the client-side authentication method.<br>
+   * Selects the {@code CredentialsProvider} used to obtain the credentials before the session is opened.
+   * If missing, {@link #BACKEND_PASSWORD} is used (password-based authentication).
+   */
+  public static final String BACKEND_AUTHENTICATION = "authentication";
 
   /** intro in URL to denote a JDBC connection. */
   public static final String BACKEND_JDBC_URL_INTRO = "jdbc:";

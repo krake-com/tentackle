@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A joined select.
+ * A joined {@code SELECT}.
  *
  * @author harald
  * @param <T> the primary PDO type
@@ -41,13 +41,16 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   /** the joins. */
   private final List<Join<? super T,?>> joins;
 
+  /** the PDOs joined so far (the joins themselves are immutable and shared). */
+  private final JoinState joinState;
+
   /** the currently retrieved PDO. */
   private T pdo;
 
   /** the PDO retrieved before the current PDO. */
   private T lastPdo;
 
-  /** retrieved list of PDOs. */
+  /** the retrieved list of PDOs. */
   private List<T> list;
 
   /** map of ID to PDOs. */
@@ -55,19 +58,20 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * Creates a joined select.
+   * Creates a joined {@code SELECT}.
    */
   public JoinedSelect() {
-    this.joins = new ArrayList<>();
+    this(new ArrayList<>());
   }
 
   /**
-   * Creates a joined select from a list of joins.
+   * Creates a joined {@code SELECT} from a list of joins.
    *
    * @param joins the joins
    */
   public JoinedSelect(List<Join<? super T,?>> joins) {
     this.joins = joins;
+    this.joinState = new JoinState();
   }
 
 
@@ -91,11 +95,19 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
     return joins;
   }
 
+  /**
+   * Gets the state of the joins for this select.
+   *
+   * @return the join state, never null
+   */
+  public JoinState getJoinState() {
+    return joinState;
+  }
 
   /**
-   * Creates the SQL-code that does the joined select.
+   * Creates the SQL code that does the joined select.
    *
-   * @param pdo the pdo proxy
+   * @param pdo the PDO proxy
    * @param selectSql the select builder without joins
    */
   public void createJoinedSql(T pdo, StringBuilder selectSql) {
@@ -104,34 +116,6 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
     for (Join<? super T,?> join: joins) {
       createJoinedSql(pdo, backend, join, selectSql);
     }
-  }
-
-  private void createJoinedSql(PersistentDomainObject<?> pdo, Backend backend, Join<?,?> join, StringBuilder selectSql) {
-    if (join.getType() != JoinType.INNER && join.getType() != JoinType.LEFT) {
-        throw new PersistenceException(pdo, "unsupported JoinType: " + join.getType().name());
-      }
-      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass(), pdo.getPersistenceDelegate().getDomainContext());
-      AbstractPersistentObject<?,?> joinPD = (AbstractPersistentObject<?,?>) joinedPdo.getPersistenceDelegate();
-      String columnName = join.getColumnName();
-      String joinedColumnName = join.getJoinedColumnName();
-      String joinSelectIdAlias = null;
-      String selectJoinedSql = joinPD.createSelectAllSql(backend);
-      if (join.isExplicitIdAliasRequired()) {
-        // replace <alias>.id by <alias>_id
-        joinSelectIdAlias = joinPD.getTableAlias() + ".id AS " + joinPD.getTableAlias() + "_id";
-        joinedColumnName = join.getJoinAlias() + "." + joinPD.getTableAlias() + "_id";
-      }
-      String joinSql = columnName + "=" + joinedColumnName;
-      if (join.getExtraSql() != null) {
-        joinSql += join.getExtraSql();
-      }
-      backend.sqlJoinSelects(join.getType(), true, selectSql,
-                             selectJoinedSql, joinSelectIdAlias, join.getJoinAlias(),
-                             joinSql);
-
-      for (Join<?,?> subJoin: join.getJoins()) {
-        createJoinedSql(joinedPdo, backend, subJoin, selectSql);
-      }
   }
 
   /**
@@ -156,7 +140,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
    * Finishes the current pdo and switches to the next.
    *
    * @param pdo the next pdo
-   * @return the pdo possibly changed if already in list
+   * @return the pdo possibly changed if already in the list
    */
   public T nextPdo(T pdo) {
     lastPdo = this.pdo;
@@ -189,8 +173,35 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
     pdo = null;
     lastPdo = null;
     idMap = new HashMap<>();
-    for (Join<? super T,?> join: joins) {
-      join.initialize();
+    joinState.clear();
+  }
+
+
+  private void createJoinedSql(PersistentDomainObject<?> pdo, Backend backend, Join<?,?> join, StringBuilder selectSql) {
+    if (join.getType() != JoinType.INNER && join.getType() != JoinType.LEFT) {
+      throw new PersistenceException(pdo, "unsupported JoinType: " + join.getType().name());
+    }
+    PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass(), pdo.getPersistenceDelegate().getDomainContext());
+    AbstractPersistentObject<?,?> joinPD = (AbstractPersistentObject<?,?>) joinedPdo.getPersistenceDelegate();
+    String columnName = join.getColumnName();
+    String joinedColumnName = join.getJoinedColumnName();
+    String joinSelectIdAlias = null;
+    String selectJoinedSql = joinPD.createSelectAllSql(backend);
+    if (join.isExplicitIdAliasRequired()) {
+      // replace <alias>.id by <alias>_id
+      joinSelectIdAlias = joinPD.getTableAlias() + ".id AS " + joinPD.getTableAlias() + "_id";
+      joinedColumnName = join.getJoinAlias() + "." + joinPD.getTableAlias() + "_id";
+    }
+    String joinSql = columnName + "=" + joinedColumnName;
+    if (join.getExtraSql() != null) {
+      joinSql += join.getExtraSql();
+    }
+    backend.sqlJoinSelects(join.getType(), true, selectSql,
+                           selectJoinedSql, joinSelectIdAlias, join.getJoinAlias(),
+                           joinSql);
+
+    for (Join<?,?> subJoin: join.getJoins()) {
+      createJoinedSql(joinedPdo, backend, subJoin, selectSql);
     }
   }
 

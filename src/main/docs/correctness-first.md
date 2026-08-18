@@ -369,6 +369,7 @@ object that throws only in production — structurally hard to reach. For techni
 - [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — the location-transparency
   companion to this document.
 - [Multi-Tier Cascade](./tiers.md) — how the same artifact runs at any tier, and how caching stays coherent.
+- [Exceptions and Error Handling](./exceptions.md) — the machinery behind "fail loudly": the exception hierarchy, the `temporary` classifier, and exceptions that survive a trip between tiers.
 - [Locking](../../../tentackle-persistence/src/main/docs/locking.md) — optimistic `serial` and token locks in depth.
 - [Validation](../../../tentackle-core/src/main/docs/validation.md) — annotation-driven, scope- and severity-aware checks.
 - [Immutable](../../../tentackle-core/src/main/docs/immutable.md) — switchable read-only objects and aggregate cascading.

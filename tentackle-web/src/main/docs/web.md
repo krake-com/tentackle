@@ -71,16 +71,30 @@ Because `WebApplication` extends `AbstractServerApplication`, **both deployment 
 parameterized by the **web session key type** `T`. `T` is whatever the web framework uses to identify a client
 session — most commonly a `String` (the servlet session id), but it can be any key you can hand back to the cache.
 
-Its lifecycle hooks slot into the standard application startup/shutdown sequence:
+The key cache itself is created with the application, so it is never null — a web container may still be draining
+requests while the node is already shutting down. Only its cleanup thread follows the application's lifecycle and
+slots into the standard startup/shutdown sequence:
 
 ```java
-@Override protected void startup()        { sessionInfoCache = new WebSessionKeyCache<>(); super.startup(); }
+private final WebSessionKeyCache<T> sessionInfoCache = new WebSessionKeyCache<>();
+
 @Override protected void finishStartup()  { super.finishStartup(); sessionInfoCache.startup(300000); } // 5 min
-@Override protected void cleanup()        { sessionInfoCache.terminate(); super.cleanup(); }
+@Override protected void cleanup()        {
+  try {
+    if (sessionInfoCache.isRunning()) {   // the startup may have failed before finishStartup()
+      sessionInfoCache.terminate();
+    }
+  }
+  finally {
+    super.cleanup();                      // sessions, pools and drivers must be released either way
+  }
+}
 ```
 
-So the key cache is created before the server endpoint comes up, and its cleanup thread (see below) is started with
-a 5-minute eviction interval once startup has finished.
+So the eviction thread is started with a 5-minute interval once startup has finished. The `isRunning()` guard and
+the `finally` matter: if the node fails to come up at all — a wrong backend password, an unreachable database —
+`AbstractApplication.start()` calls `stop()`, and the cleanup must still shut down the session pool, the connection
+manager and the JDBC drivers rather than abort on a cache that was never started.
 
 The public API is four methods that the web layer calls, plus the inherited server machinery:
 
@@ -163,6 +177,18 @@ is kept.
   `startup(long)` refuses to start a second thread, and `terminate()` interrupts and joins it during application
   cleanup. This sweeps up keys for sessions the web container forgot to log out (crashes, dropped connections)
   without relying on the web framework to always fire a logout event.
+
+All three places that evict a dead entry — the lookup, the reverse scan and the sweeper — remove it **conditionally
+on the reference they saw**, never by key alone:
+
+```java
+sessionInfoMap.remove(sessionKey, sessionInfoRef);
+```
+
+Otherwise a re-login racing with the eviction would lose: the login controller stores a fresh `SessionInfo` under
+the same web key, and a plain `remove(key)` from the concurrent eviction would delete it again, leaving the caller
+convinced it is logged in while every following request gets `null`. (`ConcurrentHashMap.values().removeIf(...)`
+already removes value-conditionally, which is why the sweeper needs no extra care.)
 
 `getSessionKeys(SessionInfo)` scans the map for all keys bound to a given identity (removing any dead entries it
 meets along the way). It is the basis for "log this user out everywhere" or "how many web sessions does this user

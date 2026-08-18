@@ -983,6 +983,25 @@ public interface Backend {
   String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable);
 
   /**
+   * Generates SQL code to change the null-constraint of a column, given its full declaration.<br>
+   * Some backends (MySQL, for example) cannot change a single property of a column: the whole
+   * declaration must be repeated. Backends that can change the null-constraint on its own
+   * simply ignore the type, size, scale and default.
+   *
+   * @param tableName the tablename
+   * @param columnName the new column name
+   * @param sqlType the JDBC SQL type
+   * @param size the optional size
+   * @param scale the optional scale
+   * @param nullable true if NULL, else NOT NULL
+   * @param defaultValue the optional default value
+   * @return the SQL code, null if need {@link #sqlAlterColumnType}
+   * @see #sqlAlterColumnNullConstraint(String, String, boolean)
+   */
+  String sqlAlterColumnNullConstraint(String tableName, String columnName, SqlType sqlType, int size, int scale,
+                                      boolean nullable, Object defaultValue);
+
+  /**
    * Generates SQL code to change the default value of a column.
    *
    * @param tableName the tablename
@@ -1164,6 +1183,43 @@ public interface Backend {
    * @return the optimized SQL code
    */
   String optimizeSql(String sql);
+
+  /**
+   * Reduces a WHERE-clause holding empty sub-expressions.<br>
+   * Wurblets generating a finder with optional conditions (see {@code ?<boolean>} wurblet arguments)
+   * simply skip the SQL text of conditions that are not applicable. As a result, the SQL may contain
+   * empty parentheses and dangling logical operators, for example:
+   * <pre>
+   *   code=? AND NOT ()
+   * </pre>
+   * which is reduced to:
+   * <pre>
+   *   code=?
+   * </pre>
+   * The reduction removes parenthesized groups without any operand, along with the
+   * {@link #SQL_NOT}, {@link #SQL_AND} and {@link #SQL_OR} operators becoming superfluous.
+   * If two operators become adjacent because the operand in between was skipped, the first one
+   * is removed, i.e. the operand takes its leading operator with it.<br>
+   * Only parentheses that are an operand of a logical expression are removed. Parentheses belonging
+   * to an operand, such as {@code now()} or {@code id IN()}, are left alone, as is anything within quotes.
+   * Only uppercase keywords are treated as operators. If you don't want your statements
+   * getting reduced, use lowercase for those keywords.<br>
+   * The SQL text must end with the logical expression, i.e. the reduction must be applied
+   * before appending an ORDER BY or any other trailing clause. Otherwise, a dangling operator
+   * at the end of the expression cannot be detected.
+   *
+   * @param sql the SQL code, will be modified in place
+   */
+  void reduceSql(StringBuilder sql);
+
+  /**
+   * Reduces a WHERE-clause holding empty sub-expressions.
+   *
+   * @param sql the original SQL code
+   * @return the reduced SQL code
+   * @see #reduceSql(StringBuilder)
+   */
+  String reduceSql(String sql);
 
   /**
    * Returns whether the backend supports releasing savepoints explicitly.

@@ -47,16 +47,31 @@ Only two methods are overridden:
 
 The exporter walks each visible column's binding and maps the model value to a typed cell:
 
-| Model value            | Cell rendering                                                        |
-|------------------------|-----------------------------------------------------------------------|
-| `Boolean`              | boolean cell                                                          |
-| `BMoney`               | numeric cell with a `#,##0[.0…]` format matching the money scale       |
-| any other `Number`     | numeric cell                                                          |
-| `Date` / `Calendar`    | date cell with the built-in `m/d/yy` format                           |
-| anything else (`!= null`) | rich-text string from `toString()`                                 |
+| Model value                                        | Cell rendering                                                        |
+|----------------------------------------------------|-----------------------------------------------------------------------|
+| `Boolean`                                          | boolean cell                                                          |
+| `BMoney`                                           | numeric cell with a `#,##0[.0…]` format matching the money scale       |
+| any other `Number`                                 | numeric cell                                                          |
+| `Date` / `Calendar` / `LocalDate`                  | date cell with the built-in `m/d/yy` format                           |
+| `LocalDateTime`                                    | date cell with the built-in `m/d/yy h:mm` format                      |
+| `OffsetDateTime` / `ZonedDateTime`                 | as `LocalDateTime`: a spreadsheet has no notion of a time zone         |
+| `Instant`                                          | as `LocalDateTime`, resolved in the JVM's default zone                 |
+| `LocalTime` / `OffsetTime`                         | numeric cell holding the fraction of a day, format `h:mm:ss`           |
+| anything else (`!= null`)                          | rich-text string from `toString()`                                    |
 
 Column headers are written as a bold, italic, centered first row. Number formats are cached and
 reused per scale, so a large export does not create one cell style per row.
+
+Note that a spreadsheet time has no sub-second precision, and that the value of an enum is written
+as its `toString()` rather than the localized text the table shows.
+
+## Sheet limits
+
+The `.xls` (BIFF8) format holds at most **65,536 rows** (the header included) and **256 columns**.
+`toSpreadsheet(...)` checks both up front and throws an `RdcRuntimeException` naming the limit,
+rather than letting POI fail with an `IllegalArgumentException` that names nothing but the offending
+index. Invisible columns don't count. Exports that big need one of the OOXML formats
+(`XSSFWorkbook`, or `SXSSFWorkbook` for streaming), which this module does not currently use.
 
 ## JPMS / POI caveat
 
@@ -86,6 +101,24 @@ fails, because an automatic module referencing it uses the wrong class loader an
 
 Once POI and all its transitive dependencies are fully modularized, the module can declare a normal
 `module-info.java` and this special handling can be dropped.
+
+## Unit testing the export
+
+The module's own tests (`src/test/java`) run **without a JavaFX toolkit**. That is possible because
+the export only touches the table *configuration*, never a `Control`:
+
+- A `DefaultTableConfiguration` is filled with columns and bound to a plain row class with
+  `@Bindable` getters (`config.getBinder().bind()`), which yields the very same `FxTableBinding`s the
+  RDC uses at runtime.
+- Column visibility is toggled through `getTableColumn()` / `getTreeTableColumn()` — the column
+  configuration creates those lazily, and a `TableColumn` is not a `Control`.
+- The workbook is written to a temporary file and read back with POI, so cell types, values, number
+  formats and the reuse of cell styles are verified on the real `.xls` output.
+
+`selectSpreadsheetFile(...)` would open a `FileChooser`, so the tests register a
+`TestRdcUtilities` via `@Service(RdcUtilities.class)` that records the arguments instead
+(hence the `test-analyze` goal in the module's `pom.xml`). The same mechanism verifies that
+`TableUtilities.getInstance()` really resolves to `PoiTableUtilities`.
 
 ## See also
 

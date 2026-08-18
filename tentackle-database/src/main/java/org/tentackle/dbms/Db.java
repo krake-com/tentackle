@@ -23,6 +23,7 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.trip.DbRemoteDelegate;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.dbms.trip.RemoteDbConnection;
 import org.tentackle.dbms.trip.RemoteDbDelegate;
 import org.tentackle.dbms.trip.RemoteDbSession;
@@ -53,6 +54,7 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.BackendInfoFactory;
 import org.tentackle.sql.ScriptRunnerResult;
+import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
@@ -158,6 +160,9 @@ import java.util.function.Consumer;
  *   <li>{@code tripq}: trip over QUIC/RFC9000 (using kwik, the module {@code tentackle-quic} must
  *   be configured as a runtime dependency for the transport to be found)</li>
  *   <li>{@code tripcq}: compressed + QUIC</li>
+ *   <li>{@code tripj}: trip over QUIC/RFC9000 (using Cloudflare quiche, the module
+ *   {@code tentackle-quiche} must be configured as a runtime dependency for the transport to be found)</li>
+ *   <li>{@code tripcj}: compressed + QUIC on quiche</li>
  * </ul>
  * Further transports can easily be provided by implementing the {@link Transport} interface.
  * <p>
@@ -261,6 +266,25 @@ public class Db implements Session, Cloneable {
     return GLOBAL_CLOSE_HANDLERS.remove(closeHandler);
   }
 
+  /**
+   * Prepares a {@link RemoteDelegate}.
+   * <p>
+   * The delegates for the AbstractDbObject-classes "live" in the session, i.e., the remote session.
+   * Thus, delegates are unique per class AND session!
+   * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
+   * the delegates get a unique handle, i.e., an index to an array of delegates, which in
+   * turn is unique among ALL sessions.
+   *
+   * @param clazz is the AbstractDbObject-class
+   * @return the handle
+   */
+  public static synchronized int prepareRemoteDelegate(Class<?> clazz) {
+    Class<?>[] classes = Arrays.copyOf(remoteClasses, remoteClasses.length + 1);
+    classes[classes.length - 1] = clazz;
+    remoteClasses = classes;    // fully built before the volatile store: safely published to readers
+    return classes.length;      // start at 1
+  }
+
 
   /**
    * We keep an internal set of all open sessions via WeakReferences, so the
@@ -336,8 +360,9 @@ public class Db implements Session, Cloneable {
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();  // global session instance counter
 
   // for remote connections
-  private static Class<?>[]         remoteClasses;        // the classes the delegates provide service for
-  private static int                nextDelegateId;       // next handle per class
+  // copy-on-write: replaced as a whole under the class lock, never modified in place.
+  // Readers take a single snapshot without locking, the delegate id is the index + 1.
+  private static volatile Class<?>[] remoteClasses = new Class<?>[0];   // the classes the delegates provide service for
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
@@ -587,6 +612,8 @@ public class Db implements Session, Cloneable {
   private ReconnectionPolicy<Db> reconnectionPolicy;          // reconnection policy, null if none (default)
   private int batchSize;                                      // >1 if JDBC batching should be used for certain prepared statements
   private RemoteDbDelegate[] delegates;                       // the delegates per session (TRIP only)
+  private Map<String, RemoteDbDelegate> preloadedDelegates;   // preloaded delegates by classname, null if not preloaded
+  private boolean preloadRequested;                           // true if the application requested preloading
 
 
   /**
@@ -690,9 +717,10 @@ public class Db implements Session, Cloneable {
    * @param conMgr the connection manager, null if remote
    */
   private void open(ConnectionManager conMgr) {
+    Transport transport = null;                 // remote transport
+    boolean transportHandedOver = false;        // true once the resources own the transport
     try {
       int sessionId;                            // the local or remote session ID
-      Transport transport = null;               // remote transport
       DbRemoteDelegate rdel = null;             // remote database delegate
       RemoteDbConnection rcon = null;           // != null if remote connection established to TRIP-server
       RemoteDbSession rses = null;              // remote database session if logged in to TRIP-server
@@ -739,14 +767,30 @@ public class Db implements Session, Cloneable {
       resources = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
       resources.name = toString();
       cleanable = CLEANER.register(this, resources);
+      transportHandedOver = true;   // from here on the resources release the transport
 
       registerSession();
+
+      if (preloadRequested) {
+        preloadRemoteDelegates();   // restore the preloaded delegates after re-open
+      }
 
       if (!isCloned()) {
         LOGGER.info("session {0} opened", this);
       }
     }
     catch (Throwable ex) {
+      if (transport != null && !transportHandedOver) {
+        // the setup failed before the resources took ownership, e.g., because the login was refused.
+        // without releasing it here, the transport would stay cached in the TransportManager and
+        // poison every later connection to the same URI, so a retried login could never succeed.
+        try {
+          TransportManager.getInstance().releaseTransport(transport);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("could not release the transport of a failed connection", rx);
+        }
+      }
       throw handleConnectException(ex);
     }
   }
@@ -840,12 +884,12 @@ public class Db implements Session, Cloneable {
   }
 
   @Override
-  public final boolean equals(Object obj) {
+  public final boolean equals(Object obj) {   // must not be overridden!
     return super.equals(obj);
   }
 
   @Override
-  public final int hashCode() {
+  public final int hashCode() {   // must not be overridden!
     return super.hashCode();
   }
 
@@ -1579,11 +1623,14 @@ public class Db implements Session, Cloneable {
                                                TransactionIsolation.valueOf(connection().getTransactionIsolation()) +
                                                " to " + transactionIsolation);
         }
-        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT &&
-            transactionWritability.getWritable() != connection().isReadOnly()) {
-          throw new PersistenceException(this, connection().isReadOnly() ?
-                                               "cannot change a running read-only transaction to read-write" :
-                                               "cannot change a running read-write transaction to read-only");
+        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+          // notice that the writability is the inverse of the connection's read-only mode (see the tx starter above)
+          boolean readOnly = connection().isReadOnly();
+          if (transactionWritability != TransactionWritability.valueOf(!readOnly)) {
+            throw new PersistenceException(this, readOnly ?
+                                                 "cannot change a running read-only transaction to read-write" :
+                                                 "cannot change a running read-write transaction to read-only");
+          }
         }
         transaction.incrementTxLevel(txName);    // increment the nesting level
         LOGGER.fine("{0}: nested begin", this);
@@ -1594,11 +1641,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Creates an unnamed savepoint in the current transaction.
-   *
-   * @return the savepoint handle unique within current transaction
-   */
   @Override
   public SavepointHandle setSavepoint() {
     assertOpen();
@@ -1621,13 +1663,6 @@ public class Db implements Session, Cloneable {
     }
   }
 
-  /**
-   * Creates a savepoint with the given name in the current transaction.
-   *
-   * @param name the savepoint name
-   *
-   * @return the savepoint handle unique within current transaction
-   */
   @Override
   public SavepointHandle setSavepoint(String name) {
     assertOpen();
@@ -2101,7 +2136,7 @@ public class Db implements Session, Cloneable {
         transaction = null;
         postCommits = null;
         preCommits = null;
-        // remember the txLevel for pending rollback()s, if any will arrive from the application
+        // remember the txLevel for pending rollback()s if any will arrive from the application
         immediatelyRolledBack = currentTxLevel;
       }
       // else: not within a transaction: cleanup forced
@@ -2669,6 +2704,7 @@ public class Db implements Session, Cloneable {
       // cloning a remote session involves creating an entire new session via open()!
       // notice that a remote session is always open (otherwise it wouldn't be remote ;-))
       delegates = null;
+      preloadedDelegates = null;    // but keep preloadRequested for re-open
       remoteTransaction = null;
     }
     else  {
@@ -2729,6 +2765,7 @@ public class Db implements Session, Cloneable {
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
       newDb.dispatcherRef = null;
+      newDb.preloadRequested = false;   // a clone is another session and must request preloading explicitly
 
       newDb.open(resources.conMgr);
 
@@ -2829,71 +2866,97 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Prepares a {@link RemoteDelegate}.
-   * <p>
-   * The delegates for the AbstractDbObject-classes "live" in the session, i.e., the remote session.
-   * Thus, delegates are unique per class AND session!
-   * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
-   * the delegates get a unique handle, i.e., an index to an array of delegates, which in
-   * turn is unique among ALL sessions.
-   *
-   * @param clazz is the AbstractDbObject-class
-   * @return the handle
-   */
-  public static synchronized int prepareRemoteDelegate (Class<?> clazz) {
-    if (remoteClasses == null)  {
-      remoteClasses = new Class<?>[16];    // start with a reasonable size
-    }
-    if (nextDelegateId >= remoteClasses.length) {
-      Class<?>[] old = remoteClasses;
-      remoteClasses = new Class<?>[old.length << 1];    // double size
-      System.arraycopy(old, 0, remoteClasses, 0, old.length);
-    }
-    remoteClasses[nextDelegateId++] = clazz;
-    return nextDelegateId;    // start at 1
-  }
-
-
-  /**
    * Gets the remote delegate by its id.
    *
    * @param delegateId the handle for the delegate
    * @return the delegate for this session
    */
-  public RemoteDbDelegate getRemoteDelegate (int delegateId)  {
+  public RemoteDbDelegate getRemoteDelegate(int delegateId) {
 
     assertRemote();               // only allowed on remote connections!
     assertRequestedIfPooled();    // same as in attach(), but for remote session pools
 
     delegateId--; // starting from 0
 
-    if (delegateId < 0 || delegateId >= remoteClasses.length) {
+    Class<?>[] classes = remoteClasses;    // single snapshot: consistent for all accesses below
+
+    if (delegateId < 0 || delegateId >= classes.length) {
       throw new PersistenceException(this, "delegate handle out of range");
     }
 
     // enlarge if necessary
     if (delegates == null) {
-      delegates = new RemoteDbDelegate[remoteClasses.length];
-      Arrays.fill(delegates, null);
+      delegates = new RemoteDbDelegate[classes.length];
     }
-    if (delegateId >= delegates.length) {
-      RemoteDbDelegate[] old = delegates;
-      delegates = new RemoteDbDelegate[remoteClasses.length];
-      System.arraycopy(old, 0, delegates, 0, old.length);
-      // set the rest to null
-      for (int i=old.length; i < delegates.length; i++)  {
-        delegates[i] = null;
-      }
+    else if (delegateId >= delegates.length) {
+      delegates = Arrays.copyOf(delegates, classes.length);
     }
 
     // check if delegate already fetched from TRIP-server
     if (delegates[delegateId] == null) {
-      assertOpen();
-      RemoteDbDelegate delegate = resources.rses.getRemoteDelegate(remoteClasses[delegateId].getName());
+      String className = classes[delegateId].getName();
+      // check if preloaded, else fetch it from the TRIP-server
+      RemoteDbDelegate delegate = preloadedDelegates == null ? null : preloadedDelegates.remove(className);
+      if (delegate == null) {
+        assertOpen();
+        delegate = resources.rses.getRemoteDelegate(className);
+      }
       delegates[delegateId] = delegate;
       return delegate;
     }
     return delegates[delegateId];
+  }
+
+
+  /**
+   * Preloads the remote delegates of all classes annotated with {@link PreloadRemoteDelegate}.
+   * <p>
+   * Remote delegates are created lazily, one roundtrip per class. For applications with a large
+   * entity model running on links with high latency, this may slow down the application startup
+   * substantially. This method fetches the delegates of all preload candidates in a single roundtrip.
+   * <p>
+   * Since not all sessions benefit from preloading, it is up to the application to decide
+   * per session whether to invoke this method. It is usually invoked right after the session
+   * has been created. Preloading is remembered for this session, i.e., it is repeated
+   * whenever the session is re-opened (see {@link #reOpen()}). Cloned sessions, however,
+   * are sessions of their own and must request preloading explicitly.
+   * <p>
+   * Does nothing for local sessions or if the delegates are preloaded already.
+   *
+   * @see DbUtilities#getPreloadDelegateClassNames()
+   */
+  @Override
+  public void preloadRemoteDelegates() {
+    preloadRequested = true;
+    if (isRemote() && preloadedDelegates == null) {
+      assertOpen();
+      String[] classNames = DbUtilities.getInstance().getPreloadDelegateClassNames();
+      preloadedDelegates = new HashMap<>();
+      if (classNames.length > 0) {
+        Remote[] remoteDelegates = resources.rses.getRemoteDelegates(classNames);
+        for (int i = 0; i < classNames.length; i++) {
+          if (remoteDelegates[i] != null) {
+            preloadedDelegates.put(classNames[i], (RemoteDbDelegate) remoteDelegates[i]);
+          }
+          // else: no delegate on server side (already logged there)
+        }
+      }
+      LOGGER.info("{0} of {1} remote delegates preloaded for session {2}",
+                  preloadedDelegates.size(), classNames.length, this);
+    }
+  }
+
+
+  /**
+   * Gets the number of preloaded remote delegates not requested so far.<br>
+   * Once a preloaded delegate is requested via {@link #getRemoteDelegate(int)}, it is moved
+   * to the delegate array and no longer counted.
+   *
+   * @return the number of pending preloaded delegates, 0 if not preloaded at all
+   * @see #preloadRemoteDelegates()
+   */
+  public int getPreloadedDelegateCount() {
+    return preloadedDelegates == null ? 0 : preloadedDelegates.size();
   }
 
 

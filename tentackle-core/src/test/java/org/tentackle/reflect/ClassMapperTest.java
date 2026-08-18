@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.reflect;
 
 import org.testng.Assert;
@@ -50,6 +51,18 @@ public class ClassMapperTest {
   private static final String COLLECTIVE_INVOICE_PERSISTENCE =
           "org.tentackle.reflect.classmapper.CollectiveInvoicePersistence";
   private static final String PACKAGE = "org.tentackle.reflect.classmapper";
+  private static final String NESTED = "org.tentackle.reflect.ClassMapperTest$Nested";
+  private static final String OBJECT_ARRAY = "java.lang.Object[]";
+
+  /**
+   * A member class, i.e. its binary name differs from its canonical name.
+   */
+  public static class Nested {}
+
+  /**
+   * The same as a record, which adds {@link Record} to the superclass chain.
+   */
+  public record NestedRecord(String name) {}
 
 
   private DefaultClassMapper newMapper(Map<String, String> nameMap) {
@@ -84,6 +97,29 @@ public class ClassMapperTest {
     nameMap.put(INVOICE, INVOICE_PERSISTENCE);
     ClassMapper mapper = newMapper(nameMap);
     assertEquals(mapper.map(INVOICE).getName(), INVOICE_PERSISTENCE);
+  }
+
+
+  @Test
+  public void testNestedClassArrayMapping() throws ClassNotFoundException {
+    Map<String, String> nameMap = new TreeMap<>();
+    nameMap.put(NESTED + "[]", INVOICE_PERSISTENCE);
+    nameMap.put(OBJECT_ARRAY, COLLECTIVE_INVOICE_PERSISTENCE);
+    ClassMapper mapper = newMapper(nameMap);
+
+    // explicit mapping, keyed by the binary name of the component class
+    assertEquals(mapper.mapLenient(Nested[].class).getName(), INVOICE_PERSISTENCE);
+
+    // no explicit mapping: the lenient lookup climbs NestedRecord[] -> Record[] -> Object[].
+    // Before, the component class was looked up by its canonical name, which is not loadable
+    // for a member class, so the array silently ended up unmapped.
+    assertEquals(mapper.mapLenient(NestedRecord[].class).getName(), COLLECTIVE_INVOICE_PERSISTENCE);
+
+    // ... and the same for a plain member class, i.e. without the explicit mapping
+    nameMap = new TreeMap<>();
+    nameMap.put(OBJECT_ARRAY, COLLECTIVE_INVOICE_PERSISTENCE);
+    mapper = newMapper(nameMap);
+    assertEquals(mapper.mapLenient(Nested[].class).getName(), COLLECTIVE_INVOICE_PERSISTENCE);
   }
 
 

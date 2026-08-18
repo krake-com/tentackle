@@ -29,7 +29,7 @@ import java.io.Serializable;
 
 /**
  * A {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
- * and is associated to a {@link Db}-session. Complex transactions are usually
+ * and is associated with a {@link Db}-session. Complex transactions are usually
  * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remoting capable.
  *
  * @param <P> the operation class type
@@ -73,7 +73,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
    * @return the class variables
    */
   public DbOperationClassVariables<P> getClassVariables() {
-    throw new PersistenceException("classvariables not initialized for " + getClass());
+    throw new PersistenceException("class variables not initialized for " + getClass());
   }
 
 

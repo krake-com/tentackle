@@ -33,6 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+interface ServiceFactoryHolder {
+  ServiceFactory INSTANCE = ServiceFactory.createServiceFactory();
+}
+
 /**
  * Factory for services based on {@link ServiceFinder}.
  * <p>
@@ -73,6 +77,25 @@ public class ServiceFactory {
   private static String factoryClassname;
   private static ClassLoader factoryClassloader;
 
+  /** true once the singleton has been created, i.e. the settings above are frozen. */
+  private static volatile boolean factoryCreated;
+
+
+  /**
+   * Warns if the singleton has already been created.<br>
+   * Changing the settings has no effect from then on.
+   *
+   * @param what the setting being changed
+   */
+  private static void assertFactoryNotCreated(String what) {
+    if (factoryCreated) {
+      LOGGER.log(Level.WARNING,
+                 "the service factory has already been created -> setting the factory " + what + " has no effect",
+                 new Throwable("stacktrace"));
+    }
+  }
+
+
   /**
    * Sets the classname of the service factory.
    * <p>
@@ -80,10 +103,14 @@ public class ServiceFactory {
    * However, if for whatever reason, the loader doesn't find the service configuration or cannot
    * be used, the class defined by {@code factoryClassname} can be instantiated.
    * Applications must change this at a very early stage of startup, for example in the main-method.
+   * <p>
+   * Notice that the singleton is created lazily on its first use. Setting the classname afterwards
+   * has no effect and is logged as a warning.
    *
    * @param factoryClassname the classname
    */
   public static void setFactoryClassname(String factoryClassname) {
+    assertFactoryNotCreated("classname");
     ServiceFactory.factoryClassname = factoryClassname;
   }
 
@@ -101,10 +128,14 @@ public class ServiceFactory {
    * Sets the classloader to load the service factory.
    * <p>
    * If this value is null, the {@link ServiceFactory} is loaded via a default classloader.
+   * <p>
+   * Notice that the singleton is created lazily on its first use. Setting the classloader afterwards
+   * has no effect and is logged as a warning.
    *
    * @param factoryClassloader the classloader
    */
   public static void setFactoryClassloader(ClassLoader factoryClassloader) {
+    assertFactoryNotCreated("classloader");
     ServiceFactory.factoryClassloader = factoryClassloader;
   }
 
@@ -119,11 +150,14 @@ public class ServiceFactory {
 
 
   /**
-   * Creates the singleton via {@link ServiceLoader}.
+   * Creates the singleton via {@link ServiceLoader}.<br>
+   * Invoked once, lazily, by {@link ServiceFactoryHolder}.
    *
    * @return the instance, never null (fallback to this class)
    */
-  private static ServiceFactory createServiceFactory() {
+  static ServiceFactory createServiceFactory() {
+
+    factoryCreated = true;    // any further setFactoryXXX comes too late
 
     if (factoryClassname != null) {
       try {
@@ -138,7 +172,7 @@ public class ServiceFactory {
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
              InvocationTargetException | NoSuchMethodException ex) {
         LOGGER.log(Level.WARNING,
-                "creating instance of Constants.SERVICE_FACTORY_CLASSNAME failed -> trying ServiceLoader...",
+                "creating instance of " + factoryClassname + " failed -> trying ServiceLoader...",
                 ex);
       }
     }
@@ -163,8 +197,19 @@ public class ServiceFactory {
     return new ServiceFactory();
   }
 
-  /** the singleton instance. */
-  public static final ServiceFactory INSTANCE = createServiceFactory();
+
+  /**
+   * Gets the singleton.
+   * <p>
+   * The instance is created lazily on the first invocation, so that
+   * {@link #setFactoryClassname(String)} and {@link #setFactoryClassloader(ClassLoader)}
+   * are effective if applied before.
+   *
+   * @return the singleton, never null
+   */
+  public static ServiceFactory getInstance() {
+    return ServiceFactoryHolder.INSTANCE;
+  }
 
 
     /**
@@ -176,7 +221,7 @@ public class ServiceFactory {
    * @return the finder
    */
   public static ServiceFinder getServiceFinder(ClassLoader loader, String servicePath) {
-    return INSTANCE.getServiceFinderImpl(loader, servicePath);
+    return getInstance().getServiceFinderImpl(loader, servicePath);
   }
 
 
@@ -189,7 +234,7 @@ public class ServiceFactory {
    * @return the finder, never null
    */
   public static ServiceFinder getServiceFinder(String servicePath) {
-    return INSTANCE.getServiceFinderImpl(servicePath);
+    return getInstance().getServiceFinderImpl(servicePath);
   }
 
 
@@ -202,7 +247,7 @@ public class ServiceFactory {
    * @return the finder
    */
   public static ServiceFinder getServiceFinder() {
-    return INSTANCE.getServiceFinderImpl();
+    return getInstance().getServiceFinderImpl();
   }
 
 
@@ -217,7 +262,7 @@ public class ServiceFactory {
    */
   public static <T> Class<T> createServiceClass(Class<T> serviceClass) {
     try {
-      return INSTANCE.getServiceFinderImpl().findFirstServiceProvider(serviceClass);
+      return getInstance().getServiceFinderImpl().findFirstServiceProvider(serviceClass);
     }
     catch (ClassNotFoundException ex) {
       throw new TentackleRuntimeException("cannot create service class for " + serviceClass, ex);
@@ -303,7 +348,7 @@ public class ServiceFactory {
    * @return the classloader, never null
    */
   public static ClassLoader getClassLoader(String servicePath, String serviceName) {
-    return INSTANCE.getClassLoaderImpl(servicePath, serviceName);
+    return getInstance().getClassLoaderImpl(servicePath, serviceName);
   }
 
 
@@ -315,8 +360,11 @@ public class ServiceFactory {
    * @return the classloader, null if no explicit classloader set
    */
   public static ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
-    if (INSTANCE != null) {   // chicken/egg (could be called during init of ServiceFactory itself)
-      return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
+    // chicken/egg: may be invoked while the singleton itself is being created, in which case
+    // the holder's field still reads as null. Don't use getInstance() here, it would recurse.
+    ServiceFactory factory = ServiceFactoryHolder.INSTANCE;
+    if (factory != null) {
+      return factory.getExplicitClassLoaderImpl(servicePath, serviceName);
     }
     return null;
   }
@@ -334,7 +382,7 @@ public class ServiceFactory {
    * @param classLoader the classloader, null if remove
    */
   public static void addExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
-    INSTANCE.addExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+    getInstance().addExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
   }
 
 
@@ -350,7 +398,7 @@ public class ServiceFactory {
    * @param classLoader the classloader, null if remove
    */
   public static void removeExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
-    INSTANCE.removeExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+    getInstance().removeExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
   }
 
 
@@ -367,7 +415,7 @@ public class ServiceFactory {
    * @param set true if set loaders, else remove loaders from the services index
    */
   public static void applyResourceIndex(ClassLoader classLoader, String indexName, boolean set) {
-    INSTANCE.applyResourceIndexImpl(classLoader, indexName, set);
+    getInstance().applyResourceIndexImpl(classLoader, indexName, set);
   }
 
 

@@ -123,13 +123,13 @@ public class AttributeLine extends SingleLine {
         extractJavaType(token);
       }
       else if (javaName == null) {
-        if (token.charAt(0) == '(') {
-          ssBuf = new StringBuilder(token);
+        if (ssBuf == null && token.charAt(0) == '(') {
+          // size and/or scale separated from the type by whitespaces
+          ssBuf = new StringBuilder();
         }
         if (ssBuf != null) {
-          if (token.endsWith(")")) {
-            ssBuf.append(token);
-          }
+          // collect until the closing brace, which may be within this or one of the following tokens
+          ssBuf.append(token);
           if (ssBuf.charAt(ssBuf.length() - 1) == ')') {
             extractSizeAndOrScale(ssBuf.substring(1, ssBuf.length() - 1));
             ssBuf = null;

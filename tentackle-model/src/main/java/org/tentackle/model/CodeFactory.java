@@ -62,17 +62,15 @@ public class CodeFactory {
    * Creates source code for the @Bindable-annotation.
    *
    * @param attribute the attribute
-   * @return the java code, null if no binding
+   * @return the Java code, null if no binding
    */
   public String createBindableAnnotation(Attribute attribute) {
     if (attribute.getOptions().isBindable()) {
       String bindOptions = attribute.getOptions().getBindOptions();
       if (StringHelper.isAllWhitespace(bindOptions)) {
-        return "@Bindable";
+        return "@Bindable(ordinal=" + attribute.getOrdinal() + ")";
       }
-      else {
-        return "@Bindable(options=\"" + bindOptions + "\")";
-      }
+      return "@Bindable(options=\"" + bindOptions + "\", ordinal=" + attribute.getOrdinal() + ")";
     }
     return null;
   }
@@ -82,7 +80,7 @@ public class CodeFactory {
    *
    * @param attribute the attribute
    * @param value the argument name
-   * @return the java code
+   * @return the Java code
    */
   public String createMethodArgument(Attribute attribute, String value) throws ModelException {
     DataType<?> dataType = attribute.getEffectiveDataType();

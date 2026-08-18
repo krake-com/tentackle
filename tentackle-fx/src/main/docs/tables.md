@@ -5,7 +5,7 @@
 Tables are the workhorse of business applications: search results, pick lists, journal views,
 editable detail grids. Plain JavaFX makes each of these a chore — every `TableColumn` needs a
 cell-value factory, a cell factory, a formatter, an alignment, an editor, and none of it survives
-a restart: column widths, ordering, visibility and sorting are gone when the user closes the
+a restart: column widths, ordering, visibility, and sorting are gone when the user closes the
 window.
 
 Tentackle replaces that per-column boilerplate with a **declarative table configuration**: a single
@@ -18,11 +18,13 @@ derives from it:
   [`FxTableView`](../java/org/tentackle/fx/component/FxTableView.java) and an
   [`FxTreeTableView`](../java/org/tentackle/fx/component/FxTreeTableView.java).
 - **Columns are binding paths** — `config.addColumn("orgUnit", "Org Unit")` is all it takes; the
-  column's type, format, alignment and editor follow from the bound model member.
+  column's type, format, alignment, and editor follow from the bound model member.
 - **Rendering by value class** — a pluggable
   [`TableCellType`](../java/org/tentackle/fx/table/TableCellType.java) knows how to display and
   edit one Java type, application-wide.
-- **Layouts that roam** — column widths, order, visibility and sorting are stored in the
+- **Autofilter in the header** — an Excel-like filter popup per column, for tables and tree-tables
+  alike (see [below](#column-filters-autofilter)).
+- **Layouts that roam** — column widths, order, visibility, and sorting are stored in the
   [persisted preferences](../../../../tentackle-core/src/main/docs/preferences.md), per user or
   system-wide; with database-backed preferences the layout follows the user to any workstation.
 - **PDO awareness on top** — the [rich desktop client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
@@ -153,6 +155,75 @@ In a Tentackle application the preferences are usually
 so a user's table layouts follow them to any workstation — and system-wide defaults are rolled out
 by simply saving them once.
 
+### Column filters (autofilter)
+
+JavaFX can filter rows only programmatically — a `FilteredList` and a `Predicate` — and offers
+nothing at all for `TreeTableView`. Tentackle adds the **autofilter** known from spreadsheet
+applications: a filter button in each column header opening a popup with sort shortcuts, a search
+field, a checkbox list of the column's distinct values, and a type-aware condition editor.
+
+Filtering is **off by default** and is switched on per table configuration:
+
+```java
+config.setFilterEnabled(true);     // filter buttons in the column headers
+config.setFilterIncluded(true);    // optional: the filter becomes part of the saved layout
+config.getColumnConfiguration("serial").setFilterable(Boolean.FALSE);   // opt out per column
+```
+
+`configure(...)` then installs a
+[`TableFilterSupport`](../java/org/tentackle/fx/table/filter/TableFilterSupport.java) on the view,
+reachable through `FxTableView.getFilterSupport()` / `getFilter()` / `isFilterActive()` /
+`clearFilter()` (and the same on `FxTreeTableView`).
+
+Each column gets a [`TableColumnFilter`](../java/org/tentackle/fx/table/filter/TableColumnFilter.java)
+combining two optional parts with a logical *and*:
+
+- the **value set** — the displayed texts the user checked in the popup, plus the pseudo entry
+  *(blank)* for empty values;
+- the **condition** — a [`TableFilterOperator`](../java/org/tentackle/fx/table/filter/TableFilterOperator.java)
+  with up to two operands: equals, contains, starts/ends with, less/greater, between, is empty, …
+  Only the operators applicable to the column type are offered.
+
+Values are matched by their **displayed text**, not by `equals`, since the values of a column often
+provide no useful equality (PDOs, for example) and since the user picks what is displayed. Only the
+ordering operators compare the values naturally, parsing the operand according to the column's
+format. As in spreadsheet applications, the value list of a column shows the values of the rows
+passing the filters of all *other* columns; it is capped at
+`TableFilterSupport.setMaxDistinctValues(int)` (1000 by default).
+
+**Table views** are filtered by inserting a `FilteredList` into the view's item chain, which then
+reads `source → FilteredList → SortedList`. The chain always ends in a `SortedList` bound to the
+table's comparator, because the table's sort policy cannot sort anything else. As a consequence,
+`getItems()` returns an immutable transformation list as soon as filtering is enabled — modify the
+root source instead:
+
+```java
+FxUtilities.getInstance().getRootSource(table.getItems()).add(pdo);
+FxUtilities.getInstance().setSourceElement(table.getItems(), viewIndex, pdo);   // maps the index down
+```
+
+**Tree-table views** are filtered level by level by a
+[`TreeItemFilter`](../java/org/tentackle/fx/table/filter/TreeItemFilter.java): an item is hidden when
+its own row does not pass the filter, together with its whole subtree, and the children of an item
+are evaluated when the item is **expanded** and not before. Lazily loading tree items — such as the
+RDC's `PdoTreeItem`, which queries the database in `getChildren()` — are thus never forced to
+materialize the whole tree, and node loops cannot lead to an endless recursion. Two consequences
+worth knowing:
+
+- an item all of whose children are filtered out still shows its disclosure arrow, since being a
+  leaf is decided by the tree item itself;
+- if the application replaces the children of an item while a filter is active, tell the support
+  about it via `TableFilterSupport.invalidate(treeItem)`.
+
+With `setFilterIncluded(true)` the active filter is stored per column in the same preferences node as
+the width, visibility, and sorting, under the key `filter`. Unparsable or outdated entries clear the
+column's filter instead of failing the load.
+
+The popup renders each value with the text (and graphic) the table's cells would show. This comes
+from `TableCellType.getText(...)` / `getGraphic(...)`, which render a value without a cell —
+the same methods the spreadsheet and XML exports use, so a date column exports as `31.12.2025`
+rather than `2025-12-31`.
+
 ### Totals
 
 [`TotalsTableView`](../java/org/tentackle/fx/table/TotalsTableView.java) is a small companion table
@@ -176,7 +247,7 @@ extends `TableConfigurationProvider`. The
 [`DefaultGuiProvider`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/DefaultGuiProvider.java)
 derives a default configuration from the PDO model via reflection: each `@Persistent` attribute
 with a `@Bindable` getter becomes a column, displayed names come from the provider's resource
-bundle. `createTableView()` then creates the table, applies the binding mode and asserts that all
+bundle. `createTableView()` then creates the table, applies the binding mode, and asserts that all
 columns are bound. A typical override picks and orders the columns explicitly, using the
 generated attribute-name constants:
 
@@ -237,7 +308,7 @@ A controller displaying a list of invoices in an editable table:
 1. The FXML declares an `FxTableView` (or the code creates one via
    `guiProvider.createTableView()` in an RDC application).
 2. The table configuration — from a `TableConfigurationProvider`, the PDO's `GuiProvider`, or
-   built inline — is applied with `config.configure(tableView)`: columns, cell types, editors and
+   built inline — is applied with `config.configure(tableView)`: columns, cell types, editors, and
    formats appear, and the saved layout is restored from the preferences.
 3. The controller's [binder](../../../../tentackle-core/src/main/docs/binding.md) binds the data
    list to the table by name; the table's own binder moves values between cells and row objects,
@@ -252,6 +323,7 @@ A controller displaying a list of invoices in an editable table:
 | Package                                        | Content                                                                | Module            |
 |------------------------------------------------|------------------------------------------------------------------------|-------------------|
 | `org.tentackle.fx.table`                       | Configurations, providers, cell/column classes, `TotalsTableView`      | tentackle-fx      |
+| `org.tentackle.fx.table.filter`                | Column filters (autofilter): filter model, support, popup              | tentackle-fx      |
 | `org.tentackle.fx.table.type`                  | Built-in `TableCellType`s (strings, numbers, money, date/time, …)      | tentackle-fx      |
 | `org.tentackle.fx.rdc.table`                   | PDO-aware configuration, `TablePopup`, `TablePrinter`, `TableUtilities` | tentackle-fx-rdc  |
 | `org.tentackle.fx.rdc.poi`                     | Excel export replacing the CSV default                                 | tentackle-fx-rdc-poi |

@@ -48,8 +48,8 @@ public class LoopbackConnectionHandler extends ConnectionHandler {
   }
 
   @Override
-  protected TripStream createStream(UUID id) {
-    stream = super.createStream(id);
+  protected TripStream createStream(UUID id, boolean clientDictionaryEmpty) {
+    stream = super.createStream(id, clientDictionaryEmpty);
     return stream;
   }
 

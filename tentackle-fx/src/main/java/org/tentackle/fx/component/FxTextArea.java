@@ -27,14 +27,19 @@ import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.delegate.FxTextAreaDelegate;
+import org.tentackle.fx.component.skin.FxTextAreaSkin;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.misc.SubString;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Pos;
+import javafx.scene.control.Skin;
 import javafx.scene.control.TextArea;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -42,6 +47,14 @@ import java.util.function.Function;
 
 /**
  * Extended TextArea.
+ * <p>
+ * Since the default navigation in Tentackle works with {@code ENTER} and {@code Shift-ENTER} keys,
+ * FxTextArea provides {@link #setNavigateViaEnterEnabled(boolean)} to control this behavior.
+ * It is enabled by default.
+ * <p>
+ * A text area displayed with only one or very few lines can offer an expand-button at its top
+ * right edge. Clicking it pops up a multi-line editor covering the text area, which collapses again
+ * as soon as it loses the focus. The feature is opt-in via {@link #setExpandable(boolean)}.
  *
  * @author harald
  */
@@ -50,7 +63,27 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   /**
    * True if enter/shift-Enter navigates to the next/previous component.
    */
-  private boolean navigateViaEnterEnabled = true;
+  private BooleanProperty navigateViaEnterEnabledProperty;
+
+  /**
+   * True if a one-liner can be expanded to a multi-line editor (opt-in).
+   */
+  private BooleanProperty expandableProperty;
+
+  /**
+   * True while the multi-line editor is showing.
+   */
+  private ReadOnlyBooleanWrapper expandedProperty;
+
+  /**
+   * The number of rows of the expanded editor, 0 if determined by {@link FxUtilities}.
+   */
+  private int expandedRowCount;
+
+  /**
+   * The multi-line editor, created lazily on first expansion.
+   */
+  private ExpandedTextPopup expandedTextPopup;
 
 
   /**
@@ -59,7 +92,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    * @return true if tentackle, false if standard FX
    */
   public boolean isNavigateViaEnterEnabled() {
-    return navigateViaEnterEnabled;
+    return navigateViaEnterEnabledProperty == null || navigateViaEnterEnabledProperty.get();
   }
 
   /**
@@ -69,7 +102,150 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    * @param navigateViaEnterEnabled false to restore FX standard behavior
    */
   public void setNavigateViaEnterEnabled(boolean navigateViaEnterEnabled) {
-    this.navigateViaEnterEnabled = navigateViaEnterEnabled;
+    navigateViaEnterEnabledProperty().set(navigateViaEnterEnabled);
+  }
+
+  /**
+   * Gets the navigate-via-enter property.
+   *
+   * @return the property
+   */
+  public BooleanProperty navigateViaEnterEnabledProperty() {
+    if (navigateViaEnterEnabledProperty == null) {
+      navigateViaEnterEnabledProperty = new SimpleBooleanProperty(this, "navigateViaEnterEnabled", true);
+    }
+    return navigateViaEnterEnabledProperty;
+  }
+
+  /**
+   * Returns whether a one-liner offers the expand button.
+   *
+   * @return true if expandable, false if never expand (default)
+   */
+  public boolean isExpandable() {
+    return expandableProperty != null && expandableProperty.get();
+  }
+
+  /**
+   * Sets whether a one-liner offers the expand button.<br>
+   * Has no effect on text areas that are multi-line anyway.
+   *
+   * @param expandable true if expandable, false if never expand (default)
+   */
+  public void setExpandable(boolean expandable) {
+    expandableProperty().set(expandable);
+  }
+
+  /**
+   * Gets the expandable property.
+   *
+   * @return the property
+   */
+  public BooleanProperty expandableProperty() {
+    if (expandableProperty == null) {
+      expandableProperty = new SimpleBooleanProperty(this, "expandable", false);
+    }
+    return expandableProperty;
+  }
+
+  /**
+   * Gets the number of rows of the expanded editor.
+   *
+   * @return the row count, defaults to {@link FxUtilities#getDefaultExpandedRowCount(FxTextArea)}
+   */
+  public int getExpandedRowCount() {
+    return expandedRowCount > 0 ? expandedRowCount : FxUtilities.getInstance().getDefaultExpandedRowCount(this);
+  }
+
+  /**
+   * Sets the number of rows of the expanded editor.
+   *
+   * @param expandedRowCount the row count, 0 to apply the default
+   */
+  public void setExpandedRowCount(int expandedRowCount) {
+    this.expandedRowCount = expandedRowCount;
+  }
+
+  /**
+   * Returns whether the multi-line editor is showing.
+   *
+   * @return true if expanded
+   */
+  public boolean isExpanded() {
+    return expandedProperty != null && expandedProperty.get();
+  }
+
+  /**
+   * Gets the expanded property.
+   *
+   * @return the read-only property
+   */
+  public ReadOnlyBooleanProperty expandedProperty() {
+    return expandedPropertyWrapper().getReadOnlyProperty();
+  }
+
+  /**
+   * Expands this text area to a multi-line editor.<br>
+   * Does nothing if not {@link #isExpandable()}, already expanded
+   * or not displayed at all.
+   */
+  public void expand() {
+    if (isExpandable()) {
+      getExpandedTextPopup().showPopup();
+    }
+  }
+
+  /**
+   * Collapses the multi-line editor back to the one-liner and moves the focus back to this
+   * text area.<br>
+   * Does nothing if not expanded.
+   */
+  public void collapse() {
+    if (expandedTextPopup != null) {
+      expandedTextPopup.collapse();
+    }
+  }
+
+  /**
+   * Gets the multi-line editor.<br>
+   * The popup is created on demand and reused for subsequent expansions.
+   *
+   * @return the popup, never null
+   */
+  public ExpandedTextPopup getExpandedTextPopup() {
+    if (expandedTextPopup == null) {
+      expandedTextPopup = createExpandedTextPopup();
+      expandedPropertyWrapper().bind(expandedTextPopup.showingProperty());
+    }
+    return expandedTextPopup;
+  }
+
+  /**
+   * Creates the multi-line editor.<br>
+   * Useful for application-specific needs.
+   *
+   * @return the popup
+   */
+  protected ExpandedTextPopup createExpandedTextPopup() {
+    return new ExpandedTextPopup(this);
+  }
+
+  @Override
+  protected Skin<?> createDefaultSkin() {
+    return new FxTextAreaSkin(this);
+  }
+
+
+  /**
+   * Gets the writable expanded property.
+   *
+   * @return the property wrapper
+   */
+  private ReadOnlyBooleanWrapper expandedPropertyWrapper() {
+    if (expandedProperty == null) {
+      expandedProperty = new ReadOnlyBooleanWrapper(this, "expanded", false);
+    }
+    return expandedProperty;
   }
 
 

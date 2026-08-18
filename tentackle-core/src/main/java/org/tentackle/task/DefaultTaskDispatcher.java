@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.task;
 
 import org.tentackle.common.InterruptedRuntimeException;
@@ -30,9 +29,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 
 /**
  * A thread executing tasks in a serialized manner.
@@ -69,17 +68,21 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private static final long DEFAULT_DEAD_INTERVAL = 60000;      // 60s
 
 
-  private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
-  private ReentrantReadWriteLock mutex;                 // mutex lock
-  private long sleepInterval;                           // keepalive in ms
-  private long deadInterval;                            // dead detection interval in ms, 0 if disabled
-  private long waitInterval;                            // timeout for waitForTask, 0 if disabled
-  private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 for permanent
-  private long lastActivity;                            // last activity, 0 if a task is currently executed
+  // the configuration is written by the setters from arbitrary threads and read by the dispatcher
+  private volatile boolean usingMutexLocking;           // true if using a mutex lock, else just a counter
+  private volatile ReentrantReadWriteLock mutex;        // mutex lock
+  private volatile long sleepInterval;                  // keepalive in ms
+  private volatile long deadInterval;                   // dead detection interval in ms, 0 if disabled
+  private volatile long waitInterval;                   // timeout for waitForTask, 0 if disabled
+  private volatile long shutdownIdleTimeout;            // shutdown thread after idle milliseconds, 0 for permanent
+
+  private long lastActivity;                            // last activity, 0 if a task is currently executed (dispatcher thread only)
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
-  private final List<TaskListener> listeners;           // task listeners
+  private final Object queueLock;                       // makes composite updates of queue + idMap atomic
+  private final List<TaskListener> listeners;           // task listeners (notified without holding a lock)
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
+  private final Object interruptLock;                   // makes testing and setting delayInterrupt atomic
   private int nonMutexLockCount;                        // non-mutex lock count
   private Object unlockKey;                             // optional key to unlock
   private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
@@ -111,9 +114,18 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     setWaitInterval(deadInterval / 2);
 
     queue = new ConcurrentSkipListSet<>();
-    listeners = new ArrayList<>();
+    /*
+     * fireStarted/fireCompleted iterate the listeners without a lock, and a listener may well
+     * add or remove listeners from within the notification (a one-shot listener deregistering
+     * itself is the obvious case). Iterating a plain list would skip the remaining listeners
+     * or throw a ConcurrentModificationException, which aborts the task execution.
+     * Note this is java.util.concurrent's list, not the copy-once org.tentackle.misc.CopyOnWriteList.
+     */
+    listeners = new CopyOnWriteArrayList<>();
     idMap = new ConcurrentHashMap<>();
+    queueLock = new Object();
     interruptMutex = new ReentrantReadWriteLock();
+    interruptLock = new Object();
   }
 
   /**
@@ -267,13 +279,13 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  public synchronized void addTaskListener(TaskListener listener) {
+  public void addTaskListener(TaskListener listener) {
     assertNotKilled();
     listeners.add(listener);
   }
 
   @Override
-  public synchronized void removeTaskListener(TaskListener listener) {
+  public void removeTaskListener(TaskListener listener) {
     assertNotKilled();
     listeners.remove(listener);
   }
@@ -286,11 +298,11 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         throw new TaskException("task " + task + " already belongs to dispatcher " +
                                 task.getDispatcher() + ", cannot be added to " + this);
       }
-      if (task.getId() != 0 && queue.contains(task)) {
-        LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
-        return false;
-      }
-      else {
+      synchronized (queueLock) {
+        if (task.getId() != 0 && queue.contains(task)) {
+          LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
+          return false;
+        }
         task.setDispatcher(this);
         if (task.getId() == 0) {
           // task never added before: set a unique id
@@ -298,17 +310,20 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         }
         queue.add(task);
         idMap.put(task.getId(), task);
-        LOGGER.fine("{0}: task {1} added", this, task);
-        safeInterrupt();   // wake up!
-        return true;
       }
+      LOGGER.fine("{0}: task {1} added", this, task);
+      safeInterrupt();   // wake up!
+      return true;
     }
   }
 
   @Override
   public boolean isTaskPending(Task task) {
     assertNotKilled();
-    return queue.contains(task);
+    synchronized (queueLock) {
+      // never observe a repeating task while it is being rescheduled (see executeTask)
+      return queue.contains(task);
+    }
   }
 
   @Override
@@ -380,13 +395,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public boolean removeTask(Task task) {
     assertNotKilled();
-    boolean removed = queue.remove(task);
-    if (removed) {
-      idMap.remove(task.getId());
-      task.setDispatcher(null);   // this triggers the warning when finished
-      if (task.getStarted() != 0 && task.getCompleted() == 0) {
-        LOGGER.warning("{0}: removed task {1} is still running -> dispatcher remains blocked until task has finished!", this, task);
+    boolean removed;
+    synchronized (queueLock) {
+      removed = queue.remove(task);
+      if (removed) {
+        idMap.remove(task.getId());
+        task.setDispatcher(null);   // this triggers the warning when finished
       }
+    }
+    if (removed && task.getStarted() != 0 && task.getCompleted() == 0) {
+      LOGGER.warning("{0}: removed task {1} is still running -> dispatcher remains blocked until task has finished!", this, task);
     }
     return removed;
   }
@@ -410,11 +428,19 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    */
   @Override
   public void interrupt() {
-    if (delayInterrupt) {
-      wasInterrupted = true;
-    }
-    else  {
-      super.interrupt();
+    /*
+     * The interruptLock makes testing 'delayInterrupt' and acting on it atomic with respect
+     * to executeTask, which flips the flag under the same lock. Without it this is a
+     * check-then-act race: this thread could read 'delayInterrupt' as false, be descheduled
+     * while the dispatcher enters a task declared non-interruptable, and interrupt it anyway.
+     */
+    synchronized (interruptLock) {
+      if (delayInterrupt) {
+        wasInterrupted = true;    // re-asserted once the task has finished, see executeTask
+      }
+      else  {
+        super.interrupt();
+      }
     }
   }
 
@@ -668,11 +694,18 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
     synchronized (task) {
       try {
-        if (!task.isInterruptable()) {
-          delayInterrupt = true;
-        }
         interruptMutex.writeLock().lock();
         try {
+          synchronized (interruptLock) {
+            if (!task.isInterruptable()) {
+              delayInterrupt = true;
+              if (Thread.interrupted()) {
+                // an interrupt landed just before the flag was raised: consume it, the task
+                // must not start out with a pending interrupt it declared it cannot handle
+                wasInterrupted = true;
+              }
+            }
+          }
           task.run();
         }
         catch (Throwable t) {
@@ -680,7 +713,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           LOGGER.severe("task '" + task + "', ID=" + task.getId() + " terminated abnormally", t);
         }
         finally {
-          delayInterrupt = false;
+          synchronized (interruptLock) {
+            delayInterrupt = false;
+            if (wasInterrupted) {
+              // deliver what was withheld while the task was running
+              wasInterrupted = false;
+              super.interrupt();
+            }
+          }
           interruptMutex.writeLock().unlock();
         }
 
@@ -689,6 +729,35 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         }
 
         lastMillis = System.currentTimeMillis();
+
+        // Finish all dispatcher-side bookkeeping *before* signaling completion.
+        // setCompleted() sets the (volatile) completion timestamp and fires the
+        // task's completion listeners, and the notifyAll() below wakes waitForTask().
+        // All of these observers must see a consistent dispatcher state: the task
+        // already dequeued and - unless it repeats - removed from the id map.
+        // Otherwise, a completion observer could still find the just-completed task
+        // via getTask() or isTaskPending() (see DefaultTaskDispatcherTest).
+        unlockInternal(0);
+
+        // A repeating task must be dequeued and re-queued because the queue is sorted
+        // by the scheduled time, which is about to change (see AbstractTask.compareTo).
+        // The lock keeps that update atomic: without it a concurrent removeTask() could
+        // hit the gap, fail to remove the task and thus fail to clear its dispatcher,
+        // whereupon the task would be re-queued below and repeat forever.
+        synchronized (queueLock) {
+          queue.remove(task);
+
+          long repeat = task.getRepeatInterval();
+          if (repeat > 0 && task.getDispatcher() == this) {
+            // if repeat and not removed from the dispatcher in the meantime
+            task.setScheduledEpochalTime(lastMillis + repeat);
+            queue.add(task);
+          }
+          else  {
+            idMap.remove(task.getId());
+          }
+        }
+
         try {
           task.setCompleted(lastMillis);
         }
@@ -699,20 +768,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
       finally {
         task.notifyAll();
-      }
-
-      unlockInternal(0);
-
-      queue.remove(task);
-
-      long repeat = task.getRepeatInterval();
-      if (repeat > 0 && task.getDispatcher() == this) {
-        // if repeat and not removed from the dispatcher in the meantime
-        task.setScheduledEpochalTime(lastMillis + repeat);
-        queue.add(task);
-      }
-      else  {
-        idMap.remove(task.getId());
       }
     }
 
@@ -797,7 +852,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         /*
          * We don't need a 'synchronized(this)' here because
          * if there is already a lock, only the same thread can lock it again.
-         * If it is not the same thread the lock() below will block.
+         * If it is a different thread, the lock() below will block.
          */
         for (;;) {
           assertAlive();
@@ -928,7 +983,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       /*
        * We don't need a 'synchronized(this)' here because we can assume
        * that the same thread that locked the dispatcher will also unlock it.
-       * If it is a different thread or there is no lock at all
+       * If it is a different thread or there is no lock at all,
        * the "unlock()" below will fail with an IllegalMonitorStateException.
        */
       checkUnlockKey(key);

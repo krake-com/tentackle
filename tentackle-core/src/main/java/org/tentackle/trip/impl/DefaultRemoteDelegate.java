@@ -20,6 +20,7 @@ package org.tentackle.trip.impl;
 
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.IndexedMethodCache;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
@@ -34,7 +35,9 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -43,6 +46,9 @@ import java.util.UUID;
  * Although this class is thread-safe, invocations on the target object
  * are <em>not</em> synchronized!
  * This must be done by the implementation of the remote object.
+ * <p>
+ * Only the methods declared by the target's remote interfaces are invocable, see
+ * {@link #findRemoteMethod(String, Class[])}.
  *
  * @param <T> the type of the remote object
  */
@@ -50,11 +56,32 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
 
   private static final Logger LOGGER = Logger.get(DefaultRemoteDelegate.class);
 
+  /**
+   * The methods of {@link Object} a dynamic proxy forwards to its invocation handler, and thus the
+   * only ones a client can invoke without them being declared by a remote interface.
+   */
+  private static final Set<String> FORWARDED_OBJECT_METHODS = Set.of("toString", "hashCode", "equals");
+
+  /**
+   * The remote interfaces per target class.<br>
+   * They only depend on the class, while there may be many remote objects of the same class, so
+   * the interface hierarchy is walked only once. A {@link ClassValue} is used instead of a map to
+   * not keep the classes and their classloaders alive.
+   */
+  private static final ClassValue<Collection<Class<? extends Remote>>> REMOTE_INTERFACES = new ClassValue<>() {
+    @Override
+    protected Collection<Class<? extends Remote>> computeValue(Class<?> type) {
+      // immutable, since it is shared by all delegates of that class
+      return List.copyOf(ReflectionHelper.findAllInterfaces(type, Remote.class));
+    }
+  };
+
   private final Registry registry;
   private final UUID remoteId;
   private final T target;
   private final IndexedMethodCache methodCache;
   private final List<WeakReference<RemoteDelegate<?>>> registeredDelegates;
+  private final Collection<Class<? extends Remote>> remoteInterfaces;
 
   /**
    * Creates a new remote delegate.
@@ -70,6 +97,7 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
     this.target = target;
     this.methodCache = methodCache;
     registeredDelegates = new ArrayList<>();
+    remoteInterfaces = REMOTE_INTERFACES.get(target.getClass());
   }
 
   @Override
@@ -90,7 +118,7 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   @Override
   public InitialRemoteResponse invoke(InitialRemoteCall call) {
     try {
-      Method method = target.getClass().getMethod(call.methodName(), call.parameterTypes());
+      Method method = findRemoteMethod(call.methodName(), call.parameterTypes());
       int methodIndex = methodCache.add(method);
       try {
         return new InitialRemoteResponse(methodIndex,
@@ -156,7 +184,50 @@ public class DefaultRemoteDelegate<T extends Remote> implements RemoteDelegate<T
   }
 
 
+  /**
+   * Looks up an invocable method by the name and parameter types received from the client.
+   * <p>
+   * Only the methods of the target's remote interfaces are invocable, not every public method of
+   * its implementation class. A client can only hold a proxy for those interfaces, but the call
+   * carries the method name and its parameter types, so a peer is free to name any other method.
+   * Without this restriction it would reach everything the implementation happens to expose
+   * publicly beyond its remote interfaces, such as lifecycle or configuration methods.
+   * <p>
+   * The three {@link Object} methods a dynamic proxy forwards to its invocation handler are
+   * invocable as well, since a client may legitimately call them on its proxy.
+   *
+   * @param methodName the name of the method
+   * @param parameterTypes the parameter types
+   * @return the method, never null
+   * @throws NoSuchMethodException if no remote interface declares such a method
+   */
+  protected Method findRemoteMethod(String methodName, Class<?>[] parameterTypes) throws NoSuchMethodException {
+    for (Class<? extends Remote> remoteInterface : remoteInterfaces) {
+      try {
+        // also finds the methods of the superinterfaces
+        return remoteInterface.getMethod(methodName, parameterTypes);
+      }
+      catch (NoSuchMethodException nx) {
+        // not this one, try the next interface
+      }
+    }
+    if (FORWARDED_OBJECT_METHODS.contains(methodName)) {
+      return Object.class.getMethod(methodName, parameterTypes);   // verifies the signature as well
+    }
+    throw new NoSuchMethodException(methodName + " is not provided by the remote interfaces " +
+                                    remoteInterfaces + " of " + target.getClass().getName());
+  }
+
+
   private Object processResult(Object result) {
+    if (result instanceof Remote[] remotes) {
+      // several remote objects returned in a single roundtrip
+      DelegateDescriptor[] descriptors = new DelegateDescriptor[remotes.length];
+      for (int i = 0; i < remotes.length; i++) {
+        descriptors[i] = remotes[i] == null ? null : (DelegateDescriptor) processResult(remotes[i]);
+      }
+      return descriptors;
+    }
     if (result instanceof Remote remote) {
       RemoteDelegate<Remote> delegate;
       UUID id = registry.lookup(remote);

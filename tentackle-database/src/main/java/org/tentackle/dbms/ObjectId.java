@@ -76,10 +76,10 @@ public class ObjectId extends AbstractIdSource {
 
         // increment by 1 (this starts isolation withing the transaction!)
         PreparedStatementWrapper incrementStatement = db.getPreparedStatement(new StatementKey(INCREMENT_ID, getClass()), false,
-          b -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL + CN_ID + "+1"
+          _ -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL + CN_ID + "+1"
         );
         PreparedStatementWrapper selectStatement = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
-          b -> Backend.SQL_SELECT + CN_ID + Backend.SQL_FROM + getName()
+          _ -> Backend.SQL_SELECT + CN_ID + Backend.SQL_FROM + getName()
         );
 
         /*
@@ -110,7 +110,7 @@ public class ObjectId extends AbstractIdSource {
           // register the final update for the end of transaction
           db.preCommit(_ -> {
             PreparedStatementWrapper updateStatement = db.getPreparedStatement(new StatementKey(UPDATE_ID, getClass()), false,
-                                                                               b -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
+                                                                               _ -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
             );
             updateStatement.setLong(1, lastId);   // set the current value of ID
             assertOneRowAffected(db, updateStatement.executeUpdate());

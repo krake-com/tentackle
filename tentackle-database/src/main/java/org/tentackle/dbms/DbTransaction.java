@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class DbTransaction extends AbstractTransaction {
 
-  // will not be serialized, but makes compiler happy
+  // will not be serialized but makes compiler happy
   @Serial
   private static final long serialVersionUID = 1L;
 
@@ -44,7 +44,7 @@ public class DbTransaction extends AbstractTransaction {
   private transient final long creationTime;      // epochal time in ms when started/created
   private transient final TimeKeeper timeKeeper;  // to measure the exact duration
   private transient int handleCount;              // the last handle number
-  private transient volatile boolean alive;       // alive flag to detect idle transactions
+  private transient volatile boolean alive;       // the alive-flag to detect idle transactions
 
   private transient Map<DbTransactionHandle, PersistenceVisitor> visitors;  // the visitors
   private transient Map<SavepointHandle, Savepoint> savepoints;             // the savepoints

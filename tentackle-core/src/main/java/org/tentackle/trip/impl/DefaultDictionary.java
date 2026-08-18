@@ -103,6 +103,12 @@ public class DefaultDictionary implements Dictionary {
   }
 
   @Override
+  public boolean isEmpty() {
+    // entriesByOrdinal holds the permanent as well as the temporary (client-only) entries
+    return entriesByOrdinal.isEmpty();
+  }
+
+  @Override
   public String toString() {
     return id.toString();
   }

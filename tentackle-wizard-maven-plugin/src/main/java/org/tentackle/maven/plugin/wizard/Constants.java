@@ -23,7 +23,7 @@ package org.tentackle.maven.plugin.wizard;
  */
 public class Constants {
 
-  /** java file extension. */
+  /** Java file extension. */
   public static final String JAVA_EXT = ".java";
 
   /** classID status file extension. */
@@ -34,6 +34,9 @@ public class Constants {
 
   /** template category for operations. */
   public static final String CATEGORY_OPERATION = "operation";
+
+  /** template category for script harnesses. */
+  public static final String CATEGORY_SCRIPT = "script";
 
   private Constants() {}
 }

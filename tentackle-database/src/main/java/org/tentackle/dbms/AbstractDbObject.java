@@ -61,7 +61,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * <p>
  * All persistence implementations must extend {@code AbstractDbObject}, which provides the generic
  * functionality of persistent objects. Every {@code AbstractDbObject} is associated
- * to a logical {@link Session}, which can be either local or remote.
+ * with a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
  * overriding methods (pure OO-approach). These methods are usually generated
  * by wurblets (see <a href="https://wurbelizer.org">wurbelizer.org</a>), according to a model.
@@ -1228,7 +1228,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          * ORA-01002 exception is raised.
          * Furthermore, if a transaction that contains a SELECT FOR UPDATE for a given
          * object and the same object is selected IMMEDIATELY after the commit
-         * of the transaction, the JDBC-connection hangs!
+         * of the transaction, the JDBC connection hangs!
          * @todo: verify whether that's still the case with newer versions of Oracle
          */
         getSession().assertTxRunning();
@@ -2070,7 +2070,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the modification counter
    */
   public long getModificationCount () {
-    return ModificationTracker.getInstance().getSerial(getTableName());
+    return ModificationTracker.getInstance().getIdSerialForName(getTableName()).getSerial();
   }
 
   /**

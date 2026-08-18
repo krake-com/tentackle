@@ -42,7 +42,7 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
   private final Map<String, Long> downloadSizes = new ConcurrentHashMap<>();      // size in bytes of the download ZIPs
   private final Map<String, String> checksumHashes = new ConcurrentHashMap<>();   // checksum hashes of the download ZIPs
 
-  private String updateURL;
+  private volatile String updateURL;    // read by all clients concurrently
 
   /**
    * Creates an update service object.
@@ -200,10 +200,14 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
 
   /**
    * Determines the download size of the ZIP file.
+   * <p>
+   * Only a determinate size is cached. An unknown size is not, because it would otherwise
+   * be answered for this artifact until the server is restarted, even though the very next
+   * request might get a proper content-length.
    *
    * @param zipURL the download URL
-   * @return the size in bytes, -1 if content-length in header response
-   * @throws IOException if failed
+   * @return the size in bytes, -1 if no content-length in header response
+   * @throws IOException if failed or the artifact is not available
    */
   protected long determineDownloadSize(URL zipURL) throws IOException {
     String zipUrlStr = zipURL.toString();
@@ -215,15 +219,31 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
             .method("HEAD", HttpRequest.BodyPublishers.noBody())
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (!isSuccessful(response.statusCode())) {
+          // don't cache the content-length of an error page as the size of the ZIP file!
+          throw new IOException("cannot download " + zipUrlStr + ": HTTP status " + response.statusCode());
+        }
         OptionalLong contentLength = response.headers().firstValueAsLong("content-length");
-        size = contentLength.orElse(-1);
-        downloadSizes.put(zipUrlStr, size);
+        size = contentLength.orElse(-1L);
+        if (size >= 0) {
+          downloadSizes.put(zipUrlStr, size);
+        }
       }
       catch (InterruptedException | URISyntaxException ex) {
         throw new IOException("cannot determine expected download size of " + zipUrlStr, ex);
       }
     }
     return size;
+  }
+
+  /**
+   * Returns whether an HTTP status code denotes success.
+   *
+   * @param statusCode the status code
+   * @return true if 2xx
+   */
+  protected boolean isSuccessful(int statusCode) {
+    return statusCode >= 200 && statusCode < 300;
   }
 
 }

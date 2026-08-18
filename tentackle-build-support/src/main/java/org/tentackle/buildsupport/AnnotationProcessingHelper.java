@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.buildsupport;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -28,8 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
-
-
 /**
  * Helper for annotation processing.
  *
@@ -37,6 +34,75 @@ import java.util.StringTokenizer;
  */
 public final class AnnotationProcessingHelper {
 
+  /**
+   * Escape character used by {@link #escapeToken(String)} and {@link #unescapeToken(String)}.
+   */
+  private static final char ESCAPE_CHAR = '\\';
+
+  /**
+   * Character following the escape character to denote a blank.
+   */
+  private static final char ESCAPED_BLANK = 's';
+
+
+  /**
+   * Escapes the whitespace within a token written to an info file.<br>
+   * The info files are whitespace-separated, but type strings are not necessarily whitespace-free:
+   * javac renders wildcard bounds as {@code "? extends Foo"} and type annotations as
+   * {@code "@Bar Foo"}. Such tokens must be escaped to survive the round trip.
+   * <p>
+   * Whitespace becomes {@code \s}, the escape character itself becomes {@code \\}.
+   *
+   * @param token the token, null if none
+   * @return the escaped token, null if token was null
+   * @see #unescapeToken(String)
+   */
+  public static String escapeToken(String token) {
+    if (token == null) {
+      return null;
+    }
+    StringBuilder buf = new StringBuilder(token.length());
+    for (int i = 0; i < token.length(); i++) {
+      char c = token.charAt(i);
+      if (c == ESCAPE_CHAR) {
+        buf.append(ESCAPE_CHAR).append(ESCAPE_CHAR);
+      }
+      else if (Character.isWhitespace(c)) {
+        buf.append(ESCAPE_CHAR).append(ESCAPED_BLANK);
+      }
+      else {
+        buf.append(c);
+      }
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Unescapes a token read from an info file.<br>
+   * Tokens without an escape character are returned unchanged, which is why info files written
+   * before the escaping was introduced still read correctly (java types never contain a backslash).
+   *
+   * @param token the escaped token, null if none
+   * @return the unescaped token, null if token was null
+   * @see #escapeToken(String)
+   */
+  public static String unescapeToken(String token) {
+    if (token == null || token.indexOf(ESCAPE_CHAR) < 0) {
+      return token;   // nothing to unescape (covers all pre-escaping info files)
+    }
+    StringBuilder buf = new StringBuilder(token.length());
+    for (int i = 0; i < token.length(); i++) {
+      char c = token.charAt(i);
+      if (c == ESCAPE_CHAR && i + 1 < token.length()) {
+        char next = token.charAt(++i);
+        buf.append(next == ESCAPED_BLANK ? ' ' : next);
+      }
+      else {
+        buf.append(c);
+      }
+    }
+    return buf.toString();
+  }
 
   /**
    * Gets an array of modifiers from a string tokenizer.
@@ -57,13 +123,12 @@ public final class AnnotationProcessingHelper {
     return modList.toArray(new Modifier[0]);
   }
 
-
   /**
    * Checks if a modifier is in the set of modifiers.
    *
    * @param modifier the modifier to check
    * @param modifierList the list of modifiers
-   * @return true if modifier is in the list of modifiers
+   * @return true if the modifier is in the list of modifiers
    */
   public static boolean isModifierSet(Modifier modifier, Modifier[] modifierList) {
     boolean rv = false;
@@ -77,8 +142,6 @@ public final class AnnotationProcessingHelper {
     }
     return rv;
   }
-
-
 
   /**
    * Creates a string from an object array.
@@ -104,8 +167,6 @@ public final class AnnotationProcessingHelper {
   }
 
 
-
-
   /**
    * Checks whether a type is an instance of a given classname and optional generics type.
    *
@@ -113,7 +174,7 @@ public final class AnnotationProcessingHelper {
    * @param typeMirror the element type
    * @param className the class to check
    * @param genType the generic type
-   * @return true if type is an instance of a given classname
+   * @return true if the type is an instance of a given classname
    */
   public static boolean isTypeInstanceOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className, String genType) {
 
@@ -139,7 +200,7 @@ public final class AnnotationProcessingHelper {
     }
 
     if (typeName.equals(className)) {
-      // true if optional type parameters and the classname matches
+      // true if optional type parameters and classname match
       return genTypeOk;
     }
 
@@ -150,7 +211,6 @@ public final class AnnotationProcessingHelper {
     }
     return false;
   }
-
 
   /**
    * Checks whether a type is a given instance of a class.

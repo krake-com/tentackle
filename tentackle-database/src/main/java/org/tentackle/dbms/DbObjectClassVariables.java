@@ -50,13 +50,12 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();
 
 
-
   /**
-   * Creates a classvariable for a db object.
+   * Creates a class variable for a db object.
    *
-   * @param clazz is the class of the derived AbstractDbObject
+   * @param clazz the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
-   * @param tableName is the SQL tablename
+   * @param tableName theSQL table name
    * @param <P> the persistence type
    */
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz, int classId, String tableName) {
@@ -64,10 +63,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Creates a classvariable for a db object.<br>
-   * Classid and tablename are derived from mapped services in META-INF.
+   * Creates a class variable for a db object.<br>
+   * ClassId and tablename are derived from mapped services in META-INF.
    *
-   * @param clazz is the class of the derived AbstractDbObject
+   * @param clazz the class of the derived AbstractDbObject
    * @param <P> the persistence type
    */
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz) {
@@ -75,11 +74,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Gets the classvariables for a given tablename.
+   * Gets the class variables for a given tablename.
    *
    * @param <P> the persistence type
-   * @param tableName is the database tablename
-   * @return the classvariables or null if no such tablename
+   * @param tableName the database tablename
+   * @return the class variables or null if no such tablename
    */
   @SuppressWarnings("unchecked")
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> getVariables(String tableName) {
@@ -89,10 +88,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Registers a classvariables instance.
+   * Registers a class variables instance.
    *
    * @param <P> the persistence type
-   * @param variables the classvariables to register
+   * @param variables the class variables to register
    */
   public static <P extends AbstractDbObject<P>> void putVariables(DbObjectClassVariables<P> variables) {
     if (variables.tableName != null) {
@@ -107,7 +106,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
            */
           if (!classVar.clazz.isAssignableFrom(variables.clazz)) {
             throw new PersistenceException(
-                    "classvariables for '" + variables.tableName + "' already registered, old=" + classVar.clazz.getName() +
+                    "class variables for '" + variables.tableName + "' already registered, old=" + classVar.clazz.getName() +
                     ", new=" + variables.clazz.getName());
           }
         }
@@ -117,6 +116,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       }
     }
   }
+
 
   /**
    * A reference to a class that is referencing this class.
@@ -128,7 +128,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   protected record ForeignReference(Method[] methods, int priority, String methodPath) implements Comparable<ForeignReference> {
 
     /**
-     * Sorted by priority + method.
+     * Sorted by priority plus method.
      */
     @Override
     public int compareTo(ForeignReference o) {
@@ -150,7 +150,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       return rv;
     }
   }
-
 
   /**
    * References from other classes.
@@ -177,22 +176,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * database table name.
    */
   public final String tableName;
-
-  /**
-   * ID for the remote delegate for this class.
-   */
-  public int remoteDelegateId;
-
-  /**
-   * Number of columns in a resultset.
-   */
-  public int columnCount;
-
-  /**
-   * true if prepared statements should always be prepared (i.e., if
-   * the statement is changing for some reason, e.g., the table name).
-   */
-  public boolean alwaysPrepare;
 
   /**
    * prepared statement ID for select().
@@ -285,14 +268,34 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    */
   public final TableSerialExpirationBacklog expirationBacklog;
 
+
+  /**
+   * Number of columns in a resultset.
+   *
+   */
+  int columnCount;    // package scope!
+
+  /**
+   * true if prepared statements should always be prepared (i.e., if
+   * the statement is changing for some reason, e.g., the table name).
+   */
+  boolean alwaysPrepare;  // package scope!
+
+
   /**
    * The source for getting a new ID.
    */
-  public IdSource idSource;
-
+  private IdSource idSource;
 
   /**
-   * class properties.
+   * ID for the remote delegate for this class.<br>
+   * Volatile, since lazily initialized by {@link #getRemoteDelegateId()} from arbitrary threads.
+   */
+  private volatile int remoteDelegateId;
+
+  /**
+   * class properties.<br>
+   * Lazily loaded by {@link #getProperties()} and guarded by this instance's monitor.
    */
   private Properties properties;
 
@@ -301,9 +304,9 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Constructs a class variable.<br>
    * Throws IllegalStateException if already constructed.
    *
-   * @param clazz is the class of the derived AbstractDbObject
+   * @param clazz the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
-   * @param tableName is the SQL tablename
+   * @param tableName theSQL table name
    */
   public DbObjectClassVariables(Class<P> clazz, int classId, String tableName)  {
 
@@ -322,9 +325,9 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Constructs a class variable.<br>
    * Throws IllegalStateException if already constructed.
-   * Classid and tablename are derived from META-INF.
+   * ClassId and tablename are derived from META-INF.
    *
-   * @param clazz is the class of the derived AbstractDbObject
+   * @param clazz the class of the derived AbstractDbObject
    */
   public DbObjectClassVariables(Class<P> clazz) {
     this(clazz,
@@ -349,9 +352,9 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @return the properties, never null
    */
-  public Properties getProperties() {
+  public synchronized Properties getProperties() {
     if (properties == null) {
-      // load properties, if any from file or resource
+      // load properties, if any, from file or resource
       String propertiesName = clazz.getName().replace('.', '/');
       properties = PropertiesUtilities.getInstance().loadIfExists(propertiesName);
       if (properties == null) {
@@ -368,7 +371,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * If the IdSource is null, the method will look for
    * a property file which is the classname + ".properties".
-   * The property file must contain an idsource-line
+   * The property file must contain an {@code idsource} line
    * similar to that in Db.properties.<br>
    * If there is no such file, the source from the db will be used.
    *
@@ -377,7 +380,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    */
   public synchronized IdSource getIdSource(Db db) {
     if (idSource == null) {  // set up IdSource once for this class
-      // check property "idsource = ..."
       String idConfig = getProperty(Db.IDSOURCE);
       if (idConfig == null) {
         // no such property: use the default id source from Db
@@ -502,7 +504,26 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return true if referenced
    */
   public boolean isReferenced(Db db, long id) {
-    return isReferencedImpl(db, id, foreignReferences);
+    return isReferencedImpl(db, id, getForeignReferences());
+  }
+
+
+  /**
+   * Gets a snapshot of the foreign references.
+   * <p>
+   * The references are copied while holding the monitor of {@code foreignReferences}, which is the
+   * same monitor {@link #addReferencingClass} and {@link #removeReferencingClass} write under.
+   * {@link #isReferencedImpl} queries the database for every reference, so it must iterate a copy:
+   * holding the monitor for the duration of those queries would block registration of further
+   * referencing classes, and iterating the live set without it risks a
+   * {@link java.util.ConcurrentModificationException}.
+   *
+   * @return the unmodifiable collection of foreign references, never null
+   */
+  protected Collection<ForeignReference> getForeignReferences() {
+    synchronized (foreignReferences) {
+      return List.copyOf(foreignReferences);    // the TreeSet's order is retained
+    }
   }
 
 
@@ -546,10 +567,17 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the delegate id
    */
   public int getRemoteDelegateId() {
-    if (remoteDelegateId == 0)  {
-      remoteDelegateId = Db.prepareRemoteDelegate(clazz);
+    int id = remoteDelegateId;
+    if (id == 0)  {
+      synchronized (this) {
+        id = remoteDelegateId;
+        if (id == 0)  {   // still unprepared: another thread may have won the race
+          id = Db.prepareRemoteDelegate(clazz);
+          remoteDelegateId = id;
+        }
+      }
     }
-    return remoteDelegateId;
+    return id;
   }
 
   /**

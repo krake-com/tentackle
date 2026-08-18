@@ -19,13 +19,12 @@
 
 package org.tentackle.fx.table.type;
 
-import javafx.geometry.Pos;
-
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
+import javafx.geometry.Pos;
 import java.text.DecimalFormat;
 
 /**
@@ -46,32 +45,22 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
   }
 
   @Override
+  public String getText(TableColumnConfiguration<?, T> columnConfiguration, T item) {
+    DecimalFormat fmt = getFormat(columnConfiguration, item);
+    return fmt == null ? item.toString() : fmt.format(item);
+  }
+
+  @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    DecimalFormat fmt = getFormat(tableCell.getColumnConfiguration(), item);
-    String text;
-    if (fmt != null) {
-      text = fmt.format(item);
-    }
-    else {
-      text = item.toString();
-    }
-    tableCell.setText(text);
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), item));
     updateAlignment(tableCell, Pos.BASELINE_RIGHT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, T> treeTableCell, T item) {
     treeTableCell.setGraphic(null);
-    DecimalFormat fmt = getFormat(treeTableCell.getColumnConfiguration(), item);
-    String text;
-    if (fmt != null) {
-      text = fmt.format(item);
-    }
-    else {
-      text = item.toString();
-    }
-    treeTableCell.setText(text);
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), item));
     updateAlignment(treeTableCell, Pos.BASELINE_RIGHT);
   }
 
@@ -85,4 +74,5 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
   protected DecimalFormat getFormat(TableColumnConfiguration<?, T> config, T item) {
     return config.getNumberFormat();
   }
+
 }

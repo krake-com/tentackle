@@ -205,17 +205,31 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   @Override
-  public synchronized void shutdown() {
-    assertNotShutdown();
-    LOGGER.info("shutting down pool {0}", this);
-    for (PoolSlot<T> slot: slots) {
+  public void shutdown() {
+    PoolSlot<T>[] slotsToClose;
+    long timeout;
+    synchronized (this) {
+      assertNotShutdown();
+      LOGGER.info("shutting down pool {0}", this);
+      slotsToClose = slots;
+      timeout = shutdownTimeout;
+      // mark the pool shut down before closing: get() and put() must not hand out resources anymore
+      slots = null;
+      freeList = null;
+      unusedList = null;
+    }
+    /*
+     * Close the resources without holding the pool's monitor.
+     * close() waits for the closing operation of each resource, and closing a resource may
+     * well need the pool again. Holding the monitor here would block that until the timeout
+     * struck, leaving the resource unclosed - and would stall the shared PoolTimeoutThread,
+     * which invokes this via monitor() and services all other pools as well.
+     */
+    for (PoolSlot<T> slot: slotsToClose) {
       if (slot != null) {
-        slot.close(shutdownTimeout);
+        slot.close(timeout);
       }
     }
-    slots = null;
-    freeList = null;
-    unusedList = null;
   }
 
   @Override
@@ -237,25 +251,39 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
       initialized = true;
       PoolTimeoutThread.register(this);   // start monitoring by timeout thread
     }
-    if (unusedCount == 0) {
-      createSlots(incrementSize); // enlarge the pool (will throw Exception if the pool is exhausted)
+    // A resource may die while sitting unused in the pool, without the pool being notified:
+    // the peer closed it, a protocol-level idle timeout struck, the network went away, ...
+    // Such a resource must be dropped and replaced instead of being handed out.
+    // Each loop either returns a resource or removes a stale one, so the number of
+    // stale resources found is limited by the current pool size.
+    int staleLimit = slots.length + 1;
+    for (int stale = 0; ; stale++) {
+      if (unusedCount == 0) {
+        createSlots(incrementSize); // enlarge the pool (will throw Exception if the pool is exhausted)
+      }
+      int poolId = unusedList[--unusedCount];
+      PoolSlot<T> poolSlot = slots[poolId];
+      if (poolSlot == null) {
+        throw createException("pool " + this + ": poolable with ID=" + poolId + " cleared unexpectedly");
+      }
+      T poolable = poolSlot.getPoolable();
+      if (poolable == null) {
+        throw createException("pool " + this + ": poolable with ID=" + poolId + " still in use unexpectedly");
+      }
+      if (!poolable.isOpen()) {
+        if (stale >= staleLimit) {
+          // a freshly created resource must be open: give up rather than loop forever
+          throw createException(poolable, "pool " + this + ": no usable resource after " + stale + " attempts");
+        }
+        LOGGER.info("pool {0}: unused poolable {1} is not open anymore -> removed from pool", this, poolSlot);
+        removePoolable(poolable, poolId);
+        continue;   // try the next unused resource, create a new one if there is none left
+      }
+      poolSlot.use(Thread.currentThread());
+      poolable.setPoolId(poolId + 1);   // starting at 1
+      LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
+      return poolable;
     }
-    int poolId = unusedList[--unusedCount];
-    PoolSlot<T> poolSlot = slots[poolId];
-    if (poolSlot == null) {
-      throw createException("pool " + this + ": poolable with ID=" + poolId + " cleared unexpectedly");
-    }
-    T poolable = poolSlot.getPoolable();
-    if (poolable == null) {
-      throw createException("pool " + this + ": poolable with ID=" + poolId + " still in use unexpectedly");
-    }
-    if (!poolable.isOpen()) {
-      throw createException(poolable, "pool " + this + ": poolable " + poolSlot + " has been closed unexpectedly");
-    }
-    poolSlot.use(Thread.currentThread());
-    poolable.setPoolId(poolId + 1);   // starting at 1
-    LOGGER.fine("{0}: poolable {1} assigned to pool id {2}", this, poolable, poolId);
-    return poolable;
   }
 
   @Override
@@ -396,7 +424,29 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   @Override
-  public synchronized void monitor() {
+  public void monitor() {
+    boolean shutdownPool;
+
+    synchronized (this) {
+      if (isShutdown()) {
+        return;   // shut down concurrently: nothing left to monitor
+      }
+      shutdownPool = monitorSlots();
+    }
+
+    if (shutdownPool && !isShutdown()) {
+      // outside the monitor: shutdown() waits for the resources to be closed
+      shutdown();
+    }
+  }
+
+  /**
+   * Closes timed out resources and re-establishes the minimum pool size.<br>
+   * Must be invoked with the pool's monitor held.
+   *
+   * @return true if the pool should be shut down
+   */
+  private boolean monitorSlots() {
     long currentMillis = System.currentTimeMillis();
 
     int i = 0;    // start with the oldest unused
@@ -423,11 +473,18 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
         }
 
         if (idleTimedOut || usageTimedOut || slot.isObsolete()) {
+          // removePoolable drops index i from the unused list and shifts the remaining
+          // entries left, so the next slot moves into i: don't advance i here
           removePoolable(slot.getPoolable(), index);
         }
         else {
           i++;
         }
+      }
+      else {
+        // the slot must be kept (isSlotRemovable may be overridden to veto removal):
+        // advance, otherwise this loop would never terminate and block the pool forever
+        i++;
       }
     }
 
@@ -450,11 +507,10 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     int size = getSize();
     if (minimumSize > 0 && size < minimumSize) {
       createSlots(minimumSize - size);
+      return false;
     }
-    else if (size == 0 && minimumSize < 0) {
-      // minimum size < 0, and all resources closed -> shut down pool
-      shutdown();
-    }
+    // minimum size < 0, and all resources closed -> shut down pool
+    return size == 0 && minimumSize < 0;
   }
 
   /**

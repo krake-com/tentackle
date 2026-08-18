@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 /**
@@ -37,7 +36,7 @@ public interface SessionDependable extends SessionProvider {
   /**
    * Sets the session to immutable.
    *
-   * @param sessionImmutable true if session cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   void setSessionImmutable(boolean sessionImmutable);
 

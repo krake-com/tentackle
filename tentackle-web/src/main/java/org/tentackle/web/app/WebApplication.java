@@ -37,7 +37,14 @@ import java.util.Collection;
  */
 public abstract class WebApplication<T> extends AbstractServerApplication {
 
-  private WebSessionKeyCache<T> sessionInfoCache;   // the web session info cache
+  /**
+   * The web session info cache.
+   * <p>
+   * Created along with the application, not in {@link #startup}, so that the cache is never null:
+   * a web container may still be draining requests while the application is already cleaning up.
+   * Only the cache's cleanup thread follows the application's lifecycle.
+   */
+  private final WebSessionKeyCache<T> sessionInfoCache;
 
 
   /**
@@ -48,6 +55,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    */
   public WebApplication(String name, String version) {
     super(name, version);
+    sessionInfoCache = new WebSessionKeyCache<>();
   }
 
 
@@ -138,13 +146,6 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   @Override
-  protected void startup() {
-    sessionInfoCache = new WebSessionKeyCache<>();
-    super.startup();
-  }
-
-
-  @Override
   protected void finishStartup() {
     super.finishStartup();
 
@@ -155,11 +156,19 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
   @Override
   protected void cleanup() {
-    if (sessionInfoCache != null) {
-      sessionInfoCache.terminate();
-      sessionInfoCache = null;
+    try {
+      /*
+       * Only terminate what has been started: if the startup failed before finishStartup(),
+       * the cleanup thread never ran and terminate() would throw, aborting the cleanup below.
+       */
+      if (sessionInfoCache.isRunning()) {
+        sessionInfoCache.terminate();
+      }
     }
-    super.cleanup();
+    finally {
+      // whatever happened to the cleanup thread, the sessions, pools and drivers must be released
+      super.cleanup();
+    }
   }
 
 }

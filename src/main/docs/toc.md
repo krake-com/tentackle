@@ -9,6 +9,7 @@ the [Index](./index.md).
 - [Quickstart](./quickstart.md) — generate, build, and run a multi-tier application in minutes.
 - [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how the generated modules fit together.
 - [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through a generated application, tier by tier.
+- [What a Seasoned Java Developer Would Not Expect](./unexpected.md) — the distilled list of deviations from mainstream Java frameworks, each with a pointer to the document that covers it.
 - [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md) — the Bill of Materials for pinning Tentackle module versions in downstream projects.
 
 ## Concepts & Architecture
@@ -16,6 +17,7 @@ the [Index](./index.md).
 - [Tentackle Modules](./modules.md) — the build-time, runtime and common modules, and how they layer.
 - [Multi-Tier Cascade](./tiers.md) — nested servers and clients; how the same artifact runs at any tier.
 - [Correctness First](./correctness-first.md) — the design philosophy: refuse to be wrong quietly.
+- [Exceptions and Error Handling](./exceptions.md) — the exception hierarchy, the `temporary` flag behind transparent retry, session-aware messages, and how a `Throwable` survives a trip between tiers.
 - [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — where location transparency shines.
 - [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
 - [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modeling tool.
@@ -39,7 +41,9 @@ the [Index](./index.md).
 - [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL embedded in a PDO interface.
 - [Wurblets — Interface-Level Code Generation](../../../tentackle-wurblets/src/main/docs/wurblets.md) — generating the PDO/operation interfaces.
 - [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md) — generating data transfer objects from a property model or an annotated record.
+- [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — the `org.tentackle.wurblet` classes: wurblet base classes, the argument mini-language, the join model.
 - [Persistence Wurblets — Implementation-Level Code Generation](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md) — generating the persistence implementation.
+- [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md) — the `org.tentackle.persist.wurblet` classes: `DbModelWurblet`, the clause generators, the remoting helpers.
 - [PdoSelectList and PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md) — generating query methods.
 - [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md) — fetching related entities via outer joins.
 
@@ -50,16 +54,22 @@ the [Index](./index.md).
 - [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md) — streaming large result sets, transparently over local and remote sessions.
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
+- [Authentication — Credentials, Providers, and Single Sign-On](../../../tentackle-session/src/main/docs/authentication.md) — the pluggable login: password, OAuth2/OIDC tokens, and your own.
+- [Table Names](../../../tentackle-session/src/main/docs/table-names.md) — schemas, schema mapping and table prefixes: `@TableName`, the wurblet properties and the maven parameters.
 - [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
 - [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `backend.properties` reference: connection, server, and client configuration keys.
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
+- [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
+- [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.
+- [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) — type mapping, index key limits, migration by full column declaration, sequences.
 
 ## Remoting
 
 - [TRIP — Tentackle Remote Invocation Protocol](../../../tentackle-core/src/main/docs/trip.md) — binary serialization and RPC.
-- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport.
+- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the QUIC (RFC-9000) transport, on KWIK.
+- [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md) — the same transport on Cloudflare quiche.
 - [I/O and Networking](../../../tentackle-core/src/main/docs/io.md) — packet-framed compressing/encrypting streams and the reconnection machinery.
 
 ## Core Foundations
@@ -131,9 +141,15 @@ the [Index](./index.md).
 - [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) — syncs database-backed bundles with resource bundles.
 - [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — builds self-contained application images.
 - [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — interactive PDO/operation wizard.
+- [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves the model to coding agents over MCP.
+
+## AI Agent Support
+
+- [AI Agent Tooling Support](./ai-agents.md) — the map: analyzing the model over MCP, the headless batch modes of the wizard goals that scaffold entities, generate fixture code and run application code, and the database side via `tentackle-sql:migrate` and `tentackle-sql:run`.
 
 ## Testing
 
+- [tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — mock delegates for database-less PDO and operation unit tests.
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) — TestNG support for the PDO layer.
 - [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support for the rich desktop client.
 

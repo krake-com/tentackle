@@ -1,0 +1,19 @@
+## a line of an invoice
+name := InvoiceLine
+id := 5
+table := invoiceline
+
+## attributes
+
+Long            invoiceId       invoice_id      object ID of the invoice
+Long            articleId       article_id      object ID of the article
+
+## relations
+# the article sold
+Article:
+    select = lazy
+
+LineNote:
+    relation = component list,
+    name = notes,
+    select = lazy

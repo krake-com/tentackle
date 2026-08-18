@@ -37,31 +37,52 @@ import java.util.Locale;
  */
 public class AttributeOptionsImpl extends CommonOptionsImpl implements AttributeOptions {
 
-  /** generate SQL DEFAULT. */
+  /**
+   * Emits a SQL {@code DEFAULT} clause into the generated column DDL. This is a literal,
+   * database-side default supplied on insert when the column is omitted; it does not
+   * initialize the Java field. Followed by the literal value ({@code DEFAULT <value>}).
+   */
   public static final String OPTION_DEFAULT = "DEFAULT";
 
-  /** initial value. */
+  /**
+   * A Java expression placed on the generated field declaration, so it initializes every
+   * instance from construction (a reload from the database then overwrites it). Use it to avoid
+   * {@code null} starting values. Followed by the expression ({@code INIT <expr>}).
+   */
   public static final String OPTION_INIT = "INIT";
 
-  /** value to set before validation if persisted as new. */
+  /**
+   * A Java expression run once from the generated {@code presetVirgin()} just before a
+   * never-persisted PDO is first saved. Unlike {@code INIT} it does not touch reloaded objects
+   * and may call methods or read other fields. Followed by the expression ({@code NEW <expr>}).
+   */
   public static final String OPTION_NEW = "NEW";
 
-  /** this is the object id holding the context. */
+  /**
+   * Marks the attribute that holds the id of the object spanning the PDO's domain context
+   * (e.g. the tenant/mandator). The generated {@code determineContextId()} fills it and queries
+   * add a context condition. At most one per entity; not allowed on embedded attributes.
+   */
   public static final String OPTION_CONTEXT = "CONTEXT";
 
-  /** this is a unique domain key (or part of it). */
+  /** Marks the attribute as part of the unique domain key (UDK). */
   public static final String OPTION_DOMAINKEY = "KEY";
 
-  /** timestamp, date or time with database timezone. */
+  /**
+   * For the legacy {@code java.sql} date/time types only: applies an explicit, per-object timezone
+   * via the {@code Calendar}-argument JDBC accessors. The PDO must supply the {@code Calendar}
+   * through a {@code get<Attribute>TimezoneConfig()} method. Use for wall-clock values stored in a
+   * data-driven zone; prefer the {@code java.time} types where possible.
+   */
   public static final String OPTION_TZ = "TZ";
 
-  /** hidden attribute (no interface definition). */
+  /** Generates the attribute in the persistence implementation only, not in the PDO interface. */
   public static final String OPTION_HIDDEN = "HIDDEN";
 
-  /** shallow attribute (ignored in snapshots and copies). */
+  /** Excludes the attribute from snapshot and copy operations. */
   public static final String OPTION_SHALLOW = "SHALLOW";
 
-  /** add toString value to the partOfNormText. */
+  /** Includes this attribute's value in the entity's {@code normText} column for full-text search. */
   public static final String OPTION_NORMTEXT = "NORMTEXT";
 
 

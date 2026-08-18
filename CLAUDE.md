@@ -25,6 +25,7 @@ Entry points (all under `src/main/docs/`):
 - [`toc.md`](src/main/docs/toc.md) — every document, grouped by topic.
 - [`index.md`](src/main/docs/index.md) — alphabetical concept → document map.
 - [`README.md`](README.md) — the public-facing overview ("Why Tentackle?").
+- [`ai-agents.md`](src/main/docs/ai-agents.md) — the tooling an agent can drive here: the MCP model server, the headless batch modes of the wizard goals, and the SQL plugin's `migrate`/`run`.
 
 Conceptual deep-dives worth knowing: [`correctness-first.md`](src/main/docs/correctness-first.md), [`tiers.md`](src/main/docs/tiers.md) (multi-tier cascade), [`modules.md`](src/main/docs/modules.md), and [`pdo-vs-orm.md`](tentackle-pdo/src/main/docs/pdo-vs-orm.md).
 
@@ -66,34 +67,37 @@ mvn -Dtest=TestClassName#methodName test
 # Build a specific module (with its reactor dependencies)
 mvn -pl :tentackle-core -am clean install
 
-# Initialize/populate the test database
-mvn -Pinitdb test
+# Additionally run the tests that need a real PostgreSQL server
+mvn -Ppostgres test
 ```
 
-**Requirements:** Java JDK >= 25, Maven >= 3.9.0, PostgreSQL >= 9.
+**Requirements:** Java JDK >= 25, Maven >= 3.9.0.
 (Older LTS lines live on the `java21`, `java17`, `java11` and `java8` branches.)
+
+The build needs **no database**: the tests run against H2 (see [Testing](#testing)).
+PostgreSQL >= 9 is only required for `-Ppostgres`.
 
 Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US`).
 
 ## Module Architecture
 
-This is a 37-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
+This is a 40-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
 
 ```
 UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
                         tentackle-fx-rdc-poi, tentackle-fx-rdc-update, tentackle-web
 Application (runtime):  tentackle-pdo, tentackle-domain, tentackle-persistence, tentackle-update
 Database (runtime):     tentackle-database, tentackle-session
-Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic,
+Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic, tentackle-quiche,
                         log/script providers (log-slf4j, log-log4j2v, script-groovy/ruby/jsr)
 Common (build+runtime): tentackle-common, tentackle-sql
 Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentackle-build-support,
                         tentackle-sql-maven-plugin, tentackle-i18n-maven-plugin,
                         tentackle-jlink-maven-plugin, tentackle-check-maven-plugin,
-                        tentackle-wizard-maven-plugin, tentackle-model,
-                        tentackle-wurblets, tentackle-persistence-wurblets
+                        tentackle-wizard-maven-plugin, tentackle-mcp-maven-plugin,
+                        tentackle-model, tentackle-wurblets, tentackle-persistence-wurblets
 Aggregation/scaffold:   tentackle-bom, tentackle-project-archetype
-Test support:           tentackle-test-pdo, tentackle-test-fx-rdc
+Test support:           tentackle-pdo-mock, tentackle-test-pdo, tentackle-test-fx-rdc
 ```
 
 Note the interface/implementation split: interface modules are implemented by separate runtime modules that are injected via the SPI (see below), so the API stays agnostic of the implementation.
@@ -108,7 +112,8 @@ Key modules:
 - `tentackle-pdo` — Persistent Domain Object interfaces (entities, aggregates, components, operations, security, number sources).
 - `tentackle-domain` — domain-logic layer base classes (PDO domain side).
 - `tentackle-persistence` — PDO-aware persistence layer (PDO persistence side).
-- `tentackle-model` — the model API describing the application's entities and relationships; consumed by the wurblets, the PDO wizard and the SQL plugin.
+- `tentackle-model` — the model API describing the application's entities and relationships; consumed by the wurblets, the PDO wizard, the SQL plugin and the MCP server.
+- `tentackle-mcp-maven-plugin` — serves the loaded, relation-resolved model to coding agents over MCP (`mvn tentackle-mcp:serve`).
 - `tentackle-fx-rdc` — Rich Desktop Client framework (tables, trees, forms) built on PDOs and operations.
 - `tentackle-bom` — Bill of Materials for downstream projects.
 - `tentackle-project-archetype` — Maven archetype for scaffolding new multi-tier projects.
@@ -132,13 +137,13 @@ See [`pdo.md`](tentackle-pdo/src/main/docs/pdo.md) and [`pdo-vs-orm.md`](tentack
 See [`correctness-first.md`](src/main/docs/correctness-first.md). Optimistic (`serial`) and token locking are always on ([`locking.md`](tentackle-persistence/src/main/docs/locking.md)), validation is declarative and travels with the object ([`validation.md`](tentackle-core/src/main/docs/validation.md)), shared objects can be made immutable ([`immutable.md`](tentackle-core/src/main/docs/immutable.md)), and aggregates revert atomically via snapshots ([`snapshot.md`](tentackle-pdo/src/main/docs/snapshot.md)).
 
 ### TRIP (Tentackle Remote Invocation Protocol)
-Custom binary serialization/RPC framework in `tentackle-core` replacing RMI and JOS — compact, pluggable and SD-WAN-friendly. Used for client-server and server-server communication; PDOs travel between JVMs serialized via TRIP. Requires `opens` in `module-info.java` for reflection access. QUIC (RFC-9000) is a pluggable transport (`tentackle-quic`). See [`trip.md`](tentackle-core/src/main/docs/trip.md) and [`tiers.md`](src/main/docs/tiers.md).
+Custom binary serialization/RPC framework in `tentackle-core` replacing RMI and JOS — compact, pluggable and SD-WAN-friendly. Used for client-server and server-server communication; PDOs travel between JVMs serialized via TRIP. Requires `opens` in `module-info.java` for reflection access. QUIC (RFC-9000) is a pluggable transport, provided twice: `tentackle-quic` on the pure-Java KWIK stack (`tripq`/`tripcq`) and `tentackle-quiche` on Cloudflare quiche, bound via the JDK's FFM API (`tripj`/`tripcj`). Both interoperate. See [`trip.md`](tentackle-core/src/main/docs/trip.md), [`quiche.md`](tentackle-quiche/src/main/docs/quiche.md) and [`tiers.md`](src/main/docs/tiers.md).
 
 ### Wurbelizer Code Generation
 Wurblets are code generation templates processed at build time by the third-party `wurbelizer-maven-plugin` (see https://wurbelizer.org/). Generated code is woven into the source within guarded code-folding regions; analysis metadata lands in `target/wurbel/`. `tentackle-wurblets` generates the PDO/operation interfaces and DTOs; `tentackle-persistence-wurblets` generates the persistence implementation and query methods (`PdoSelectList`/`PdoSelectUnique`, eager relations). The model definition DSL is documented in [`model-definition.md`](tentackle-model/src/main/docs/model-definition.md).
 
 ### JPMS (Java Module System)
-Every module has an explicit `module-info.java`, using `exports` for public API and `opens` for reflection-based access. Tentackle applications run in both modular and non-modular (classpath) environments via the ServiceFinder SPI, which is resolved at build time (no runtime classpath scanning, fast startup). See [`modules.md`](src/main/docs/modules.md).
+Every module an application ships with has an explicit `module-info.java`, using `exports` for public API and `opens` for reflection-based access. The build-tooling, test-support and non-modularized provider artifacts (`tentackle-script-groovy`, `-script-ruby`, `-fx-rdc-poi`) declare an `Automatic-Module-Name` in the manifest instead. Tentackle applications run in both modular and non-modular (classpath) environments via the ServiceFinder SPI, which is resolved at build time (no runtime classpath scanning, fast startup). See [`modules.md`](src/main/docs/modules.md).
 
 ### SPI / Service Pattern
 Annotations enable service discovery via `ServiceFinder`, backed by entries under `META-INF/services` (and related `META-INF` subdirectories) produced at build time by the `tentackle-maven-plugin` (which scans for types annotated, directly or indirectly, with `@Analyze`). See [`services.md`](tentackle-common/src/main/docs/services.md).
@@ -152,6 +157,20 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
 ## Testing
 
 - TestNG is the default test framework (JUnit 5 also supported).
-- H2 in-memory database is used for integration tests; PostgreSQL is used for integration tests with multiple processes running in parallel.
-- Test database credentials are configured via filtered resources in test modules.
+- **H2 is the default backend for every test, and no database has to be set up to build the
+  reactor.** `backend.properties` of the test modules points at H2; the test base classes
+  (`AbstractPdoTest`, `TestApplication`, `AbstractDbTest`) create the schema themselves when the
+  backend is H2, so a plain `mvn clean install` is self-contained.
+  - `tentackle-test-pdo` and `tentackle-test-fx-rdc` use an in-memory database
+    (`jdbc:h2:mem:default`) and build the schema from the model via `DbTestUtilities`.
+  - `tentackle-database` uses a file-backed database in `AUTO_SERVER` mode under `target/`,
+    because `MultiJVMPreferencesTest` shares it with a second JVM, and builds the schema from
+    the DDL its own build generates into `META-INF/sql/H2/createttmodel.sql`. Cross-JVM access
+    needs `-Dh2.bindAddress=localhost`, which `AbstractDbTest` sets and passes on to the
+    children it spawns.
+- **PostgreSQL is opt-in** via `mvn -Ppostgres test`, which adds the `postgres` TestNG group.
+  Only `PostgresScriptRunnerTest` is in it — cancelling a statement needs a server that can
+  sleep. That run needs a `tentackle` database created from the generated DDL beforehand; its
+  credentials come from the `dbUrl`/`dbUser`/`dbPasswd` properties, filtered into the test
+  modules' `postgres.properties`.
 - `tentackle-test-pdo` and `tentackle-test-fx-rdc` provide TestNG support for the PDO layer and the rich desktop client respectively.

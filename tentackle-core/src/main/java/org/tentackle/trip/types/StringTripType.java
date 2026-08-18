@@ -27,6 +27,7 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;
 import org.tentackle.trip.impl.DefaultOpCode;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -40,6 +41,9 @@ import java.nio.charset.StandardCharsets;
  */
 @TripTypeService(String.class)
 public class StringTripType extends AbstractTripType<String> {
+
+  /** the number of bytes read at once for longer strings. */
+  private static final int CHUNK_SIZE = 8192;
 
   /**
    * Creates the type.
@@ -170,9 +174,7 @@ public class StringTripType extends AbstractTripType<String> {
         value = "";
       }
       else if (len > 0) {
-        byte[] readBuffer = new byte[len];
-        deserializer.deserialize(readBuffer, 0, len);
-        value = new String(readBuffer, 0, len, StandardCharsets.UTF_8);
+        value = readString(deserializer, len);
 
         if (reference != null) {
           stream.addReference(reference, value, isDeduplicateable(value));
@@ -185,6 +187,36 @@ public class StringTripType extends AbstractTripType<String> {
     }
 
     return value;
+  }
+
+
+  /**
+   * Reads a string of the given length in UTF-8.
+   * <p>
+   * Longer strings are read in chunks instead of allocating the announced length up front, so that
+   * a corrupted length cannot allocate more than the stream actually delivers: it runs out of data
+   * and reports a closed stream rather than an {@link OutOfMemoryError}.
+   *
+   * @param deserializer the deserializer to read from
+   * @param len the number of bytes, greater than zero
+   * @return the string
+   */
+  protected String readString(Deserializer deserializer, int len) {
+    if (len <= CHUNK_SIZE) {
+      byte[] readBuffer = new byte[len];
+      deserializer.deserialize(readBuffer, 0, len);
+      return new String(readBuffer, 0, len, StandardCharsets.UTF_8);
+    }
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream(CHUNK_SIZE);
+    byte[] chunk = new byte[CHUNK_SIZE];
+    int remaining = len;
+    while (remaining > 0) {
+      int count = Math.min(remaining, chunk.length);
+      deserializer.deserialize(chunk, 0, count);
+      buffer.write(chunk, 0, count);
+      remaining -= count;
+    }
+    return buffer.toString(StandardCharsets.UTF_8);
   }
 
 }

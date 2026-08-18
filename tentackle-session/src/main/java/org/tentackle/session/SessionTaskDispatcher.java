@@ -39,7 +39,7 @@ public interface SessionTaskDispatcher extends TaskDispatcher {
    * Sets the session.
    *
    * @param session the session
-   * @throws TaskException if dispatcher is already running or not invoked from the dispatcher thread
+   * @throws TaskException if the dispatcher is already running or not invoked from the dispatcher thread
    */
   void setSession(Session session);
 

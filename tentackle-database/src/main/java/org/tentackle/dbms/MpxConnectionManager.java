@@ -46,6 +46,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private static final int BASE_MS = 50;          // base milliseconds to sleep before the next try
   private static final long REQ_MUTEX_MS = 1000;  // request connections mutex wait timeout
   private static final long DONE_MUTEX_MS = 500;  // done connections mutex wait timeout
+  private static final long CONNECT_THREAD_JOIN_MS = 5000;   // max. time to wait for the connect thread to terminate
 
 
   // args
@@ -83,9 +84,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   // connect thread
 
-  private boolean shutdownRequested;                  // true if shutdown procedure initiated
+  private volatile boolean shutdownRequested;         // true if shutdown procedure initiated
   private final ConnectionThread connectThread;       // thread to bring up connections
-  private int conRequestCount;                        // number of new connections requested
+  private int conRequestCount;                        // number of new connections requested (guarded by this)
   private int warnLogSize;                            // number of connections when to start WARNING logging
   private int infoLogSize;                            // number of connections when to start INFO logging
   private final Object doneMtx;                       // connections created mutex
@@ -213,14 +214,14 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * All connections are closed and the threads stopped.
    */
   @Override
-  public synchronized void shutdown() {
-    shutdownRequested = true;
+  public void shutdown() {
+    shutdownRequested = true;   // volatile: the connect thread sees it without holding any lock
     InterruptedException ix = null;
     for (int loop=0; connectThread.isAlive() && loop < 3; loop++) {   // loop because we may receive an interrupt as well
       ix = null;
       connectThread.interrupt();
       try {
-        connectThread.join();   // wait until the connect-thread terminates
+        connectThread.join(CONNECT_THREAD_JOIN_MS);   // wait until the connect-thread terminates
         break;
       }
       catch (InterruptedException ex) {
@@ -229,11 +230,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
     }
     if (connectThread.isAlive()) {
+      // the thread is stuck, most probably in a lengthy connect against an unreachable backend.
+      // it is a daemon thread and will terminate as soon as the connect fails or the JVM exits.
       LOGGER.warning(this + ": stopping the connect thread failed", ix);
     }
     // close all connections
     super.shutdown();
-    unConCount = 0;
+    synchronized (this) {
+      unConCount = 0;
+    }
   }
 
   /**
@@ -291,28 +296,34 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   @Override
-  public synchronized void logout(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    removeSessionIndex(index);
-    LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
-    try {
-      // check that the connection is not attached, if so, detach it!
-      freeConnection(session.getConnection());
+  public void logout(Db session) {
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      int index = getIndexFromSession(session);
+      removeSessionIndex(index);
+      LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
+      try {
+        // check that the connection is not attached, if so, detach it!
+        freeConnection(session.getConnection());
+      }
+      finally {
+        session.clearSessionId();
+      }
     }
-    finally {
-      session.clearSessionId();
-    }
+    fireConnectionRequest();    // only after the monitor has been released!
   }
 
   @Override
-  public synchronized void cleanup(int sessionId, ManagedConnection connection) {
-    if (sessionId > 0) {
-      int index = getIndexFromSessionId(sessionId);
-      removeSessionIndex(index);
+  public void cleanup(int sessionId, ManagedConnection connection) {
+    synchronized (this) {
+      if (sessionId > 0) {
+        int index = getIndexFromSessionId(sessionId);
+        removeSessionIndex(index);
+      }
+      LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
+      freeConnection(connection);
     }
-    LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
-    freeConnection(connection);
+    fireConnectionRequest();    // only after the monitor has been released!
   }
 
   @Override
@@ -402,13 +413,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
       else {
         if (request) {
-          // start a new request for bringing up connections
-          synchronized(connectThread.requestMtx) {
-            connectThread.requestMtx.notifyAll();
-          }
+          // start a new request for bringing up connections (not synchronized on this!)
+          connectThread.requestConnections();
         }
 
-        // wait for connections to be brought up (even if no request -> may take longer)
+        // wait for connections to be brought up (even if no request: may take longer)
         synchronized (doneMtx) {
           try {
             doneMtx.wait(DONE_MUTEX_MS);
@@ -493,13 +502,17 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         LOGGER.warning("closing old connection failed", rex);
       }
       reopenConnections();
+      fireConnectionRequest();
     }
   }
 
   @Override
-  public synchronized void forceDetach(Db session) {
-    assertSessionBelongsToMe(session);
-    freeConnection(session.getConnection());
+  public void forceDetach(Db session) {
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      freeConnection(session.getConnection());
+    }
+    fireConnectionRequest();    // only after the monitor has been released!
   }
 
 
@@ -629,7 +642,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             LOGGER.warning(buf.toString());
           }
           else {
-            // pre warning
+            // pre-warning
             LOGGER.info(msg);
           }
         }
@@ -665,28 +678,46 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   /**
    * Checks whether the number of connections dropped below minSize.
-   * If so, reopen missing connections.
+   * If so, requests missing connections to be reopened.
    */
   private void reopenConnections() {
-    boolean reopen = false;
-
     synchronized(this) {
       if (conRequestCount == 0) {
         // no connect running
         int num = minSize - getNumConnections();
         if (num > 0) {
           // we dropped below minSize: open connection(s)
-          reopen = true;
           conRequestCount = num;
         }
       }
     }
+  }
 
-    if (reopen) {
-      synchronized(connectThread.requestMtx) {
-        connectThread.requestMtx.notifyAll();   // fire connect, but don't wait for completion
-      }
+  /**
+   * Triggers the connect thread if there are outstanding connection requests.
+   */
+  private void fireConnectionRequest() {
+    if (getConnectionRequestCount() > 0) {
+      connectThread.requestConnections();    // fire connect, but don't wait for completion
     }
+  }
+
+  /**
+   * Gets the number of requested connections.
+   *
+   * @return the number of connections to bring up, 0 if none, -1 if the maximum number of connections is reached
+   */
+  private synchronized int getConnectionRequestCount() {
+    return conRequestCount;
+  }
+
+  /**
+   * Sets the number of requested connections.
+   *
+   * @param conRequestCount the number of connections to bring up, 0 if none, -1 if the maximum number of connections is reached
+   */
+  private synchronized void setConnectionRequestCount(int conRequestCount) {
+    this.conRequestCount = conRequestCount;
   }
 
   private void assertNotShutdown() {
@@ -703,6 +734,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     private final Object requestMtx;                            // connections requested mutex
     private final WeakReference<MpxConnectionManager> cmRef;    // weak reference to check for garbage-collected connection manager
+    private boolean requestPending;                             // true if connections were requested (guarded by requestMtx)
     private boolean lastAttemptFailed;                          // true if the last connection attempt failed
 
     ConnectionThread(MpxConnectionManager mgr) {
@@ -713,57 +745,76 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       requestMtx = new Object();
     }
 
+    /**
+     * Wakes up this thread to bring up the requested connections.
+     */
+    void requestConnections() {
+      synchronized (requestMtx) {
+        requestPending = true;
+        requestMtx.notifyAll();
+      }
+    }
+
     @Override
     public void run() {
 
       LOGGER.info("{0} started", getName());
 
       for (;;) {
-        synchronized (requestMtx) {     // syncs conRequestCount as well
-          try {
-            requestMtx.wait(REQ_MUTEX_MS);
-          }
-          catch (InterruptedException ex) {
-            // check the termination condition below (mgr == null)
-          }
-
-          MpxConnectionManager mgr = cmRef.get();
-          if (mgr == null || mgr.shutdownRequested) {
-            break;
-          }
-
-          if (mgr.conRequestCount > 0) {
-            /*
-             * Bring up connections. This will probably throw exceptions that we catch here and log.
-             * There's not much more we can do.
-             */
+        /*
+         * Wait for a request.
+         * Notice that the manager's monitor must not be acquired while holding requestMtx,
+         * because the manager triggers this thread after releasing its monitor, never before.
+         */
+        synchronized (requestMtx) {
+          if (!requestPending) {    // don't wait if a request came in while we were creating connections
             try {
-              // create missing connections
-              int count = mgr.createConnections(mgr.conRequestCount);
-              mgr.conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
-              if (lastAttemptFailed) {
-                lastAttemptFailed = false;
-                LOGGER.warning("database connection problems resolved");
-              }
+              requestMtx.wait(REQ_MUTEX_MS);
             }
-            catch (RuntimeException e) {
-              if (lastAttemptFailed) {  // don't pollute the logfile if connection errors persist
-                try {
-                  sleep(REQ_MUTEX_MS);  // limit CPU usage
-                }
-                catch (InterruptedException ix) {
-                  // the next round checks whether mgr == null (see above)
-                }
-              }
-              else {
-                lastAttemptFailed = true;
-                LOGGER.severe(mgr + ": creating connections failed", e);
-              }
+            catch (InterruptedException ex) {
+              // check the termination condition below (mgr == null)
             }
+          }
+          requestPending = false;
+        }
 
-            synchronized (mgr.doneMtx) {   // syncs conRequestCount as well
-              mgr.doneMtx.notifyAll();
+        MpxConnectionManager mgr = cmRef.get();
+        if (mgr == null || mgr.shutdownRequested) {
+          break;
+        }
+
+        int requestCount = mgr.getConnectionRequestCount();
+        if (requestCount > 0) {
+          /*
+           * Bring up connections. This will probably throw exceptions that we catch here and log.
+           * There's not much more we can do.
+           */
+          try {
+            // create missing connections
+            int count = mgr.createConnections(requestCount);
+            mgr.setConnectionRequestCount(count == 0 ? -1 : 0); // -1 = max. connections exhausted
+            if (lastAttemptFailed) {
+              lastAttemptFailed = false;
+              LOGGER.warning("database connection problems resolved");
             }
+          }
+          catch (RuntimeException e) {
+            if (lastAttemptFailed) {  // don't pollute the logfile if connection errors persist
+              try {
+                sleep(REQ_MUTEX_MS);  // limit CPU usage
+              }
+              catch (InterruptedException ix) {
+                // the next round checks whether mgr == null (see above)
+              }
+            }
+            else {
+              lastAttemptFailed = true;
+              LOGGER.severe(mgr + ": creating connections failed", e);
+            }
+          }
+
+          synchronized (mgr.doneMtx) {
+            mgr.doneMtx.notifyAll();
           }
         }
       }

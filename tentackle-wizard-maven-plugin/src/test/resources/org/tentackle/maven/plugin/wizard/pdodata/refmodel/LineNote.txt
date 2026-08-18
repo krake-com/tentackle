@@ -1,0 +1,10 @@
+## a note attached to an invoice line
+name := LineNote
+id := 6
+table := linenote
+
+## attributes
+[rootid, rootclassid]
+
+Long            invoiceLineId   invoiceline_id  object ID of the invoice line
+String(200)     text            text            the note's text

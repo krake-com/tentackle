@@ -17,6 +17,8 @@ For more options, see {\@link DbModelWurblet}.
 @[
   private void wurbel() throws WurbelException, ModelException {
 
+    assertNoOptionalArguments();    // the prepared statement is cached, i.e. the SQL text must be fixed
+
     String className = getClassName();
     String methodName = getMethodName();
 

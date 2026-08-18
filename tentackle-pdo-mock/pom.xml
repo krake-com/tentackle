@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>25.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-pdo-mock</artifactId>
+  <packaging>jar</packaging>
+  <name>Tentackle PDO Mocks</name>
+  <description>
+    Mock delegates to instantiate PDOs and operations without a persistence backend.
+    Sits below the domain- and persistence layer so that their unit tests can use it as well.
+    This artifact must be included in test-scope only!
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't change the classpath order -->
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

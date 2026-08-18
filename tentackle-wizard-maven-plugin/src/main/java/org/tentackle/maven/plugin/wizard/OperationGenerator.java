@@ -33,7 +33,9 @@ import org.tentackle.validate.validator.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Generator for the operation files.
@@ -82,23 +84,8 @@ public class OperationGenerator extends AbstractValidateableGenerator {
 
       // create targets
       List<GeneratedFile> generatedFiles = new ArrayList<>();
-      generatedFiles.add(new GeneratedFile(cfg, templateModel,"OperationInterface.ftl",
-                         new File(getProfile().getOperationPackageInfo().getPath(), getOperationName() + Constants.JAVA_EXT)));
-      if (getDomainInterface() != null) {
-        generatedFiles.add(new GeneratedFile(cfg, templateModel, "DomainInterface.ftl",
-        new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + Constants.JAVA_EXT)));
-      }
-      if (getPersistenceInterface() != null) {
-        generatedFiles.add(new GeneratedFile(cfg, templateModel, "PersistenceInterface.ftl",
-        new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT)));
-      }
-      if (getDomainImplementation() != null) {
-        generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainImplementation.ftl",
-                           new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + Constants.JAVA_EXT)));
-      }
-      if (getPersistenceImplementation() != null) {
-        generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceImplementation.ftl",
-                           new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + Constants.JAVA_EXT)));
+      for (Map.Entry<String, File> entry: createTargets().entrySet()) {
+        generatedFiles.add(new GeneratedFile(cfg, templateModel, entry.getKey(), entry.getValue()));
       }
 
       // generate targets
@@ -107,6 +94,44 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       }
     }
     return results;
+  }
+
+  /**
+   * Gets the files that {@link #generate()} would create.<br>
+   * Requires the profile and the operation name to be set.
+   *
+   * @return the target files, never null
+   */
+  public List<File> getTargetFiles() {
+    return new ArrayList<>(createTargets().values());
+  }
+
+  /**
+   * Creates the mapping of the templates to their target files.
+   *
+   * @return the map, ordered by template
+   */
+  private Map<String, File> createTargets() {
+    Map<String, File> targets = new LinkedHashMap<>();
+    targets.put("OperationInterface.ftl",
+                new File(getProfile().getOperationPackageInfo().getPath(), getOperationName() + Constants.JAVA_EXT));
+    if (getDomainInterface() != null) {
+      targets.put("DomainInterface.ftl",
+                  new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + Constants.JAVA_EXT));
+    }
+    if (getPersistenceInterface() != null) {
+      targets.put("PersistenceInterface.ftl",
+                  new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT));
+    }
+    if (getDomainImplementation() != null) {
+      targets.put("DomainImplementation.ftl",
+                  new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + Constants.JAVA_EXT));
+    }
+    if (getPersistenceImplementation() != null) {
+      targets.put("PersistenceImplementation.ftl",
+                  new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + Constants.JAVA_EXT));
+    }
+    return targets;
   }
 
   public void initializeRemoteDefault() {

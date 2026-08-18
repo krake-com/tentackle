@@ -71,9 +71,9 @@ public class JoinClauseGenerator implements CodeGenerator<Object> {
           buf.append(Backend.SQL_AND);
         }
         if (argument.getColumnIndex() == null || columnIndex == argument.getColumnIndex()) {
-          buf.append(join.getName()).append('.').append(attribute.getColumnName());
+          buf.append(join.getName()).append('.').append(wurblet.getColumnName(attribute, columnIndex))
+             .append(wurblet.createRelopSql(argument));
         }
-        buf.append(wurblet.createRelopSql(argument));
       }
       return buf.toString();
     }

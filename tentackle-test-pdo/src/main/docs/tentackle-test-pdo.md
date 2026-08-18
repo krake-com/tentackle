@@ -36,7 +36,7 @@ module descriptor.
 | `org.tentackle.pdo.testng` | TestNG base classes: `AbstractPdoTest` and `TestApplication`. The **default** framework (the module's own tests run under TestNG via `src/test/testng.xml`).  |
 | `org.tentackle.pdo.junit`  | JUnit 5 equivalents of the same two base classes, for projects that prefer Jupiter.                                                                           |
 | `org.tentackle.pdo.test`   | `DbTestUtilities` — low-level helpers that build and run the database-population SQL script from the model. Shared by both the TestNG and JUnit base classes. |
-| `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests.                  |
+| `org.tentackle.pdo.mock`   | `MockDomainObject`, `MockPersistentObject`, `MockDomainOperation`, `MockPersistentOperation` — no-op delegates for database-less unit tests. Ships in the separate `tentackle-pdo-mock` artifact (see below) and reaches downstream projects through this one. |
 
 ---
 
@@ -123,6 +123,14 @@ The `org.tentackle.pdo.mock` package lets a **unit** test work with PDOs and ope
 backend. Recall the [PDO pattern](../../../../tentackle-pdo/src/main/docs/pdo.md): a PDO is a dynamic proxy backed
 by a *domain* delegate and a *persistence* delegate. The mocks supply trivial stand-ins for those delegates:
 
+> **Where they live.** The package is its own artifact, **`tentackle-pdo-mock`**, which depends on nothing but
+> `tentackle-pdo`. It sits *below* the domain- and persistence layer, so those modules can use the mocks in their
+> own unit tests — a dependency on `tentackle-test-pdo` would be a cycle, because this module depends on them.
+> Downstream projects need not care: `tentackle-test-pdo` depends on `tentackle-pdo-mock`, so the classes arrive
+> transitively under their unchanged package and class names. See
+> [Tentackle PDO Mocks](../../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) for the full description of the
+> mocks — what they implement, how to write and generate one, and the Mockito alternative.
+
 | Mock                         | Stands in for                                                                            |
 |------------------------------|------------------------------------------------------------------------------------------|
 | `MockDomainObject<T,D>`      | the domain delegate of a `PersistentDomainObject`                                        |
@@ -169,8 +177,9 @@ wants itself.
 ## The Module's Own Tests
 
 Although primarily a *support* library, the module also **contains PDO tests** (under `src/test/java`) that exercise
-the framework end-to-end against H2 (in-memory) and PostgreSQL (multi-process). They double as worked examples of
-the base classes above. Coverage spans, among others:
+the framework end-to-end against the in-memory H2 database — including the multi-process ones, whose database
+lives inside the forked server. They double as worked examples of the base classes above. Coverage spans, among
+others:
 
 | Area                       | Example test(s)                                                                                    |
 |----------------------------|----------------------------------------------------------------------------------------------------|
@@ -188,13 +197,31 @@ the factory and [interceptor](../../../../tentackle-core/src/main/docs/intercept
 running the code generator.
 
 The `testng.xml` suite runs three groups — `local`, `remote1`, `remote2` — single-threaded, over the whole
-`org.tentackle.*` package tree; the `remote*` groups drive the out-of-process server.
+`org.tentackle.*` package tree; the `remote*` groups drive the out-of-process server. A fourth group,
+`postgres`, is excluded by default and added by `testng-postgres.xml` under `mvn -Ppostgres test`.
+
+> **A test method without a group never runs.** Because the suite selects methods by group, a plain `@Test` is
+> silently skipped. Annotate new tests with `groups = "local"` unless they belong in one of the others.
 
 ### Test configuration
 
-Connection parameters come from filtered resources (`backend.properties`, `client.properties`) substituting the
-`dbUrl`/`dbUser`/`dbPasswd`/`dbService` build properties, with `h2.properties` selecting the in-memory default
-(`jdbc:h2:mem:default`). Logging is routed to `target/logs/test.log` via
+`backend.properties` — the file every test picks up by default — selects the **in-memory H2 database**
+(`jdbc:h2:mem:default;DB_CLOSE_DELAY=-1`), so the suite is self-contained and needs no database setup.
+`DB_CLOSE_DELAY=-1` keeps the database alive while no connection is held, which matters for the pool tests.
+`client.properties` holds the TRIP URL of the forked server (`${dbService}`), and `backend.properties` also
+carries the matching `service=` entry the server listens on.
+
+The forked server JVMs get their *own* empty in-memory database, so `TestServer` and `AddAndRemovePrefsInServer`
+build the schema themselves in `finishStartup()` via `InMemoryServerSchema` — the counterpart of what
+`AbstractPdoTest` does for the test JVM.
+
+`postgres.properties` (filtered from `dbUrl`/`dbUser`/`dbPasswd`) points at a real PostgreSQL server. Only
+`PostgresScriptRunnerTest` uses it: cancelling a running script needs a statement that blocks (`PG_SLEEP`) and
+asserts PostgreSQL's own abort message, and it is the only coverage of `PostgresScriptRunner`. It belongs to the
+`postgres` group, which `testng.xml` excludes; run it with `mvn -Ppostgres test`, which switches the suite to
+`testng-postgres.xml`.
+
+Logging is routed to `target/logs/test.log` via
 [`tentackle-log-log4j2v`](../../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md) because the
 console is contended by parallel processes on Windows.
 

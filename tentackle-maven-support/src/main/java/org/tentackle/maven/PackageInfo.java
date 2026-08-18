@@ -75,13 +75,34 @@ public class PackageInfo {
   }
 
   /**
+   * Determines whether a file is hidden.<br>
+   * Unlike {@link File#isHidden()}, a name starting with a dot counts as hidden on all platforms,
+   * not just on unix-like ones. Otherwise, files such as {@code .gitignore} would be treated
+   * differently on Windows.
+   *
+   * @param file the file to check
+   * @return true if hidden
+   */
+  public static boolean isHidden(File file) {
+    return file.getName().startsWith(".") || file.isHidden();
+  }
+
+  /**
    * Determines whether this package contains any files.<br>
    * The method is used to detect split packages which are forbidden in JPMS.
+   * <p>
+   * Only the files directly within the package directory count, and hidden files are ignored,
+   * just as when the package was collected (a directory holding nothing but a {@code .gitignore}
+   * is an empty package).
    *
    * @return true if not empty, false if no files found
    */
   public boolean isContainingFiles() {
-    String[] files = path.list((dir, nam) -> dir.isFile());
+    // notice: the first argument of a FilenameFilter is the directory, not the file!
+    String[] files = path.list((dir, nam) -> {
+      File file = new File(dir, nam);
+      return file.isFile() && !isHidden(file);
+    });
     return files != null && files.length > 0;
   }
 

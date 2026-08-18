@@ -101,7 +101,7 @@ For more options, see {\@link ModelWurblet}.
             }
             if (attr.getOptions().isBindable()) {
 ]@
-  \@Bindable
+  \@Bindable(ordinal=@(attr.getOrdinal())@)
 @[
             }
 ]@

@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>25.18.2.1</version>
+  <version>25.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -45,18 +45,21 @@
     <module>tentackle-maven-support</module>
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
+    <module>tentackle-mcp-maven-plugin</module>
     <module>tentackle-core</module>
     <module>tentackle-quic</module>
+    <module>tentackle-quiche</module>
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>
+    <module>tentackle-pdo-mock</module>
     <module>tentackle-log-log4j2v</module>
     <module>tentackle-log-slf4j</module>
     <module>tentackle-script-jsr</module>
     <module>tentackle-script-groovy</module>
     <module>tentackle-script-ruby</module>
-    <module>tentackle-domain</module>
     <module>tentackle-persistence-wurblets</module>
+    <module>tentackle-domain</module>
     <module>tentackle-database</module>
     <module>tentackle-persistence</module>
     <module>tentackle-i18n</module>
@@ -87,18 +90,21 @@
     <asm.version>9.10.1</asm.version>
     <atlantafx.version>2.1.0</atlantafx.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>5.0.7</groovy.version>
+    <groovy.version>5.1.0</groovy.version>
     <h2.version>2.4.240</h2.version>
+    <helidon.mcp.version>1.2.0</helidon.mcp.version>
+    <helidon.version>4.5.0</helidon.version>
     <ikonli.version>12.4.0</ikonli.version>
-    <javafx.version>26.0.1</javafx.version>
-    <jruby.version>10.1.0.0</jruby.version>
-    <junit.version>6.1.1</junit.version>
+    <javafx.version>26.0.2</javafx.version>
+    <jruby.version>10.1.1.0</jruby.version>
+    <junit.version>6.1.3</junit.version>
     <kwik.version>0.11</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
     <plexus.archiver.version>4.12.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
     <postgresql.version>42.7.13</postgresql.version>
+    <quiche.native.version>0.29.3</quiche.native.version>
     <slf4j.version>2.0.18</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
@@ -118,11 +124,11 @@
     <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
     <maven.help.plugin.version>3.5.2</maven.help.plugin.version>
     <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
-    <maven.jar.plugin.version>3.5.0</maven.jar.plugin.version>
+    <maven.jar.plugin.version>3.5.1</maven.jar.plugin.version>
     <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
     <maven.keytool.plugin.version>2.0.2</maven.keytool.plugin.version>
-    <maven.owasp.plugin.version>12.2.2</maven.owasp.plugin.version>
+    <maven.owasp.plugin.version>13.0.0</maven.owasp.plugin.version>
     <maven.plugin.plugin.version>3.15.2</maven.plugin.plugin.version>
     <maven.plugin.report.plugin.version>3.15.2</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.9.0</maven.project.info.reports.plugin.version>
@@ -141,7 +147,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>25.6.5.0</wurbelizer.version>
+    <wurbelizer.version>25.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
@@ -149,7 +155,7 @@
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
     <tentackle.sqlDir>${wurbel.wurbelDir}/sql</tentackle.sqlDir>
 
-    <!-- CI test database -->
+    <!-- CI test database (postgres-related tests only, not used for the build)-->
     <dbUrl>jdbc:postgresql://localhost/tentackle</dbUrl>
     <dbUser>tentackle</dbUser>
     <dbPasswd>tentackle</dbPasswd>
@@ -293,6 +299,27 @@
         <groupId>tech.kwik</groupId>
         <artifactId>kwik</artifactId>
         <version>${kwik.version}</version>
+      </dependency>
+
+      <!-- the Cloudflare quiche native libraries, built by the Jetty project.
+           Resources only: tentackle-quiche binds them via the FFM API. -->
+      <dependency>
+        <groupId>org.mortbay.jetty.quiche</groupId>
+        <artifactId>jetty-quiche-native</artifactId>
+        <version>${quiche.native.version}</version>
+      </dependency>
+
+      <!-- the MCP server: pulls the helidon webserver, JSON-RPC, SSE and JSON artifacts -->
+      <dependency>
+        <groupId>io.helidon.extensions.mcp</groupId>
+        <artifactId>helidon4-extensions-mcp-server</artifactId>
+        <version>${helidon.mcp.version}</version>
+      </dependency>
+      <!-- the logging implementation must be loaded explicitly -->
+      <dependency>
+        <groupId>io.helidon.logging</groupId>
+        <artifactId>helidon-logging-jul</artifactId>
+        <version>${helidon.version}</version>
       </dependency>
 
       <dependency>
@@ -730,7 +757,7 @@
             </reports>
             <configuration>
               <!-- aggregate does not allow mixing modular and non-modular artifacts: exclude automatic modules -->
-              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi</skippedModules>
+              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-mcp-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi</skippedModules>
             </configuration>
           </reportSet>
         </reportSets>

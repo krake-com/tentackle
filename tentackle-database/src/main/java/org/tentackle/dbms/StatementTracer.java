@@ -61,7 +61,7 @@ public class StatementTracer {
 
   private transient boolean regexPresent;       // to speed up
   private boolean enabled;                      // tracer is disabled by default
-  private Logger.Level logLevel;                // log level, if traced statements should be immediately logged
+  private Logger.Level logLevel;                // log level, if the traced statements should be immediately logged
 
   /**
    * Creates the tracer.
@@ -167,7 +167,7 @@ public class StatementTracer {
   }
 
   /**
-   * Returns whether statement should be traced.
+   * Returns whether the statement should be traced.
    *
    * @param statement the statement
    * @return true to trace, false don't trace

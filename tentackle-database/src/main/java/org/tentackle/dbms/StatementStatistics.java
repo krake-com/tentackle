@@ -55,7 +55,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
 
   /**
-   * If true the statistics are per statement and parameters, else only per statement.
+   * If true, the statistics are per statement and parameters, else only per statement.
    */
   private static boolean withParameters;
 
@@ -124,7 +124,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    * Gets the current statistics.
    *
    * @param clear true if clear
-   * @return the statement statistics sorted by sql and parameters
+   * @return the statement statistics sorted by SQL and parameters
    */
   public static synchronized Set<StatementStatistics> getStatistics(boolean clear) {
     Set<StatementStatistics> stats = new TreeSet<>(STAT_MAP.values());
@@ -316,14 +316,13 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     return Objects.equals(this.parameters, other.parameters);
   }
 
-
   @Override
   public int compareTo(StatementStatistics o) {
     int rv = Compare.compare(sql, o.sql);
     if (rv == 0) {
       /*
-       * Because statistics are only created for unequal parameters
-       * it is sufficient to compare the instanceNumber
+       * Because statistics are only created for unequal parameters.
+       * It is sufficient to compare the instanceNumber
        */
       rv = Integer.compare(instanceNumber, o.instanceNumber);
     }

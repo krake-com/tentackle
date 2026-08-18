@@ -35,8 +35,7 @@ compact, pluggable protocol:
   There is no need to explicitly export or unexport remote objects since
   the remote delegates and client proxies are automatically managed.
 - **SD-WAN compatible**: unlike RMI, TRIP does not send IP addresses, host names, or port numbers back to the client
-  when exposing remote objects.
-  This allows NAT and also saves one network round-trip for each new remote proxy.
+  when exposing remote objects, which wouldn't work with NAT.
 
 
 
@@ -83,19 +82,63 @@ The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**
 
-| Scheme   | Description                                             |
-|----------|---------------------------------------------------------|
-| `trip`   | Plain TCP sockets                                       |
-| `trips`  | TCP with SSL/TLS encryption                             |
-| `tripe`  | TCP with pre-shared key (PSK) encryption                |
-| `tripc`  | TCP with deflate compression                            |
-| `tripcs` | TCP with both SSL and compression                       |
-| `tripce` | TCP with both PSK and compression                       |
-| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module) |
-| `tripcq` | UDP QUIC protocol with compression                      |
+| Scheme   | Description                                                                    |
+|----------|--------------------------------------------------------------------------------|
+| `trip`   | Plain TCP sockets                                                              |
+| `trips`  | TCP with SSL/TLS encryption                                                    |
+| `tripe`  | TCP with pre-shared key (PSK) encryption                                       |
+| `tripc`  | TCP with deflate compression                                                   |
+| `tripcs` | TCP with both SSL and compression                                              |
+| `tripce` | TCP with both PSK and compression                                              |
+| `tripq`  | UDP QUIC protocol (provided by `tentackle-quic` module)                        |
+| `tripcq` | UDP QUIC protocol with compression                                             |
+| `tripj`  | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module) |
+| `tripcj` | UDP QUIC protocol on Cloudflare quiche, with compression                       |
 
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
 `org.tentackle.io` — see [io.md](io.md).
+
+### SSL/TLS configuration
+
+The SSL-based transports (`trips` and `tripcs`) create their sockets through the SSL-aware
+[`TcpSocketFactory`](../java/org/tentackle/io/TcpSocketFactory.java) and
+[`TcpServerSocketFactory`](../java/org/tentackle/io/TcpServerSocketFactory.java). Unlike the default
+JSSE factories — which always present the *first* certificate found in the keystore — these allow
+**selecting the certificate by its alias** and tuning the SSL options.
+
+The configuration is held by [`SslParameters`](../java/org/tentackle/io/SslParameters.java). Each
+value is resolved from up to three sources, in order of precedence:
+
+1. the URI **query parameter** (short key, e.g. `ksfile`),
+2. the Tentackle **system property** `tentackle.ssl.<name>` (e.g. `tentackle.ssl.keyStore`),
+3. the standard JSSE **system property** `javax.net.ssl.<name>` as a fallback, so existing
+   configurations (e.g. in `backend.properties`) keep working.
+
+| Query key    | `tentackle.ssl.` suffix  | `javax.net.ssl.` fallback | Side   | Description                                                                                 |
+|--------------|--------------------------|---------------------------|--------|---------------------------------------------------------------------------------------------|
+| `ksfile`     | `keyStore`               | `keyStore`                | both   | keystore holding the own certificate(s); a client sets it to present a client cert          |
+| `kspass`     | `keyStorePassword`       | `keyStorePassword`        | both   | keystore password                                                                           |
+| `kstype`     | `keyStoreType`           | `keyStoreType`            | both   | keystore type (default: JDK default, usually `PKCS12`)                                      |
+| `ksalias`    | `keyStoreAlias`          | —                         | both   | **alias of the certificate to present** (optional if the keystore holds a single key entry) |
+| `kmpass`     | `keyPassword`            | `keyPassword`             | both   | private key password (default: keystore password)                                           |
+| `tsfile`     | `trustStore`             | `trustStore`              | both   | truststore verifying the peer (default: JSSE default trust store)                           |
+| `tspass`     | `trustStorePassword`     | `trustStorePassword`      | both   | truststore password                                                                         |
+| `tstype`     | `trustStoreType`         | `trustStoreType`          | both   | truststore type                                                                             |
+| `protocol`   | `protocol`               | —                         | both   | `SSLContext` protocol (default `TLS`)                                                       |
+| `protocols`  | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
+| `ciphers`    | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
+| `clientauth` | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
+| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm, e.g. `HTTPS` (default: none)                             |
+
+Example — a server presenting the certificate stored under alias `server` and requiring client
+certificates, with clients verified against a dedicated truststore:
+
+```
+trips://0.0.0.0:18000/myapp?ksfile=server.p12&kspass=secret&ksalias=server&tsfile=clients.p12&tspass=secret&clientauth=need
+```
+
+Client certificates are supported symmetrically: a client presents one by providing `ksfile`
+(and, to pick a specific one, `ksalias`).
 
 ### Remote and RemoteDelegate
 
@@ -142,6 +185,31 @@ belonging to the tree are unregistered as well.
 The Tentackle's [Session API](../../../../tentackle-session/src/main/docs/session.md) makes use of this mechanism.
 When a session is closed, the remote session delegate is unregistered
 together with all other remote objects of the session.
+
+#### Returning several remote objects at once
+
+A remote method may also return an **array of `Remote` objects**. Each element is registered
+individually, exactly as a single `Remote` result would be, and the client receives an array
+of proxies:
+
+```java
+public interface MyService extends Remote {
+    Remote[] lookupServices(String[] names);   // one roundtrip for all of them
+}
+```
+
+Elements may be `null`, which allows the server to answer "no such remote object" for individual
+entries without failing the whole call. The elements join the returning delegate's tree, so they
+are unregistered together with it.
+
+This is what the session layer uses to
+[preload remote delegates](../../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates):
+on links with a high latency, fetching hundreds of delegates one by one is the dominating cost
+of the application startup.
+
+Notice that only arrays with a component type of `Remote` (or a subtype) are treated this way.
+Collections and `Object[]` are serialized as ordinary results, since scanning every list-shaped
+result for remote objects would slow down all other remote calls.
 
 ### Registry and RemoteLookup
 
@@ -220,6 +288,33 @@ When an object is first serialized:
 
 This compression is maintained separately per client on the server side and as a single dictionary on the client side.
 
+##### Dictionary lifetime and the connection handshake
+
+Every connection starts with a short preamble:
+
+| Bytes | Meaning                                        |
+|-------|------------------------------------------------|
+| 2     | the TRIP magic number                          |
+| 16    | the UUID of the client's transport             |
+| 1     | whether the client's dictionary is still empty |
+
+The server keeps one dictionary per client transport UUID and holds it only weakly: once the last
+connection of that transport is closed, the dictionary is garbage collected. The client, in
+contrast, keeps its dictionary for the whole lifetime of its transport. That asymmetry is why the
+last byte exists.
+
+When a connection arrives and the server has no dictionary for its transport UUID — because it was
+collected or because the server was restarted — it may only create a new one if the client says
+its own dictionary is still empty. A client that already learned entries would otherwise send
+ordinals the new dictionary never saw, and the receiving side would block until
+`Dictionary.getEntry(int)` times out. Such a client is rejected with *"no such dictionary … (stale
+client transport?)"* and has to establish a new transport, which gives both sides a fresh
+dictionary. Applications that reconnect must therefore build a new `Transport` rather than reuse
+the rejected one.
+
+Because the preamble is part of the wire format, a peer built against a different handshake version
+fails immediately with an *"invalid magic"* error instead of misreading the header.
+
 #### OpCode
 
 Every serialized block starts with a single-byte `OpCode` (`org.tentackle.trip.OpCode`) that tells the deserializer what type of data follows:
@@ -277,8 +372,9 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
     - Records → `RecordTripType`
     - Enums → `EnumTripType` (constants with class bodies are mapped to their enum class)
     - Collections/Maps → `CollectionTypeBuilder` / `MapTypeBuilder`, including the JDK types
-      without usable constructors: the `Collections` wrappers (`unmodifiable*`, `empty*`,
-      `singleton*`), `Arrays.asList`, `EnumSet` and `EnumMap`
+      without usable constructors: the `Collections` wrappers (`unmodifiable*`, `synchronized*`,
+      `empty*`, `singleton*`, `nCopies`, `newSetFromMap`), `Arrays.asList`,
+      `ConcurrentHashMap.newKeySet`, `EnumSet` and `EnumMap`
 
 4. **Component construction**: For `ObjectTripType`, the builder scans the class for serializable fields:
     - Skips `transient`, `static`, and fields annotated with `@TripIgnore`
@@ -322,6 +418,76 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
    invoke validate() method if TripSerializable.validate() is set
    return instance
    ```
+
+### JDK collections and maps
+
+Java collections hold internal delegates that cannot be instantiated directly, so TRIP serializes
+their *elements* only, never their fields — see `CollectionTripType#isFieldSerializable`. On the
+receiving side the collection is rebuilt through its sized (or no-args) constructor and refilled.
+Consequently, everything the JDK keeps in a private field is *not* transported unless a dedicated
+`TripType` takes care of it.
+
+A subclass can transport such state itself: annotate a getter for it with `@CanonicalGetter` and the
+constructor taking it back with `@CanonicalConstructor` (see
+[canonical construction](reflect.md#canonical-construction)). TRIP then creates the map or
+collection through that constructor and sends its components *ahead* of the entries, since the
+container cannot exist before its constructor arguments are known.
+[`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) does exactly this for the
+`defaults` of a `Properties`. A map or collection with only a canonical constructor — neither sized
+nor no-args — is serializable this way as well.
+
+The full matrix is verified by `JdkCollectionsTest`. In short:
+
+**Round trip faithfully** — the concrete class, the content, the iteration order, null elements,
+null keys and null values, shared references and cycles:
+
+| Kind      | Types                                                                                                                                                               |
+|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Lists     | `ArrayList`, `LinkedList`, `Vector`, `Stack`, `CopyOnWriteArrayList`                                                                                                |
+| Sets      | `HashSet`, `LinkedHashSet`, `TreeSet`, `EnumSet`, `CopyOnWriteArraySet`, `ConcurrentSkipListSet`                                                                    |
+| Queues    | `ArrayDeque`, `PriorityQueue`, `ConcurrentLinked{Queue,Deque}`, `LinkedBlocking{Queue,Deque}`, `ArrayBlockingQueue`, `PriorityBlockingQueue`, `LinkedTransferQueue` |
+| Maps      | `HashMap`, `LinkedHashMap`, `TreeMap`, `Hashtable`, `Properties`, `ConcurrentHashMap`, `ConcurrentSkipListMap`, `IdentityHashMap`, `WeakHashMap`, `EnumMap`         |
+| Immutable | `List.of`, `Set.of`, `Map.of` and their `copyOf` variants                                                                                                           |
+| Wrappers  | `Collections.{unmodifiable,synchronized,empty,singleton}*`, `nCopies`, `newSetFromMap`, `Arrays.asList`, `ConcurrentHashMap.newKeySet`                              |
+
+Every collection ordered by a `Comparator` transports it as part of the header, since it lives in
+a JDK-internal field and would otherwise leave the receiver re-sorting by natural ordering — or
+failing outright for elements that are not `Comparable`:
+
+| Types                                                             | Trip type                  |
+|-------------------------------------------------------------------|----------------------------|
+| `TreeSet`, `ConcurrentSkipListSet`                                | `SortedSetTripType`        |
+| `TreeMap`, `ConcurrentSkipListMap`                                | `SortedMapTripType`        |
+| `PriorityQueue`, `PriorityBlockingQueue`                          | `PriorityQueueTripType`    |
+| `Collections.{unmodifiable,synchronized}{SortedSet,NavigableSet}` | `WrappedSortedSetTripType` |
+| `Collections.{unmodifiable,synchronized}{SortedMap,NavigableMap}` | `WrappedSortedMapTripType` |
+
+This requires a comparator constructor, which every JDK implementation provides. The comparator
+must be serializable itself, i.e., a static or top-level class — an anonymous inner class would
+expect the enclosing instance as a constructor argument.
+
+A priority queue restores its *heap*, not the heap's layout: the elements are re-inserted one by
+one, so the iteration order may differ from the sender's. The head of the queue and the polling
+order are identical.
+
+**Round trip, but arrive reconfigured** — the content is intact, the setup is not:
+
+- the capacity of the bounded queues is reduced to the number of elements,
+- the access-order flag of a `LinkedHashMap` (LRU caches) is lost,
+- the `defaults` of a `Properties` are lost — use
+  [`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) instead, which transports
+  the whole chain,
+- the backing map of `Collections.newSetFromMap` becomes a `LinkedHashMap`,
+- the `Collections` wrappers are rebuilt around an `ArrayList`, hence the `RandomAccess`
+  variant of the wrapper is delivered.
+
+**Are rejected** with a `TripInstantiationException`, since they cannot be reconstructed without
+their backing collection or type token — copy them into a regular collection before sending:
+
+- the views: `List#subList`, `Map#keySet`, `Map#values`, `Map#entrySet`,
+  `NavigableMap#descendingMap`, `NavigableSet#descendingSet`,
+- `Collections.checked*`,
+- `Map.entry` (`java.util.KeyValueHolder`) and `BitSet`, which are neither collections nor maps.
 
 ### Annotation-driven customization
 
@@ -437,6 +603,12 @@ public class SharedConfig {
     }
 }
 ```
+
+A back-reference can only be resolved once the object exists on the receiving side. For classes
+built through a `@CanonicalConstructor`, a `@CanonicalBuilder`, or for records, construction is
+delayed until the component values are known, which restricts how far a component may reference
+back to its own object — see
+[delayed construction and back-references](reflect.md#delayed-construction-and-back-references).
 
 #### `@TripSerializeLambda`
 
@@ -878,6 +1050,9 @@ Key details:
     - `kstype` — keystore type (defaults to JDK default)
     - `alpnid` — ALPN protocol identifier (defaults to the URI scheme)
     - `maxstreams` — maximum concurrent bidirectional streams (default: 128)
+    - `connecttimeout` — seconds to wait for the QUIC handshake before giving up. Must be > 0.
+    - `quicidle` — QUIC max idle timeout in seconds (default: 30)
+    - `keepalive` — seconds to keep the QUIC connection alive, `0` disables it (default: unlimited)
 
 - **`createStream()`** method wraps a QUIC stream's I/O in a TRIP `TripStream`:
   ```java
@@ -889,7 +1064,7 @@ Key details:
   }
   ```
 
-- **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`.
+- **Client connections**: `QuicTripConnectionPool` opens a `QuicClientConnection`, and each `createSlot()` call creates a new bidirectional `QuicStream` on that connection, wrapped in a `QuicTripConnection`. Since all pooled connections share that single QUIC connection, it is kept alive by PING frames (see `keepalive` above) and re-established if it is lost.
 
 - **Server-side streams**: `QuicProtocolConnectionFactory` accepts incoming `QuicStream`s from peer-initiated bidirectional streams and hands them to `transport.createConnectionHandler()` on a virtual thread.
 
@@ -904,3 +1079,4 @@ Key details:
 - [The Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — how the same artifact runs at any tier, with TRIP as the transport between them.
 - [Correctness First](../../../../src/main/docs/correctness-first.md) — TRIP's version checking and type dictionary as part of the correctness story.
 - [Tentackle Modules](../../../../src/main/docs/modules.md) — where `tentackle-core` (TRIP) sits among the framework modules.
+- [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md) — how a `Throwable` is put on the wire and rethrown unchanged on the far side.

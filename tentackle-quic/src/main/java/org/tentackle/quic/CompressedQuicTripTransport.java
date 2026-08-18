@@ -63,8 +63,8 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   public TripStream createStream(Dictionary dictionary, QuicStream quicStream) {
     TripFactory factory = TripFactory.getInstance();
     return factory.createStream(dictionary,
-                                factory.createSerializer(createCompressedOutputStream(quicStream.getOutputStream())),
-                                factory.createDeserializer(createCompressedInputStream(quicStream.getInputStream())));
+                                factory.createSerializer(createCompressedOutputStream(outputStream(quicStream))),
+                                factory.createDeserializer(createCompressedInputStream(inputStream(quicStream))));
   }
 
 

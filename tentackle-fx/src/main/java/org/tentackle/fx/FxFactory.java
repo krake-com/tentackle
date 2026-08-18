@@ -26,6 +26,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Paint;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
@@ -159,6 +160,18 @@ public interface FxFactory {
    * @return the image
    */
   Image createImage(Node node, Paint fill);
+
+  /**
+   * Creates an icon button as a stack pane.<br>
+   * Used to decorate an existing component with a button-like node.
+   *
+   * @param styleClass the style class
+   * @param graphicName the symbolic graphic name
+   * @param bundleKey the bundle key for the tooltip
+   * @param action the action to run when the button is clicked
+   * @return the button
+   */
+  StackPane createButton(String styleClass, String graphicName, String bundleKey, Runnable action);
 
   /**
    * Creates an empty configuration from a template object.

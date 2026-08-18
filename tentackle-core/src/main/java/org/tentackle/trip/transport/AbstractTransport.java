@@ -74,6 +74,17 @@ public abstract class AbstractTransport implements Transport {
    * This is necessary to GC the server-side dictionaries when the last
    * connection sharing the dictionary (mapped by its UUID, which is
    * the same reference as the UUID of the client's transport) is closed.
+   * <p>
+   * The map is a pure cache of the currently live dictionaries. Whether a client transport that
+   * is not (anymore) in it may be given a new dictionary is decided by the handshake flag, not by
+   * the presence of an entry — see {@link #getServerDictionary(UUID, boolean)}.
+   * <p>
+   * Notice: the ModificationTracker automatically reconnects its {@code Session} if the
+   * TRIP-connection is closed due to an error (for example, a timeout or some serialization error).
+   * If this was the only connection, the dictionary is removed from this map, and a
+   * new dictionary is created when the session is re-established.<br>
+   * If TRIP is used by other applications, some similar reconnection mechanism must be implemented as well.<br>
+   * See also {@code ConnectionHandler:239 → "no such dictionary … (stale client transport?)"}.
    */
   private WeakHashMap<UUID, WeakReference<Dictionary>> dictionariesById;
 
@@ -151,13 +162,31 @@ public abstract class AbstractTransport implements Transport {
   }
 
   @Override
-  public synchronized Dictionary getServerDictionary(UUID id) {
+  public synchronized Dictionary getServerDictionary(UUID id, boolean clientDictionaryEmpty) {
     // Since the dictionary keeps a strong reference to the transport's ID,
     // all the incoming connection's UUID are mapped to the same reference.
     // When the last connection sharing the dictionary is closed, the dictionary
     // and the UUID in the weak map are both garbage collected.
-    return dictionariesById.computeIfAbsent(id, uuid -> new WeakReference<>(
-      TripFactory.getInstance().createDictionary(uuid, true))).get();
+    WeakReference<Dictionary> reference = dictionariesById.get(id);
+    Dictionary serverDictionary = reference == null ? null : reference.get();
+    if (serverDictionary == null) {
+      if (!clientDictionaryEmpty) {
+        // The client already holds entries, but we have none for it: either all its connections
+        // were closed and its dictionary was collected, or this server was restarted. Giving it a
+        // new dictionary would make it send ordinals we never learned, so it has to establish a
+        // new transport, which gives both sides a fresh dictionary.
+        LOGGER.warning("client transport {0} has a populated dictionary but {1} has none for it " +
+                       "-> the client must establish a new transport", id, this);
+        return null;
+      }
+      // Drop a stale entry first: put() would keep its collected UUID instance as the key, and
+      // that instance dies with the old dictionary, taking the entry of the new one with it.
+      dictionariesById.remove(id);
+      // The new dictionary holds the given UUID, which is what keeps the weak key alive.
+      serverDictionary = TripFactory.getInstance().createDictionary(id, true);
+      dictionariesById.put(id, new WeakReference<>(serverDictionary));
+    }
+    return serverDictionary;
   }
 
   @Override

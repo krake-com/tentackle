@@ -40,7 +40,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
 
   /**
    * Maps Tentackle symbolic names to icon font names.<br>
-   * Symbolic names allows to replace the icon pack by the application without changing the framework's code.
+   * Symbolic names allow replacing the icon pack by the application without changing the framework's code.
    */
   private Map<String, String> nameMap;
 
@@ -63,7 +63,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
   }
 
   /**
-   * Creates the symbolic to icon-pack name map.
+   * Creates the symbolic to the icon-pack name map.
    *
    * @return the map
    */
@@ -86,6 +86,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("expand", "mdi2a-arrow-expand-vertical");
     nm.put("file", "mdi2f-file-outline");
     nm.put("filter", "mdi2f-filter-outline");
+    nm.put("filter-active", "mdi2f-filter");
     nm.put("generate", "mdi2c-cog");
     nm.put("help", "mdi2h-help");
     nm.put("hide", "mdi2e-eye-off");
@@ -104,6 +105,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("search", "mdi2f-file-find");
     nm.put("security", "mdi2s-security");
     nm.put("session", "mdi2l-lan-connect");
+    nm.put("stop", "mdi2t-timer-stop-outline");
     nm.put("subtract", "mdi2m-minus");
     nm.put("table", "mdi2t-table");
     nm.put("theme", "mdi2t-theme-light-dark");

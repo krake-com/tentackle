@@ -221,6 +221,12 @@ with `@CanonicalName`, or annotate the members with `@CanonicalField` / `@Canoni
 explicit-name requirement is a deliberate trade — Tentackle does not want to force every application
 to compile with `javac -parameters`.
 
+A `@CanonicalGetter` does not need a serializable field behind it: if the field is transient, or
+declared in a JDK class TRIP must not reflect into, the getter becomes a component in its own right.
+This is what lets [`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) transport
+the `defaults` chain of a `java.util.Properties`, which lives in a `java.util` field —
+see [JDK collections and maps](trip.md#jdk-collections-and-maps).
+
 `@CanonicalBuilder` covers the builder pattern: the constructor takes a single builder argument; the
 builder has a no-arg constructor, one method per field named after the field, taking the value and
 returning the builder, plus a no-arg method returning the finished object. The
@@ -232,6 +238,29 @@ generates exactly this shape.
 *delayed construction*: components are deserialized first, then the object is built in one shot.
 Without a canonical constructor or a no-arg constructor, a class is simply not serializable by TRIP
 — which is why [trip.md](trip.md) recommends adding one as the first remedy.
+
+### Delayed construction and back-references
+
+Delayed construction has one consequence worth knowing: TRIP can only register an object for
+[back-references](trip.md#tripreferencable) once the object exists. How far a component may
+reference back to the object it belongs to therefore depends on how that object is constructed:
+
+| Construction            | When the object exists          | Components that may back-reference it |
+|-------------------------|---------------------------------|---------------------------------------|
+| no-arg constructor      | before any component is read    | all of them                           |
+| `@CanonicalConstructor` | once all constructor args are read | every non-canonical component      |
+| `@CanonicalBuilder`     | after *all* components are read | none                                  |
+| record                  | after *all* components are read | none                                  |
+
+A component that reaches back to its own object outside these bounds — directly or through another
+object — fails deserialization with a `no such reference id` `TripRuntimeException`. This is rarely
+hit in practice, since immutable values that need a canonical constructor or a builder are normally
+leaves of the object graph rather than cycle participants. Where a genuine cycle is unavoidable, the
+class must provide a no-arg constructor.
+
+Maps and collections built through a `@CanonicalConstructor` send their components ahead of the
+entries, so the container exists before the first entry is read: keys, values and elements may
+back-reference the container itself without restriction.
 
 
 ## Caches, Visitors, and Helpers

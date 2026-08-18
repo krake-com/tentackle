@@ -393,7 +393,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   /**
    * Creates an unnamed savepoint in the current transaction.
    *
-   * @return the savepoint handle unique within current transaction
+   * @return the savepoint handle unique within the current transaction
    */
   SavepointHandle setSavepoint();
 
@@ -402,7 +402,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    *
    * @param name the savepoint name
    *
-   * @return the savepoint handle unique within current transaction
+   * @return the savepoint handle unique within the current transaction
    */
   SavepointHandle setSavepoint(String name);
 
@@ -503,6 +503,20 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
    * @see #isRemote()
    */
   RemoteSession getRemoteSession();
+
+  /**
+   * Preloads the remote delegates of the entities marked as preload candidates.
+   * <p>
+   * Remote sessions create the delegates lazily, one roundtrip per entity class.
+   * For applications with a large entity model running on links with high latency,
+   * this may slow down the application startup substantially. Preloading fetches the delegates
+   * of all candidates in a single roundtrip.
+   * <p>
+   * Since not all sessions benefit from preloading, it is up to the application to decide
+   * per session whether to invoke this method. It is usually invoked right after the session
+   * has been created.
+   */
+  void preloadRemoteDelegates();
 
   /**
    * Gets the connection url.

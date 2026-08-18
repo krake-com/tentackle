@@ -20,6 +20,7 @@ package org.tentackle.pdo;
 
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 
 import java.util.Collection;
@@ -86,6 +87,14 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * @return the context's clone
    */
   DomainContext clone();
+
+  /**
+   * Clones this context for another session.
+   * <p>
+   * The clone gets the root entity and sessionImmutable cleared.
+   * @return the context's clone
+   */
+  DomainContext clone(Session session);
 
   /**
    * Clones this context.<br>

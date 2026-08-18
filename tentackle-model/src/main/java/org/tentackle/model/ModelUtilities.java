@@ -37,7 +37,7 @@ interface ModelUtilitiesHolder {
 
 /**
  * Model utility methods.<br>
- * May be replaced by project specific implementation via <code>@Service</code>.
+ * May be replaced by project-specific implementation via <code>@Service</code>.
  */
 @Service(ModelUtilities.class)    // defaults to self
 public class ModelUtilities {
@@ -95,7 +95,7 @@ public class ModelUtilities {
 
   /**
    * Extracts the syllables of a name.<br>
-   * The default implementation is very simple, but works good enough for the purpose of column migration.
+   * The default implementation is very simple but works well enough for column migration.
    *
    * @param name the column name
    * @return the syllables
@@ -136,7 +136,7 @@ public class ModelUtilities {
               }
               else {
                 if (!isVwl && containsVowel && i < len - 2 && containsVowel(s.substring(i + 1))) {
-                  // word already contains at least one vowel and this is not a vowel
+                  // word already contains at least one vowel, and this is not a vowel
                   // and not only one char remaining and remainder contains at least one vowel
                   syllable.append(c);
                   if (!isJoinedLetter(c, s.charAt(i + 1))) {
@@ -184,7 +184,7 @@ public class ModelUtilities {
 
 
   /**
-   * Returns whether two character can be regarded as one.
+   * Returns whether two characters can be regarded as one.
    *
    * @param c1 the first char
    * @param c2 the second char

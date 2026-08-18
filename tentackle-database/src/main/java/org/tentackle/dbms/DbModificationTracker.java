@@ -53,6 +53,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -69,22 +70,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private static final long DEFAULT_POLLING_INTERVAL = 2000;        // 2s
 
   private static final AtomicInteger LISTENER_KEY_INSTANCE_COUNTER = new AtomicInteger();
-
-
-  /**
-   * Gets the remote delegate.
-   *
-   * @return the delegate
-   */
-  private static int getRemoteDelegateId() {
-    if (delegateId == 0)  {
-      delegateId = Db.prepareRemoteDelegate(DbModificationTracker.class);
-    }
-    return delegateId;
-  }
-
-  private static int delegateId;
-
 
 
   /**
@@ -313,18 +298,19 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   }
 
-
-
+  private volatile int remoteDelegateId;                            // the delegate ID
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
+  private final Object shutdownRunnablesLock;                       // guards shutdownRunnables
+  private final Object configurationLock;                           // serializes configuration tasks if the tracker isn't running
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
-  private final Set<ListenerEntry> listenerEntries;                 // modification listeners
+  private final Set<ListenerEntry> listenerEntries;                 // modification listeners, sorted by priority
   private final Map<String, TableEntry> tableEntriesByName;         // the table entries mapped by (table)name
   private final Map<Long, TableEntry> tableEntriesById;             // the table entries mapped by ID
   private volatile TableEntry masterEntry;                          // master serial entry
   private final Random timeRandom;                                  // execution time randomizer
-  private final Map<ModificationListener,DelayedEvent> delayedListeners;   // map of delayed listeners
-  private final Set<DelayedEvent> delayedEvents;                    // delayed events
+  private final Map<ModificationListener,DelayedEvent> delayedListeners;   // map of delayed listeners (tracker thread only)
+  private final Set<DelayedEvent> delayedEvents;                    // delayed events (tracker thread only)
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
   private boolean localClientMode;                                  // true if the local session and not a server
@@ -351,14 +337,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     setSleepInterval(DEFAULT_POLLING_INTERVAL);
 
     countersByName = new ConcurrentHashMap<>();
-    countersById = new HashMap<>();
-    listenerEntries = new TreeSet<>();
+    countersById = new ConcurrentHashMap<>();
+    listenerEntries = new ConcurrentSkipListSet<>();    // sorted like a TreeSet, but iterable while being modified
     delayedListeners = new HashMap<>();
     delayedEvents = new TreeSet<>();
     tableEntriesByName = new ConcurrentHashMap<>();
     tableEntriesById = new ConcurrentHashMap<>();
     timeRandom = new Random();
     shutdownRunnables = new ArrayList<>();
+    shutdownRunnablesLock = new Object();
+    configurationLock = new Object();
   }
 
   /**
@@ -384,7 +372,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public Db getSession() {
     Db db = (Db) super.getSession();
     if (db == null) {
-      throw new PersistenceException("no session configured for " + this);
+      PersistenceException ex = new PersistenceException("no session configured for " + this);
+      ex.setTemporary(true);    // try again later when everything is up and running
+      throw ex;
     }
     return db;
   }
@@ -415,8 +405,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param runnable the runnable
    */
   @Override
-  public synchronized void addShutdownRunnable(Runnable runnable) {
-    shutdownRunnables.add(runnable);
+  public void addShutdownRunnable(Runnable runnable) {
+    synchronized (shutdownRunnablesLock) {
+      shutdownRunnables.add(runnable);
+    }
   }
 
   /**
@@ -428,8 +420,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return true if runnable removed, false if no such runnable registered
    */
   @Override
-  public synchronized boolean removeShutdownRunnable(Runnable runnable) {
-    return shutdownRunnables.remove(runnable);
+  public boolean removeShutdownRunnable(Runnable runnable) {
+    synchronized (shutdownRunnablesLock) {
+      return shutdownRunnables.remove(runnable);
+    }
   }
 
   /**
@@ -439,26 +433,23 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   @Override
   public void addModificationListener(ModificationListener listener) {
+    // notice that the listener must refer to the configured entry, not to one configured concurrently
     if (listener.getNames() == null || listener.getNames().length == 0) {
       // unnamed master listener
-      if (masterEntry == null) {
-        configureMaster();
+      TableEntry entry = masterEntry;
+      if (entry == null) {
+        entry = configureMaster();
       }
-      synchronized(this) {
-        listenerEntries.add(new ListenerEntry(listener, masterEntry));
-      }
+      listenerEntries.add(new ListenerEntry(listener, entry));
     }
     else  {
       // named listener(s)
       for (String name: listener.getNames()) {
         TableEntry entry = tableEntriesByName.get(name);
         if (entry == null) {
-          configureName(name);
-          entry = tableEntriesByName.get(name);
+          entry = configureName(name);
         }
-        synchronized (this) {
-          listenerEntries.add(new ListenerEntry(listener, entry));
-        }
+        listenerEntries.add(new ListenerEntry(listener, entry));
       }
     }
   }
@@ -470,7 +461,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return true if listener removed
    */
   @Override
-  public synchronized boolean removeModificationListener(ModificationListener listener) {
+  public boolean removeModificationListener(ModificationListener listener) {
     boolean removed = false;
     Iterator<ListenerEntry> iter = listenerEntries.iterator();
     while (iter.hasNext()) {
@@ -526,33 +517,49 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return the current master serial
    */
   public long getMasterSerial() {
-    if (masterEntry == null) {
-      configureMaster();
+    TableEntry entry = masterEntry;
+    if (entry == null) {
+      entry = configureMaster();
     }
-    return masterEntry.serial;
+    return entry.serial;
   }
 
-  /**
-   * Gets the pair of id/serial for a given table name.<br>
-   * Used in remote connections.
-   *
-   * @param tableName the table to lookup
-   * @return the id/serial pair for the table name, never null
-   */
-  public IdSerialTuple getIdSerialForName(String tableName) {
-    if (tableName == null) {
+  @Override
+  public IdSerialTuple getIdSerialForName(String name) {
+    if (name == null) {
       throw new PersistenceException("tableName must be given");
     }
-    TableEntry entry = tableEntriesByName.get(tableName);
+    TableEntry entry = tableEntriesByName.get(name);
     if (entry == null) {
-      configureName(tableName);
-      entry = tableEntriesByName.get(tableName);
+      entry = configureName(name);
     }
     return new IdSerialTuple(entry.id, entry.serial);
   }
 
+  /**
+   * Sets the row id and serial for a given name.<br>
+   * The method is provided for cache preloading only
+   * and avoids a roundtrip.
+   * <p>
+   * Important: the serial will always be applied, even if the table entry already exists!
+   *
+   * @param name the name to set
+   * @param idSerial the id/serial pair to set
+   */
+   public synchronized void setIdSerialForName(String name, IdSerialTuple idSerial) {
+    TableEntry entry = tableEntriesByName.get(name);
+    if (entry == null) {
+      entry = new TableEntry(name, idSerial.getId(), idSerial.getSerial());
+      tableEntriesByName.put(name, entry);
+      tableEntriesById.put(idSerial.getId(), entry);
+    }
+    else {
+      entry.serial = idSerial.getSerial();
+    }
+  }
+
   @Override
-  public long getSerial(Class<?> clazz) {
+  public IdSerialTuple getIdSerialForClass(Class<?> clazz) {
     String name = SessionUtilities.getInstance().getTableName(clazz.getName());
     if (name == null) {
       // not annotated with @TableName: try to instantiate and get from AbstractDbObject
@@ -561,12 +568,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         name = obj.getTableName();
       }
     }
-    return getSerial(name);
-  }
-
-  @Override
-  public long getSerial(String name) {
-    return getIdSerialForName(name).getSerial();
+    return getIdSerialForName(name);
   }
 
   /**
@@ -773,7 +775,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Used in remote clients only.
    * <p>
    * If the master serial implements {@link MasterSerialEvent}, the corresponding
-   * handler will be invoked (if any), before returning the serial.
+   * handler will be invoked (if any) before returning the serial.
    *
    * @param masterSerial the master serial object
    * @return the long serial
@@ -833,8 +835,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected long selectMasterSerial() {
     Db session = getSession();
     if (session.isRemote()) {
-      return extractMasterSerial(((DbModificationTrackerRemoteDelegate)
-                                    session.getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
+      return extractMasterSerial(getRemoteDelegate(session).selectMasterSerial());
     }
     else {
       return masterModification.selectMasterSerial();
@@ -852,7 +853,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected List<IdSerialNameTuple> selectAllIdSerialNames() {
     Db session = getSession();
     if (session.isRemote()) {
-      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerialNames();
+      return getRemoteDelegate(session).selectAllIdSerialNames();
     }
     else {
       List<IdSerialNameTuple> tuples = new ArrayList<>();
@@ -873,7 +874,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected List<IdSerialTuple> selectAllIdSerials() {
     Db session = getSession();
     if (session.isRemote()) {
-      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerials();
+      return getRemoteDelegate(session).selectAllIdSerials();
     }
     else {
       return masterModification.selectAllIdSerial();
@@ -892,13 +893,48 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       IdSerialTuple tuple = getRemoteIdSerial(tableName);   // try fast lookup first (to save a roundtrip)
       if (tuple == null) {
         // not in the initial map? -> get it from the remote server (and optionally create it)
-        tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
+        tuple = getRemoteDelegate(session).selectIdSerialForName(tableName);
       }
       return tuple;
     }
     else {
       return masterModification.selectIdSerial(tableName);
     }
+  }
+
+  /**
+   * Gets the remote delegate.
+   * <p>
+   * Although the ModificationTracker is a singleton, the remote delegate is an instance variable.
+   * If the application accidentally creates multiple instances of the ModificationTracker,
+   * bypassing the ServiceFinder, each gets its own remote delegate.
+   * So the old one is wasted, but the application does not fail with a ClassCastException if
+   * the delegates are of different types.
+   *
+   * @return the delegate
+   */
+  protected int getRemoteDelegateId() {
+    int id = remoteDelegateId;
+    if (id == 0) {
+      synchronized (this) {
+        id = remoteDelegateId;
+        if (id == 0) {
+          id = Db.prepareRemoteDelegate(getClass());
+          remoteDelegateId = id;
+        }
+      }
+    }
+    return id;
+  }
+
+  /**
+   * Gets the remote delegate.
+   *
+   * @param session the session
+   * @return the delegate
+   */
+  protected DbModificationTrackerRemoteDelegate getRemoteDelegate(Db session) {
+    return (DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId());
   }
 
   /**
@@ -918,13 +954,14 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   private void poll() {
 
-    boolean isLocalSession = !getSession().isRemote();
+    Db session = getSession();
+    boolean isLocalSession = !session.isRemote();
     if (isLocalSession) {
       performPendingCounts();
     }
     else if (remoteConfigPending) {
       // do that only once!
-      ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).configureRemoteSession();
+      getRemoteDelegate(session).configureRemoteSession();
       remoteConfigPending = false;
     }
 
@@ -1094,20 +1131,17 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
-        IdSerialTuple idSer = selectIdSerialForName(tableName);
-        long lastSerial = idSer == null ? 0 : idSer.getSerial();
-        counter.setLastSerial(lastSerial);
-        countersByName.put(tableName, counter);
-        countersById.put(counter.getId(), counter);
+        if (countersByName.get(tableName) == null) {   // another task may have configured it in the meantime
+          ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
+          IdSerialTuple idSer = selectIdSerialForName(tableName);
+          long lastSerial = idSer == null ? 0 : idSer.getSerial();
+          counter.setLastSerial(lastSerial);
+          countersByName.put(tableName, counter);
+          countersById.put(counter.getId(), counter);
+        }
       }
     };
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
-    }
-    else  {
-      addTaskAndWait(task);
-    }
+    runConfigurationTask(task);
     ModificationTally tally = countersByName.get(tableName);
     if (tally == null) {
       throw new PersistenceException("configuration of counter failed for " + tableName);
@@ -1117,50 +1151,87 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   /**
    * Configures the master entry.
+   *
+   * @return the master entry, never null
    */
-  private void configureMaster() {
+  private TableEntry configureMaster() {
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        long serial = selectMasterSerial();
-        masterEntry = new TableEntry(null, 0, serial);
+        if (masterEntry == null) {   // another task may have configured it in the meantime
+          long serial = selectMasterSerial();
+          masterEntry = new TableEntry(null, 0, serial);
+        }
       }
     };
 
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
+    runConfigurationTask(task);
+    TableEntry entry = masterEntry;
+    if (entry == null) {
+      throw new PersistenceException("configuration of the master entry failed");
     }
-    else  {
-      addTaskAndWait(task);
-    }
+    return entry;
   }
 
   /**
    * Configures a named entry.
    *
    * @param name the name
+   * @return the table entry, never null
    */
-  private void configureName(String name) {
+  private TableEntry configureName(String name) {
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        IdSerialTuple idSer = selectIdSerialForName(name);
-        if (idSer == null) {
-          // missing: create it
-          getCounter(name).addToModificationTable();
-          idSer = selectIdSerialForName(name);
+        if (tableEntriesByName.get(name) == null) {   // another task may have configured it in the meantime
+          IdSerialTuple idSer = selectIdSerialForName(name);
+          if (idSer == null) {
+            // missing: create it
+            getCounter(name).addToModificationTable();
+            idSer = selectIdSerialForName(name);
+          }
+          TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
+          tableEntriesByName.put(name, entry);
+          tableEntriesById.put(idSer.getId(), entry);
         }
-        TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
-        tableEntriesByName.put(name, entry);
-        tableEntriesById.put(idSer.getId(), entry);
       }
     };
 
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.run();
+    runConfigurationTask(task);
+    TableEntry entry = tableEntriesByName.get(name);
+    if (entry == null) {
+      throw new PersistenceException("configuration of the table entry failed for " + name);
     }
-    else  {
-      addTaskAndWait(task);
+    return entry;
+  }
+
+  /**
+   * Runs a configuration task.
+   * <p>
+   * Configuration tasks lazily create the entries and counters. They must be serialized against
+   * each other, since two threads requesting the same entry concurrently would otherwise create
+   * it twice: the loser's instance is replaced in the maps but is still referenced by the
+   * {@link ListenerEntry} created for it. Its serial would never be updated again by {@link #poll()},
+   * so the listener would fire on every poll from then on.
+   * <p>
+   * Tasks are serialized by the tracker thread, which executes them one after the other.
+   * Only if the tracker is not running, they are executed by the invoking thread and must be
+   * serialized explicitly. Notice that the tracker thread never acquires that lock (it always
+   * takes the first branch below), so waiting for a task cannot deadlock against it.
+   *
+   * @param task the configuration task
+   */
+  private void runConfigurationTask(Task task) {
+    if (isTaskDispatcherThread()) {
+      task.run();               // we are the tracker thread: already serialized
+    }
+    else if (isAlive()) {
+      addTaskAndWait(task);     // serialized by the tracker thread
+    }
+    else {
+      synchronized (configurationLock) {
+        task.run();             // no tracker thread to serialize us
+      }
     }
   }
 
@@ -1168,9 +1239,17 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * runs the shutdown runnables
    */
   private void invokeShutdownRunnables() {
-    // run each runnable only once (in case of loops)
-    List<Runnable> tempList = new ArrayList<>(shutdownRunnables);
-    shutdownRunnables.clear();
+    /*
+     * Run each runnable only once (in case of loops).
+     * Notice that cleanup() may be invoked concurrently from the tracker thread and from the thread
+     * terminating it, so taking the runnables over must be atomic. They are run without holding
+     * the lock, since they are application code that may register or remove runnables itself.
+     */
+    List<Runnable> tempList;
+    synchronized (shutdownRunnablesLock) {
+      tempList = new ArrayList<>(shutdownRunnables);
+      shutdownRunnables.clear();
+    }
     for (Runnable r: tempList) {
       try {
         r.run();

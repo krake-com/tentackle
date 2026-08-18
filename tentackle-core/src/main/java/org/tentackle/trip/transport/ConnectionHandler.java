@@ -126,8 +126,15 @@ public class ConnectionHandler implements Runnable {
    */
   @Override
   public void run() {
+    int versionSkew;
     try {
-      readMagic();
+      versionSkew = readMagic();
+      if (versionSkew != 0) {
+        // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
+        // The client then updates itself and automatically uses the latest protocol.
+        LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
+                       new TransportClientInfo(transport, connectionName), versionSkew);
+      }
     }
     catch (TripRuntimeException e) {
       if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
@@ -141,7 +148,11 @@ public class ConnectionHandler implements Runnable {
     }
 
     UUID id = readUUID();
-    TripStream stream = createStream(id);
+    boolean clientDictionaryEmpty = true;
+    if (versionSkew == 0) {
+      clientDictionaryEmpty = readDictionaryFlag();
+    }
+    TripStream stream = createStream(id, clientDictionaryEmpty);
     TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
     boolean closedByClient = false;
     LOGGER.info("connection " + transportClientInfo + " opened");
@@ -209,6 +220,7 @@ public class ConnectionHandler implements Runnable {
     LOGGER.info("connection {0} closed{1}", transportClientInfo, closedByClient ? " by client" : "");
   }
 
+
   /**
    * Checks whether the connection is still alive.
    *
@@ -222,13 +234,14 @@ public class ConnectionHandler implements Runnable {
    * Creates a new stream for the given UUID.
    *
    * @param id the UUID of the client's transport
+   * @param clientDictionaryEmpty true if the client's dictionary is still empty
    * @return the trip stream
    */
-  protected TripStream createStream(UUID id) {
+  protected TripStream createStream(UUID id, boolean clientDictionaryEmpty) {
     if (transport.isClosed()) {   // don't use isConnectionAlive since this would block in LoopbackTransport (see override)
       throw new TripStreamClosedException("transport " + transport + " already closed");
     }
-    Dictionary serverDictionary = transport.getServerDictionary(id);
+    Dictionary serverDictionary = transport.getServerDictionary(id, clientDictionaryEmpty);
     if (serverDictionary != null) {
       TripFactory factory = TripFactory.getInstance();
       Serializer serializer = factory.createSerializer(outputStream);
@@ -241,21 +254,53 @@ public class ConnectionHandler implements Runnable {
   }
 
 
-  private void readMagic() {
+  /**
+   * Reads the magic number and derives the version-skew.
+   *
+   * @return the version-skew, 0 if the client is using the current version
+   */
+  private int readMagic() {
     try {
       byte[] magic = inputStream.readNBytes(2);
       if (magic.length != 2) {
         throw new TripStreamClosedException("end of stream while reading magic");
       }
-      if (magic[0] != TripConstants.MAGIC[0] || magic[1] != TripConstants.MAGIC[1]) {
-        throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
+      if (magic[0] == TripConstants.MAGIC[0] && magic[1] == TripConstants.MAGIC[1]) {
+        return 0;   // current version
       }
+      else if (magic[0] == TripConstants.MAGIC_1[0] && magic[1] == TripConstants.MAGIC_1[1]) {
+        return 1;  // one version behind w/o the dictionary flag
+      }
+      throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
     }
     catch (IOException e) {
       throw new TripRuntimeException("reading magic failed", e);
     }
   }
 
+  /**
+   * Reads the dictionary flag.
+   *
+   * @return true if the client's dictionary is empty, false otherwise
+   */
+  private boolean readDictionaryFlag() {
+    try {
+      int flag = inputStream.read();
+      if (flag == -1) {
+        throw new TripStreamClosedException("end of stream while reading the dictionary flag");
+      }
+      return flag != 0;
+    }
+    catch (IOException e) {
+      throw new TripRuntimeException("reading the dictionary flag failed", e);
+    }
+  }
+
+  /**
+   * Reads the UUID of the client's transport.
+   *
+   * @return the UUID of the client's transport
+   */
   private UUID readUUID() {
     try {
       byte[] uuidBytes = inputStream.readNBytes(16);

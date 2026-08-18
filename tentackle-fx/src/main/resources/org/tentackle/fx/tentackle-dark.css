@@ -42,6 +42,11 @@
    * special base color for scrollbars (would be way too dark otherwise, see below)
    */
   -tt-scrollbar-color: derive(-fx-base, 50%);
+
+  /**
+   * color of the filter button of a filtered column.
+   */
+  -tt-filter-active-color: #79b8ff;
 }
 
 .tt-info {
@@ -168,4 +173,81 @@
 .scroll-bar > .increment-button:pressed > .increment-arrow,
 .scroll-bar > .decrement-button:pressed > .decrement-arrow {
   -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-55%);
+}
+
+/**
+ * expand-/collapse button of one-line text areas (see FxTextArea).
+ * The icon is dimmed until the mouse hovers over it, so that it stays discreet.
+ */
+.tt-expand-button {
+  -fx-padding: 0 2 0 2;
+  /* blends the button into the text, whatever the component's state (mandatory, error) is */
+  -fx-background-color: -fx-control-inner-background;
+  -fx-background-insets: 1 1 1 -1;
+}
+
+/* keep the button in line with the .text-area:readonly .content rule above */
+.text-area:readonly > .tt-expand-button {
+  -fx-background-color: derive(-fx-background, 30%);
+}
+
+.tt-expand-button > .ikonli-font-icon {
+  -fx-icon-size: 12;
+  -fx-opacity: 0.5;
+}
+
+.tt-expand-button:hover > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+}
+
+/**
+ * the multi-line editor a one-line text area expands to.
+ */
+.tt-expanded-text-pane {
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.0, 0, 3);
+}
+
+/**
+ * column filter (autofilter), see TableFilterSupport.
+ * The filter button is dimmed until the mouse hovers over it or the column is filtered.
+ */
+.tt-filter-column > .label {
+  -fx-content-display: right;
+  -fx-graphic-text-gap: 4;
+}
+
+.tt-filter-button {
+  -fx-padding: 0 2 0 2;
+  -fx-background-color: transparent;
+}
+
+.tt-filter-button > .ikonli-font-icon {
+  -fx-icon-size: 12;
+  -fx-opacity: 0.4;
+}
+
+.tt-filter-button:hover > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+}
+
+.tt-filter-button-active > .ikonli-font-icon {
+  -fx-opacity: 1.0;
+  -fx-icon-color: -tt-filter-active-color;
+}
+
+.tt-filter-popup-pane {
+  -fx-background-color: -fx-background;
+  -fx-padding: 6;
+  -fx-spacing: 4;
+  -fx-min-width: 220;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0.0, 0, 3);
+}
+
+.tt-filter-popup-pane .tt-filter-condition {
+  -fx-spacing: 2;
+}
+
+.tt-filter-popup-pane .tt-filter-hint {
+  -fx-font-size: 0.9em;
+  -fx-opacity: 0.7;
 }

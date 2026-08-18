@@ -55,6 +55,9 @@ RDC `DesktopApplication<C>` (where `C` is the main controller type) and adds two
    directory, it acquires an exclusive lock on a per-application lockfile (`<appname>.lck`) and writes its PID into
    it. If the lock is already held, it reads and reports the offending PID and refuses to start. The `FileChannel`
    is kept open (and referenced) for the whole lifetime of the process so the lock survives.
+   The lockfile lives in the installation root — the jlink image root, or the package root determined by
+   `determineJPackageRoot()` for jpackage, whose launchers do not necessarily start the application in its own
+   installation directory (`createLockFilePath(...)`).
 
    The check is a no-op for non-updatable installations (normal jar/classpath launches), so the same application
    class works in development and in a packaged deployment.

@@ -19,6 +19,8 @@
 
   <modules>
     <module>tentackle-core-osgi-activator</module>
+    <module>tentackle-quic-osgi-activator</module>
+    <module>tentackle-quiche-osgi-activator</module>
     <module>tentackle-sql-osgi-activator</module>
     <module>tentackle-session-osgi-activator</module>
     <module>tentackle-database-osgi-activator</module>
@@ -26,7 +28,6 @@
     <module>tentackle-pdo-osgi-activator</module>
     <module>tentackle-domain-osgi-activator</module>
     <module>tentackle-persistence-osgi-activator</module>
-    <module>tentackle-log-log4j-osgi-activator</module>
     <module>tentackle-log-log4j2v-osgi-activator</module>
     <module>tentackle-log-slf4j-osgi-activator</module>
     <module>tentackle-i18n-osgi-activator</module>

@@ -1,0 +1,326 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.quiche;
+
+import org.tentackle.io.SslParameters;
+import org.tentackle.io.UriHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.PoolSlot;
+import org.tentackle.quiche.engine.QuicheConnection;
+import org.tentackle.quiche.engine.QuicheEndpoint;
+import org.tentackle.quiche.engine.QuicheStream;
+import org.tentackle.quiche.engine.StreamLimitException;
+import org.tentackle.quiche.ffm.PemExporter;
+import org.tentackle.quiche.ffm.QuicheConfig;
+import org.tentackle.quiche.ffm.QuicheException;
+import org.tentackle.trip.Connection;
+import org.tentackle.trip.Dictionary;
+import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.transport.AbstractConnectionPool;
+import org.tentackle.trip.transport.ConnectionPoolSlot;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.util.Map;
+
+/**
+ * The QUIC client connection pool.
+ * <p>
+ * All pooled connections are streams multiplexed over a single QUIC connection. Since that connection is
+ * discarded silently by both peers as soon as it stays idle for longer than the QUIC max idle timeout
+ * (see {@link QuicheTripTransport#getMaxIdleSeconds()}), which is way shorter than the pool's idle
+ * timeout, it is kept alive by sending ack-eliciting packets. Otherwise, the pool would hand out
+ * connections belonging to a QUIC connection that is long gone.
+ * <p>
+ * Because each pooled connection holds one of the streams the peer allows for the whole time it is in the
+ * pool, the pool's maximum size defaults to {@link QuicheTripTransport#getMaxStreams()} instead of being
+ * unlimited.
+ */
+public class QuicheTripConnectionPool extends AbstractConnectionPool {
+
+  /**
+   * The default connect timeout in seconds, applied if the URI does not specify {@code connecttimeout}.
+   * <p>
+   * This is the timeout for establishing the QUIC connection, i.e., the handshake with the server,
+   * not for the individual streams created per pool slot.
+   */
+  public static final int DEFAULT_CONNECT_TIMEOUT = 10;
+
+  /**
+   * The shortest keep-alive interval derived from the QUIC max idle timeout.
+   * <p>
+   * Keeps the keep-alive traffic reasonable for the usual idle timeouts of tens of seconds. It is a lower
+   * bound only: a short idle timeout wins over it, see {@link #determineKeepAliveMillis()}.
+   */
+  private static final long MIN_KEEP_ALIVE_MILLIS = 500;
+
+  private static final Logger LOGGER = Logger.get(QuicheTripConnectionPool.class);
+
+
+  private final QuicheTripTransport transport;
+  private final QuicheEndpoint endpoint;
+  private final QuicheConfig config;
+  private final InetSocketAddress serverAddress;
+  private final String serverName;
+  private final int connectTimeoutSeconds;
+  private final int keepAliveSeconds;
+  private QuicheConnection connection;
+
+  /**
+   * Creates a QUIC connection pool.
+   *
+   * @param transport the transport associated with this pool
+   * @param dictionary the dictionary associated with this pool
+   */
+  public QuicheTripConnectionPool(QuicheTripTransport transport, Dictionary dictionary) {
+    super(transport, dictionary);
+    this.transport = transport;
+
+    QuicheLogger.install();
+
+    URI uri = transport.getUri();
+    if (uri.getPort() <= 0) {
+      throw new IllegalArgumentException("QUIC port number must be > 0, got " + uri.getPort() + " from URI " + uri);
+    }
+    connectTimeoutSeconds = transport.getUriPars().getOrDefault("connecttimeout", DEFAULT_CONNECT_TIMEOUT);
+    if (connectTimeoutSeconds <= 0) {
+      throw new IllegalArgumentException(
+        "QUIC connect timeout must be > 0 seconds, got " + connectTimeoutSeconds + " from URI " + uri);
+    }
+    /*
+     * The peer grants at most maxstreams concurrent streams per QUIC connection, and every pooled
+     * connection holds one of them for as long as it sits in the pool. An unlimited pool would
+     * therefore keep enlarging itself until it runs into that limit.
+     */
+    if (getMaximumSize() == 0) {    // not configured in the URI: unlimited
+      setMaximumSize(transport.getMaxStreams());
+    }
+
+    Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
+    String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
+    keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    serverName = uri.getHost();
+    try {
+      serverAddress = new InetSocketAddress(InetAddress.getByName(serverName), uri.getPort());
+    }
+    catch (IOException e) {
+      throw new TripRuntimeException("cannot resolve the host of URI " + uri, e);
+    }
+
+    QuicheConfig newConfig = transport.createConfig(alpnId);
+    try {
+      /*
+       * Unlike the TCP transports, a QUIC client does not check the server's certificate by default:
+       * a Tentackle server usually presents a self-signed one, and the TRIP handshake authenticates
+       * the peers anyway. Setting certcheck=true turns the check on, and then a truststore (tsfile)
+       * holding the server's CA is needed, because BoringSSL will not know it either.
+       */
+      if (Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
+        newConfig.verifyPeer(true);
+        SslParameters sslParameters = new SslParameters(uri);
+        KeyStore trustStore = sslParameters.getTrustStore();
+        if (trustStore != null) {
+          Path trusted = PemExporter.writeTrustedCertificates(trustStore);
+          newConfig.loadVerifyLocations(trusted);
+        }
+      }
+      else {
+        newConfig.verifyPeer(false);
+      }
+      endpoint = new QuicheEndpoint(new InetSocketAddress(0));
+    }
+    catch (IOException | RuntimeException e) {
+      newConfig.close();
+      throw e instanceof RuntimeException re ?
+              re : new TripRuntimeException("cannot create the QUIC endpoint", e);
+    }
+    config = newConfig;
+
+    try {
+      connect();
+    }
+    catch (RuntimeException e) {
+      // the endpoint and the configuration would leak otherwise: the pool is never handed out
+      endpoint.close();
+      config.close();
+      throw e;
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Deliberately not synchronized: {@link org.tentackle.misc.AbstractPool#shutdown()} closes the pooled
+   * connections without holding the pool's monitor, on purpose, since it waits for each of them. Only
+   * accessing the QUIC connection needs the monitor.
+   */
+  @Override
+  public void shutdown() {
+    try {
+      super.shutdown();
+    }
+    finally {
+      synchronized (this) {
+        // the QUIC connection must be released even if closing the pooled streams failed
+        connection = null;
+        endpoint.close();
+        // the configuration must outlive the connections created from it, hence after the endpoint
+        config.close();
+      }
+    }
+  }
+
+
+  @Override
+  protected PoolSlot<Connection> createSlot(int slotNumber) {
+    QuicheStream quicStream = createQuicStream();   // may re-establish the QUIC connection
+    QuicheConnection quicConnection = connection;
+    try {
+      return new ConnectionPoolSlot(this, slotNumber,
+                                    new QuicheTripConnection(transport, getDictionary(),
+                                                             quicConnection::isConnected, quicStream));
+    }
+    catch (RuntimeException e) {
+      // The connection did not take ownership of the stream because sending the TRIP preamble failed.
+      // Dropping the stream would keep one of the peer's stream slots occupied until the whole QUIC
+      // connection is gone, so repeated failures would run the pool out of streams for good.
+      closeQuietly(quicStream);
+      throw e;
+    }
+  }
+
+  /**
+   * Creates a new client quic stream.<br>
+   * Re-establishes the QUIC connection if it has been terminated meanwhile.
+   *
+   * @return the quic stream
+   */
+  QuicheStream createQuicStream() {
+    QuicheConnection quicConnection = connection;
+    if (quicConnection == null || !quicConnection.isConnected()) {
+      // idle timeout, peer restarted, network loss, ... (or a previous connect attempt failed)
+      LOGGER.info("QUIC connection to {0} is gone -> reconnecting", getTransport().getUri());
+      connect();
+      quicConnection = connection;
+    }
+    try {
+      return quicConnection.openStream();
+    }
+    catch (StreamLimitException e) {
+      TripRuntimeException tex = new TripRuntimeException(
+        "no QUIC stream available on " + getTransport().getUri() +
+        ": the peer grants fewer than the configured " + transport.getMaxStreams() + " streams", e);
+      tex.setTemporary(true);   // may well succeed again once a pooled connection is returned and closed
+      throw tex;
+    }
+    catch (QuicheException e) {
+      throw new TripRuntimeException("creating QUIC stream failed", e);
+    }
+  }
+
+  /**
+   * Establishes the QUIC connection all pooled connections are multiplexed over.<br>
+   * A previously established connection is closed first.
+   */
+  protected void connect() {
+    closeConnection();
+    URI uri = getTransport().getUri();
+    QuicheConnection quicConnection = endpoint.connect(serverAddress, serverName, config);
+    try {
+      if (!quicConnection.awaitEstablished(connectTimeoutSeconds * 1000L)) {
+        String reason = quicConnection.getFailure();
+        throw new TripRuntimeException(
+          "the QUIC handshake with " + uri + " did not complete within " + connectTimeoutSeconds +
+          " seconds" + (reason == null ? "" : ": " + reason));
+      }
+    }
+    catch (RuntimeException e) {
+      quicConnection.closeGracefully(0, "handshake failed");
+      throw e;
+    }
+    if (keepAliveSeconds != 0) {
+      quicConnection.setKeepAliveMillis(determineKeepAliveMillis());
+    }
+    connection = quicConnection;
+  }
+
+  /**
+   * Determines how often a keep-alive packet is to be sent.
+   * <p>
+   * An explicitly configured {@code keepalive} is taken as it is. Otherwise the interval is a third of the
+   * QUIC max idle timeout, so that two keep-alives in a row may be lost before the connection is at risk,
+   * but never more than half of it: the keep-alive must fall due safely <em>before</em> the idle timeout,
+   * never together with it. {@link QuicheConnection#runDueWork()} processes the timeout first, on purpose,
+   * so a keep-alive that is due at the same moment comes too late and the connection is torn down instead
+   * of being kept alive. The margin has to be large enough to absorb the drift of the idle timer, which
+   * every packet the connection sends on its own &mdash; a loss probe, an ack &mdash; re-bases.
+   *
+   * @return the interval in milliseconds, 0 to send no keep-alive packets
+   */
+  private long determineKeepAliveMillis() {
+    long idleMillis = transport.getMaxIdleSeconds() * 1000L;
+    if (keepAliveSeconds > 0) {
+      long interval = keepAliveSeconds * 1000L;
+      if (idleMillis > 0 && interval >= idleMillis / 2) {
+        LOGGER.warning("the keep-alive interval of " + keepAliveSeconds + " seconds configured in " +
+                       getTransport().getUri() + " is too close to the QUIC max idle timeout of " +
+                       transport.getMaxIdleSeconds() + " seconds: the connection may time out anyway");
+      }
+      return interval;
+    }
+    // derived: no idle timeout at all (quicidle=0) means there is nothing to keep alive
+    return Math.min(Math.max(idleMillis / 3, MIN_KEEP_ALIVE_MILLIS), idleMillis / 2);
+  }
+
+  /**
+   * Closes the QUIC connection if there is one.<br>
+   * Closing is best effort: the connection may be gone already.
+   */
+  protected void closeConnection() {
+    QuicheConnection quicConnection = connection;
+    connection = null;
+    if (quicConnection != null) {
+      try {
+        quicConnection.closeGracefully(0, "closed by the pool");
+      }
+      catch (RuntimeException e) {
+        LOGGER.warning("closing the QUIC connection to " + getTransport().getUri() + " failed", e);
+      }
+    }
+  }
+
+  /**
+   * Closes a quic stream, ignoring any errors.
+   *
+   * @param quicStream the stream to close
+   */
+  private void closeQuietly(QuicheStream quicStream) {
+    try {
+      QuicheTripTransport.closeStream(quicStream);
+    }
+    catch (IOException e) {
+      LOGGER.warning("closing " + quicStream + " failed", e);
+    }
+  }
+
+}

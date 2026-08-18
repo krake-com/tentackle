@@ -133,7 +133,11 @@ public class DefaultRegistry implements Registry {
   }
 
   @Override
-  public UUID lookup(Remote remoteObject) {
+  public synchronized UUID lookup(Remote remoteObject) {
+    // Unlike lookup(UUID), this must be synchronized: reverseTargetMap is a plain IdentityHashMap
+    // mutated by register() and unregister(). Reading it concurrently to a mutation could not only
+    // return a stale ID, but observe a partially rehashed table, since IdentityHashMap resolves
+    // collisions by linear probing over a single array.
     return reverseTargetMap.get(remoteObject);
   }
 

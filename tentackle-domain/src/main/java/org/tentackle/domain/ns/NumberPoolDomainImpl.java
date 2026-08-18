@@ -59,13 +59,38 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * <strong>This method modifies the pool.</strong> While scanning for the lowest non-empty range
+   * it drops every exhausted range from {@link NumberPool#getNumberRangeList()}. That list is a
+   * {@code TrackedList}, so the removed ranges are <em>deleted from the database</em> as soon as
+   * the pool is persisted (see {@code NumberPoolPersistenceImpl.deleteReferencingRelations}) &mdash;
+   * this is the intended housekeeping that keeps the range table from filling up with used-up rows.
+   * <p>
+   * Two consequences for callers:
+   * <ul>
+   *   <li>The pruning happens on the failure path as well: when the pool turns out to be empty, the
+   *       ranges have already been removed before the {@link NumberSourceEmptyException} is thrown.</li>
+   *   <li>Call this within a transaction that either persists the pool afterward or is rolled back,
+   *       and hold the pool locked while doing so &mdash; otherwise the in-memory list silently
+   *       diverges from the database, or the deletions ride along with an unrelated later save.</li>
+   * </ul>
+   * The method is not thread-safe and does not lock anything itself. {@code DefaultNumberSource} is
+   * the intended caller and provides all of it: its methods are {@code synchronized}, run inside a
+   * transaction, take a database row lock on the pool via {@code reloadForUpdate()}, and persist the
+   * pool at the end.
+   *
+   * @return the current range, never null
+   * @throws NumberSourceEmptyException if no non-empty range is left
+   */
   @Override
   public NumberRange getCurrentRange() {
     NumberRange currentRange = null;
     for (Iterator<NumberRange> iter =  me().getNumberRangeList().iterator(); iter.hasNext(); ) {
       NumberRange range = iter.next();
       if (range.isEmpty()) {
-        iter.remove();
+        iter.remove();    // housekeeping: gets the exhausted range deleted on the next persist
       }
       else  {
         // find the lowest range

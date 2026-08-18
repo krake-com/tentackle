@@ -1,0 +1,13 @@
+## the contact data embedded into the customer
+name := Contact
+inheritance := embedded
+
+## attributes
+
+Long            agentId         agent_id        object ID of the agent
+String(60)      email           email           the email address
+
+## relations
+# the agent taking care of the customer
+Agent:
+    select = lazy

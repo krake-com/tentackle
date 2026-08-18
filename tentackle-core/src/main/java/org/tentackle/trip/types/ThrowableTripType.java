@@ -35,6 +35,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -49,8 +51,13 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
 
   private static final OpCode OP_CODE = DefaultOpCode.THROWABLE;
 
-
-  private boolean warningLogged;
+  /**
+   * The throwable classes the fallback warning has already been logged for.<br>
+   * Trip types are stateless singletons, so the log-once bookkeeping must not live in the instance.
+   * Keeping it here retains the per-class granularity of the warning and makes it exactly once,
+   * even if several threads deserialize the same throwable class concurrently.
+   */
+  private static final Set<Class<?>> WARNED_CLASSES = ConcurrentHashMap.newKeySet();
 
   /**
    * Creates the type.
@@ -75,11 +82,10 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
     }
     catch (TripInstantiationException ix) {
       // missing no-arg constructor?
-      if (!warningLogged) {
+      if (WARNED_CLASSES.add(getObjectClass())) {
         LOGGER.warning(
           "{0} -> trying common constructors (consider providing a TripInstanceCreator!)",
           ix.getMessage());
-        warningLogged = true;
       }
       try {
         try {

@@ -54,6 +54,8 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   private static final Logger LOGGER = Logger.get(DefaultConnectionManager.class);
 
+  private static final long TIMEOUT_THREAD_JOIN_MS = 5000;    // max. time to wait for the attach-timeout thread to terminate
+
 
 
   /** name of the connection manager. */
@@ -102,9 +104,11 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
-  private long attachTimeout;                   // max. attach timeout, 0 to disable check (default)
+
+  private volatile long attachTimeout;          // max. attach timeout, 0 to disable check (default)
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
-  private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
+  private AttachTimeoutThread timeoutThread;    // thread to check for connections attached too long (default null)
+
   private boolean configurationLogged;          // true if configuration logged (once)
 
   private record VersionInfo(int majorVersion, int minorVersion) {
@@ -124,7 +128,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * @param iniSize the initial size of the session table
    * @param maxSize the maximum number of connections, 0 = unlimited (dangerous!)
    * @param idOffset the offset for session ids (&gt; 0)
-   * @param minMinutes minimum minutes a connection should be used, 0 if keep connection forever
+   * @param minMinutes minimum minutes a connection should be used, 0 to keep the connection forever
    * @param maxMinutes maximum minutes a connection should be used
    */
   public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset,
@@ -217,16 +221,16 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Gets the attach-timeout.
    *
-   * @return the max. attach time, 0 if check is disabled (default)
+   * @return the maximum attach-time, 0 for check is disabled (default)
    */
-  public synchronized long getAttachTimeout() {
+  public long getAttachTimeout() {
     return attachTimeout;
   }
 
   /**
    * Sets the attach-timeout.
    *
-   * @param attachTimeout the max. attach time, 0 if check is disabled (default)
+   * @param attachTimeout the maximum attach-time, 0 for check is disabled (default)
    */
   public synchronized void setAttachTimeout(long attachTimeout) {
     this.attachTimeout = attachTimeout;
@@ -238,6 +242,8 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
     else {
       if (timeoutThread != null) {
+        // don't wait for its termination: we're holding the monitor the thread needs
+        timeoutThread.requestTermination();
         timeoutThread.interrupt();
         timeoutThread = null;
       }
@@ -375,7 +381,7 @@ public class DefaultConnectionManager implements ConnectionManager {
      */
     ManagedConnection con = attachImpl(session);    // <<-- synchronized
 
-    if (con != null) {    // need reopen
+    if (con != null) {    // need re-open
       // not synchronized -> does not block the connection manager
       try {
         con.close();
@@ -415,29 +421,42 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   @Override
-  public synchronized void shutdown() {
+  public void shutdown() {
 
-    shutdownRequested = true;
+    shutdownRequested = true;   // volatile: the timeout thread sees it without holding any lock
 
-    Thread t = timeoutThread;
+    AttachTimeoutThread t;
+    synchronized (this) {
+      t = timeoutThread;
+      timeoutThread = null;
+    }
+
     if (t != null) {
-      // shutdown monitoring thread
+      // shutdown monitoring thread, unsynchronized: the thread locks this manager
+      t.requestTermination();
       t.interrupt();
       try {
-        t.join();   // wait until thread terminates
+        t.join(TIMEOUT_THREAD_JOIN_MS);   // wait until thread terminates
       }
       catch (InterruptedException ex) {
         // daemon thread is terminated via shutdown()!
         LOGGER.warning(this + ": stopping the timeout thread failed", ex);
       }
+      if (t.isAlive()) {
+        // the thread is stuck, most probably in a lengthy detach.
+        // it is a daemon thread and will terminate as soon as it is done.
+        LOGGER.warning("{0}: the timeout thread did not terminate within {1} ms", this, TIMEOUT_THREAD_JOIN_MS);
+      }
     }
 
-    // close all connections
-    for (int i=0; i < conList.length; i++) {
-      if (conList[i] != null) {
-        ManagedConnection con = removeConnection(i);
-        LOGGER.info("{0}: close connection {1}", this, con);
-        con.close();
+    synchronized (this) {
+      // close all connections
+      for (int i=0; i < conList.length; i++) {
+        if (conList[i] != null) {
+          ManagedConnection con = removeConnection(i);
+          LOGGER.info("{0}: close connection {1}", this, con);
+          con.close();
+        }
       }
     }
   }
@@ -625,7 +644,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     try {
       versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
         try {
-          DatabaseMetaData metaData = con.getMetaData();    // may be a lengthy operation -> cached per URL
+          DatabaseMetaData metaData = con.getMetaData();    // maybe a lengthy operation -> cached per URL
           return new VersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
         }
         catch (SQLException sx) {
@@ -723,6 +742,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   private static class AttachTimeoutThread extends Thread {
 
     private final WeakReference<DefaultConnectionManager> cmRef;
+    private volatile boolean terminationRequested;    // true if this thread should stop
     private long attachTimeout;
 
     AttachTimeoutThread(DefaultConnectionManager mgr) {
@@ -730,6 +750,15 @@ public class DefaultConnectionManager implements ConnectionManager {
       setDaemon(true);
       cmRef = new WeakReference<>(mgr);
       attachTimeout = mgr.attachTimeout;
+    }
+
+    /**
+     * Requests this thread to terminate.<br>
+     * The flag belongs to the thread, not to the manager, so that a thread already retired
+     * cannot be revived by re-enabling the attach timeout, which would start a second thread.
+     */
+    void requestTermination() {
+      terminationRequested = true;
     }
 
     @Override
@@ -746,7 +775,7 @@ public class DefaultConnectionManager implements ConnectionManager {
         }
 
         DefaultConnectionManager mgr = cmRef.get();
-        if (mgr == null || mgr.shutdownRequested || mgr.attachTimeout <= 0) {
+        if (mgr == null || terminationRequested || mgr.shutdownRequested || mgr.attachTimeout <= 0) {
           break;
         }
 

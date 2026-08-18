@@ -16,11 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.misc.Immutable;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.PasswordCredentials;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -28,6 +29,11 @@ import java.util.TimeZone;
 
 /**
  * Session information.
+ * <p>
+ * Implementations must define {@code equals} and {@code hashCode} by the username alone, so that
+ * every session info of a user -- the original, its clones, and one created solely to address that
+ * user -- is interchangeable as a key. A {@link MultiUserSessionPool} depends on it to map a user
+ * to its sessions.
  *
  * @author harald
  */
@@ -78,12 +84,13 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the password.
    *
-   * @return the password
+   * @return the password, null if the credentials are not password-based
    */
   char[] getPassword();
 
   /**
-   * Sets the password.
+   * Sets the password.<br>
+   * Replaces the current credentials by {@link PasswordCredentials}.
    *
    * @param password the password
    */
@@ -93,8 +100,31 @@ public interface SessionInfo extends Immutable, Serializable {
    * Clears the password.<br>
    * Will remove it from memory by overwriting each
    * element in the character array.
+   *
+   * @see Credentials#clear()
    */
   void clearPassword();
+
+  /**
+   * Gets the credentials to authenticate with.
+   * <p>
+   * They are transferred to the application server at login, where the
+   * {@link org.tentackle.session.auth.AuthenticationManager} hands them to the configured
+   * {@link org.tentackle.session.auth.AuthenticationProvider}s.
+   *
+   * @return the credentials, never null
+   */
+  Credentials getCredentials();
+
+  /**
+   * Sets the credentials to authenticate with.
+   * <p>
+   * This is how a client logs in with something other than a username and a password, for
+   * example, with a token obtained from an identity provider.
+   *
+   * @param credentials the credentials, null to reset to empty {@link PasswordCredentials}
+   */
+  void setCredentials(Credentials credentials);
 
   /**
    * Gets the epochal time since when logged in.
@@ -203,7 +233,7 @@ public interface SessionInfo extends Immutable, Serializable {
    * to {@link #getPropertiesName()} (if it does not contain an extension already).<br>
    * If there is no such file, the properties will be read as a resource according
    * to the classpath.<br>
-   * If all fails a {@link PersistenceException} is thrown.
+   * If all fails, a {@link PersistenceException} is thrown.
    *
    * @return the connection properties, never null
    */
@@ -226,7 +256,7 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Applies the properties to this session info.<br>
-   * Sets user, password and application-name from properties, if given.
+   * Sets user, password, and application-name from properties, if given.
    */
   void applyProperties();
 
@@ -312,7 +342,7 @@ public interface SessionInfo extends Immutable, Serializable {
   void checkServerVersion(String serverVersion);
 
   /**
-   * Determines whether token-locks are removed when session is closed.<br>
+   * Determines whether token-locks are removed when the session is closed.<br>
    * By default, locks are not removed for cloned sessions.
    *
    * @return true if leave locks untouched, false to remove locks
@@ -320,7 +350,7 @@ public interface SessionInfo extends Immutable, Serializable {
   boolean isLockLingerEnabled();
 
   /**
-   * Sets whether token-locks are removed when session is closed.
+   * Sets whether token-locks are removed when the session is closed.
    *
    * @param enabled true if leave locks untouched, false to remove locks
    */

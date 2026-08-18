@@ -28,6 +28,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.testng.AbstractPdoTest;
+import org.tentackle.pdo.testng.ServerProcessWrapper;
 import org.tentackle.persist.server.TestServer;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
@@ -116,9 +117,9 @@ public class RemoteTransactionTest implements DomainContextProvider {
   public void testTransactions() throws Exception {
     Reporter.log("RemoteTransactionTest.testTransactions <br>", true);
 
-    Process process = AbstractPdoTest.runClass(TestServer.class, "duration=5000");
-    Thread.sleep(3500);
+    ServerProcessWrapper server = new ServerProcessWrapper(AbstractPdoTest.runClass(TestServer.class));
     try {
+      server.awaitReady(30000);   // block until the server is listening instead of guessing with sleep
       SessionInfo sessionInfo = Pdo.createSessionInfo("client");
       session = (Db) Pdo.createSession(sessionInfo);
       context = Pdo.createDomainContext(session);
@@ -133,7 +134,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
       if (session != null) {
         session.close();
       }
-      AbstractPdoTest.waitForProcess(process);
+      server.stopAndWait();   // signal shutdown via stdin EOF and wait for the server to terminate
     }
   }
 

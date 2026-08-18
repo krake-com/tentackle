@@ -58,7 +58,7 @@ public interface ModificationListener {
 
   /**
    * Gets the optional delay to fire the event.<br>
-   * Allows to collect events for multiple names within an interval.<br>
+   * Allows collecting events for multiple names within an interval.<br>
    * If both timeFrame and timeDelay are given, the delay is treated as an
    * offset to the frame.
    *
@@ -67,7 +67,7 @@ public interface ModificationListener {
   long getTimeDelay();
 
   /**
-   * Invoked whenever an instance of given class has changed.<br>
+   * Invoked whenever an instance of the given class has changed.
    *
    * @param ev the modification event
    */

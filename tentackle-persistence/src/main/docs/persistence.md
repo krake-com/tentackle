@@ -121,6 +121,12 @@ implement PDO-level joins — fetching two related PDOs in a single `SELECT`. Th
 (relations marked to load with their root) and **explicit domain-driven joins**, and work for composite
 (aggregate component) and non-composite relations alike.
 
+A `Join` is an immutable *description* of how to join. Model-based eager joins are created once in the static class
+variables of a persistence class, so the same `Join` instances are used concurrently by every thread
+selecting that entity. The bookkeeping of which PDOs have already been joined therefore lives in
+[`JoinState`](../java/org/tentackle/persist/JoinState.java), which is created per query and owned by the
+`JoinedSelect` — never in the `Join` itself.
+
 ### Cursors
 
 [`ResultSetCursor`](../java/org/tentackle/persist/ResultSetCursor.java) is a `ScrollableResource<T>` that turns a
@@ -207,7 +213,7 @@ The `org.tentackle.persist.app` package provides the entry points for the **midd
 
 | Package                                              | Contents                                                                                                                                                                                                                                      |
 |------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org.tentackle.persist`                              | The core: `AbstractPersistentObject`, `AbstractPersistentOperation`, class-variables and their factory, the modification tracker, token-lock interfaces, joins, cursors, normtext, the PDO-aware utilities and the session/delegate adapters. |
+| `org.tentackle.persist`                              | The core: `AbstractPersistentObject`, `AbstractPersistentOperation`, class-variables and their factory, the modification tracker, token-lock interfaces, joins (`Join`, `JoinedSelect`, `JoinState`), cursors, normtext, the PDO-aware utilities and the session/delegate adapters. |
 | `org.tentackle.persist.app`                          | Server-application lifecycle (`AbstractServerApplication`, `ServerApplication`).                                                                                                                                                              |
 | `org.tentackle.persist.lock`                         | The default `LockManager` and its persisted `DbTokenLock`.                                                                                                                                                                                    |
 | `org.tentackle.persist.ns` (+ `ns.trip`)             | Persistence for number sources (pools/ranges) and their remoting.                                                                                                                                                                             |
@@ -228,7 +234,7 @@ A typical read of an entity through a PDO proxy flows like this:
    persistence delegate  ── AbstractPersistentObject.select(id)
         │
    local ──────────────┐                    remote ─────────────┐
-        ▼              │                          ▼              │
+        ▼              │                          ▼             │
    AbstractDbObject    │   builds SQL via    PdoRemoteDelegateLocator
    + Backend (SQL)     │   the Backend       → …RemoteDelegate (TRIP)
         ▼              │                          ▼ (on server)

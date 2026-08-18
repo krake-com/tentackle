@@ -31,6 +31,7 @@ import org.tentackle.session.Session;
 import java.io.Serial;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,12 +49,16 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Holds the resources to be cleaned up.
+   * <p>
+   * All fields are volatile: {@link #run()} is executed either by the closing application thread or,
+   * for a cursor that became unreachable without being closed, by the cleaner thread. Both write
+   * them, and {@link ResultSetCursor#isClosed()} reads them from the application thread.
    */
   private static class Resources<T extends PersistentDomainObject<T>> implements Runnable {
 
-    private ResultSetWrapper rs;                      // the result set (only for local sessions, null if remote)
-    private RemoteResultSetCursor<T> remoteCursor;    // the remote cursor (only for remote sessions, null if local)
-    private ResultSetCursor<T> me;                    // != null if programmatic close
+    private volatile ResultSetWrapper rs;                   // the result set (only for local sessions, null if remote)
+    private volatile RemoteResultSetCursor<T> remoteCursor; // the remote cursor (only for remote sessions, null if local)
+    private volatile ResultSetCursor<T> me;                 // != null if programmatic close
 
     Resources(ResultSetWrapper rs, RemoteResultSetCursor<T> remoteCursor) {
       this.rs = rs;
@@ -214,8 +219,19 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public void close() {
-    resources.me = this;
-    cleanable.clean();
+    try {
+      resources.me = this;    // mark as programmatic close, before the cleaner may run
+      cleanable.clean();
+    }
+    finally {
+      /*
+       * Keep this cursor reachable until the cleanup is done. Without the fence the JIT may treat
+       * it as unreachable as soon as 'resources' and 'cleanable' have been loaded, letting the
+       * cleaner thread run the cleanup concurrently -- which would log the cursor as unreferenced
+       * even though it is being closed properly right here.
+       */
+      Reference.reachabilityFence(this);
+    }
   }
 
 

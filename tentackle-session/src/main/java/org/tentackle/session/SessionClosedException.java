@@ -16,13 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.misc.Identifiable;
 
 import java.io.Serial;
-
 
 /**
  * Runtime exception thrown if the session is already closed.
@@ -37,7 +35,7 @@ public class SessionClosedException extends PersistenceException {
  /**
    * Constructs a new database session closed exception for a given session
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
    * @param session the session
@@ -49,7 +47,7 @@ public class SessionClosedException extends PersistenceException {
 
   /**
    * Constructs a new database session closed exception for a given session with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   session the session
@@ -69,7 +67,7 @@ public class SessionClosedException extends PersistenceException {
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public SessionClosedException(Session session, String message, Throwable cause) {
@@ -81,12 +79,12 @@ public class SessionClosedException extends PersistenceException {
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * that are little more than wrappers for other {@link Throwable}s.
    *
    * @param  session the session
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public SessionClosedException(Session session, Throwable cause) {
@@ -98,7 +96,7 @@ public class SessionClosedException extends PersistenceException {
   /**
    * Constructs a new database session closed exception for a given pc object
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
    * @param object the persistent object
@@ -110,7 +108,7 @@ public class SessionClosedException extends PersistenceException {
 
   /**
    * Constructs a new database session closed exception for a given session with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   object the persistent object
@@ -130,7 +128,7 @@ public class SessionClosedException extends PersistenceException {
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public SessionClosedException(Identifiable object, String message, Throwable cause) {
@@ -142,12 +140,12 @@ public class SessionClosedException extends PersistenceException {
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * that are little more than wrappers for other {@link Throwable}s.
    *
    * @param  object the persistent object
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public SessionClosedException(Identifiable object, Throwable cause) {
@@ -158,7 +156,7 @@ public class SessionClosedException extends PersistenceException {
   /**
    * Constructs a new database session closed exception without a session and
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    */
   public SessionClosedException() {
@@ -168,7 +166,7 @@ public class SessionClosedException extends PersistenceException {
 
   /**
    * Constructs a new database session closed exception without a session with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   message   the detail message. The detail message is saved for
@@ -188,7 +186,7 @@ public class SessionClosedException extends PersistenceException {
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public SessionClosedException(String message, Throwable cause) {

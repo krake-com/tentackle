@@ -43,6 +43,12 @@
               <goal>analyze</goal>
             </goals>
           </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
+            </goals>
+          </execution>
         </executions>
         <configuration>
           <verbosity>info</verbosity>

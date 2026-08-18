@@ -772,7 +772,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       File[] files = dir.listFiles();
       if (files != null) {
         for (File file : files) {
-          if (!file.isHidden()) {
+          if (!PackageInfo.isHidden(file)) {
             empty = false;
             if (file.isDirectory()) {
               checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());

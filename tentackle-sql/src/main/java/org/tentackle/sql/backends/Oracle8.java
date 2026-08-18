@@ -328,6 +328,21 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
+    // Oracle stores the default as the source text of the DDL, so the model's value must be
+    // mapped the same way valueToLiteral does before it is compared: the empty string is
+    // written as a single blank, booleans as 1/0. Without that, the migrator would report
+    // such a default as changed on every run - and re-applying it would not help.
+    if (defaultValue instanceof String str && str.isEmpty()) {
+      defaultValue = getEmptyString();
+    }
+    else if (defaultValue instanceof Boolean bool) {
+      defaultValue = bool ? "1" : "0";
+    }
+    return super.isDefaultEqual(column, sqlType, defaultValue);
+  }
+
+  @Override
   public ColumnMetaData createColumnMetaData(TableMetaData tableMetaData) {
     return new OracleColumnMetaData(tableMetaData);
   }

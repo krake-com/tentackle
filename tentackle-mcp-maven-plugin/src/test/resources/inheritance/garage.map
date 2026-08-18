@@ -1,0 +1,11 @@
+# a standalone entity whose table is maintained externally
+name := Garage
+id := 8003
+table := garage
+alias := gar
+integrity := none
+
+## attributes
+[root, remote, tracked, provided]
+
+String(40)     name            gname             what it is called

@@ -20,13 +20,16 @@
 package org.tentackle.fx.table.type;
 
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 
 /**
  * A {@link Boolean} cell type.
@@ -43,27 +46,33 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Although a boolean is rendered as a graphic only, a textual representation is provided
+   * for the column filters and the exports.
+   */
+  @Override
+  public String getText(TableColumnConfiguration<?, Boolean> columnConfiguration, Boolean item) {
+    return FxFxBundle.getString(item ? "YES" : "NO");
+  }
+
+  @Override
+  public Node getGraphic(TableColumnConfiguration<?, Boolean> columnConfiguration, Boolean item) {
+    return Fx.createGraphic(item ? "checked" : "unchecked");
+  }
+
   @Override
   public void updateItem(FxTableCell<?, Boolean> tableCell, Boolean item) {
     tableCell.setText(null);
-    if (item) {
-      tableCell.setGraphic(Fx.createGraphic("checked"));
-    }
-    else {
-      tableCell.setGraphic(Fx.createGraphic("unchecked"));
-    }
+    tableCell.setGraphic(getGraphic(tableCell.getColumnConfiguration(), item));
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, Boolean> tableCell, Boolean item) {
     tableCell.setText(null);
-    if (item) {
-      tableCell.setGraphic(Fx.createGraphic("checked"));
-    }
-    else {
-      tableCell.setGraphic(Fx.createGraphic("unchecked"));
-    }
+    tableCell.setGraphic(getGraphic(tableCell.getColumnConfiguration(), item));
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 

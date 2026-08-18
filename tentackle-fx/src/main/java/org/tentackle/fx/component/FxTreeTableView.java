@@ -32,6 +32,8 @@ import org.tentackle.fx.component.delegate.FxTreeTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.filter.TableFilter;
+import org.tentackle.fx.table.filter.TableFilterSupport;
 import org.tentackle.misc.CsvConverter;
 
 import javafx.beans.property.BooleanProperty;
@@ -72,6 +74,11 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    * Copy to clipboard feature toggle.
    */
   private boolean copyToClipboardEnabled;
+
+  /**
+   * The column filter support.
+   */
+  private TableFilterSupport<S> filterSupport;
 
 
   /**
@@ -132,6 +139,86 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   /**
+   * Gets the column filter support.
+   *
+   * @return the filter support, null if the columns cannot be filtered by the user
+   * @see TableConfiguration#isFilterEnabled()
+   */
+  public TableFilterSupport<S> getFilterSupport() {
+    return filterSupport;
+  }
+
+  /**
+   * Sets the column filter support.<br>
+   * Usually set by the table configuration. Any previously installed support is uninstalled,
+   * so passing {@code null} removes the filter UI and restores the unfiltered rows.
+   *
+   * @param filterSupport the filter support, null if the columns cannot be filtered by the user
+   */
+  public void setFilterSupport(TableFilterSupport<S> filterSupport) {
+    if (this.filterSupport != filterSupport && this.filterSupport != null) {
+      this.filterSupport.uninstall();
+    }
+    this.filterSupport = filterSupport;
+  }
+
+  /**
+   * Returns whether the column filter feature is currently enabled.
+   *
+   * @return true if the columns provide a filter UI in their headers
+   */
+  public boolean isFilterEnabled() {
+    return filterSupport != null;
+  }
+
+  /**
+   * Enables or disables the column filter feature.<p>
+   * In contrast to {@link TableConfiguration#setFilterEnabled(boolean)}, which must be set before the
+   * view is configured, this method turns the feature on or off <em>after</em> configuration, similar
+   * to {@link #setSortable(boolean)}. Disabling removes the filter UI and restores the unfiltered rows;
+   * enabling installs a fresh filter support via the configuration.
+   *
+   * @param filterEnabled true to enable the filter feature, false to disable it
+   */
+  public void setFilterEnabled(boolean filterEnabled) {
+    if (filterEnabled) {
+      if (filterSupport == null && configuration != null) {
+        configuration.installFilterSupport(this);
+      }
+    }
+    else {
+      setFilterSupport(null);
+    }
+  }
+
+  /**
+   * Gets the column filter.
+   *
+   * @return the filter, null if the columns cannot be filtered by the user
+   */
+  public TableFilter<S> getFilter() {
+    return filterSupport == null ? null : filterSupport.getFilter();
+  }
+
+  /**
+   * Returns whether the displayed rows are restricted by a column filter.
+   *
+   * @return true if filtered
+   */
+  public boolean isFilterActive() {
+    return filterSupport != null && filterSupport.getFilter().isActive();
+  }
+
+  /**
+   * Clears all column filters.
+   */
+  public void clearFilter() {
+    if (filterSupport != null) {
+      filterSupport.clear();
+    }
+  }
+
+  /**
    * Sets the table configuration.
    *
    * @param configuration the configuration
@@ -151,7 +238,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     configuration.configure(this);
   }
 
-
   /**
    * Gets the displayed items.
    *
@@ -168,15 +254,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
       }
     }
     return items;
-  }
-
-  private void getItems(List<S> items, TreeItem<S> treeItem) {
-    items.add(treeItem.getValue());
-    if (treeItem.isExpanded()) {
-      for (TreeItem<S> child : treeItem.getChildren()) {
-        getItems(items, child);
-      }
-    }
   }
 
   /**
@@ -197,13 +274,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     return items;
   }
 
-  private void getTreeItems(List<TreeItem<S>> items, TreeItem<S> treeItem) {
-    items.add(treeItem);
-    for (TreeItem<S> child : treeItem.getChildren()) {
-      getTreeItems(items, child);
-    }
-  }
-
   /**
    * Gets the selected items.
    *
@@ -217,7 +287,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     return items;
   }
 
-
   /**
    * Scrolls the view in such a way that the given row is positioned in the center of the visible rows.
    *
@@ -226,7 +295,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   public void scrollToCentered(int row) {
     scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row, getItems().size()));
   }
-
 
   /**
    * Saves the column sizes, visibility, view size and sorting to the preferences.
@@ -252,7 +320,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     }
   }
 
-
   /**
    * Sets the sortable property of all columns.
    *
@@ -264,7 +331,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     }
   }
 
-
   /**
    * Sets the reorderable property of all columns.
    *
@@ -275,7 +341,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
       col.setReorderable(reorderable);
     }
   }
-
 
   /**
    * Configures the table to copy a cell via Ctrl-C to the clipboard.
@@ -326,7 +391,6 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
       }
     }
   }
-
 
   /**
    * Copies the selected cells to the clipboard.
@@ -397,6 +461,23 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
       }
     }
     return null;
+  }
+
+
+  private void getItems(List<S> items, TreeItem<S> treeItem) {
+    items.add(treeItem.getValue());
+    if (treeItem.isExpanded()) {
+      for (TreeItem<S> child : treeItem.getChildren()) {
+        getItems(items, child);
+      }
+    }
+  }
+
+  private void getTreeItems(List<TreeItem<S>> items, TreeItem<S> treeItem) {
+    items.add(treeItem);
+    for (TreeItem<S> child : treeItem.getChildren()) {
+      getTreeItems(items, child);
+    }
   }
 
 

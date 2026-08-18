@@ -21,6 +21,7 @@ package org.tentackle.persist.ns;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -50,6 +51,7 @@ import java.util.Objects;
  * @author harald
  */
 @PersistentObjectService(NumberPool.class)
+@PreloadRemoteDelegate
 public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPool, NumberPoolPersistenceImpl> implements NumberPoolPersistence {
 
   @Serial
@@ -147,6 +149,8 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   //</editor-fold>//GEN-END:declare
 
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
    * Creates a number space.
    *
@@ -182,6 +186,8 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public NumberPoolPersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
   @Override
   public boolean isUpdatingSerialEvenIfNotModified() {

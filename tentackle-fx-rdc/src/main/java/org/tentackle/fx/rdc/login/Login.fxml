@@ -48,10 +48,10 @@
                   </Button>
                </children>
             </HBox>
-        <Label text="%Username:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-        <Label text="%Password:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+        <Label fx:id="usernameLabel" text="%Username:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+        <Label fx:id="passwordLabel" text="%Password:" GridPane.columnIndex="1" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
         <TextField fx:id="usernameField" maxWidth="-Infinity" promptText="%username" GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="1" />
-            <HBox GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
+            <HBox fx:id="passwordBox" GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="2">
                <children>
               <PasswordField fx:id="passwordField" maxWidth="-Infinity" promptText="%password" />
                   <Button fx:id="revealButton" mnemonicParsing="false">
@@ -63,6 +63,7 @@
         <HBox spacing="5.0" GridPane.columnIndex="2" GridPane.columnSpan="2147483647" GridPane.rowIndex="3">
           <children>
             <Button fx:id="loginButton" mnemonicParsing="false" text="%login" />
+            <Button fx:id="ssoButton" mnemonicParsing="false" text="%sso login" />
             <Button fx:id="cancelButton" cancelButton="true" mnemonicParsing="false" text="%cancel" />
           </children>
           <GridPane.margin>

@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * A wrapper for {@link ResultSet}s.
  *
@@ -1026,12 +1025,16 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Retrieves a list of DTOs from this resultset.
+   * Retrieves a list of DTOs from this resultset.<br>
+   * Intended for projection queries, i.e. queries delivering just data, not PDOs.
+   * Such queries are usually built by the {@link org.tentackle.dbms.dsl.DSL},
+   * which provides {@code toList} as a terminal operation.
    *
    * @param clazz the DTO class
    * @param <T> the DTO type
    * @return the list of objects
    * @see DbUtilities#resultSetToList(ResultSetWrapper, Class)
+   * @see org.tentackle.dbms.dsl.Select#toList(Db, Class)
    */
   public <T> List<T> toList(Class<T> clazz) {
     return DbUtilities.getInstance().resultSetToList(this, clazz);

@@ -176,7 +176,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     Db db = requestDb(false, false);
     try {
       if (db.isRemote()) {
-        nodeTableSerial = ModificationTracker.getInstance().getSerial(TRACKER_NAME);
+        nodeTableSerial = ModificationTracker.getInstance().getIdSerialForName(TRACKER_NAME).getSerial();
         keyTableSerial = 0;
         ModificationTracker.getInstance().addModificationListener(
                 new ModificationListenerAdapter(TRACKER_NAME) {

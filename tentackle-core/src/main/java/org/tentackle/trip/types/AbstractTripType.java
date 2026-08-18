@@ -42,8 +42,18 @@ public abstract class AbstractTripType<T> implements TripType<T> {
    * Global flag to enable/disable deduplication.<br>
    * Deduplication is enabled by default and should not be disabled in most cases.
    * Provided for testing purposes only.
+   * <p>
+   * Volatile, since trip types are shared singletons: a change must become visible
+   * to all threads currently serializing or deserializing.
    */
-  public static boolean deduplicationEnabled = true;
+  public static volatile boolean deduplicationEnabled = true;
+
+  /**
+   * Upper bound for pre-allocating from a size read off the stream.<br>
+   * The container still grows to whatever the stream really delivers, so this only prevents a
+   * corrupted size from allocating gigabytes before the first element was even read.
+   */
+  private static final int MAX_PRE_ALLOCATED_SIZE = 4096;
 
   @SuppressWarnings("rawtypes")
   private static final TripComponent[] NO_COMPONENTS = new TripComponent[0];
@@ -201,6 +211,36 @@ public abstract class AbstractTripType<T> implements TripType<T> {
     return clazz.hashCode();
   }
 
+
+  /**
+   * Validates a size or length read from the stream.
+   *
+   * @param size the size read from the stream
+   * @return the size, never negative
+   * @throws TripRuntimeException if the size is negative
+   */
+  protected int checkSize(int size) {
+    if (size < 0) {
+      throw new TripRuntimeException("negative size " + size + " for " + this);
+    }
+    return size;
+  }
+
+  /**
+   * Limits a size read from the stream to what may be pre-allocated for it.
+   * <p>
+   * Containers that grow while their elements are read must not be sized by the stream: a
+   * corrupted size would allocate far more than the stream can ever fill. The container reaches
+   * its real size as the elements arrive, and a size larger than the remaining data ends up as a
+   * closed stream instead of an {@link OutOfMemoryError}.
+   *
+   * @param size the size read from the stream
+   * @return the capacity to pre-allocate, never negative
+   * @throws TripRuntimeException if the size is negative
+   */
+  protected int limitPreAllocation(int size) {
+    return Math.min(checkSize(size), MAX_PRE_ALLOCATED_SIZE);
+  }
 
   /**
    * Sends the null opcode to the stream.

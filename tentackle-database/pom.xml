@@ -25,6 +25,13 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <!-- the default test backend -->
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- only needed when the tests are pointed at postgres.properties -->
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
@@ -39,8 +46,15 @@
 
     <testResources>
       <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
         <directory>src/test/filtered-resources</directory>
         <filtering>true</filtering>
+      </testResource>
+      <testResource>
+        <!-- the DDL of this module's own tables, generated below -->
+        <directory>${project.build.directory}/generated-test-resources</directory>
       </testResource>
       <testResource>
         <directory>${tentackle.testServiceDir}</directory>
@@ -139,6 +153,55 @@
             </fileset>
           </filesets>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <!--
+          Create the DDL for this module's own tables so that AbstractDbTest can build the
+          schema of an H2 test database from the classpath. Notice that this module is way
+          below tentackle-test-pdo in the reactor and cannot use its DbTestUtilities.
+        -->
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <verbosity>info</verbosity>
+              <generateHeaderComment>false</generateHeaderComment>
+              <checkReservedTables>false</checkReservedTables>
+              <backendNames>H2,PostgreSQL</backendNames>
+              <sqlDir>${project.build.directory}/generated-test-resources/META-INF/sql</sqlDir>
+              <sqlFileName>createttmodel.sql</sqlFileName>
+              <filesets>
+                <fileset>
+                  <!--
+                    The model dir is shared by the whole reactor, so the entities of this
+                    module must be named explicitly. Otherwise, an incremental build would
+                    pull in the models of other modules as well.
+                  -->
+                  <directory>${tentackle.modelDir}</directory>
+                  <includes>
+                    <include>modification.map</include>
+                    <include>modlog.map</include>
+                    <include>prefnode.map</include>
+                    <include>prefkey.map</include>
+                  </includes>
+                </fileset>
+              </filesets>
+              <sequences>
+                <sequence>
+                  <name>object_sequence_id</name>
+                  <comment>to generate the ID of PDOs</comment>
+                </sequence>
+              </sequences>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>

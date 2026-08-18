@@ -43,6 +43,13 @@ interface MapTypeHolder {
 
 /**
  * Trip type for {@link Map}s.
+ * <p>
+ * The map is rebuilt through its sized (or no-args) constructor and refilled with the entries.
+ * Maps providing neither, but a {@link org.tentackle.reflect.CanonicalConstructor} instead, are
+ * created by that constructor once its arguments arrived. Since the map cannot exist before,
+ * its components precede the entries in the stream in this case, the other way round otherwise.
+ * Either way the map is created before its entries are read, so keys and values may
+ * back-reference the map itself.
  *
  * @param <T> the map type
  */
@@ -62,7 +69,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    */
   public MapTripType(Class<T> clazz) {
     super(clazz);
-    if (isInstantiable()) {
+    if (isInstantiable() && !isDelayedConstruction()) {
       try {
         sizedConstructor = clazz.getDeclaredConstructor(Integer.TYPE);
       }
@@ -72,12 +79,13 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
           noArgsConstructor = clazz.getDeclaredConstructor();
         }
         catch (NoSuchMethodException ex) {
-          throw new TripInstantiationException(clazz, "no sized or a no-args constructor", ex);
+          throw new TripInstantiationException(clazz, "no sized, no-args or canonical constructor", ex);
         }
       }
     }
-    // else: interface or abstract. Since the concrete type is not known yet,
-    // it will be determined when serialized. Therefore, read() and write() won't be invoked.
+    // else: - interface or abstract. Since the concrete type is not known yet,
+    //         it will be determined when serialized. Therefore, read() and write() won't be invoked.
+    //       - or delayed construction, i.e. the map is created by its canonical constructor or builder.
   }
 
   /**
@@ -99,7 +107,6 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void write(T value, TripStream stream) {
     stream.getSerializer().serializeOpCode(getOpCode());
     sendDictionary(stream);
@@ -111,28 +118,18 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
       if (reference == null || reference.isObjectFollowing()) {
         prepareWrite(value);
         writeHeader(value, stream);
-        Set<Map.Entry> entrySet = value.entrySet();
-        for (Map.Entry element : entrySet) {
-          Object elementKey = element.getKey();
-          if (elementKey == null) {
-            sendNull(stream);   // map allows null keys, obviously
-          }
-          else {
-            TripType type = stream.getType(elementKey.getClass());
-            type.write(elementKey, stream);
-          }
-          Object elementValue = element.getValue();
-          if (elementValue == null) {
-            sendNull(stream);   // map allows null values, obviously
-          }
-          else {
-            TripType type = stream.getType(elementValue.getClass());
-            type.write(elementValue, stream);
-          }
-        }
-        if (getComponents().length > 0) {
-          // additional members (TripComponentProvider!)
+        if (isDelayedConstruction()) {
+          // the canonical constructor's arguments must arrive before the entries,
+          // since the map does not exist yet. Unconditional: the reader expects the end opcode.
           writeComponents(value, stream);
+          writeEntries(value, stream);
+        }
+        else {
+          writeEntries(value, stream);
+          if (getComponents().length > 0) {
+            // additional members (TripComponentProvider!)
+            writeComponents(value, stream);
+          }
         }
       }
     }
@@ -184,56 +181,29 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
       MapHeader<T> header = readHeader(stream, opCode);
       int size = header.size();
       value = header.value();
-      if (initializer != null) {
-        initializer.accept(value);
-      }
 
-      if (reference != null && !isConverted()) {
-        // register before reading the entries, so that keys or values may back-reference the map itself
-        stream.addReference(reference, value, isDeduplicateable(value));
-        reference.markReceived();
-      }
-
-      if (size > 0) {
-        opCode = stream.receiveOpCode();
-        int elementCount = 0;
-        while (elementCount < size) {
-          Object elementKey;
-          if (opCode == DefaultOpCode.NULL) {
-            elementKey = null;    // map allows null keys, obviously
-          }
-          else {
-            TripType<?> elementType = stream.deriveType(opCode);
-            if (elementType.isDictionaryBased()) {
-              opCode = stream.receiveOpCode();
-            }
-            elementKey = elementType.read(stream, opCode);
-          }
-
-          opCode = stream.receiveOpCode();
-          Object elementValue;
-          if (opCode == DefaultOpCode.NULL) {
-            elementValue = null;    // map allows null values, obviously
-          }
-          else {
-            TripType<?> elementType = stream.deriveType(opCode);
-            if (elementType.isDictionaryBased()) {
-              opCode = stream.receiveOpCode();
-            }
-            elementValue = elementType.read(stream, opCode);
-          }
-
-          value.put(elementKey, elementValue);
-
-          if (++elementCount < size) {
-            // opcode for the next element
-            opCode = stream.receiveOpCode();
-          }
-        }
-      }
-
-      if (getComponents().length > 0) {
+      if (isDelayedConstruction()) {
+        // the map does not exist yet: the canonical constructor creates it from the components,
+        // applies the initializer and registers the reference (see ObjectTripType).
         value = readComponents(stream, stream.receiveOpCode(), entry, reference, value, initializer);
+        readEntries(stream, value, size);
+      }
+      else {
+        if (initializer != null) {
+          initializer.accept(value);
+        }
+
+        if (reference != null && !isConverted()) {
+          // register before reading the entries, so that keys or values may back-reference the map itself
+          stream.addReference(reference, value, isDeduplicateable(value));
+          reference.markReceived();
+        }
+
+        readEntries(stream, value, size);
+
+        if (getComponents().length > 0) {
+          value = readComponents(stream, stream.receiveOpCode(), entry, reference, value, initializer);
+        }
       }
 
       value = convert(value);
@@ -245,6 +215,86 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
       }
     }
     return value;
+  }
+
+  /**
+   * Writes the entries of the map.
+   *
+   * @param value the map instance
+   * @param stream the stream to write to
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected void writeEntries(T value, TripStream stream) {
+    Set<Map.Entry> entrySet = value.entrySet();
+    for (Map.Entry element : entrySet) {
+      Object elementKey = element.getKey();
+      if (elementKey == null) {
+        sendNull(stream);   // map allows null keys, obviously
+      }
+      else {
+        TripType type = stream.getType(elementKey.getClass());
+        type.write(elementKey, stream);
+      }
+      Object elementValue = element.getValue();
+      if (elementValue == null) {
+        sendNull(stream);   // map allows null values, obviously
+      }
+      else {
+        TripType type = stream.getType(elementValue.getClass());
+        type.write(elementValue, stream);
+      }
+    }
+  }
+
+  /**
+   * Reads the entries of the map.
+   * <p>
+   * The next opcode is unread both on entry and on return, so that the entries can be read
+   * before or after the components (see {@link #read(TripStream, OpCode, Consumer)}).
+   *
+   * @param stream the stream to read from
+   * @param value the map instance to fill
+   * @param size the number of entries
+   */
+  @SuppressWarnings("unchecked")
+  protected void readEntries(TripStream stream, T value, int size) {
+    if (size > 0) {
+      OpCode opCode = stream.receiveOpCode();
+      int elementCount = 0;
+      while (elementCount < size) {
+        Object elementKey;
+        if (opCode == DefaultOpCode.NULL) {
+          elementKey = null;    // map allows null keys, obviously
+        }
+        else {
+          TripType<?> elementType = stream.deriveType(opCode);
+          if (elementType.isDictionaryBased()) {
+            opCode = stream.receiveOpCode();
+          }
+          elementKey = elementType.read(stream, opCode);
+        }
+
+        opCode = stream.receiveOpCode();
+        Object elementValue;
+        if (opCode == DefaultOpCode.NULL) {
+          elementValue = null;    // map allows null values, obviously
+        }
+        else {
+          TripType<?> elementType = stream.deriveType(opCode);
+          if (elementType.isDictionaryBased()) {
+            opCode = stream.receiveOpCode();
+          }
+          elementValue = elementType.read(stream, opCode);
+        }
+
+        value.put(elementKey, elementValue);
+
+        if (++elementCount < size) {
+          // opcode for the next element
+          opCode = stream.receiveOpCode();
+        }
+      }
+    }
   }
 
   /**
@@ -277,7 +327,9 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   }
 
   /**
-   * Creates a new map instance.
+   * Creates a new map instance.<br>
+   * Not invoked for delayed construction, i.e. if the map is created by its
+   * canonical constructor or builder.
    *
    * @param size the size of the map
    * @return the map instance
@@ -304,7 +356,8 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   @Override
   protected boolean isFieldSerializable(Field field) {
     // The fields in the java maps must not be serialized, since the components are serialized instead.
-    // Otherwise, we would get exceptions "module java.base does not open java.util to module org.tentackle.core"
+    // Otherwise, we would get exceptions "module java.base does not open java.util to module org.tentackle.core".
+    // Such a field can still be transported by a @CanonicalGetter, see ChainedProperties.
     return super.isFieldSerializable(field) && !field.getDeclaringClass().getName().startsWith("java.");
   }
 
@@ -322,21 +375,26 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
    * Returned by {@link #readHeader(TripStream, OpCode)}.
    *
    * @param size the size of the map
-   * @param value the map instance
+   * @param value the map instance, null for delayed construction
    * @param <T> the map type
    */
   protected record MapHeader<T>(int size, T value) {}
 
   /**
    * Reads the map header and creates a new map instance.
+   * <p>
+   * Subclasses overriding this method must return a header with a null instance for
+   * delayed construction, since the map is created by its canonical constructor or builder
+   * from the components that follow.
    *
    * @param stream the stream to read from
    * @param opCode the opcode to read (already read from the stream)
    * @return the map header
    */
   protected MapHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    int size = MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-    return new MapHeader<>(size, createMap(size));
+    int size = checkSize(MapTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
+    // the map grows while its entries are read, so the size is only a capacity hint
+    return new MapHeader<>(size, isDelayedConstruction() ? null : createMap(limitPreAllocation(size)));
   }
 
 }

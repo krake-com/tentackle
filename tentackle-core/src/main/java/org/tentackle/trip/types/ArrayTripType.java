@@ -78,8 +78,15 @@ interface ArrayTypeHolder {
 public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
   private final Class<?> componentClass;
-  private TripType<?> componentType;
-  private TripComponent<T, ?>[] components;
+
+  /**
+   * The lazily resolved component type and components.<br>
+   * The resolution must be delayed due to recursive factory calls, and trip types are shared
+   * singletons, hence the fields are volatile: both are assigned only after the value is fully
+   * built, so a reader either sees null or a completely initialized value.
+   */
+  private volatile TripType<?> componentType;
+  private volatile TripComponent<T, ?>[] components;
 
   /**
    * Creates the array type.
@@ -106,22 +113,28 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
    * @return the component type
    */
   public TripType<?> getComponentType() {
-    if (componentType == null) {
+    TripType<?> type = componentType;
+    if (type == null) {
       // must be delayed due to recursive factory calls
-      componentType = TripFactory.getInstance().getType(componentClass);
+      type = TripFactory.getInstance().getType(componentClass);
+      componentType = type;
     }
-    return componentType;
+    return type;
   }
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public TripComponent<T, ?>[] getComponents() {
-    if (components == null) {
-      components = new TripComponent[]{
+    TripComponent<T, ?>[] tripComponents = components;
+    if (tripComponents == null) {
+      // deliberately unlocked: concurrent readers may build it more than once, but the components
+      // are equivalent and matched by name (see DefaultDictionaryEntry), not by identity.
+      tripComponents = new TripComponent[]{
         TripFactory.getInstance().createComponent(this, 0, componentClass)
       };
+      components = tripComponents;
     }
-    return components;
+    return tripComponents;
   }
 
   @Override
@@ -196,7 +209,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
     }
 
     if (readContent) {
-      int length = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+      int length = checkSize(ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode));
       opCode = stream.receiveOpCode();
       value = (T) Array.newInstance(getComponentClass(entry), length);
 
@@ -207,6 +220,10 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
       while (opCode != DefaultOpCode.END) {
         int arrayIndex = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
+        if (arrayIndex < 0 || arrayIndex >= length) {
+          throw new TripRuntimeException("array index " + arrayIndex + " out of range for " + this +
+                                         " of length " + length);
+        }
         opCode = stream.receiveOpCode();
         TripType<?> elementType = getComponentType();
         if (!elementType.isFinal()) {

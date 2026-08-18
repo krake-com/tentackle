@@ -21,13 +21,14 @@ package org.tentackle.persist;
 import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.DbModificationTracker;
+import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 
 /**
- * The modification tracker for the tentackle persistence layer.
+ * The modification tracker for the PDO persistence layer.
  *
  * @author harald
  */
@@ -45,11 +46,11 @@ public class PdoModificationTracker extends DbModificationTracker {
 
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  public long getSerial(Class<?> clazz) {
+  public IdSerialTuple getIdSerialForClass(Class<?> clazz) {
     if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
-      return getSerial(PdoUtilities.getInstance().getTableName((Class) clazz));
+      return getIdSerialForName(PdoUtilities.getInstance().getTableName((Class) clazz));
     }
-    return super.getSerial(clazz);
+    return super.getIdSerialForClass(clazz);
   }
 
   @Override

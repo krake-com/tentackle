@@ -18,9 +18,9 @@
 
 package org.tentackle.bind;
 
-import org.tentackle.common.StringHelper;
-
 import org.testng.annotations.Test;
+
+import org.tentackle.common.StringHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -186,9 +186,7 @@ public class DefaultBindableCacheTest {
     assertNotNull(note.getField());
     assertNull(note.getGetter());
     assertNull(note.getSetter());
-    // NOTE: for field-only elements the cache uses the ordinal only for the sort key,
-    // it does not copy it onto the element itself (which keeps its default 0).
-    assertEquals(note.getOrdinal(), 0);
+    assertEquals(note.getOrdinal(), 3);
   }
 
   @Test

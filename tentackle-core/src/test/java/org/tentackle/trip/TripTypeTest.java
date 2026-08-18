@@ -24,10 +24,12 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.I18NText;
 import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
+import org.tentackle.misc.ChainedProperties;
 import org.tentackle.misc.CopyOnWriteCollection;
 import org.tentackle.misc.CopyOnWriteList;
 import org.tentackle.misc.ImmutableArrayList;
@@ -35,12 +37,17 @@ import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.reflect.CanonicalConstructor;
 import org.tentackle.reflect.CanonicalField;
+import org.tentackle.trip.impl.CanonicalDto;
+import org.tentackle.trip.impl.CanonicalList;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
+import org.tentackle.trip.impl.Employees;
+import org.tentackle.trip.impl.EmployeesArray;
 import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
 import org.tentackle.trip.impl.NotReferencableClass;
+import org.tentackle.trip.impl.PartialCanonicalTripType;
 import org.tentackle.trip.impl.PreparedSerializableClass;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestClassWithArray;
@@ -53,6 +60,7 @@ import org.tentackle.trip.impl.TestProxyTarget;
 import org.tentackle.trip.impl.TestRecord;
 import org.tentackle.trip.impl.TestSubClass;
 import org.tentackle.trip.impl.ValidateSerializableClass;
+import org.tentackle.trip.impl.ValuesInstantiatable;
 import org.tentackle.trip.types.CollectionTripType;
 import org.tentackle.trip.types.ImmutableCollectionTripType;
 
@@ -80,6 +88,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -473,6 +482,77 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
+  void testCanonicalBuilderReference() {
+    // the same instance twice -> the second occurrence is sent as a back-reference
+    DtoWithCanonicalBuilder john = DtoWithCanonicalBuilder.builder().userId(100).userName("John").build();
+    List<DtoWithCanonicalBuilder> list = new ArrayList<>();
+    list.add(john);
+    list.add(john);
+    TripType<List> tripType = TripFactory.getInstance().getType(ArrayList.class);
+    List tunneled = tunnel(list, tripType);
+    assertSame(tunneled.get(0), tunneled.get(1));
+  }
+
+  @Test
+  void testCanonicalDto() {
+    TripType<CanonicalDto> tripType = TripFactory.getInstance().getType(CanonicalDto.class);
+    tunnel(new CanonicalDto("John", 42), tripType);
+    tunnel(new CanonicalDto(null, 0), tripType);
+  }
+
+  /**
+   * A component the sender does not provide — because its version of the class does not have it,
+   * or because it is at its default value — must not prevent the object from being created.
+   * The missing argument of the canonical constructor keeps its default value instead of the
+   * deserialization silently yielding null.
+   */
+  @Test
+  void testCanonicalConstructorWithMissingComponents() {
+    TripType<CanonicalDto> reader = TripFactory.getInstance().getType(CanonicalDto.class);
+    CanonicalDto john = new CanonicalDto("John", 42);
+
+    // the primitive component is missing -> keeps its default
+    CanonicalDto withoutAge = tunnelValue(john, new PartialCanonicalTripType("age"), reader);
+    assertNotNull(withoutAge);
+    assertEquals(withoutAge.getName(), "John");
+    assertEquals(withoutAge.getAge(), 0);
+
+    // the reference component is missing -> keeps its default
+    CanonicalDto withoutName = tunnelValue(john, new PartialCanonicalTripType("name"), reader);
+    assertNotNull(withoutName);
+    assertNull(withoutName.getName());
+    assertEquals(withoutName.getAge(), 42);
+
+    // no component at all arrives
+    CanonicalDto empty = tunnelValue(john, new PartialCanonicalTripType("name", "age"), reader);
+    assertNotNull(empty);
+    assertNull(empty.getName());
+    assertEquals(empty.getAge(), 0);
+  }
+
+  @Test
+  void testValuesInstanceCreator() {
+    ValuesInstantiatable john = new ValuesInstantiatable("John", 42);
+    tunnel(john, TripFactory.getInstance().getType(ValuesInstantiatable.class));
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void testValuesInstanceCreatorReference() {
+    // the same instance twice -> the second occurrence is sent as a back-reference and
+    // must resolve to the object created by the instance creator, not to the bare instance
+    ValuesInstantiatable john = new ValuesInstantiatable("John", 42);
+    List<ValuesInstantiatable> list = new ArrayList<>();
+    list.add(john);
+    list.add(john);
+    TripType<List> tripType = TripFactory.getInstance().getType(ArrayList.class);
+    List tunneled = tunnel(list, tripType);
+    assertSame(tunneled.get(0), tunneled.get(1));
+    assertEquals(tunneled.get(1), john);
+  }
+
+  @Test
   void testString() {
     tunnel(null);
     tunnel("");
@@ -656,6 +736,94 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     TestRecord dedupChild = new TestRecord("kerrin", 29, false, null, null, "blah-blah");
     TestRecord tunneledDedup = tunnel(dedupChild, tripType);
     assertSame(tunneledDedup, tunneledRecord.child());
+  }
+
+  /**
+   * Records nested in records, each holding a list of the next level.<br>
+   * The whole graph must arrive component by component, including the empty and the {@code null} list.
+   */
+  @Test
+  void testNestedRecords() {
+    TripType<Employees> tripType = TripFactory.getInstance().getType(Employees.class);
+
+    Employees.Attribute shared = new Employees.Attribute("department", "development");
+    Employees employees = new Employees(
+      List.of(new Employees.Employee("kerrin", 29,
+                                     List.of(shared, new Employees.Attribute("room", "1.02"))),
+              new Employees.Employee("kathrin", 59,
+                                     // an equal but distinct attribute of another employee
+                                     List.of(new Employees.Attribute("department", "development"))),
+              new Employees.Employee("hugo", 42, List.of()),
+              new Employees.Employee(null, null, null)));
+
+    Employees tunnelled = tunnel(employees, tripType);
+    assertNotSame(tunnelled, employees);
+    assertEquals(tunnelled.employees().size(), 4);
+    assertEquals(tunnelled.employees().getFirst().attributes().getFirst().value(), "development");
+    assertTrue(tunnelled.employees().get(2).attributes().isEmpty());
+    assertNull(tunnelled.employees().get(3).name());
+    assertNull(tunnelled.employees().get(3).age());
+    assertNull(tunnelled.employees().get(3).attributes());
+
+    // equal records are deduplicated, no matter how deep they are nested
+    assertSame(tunnelled.employees().getFirst().attributes().getFirst(),
+               tunnelled.employees().get(1).attributes().getFirst());
+
+    // the whole object graph is a reference of its own
+    assertSame(tunnel(employees, tripType), tunnelled);
+
+    tunnel(new Employees(List.of()), tripType);
+    tunnel(new Employees(null), tripType);
+    tunnel(null, tripType);
+  }
+
+  /**
+   * The same as {@link #testNestedRecords()}, but with arrays instead of lists.<br>
+   * Notice that the array components make the records fall back to identity equals,
+   * hence the graph must be asserted component by component.
+   */
+  @Test
+  void testNestedRecordsWithArrays() {
+    TripType<EmployeesArray> tripType = TripFactory.getInstance().getType(EmployeesArray.class);
+
+    EmployeesArray.Attribute shared = new EmployeesArray.Attribute("department", "development");
+    EmployeesArray employees = new EmployeesArray(
+      new EmployeesArray.Employee[] {
+        new EmployeesArray.Employee("kerrin", 29,
+                                    new EmployeesArray.Attribute[] {
+                                      shared, new EmployeesArray.Attribute("room", "1.02")}),
+        new EmployeesArray.Employee("kathrin", 59,
+                                    // an equal but distinct attribute of another employee
+                                    new EmployeesArray.Attribute[] {
+                                      new EmployeesArray.Attribute("department", "development")}),
+        new EmployeesArray.Employee("hugo", 42, new EmployeesArray.Attribute[0]),
+        new EmployeesArray.Employee(null, null, null),
+        null});
+
+    EmployeesArray tunnelled = tunnelNoEquals(employees, tripType);
+    assertNotSame(tunnelled, employees);
+    assertEquals(tunnelled.employees().getClass().getComponentType(), EmployeesArray.Employee.class);
+    assertEquals(tunnelled.employees().length, 5);
+    assertEquals(tunnelled.employees()[0].name(), "kerrin");
+    assertEquals(tunnelled.employees()[0].age(), Integer.valueOf(29));
+    assertEquals(tunnelled.employees()[0].attributes(), employees.employees()[0].attributes());   // assertEquals is aware of arrays!
+    assertEquals(tunnelled.employees()[0].attributes().getClass().getComponentType(), EmployeesArray.Attribute.class);
+    assertEquals(tunnelled.employees()[2].attributes().length, 0);
+    assertNull(tunnelled.employees()[3].name());
+    assertNull(tunnelled.employees()[3].age());
+    assertNull(tunnelled.employees()[3].attributes());
+    assertNull(tunnelled.employees()[4]);
+
+    // equal records are deduplicated, no matter how deep they are nested
+    assertSame(tunnelled.employees()[0].attributes()[0], tunnelled.employees()[1].attributes()[0]);
+
+    // the whole object graph is a reference of its own
+    assertSame(tunnelNoEquals(employees, tripType), tunnelled);
+
+    EmployeesArray empty = tunnelNoEquals(new EmployeesArray(new EmployeesArray.Employee[0]), tripType);
+    assertEquals(empty.employees().length, 0);
+    assertNull(tunnelNoEquals(new EmployeesArray(null), tripType).employees());
+    assertNull(tunnel(null, tripType));
   }
 
   @Test
@@ -1101,6 +1269,173 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertSame(tunnel(map, type), tunneledMap);
   }
 
+  /**
+   * {@link Properties} is a plain JDK map: all its fields are declared in {@code java.util},
+   * so none of them is serializable (see {@code MapTripType#isFieldSerializable}) and the
+   * entries are all that travels.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testProperties() {
+    Properties properties = new Properties();
+    properties.setProperty("user", "hugo");
+    properties.setProperty("empty", "");
+    properties.put("count", 42);    // Hashtable accepts non-string values
+
+    TripType<Properties> type = TripFactory.getInstance().getType(Properties.class);
+    Properties tunneled = tunnel(properties, type);
+    assertNotSame(tunneled, properties);
+    assertEquals(tunneled.getProperty("user"), "hugo");
+    assertEquals(tunneled.getProperty("empty"), "");
+    assertEquals(tunneled.get("count"), 42);
+    assertEquals(tunneled.stringPropertyNames(), Set.of("user", "empty"));
+    assertSame(tunnel(properties, type), tunneled);
+
+    assertTrue(tunnel(new Properties(), type).isEmpty());
+    assertNull(tunnel(null, type));
+
+    // known limitation: the defaults live in a java.util field and are therefore not transported.
+    // Use ChainedProperties instead, see testChainedProperties().
+    Properties defaults = new Properties();
+    defaults.setProperty("inherited", "value");
+    Properties withDefaults = new Properties(defaults);
+    withDefaults.setProperty("own", "value");
+    assertEquals(withDefaults.getProperty("inherited"), "value");
+    Properties tunneledWithDefaults = tunnel(withDefaults, type);
+    assertEquals(tunneledWithDefaults.getProperty("own"), "value");
+    assertNull(tunneledWithDefaults.getProperty("inherited"));
+  }
+
+  /**
+   * {@link ChainedProperties} exposes the defaults of a {@link Properties} through a
+   * {@code @CanonicalGetter} and takes them back through a {@code @CanonicalConstructor}.
+   * The map is thus created from its components, which precede the entries in the stream.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testChainedProperties() {
+    ChainedProperties root = new ChainedProperties();
+    root.setProperty("level", "root");
+    root.setProperty("fromRoot", "yes");
+    ChainedProperties middle = new ChainedProperties(root);
+    middle.setProperty("level", "middle");
+    middle.setProperty("fromMiddle", "yes");
+    ChainedProperties leaf = new ChainedProperties(middle);
+    leaf.setProperty("level", "leaf");
+    leaf.put("count", 42);    // Hashtable accepts non-string values
+
+    TripType<ChainedProperties> type = TripFactory.getInstance().getType(ChainedProperties.class);
+    ChainedProperties tunneled = tunnel(leaf, type);
+    assertNotSame(tunneled, leaf);
+    // the whole chain arrived
+    assertEquals(tunneled.getProperty("level"), "leaf");
+    assertEquals(tunneled.getProperty("fromMiddle"), "yes");
+    assertEquals(tunneled.getProperty("fromRoot"), "yes");
+    assertEquals(tunneled.get("count"), 42);
+    assertEquals(tunneled.stringPropertyNames(), Set.of("level", "fromMiddle", "fromRoot"));
+    // ... including its structure
+    assertNotNull(tunneled.getDefaults());
+    assertEquals(tunneled.getDefaults().getProperty("level"), "middle");
+    assertNotNull(tunneled.getDefaults().getDefaults());
+    assertEquals(tunneled.getDefaults().getDefaults().getProperty("level"), "root");
+    assertNull(tunneled.getDefaults().getDefaults().getDefaults());
+    assertSame(tunnel(leaf, type), tunneled);
+
+    // without defaults
+    ChainedProperties plain = new ChainedProperties();
+    plain.setProperty("own", "value");
+    ChainedProperties tunneledPlain = tunnel(plain, type);
+    assertNull(tunneledPlain.getDefaults());
+    assertEquals(tunneledPlain.getProperty("own"), "value");
+    assertTrue(tunnel(new ChainedProperties(), type).isEmpty());
+    assertNull(tunnel(null, type));
+
+    // shared defaults must arrive as one object, not as two copies
+    ChainedProperties shared = new ChainedProperties();
+    shared.setProperty("shared", "value");
+    List<ChainedProperties> chains = new ArrayList<>();
+    chains.add(new ChainedProperties(shared));
+    chains.add(new ChainedProperties(shared));
+    TripType<List> listType = TripFactory.getInstance().getType(chains.getClass());
+    List<ChainedProperties> tunneledChains = tunnel(chains, (TripType) listType);
+    assertEquals(tunneledChains.getFirst().getProperty("shared"), "value");
+    assertSame(tunneledChains.getFirst().getDefaults(), tunneledChains.get(1).getDefaults());
+  }
+
+  /**
+   * A collection providing neither a sized nor a no-args constructor, but a canonical one.<br>
+   * {@code name} becomes a component of its own, {@code capacity} is transient and is
+   * transported by its {@code @CanonicalGetter}.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testCanonicalCollection() {
+    CanonicalList<Object> list = new CanonicalList<>("the name", 4711);
+    list.add("one");
+    list.add(null);
+    list.add("two");
+    list.add(list);   // the element back-references the collection itself
+
+    TripType<CanonicalList> type = TripFactory.getInstance().getType(CanonicalList.class);
+    CanonicalList<Object> tunneled = tunnelNoEquals(list, (TripType) type);
+    assertNotSame(tunneled, list);
+    assertEquals(tunneled.getName(), "the name");
+    assertEquals(tunneled.getCapacity(), 4711);
+    assertEquals(tunneled.size(), 4);
+    assertEquals(tunneled.get(0), "one");
+    assertNull(tunneled.get(1));
+    assertEquals(tunneled.get(2), "two");
+    assertSame(tunneled.get(3), tunneled);
+
+    // the canonical defaults must survive as well
+    CanonicalList<Object> empty = new CanonicalList<>(null, 0);
+    CanonicalList<Object> tunneledEmpty = tunnelNoEquals(empty, (TripType) type);
+    assertNull(tunneledEmpty.getName());
+    assertEquals(tunneledEmpty.getCapacity(), 0);
+    assertTrue(tunneledEmpty.isEmpty());
+  }
+
+  /**
+   * {@link EncryptedProperties} is a JDK map with fields of its own.<br>
+   * The entries are serialized by the {@link org.tentackle.trip.types.MapTripType}, the fields
+   * as its components. Notice that {@link java.util.Hashtable#equals} compares the entries only,
+   * so the fields must be asserted explicitly.
+   */
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testEncryptedProperties() {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.setName("backend.properties");
+    properties.setProperty("user", "hugo");
+    // no @Service(Cryptor.class) configured in this module, hence the encrypted value is set verbatim
+    properties.setProperty("password", "~c29tZSBzZWNyZXQ=");
+    properties.setProperty("escaped", "\\~not encrypted");
+    properties.setProperty("MixedCase", "value");
+
+    TripType<EncryptedProperties> type = TripFactory.getInstance().getType(EncryptedProperties.class);
+    EncryptedProperties tunneled = tunnel(properties, type);
+    assertNotSame(tunneled, properties);
+    assertEquals(tunneled.getName(), "backend.properties");
+    assertNull(tunneled.getKeyPrefix());
+    // the encrypted value must arrive untouched, i.e. neither decrypted nor re-encrypted
+    assertEquals(tunneled.getPropertyBlunt("password"), "~c29tZSBzZWNyZXQ=");
+    assertEquals(tunneled.getProperty("user"), "hugo");
+    assertEquals(tunneled.getProperty("escaped"), "~not encrypted");
+    // the key case map is transient and must be rebuilt lazily on the receiving side
+    assertEquals(tunneled.getPropertyIgnoreCase("mixedcase"), "value");
+    assertSame(tunnel(properties, type), tunneled);
+
+    // the key prefix must survive as well and still translate the keys
+    EncryptedProperties prefixed = new EncryptedProperties();
+    prefixed.setKeyPrefix("org.tentackle.");
+    prefixed.setProperty("user", "hugo");
+    assertNotNull(prefixed.getPropertyBlunt("user"));
+    EncryptedProperties tunneledPrefixed = tunnel(prefixed, type);
+    assertEquals(tunneledPrefixed.getKeyPrefix(), "org.tentackle.");
+    assertEquals(tunneledPrefixed.getProperty("user"), "hugo");
+    assertEquals(tunneledPrefixed.get("org.tentackle.user"), "hugo");
+  }
+
   @Test
   void testException() {
     try {
@@ -1303,6 +1638,31 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   private void tunnel(String value) {
     TripType<String> tripType = TripFactory.getInstance().getType(String.class);
     assertEquals(tunnelValue(value, tripType), value);
+  }
+
+  /**
+   * Tunnels a value written by one trip type and read back by another, which allows simulating
+   * a sender whose class definition differs from the receiver's.
+   *
+   * @param value the value to write
+   * @param writer the trip type to write with
+   * @param reader the trip type to read with
+   * @return the value read back
+   * @param <T> the type
+   */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private <T> T tunnelValue(T value, TripType<T> writer, TripType<T> reader) {
+    try {
+      // each case is a message of its own, or the value would be sent as a back-reference
+      transceiver.clear();
+      writer.write(value, transceiver.getStream());
+      transceiver.echo();
+      OpCode opCode = transceiver.getStream().getDeserializer().deserializeOpCode();
+      return reader.read(transceiver.getStream(), opCode);
+    }
+    finally {
+      transceiver.reset();
+    }
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })

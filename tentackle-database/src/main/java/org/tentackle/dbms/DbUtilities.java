@@ -22,6 +22,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.BackendConfiguration;
@@ -41,6 +42,7 @@ import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 interface DbUtilitiesHolder {
@@ -71,9 +73,10 @@ public class DbUtilities {
 
 
   private ConnectionManager connectionManager;
+  private volatile String[] preloadDelegateClassNames;   // cached names of the preload candidates
 
   /**
-   * Creates the db utitities.
+   * Creates the db utilities.
    */
   public DbUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -172,9 +175,28 @@ public class DbUtilities {
   }
 
   /**
+   * Gets the names of the classes to preload the remote delegates for.<br>
+   * By default, these are the classes annotated with {@link PreloadRemoteDelegate}, collected
+   * at build time and looked up via the service API. The classes are not loaded.
+   *
+   * @return the class names, never null
+   * @see Db#preloadRemoteDelegates()
+   */
+  public String[] getPreloadDelegateClassNames() {
+    String[] classNames = preloadDelegateClassNames;
+    if (classNames == null) {
+      Set<String> names = ServiceFactory.getServiceFinder()
+                                        .findServiceConfigurations(PreloadRemoteDelegate.class.getName()).keySet();
+      classNames = names.toArray(new String[0]);
+      preloadDelegateClassNames = classNames;
+    }
+    return classNames;
+  }
+
+  /**
    * Creates a reconnection policy.
    *
-   * @param blocking true if reconnection blocks the current thread, else non-blocking in background
+   * @param blocking true if reconnection blocks the current thread, else non-blocking in the background
    * @param millis the (minimum) time in milliseconds between retries
    * @return the policy
    */
@@ -351,7 +373,7 @@ public class DbUtilities {
    * For the setter pattern the DTO class needs a public no-arg constructor.<br>
    * For the record pattern the canonical constructor is used.
    * <p>
-   * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
+   * The method- and column names are matched case-insensitive with all underscores removed.<br>
    * For primitive members of the DTO-class the result set must not contain null values, of course.
    *
    * @param rs the resultset
@@ -364,7 +386,7 @@ public class DbUtilities {
   public <T> List<T> resultSetToList(ResultSetWrapper rs, Class<T> clazz) {
 
     if (rs.isInSkipMode()) {
-      throw new PersistenceException("result set must not be in skipmode");
+      throw new PersistenceException("result set must not be in skipMode");
     }
     if (rs.getColumnOffset() != 0) {
       throw new PersistenceException("column offset must be zero");
@@ -494,9 +516,12 @@ public class DbUtilities {
         else if (recordConstructor != null) {
           dto = retrieveRecordMappings(recordConstructor, recordMappings, rs);
         }
-        else {
+        else if (noArgConstructor != null) {
           dto = noArgConstructor.newInstance();
           retrieveMethodMappings(setterMappings, dto, rs);
+        }
+        else {
+          throw new PersistenceException("no suitable instantiation method found to create a DTO from " + clazz);
         }
         dtos.add(dto);
       }

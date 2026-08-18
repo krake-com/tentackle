@@ -192,44 +192,69 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final StatementId transferTokenLockStatementId = new StatementId();
 
 
+  /*
+   * The fields below are lazily determined on first use, from arbitrary threads: class variables are
+   * static and thus shared by every thread working with the entity.
+   *
+   * They are all volatile, because a lazily computed value and its "pending" flag are two separate
+   * writes: without volatile they may be reordered or stay invisible, and a reader seeing
+   * "pending == false" could still read the value as null. Since null is a legitimate result for
+   * most of them (an entity may map to no table and have no eager joins), such a reader cannot even
+   * tell the difference and would silently work with a wrong value.
+   *
+   * Writing the value *before* clearing the pending flag is therefore essential in every getter
+   * below. The computations themselves are pure and idempotent, so two threads racing to compute
+   * the same value is harmless.
+   */
+
   /**
    * The class variables of the topmost parent class.<br>
    * "this" if not inherited.
    */
-  private PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
-  private boolean topSuperClassVariablesPending = true;
+  private volatile PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
+  private volatile boolean topSuperClassVariablesPending = true;
 
   /**
    * The effective tablename.
    */
-  private String effectiveTableName;
-  private boolean effectiveTableNamePending = true;
+  private volatile String effectiveTableName;
+  private volatile boolean effectiveTableNamePending = true;
 
   /**
    * The effective table alias.
    */
-  private String effectiveTableAlias;
-  private boolean effectiveTableAliasPending = true;
+  private volatile String effectiveTableAlias;
+  private volatile boolean effectiveTableAliasPending = true;
 
   /**
    * The effective eager joins.
    */
-  private List<Join<? super T,?>> effectiveEagerJoins;
-  private boolean effectiveEagerJoinsPending = true;
+  private volatile List<Join<? super T,?>> effectiveEagerJoins;
+  private volatile boolean effectiveEagerJoinsPending = true;
 
   /**
    * Flag is true to check the security rules for each access to objects of this class.<br>
    * See isSecurityEnabled() below.
    */
-  private boolean securityEnabled;
-  private boolean securityEnabledPending = true;
+  private volatile boolean securityEnabled;
+  private volatile boolean securityEnabledPending = true;
 
 
-  // cached snapshot methods (determined only once per persistence class)
-  private Method revertAttributesToSnapshotMethod;
-  private Method createComponentsInSnapshotMethod;
-  private Method revertComponentsToSnapshotMethod;
+  /*
+   * Cached snapshot methods (determined only once per persistence class).
+   * Volatile as well: findSnapshotMethod() calls setAccessible(true) on the method before it is
+   * published here, and that mutation must be visible to every thread that picks the method up.
+   */
+  private volatile Method revertAttributesToSnapshotMethod;
+  private volatile Method createComponentsInSnapshotMethod;
+  private volatile Method revertComponentsToSnapshotMethod;
 
+
+  /*
+   * The two SQL fragments below are lazily built as well, but need no volatile: they are immutable
+   * Strings published by a single write, so a racing thread either reads null and rebuilds the
+   * identical string, or reads a reference to a fully constructed one.
+   */
 
   /**
    * Columns for single table inheritance select-clause.
@@ -299,10 +324,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
         if (!buf.isEmpty()) {
           buf.append(',');
         }
-        if (columnPrefix != null) {
-          buf.append(columnPrefix);
-        }
-        buf.append(getColumnName(name));
+        buf.append(getColumnName(columnPrefix, name));
       }
       sqlColumnNames = buf.toString();
     }
@@ -396,8 +418,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
         cv = cv.superClassVariables;
       }
       while (cv != null);
-      effectiveEagerJoins = egList;
-      effectiveEagerJoinsPending = false;
+      effectiveEagerJoins = egList;         // value first,
+      effectiveEagerJoinsPending = false;   // ... then the flag (see the fields)
     }
     return effectiveEagerJoins;
   }
@@ -423,8 +445,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           superCV = superCV.superClassVariables;
         }
       }
-      effectiveTableName = name;
-      effectiveTableNamePending = false;
+      effectiveTableName = name;          // value first,
+      effectiveTableNamePending = false;  // ... then the flag (see the fields)
     }
     return effectiveTableName;
   }
@@ -450,8 +472,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           superCV = superCV.superClassVariables;
         }
       }
-      effectiveTableAlias = alias;
-      effectiveTableAliasPending = false;
+      effectiveTableAlias = alias;         // value first,
+      effectiveTableAliasPending = false;  // ... then the flag (see the fields)
     }
     return effectiveTableAlias;
   }
@@ -499,8 +521,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       while (variables.superClassVariables != null) {
         variables = variables.superClassVariables;
       }
-      topSuperClassVariables = variables;
-      topSuperClassVariablesPending = false;
+      topSuperClassVariables = variables;      // value first,
+      topSuperClassVariablesPending = false;   // ... then the flag (see the fields)
     }
     return topSuperClassVariables;
   }
@@ -509,10 +531,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public boolean isSecurityEnabled() {
     if (securityEnabledPending) {
       String prop = getProperty(PROPERTY_CHECKSECURITY);
-      securityEnabled = prop == null ||
+      securityEnabled = prop == null ||                             // value first,
                         !(prop.equals("no") || prop.equals("off") || prop.equals("false") ||
                           prop.equals("disabled") || prop.equals("0"));
-      securityEnabledPending = false;
+      securityEnabledPending = false;                               // ... then the flag (see the fields)
     }
     return securityEnabled;
   }
@@ -552,7 +574,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           cv.foreignReferencesInitializer = null;
         }
       }
-      referenced = cv.isReferencedImpl(db, id, cv.foreignReferences);
+      // iterate a snapshot: isReferencedImpl() queries the database per reference (see getForeignReferences)
+      referenced = cv.isReferencedImpl(db, id, cv.getForeignReferences());
       cv = cv.superClassVariables;
     }
     return referenced;

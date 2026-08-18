@@ -143,6 +143,12 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
   [`ResultSetSkipBlock`](../java/org/tentackle/dbms/ResultSetSkipBlock.java) support joines (due to inheritance or for load joins).
 - [`Query`](../java/org/tentackle/dbms/Query.java) — builds the SQL string + parameter set for a one-off query
   (e.g., user-entered), adding the backend-specific `SELECT`/`LIMIT`/`OFFSET` automatically.
+  All predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md) are accepted as parameters, as well as
+  application-specific types with a registered `DataType`. Notice that some datatypes span more than one column
+  (`BMoney` or `ZonedDateTime`, for example) and thus require a matching number of question marks.
+- The [`org.tentackle.dbms.dsl`](../java/org/tentackle/dbms/dsl/DSL.java) package builds such a `Query` from
+  typed expressions instead of hand-written SQL strings, and counts the columns of multi-column datatypes for
+  you — see [The Query DSL](./query-dsl.md).
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
   integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
@@ -262,6 +268,52 @@ guard the calls. [`SQLExceptionComponentProvider`](../java/org/tentackle/dbms/tr
 exceptions serialize correctly across the wire, and [`DefaultMasterSerial`](../java/org/tentackle/dbms/trip/DefaultMasterSerial.java)
 carries the master modification serial back to clients.
 
+### Preloading remote delegates
+
+Delegates are created lazily: the first time a class needs one, `Db.getRemoteDelegate(int)` asks the
+server for it — **one network roundtrip per class**. For an application with several hundred entities
+running on a link with a high latency, these roundtrips accumulate and dominate the perceived
+startup time.
+
+A class can be marked as a candidate for preloading with
+[`@PreloadRemoteDelegate`](../java/org/tentackle/dbms/trip/PreloadRemoteDelegate.java):
+
+```java
+@PersistentObjectService(User.class)
+@PreloadRemoteDelegate
+public class UserPersistenceImpl extends AbstractPersistentObject<User, UserPersistenceImpl> { ... }
+```
+
+The annotation is meta-annotated with `@Service`, so the [build](../../../../tentackle-common/src/main/docs/services.md)
+collects the annotated class names in `META-INF/services/org.tentackle.dbms.trip.PreloadRemoteDelegate`.
+The client reads them as plain strings via `DbUtilities.getPreloadDelegateClassNames()` — the classes
+themselves are never loaded — and fetches all of their delegates in a **single roundtrip** using
+`RemoteDbSession.getRemoteDelegates(String[])`:
+
+```java
+Session session = Pdo.createSession(sessionInfo);
+session.preloadRemoteDelegates();       // one roundtrip instead of one per class
+```
+
+Preloaded delegates are consumed transparently: `getRemoteDelegate(int)` takes them from the preload
+map instead of going to the server. Preloading is remembered for the session, so it is repeated on
+`reOpen()` and after an automatic reconnection. A **cloned** session is a session of its own and does
+not inherit the request — it must invoke `preloadRemoteDelegates()` itself if it wants to.
+
+Two rules apply:
+
+- **The application decides, per session.** Nothing is preloaded unless `preloadRemoteDelegates()`
+  is invoked. Not every session benefits — preloading costs one roundtrip plus one server-side
+  delegate per candidate, which is wasted on short-lived or special-purpose sessions.
+- **Annotate the classes used at startup**, not the whole entity model, and never a class whose
+  delegate changes the state of the server session when created. `DbModificationTracker` is such an
+  example: creating its delegate marks the session as the modification tracker's session, so it must
+  not be a preload candidate.
+
+Class names the server cannot resolve are answered with `null` and logged there — preloading never
+breaks the session. Since `getRemoteDelegates` is part of the `RemoteDbSession` interface, client and
+server must be built from the same Tentackle version, which the login handshake verifies anyway.
+
 ---
 
 ## Package Layout
@@ -269,6 +321,7 @@ carries the master modification serial back to clients.
 | Package | Contents |
 |---------|----------|
 | `org.tentackle.dbms` | The engine: `Db`, `AbstractDbObject`/`AbstractDbOperation`, connection managers and `ManagedConnection`, pools and factories, id-sources, statement/query/result wrappers, transactions, batching, modification tracking + table serials, modification logging, persistence visitors, diagnostics/statistics and the SPI utility replacements. |
+| `org.tentackle.dbms.dsl` | The [query DSL](./query-dsl.md): typed tables, columns, expressions and conditions rendered to the SQL of a `Query`. |
 | `org.tentackle.dbms.prefs` (+ `prefs.trip`) | Database-backed `java.util.prefs.Preferences` and its remoting. |
 | `org.tentackle.dbms.trip` | The TRIP server, remote connection/session and the remote delegates that make the layer location-transparent. |
 | `org.tentackle.dbms.service` | The [`Hook`](../java/org/tentackle/dbms/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
@@ -330,6 +383,7 @@ plug into.
 ## Related Documentation
 
 - [Session](../../../../tentackle-session/src/main/docs/session.md) — the `Session`/transaction/tracking contracts this module implements.
+- [The Query DSL](./query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — the dialect-aware backend that builds the executed SQL.
 - [Persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) — the PDO-aware layer that builds on `AbstractDbObject`/`Db`.
 - [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md) — the persistent domain object pattern at the top of the stack.

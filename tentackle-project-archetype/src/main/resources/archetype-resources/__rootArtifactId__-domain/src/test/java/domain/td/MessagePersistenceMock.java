@@ -87,11 +87,6 @@ public class MessagePersistenceMock extends MockPersistentObject<Message, Messag
   }
 
   @Override
-  public Message selectByUniqueDomainKey(String messageNumber) {
-    return null;
-  }
-
-  @Override
   public TrackedList<Message> findBy(
       String messageNumber,
       Timestamp from, Timestamp until,

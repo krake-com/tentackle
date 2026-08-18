@@ -25,38 +25,47 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.AbstractConnection;
 
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 
 /**
  * QUIC connection.
  */
 public class QuicTripConnection extends AbstractConnection {
 
+  private final BooleanSupplier connectionAlive;
   private final QuicStream quicStream;
-  private boolean closed;
+  private volatile boolean closed;    // volatile: closed by the pool's closing thread, read by the pool
 
   /**
    * Creates a new QUIC connection.
+   * <p>
+   * Notice: the constructor sends the TRIP preamble, so it may well fail. The stream is only owned by the
+   * connection once the constructor returned; until then, closing it is up to the caller.
    *
    * @param transport the transport associated with this connection
    * @param dictionary the dictionary associated with this connection
+   * @param connectionAlive tells whether the QUIC connection the stream belongs to is still established
    * @param quicStream the QUIC stream associated with this connection
    */
-  public QuicTripConnection(QuicTripTransport transport, Dictionary dictionary, QuicStream quicStream) {
+  public QuicTripConnection(QuicTripTransport transport, Dictionary dictionary,
+                            BooleanSupplier connectionAlive, QuicStream quicStream) {
     super(transport, transport.createStream(dictionary, quicStream));
+    this.connectionAlive = connectionAlive;
     this.quicStream = quicStream;
   }
 
   @Override
   public boolean isOpen() {
-    return !closed;
+    // The QUIC connection may be terminated without the stream being closed explicitly, for example
+    // by the max idle timeout of either peer. Such a stream is unusable, and the pool must not hand it out.
+    return !closed && connectionAlive.getAsBoolean();
   }
 
   @Override
   public void close() {
+    closed = true;    // even if closing the streams fails: the connection must not be used anymore
     try {
-      quicStream.getOutputStream().close();
-      quicStream.getInputStream().close();
-      closed = true;
+      QuicTripTransport.closeStream(quicStream);
     }
     catch (IOException e) {
       throw new TripRuntimeException("closing " + quicStream + " failed", e);

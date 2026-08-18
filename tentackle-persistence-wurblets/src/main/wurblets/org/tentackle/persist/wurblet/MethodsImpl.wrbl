@@ -10,7 +10,7 @@ arguments:
 <li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
 <li><em>--noudk:</em> don't generate selectByUniqueDomainKey wurblet anchor.</li>
 <li><em>--noisroot:</em> don't generate isRootEntity() method.</li>
-<li><em>--mock:</em> generate code for mock object.</li>
+<li><em>--mock:</em> generate code for a mock object.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -68,7 +68,18 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (!generateMock) {
+    if (generateMock) {
+      if (getEntity().getSuperEntity() == null && getEntity().getOptions().isRoot() && generateIsRoot) {
+]@
+
+  \@Override
+  public boolean isRootEntity() {
+    return true;
+  }
+@[
+      }
+    }
+    else {
       if (isRemote()) {
         new RemoteIncludes(this);   // create TRIP-files if they don't exist yet
         String delegateType = NamingRules.getInstance().getPdoRemoteInterface(isPdo() ? pdoClass : mainClass);
@@ -1304,22 +1315,29 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   @(protection)@ boolean is@(methodSuffix)@Modified() {
 @[
-            if (isFullTracked()) {
-              if (attr.getDataType().isPrimitive()) {
+            if (generateMock) {
+]@
+    return false;
+@[
+            }
+            else {
+              if (isFullTracked()) {
+                if (attr.getDataType().isPrimitive()) {
 ]@
     return @(attr.getName())@ != @(attr.getName())@Persisted;
 @[
-              }
-              else {
+                }
+                else {
 ]@
     return !Objects.equals(@(attr.getName())@, @(attr.getName())@Persisted);
 @[
+                }
               }
-            }
-            else {
+              else {
 ]@
     return @(attr.getName())@Modified;
 @[
+              }
             }
 ]@
   }
@@ -1345,7 +1363,18 @@ For more options, see {\@link DbModelWurblet}.
             }
 ]@
   @(protection)@ @(attr.getJavaType())@ @(getter)@Persisted() {
+@[
+            if (generateMock) {
+]@
+    return @(attr.getName())@;
+@[
+            }
+            else {
+]@
     return @(attr.getName())@Persisted;
+@[
+            }
+]@
   }
 @[
           }
@@ -1470,18 +1499,26 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
       }
+    }
 
-      if (generateSelectByUDK) {
-        List<Attribute> udk = getEntity().getUniqueDomainKey();
-        if (!udk.isEmpty()) {
-          List<Attribute> superUdk = null;
-          if (getEntity().getSuperEntity() != null) {
-            superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
-          }
-          if (superUdk == null || !udk.equals(superUdk)) {
-            Set<Entity> components = getEntity().getAllComponents();
-            StringBuilder attribs = new StringBuilder();
-            for (Attribute attribute: udk) {
+    if (generateSelectByUDK) {
+      List<Attribute> udk = getEntity().getUniqueDomainKey();
+      if (!udk.isEmpty()) {
+        List<Attribute> superUdk = null;
+        if (getEntity().getSuperEntity() != null) {
+          superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+        }
+        if (superUdk == null || !udk.equals(superUdk)) {
+          Set<Entity> components = getEntity().getAllComponents();
+          StringBuilder attribs = new StringBuilder();
+          for (Attribute attribute: udk) {
+            if (generateMock) {
+              if (attribs.length() != 0) {
+                attribs.append(", ");
+              }
+              attribs.append(attribute.getJavaType()).append(' ').append(attribute.getName());
+            }
+            else {
               if (attribs.length() != 0) {
                 attribs.append(" ");
               }
@@ -1490,6 +1527,17 @@ For more options, see {\@link DbModelWurblet}.
               }
               attribs.append(attribute.getName());
             }
+          }
+          if (generateMock) {
+]@
+
+  \@Override
+  public @(getEntity())@ selectByUniqueDomainKey(@(attribs)@) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+@[
+          }
+          else {
 ]@
 
   // selects by unique domain key

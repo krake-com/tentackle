@@ -491,29 +491,31 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param processedEntities the already processed entities (to avoid loops)
    */
   protected void collectAssociatedEntities(Set<Entity> associates, Entity entity, Set<Entity> processedEntities) {
-    if (!processedEntities.contains(entity)) {
-      processedEntities.add(entity);
+    if (processedEntities.add(entity)) {
       associates.add(entity);
-      if (superEntity != null) {
-        associates.add(superEntity);
-        collectAssociatedEntities(associates, superEntity, processedEntities);
+      Entity superOfEntity = entity.getSuperEntity();
+      if (superOfEntity != null) {
+        associates.add(superOfEntity);
+        collectAssociatedEntities(associates, superOfEntity, processedEntities);
       }
-      associates.addAll(getSubEntities());
-      for (Entity child: getSubEntities()) {
+      associates.addAll(entity.getSubEntities());
+      for (Entity child: entity.getSubEntities()) {
         collectAssociatedEntities(associates, child, processedEntities);
       }
-      for (Relation relation: getRelations()) {
-        Entity relatedEntity = relation.getEntity();
+      for (Relation relation: entity.getRelations()) {
+        // the entities this entity points at
+        Entity relatedEntity = relation.getForeignEntity();
         if (relatedEntity != null) {    // model may be incomplete...
           associates.add(relatedEntity);
           collectAssociatedEntities(associates, relatedEntity, processedEntities);
         }
       }
-      for (Relation relation: getReferencingRelations()) {
-        Entity foreignEntity = relation.getForeignEntity();
-        if (foreignEntity != null) {    // model may be incomplete...
-          associates.add(foreignEntity);
-          collectAssociatedEntities(associates, foreignEntity, processedEntities);
+      for (Relation relation: entity.getReferencingRelations()) {
+        // the entities pointing at this entity
+        Entity referencingEntity = relation.getEntity();
+        if (referencingEntity != null) {    // model may be incomplete...
+          associates.add(referencingEntity);
+          collectAssociatedEntities(associates, referencingEntity, processedEntities);
         }
       }
     }

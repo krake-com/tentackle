@@ -1,0 +1,11 @@
+# the abstract root of a single-table hierarchy: it provides the table its sub entities are stored in
+name := Vehicle
+table := vehicle
+alias := vhc
+integrity := none
+inheritance := single
+
+## attributes
+[root, remote, tracked]
+
+String(40)     name            vname             what it is called

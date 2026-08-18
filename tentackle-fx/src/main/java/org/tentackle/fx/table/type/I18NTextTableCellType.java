@@ -25,6 +25,7 @@ import org.tentackle.common.I18NText;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 
 /**
  * I18NText cell type.
@@ -42,15 +43,20 @@ public class I18NTextTableCellType extends AbstractTableCellType<I18NText> {
   }
 
   @Override
+  public String getText(TableColumnConfiguration<?, I18NText> columnConfiguration, I18NText i18NText) {
+    return applyCaseConversion(columnConfiguration.getCaseConversion(), i18NText.get());
+  }
+
+  @Override
   public void updateItem(FxTableCell<?, I18NText> tableCell, I18NText i18NText) {
-    tableCell.setText(applyCaseConversion(tableCell.getColumnConfiguration().getCaseConversion(), i18NText.get()));
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), i18NText));
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, I18NText> treeTableCell, I18NText i18NText) {
-    treeTableCell.setText(applyCaseConversion(treeTableCell.getColumnConfiguration().getCaseConversion(), i18NText.get()));
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), i18NText));
     treeTableCell.setGraphic(null);
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }

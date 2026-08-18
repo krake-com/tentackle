@@ -21,8 +21,8 @@ package org.tentackle.session;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 
@@ -52,7 +52,7 @@ public class ModificationEvent implements Serializable {
   @SuppressWarnings("serial")
   private final Map<String,ModificationEventDetail> details;    //  null if master event
 
-  /** the modification serial, master or first of details. */
+  /** the modification serial, master, or first of details. */
   private final long serial;
 
   /** the first modification name, null if master. */
@@ -67,20 +67,20 @@ public class ModificationEvent implements Serializable {
    */
   public ModificationEvent(Session session, Collection<ModificationEventDetail> details) {
     this.session = Objects.requireNonNull(session, "session");
-    if (details != null && !details.isEmpty()) {
-      this.details = new HashMap<>();
-      Iterator<ModificationEventDetail> iter = details.iterator();
-      ModificationEventDetail detail = iter.next();
-      this.serial = detail.getSerial();
-      this.name = detail.getName();
-      do {
-        this.details.put(detail.getName(), detail);
-      }
-      while (iter.hasNext() && (detail = iter.next()) != null);
-    }
-    else  {
+    if (details == null || details.isEmpty()) {
       throw new IllegalArgumentException("missing details for named modification event");
     }
+    this.details = new HashMap<>();
+    ModificationEventDetail firstDetail = null;
+    for (ModificationEventDetail detail: details) {
+      Objects.requireNonNull(detail, "detail");
+      if (firstDetail == null) {
+        firstDetail = detail;
+      }
+      this.details.put(detail.getName(), detail);
+    }
+    this.serial = firstDetail.getSerial();
+    this.name = firstDetail.getName();
   }
 
 
@@ -121,16 +121,16 @@ public class ModificationEvent implements Serializable {
   /**
    * Returns whether this is a named single event.
    *
-   * @return true if single event
+   * @return true if a single event
    */
   public boolean isSingleEvent() {
     return !isMasterEvent() && details.size() == 1;
   }
 
   /**
-   * Returns whether this a multi named event.
+   * Returns whether this a multi-named event.
    *
-   * @return true if multi event
+   * @return true if a multi-named event
    */
   public boolean isMultiEvent() {
     return !isMasterEvent() && details.size() > 1;
@@ -155,22 +155,24 @@ public class ModificationEvent implements Serializable {
   }
 
   /**
-   * Gets the modification details.
+   * Gets the modification details.<br>
+   * Master events provide no details, so listeners can iterate the result unconditionally.
    *
-   * @return the details, null if master event
+   * @return the details, never null, empty if master event
+   * @see #isMasterEvent()
    */
   public Collection<ModificationEventDetail> getDetails() {
-    return details.values();
+    return details == null ? Collections.emptyList() : details.values();
   }
 
   /**
    * Gets the modification detail for a name.
    *
    * @param name the name
-   * @return the detail, null if no such detail
+   * @return the detail, null if no such detail or master event
    */
   public ModificationEventDetail getDetail(String name) {
-    return details.get(name);
+    return details == null ? null : details.get(name);
   }
 
   @Override

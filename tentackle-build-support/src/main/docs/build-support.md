@@ -110,7 +110,7 @@ Each handler reacts to one family of annotations and emits the appropriate descr
 |----------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
 | [`ServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/ServiceAnalyzeHandler.java)                       | `@Service` / `@ServiceName` (direct or as meta-annotations; honours `value`, `meta`, `method`) | a `META-INF/services/<servicedClass>` descriptor in the services dir, plus a `service.log` under the servicing class in the analyze dir |
 | [`MappedServiceAnalyzeHandler`](../java/org/tentackle/buildsupport/MappedServiceAnalyzeHandler.java)           | `@MappedService`                                                                               | a mapped-service descriptor (interface → implementation) for the `ServiceFinder`                                                        |
-| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java)                   | `@TableName`                                                                                   | a mapped-service-style descriptor; needs its own handler to deal with `mapSchema` and the table prefix                                  |
+| [`TableNameAnalyzeHandler`](../java/org/tentackle/buildsupport/TableNameAnalyzeHandler.java)                   | `@TableName`                                                                                   | a mapped-service-style descriptor; needs its own handler to deal with `mapSchema` and the table prefix (see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md))  |
 | [`BundleAnalyzeHandler`](../java/org/tentackle/buildsupport/BundleAnalyzeHandler.java)                         | `@Bundle`                                                                                      | the resource-bundle name associated with a class (for i18n)                                                                             |
 | [`FxControllerBundleAnalyzeHandler`](../java/org/tentackle/buildsupport/FxControllerBundleAnalyzeHandler.java) | `@FxControllerService`                                                                         | the bundle name for an FX controller, resolving an overridden `resources` value (or none); subclass of `BundleAnalyzeHandler`           |
 | [`InterceptionAnalyzeHandler`](../java/org/tentackle/buildsupport/InterceptionAnalyzeHandler.java)             | `org.tentackle.reflect.Interception` (on annotations)                                          | registers the matching interceptor annotation processor for the interception type (`ALL` / `PUBLIC` / `HIDDEN`)                         |
@@ -140,9 +140,15 @@ small record into an info file that a wurblet deserializes in a later build step
   [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
   for how the wurblet consumes it.
 
-Each info type defines its own `INFO_FILE_VERSION`, writes itself through a, and reads itself back
+Each info type defines its own `INFO_FILE_VERSION`, writes itself through a `PrintWriter` and reads itself back
 from a `LineNumberReader`, so the write side (this module, during analyze) and the read side (the wurblets) agree
 on a stable on-disk format.
+
+The format is line- and whitespace-separated, but type strings are not whitespace-free — javac renders a wildcard
+bound as `? extends Foo` and a type annotation as `@Bar Foo`. Types are therefore escaped on the way out and
+unescaped on the way in (`AnnotationProcessingHelper.escapeToken()`: whitespace becomes `\s`, a backslash `\\`).
+Since a java type never contains a backslash, unescaping is a no-op for info files written before the escaping was
+introduced, and a stale `target/analyze` from an older build still reads correctly.
 
 ---
 

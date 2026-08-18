@@ -52,7 +52,7 @@ public class StatisticsResult {
     }
     else {
       TimeKeeper singleTimeKeeper = duration.clone().divide(count);
-      long nanos = singleTimeKeeper.nanos() / count;
+      long nanos = singleTimeKeeper.nanos();
       if (minDuration == null || minDuration.nanos() > nanos) {
         minDuration = singleTimeKeeper;
       }

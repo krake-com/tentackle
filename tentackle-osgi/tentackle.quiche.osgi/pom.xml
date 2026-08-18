@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent-osgi</artifactId>
+    <version>25.0.0</version>
+  </parent>
+
+  <artifactId>tentackle.quiche.osgi</artifactId>
+  <packaging>bundle</packaging>
+
+  <name>Tentackle QUICHE OSGi Bundle</name>
+  <description>OSGi Bundle for the Tentackle QUICHE Module</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-quiche</artifactId>
+      <version>${tentackle.version}</version>
+    </dependency>
+    <!-- activator in sub-module to avoid inclusion of org.tentackle.common -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-quiche-osgi-activator</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!--
+     Direct dependency, since transitive ones are not embedded.
+     NativeLibrary loads the binaries from the bundle's classloader, not from the boot layer.
+    -->
+    <dependency>
+      <groupId>org.mortbay.jetty.quiche</groupId>
+      <artifactId>jetty-quiche-native</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <unpackBundle>true</unpackBundle>   <!-- necessary to include all packages for exports and imports -->
+          <instructions>
+            <Bundle-Activator>org.tentackle.quiche.Activator</Bundle-Activator>
+            <Import-Package>*;resolution:=optional</Import-Package>
+            <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
+            <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
+            <!-- create OSGI-OPT/src/... -->
+            <_sourcepath>../tentackle-osgi-activators/tentackle-quiche-osgi-activator/src/main/java,../../tentackle-quiche/src/main/java</_sourcepath>
+            <_sources>true</_sources>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

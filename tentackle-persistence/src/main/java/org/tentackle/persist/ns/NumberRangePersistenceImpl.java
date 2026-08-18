@@ -21,6 +21,7 @@ package org.tentackle.persist.ns;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.dbms.trip.PreloadRemoteDelegate;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
@@ -41,6 +42,7 @@ import java.io.Serial;
  * @author harald
  */
 @PersistentObjectService(NumberRange.class)
+@PreloadRemoteDelegate
 public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberRange, NumberRangePersistenceImpl> implements NumberRangePersistence {
 
   @Serial
@@ -106,6 +108,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   //</editor-fold>//GEN-END:declare
 
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
+
   /**
    * Creates a number space.
    *
@@ -141,6 +145,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   public NumberRangePersistenceImpl() {
     super();
   }
+
+  //</editor-fold>
 
 
   // @wurblet methods MethodsImpl

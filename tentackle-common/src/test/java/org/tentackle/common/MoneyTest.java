@@ -101,6 +101,41 @@ public class MoneyTest {
   }
 
   @Test
+  public void testMixedScaleArithmetic() {
+    // the operand is rescaled to the scale of this value, the result keeps that scale
+    BMoney a = new BMoney("1.00", 2);
+    BMoney b = new BMoney("2.500", 3);
+
+    assertEquals(a.add(b).toString(), "3.50");
+    assertEquals(a.add(b).scale(), 2);
+    assertEquals(a.subtract(b).toString(), "-1.50");
+
+    // ... and the other way round: the wider scale wins if it is the receiver's
+    assertEquals(new BMoney("1.000", 3).add(new BMoney("2.50", 2)).toString(), "3.500");
+    assertEquals(new BMoney("1.000", 3).subtract(new BMoney("2.50", 2)).toString(), "-1.500");
+
+    // rescaling the operand rounds HALF_UP
+    assertEquals(new BMoney("1.00", 2).add(new BMoney("0.005", 3)).toString(), "1.01");
+    assertEquals(new BMoney("1.00", 2).add(new BMoney("0.004", 3)).toString(), "1.00");
+
+    // the operands remain unchanged
+    assertEquals(a.toString(), "1.00");
+    assertEquals(b.toString(), "2.500");
+  }
+
+  @Test
+  public void testMixedScaleArithmeticForDMoney() {
+    DMoney a = new DMoney("1.00", 2);
+
+    assertEquals(a.add(new DMoney("2.500", 3)).toString(), "3.50");
+    assertEquals(a.subtract(new DMoney("2.500", 3)).toString(), "-1.50");
+    assertTrue(a.add(new DMoney("2.500", 3)) instanceof DMoney);
+
+    // BMoney operands are accepted as well
+    assertEquals(a.add(new BMoney("2.500", 3)).toString(), "3.50");
+  }
+
+  @Test
   public void testSmallestPositive() {
     assertEquals(new BMoney(2).smallestPositive().toString(), "0.01");
     assertEquals(new BMoney(3).smallestPositive().toString(), "0.001");

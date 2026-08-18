@@ -28,23 +28,23 @@ public enum WurbletArgumentType {
   /**
    * An {@link org.tentackle.model.Attribute} that must meet a condition.
    */
-  CONDITION(true, false, false, true, true, true),
+  CONDITION(true, false, false, true, true, true, true),
 
   /**
    * An extra {@link org.tentackle.model.Attribute}.<br>
    * Usually used for SQL UPDATE.
    */
-  EXTRA(false, false, false, true, true, false),
+  EXTRA(false, false, false, true, true, false, false),
 
   /**
    * An {@link org.tentackle.model.Attribute} used for sorting.
    */
-  SORT(true, false, false, true, false, false),
+  SORT(true, false, false, true, false, false, false),
 
   /**
    * A {@link org.tentackle.model.Relation} that will be joined and eagerly loaded.
    */
-  JOIN(false, true, false, false, false, false);
+  JOIN(false, true, false, false, false, false, false);
 
 
   private final boolean pathOptional;
@@ -53,11 +53,13 @@ public enum WurbletArgumentType {
   private final boolean attributeRequired;
   private final boolean nameOptional;
   private final boolean relopOptional;
+  private final boolean conditionOptional;
 
 
   WurbletArgumentType(boolean pathOptional, boolean pathRequired,
                       boolean attributeOptional, boolean attributeRequired,
-                      boolean nameOptional, boolean relopOptional) {
+                      boolean nameOptional, boolean relopOptional,
+                      boolean conditionOptional) {
 
     this.pathOptional = pathOptional;
     this.pathRequired = pathRequired;
@@ -65,6 +67,7 @@ public enum WurbletArgumentType {
     this.attributeRequired = attributeRequired;
     this.nameOptional = nameOptional;
     this.relopOptional = relopOptional;
+    this.conditionOptional = conditionOptional;
   }
 
   /**
@@ -137,6 +140,17 @@ public enum WurbletArgumentType {
    */
   public boolean isRelopOptional() {
     return relopOptional;
+  }
+
+  /**
+   * Returns whether the argument may be made optional at runtime.<br>
+   * Such arguments are marked with {@code ?<boolean>} and become part of the
+   * generated SQL only if the boolean method argument is true.
+   *
+   * @return true if the argument may be optional, false if not allowed
+   */
+  public boolean isConditionOptional() {
+    return conditionOptional;
   }
 
 }

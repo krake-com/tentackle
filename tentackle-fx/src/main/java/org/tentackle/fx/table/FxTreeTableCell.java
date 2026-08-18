@@ -19,6 +19,10 @@
 
 package org.tentackle.fx.table;
 
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.ValueTranslator;
+
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -27,14 +31,10 @@ import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTablePosition;
 import javafx.scene.input.KeyEvent;
 
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.ValueTranslator;
-
 /**
  * Extended tree table cell.
  *
- * @param <S> type of the objects contained within the tree table's items list
+ * @param <S> type of the objects contained within the tree table's item list
  * @param <T> type of the content in all cells in this column
  * @author harald
  */
@@ -55,7 +55,6 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
     setEditable(columnConfiguration.isEditable());
   }
 
-
   /**
    * Gets the column configuration.
    *
@@ -64,39 +63,6 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
   public TableColumnConfiguration<S, T> getColumnConfiguration() {
     return columnConfiguration;
   }
-
-
-  @Override
-  protected void updateItem(T item, boolean empty) {
-    if (item == getItem()) {
-      return;
-    }
-    super.updateItem(item, empty);
-
-    if (item == null) {
-      setText(null);
-      setGraphic(null);
-    }
-    else if (item instanceof Node) {
-      setText(null);
-      setGraphic((Node) item);
-    }
-    else {
-      getCellType().updateItem(this, item);
-    }
-  }
-
-
-  /**
-   * Gets the table cell type.
-   *
-   * @return the cell type, never null
-   */
-  protected TableCellType<T> getCellType() {
-    TableCellType<T> cellType = columnConfiguration.getCellType();
-    return cellType != null ? cellType : columnConfiguration.getTableConfiguration().getTableCellType(columnConfiguration.getType());
-  }
-
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -155,27 +121,11 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
           ((Node) editor).setOnKeyPressed(handler);
         }
 
-        // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isn't always enough :(
+        // same sh*t as in Swing... hoping 3 loops in eventQ is enough
         Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
       }
     }
   }
-
-
-  /**
-   * Gets the editor for this table cell.
-   *
-   * @param cellType the table cell type
-   * @return the editor
-   */
-  protected FxComponent getEditor(TableCellType<T> cellType) {
-    FxComponent editor = columnConfiguration.getEditor();
-    if (editor == null) {
-      editor = cellType.getEditor();
-    }
-    return editor;
-  }
-
 
   @Override
   public void commitEdit(T newValue) {
@@ -218,6 +168,49 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
     });
   }
 
+
+  @Override
+  protected void updateItem(T item, boolean empty) {
+    if (item == getItem()) {
+      return;
+    }
+    super.updateItem(item, empty);
+
+    if (item == null) {
+      setText(null);
+      setGraphic(null);
+    }
+    else if (item instanceof Node) {
+      setText(null);
+      setGraphic((Node) item);
+    }
+    else {
+      getCellType().updateItem(this, item);
+    }
+  }
+
+  /**
+   * Gets the editor for this table cell.
+   *
+   * @param cellType the table cell type
+   * @return the editor
+   */
+  protected FxComponent getEditor(TableCellType<T> cellType) {
+    FxComponent editor = columnConfiguration.getEditor();
+    if (editor == null) {
+      editor = cellType.getEditor();
+    }
+    return editor;
+  }
+
+  /**
+   * Gets the table cell type.
+   *
+   * @return the cell type, never null
+   */
+  protected TableCellType<T> getCellType() {
+    return columnConfiguration.getEffectiveCellType();
+  }
 
   /**
    * Gets the table position of the currently selected cell.

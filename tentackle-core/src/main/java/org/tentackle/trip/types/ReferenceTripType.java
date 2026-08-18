@@ -90,6 +90,10 @@ public final class ReferenceTripType extends AbstractTripType<Reference<?>> {
       case 3 -> deserializer.deserializeInt3AsUnsigned();
       default -> throw new TripRuntimeException("what??" + opCode);
     };
+    if (referenceId < 0) {
+      // only the 4-byte form can be negative, and only from a corrupted stream
+      throw new TripRuntimeException("negative reference id " + referenceId + " for " + opCode);
+    }
     return new Reference<>(referenceId, (code & 0x4) != 0, false);
   }
 

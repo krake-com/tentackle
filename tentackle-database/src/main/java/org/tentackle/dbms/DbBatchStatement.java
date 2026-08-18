@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Statement and its data used in a batched transactions.
+ * Statement and its data used in batched transactions.
  */
 @SuppressWarnings("rawtypes")   // due to AbstractDbObject<P>
 public class DbBatchStatement {

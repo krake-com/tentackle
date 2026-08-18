@@ -36,7 +36,7 @@ public class IdSourceException extends PersistenceException {
  /**
    * Constructs a new id source exception for a given session
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
    * @param db the session
@@ -47,7 +47,7 @@ public class IdSourceException extends PersistenceException {
 
   /**
    * Constructs a new id source exception for a given session with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   db the session
@@ -57,7 +57,6 @@ public class IdSourceException extends PersistenceException {
   public IdSourceException(Db db, String message) {
     super(db, message);
   }
-
 
   /**
    * Constructs a new id source exception for a given session with the specified detail message and
@@ -72,7 +71,6 @@ public class IdSourceException extends PersistenceException {
     super(db, message, cause);
   }
 
-
   /**
    * Constructs a new id source exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
@@ -86,21 +84,19 @@ public class IdSourceException extends PersistenceException {
     super(db, cause);
   }
 
-
   /**
    * Constructs a new id source exception without a session and
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
+   * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    */
   public IdSourceException() {
     super();
   }
 
-
   /**
    * Constructs a new id source exception without a session with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
+   * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
    * @param   message   the detail message. The detail message is saved for
@@ -109,7 +105,6 @@ public class IdSourceException extends PersistenceException {
   public IdSourceException(String message) {
     super(message);
   }
-
 
   /**
    * Constructs a new id source exception without a session with the specified detail message and
@@ -121,7 +116,7 @@ public class IdSourceException extends PersistenceException {
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
+   *         permitted and indicates that the cause is nonexistent or
    *         unknown.)
    */
   public IdSourceException(String message, Throwable cause) {

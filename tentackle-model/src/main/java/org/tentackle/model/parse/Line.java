@@ -169,7 +169,7 @@ public abstract class Line {
    * @return the exception
    */
   public ModelException createModelException(String message, Throwable cause) {
-    return new ModelException(message + ModelException.AT_ELEMENT + getSourceInfo(), cause);
+    return new ModelException(appendSourceInfo(message), cause);
   }
 
   /**
@@ -178,7 +178,20 @@ public abstract class Line {
    * @return the exception
    */
   public ModelException createModelException(String message) {
-    return new ModelException(message + ModelException.AT_ELEMENT + getSourceInfo());
+    return new ModelException(appendSourceInfo(message));
+  }
+
+  /**
+   * Appends the source location to a message, if known.<br>
+   * There is no source info if the model source does not start with {@link Document#ORIGIN_INFO_LEAD},
+   * which is the case for model sources loaded from a jar or the classpath.
+   *
+   * @param message the message
+   * @return the message, followed by the source location if there is one
+   */
+  private String appendSourceInfo(String message) {
+    SourceInfo sourceInfo = getSourceInfo();
+    return sourceInfo == null ? message : message + ModelException.AT_ELEMENT + sourceInfo;
   }
 
 }

@@ -18,6 +18,8 @@
 
 package org.tentackle.trip.transport;
 
+import org.tentackle.io.TcpServerSocketFactory;
+import org.tentackle.io.TcpSocketFactory;
 import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
@@ -46,8 +48,8 @@ public class TcpTransport extends AbstractTransport {
   public static final String PROTOCOL = "trip";
 
 
-  private final SocketFactory socketFactory = SocketFactory.getDefault();
-  private final ServerSocketFactory serverSocketFactory = ServerSocketFactory.getDefault();
+  private SocketFactory socketFactory;
+  private ServerSocketFactory serverSocketFactory;
   private boolean accepting;
 
   /**
@@ -106,7 +108,10 @@ public class TcpTransport extends AbstractTransport {
    *
    * @return the socket factory
    */
-  protected SocketFactory getSocketFactory() {
+  protected synchronized SocketFactory getSocketFactory() {
+    if (socketFactory == null) {
+      socketFactory = createSocketFactory();
+    }
     return socketFactory;
   }
 
@@ -115,8 +120,33 @@ public class TcpTransport extends AbstractTransport {
    *
    * @return the socket factory
    */
-  protected ServerSocketFactory getServerSocketFactory() {
+  protected synchronized ServerSocketFactory getServerSocketFactory() {
+    if (serverSocketFactory == null) {
+      serverSocketFactory = createServerSocketFactory();
+    }
     return serverSocketFactory;
+  }
+
+  /**
+   * Creates the client socket factory.<br>
+   * Plain TCP transports use an unencrypted factory. SSL-based transports
+   * override this method to create an SSL-aware factory.
+   *
+   * @return the socket factory
+   */
+  protected SocketFactory createSocketFactory() {
+    return new TcpSocketFactory();
+  }
+
+  /**
+   * Creates the server socket factory.<br>
+   * Plain TCP transports use an unencrypted factory. SSL-based transports
+   * override this method to create an SSL-aware factory.
+   *
+   * @return the server socket factory
+   */
+  protected ServerSocketFactory createServerSocketFactory() {
+    return new TcpServerSocketFactory();
   }
 
   @Override

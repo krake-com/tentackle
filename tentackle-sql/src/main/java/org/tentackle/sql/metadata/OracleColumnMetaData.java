@@ -24,6 +24,9 @@ package org.tentackle.sql.metadata;
  * Hence, "MODIFY ... DEFAULT NULL" will <em>not</em> drop the default value, but
  * simply use {@code NULL} as default. Furthermore, any attempt to fool the dbms
  * (using (null), for example) will not work either.
+ * <p>
+ * Because the default is stored as the verbatim source text, it also carries the
+ * whitespace up to the token following the default value, which must be removed.
  *
  * @author harald
  */
@@ -42,6 +45,14 @@ public class OracleColumnMetaData extends ColumnMetaData {
   public void validate() {
     super.validate();
     String deflt = getDefaultValue();
+    if (deflt != null) {
+      // Oracle stores the default as the verbatim source text of the expression, including the
+      // whitespace up to the following token. "serial NUMBER(19) DEFAULT 1 NOT NULL" is thus
+      // reported as "1 ", which would differ from the model's default on every migration run.
+      // The empty string default keeps its quotes, so trimming never touches its single blank.
+      deflt = deflt.trim();
+      setDefaultValue(deflt.isEmpty() ? null : deflt);
+    }
     if ("NULL".equals(deflt) || "(NULL)".equals(deflt) || "null".equals(deflt) || "(null)".equals(deflt)) {
       setDefaultValue(null);
     }

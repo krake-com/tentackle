@@ -21,6 +21,7 @@ package org.tentackle.trip.remote;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.ClientTransportCloseRequest;
 import org.tentackle.trip.Connection;
+import org.tentackle.trip.Remote;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripFactory;
@@ -158,10 +159,17 @@ public class RemoteInvocationHandler implements InvocationHandler {
       String msg = MessageFormat.format("connection closed by server {0}", transport);
       LOGGER.fine(msg, tc);
       closeConnection(connection);
-      throw new TripStreamClosedException(msg);
+      throw new TripStreamClosedException(msg, tc);
     }
     catch (Throwable t) {
-      stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, t);
+      try {
+        stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, t);
+      }
+      catch (RuntimeException sx) {
+        // the connection is already broken -> there is nothing left to tell the server.
+        // Must not prevent closing the connection below, or it would be handed back to the pool.
+        t.addSuppressed(sx);
+      }
       closeConnection(connection);   // since we don't know what's still in the input stream, discard it
       StringBuilder buf = new StringBuilder("error invoking remote method ").append(method);
       if (call != null) {
@@ -184,7 +192,8 @@ public class RemoteInvocationHandler implements InvocationHandler {
   /**
    * Processes the result of a remote call.<br>
    * If the result is a {@link DelegateDescriptor}, it is replaced with a proxy for the
-   * remote object.
+   * remote object. An array of descriptors is replaced with an array of proxies,
+   * which allows retrieving several remote objects in a single roundtrip.
    *
    * @param result the result of the remote call
    * @return the processed result
@@ -192,6 +201,17 @@ public class RemoteInvocationHandler implements InvocationHandler {
   protected Object processResult(Object result) {
     if (result instanceof DelegateDescriptor(UUID id, Class<?>[] remoteInterfaces)) {
       return TripFactory.getInstance().createRemoteProxy(id, transport, remoteInterfaces);
+    }
+    if (result instanceof DelegateDescriptor[] descriptors) {
+      Remote[] remotes = new Remote[descriptors.length];
+      for (int i = 0; i < descriptors.length; i++) {
+        if (descriptors[i] != null) {
+          remotes[i] = TripFactory.getInstance().createRemoteProxy(
+                  descriptors[i].remoteId(), transport, descriptors[i].remoteInterfaces());
+        }
+        // else: no delegate for that object
+      }
+      return remotes;
     }
     if (result instanceof ClientTransportCloseRequest closeRequest) {
       if (closeRequest.isCloseAllTransportsRequested()) {

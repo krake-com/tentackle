@@ -28,6 +28,8 @@ module org.tentackle.i18n {
   requires transitive org.tentackle.persistence;
   requires transitive org.tentackle.domain;
 
+  opens org.tentackle.i18n.pdo to org.tentackle.core;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.i18n.service.Hook;
 
 }

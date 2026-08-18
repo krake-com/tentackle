@@ -358,6 +358,19 @@ persistence part, the remote delegate scaffolding. New projects created from the
 [project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) ship with the same
 templates under `templates/operation`.
 
+The same wizard runs **headless** when the operation name is given on the command
+line — useful in scripts and for coding agents, which cannot operate the dialog:
+
+```bash
+mvn tentackle-wizard:operation -DoperationName=SendInvoice -Dcomment="sends an invoice"
+```
+
+Everything the dialog asks for has a corresponding property (`-Dprofile`,
+`-Dremote`, `-DsuperOperation`, `-Dabstract`, and one per generated type; an empty
+value suppresses that file). See
+[the wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-operation-goal)
+for the full list.
+
 ---
 
 ## When to Use an Operation vs. a PDO

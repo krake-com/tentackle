@@ -78,7 +78,7 @@ The trailing semicolon is optional. Leading and trailing whitespace around key a
 |---------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------|
 | `name`        | string (often `$classname`)                                           | Entity name (class simple name). Must be unique in the model.                |
 | `id`          | integer (often `$classid`)                                            | Unique numeric class ID (non-abstract classes only).                         |
-| `table`       | string (often `$tablename`)                                           | Database table name (if applicable). May include schema: `schema.tablename`. |
+| `table`       | string (often `$tablename`)                                           | Database table name (if applicable). May include schema: `schema.tablename` — see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md). |
 | `alias`       | string                                                                | Short table alias used in SQL joins. Auto-generated if omitted.              |
 | `integrity`   | see [Integrity Modes](#integrity-modes)                               | Referential integrity strategy.                                              |
 | `comment`     | string                                                                | optional entity description (overriding any previous comment)                |
@@ -156,7 +156,7 @@ prefixed with `#`.
 | `fulltracked` | Full tracking per attribute including access to the old persisted value.     |
 | `untracked`   | No tracking (default, also used to override the model default).              |
 | `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`)    |
-| `tableserial` | Adds the `tableSerial` attribute.                                            |
+| `tableserial` | Adds the `tableSerial` attribute (table-wide serial bumped on every modification; used for change detection and cache invalidation). |
 | `normtext`    | Adds the `normText` attribute for full-text search.                          |
 | `nopkey`      | No primary key `id`.                                                         |
 | `nodefaults`  | Ignore global model defaults entirely.                                       |
@@ -359,8 +359,8 @@ rather than a plain setter.
 | `readonly`       | Generate getter only; no setter.                                                        |
 | `writeonly`      | Generate setter only; no getter.                                                        |
 | `nomethod`       | Generate neither getter nor setter.                                                     |
-| `nodeclare`      | Do not emit the field declaration code.                                                 |
-| `noconstant`     | Do not generate the name constant.                                                      |
+| `nodeclare`      | Do not emit the backing-field declaration. The column is still mapped (read/written); the value is held elsewhere (e.g. a derived or superclass field). |
+| `noconstant`     | Do not generate the name constants (the `AN_`/`CN_` attribute- and column-name constants and the size constant). |
 | `super`          | Attribute is inherited from a super entity (if not in model of superclass)              |
 | `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`. |
 
@@ -505,6 +505,11 @@ Index lines appear in the `## indexes` section.
 - Columns are database column names or Java attribute names, comma-separated.
 - `asc` / `desc` or `+` / `-` are optional sort direction suffixes.
 - following `where` or `|`: optional SQL expression defining a filtered (a.k.a. conditional) index.
+
+Not every backend can do all of this. If a backend supports neither the requested filter nor a function, the
+index is skipped when declared `optional` and rejected at build time otherwise. Oracle has no partial indexes at
+all and emulates them with a `CASE` expression — the conditional uniqueness is enforced, but the index is not
+used for reads. See [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md).
 
 ### Examples
 
@@ -904,3 +909,4 @@ the `<wurbletProperties>` section in the project's parent pom.
 - [Cache](../../../../tentackle-pdo/src/main/docs/cache.md) — the `cached` entity option.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migrations from the model.
 - [Tentackle Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — the interactive PDO/operation wizard.
+- [Tentackle MCP Maven Plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — serves this document and the loaded model to coding agents, and validates a candidate definition without a build.

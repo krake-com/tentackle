@@ -115,7 +115,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         for (Validator validator: mandatoryBinding.getValidators()) {
           if (validator instanceof MandatoryBindingEvaluator) {
             Object parentObject = mandatoryBinding.getParentObject();
-            if (parentObject != null) { // if parent path is valid, i.e. no null reference
+            if (parentObject != null) { // if the parent path is valid, i.e., no null reference
               ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
               ValidationContext validationContext = ValidationContextFactory.getInstance().create(
                   mandatoryBinding.getMember().getMemberPath(),
@@ -144,7 +144,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         for (Validator validator: changeableBinding.getValidators()) {
           if (validator instanceof ChangeableBindingEvaluator) {
             Object parentObject = changeableBinding.getParentObject();
-            if (parentObject != null) { // if parent path is valid, i.e. no null reference
+            if (parentObject != null) { // if the parent path is valid, i.e., no null reference
               ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
               ValidationContext validationContext = ValidationContextFactory.getInstance().create(
                   changeableBinding.getMember().getMemberPath(),
@@ -265,6 +265,12 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     unboundComponents.clear();
     boundComponents.clear();
     boundPaths.clear();
+    // the dynamic bindings refer to the bindings just dropped: forget them as well,
+    // else they would pile up with each rebind and be evaluated in fireToView()
+    dynamicMandatoryBindings.clear();
+    needMandatoryUpdate = false;
+    dynamicChangeableBindings.clear();
+    needChangeableUpdate = false;
   }
 
   @Override
@@ -360,6 +366,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         throw new BindingException("Binding " + binding + " missing in path map");
       }
       binding.getComponent().setBinding(null);
+      removeDynamicBinding(binding);
     }
     return binding;
   }
@@ -372,6 +379,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         throw new BindingException("Binding " + binding + " missing in component map");
       }
       binding.getComponent().setBinding(null);
+      removeDynamicBinding(binding);
     }
     return binding;
   }
@@ -393,6 +401,16 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
    */
   protected void addChangeableBinding(Binding changeableBinding) {
     dynamicChangeableBindings.add(changeableBinding);
+  }
+
+  /**
+   * Removes a binding from the dynamic mandatory- and changeable bindings.
+   *
+   * @param binding the binding that is no longer bound
+   */
+  protected void removeDynamicBinding(Binding binding) {
+    dynamicMandatoryBindings.remove(binding);
+    dynamicChangeableBindings.remove(binding);
   }
 
   @Override
@@ -549,7 +567,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
    *
    * @param controller the controller declaring the field
    * @param field the form field declared in the controller
-   * @return the component, null if field is not an FxComponent
+   * @return the component, null if the field is not an FxComponent
    */
   private FxComponent getFxComponent(FxController controller, Field field) {
     FxComponent component = null;
@@ -574,12 +592,12 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   }
 
   /**
-   * Adds all eligible components of given controller.
+   * Adds all eligible components of the given controller.
    *
    * @param controller the controller of the component
    * @param controllerPath the path to the component
    * @param checkedControllers set of all controllers
-   * @param declaredOnly true if only components declared in controller, else also inherited
+   * @param declaredOnly true if only components declared in the controller, else also inherited
    */
   private void addEligibleComponents(FxController controller, String controllerPath,
                                      Set<FxController> checkedControllers, boolean declaredOnly) {
@@ -621,7 +639,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
                 addToEligibleComponents(anotherBindingPath, component);
               }
             }
-            // alternative 2: remove some well known suffixes
+            // alternative 2: remove some well-known suffixes
             anotherBindingPath = StringHelper.removeTrailingText(bindingPath, bindingPathSuffixes);
             if (!bindingPath.equals(anotherBindingPath)) {
               addToEligibleComponents(anotherBindingPath, component);

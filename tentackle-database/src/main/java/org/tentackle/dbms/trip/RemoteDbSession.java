@@ -46,7 +46,7 @@ public interface RemoteDbSession extends Remote {
   void close();
 
   /**
-   * Sends text based logging infos to the TRIP-Server.
+   * Sends text-based logging info to the TRIP-Server.
    *
    * @param name the logger name, null if predefined
    * @param level the logging level
@@ -70,14 +70,25 @@ public interface RemoteDbSession extends Remote {
   DbRemoteDelegate getRemoteDelegate();
 
   /**
-   * Gets the delegate for a given interface name.<br>
-   * If the implementation isn't annotated with {@link org.tentackle.trip.RemoteService},
-   * it will be located according to the {@link org.tentackle.common.NamingRules}.
+   * Gets the remote delegate for a given class name.
    *
    * @param <T> the delegate type
-   * @param classname is the name of remote interface
+   * @param classname is the name to get the delegates for
    * @return the delegate
    */
   <T extends Remote> T getRemoteDelegate(String classname);
+
+  /**
+   * Gets the remote delegates for the given class names in a single roundtrip.<br>
+   * This is the bulk variant of {@link #getRemoteDelegate(String)}, used to preload the delegates
+   * of classes annotated with {@link PreloadRemoteDelegate}.
+   * <p>
+   * Class names the server cannot create a delegate for are answered with null instead of
+   * an exception, since preloading must never break the session.
+   *
+   * @param classnames the class names to get the delegates for
+   * @return the delegates in the order of the given class names, null for each unresolvable name
+   */
+  Remote[] getRemoteDelegates(String[] classnames);
 
 }

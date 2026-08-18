@@ -271,6 +271,7 @@ public class WurbletArgumentParser {
     boolean expressionFinished = false;             // true if expression evaluation finished
     Set<Relation> existsRelations = null;           // exists relations found so far, if not null
     Set<Entity> existsComponents = null;            // exists components found so far, if not null
+    List<WurbletArgument> existsArguments = null;   // arguments sharing the current EXISTS-clause
 
     for (String arg : args) {
       if (arg != null) {
@@ -326,6 +327,7 @@ public class WurbletArgumentParser {
             if (match) {
               existsRelations = null;
               existsComponents = null;
+              existsArguments = null;
               if (lastExistsArg != null) {
                 lastExistsArg.setEndOfExistsClause(true);
                 lastExistsArg = null;
@@ -380,6 +382,7 @@ public class WurbletArgumentParser {
                   if (lastOperator != WurbletArgumentOperator.AND) {
                     existsRelations = null;
                     existsComponents = null;
+                    existsArguments = null;
                     if (lastExistsArg != null) {
                       lastExistsArg.setEndOfExistsClause(true);
                       lastExistsArg = null;
@@ -392,6 +395,7 @@ public class WurbletArgumentParser {
                       // first relation may be a component join
                       existsRelations = new LinkedHashSet<>(operand.getExpressionRelations());
                       existsComponents = new LinkedHashSet<>();
+                      existsArguments = new ArrayList<>();
                       if (operand.getComponent() != null) {
                         existsComponents.add(operand.getComponent());
                       }
@@ -406,6 +410,9 @@ public class WurbletArgumentParser {
                         existsComponents.add(operand.getComponent());
                       }
                     }
+                    // all arguments of the clause share the same list
+                    existsArguments.add(operand);
+                    operand.setExistsArguments(existsArguments);
                     lastExistsArg = operand;
                   }
                   break;
@@ -423,6 +430,43 @@ public class WurbletArgumentParser {
     if (expressionLevel > 0) {
       throw new WurbelException("unbalanced braces: more opened than closed");
     }
+
+    verifyOptionalArguments();
+  }
+
+  /**
+   * Verifies that the boolean arguments of optional conditions don't collide with other method arguments.
+   *
+   * @throws WurbelException if a name is used twice
+   */
+  private void verifyOptionalArguments() throws WurbelException {
+    Set<String> argNames = new LinkedHashSet<>();
+    for (WurbletArgument arg: getMethodArguments()) {
+      if (arg.isMethodArgument()) {
+        argNames.add(arg.getMethodArgumentName());
+      }
+    }
+    for (WurbletArgument arg: getMethodArguments()) {
+      if (arg.isOptional() && argNames.contains(arg.getOptionalName())) {
+        throw new WurbelException("'" + arg.getOptionalName() + "' in argument '" + arg +
+                                  "' is already used as a method argument name");
+      }
+    }
+  }
+
+  /**
+   * Returns whether at least one condition is optional.
+   *
+   * @return true if there are optional conditions
+   * @see WurbletArgument#isOptional()
+   */
+  public boolean isWithOptionalArguments() {
+    for (WurbletArgument arg: getMethodArguments()) {
+      if (arg.isOptional()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

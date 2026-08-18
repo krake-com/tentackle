@@ -56,7 +56,7 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
    * @param sessionGroupId the session group ID, 0 if none
    * @param initialSize the initial pool size
    * @param incrementSize the number of Db instances to enlarge the pool if all in use
-   * @param minimumSize the minimum number of Db instances to keep in pool, &lt; 0 if auto shutdown pool if all sessions timed out
+   * @param minimumSize the minimum number of Db instances to keep in the pool, &lt; 0 if auto shutdown pool if all sessions timed out
    * @param maximumSize the maximum number of Db instances, 0 = unlimited
    * @param idleMinutes the idle timeout in minutes to close unused Db instances, 0 = unlimited
    * @param usageMinutes the max. used time in minutes, 0 = unlimited
@@ -107,7 +107,7 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
   @Override
   protected void unusePoolable(Session session) {
     Db db = (Db) session;
-    int poolId = db.getPoolId();    // -1 if removed from the pool below
+    int poolId = db.getPoolId();    // 0 if already returned, -1 if removed, else the slot index + 1
     boolean txRunning = db.isTxRunning();
     String exMsg = null;
     if (txRunning) {
@@ -115,9 +115,14 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
       if (db.isRemote()) {
         // rollbackImmediately is not allowed for remote sessions.
         // just close it, the rollback will be performed at the remote side.
-        exMsg += " remote " + exMsg + "closed and removed from pool";
-        removePoolable(db, poolId - 1);
-        poolId = -1;
+        if (poolId > 0) {   // only if not returned to the pool yet, else the slot index is unknown
+          removePoolable(db, poolId - 1);
+          poolId = -1;
+          exMsg += " remote session closed and removed from pool";
+        }
+        else {
+          exMsg += " remote session already returned to the pool";
+        }
       }
       else {
         // rollback first and return to pool, log the exception later (see below)

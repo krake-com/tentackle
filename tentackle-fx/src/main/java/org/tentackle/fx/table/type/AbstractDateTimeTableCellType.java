@@ -19,12 +19,11 @@
 
 package org.tentackle.fx.table.type;
 
-import javafx.geometry.Pos;
-
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
+import javafx.geometry.Pos;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -42,16 +41,21 @@ public abstract class AbstractDateTimeTableCellType<T> extends AbstractTableCell
   }
 
   @Override
+  public String getText(TableColumnConfiguration<?, T> columnConfiguration, T item) {
+    return formatItem(getFormatter(columnConfiguration), item);
+  }
+
+  @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    tableCell.setText(formatItem(getFormatter(tableCell.getColumnConfiguration()), item));
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), item));
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, T> treeTableCell, T item) {
     treeTableCell.setGraphic(null);
-    treeTableCell.setText(formatItem(getFormatter(treeTableCell.getColumnConfiguration()), item));
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), item));
     updateAlignment(treeTableCell, Pos.BASELINE_CENTER);
   }
 

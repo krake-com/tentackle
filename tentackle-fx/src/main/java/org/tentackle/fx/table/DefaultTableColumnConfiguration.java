@@ -19,6 +19,12 @@
 
 package org.tentackle.fx.table;
 
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxTableBinding;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.reflect.ReflectionHelper;
+
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
@@ -28,21 +34,15 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
-
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.bind.FxTableBinding;
-import org.tentackle.misc.FormatHelper;
-import org.tentackle.reflect.ReflectionHelper;
-
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Default configuration for a table column.<br>
+ * The setters follow a fluent API style, i.e., they return the current instance.
  *
- * @param <S> type of the objects contained within the table's items list
+ * @param <S> type of the objects contained within the table's item list
  * @param <T> type of the content in all cells in this column
  *
  * @author harald
@@ -101,18 +101,18 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
   /**
    * The decimal format.<br>
-   * null if pattern and scale is null.
+   * null if pattern and scale are both null.
    */
   private DecimalFormat numberFormat;
 
   /**
    * Formatter for all date- and time-related types.<br>
-   * null if pattern is null.
+   * null if the pattern is null.
    */
   private DateTimeFormatter dateTimeFormatter;
 
   /**
-   * Alignment within cell.
+   * Alignment within the cell.
    */
   private Pos alignment;
 
@@ -142,7 +142,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Boolean autoSelect;
 
   /**
-   * Max. columns in cell.
+   * Maximum columns in the cell.
    */
   private Integer maxColumns;
 
@@ -150,6 +150,12 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * The numeric scale.
    */
   private Integer scale;
+
+  /**
+   * True if the scale was derived from the pattern by {@link #getNumberFormat()}
+   * instead of being configured by the application.
+   */
+  private boolean scaleDerivedFromPattern;
 
   /**
    * Case conversion.
@@ -162,6 +168,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Boolean summable;
 
   /**
+   * Filterable or not.
+   */
+  private Boolean filterable;
+
+  /**
    * Editable or not.
    */
   private Boolean editable;
@@ -170,7 +181,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Optional editor.
    */
   private FxComponent editor;
-
 
 
   /**
@@ -185,6 +195,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     this.name = name;
     this.displayedName = displayedName;
   }
+
 
   @Override
   public String toString() {
@@ -207,11 +218,12 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setDisplayedName(String displayedName) {
+  public TableColumnConfiguration<S, T> setDisplayedName(String displayedName) {
     this.displayedName = displayedName;
     if (tableColumn != null) {
       tableColumn.setText(displayedName);
     }
+    return this;
   }
 
   @Override
@@ -240,14 +252,23 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setCellType(TableCellType<T> cellType) {
+  public TableColumnConfiguration<S, T> setCellType(TableCellType<T> cellType) {
     this.cellType = cellType;
+    return this;
   }
 
   @Override
-  public void setPattern(String pattern) {
+  public TableColumnConfiguration<S, T> setPattern(String pattern) {
     this.pattern = pattern;
     numberFormat = null;
+    dateTimeFormatter = null;   // both formats are derived from the pattern
+    if (scaleDerivedFromPattern) {
+      // drop a scale derived from the previous pattern, else it would override the new one.
+      // A scale configured by the application is kept, since that is what it asked for.
+      scale = null;
+      scaleDerivedFromPattern = false;
+    }
+    return this;
   }
 
   @Override
@@ -258,20 +279,20 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public DecimalFormat getNumberFormat() {
     if (numberFormat == null && (pattern != null || scale != null)) {
-      // scale or pattern given
-      if (pattern == null) {
-        pattern = FormatHelper.getIntegerPattern();
-      }
-      numberFormat = new DecimalFormat(pattern);
+      // scale or pattern given.
+      // Don't store a defaulted pattern in the pattern field: the field is shared with the
+      // date/time formatter and must keep describing what the application configured.
+      String numberPattern = pattern == null ? FormatHelper.getIntegerPattern() : pattern;
+      numberFormat = new DecimalFormat(numberPattern);
       if (scale == null) {
         // determine from format
         scale = 0;
-        String p = getPattern();
-        int dotNdx = p.lastIndexOf('.');
+        scaleDerivedFromPattern = true;
+        int dotNdx = numberPattern.lastIndexOf('.');
         if (dotNdx >= 0)  {
           // count zeros after dot
-          for (++dotNdx; dotNdx < p.length(); dotNdx++)  {
-            if (p.charAt(dotNdx) != '0') {
+          for (++dotNdx; dotNdx < numberPattern.length(); dotNdx++)  {
+            if (numberPattern.charAt(dotNdx) != '0') {
               break;
             }
             scale++;
@@ -295,8 +316,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setAlignment(Pos alignment) {
+  public TableColumnConfiguration<S, T> setAlignment(Pos alignment) {
     this.alignment = alignment;
+    return this;
   }
 
   @Override
@@ -305,8 +327,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setBlankZero(Boolean blankZero) {
+  public TableColumnConfiguration<S, T> setBlankZero(Boolean blankZero) {
     this.blankZero = blankZero;
+    return this;
   }
 
   @Override
@@ -320,8 +343,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setUnsigned(Boolean unsigned) {
+  public TableColumnConfiguration<S, T> setUnsigned(Boolean unsigned) {
     this.unsigned = unsigned;
+    return this;
   }
 
   @Override
@@ -330,8 +354,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setValidChars(String validChars) {
+  public TableColumnConfiguration<S, T> setValidChars(String validChars) {
     this.validChars = validChars;
+    return this;
   }
 
   @Override
@@ -340,13 +365,15 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setInvalidChars(String invalidChars) {
+  public TableColumnConfiguration<S, T> setInvalidChars(String invalidChars) {
     this.invalidChars = invalidChars;
+    return this;
   }
 
   @Override
-  public void setAutoSelect(Boolean autoSelect) {
+  public TableColumnConfiguration<S, T> setAutoSelect(Boolean autoSelect) {
     this.autoSelect = autoSelect;
+    return this;
   }
 
   @Override
@@ -355,8 +382,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setMaxColumns(Integer maxColumns) {
+  public TableColumnConfiguration<S, T> setMaxColumns(Integer maxColumns) {
     this.maxColumns = maxColumns;
+    return this;
   }
 
   @Override
@@ -365,9 +393,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setScale(Integer scale) {
+  public TableColumnConfiguration<S, T> setScale(Integer scale) {
     this.scale = scale;
+    scaleDerivedFromPattern = false;    // configured by the application
     numberFormat = null;
+    return this;
   }
 
   @Override
@@ -376,8 +406,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setCaseConversion(Boolean caseConversion) {
+  public TableColumnConfiguration<S, T> setCaseConversion(Boolean caseConversion) {
     this.caseConversion = caseConversion;
+    return this;
   }
 
   @Override
@@ -396,13 +427,25 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setSummable(Boolean summable) {
+  public TableColumnConfiguration<S, T> setSummable(Boolean summable) {
     this.summable = summable;
+    return this;
   }
 
   @Override
   public Boolean getSummable() {
     return summable;
+  }
+
+  @Override
+  public TableColumnConfiguration<S, T> setFilterable(Boolean filterable) {
+    this.filterable = filterable;
+    return this;
+  }
+
+  @Override
+  public Boolean getFilterable() {
+    return filterable;
   }
 
   @Override
@@ -417,8 +460,9 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setEditable(Boolean editable) {
+  public TableColumnConfiguration<S, T> setEditable(Boolean editable) {
     this.editable = editable;
+    return this;
   }
 
   @Override
@@ -427,13 +471,15 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setEditor(FxComponent editor) {
+  public TableColumnConfiguration<S, T> setEditor(FxComponent editor) {
     this.editor = editor;
+    return this;
   }
 
   @Override
-  public void setBinding(FxTableBinding<S, T> binding) {
+  public TableColumnConfiguration<S, T> setBinding(FxTableBinding<S, T> binding) {
     this.binding = binding;
+    return this;
   }
 
   @Override
@@ -474,7 +520,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     return new ReadOnlyObjectWrapper<>(binding.getModelValue());
   }
 
-
   /**
    * Creates the cell value factory.
    *
@@ -483,7 +528,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTableCellValueFactory() {
     return this::createTableCellValue;
   }
-
 
   /**
    * Creates a table cell.<br>
@@ -495,7 +539,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected TableCell<S,T> createTableCell(TableColumn<S, T> column) {
     return new FxTableCell<>(this);
   }
-
 
   /**
    * Gets the cell factory.
@@ -519,7 +562,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
 
-
   // ------------- for TreeTableView ------------------
 
   /**
@@ -537,7 +579,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     return new ReadOnlyObjectWrapper<>(binding.getModelValue());
   }
 
-
   /**
    * Creates the tree table cell value factory.
    *
@@ -546,7 +587,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected Callback<TreeTableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTreeTableCellValueFactory() {
     return this::createTreeTableCellValue;
   }
-
 
   /**
    * Creates a treetable cell.<br>
@@ -558,7 +598,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   protected TreeTableCell<S,T> createTreeTableCell(TreeTableColumn<S, T> column) {
     return new FxTreeTableCell<>(this);
   }
-
 
   /**
    * Creates the treetable cell factory.
@@ -580,6 +619,5 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     tc.setCellFactory(createTreeTableCellFactory());
     return tc;
   }
-
 
 }

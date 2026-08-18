@@ -9,6 +9,11 @@ answer one question, consistently, on every tier of the application:
 > *May **this grantee** perform **this permission** on **this object** (or class)
 > within **this domain context**?*
 
+The complementary question — *who is this grantee in the first place?* — is answered once, at login,
+by [Authentication](../../../../tentackle-session/src/main/docs/authentication.md). By the time any
+rule is evaluated the identity is settled: the `userId`/`userClassId` pair on the session info is
+what a grantee is derived from.
+
 Two design choices make it distinctive:
 
 - **Authorization is data, not code.** The access rules themselves are ordinary
@@ -342,6 +347,12 @@ Treating rules as PDOs has concrete operational consequences:
   upstream (`@Secured`, persistence checks, `isViewAllowed()`, the UI) is written
   against the `SecurityManager` interface and keeps working unchanged.
 
+When the identity comes from an external provider, the roles it asserted are available too:
+`RemoteDbSessionImpl.getAuthentication()` carries the verified claims and groups of the login, which
+is the natural input for a `determineGranteesToCheck` override that maps identity-provider groups
+onto Tentackle grantees. See
+[Authentication](../../../../tentackle-session/src/main/docs/authentication.md).
+
 ---
 
 ## Use Cases at a Glance
@@ -386,6 +397,7 @@ Treating rules as PDOs has concrete operational consequences:
 - [operation.md](operation.md) — securing table-less service operations with `@Secured`.
 - [interceptors.md](../../../../tentackle-core/src/main/docs/interceptors.md) — the interception mechanism behind `@Secured`.
 - [session.md](../../../../tentackle-session/src/main/docs/session.md) — the session/user the grantee is derived from, and the `ModificationTracker`.
+- [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md) — how that user is established at login: credentials, providers, single sign-on.
 - [trip.md](../../../../tentackle-core/src/main/docs/trip.md) — how security evaluation and rule loading work across tiers.
 - [services.md](../../../../tentackle-common/src/main/docs/services.md) — the SPI discovery used for permissions and the security manager.
 - [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) — the `SecurityEditor` UI for managing rules.

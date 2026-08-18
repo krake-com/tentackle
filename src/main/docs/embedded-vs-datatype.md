@@ -213,7 +213,7 @@ The model-definition guide states the rule directly:
    ```
 
 2. **Multi-column or backend-specific → a full `DataType` (the heavyweight path).** When one value needs several
-   columns (the built-in `BMoney` maps to two — amount and currency), or different SQL types/sizes for different
+   columns (the built-in `BMoney` maps to two — amount and scale), or different SQL types/sizes for different
    backends, implement the full `DataType<T>` interface. This is more work and comes with deployment rules: the
    type should live in **its own module** (so the PDO modules don't drag in `tentackle-sql`), and that module must
    be registered with the wurbelizer plugin (`wurbletDependency`) and the tentackle-sql plugin.

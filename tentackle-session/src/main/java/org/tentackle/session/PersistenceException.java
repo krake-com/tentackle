@@ -69,7 +69,6 @@ public class PersistenceException extends TentackleRuntimeException {
     setSession(session);
   }
 
-
   /**
    * Constructs a new database runtime exception for a given session with the specified detail message.
    *
@@ -109,7 +108,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given identifiable
+   * Constructs a new database runtime exception for a given {@link Identifiable}
    * with <code>null</code> as its detail message.
    *
    * @param identifiable an identifiable object
@@ -120,7 +119,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given identifiable with the specified detail message.
+   * Constructs a new database runtime exception for a given {@link Identifiable} with the specified detail message.
    *
    * @param   object the identifiable
    * @param   message the detail message.
@@ -131,7 +130,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given identifiable with the specified detail message and
+   * Constructs a new database runtime exception for a given {@link Identifiable} with the specified detail message and
    * cause.
    *
    * @param  object the identifiable
@@ -145,7 +144,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given identifiable with the specified cause and a
+   * Constructs a new database runtime exception for a given {@link Identifiable} with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
    * @param  object the identifiable

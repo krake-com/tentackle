@@ -31,13 +31,15 @@ import javafx.application.Platform;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * Extended {@link RdcUtilities} with a thread- and session pool for background execution.<br>
- * Replace it with application-specific implementation via {@link org.tentackle.common.Service} annotation.
+ * Replace it with the application-specific implementation via {@link org.tentackle.common.Service} annotation.
  * <p>
  * Example:
  * <pre>
@@ -80,14 +82,7 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
 
   @Override
   public <V> void runInBackground(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
-    Cursor oldCursor;
-    if (node != null) {
-      oldCursor = node.getCursor();
-      node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
-    }
-    else {
-      oldCursor = null;
-    }
+    Cursor oldCursor = setWaitCursor(node);
     executor.submit(runner,
                     value -> Platform.runLater(() -> {
                       restoreDefaultCursor(node, oldCursor);
@@ -104,25 +99,18 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Runs a collection of runners in background in parallel.<br>
+   * Runs a collection of runners in the background in parallel.<br>
    * If there are failures, <code>failedUI</code> (if any) will be invoked <em>before</em> <code>finishedUI</code>.
    *
    * @param <V>           the type returned by the runners
-   * @param node          the optional node the background execution is related to, null if none
+   * @param node          optional node the background execution is related to, null if none
    * @param runners       the runners to invoke
    * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
    * @param finishedUI    UI updater invoked from within the FX event queue when all runners finished, null if none
    * @param failedUI      UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
    */
   public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
-    Cursor oldCursor;
-    if (node != null) {
-      oldCursor = node.getCursor();
-      node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
-    }
-    else {
-      oldCursor = null;
-    }
+    Cursor oldCursor = setWaitCursor(node);
     executor.submit(runners, timeoutMillis,
                     successHandler -> Platform.runLater(() -> {
                       restoreDefaultCursor(node, oldCursor);
@@ -139,11 +127,11 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Runs a collection of runners in background in parallel.<br>
+   * Runs a collection of runners in the background in parallel.<br>
    * Failures will be presented to the user in an error dialog.
    *
    * @param <V>           the type returned by the runners
-   * @param node          the optional node the background execution is related to, null if none
+   * @param node          optional node the background execution is related to, null if none
    * @param runners       the runners to invoke
    * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
    * @param finishedUI    optional UI updater always invoked from within the FX event queue if all runners finished, null if none
@@ -155,18 +143,17 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
                     finishedUI,
                     failedMap -> {
 
-      StringBuilder buf = new StringBuilder();
+      // we are already within the FX event queue here (see the method above), so the dialog
+      // must not be posted again: that would show it _after_ finishedUI, which is documented
+      // to run last.
+      Set<String> messages = new LinkedHashSet<>();
       for (RuntimeException rx : failedMap.values()) {
         String msg = rx.getLocalizedMessage();
-        if (msg != null && !buf.toString().contains(msg)) {
-          if (!buf.isEmpty()) {
-            buf.append('\n');
-          }
-          buf.append(rx.getLocalizedMessage());
+        if (msg != null) {
+          messages.add(msg);
         }
       }
-      String msg = buf.toString();
-      Platform.runLater(() -> Fx.warning(node, msg));
+      Fx.warning(node, String.join("\n", messages));
     });
   }
 
@@ -206,14 +193,32 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Restores the cursor to the default.
+   * Sets the wait cursor on the node and returns the old cursor.
    *
    * @param node the node, null if none
-   * @param oldCursor the old cursor of the node (null, if it was the default cursor)
+   * @return the old cursor of the node (null, if the node had no cursor of its own or the wait cursor was already set)
+   */
+  protected Cursor setWaitCursor(Node node) {
+    if (node != null) {
+      Cursor waitCursor = FxUtilities.getInstance().getWaitCursor(node);
+      Cursor cursor = node.getCursor();
+      node.setCursor(waitCursor);
+      // don't restore the wait cursor if already set by another submitted background task
+      return waitCursor.equals(cursor) ? null : cursor;
+    }
+    return null;
+  }
+
+  /**
+   * Restores the cursor the node had before the wait cursor was set.
+   *
+   * @param node the node, null if none
+   * @param oldCursor the old cursor of the node (null, if the node had no cursor of its own)
    */
   protected void restoreDefaultCursor(Node node, Cursor oldCursor) {
     if (node != null) {
-      node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
+      // restore what the node had before, which may be null, i.e., inherited from its parent
+      node.setCursor(oldCursor);
     }
   }
 

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.common.MappedService;
@@ -26,8 +25,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
 
 /**
  * Annotation for the class id of a persistent object.
@@ -39,11 +36,10 @@ import java.lang.annotation.Target;
 public @interface ClassId {
 
   /**
-   * Determines the class ID.<br>
+   * Determines the class ID.
    *
    * @return the class ID
    */
   int value();
 
 }
-

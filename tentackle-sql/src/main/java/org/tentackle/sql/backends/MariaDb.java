@@ -20,15 +20,25 @@ package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.NonStandardCommons;
 
 /**
  * Backend for MariaDB.
+ * <p>
+ * Requires at least MariaDB 10.3, which is the first version providing sequences.
  *
  * @author harald
  */
 @Service(Backend.class)
 public class MariaDb extends MySql {
+
+  /** minimum major version. */
+  private static final int MIN_MAJOR_VERSION = 10;
+
+  /** minimum minor version if {@link #MIN_MAJOR_VERSION}. */
+  private static final int MIN_MINOR_VERSION = 3;
+
 
   /**
    * Creates the MariaDb backend.
@@ -53,8 +63,26 @@ public class MariaDb extends MySql {
   }
 
   @Override
+  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
+    if (databaseMajorVersion < MIN_MAJOR_VERSION ||
+        databaseMajorVersion == MIN_MAJOR_VERSION && databaseMinorVersion < MIN_MINOR_VERSION) {
+      throw new BackendException(this + " needs at least MariaDB " + MIN_MAJOR_VERSION + "." + MIN_MINOR_VERSION +
+                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion +
+                                 " (the MariaDB driver connects to MySQL servers as well: consider adding '|MySQL' " +
+                                 "to the connection URL if this is a MySQL server)");
+    }
+  }
+
+  @Override
   protected boolean isDropIfExistsSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isFunctionBasedIndexSupported() {
+    // unlike MySQL, MariaDB has no functional indexes at all: an expression can only be
+    // indexed by adding a generated column for it, which is beyond the model's scope.
+    return false;
   }
 
   @Override
@@ -64,7 +92,8 @@ public class MariaDb extends MySql {
 
   @Override
   public String sqlNextFromSequence(String name) {
-    return "SELECT NEXTVAL('" + name + "')";
+    // NEXTVAL takes the sequence's identifier, not a string literal as in postgres
+    return "SELECT NEXTVAL(" + name + ")";
   }
 
   @Override

@@ -24,7 +24,9 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 import static org.testng.Assert.assertEquals;
@@ -44,10 +46,10 @@ import static org.testng.Assert.fail;
 public class DaemonSupervisorTest {
 
   /** small check interval so the supervisor reacts quickly. */
-  private static final long CHECK_INTERVAL = 20;
+  private static final long CHECK_INTERVAL = 100;
 
   /** generous upper bound for all polling loops. */
-  private static final long AWAIT_TIMEOUT = 5000;
+  private static final long AWAIT_TIMEOUT = 10000;    // 10s for slow machines (windows jenkins slave in KVM)
 
 
   /**
@@ -130,9 +132,12 @@ public class DaemonSupervisorTest {
   private static class TestSupervisor extends DaemonSupervisor {
 
     private final List<TestDaemon> created = Collections.synchronizedList(new ArrayList<>());
+    private final List<Thread> plainCreated = Collections.synchronizedList(new ArrayList<>());
     private final AtomicInteger cleanupCount = new AtomicInteger();
     private volatile boolean createReturnsNull;
     private volatile boolean oneShotDaemons;
+    private volatile boolean plainDaemons;        // create ordinary threads, not Supervisables
+    private volatile boolean terminateOnCreate;   // request termination from within createDaemon
     private volatile Object terminationCause;
 
     TestSupervisor(String name, long checkInterval, int maxStartCount, int daemonNum) {
@@ -141,8 +146,27 @@ public class DaemonSupervisorTest {
 
     @Override
     public Thread createDaemon(int index) {
+      if (terminateOnCreate) {
+        requestTermination();   // invoked while run() holds the read lock
+        return null;
+      }
       if (createReturnsNull) {
         return null;
+      }
+      if (plainDaemons) {
+        Thread thread = new Thread(() -> {
+          try {
+            while (!Thread.currentThread().isInterrupted()) {
+              Thread.sleep(5);
+            }
+          }
+          catch (InterruptedException ex) {
+            // requested to stop
+          }
+        }, getName() + "-plain-" + index + "#" + plainCreated.size());
+        thread.setDaemon(true);
+        plainCreated.add(thread);
+        return thread;
       }
       TestDaemon daemon = new TestDaemon(getName() + "-daemon-" + index + "#" + created.size(), oneShotDaemons);
       daemon.terminationCause = terminationCause;
@@ -299,7 +323,11 @@ public class DaemonSupervisorTest {
     TestSupervisor supervisor = new TestSupervisor("run", CHECK_INTERVAL, 0, 2);
     try {
       supervisor.start();
-      assertTrue(await(() -> supervisor.getRunningDaemons().length == 2), "daemons should start");
+      // wait until both daemons are alive AND have recorded their start time
+      // (a thread is alive the moment start() returns, but startedAt is only set
+      //  in the first line of run(), which runs asynchronously)
+      assertTrue(await(() -> supervisor.getRunningDaemons().length == 2
+                             && supervisor.getEarliestStartTime() > 0), "daemons should start");
 
       assertEquals(supervisor.getStartedDaemons().length, 2);
       assertNotNull(supervisor.getStartedDaemon(0));
@@ -455,6 +483,122 @@ public class DaemonSupervisorTest {
       assertEquals(info.getName(), expectedName);
       assertSame(info.getCause(), cause);
       assertTrue(info.getSince() > 0);
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
+   * Daemons are not required to be {@link Supervisable} (see {@link DaemonSupervisor#createDaemon(int)}).
+   * Disabling such a daemon must not blow up the supervisor: the exception would escape run()
+   * and silently end the supervision of all other daemons as well.
+   */
+  @Test
+  public void testDisablePlainThreadDaemon() {
+    TestSupervisor supervisor = new TestSupervisor("plain", CHECK_INTERVAL, 0, 1);
+    supervisor.plainDaemons = true;
+    try {
+      supervisor.start();
+      // wait until the daemon is really running: createDaemon() registers the thread before the
+      // supervisor starts it, so a plain "has been created" check could observe an unstarted thread.
+      // The termination check below would then pass trivially (an unstarted thread is not alive)
+      // and the daemon would be started right afterwards.
+      assertTrue(await(() -> supervisor.getRunningDaemon(0) != null), "daemon should start");
+      Thread daemon = supervisor.plainCreated.get(0);
+
+      supervisor.setDaemonEnabled(0, false);
+
+      assertTrue(await(() -> !daemon.isAlive()), "disabled daemon should be interrupted until terminated");
+      assertTrue(supervisor.isAlive(), "supervisor should have survived");
+      assertNull(supervisor.getRunningDaemon(0), "disabled daemon should not be restarted");
+      assertEquals(supervisor.plainCreated.size(), 1, "disabled daemon should not be restarted");
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
+   * {@link DaemonSupervisor#createDaemon(int)} is invoked while run() holds the read lock.
+   * Requesting the termination from there must not try to acquire the write lock, because
+   * a {@link java.util.concurrent.locks.ReentrantReadWriteLock} cannot be upgraded and the
+   * supervisor would end up waiting for itself forever.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void testRequestTerminationFromCreateDaemon() {
+    TestSupervisor supervisor = new TestSupervisor("selfterm", CHECK_INTERVAL, 0, 1);
+    supervisor.terminateOnCreate = true;
+    supervisor.start();
+    // no terminate() in a finally: it would join() (and requestTermination() would block on the
+    // write lock) if the supervisor ever deadlocks again. It is a daemon thread, so leaving it is safe.
+    assertTrue(await(() -> !supervisor.isAlive()), "supervisor should have terminated");
+  }
+
+  /**
+   * Shrinking must kill the surplus daemons, not just drop their slots: a dropped daemon would
+   * keep running unsupervised and outlive even the supervisor. Ordinary threads cannot be killed
+   * directly, so they are interrupted until they terminate.
+   */
+  @Test
+  public void testDecreaseDaemonNumStopsPlainThreadDaemons() {
+    TestSupervisor supervisor = new TestSupervisor("shrinkPlain", CHECK_INTERVAL, 0, 3);
+    supervisor.plainDaemons = true;
+    try {
+      supervisor.start();
+      assertTrue(await(() -> supervisor.getRunningDaemons().length == 3), "all daemons should start");
+      List<Thread> started = new ArrayList<>(supervisor.plainCreated);
+      assertEquals(started.size(), 3);
+
+      supervisor.setDaemonNum(1);
+      assertEquals(supervisor.getDaemonNum(), 1);
+
+      assertTrue(await(() -> !started.get(1).isAlive() && !started.get(2).isAlive()),
+                 "the surplus daemons should have been stopped");
+      assertTrue(started.get(0).isAlive(), "the remaining daemon should keep running");
+    }
+    finally {
+      supervisor.terminate();
+    }
+  }
+
+  /**
+   * The supervisor starts and clears daemons while holding only the read lock, i.e. concurrently
+   * with the accessors of other threads. {@link DaemonSupervisor#getStartedDaemons()} must never
+   * blow up or report null entries while that happens.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void testGetStartedDaemonsWhileDaemonsRestart() throws InterruptedException {
+    TestSupervisor supervisor = new TestSupervisor("hammer", 1, 0, 8);
+    supervisor.oneShotDaemons = true;   // daemons die at once and are restarted every round
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    AtomicBoolean stopReader = new AtomicBoolean();
+
+    Thread reader = new Thread(() -> {
+      try {
+        while (!stopReader.get()) {
+          for (Thread daemon : supervisor.getStartedDaemons()) {
+            assertNotNull(daemon, "getStartedDaemons() must not contain null");
+          }
+        }
+      }
+      catch (Throwable tx) {
+        failure.set(tx);
+      }
+    }, "getStartedDaemons-reader");
+    reader.setDaemon(true);
+
+    try {
+      supervisor.start();
+      reader.start();
+      Thread.sleep(2000);
+      stopReader.set(true);
+      reader.join(AWAIT_TIMEOUT);
+      Throwable thrown = failure.get();
+      if (thrown != null) {
+        fail("concurrent getStartedDaemons() failed: " + thrown, thrown);
+      }
+      assertTrue(supervisor.created.size() > 8, "daemons should have been restarted repeatedly");
     }
     finally {
       supervisor.terminate();

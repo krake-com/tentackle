@@ -207,6 +207,13 @@ is configured (but not bound to a phase) so the developer can *grow* the generat
 ranges, and the [FreeMarker templates](../resources/archetype-resources/templates) under `templates/pdo` and
 `templates/operation` are the scaffolds it uses to generate new PDOs and operations consistently with the example.
 
+### The MCP plugin
+
+The [**tentackle-mcp-maven-plugin**](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
+is configured (but not bound to a phase either) with the project's `tentackle.modelDefaults` and the same backends
+the wurblets generate for, so `mvn tentackle-mcp:serve` in the project root serves the generated model — as the
+build sees it — to a coding agent over MCP. It is read-only and needs the model, so run a build first.
+
 ---
 
 ## How It Fits Into Tentackle
@@ -249,5 +256,6 @@ fastest way to see all of [`tentackle-pdo`](../../../../tentackle-pdo/src/main/d
   [sql](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) ·
   [check](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) ·
   [i18n](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) ·
-  [wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+  [wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) ·
+  [mcp](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
 - [Common / Services & Configuration](../../../../tentackle-common/src/main/docs/common.md)

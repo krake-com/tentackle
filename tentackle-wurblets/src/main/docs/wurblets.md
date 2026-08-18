@@ -145,6 +145,9 @@ and a leading `[...]` line defines global annotations applied to all properties 
 
 ## Key Concepts
 
+> The classes summarized in this section are documented class by class — lifecycle, options, helper methods,
+> grammar rules and error handling — in [The Wurblet API](wurblet-api.md).
+
 ### ModelWurblet — the shared base
 
 [`ModelWurblet`](../java/org/tentackle/wurblet/ModelWurblet.java) extends the Wurbelizer's `AbstractJavaWurblet`
@@ -185,7 +188,8 @@ Each [`WurbletArgument`](../java/org/tentackle/wurblet/WurbletArgument.java) has
 [types](../java/org/tentackle/wurblet/WurbletArgumentType.java):
 
 - **property condition** — an attribute (optionally reached through a relation path, optionally a single column of
-  a multi-column type) constrained by a relational operator and value;
+  a multi-column type) constrained by a relational operator and value; a `?<boolean>` suffix makes the condition
+  [optional](../../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#optional-conditions-qbf-style-finders);
 - **property update** — an attribute to be assigned;
 - **property sorting** — `+` ascending / `-` descending;
 - **load join** — `*` marks a relation to eagerly load; join paths can themselves be filtered.
@@ -211,6 +215,9 @@ joins reaching into aggregate components, described by
 | [`ModelCommentSupport`](../java/org/tentackle/wurblet/ModelCommentSupport.java)       | Helper logic for the `ModelComment` wurblet.                                                                                      |
 | [`AnnotationOption`](../java/org/tentackle/wurblet/AnnotationOption.java)             | Parses the annotation modifiers carried by model attributes.                                                                      |
 | [`CodeGenerator`](../java/org/tentackle/wurblet/CodeGenerator.java)                   | Functional interface for emitting nested structures.                                                                              |
+
+For the complete class reference — including `Join`/`JoinPath`/`JoinPathFactory`, the argument grammar and the
+error-handling conventions — see [The Wurblet API](wurblet-api.md).
 
 ---
 
@@ -254,6 +261,7 @@ running application.
 ## Related Documentation
 
 - [The DTO Wurblet and `@RecordDTO`](dto-wurblet.md) — the `DTO` wurblet in depth: property models vs. annotated records.
+- [The Wurblet API](wurblet-api.md) — the `org.tentackle.wurblet` classes a wurblet compiles against.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets consume.
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the interfaces these wurblets populate.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType`/`Backend` used during generation.

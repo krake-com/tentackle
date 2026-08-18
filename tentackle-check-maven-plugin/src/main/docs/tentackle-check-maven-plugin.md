@@ -174,4 +174,4 @@ production locales (fallback first) in the shared plugin configuration.
   parameters
 - [Tentackle i18n Maven Plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) —
   tooling for managing the translation bundles themselves
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-check-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-check-maven-plugin/plugin-info.html)

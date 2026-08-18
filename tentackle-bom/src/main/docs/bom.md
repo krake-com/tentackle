@@ -21,7 +21,7 @@ Import it with `scope=import` in your project's (or parent's) `dependencyManagem
     <dependency>
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-bom</artifactId>
-      <version>25.18.2.1</version>
+      <version>25.18.2.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>

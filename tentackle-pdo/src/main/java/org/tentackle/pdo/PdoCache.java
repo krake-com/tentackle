@@ -46,7 +46,7 @@ import java.util.function.Consumer;
  *
  * The cache maintains any number of unique indexes (see {@link PdoCacheIndex})
  * that are added (or removed) at runtime. The ID index is mandatory,
- * automatically added and cannot be removed.<br>
+ * automatically added, and cannot be removed.<br>
  * For inherited entities, the topmost super entity usually provides the cache for
  * all classes of the inheritance hierarchy.
  * However, subclasses may maintain their own cache, for example,
@@ -65,7 +65,7 @@ import java.util.function.Consumer;
  *        a rather small number of PDOs.<br>
  *        The first select from the cache will load all PDOs from the database
  *        so that further selects will not need a physical load anymore.</li>
- *    <li><em>LRU</em>: when {@code maxSize} is reached, the least recently PDOs are removed, depending on the {@code keepQuota}.
+ *    <li><em>LRU</em>: when {@code maxSize} is reached, the least recently used PDOs are removed, depending on the {@code keepQuota}.
  *    This is the preferred mode if the number of entities is large and all PDOs cannot (or should not) be kept in memory.</li>
  *    <li><em>LFU</em>: same as LRU, but the least frequently PDOs are removed.</li>
  *    <li><em>FORGET</em>: when {@code maxSize} is reached, the cache is completely invalidated (all PDOs removed from the cache).</li>
@@ -77,7 +77,7 @@ import java.util.function.Consumer;
  * the database into the cache (similar to {@link PdoCacheStrategy#PRELOAD}) and the {@code maxSize} is automatically enlarged, if not
  * inhibited by {@code maxSizeHardLimit}.
  * <p>
- * When PDOs are updated, inserted or deleted, the PDOs held in the cache (and optional lists) are updated according
+ * When PDOs are updated, inserted, or deleted, the PDOs held in the cache (and optional lists) are updated according
  * to the configuration of the PDOs and the application's operation mode:
  *
  * <ul>
@@ -107,12 +107,12 @@ import java.util.function.Consumer;
  *         The application is a middle-tier server (connected to the database or to another middle-tier server)
  *         or a client connected to a middle-tier server: this is the preferred mode and works well even for thousands
  *         of concurrent users.<br>
- *         Modifications will not update the modification table immediately, but delayed at some appropriate time,
- *         when the corresponding transactions have finished. When PDOs are updated, inserted or deleted,
+ *         Modifications will not update the modification table immediately but delayed at some appropriate time,
+ *         when the corresponding transactions have finished. When PDOs are updated, inserted, or deleted,
  *         their corresponding tableserials are remembered in memory, the so-called <em>tableserial history</em>.<br>
  *         Whenever a cache expiration is detected (via {@link PdoCache#expire(ModificationEvent)}), the
  *         tableserials of the updated PDOs are selected from the database <em>and</em> combined with the history.
- *         As a result, there are no gaps anymore, and the cache knows exactly which PDOs to expire, which to remove
+ *         As a result, there are no gaps anymore, and the cache knows exactly which PDOs to expire, which to remove,
  *         and which to append (to the lists, if any). However, if an unexpected gap is still detected, the cache is
  *         invalidated and a warning logged.
  *       </li>
@@ -143,7 +143,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   private static final Logger LOGGER = Logger.get(PdoCache.class);
 
-  private static boolean allEnabled = true;         // false = all caches disabled. default is true
+  // volatile: switched from anywhere and read by every cache on nearly every operation
+  private static volatile boolean allEnabled = true;   // false = all caches disabled. default is true
 
   /**
    * Checks whether all caches are enabled at all.
@@ -184,16 +185,24 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     private final String tableName;                   // the table name
     private final Class<T> pdoClass;                  // the effective PDO class
     private final Map<Session, TxIdSet> tsInTx;       // tableSerials expired within the current transaction
+    private final long modificationId;                // row id of the modification table for this table
     private long minTableSerial;                      // min tableserial to use for update check
     private long maxTableSerial;                      // max tableserial to use for update check
     private long tableSerial;                         // highest tableserial of all objects in the cache
     private long expiredTableSerial;                  // > 0 if delayed expire check
 
-    private SerialInfo(String tableName, Class<T> pdoClass) {
+    private SerialInfo(String tableName, Class<T> pdoClass, IdSerialTuple idSerial) {
       this.tableName = tableName;
       this.pdoClass = pdoClass;
-      minTableSerial = ModificationTracker.getInstance().getSerial(tableName);
-      tsInTx = new WeakHashMap<>();  // keys are weak! Db does not override equals!
+      this.modificationId = idSerial.getId();
+      this.minTableSerial = idSerial.getSerial();
+      // keys are weak!
+      // Db made equals/hashCode final to guarantee the default implementation from Object
+      tsInTx = new WeakHashMap<>();
+    }
+
+    private SerialInfo(String tableName, Class<T> pdoClass) {
+      this(tableName, pdoClass, ModificationTracker.getInstance().getIdSerialForName(tableName));
     }
 
     private void addExpiredInTx(Session session, long tableSerial) {
@@ -227,7 +236,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    */
   private static class SelectAllList<T> {
 
-    private final List<T> list;               // the PDOs via select all
+    private List<T> list;                     // the PDOs via select all
     private final TreeSet<Long> refreshIds;   // the sorted IDs to load on the next refreshList
     private final TreeSet<Long> removeIds;    // the sorted IDs to remove on the next refreshList
 
@@ -235,6 +244,21 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       refreshIds = new TreeSet<>();
       removeIds = new TreeSet<>();
       list = new ArrayList<>(size);
+    }
+
+    /**
+     * Replaces the list with a copy before it is modified.
+     * <p>
+     * {@code selectAll} hands the list out to the application (wrapped, but the wrapper copies only
+     * on write, so reading goes to this very list). Modifying it in place would therefore let a
+     * refresh in one thread corrupt an iteration in another. Refreshing instead builds a new list
+     * and leaves the published one alone, so every caller keeps a stable snapshot.
+     * <p>
+     * Copying here rather than in {@code selectAll} keeps reads free: refreshes are rare, whereas
+     * a preloading cache may be read very often and may hold the whole table.
+     */
+    private void copyBeforeModification() {
+      list = new ArrayList<>(list);
     }
 
     private void addRefreshIds(Collection<Long> ids) {
@@ -265,15 +289,21 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   private final Map<String, SerialInfo> serialInfos;          // the serial infos per table name
   private final Map<DomainContext, SelectAllList<T>> saLists; // lists for selectAll
 
-  private boolean enabled;                  // true if cache enabled
-  private PdoCacheStrategy strategy;        // caching strategy
-  private int maxSize;                      // maximum size, 0 = unlimited (default)
-  private boolean maxSizeHardLimit;         // true if selectAll throws an exception if the list is larger than maxSize
-  private int keepQuota;                    // Percentage of entries to keep when applying caching strategy. Default is 50.
-  private long selectCount;                 // select-count for existing PDOs
-  private long selectMissingCount;          // select-count for PDOs missing in the database
-  private long selectNotCacheableCount;     // select-count to non-cacheable PDOs
-  private long selectAllCount;              // select-count for the whole table in preloading caches
+  /*
+   * The configuration below is volatile. This is because it is read and written through accessors that do
+   * not all synchronize on this cache (and is read from application threads at any time), unlike
+   * the statistics counters further down, which are only ever touched while holding the monitor.
+   */
+  private volatile boolean enabled;               // true if cache enabled
+  private volatile PdoCacheStrategy strategy;     // caching strategy
+  private volatile int maxSize;                   // maximum size, 0 = unlimited (default)
+  private volatile boolean maxSizeHardLimit;      // true if selectAll throws an exception if the list is larger than maxSize
+  private volatile int keepQuota;                 // Percentage of entries to keep when applying caching strategy. Default is 50.
+
+  private long selectCount;                       // select-count for existing PDOs
+  private long selectMissingCount;                // select-count for PDOs missing in the database
+  private long selectNotCacheableCount;           // select-count to non-cacheable PDOs
+  private long selectAllCount;                    // select-count for the whole table in preloading caches
 
 
   /**
@@ -513,11 +543,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   /**
    * Gets the indexes registered for this cache.
+   * <p>
+   * The returned list is a snapshot: the wrapper copies only on write, so wrapping the cache's own
+   * list would let {@link #addIndex} or {@link #removeIndex} modify it while the caller iterates.
    *
    * @return the indexes
    */
-  public List<PdoCacheIndex<T,?>> getIndexes()  {
-    return new CopyOnWriteList<>(indexes);
+  public synchronized List<PdoCacheIndex<T,?>> getIndexes()  {
+    return new CopyOnWriteList<>(new ArrayList<>(indexes));
   }
 
   /**
@@ -626,8 +659,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Retrieves a PDO by ID.
    *
    * @param context the domain context
-   * @param id is the object-ID
-   * @param loadIfMissing is true if the object should be loaded from storage if not in cache
+   * @param id the object-ID
+   * @param loadIfMissing true if the object should be loaded from storage if not in cache
    *
    * @return the object or null if no such object
    */
@@ -651,7 +684,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Always loads if missing in the cache.
    *
    * @param context the domain context
-   * @param id is the object-ID
+   * @param id the object-ID
    *
    * @return the object or null if no such object
    */
@@ -739,6 +772,79 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     }
   }
 
+  /**
+   * Gets the preloaded content for this cache.<br>
+   * Only for preloading, read-only caches!
+   * <p>
+   * Throws a {@link PdoCacheException} if caching is disabled or the cache is not a preloading read-only cache.
+   *
+   * @param context the domain context
+   * @return the preloaded content, never null
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public synchronized PdoCachePreloadContent<T> getPreloadContent(DomainContext context) {
+    assertPreloadingReadOnly();
+    List<T> pdoList = refreshList(context);
+    if (pdoList == null) {
+      throw new PdoCacheException(this + ": caching is disabled");
+    }
+    PdoCachePreloadContent.TableInfo<T>[] tableInfos = new PdoCachePreloadContent.TableInfo[serialInfos.size()];
+    int i = 0;
+    for (Map.Entry<String, SerialInfo> serialInfoEntry : serialInfos.entrySet()) {
+      SerialInfo serialInfo = serialInfoEntry.getValue();
+      tableInfos[i++] = new PdoCachePreloadContent.TableInfo<>(
+        serialInfo.tableName, serialInfo.pdoClass,
+        new IdSerialTuple(serialInfo.modificationId, serialInfo.minTableSerial));
+    }
+    return new PdoCachePreloadContent<>(clazz, pdoList, tableInfos);
+  }
+
+  /**
+   * Applies the given preload content to this cache.<br>
+   * Only for preloading, read-only caches, uninitialized caches!
+   *
+   * @param context the domain context
+   * @param preloadContent the preload content from the remote server
+   * @return the number of objects loaded from the preload content
+   */
+  public synchronized int applyPreloadContent(DomainContext context, PdoCachePreloadContent<T> preloadContent) {
+    assertPreloadingReadOnly();
+    if (isInitialized()) {
+      throw new PdoCacheException(this + ": cache is already initialized");
+    }
+    if (preloadContent.pdoClass() != clazz) {
+      throw new PdoCacheException(this + ": preload content for wrong class: " + preloadContent.pdoClass());
+    }
+
+    // create the serialInfos first with the mintableserial from the preload content (don't ask the ModificationTracker!)
+    for (PdoCachePreloadContent.TableInfo<T> tableInfo : preloadContent.tableInfo()) {
+      serialInfos.put(tableInfo.tableName(), new SerialInfo(tableInfo.tableName(), tableInfo.pdoClass(), tableInfo.idSerial()));
+    }
+    // add the PDOs to the cache, all indexes, and update the serial infos
+    return createAndAddSelectAllList(processContext(context), preloadContent.pdoList()).list.size();
+  }
+
+  /**
+   * Returns whether this cache is initialized.<br>
+   *
+   * @return true if cache is initialized, false otherwise
+   */
+  public synchronized boolean isInitialized() {
+    return !serialInfos.isEmpty();
+  }
+
+
+  /**
+   * Asserts that the cache is a preloading read-only cache.<br>
+   */
+  protected void assertPreloadingReadOnly() {
+    if (!isPreloading()) {
+      throw new PdoCacheException(this + ": is not a preloading cache");
+    }
+    if (!isReadOnly()) {
+      throw new PdoCacheException(this + ": is not a read-only cache");
+    }
+  }
 
   /**
    * Adds an index if not already added.
@@ -771,7 +877,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * already in the cache.
    *
    * @param pdo is the PDO to add
-   * @return true if added, false if object already in cache
+   * @return true if added, false if the object is already in the cache
    */
   protected boolean add(T pdo)  {
     if (enabled && allEnabled)  {
@@ -810,9 +916,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Does NOT remove the object from any list!
    *
    * @param pdo the PersistentDomainObject to remove
-   * @return true if removed, false if object not in cache
+   * @return true if removed, false if the object is not in cache
    */
-  protected boolean remove(T pdo)  {
+  protected synchronized boolean remove(T pdo)  {
     // remove from indexes
     boolean rv = false;
     for (PdoCacheIndex<T,?> index: indexes)  {
@@ -824,73 +930,71 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   /**
    * Shrinks the cache if size limits reached and no cached lists present.
    */
-  protected void shrinkCache()  {
+  protected synchronized void shrinkCache()  {
     if (maxSize > 0 && getSize() > maxSize && saLists.isEmpty()) {
       if (strategy == PdoCacheStrategy.FORGET || keepQuota <= 0) {
         // evict the whole cache
         invalidate();
       }
       else {
-        synchronized (this) {
-          try {
-            Holder<Long> millis = new Holder<>();    // to determine the duration if with logging
-            LOGGER.fine(() -> {
-              millis.accept(System.currentTimeMillis());
-              return "shrinking " + this + ": " + printStatistics();
+        try {
+          Holder<Long> millis = new Holder<>();    // to determine the duration if with logging
+          LOGGER.fine(() -> {
+            millis.accept(System.currentTimeMillis());
+            return "shrinking " + this + ": " + printStatistics();
+          });
+          Set<T> objects = new TreeSet<>(
+            switch (strategy) {
+              case LFU -> new LFUComparator();
+              case LRU -> new LRUComparator();
+              default ->
+                throw new PdoRuntimeException(this + ": limits reached! Consider setting maxSize to 0 for strategy " + strategy);
             });
-            Set<T> objects = new TreeSet<>(
-              switch (strategy) {
-                case LFU -> new LFUComparator();
-                case LRU -> new LRUComparator();
-                default ->
-                  throw new PdoRuntimeException(this + ": limits reached! Consider setting maxSize to 0 for strategy " + strategy);
-              });
-            // add all objects to the set and sort by LRU or LFU
-            walk(true, objects::add);
-            // compute objects to keep
-            int size = objects.size();
-            int keep = maxSize * keepQuota / 100;
-            if (keep >= size) {
-              keep = size - 1; // special case: remove at least one!
-            }
-            // remove or invalidate and add?
-            if (keep > size / 2) {
-              // remove
-              int remove = size - keep;
-              for (T pdo : objects) {
-                if (remove > 0) {
-                  for (PdoCacheIndex<T, ?> index : indexes) {
-                    index.removeExisting(pdo);    // must exist!
-                  }
+          // add all objects to the set and sort by LRU or LFU
+          walk(true, objects::add);
+          // compute objects to keep
+          int size = objects.size();
+          int keep = maxSize * keepQuota / 100;
+          if (keep >= size) {
+            keep = size - 1; // special case: remove at least one!
+          }
+          // remove or invalidate and add?
+          if (keep > size / 2) {
+            // remove
+            int remove = size - keep;
+            for (T pdo : objects) {
+              if (remove > 0) {
+                for (PdoCacheIndex<T, ?> index : indexes) {
+                  index.removeExisting(pdo);    // must exist!
                 }
-                remove--;
               }
-            }
-            else {
-              // invalidate and add again
-              invalidateImpl();
-              int skip = size - keep;
-              for (T pdo : objects) {
-                if (skip <= 0) {
-                  for (PdoCacheIndex<T, ?> index : indexes) {
-                    index.addUnique(pdo);    // complain if not unique
-                  }
-                }
-                skip--;
-              }
-            }
-            Long ms = millis.get();
-            if (ms != null) {
-              clearStatistics();
-              LOGGER.fine(this + " shrunk: kept=" + getSize() + ", strategy=" + strategy +
-                          ", duration=" + (System.currentTimeMillis() - ms) + "ms");
+              remove--;
             }
           }
-          catch (RuntimeException e) {
-            // unique violation detected: log that and invalidate cache
-            LOGGER.warning("shrinking " + this + " failed -> invalidated!\n" + printStatistics(), e);
+          else {
+            // invalidate and add again
             invalidateImpl();
+            int skip = size - keep;
+            for (T pdo : objects) {
+              if (skip <= 0) {
+                for (PdoCacheIndex<T, ?> index : indexes) {
+                  index.addUnique(pdo);    // complain if not unique
+                }
+              }
+              skip--;
+            }
           }
+          Long ms = millis.get();
+          if (ms != null) {
+            clearStatistics();
+            LOGGER.fine(this + " shrunk: kept=" + getSize() + ", strategy=" + strategy +
+                        ", duration=" + (System.currentTimeMillis() - ms) + "ms");
+          }
+        }
+        catch (RuntimeException e) {
+          // unique violation detected: log that and invalidate cache
+          LOGGER.warning("shrinking " + this + " failed -> invalidated!\n" + printStatistics(), e);
+          invalidateImpl();
         }
       }
     }
@@ -935,26 +1039,12 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           maxSize = newMaxSize;
         }
 
-        sal = new SelectAllList<>(sList.size());
-
-        // add cacheable objects to all indexes
-        for (T pdo : sList) {
-          PersistentObject<T> pd = pdo.getPersistenceDelegate();
-          if (pd.isCacheable()) {
-            sal.list.add(pdo);
-            for (PdoCacheIndex<T, ?> index : indexes) {
-              index.add(pdo);   // this will replace the object if already in the index
-            }
-            pd.markCacheAccess();
-            updateSerialInfo(pdo);
-          }
-        }
-
-        // add to the List of lists
-        DomainContext clonedContext = effectiveContext.clone();  // clone to avoid further modification
-        saLists.put(clonedContext, sal);
+        sal = createAndAddSelectAllList(effectiveContext, sList);
       }
       else if (sal.isExpired()) {
+        // the list was handed out to the application before, so refresh a copy of it, not the list itself
+        sal.copyBeforeModification();
+
         // the list is cached: update or append all PDOs in refreshIds
         Map<Long, T> loadedMap = new TreeMap<>();   // updated or inserted PDOs
 
@@ -1124,6 +1214,39 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     return deleteCount < 3 || listSize * deleteCount < 100000;
   }
 
+
+  /**
+   * Creates and add a new SelectAllList for the given context and PDOs.
+   * <ul>
+   *   <li>adds each cachable PDO to all indexes</li>
+   *   <li>updates the serial infos</li>
+   * </ul>
+   *
+   * @param effectiveContext the effective domain context
+   * @param pdoList the PDOs to add
+   * @return the new SelectAllList
+   */
+  private SelectAllList<T> createAndAddSelectAllList(DomainContext effectiveContext, List<T> pdoList) {
+    SelectAllList<T> sal = new SelectAllList<>(pdoList.size());
+
+    // add cacheable objects to all indexes
+    for (T pdo : pdoList) {
+      PersistentObject<T> pd = pdo.getPersistenceDelegate();
+      if (pd.isCacheable()) {
+        sal.list.add(pdo);
+        for (PdoCacheIndex<T, ?> index : indexes) {
+          index.add(pdo);   // this will replace the object if already in the index
+        }
+        pd.markCacheAccess();
+        updateSerialInfo(pdo);
+      }
+    }
+
+    // add to the List of lists
+    DomainContext clonedContext = effectiveContext.clone();  // clone to avoid further modification
+    saLists.put(clonedContext, sal);
+    return sal;
+  }
 
   /**
    * Implementation with nesting level to detect loops.
@@ -1426,7 +1549,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
          * Gaps were found, i.e., some objects were deleted, or modifications were rolled back
          * without notifying the TableSerialHistory, or no modified objects
          * found, or the current serial does not match the last tableserial of
-         * modified objects or there is cache pollution.
+         * modified objects, or there is cache pollution.
          * This could happen if the ModificationTracker is in local-client-mode.
          * In middle-tier servers, however, this indicates that something seriously went wrong.
          *
@@ -1555,8 +1678,6 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       index.clearMissing();
     }
   }
-
-
 
 
   // Least Recently Used Comparator

@@ -293,7 +293,8 @@ public class ColumnMigrator {
    */
   private String alterNull() throws ModelException {
     return toNonNullString(backend.sqlAlterColumnNullConstraint(
-            entity.getTableName(), columnName, attribute.isNullable()));
+            entity.getTableName(), columnName, sqlType, columnSize, columnScale,
+            attribute.isNullable(), defaultValue));
   }
 
   /**

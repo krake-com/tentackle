@@ -24,6 +24,7 @@ import javafx.geometry.Pos;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 
 /**
  * String cell type.
@@ -41,15 +42,20 @@ public class StringTableCellType extends AbstractTableCellType<String> {
   }
 
   @Override
+  public String getText(TableColumnConfiguration<?, String> columnConfiguration, String text) {
+    return applyCaseConversion(columnConfiguration.getCaseConversion(), text);
+  }
+
+  @Override
   public void updateItem(FxTableCell<?, String> tableCell, String text) {
-    tableCell.setText(applyCaseConversion(tableCell.getColumnConfiguration().getCaseConversion(), text));
+    tableCell.setText(getText(tableCell.getColumnConfiguration(), text));
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, String> treeTableCell, String text) {
-    treeTableCell.setText(applyCaseConversion(treeTableCell.getColumnConfiguration().getCaseConversion(), text));
+    treeTableCell.setText(getText(treeTableCell.getColumnConfiguration(), text));
     treeTableCell.setGraphic(null);
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }

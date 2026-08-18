@@ -9,28 +9,66 @@
 @[
     }
     for (WurbletArgument par: getMethodArguments())  {
+      // the values of the EXISTS clause are set only if the clause is part of the query
+      String clauseCondition = par.getExistsArguments() == null ? null :
+                                 createOptionalCondition(par.getExistsArguments());
+      String indent = clauseCondition == null ? "" : "  ";
       if (par.isPath()) {
         // check for additional value-args in relations
         Set<Relation> existsRels = par.getExistsRelations();
+        boolean withValueArgs = false;
         if (existsRels != null) {
+          for (Relation rel: existsRels) {
+            List<MethodArgument> methodArgs = rel.getMethodArgs();
+            for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+              if (methodArg.isValue()) {
+                withValueArgs = true;
+              }
+            }
+          }
+        }
+        if (withValueArgs) {
+          if (clauseCondition != null) {
+]@
+    if (@(clauseCondition)@) {
+@[
+          }
           for (Relation rel: existsRels) {
             List<MethodArgument> methodArgs = rel.getMethodArgs();
             for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
               if (methodArg.isValue()) {
                 Attribute attr = methodArg.getForeignAttribute();
 ]@
-    @(createWhereSetPars(attr, attr.toMethodArgument(methodArg.getValue())))@;
+    @(indent)@@(createWhereSetPars(attr, attr.toMethodArgument(methodArg.getValue())))@;
 @[
               }
             }
+          }
+          if (clauseCondition != null) {
+]@
+    }
+@[
           }
         }
       }
 
       if (!par.isValueLiterally()) {
+        // the parameters of an optional condition are set only if the condition is part of the query
+        String optCondition = par.isOptional() ? par.getOptionalName() : null;
+        indent = optCondition == null ? "" : "  ";
+        if (optCondition != null) {
 ]@
-    @(createWhereSetPars(par))@;
+    if (@(optCondition)@) {
 @[
+        }
+]@
+    @(indent)@@(createWhereSetPars(par))@;
+@[
+        if (optCondition != null) {
+]@
+    }
+@[
+        }
       }
     }
 ]@
@@ -38,6 +76,10 @@
 
   \@Override
   public String process(String code) {
+    if (isWithOptionalArguments()) {
+      // the last set parameter may be skipped at runtime: keep all increments
+      return code;
+    }
     int ref = code.lastIndexOf("ndx");
     int pos = code.lastIndexOf("(ndx++,");
     if (pos >= 0 && ref == pos + 1) {

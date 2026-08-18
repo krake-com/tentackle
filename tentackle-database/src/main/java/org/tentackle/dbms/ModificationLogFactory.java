@@ -54,7 +54,7 @@ public interface ModificationLogFactory {
 
   /**
    * Creates an empty modification log for a given session.<br>
-   * Useful for reading the log or as an TRIP-proxy.
+   * Useful for reading the log or as a TRIP-proxy.
    *
    * @param db the session
    * @return the created modlog
@@ -66,7 +66,7 @@ public interface ModificationLogFactory {
    * Creates a modification log for a given session and modification type.
    *
    * @param db the session
-   * @param modType is the modification type (BEGIN or COMMIT)
+   * @param modType is the modification-type
    * @return the created modlog
    */
   ModificationLog createModificationLog(Db db, ModificationType modType);

@@ -95,13 +95,25 @@ public class ToolRunner {
   public ToolRunner run() {
     try {
       Process process = new ProcessBuilder(command).start();
+      // The streams must be drained while the tool is running. Otherwise, the tool blocks
+      // writing as soon as it has filled up the OS pipe buffer and waitFor would never return.
+      Collector outCollector = new Collector(process.getInputStream());
+      Collector errCollector = new Collector(process.getErrorStream());
+      outCollector.start();
+      errCollector.start();
       errCode = process.waitFor();
-      output = collect(process.getInputStream());
-      errors = collect(process.getErrorStream());
+      outCollector.join();
+      errCollector.join();
+      output = outCollector.getLines();
+      errors = errCollector.getLines();
       return this;
     }
-    catch (InterruptedException | IOException e) {
-      throw new TentackleRuntimeException("running tool " + tool + " failed", e);
+    catch (InterruptedException ix) {
+      Thread.currentThread().interrupt();    // don't swallow the interrupt
+      throw new TentackleRuntimeException("running tool " + tool + " failed", ix);
+    }
+    catch (IOException iox) {
+      throw new TentackleRuntimeException("running tool " + tool + " failed", iox);
     }
   }
 
@@ -171,23 +183,6 @@ public class ToolRunner {
   }
 
 
-  /**
-   * Collects output lines from an input stream.
-   *
-   * @param inputStream the input stream
-   * @return the list of lines
-   * @throws IOException if reading failed
-   */
-  private static List<String> collect(InputStream inputStream) throws IOException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-    List<String> lines = new ArrayList<>();
-    String line;
-    while ((line = reader.readLine()) != null) {
-      lines.add(line);
-    }
-    return lines;
-  }
-
   private void assertExecuted() {
     if (output == null) {
       throw new TentackleRuntimeException("run() method must be invoked first");
@@ -207,6 +202,55 @@ public class ToolRunner {
       buf.append(line);
     }
     return buf.toString();
+  }
+
+
+  /**
+   * Collects the lines of one of the tool's output streams in a separate thread.
+   */
+  private static class Collector extends Thread {
+
+    private final InputStream inputStream;
+    private final List<String> lines;
+    private IOException exception;      // the failure while reading, null if none
+
+    /**
+     * Creates a collector for a stream.
+     *
+     * @param inputStream the stream to read from
+     */
+    Collector(InputStream inputStream) {
+      this.inputStream = inputStream;
+      this.lines = new ArrayList<>();
+      setDaemon(true);    // never block the JVM from terminating
+    }
+
+    @Override
+    public void run() {
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          lines.add(line);
+        }
+      }
+      catch (IOException iox) {
+        exception = iox;
+      }
+    }
+
+    /**
+     * Gets the collected lines.<br>
+     * Must be invoked after {@link #join()} only.
+     *
+     * @return the lines, never null
+     * @throws IOException if reading the stream failed
+     */
+    List<String> getLines() throws IOException {
+      if (exception != null) {
+        throw exception;
+      }
+      return lines;
+    }
   }
 
 }

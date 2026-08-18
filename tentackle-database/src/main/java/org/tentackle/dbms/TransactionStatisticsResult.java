@@ -22,7 +22,7 @@ import org.tentackle.log.StatisticsResult;
 
 /**
  * Statistics result for transactions.<br>
- * Extends {@link StatisticsResult} by number of statements.
+ * Extends {@link StatisticsResult} by the number of statements.
  */
 public class TransactionStatisticsResult extends StatisticsResult {
 

@@ -1,0 +1,116 @@
+@{package org.tentackle.persist.wurblet}@
+@{import java.io.*}@
+@{import java.util.*}@
+@{import org.tentackle.common.*}@
+@{import org.tentackle.model.*}@
+@{import org.tentackle.sql.*}@
+@{import org.tentackle.wurblet.*}@
+@{import org.wurbelizer.wurbel.*}@
+@{import org.wurbelizer.wurblet.*}@
+@{extends ModelWurblet}@
+@{args}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate the table- and field declarations for the query DSL.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; QueryDSL [options] &lt;entity&gt; [&lt;attribute&gt; ...]
+<p>
+example:<br>
+&#064;wurblet dsl QueryDSL Customer id name turnover active
+<p>
+arguments:
+<ul>
+<li><em>&lt;entity&gt;:</em> the entity to generate the declarations for. Unlike in the other wurblets the
+entity is an argument, because the declarations are usually generated into a class that has nothing to do
+with the entity's own classes, such as a reporting operation.</li>
+<li><em>&lt;attribute&gt;:</em> the attributes to generate the fields for. If no attribute is given at all,
+the fields for all attributes mapped by the entity are generated.</li>
+<li><em>--public</em> or <em>--protected:</em> the visibility of the generated constants (default is private).</li>
+<li><em>--prefix[=&lt;prefix&gt;]:</em> prefix the field constants, by default with the uppercased entity name
+plus an underscore. Necessary if the declarations of more than one entity are generated into the same class,
+as a join query needs them.</li>
+<li><em>--table=&lt;constant&gt;:</em> the name of the table constant (default is the uppercased entity name).</li>
+<li><em>--alias=&lt;alias&gt;:</em> the table alias the columns are qualified with (default is the model's alias).</li>
+<li><em>--noalias:</em> qualify the columns with the table name instead of an alias.</li>
+</ul>
+The generated code refers to {\@code org.tentackle.dbms.dsl.DSL}, {\@code org.tentackle.dbms.dsl.Table} and
+{\@code org.tentackle.dbms.dsl.Field}, which the application must import. Fields of a datatype with a variant
+(a large string, for example) refer to {\@code org.tentackle.sql.DataTypeFactory} as well.
+<p>
+For more options, see {\@link ModelWurblet}.
+}@
+@[
+  /**
+   * Gets the entity name from the first wurblet argument.
+   * <p>
+   * Overrides the {\@code ModelWurblet}, which determines the entity from the source file:
+   * the DSL declarations are usually generated into a class that does not belong to the entity.
+   * An explicit {\@code --model=<name>} still wins, as everywhere else.
+   *
+   * \@return the entity name
+   * \@throws WurbelException if no entity given
+   */
+  public String getModelFileName() throws WurbelException {
+    String modelFileName = getOption("model");
+    if (modelFileName == null) {
+      for (String arg: getContainer().getArgs()) {
+        if (arg != null && !arg.startsWith("--")) {
+          modelFileName = arg;
+          break;
+        }
+      }
+    }
+    if (modelFileName == null) {
+      throw new WurbelException("missing entity in wurblet " + this);
+    }
+    return modelFileName;
+  }
+
+  private void wurbel() throws ModelException, WurbelException {
+
+    DslDeclarationFactory factory = new DslDeclarationFactory(getEntity());
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("public") || arg.equals("protected")) {
+        factory.setVisibility(arg);
+      }
+      else if (arg.equals("prefix")) {
+        factory.setConstantPrefix(factory.getDefaultConstantPrefix());
+      }
+      else if (arg.startsWith("prefix=")) {
+        factory.setConstantPrefix(arg.substring(7));
+      }
+      else if (arg.startsWith("table=")) {
+        factory.setTableConstant(arg.substring(6));
+      }
+      else if (arg.startsWith("alias=")) {
+        factory.setTableAlias(arg.substring(6));
+      }
+      else if (arg.equals("noalias")) {
+        factory.setTableAlias(null);
+      }
+    }
+
+    List<String> attributeNames = new ArrayList<>(getWurbletArgs());
+    if (!attributeNames.isEmpty()) {
+      attributeNames.removeFirst();     // the entity
+    }
+
+    List<Attribute> attributes = factory.determineAttributes(attributeNames);
+
+    DslDeclarationFactory.Declaration declaration = factory.createTableDeclaration();
+]@
+
+  /** @(declaration.comment())@. */
+  @(declaration.code())@
+@[
+    for (Attribute attribute: attributes) {
+      declaration = factory.createFieldDeclaration(attribute);
+]@
+
+  /** @(declaration.comment())@. */
+  @(declaration.code())@
+@[
+    }
+  }
+]@

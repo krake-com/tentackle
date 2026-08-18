@@ -37,7 +37,7 @@ public enum TransactionIsolation {
   NONE(0),
 
   /**
-   * Dirty reads, non-repeatable reads and phantom reads can occur.
+   * Dirty reads, non-repeatable reads, and phantom reads can occur.
    */
   READ_UNCOMMITTED(1),
 
@@ -52,21 +52,21 @@ public enum TransactionIsolation {
    * Dirty reads and non-repeatable reads are prevented, phantom reads can occur.
    * <p>
    * Applications running this isolation level should be prepared for temporary serialization errors
-   * and retry such transactions in a meaningful manner.
+   * and retry such transactions.
    */
   REPEATABLE_READ(4),
 
   /**
-   * Dirty reads, non-repeatable reads and phantom reads are prevented.
+   * Dirty reads, non-repeatable reads, and phantom reads are prevented.
    * <p>
    * Applications running this isolation level should be prepared for temporary serialization errors
-   * and retry such transactions in a meaningful manner.
+   * and retry such transactions.
    */
   SERIALIZABLE(8);
 
 
 
-  private final int level;    // isolation level (corresponds to Connection#TRANSACTION_....)
+  private final int level;    // isolation level (corresponds to Connection#TRANSACTION_...)
 
   TransactionIsolation(int level) {
     this.level = level;
@@ -75,7 +75,7 @@ public enum TransactionIsolation {
   /**
    * Gets the low-level isolation level constant.
    *
-   * @return the low level integer constant
+   * @return the low-level integer constant
    * @see java.sql.Connection
    */
   public int getLevel() {

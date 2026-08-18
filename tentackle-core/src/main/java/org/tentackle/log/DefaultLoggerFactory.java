@@ -92,9 +92,14 @@ public class DefaultLoggerFactory implements LoggerFactory {
     if (method == null && constructor == null) {
       // find method
       try {
-        method = loggerClass.getDeclaredMethod("getLogger", String.class);
-        if (Modifier.isStatic(method.getModifiers())) {
-          methods.put(loggerClass, method);
+        Method declaredMethod = loggerClass.getDeclaredMethod("getLogger", String.class);
+        if (Modifier.isStatic(declaredMethod.getModifiers())) {
+          method = declaredMethod;
+          methods.put(loggerClass, declaredMethod);
+        }
+        else {
+          // an instance method is of no use here: fall back to the constructor
+          methodException = new NoSuchMethodException("getLogger(String) is not static in " + loggerClass.getName());
         }
       }
       catch (NoSuchMethodException e) {

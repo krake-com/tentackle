@@ -210,7 +210,6 @@ public class RdcUtilities {
     }
   }
 
-
   /**
    * Gets a CRUD for a PDO.<br>
    * If the PDO is already being edited,
@@ -304,7 +303,7 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param editable true if the user may edit the pdo, false if to view only
-   * @return the CRUD showing stage, null if there is no such stage
+   * @return the CRUD-showing stage, null if there is no such stage
    */
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrudStage(T pdo, boolean editable) {
     if (isCrudCachingEnabled(pdo)) {
@@ -328,7 +327,6 @@ public class RdcUtilities {
     return null;
   }
 
-
   /**
    * Searches for PDOs in a separate window.
    *
@@ -343,7 +341,6 @@ public class RdcUtilities {
                     T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<ObservableList<T>> selectedItems) {
     displaySearchStage(pdo, modality, owner, createPdoAllowed, selectedItems, null);
   }
-
 
   /**
    * Searches for PDOs in a separate window.
@@ -400,7 +397,6 @@ public class RdcUtilities {
     Fx.show(stage);
   }
 
-
   /**
    * Gets a search controller for a PDO.
    *
@@ -452,7 +448,6 @@ public class RdcUtilities {
     return search;
   }
 
-
   /**
    * Shows a question dialog whether to save, discard, or cancel editing of a PDO.
    *
@@ -476,7 +471,6 @@ public class RdcUtilities {
     FxUtilities.getInstance().showNotification(owner, popup, notification, () -> doIt.accept(result.get()));
   }
 
-
   /**
    * Shows the tree of a PDO in a modal scene.
    *
@@ -498,7 +492,6 @@ public class RdcUtilities {
                    pdo.getSingular(), pdo.toString()));
     Fx.show(stage);
   }
-
 
   /**
    * Runs some code in another thread and optionally updates the UI.<br>
@@ -527,8 +520,11 @@ public class RdcUtilities {
     else {
       Cursor oldCursor;
       if (node != null) {
-        oldCursor = node.getCursor();
-        node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
+        Cursor waitCursor = FxUtilities.getInstance().getWaitCursor(node);
+        Cursor cursor = node.getCursor();
+        // don't restore the wait cursor if already set by another submitted background task
+        oldCursor = waitCursor.equals(cursor) ? null : cursor;
+        node.setCursor(waitCursor);
       }
       else {
         oldCursor = null;
@@ -560,7 +556,8 @@ public class RdcUtilities {
 
         private void restoreCursor() {
           if (node != null) {
-            node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
+            // restore what the node had before, which may be null, i.e., inherited from its parent
+            node.setCursor(oldCursor);
           }
         }
       };
@@ -576,7 +573,6 @@ public class RdcUtilities {
       task.run();   // corner case in generic tools like PdoBrowser
     }
   }
-
 
   /**
    * Creates the dragboard for a node and PDOs.
@@ -607,7 +603,6 @@ public class RdcUtilities {
     return null;
   }
 
-
   /**
    * Gets all PDO keys from the dragboard.
    *
@@ -626,7 +621,6 @@ public class RdcUtilities {
     return keys;
   }
 
-
   /**
    * Gets the PDO key from the dragboard.<br>
    * If the dragboard contains more than one key, the first will be returned.
@@ -638,7 +632,6 @@ public class RdcUtilities {
     List<IdentifiableKey<PersistentDomainObject<?>>> pdoKeysFromDragboard = getPdoKeysFromDragboard(dragboard);
     return pdoKeysFromDragboard.isEmpty() ? null : pdoKeysFromDragboard.get(0);
   }
-
 
   /**
    * Gets all PDOs from a dragboard.
@@ -672,12 +665,11 @@ public class RdcUtilities {
     return pdos.isEmpty() ? null : pdos.get(0);
   }
 
-
   /**
    * Selects a file via the file chooser dialog and remembers the decision in the user preferences.
    *
-   * @param prefName the preferences name
-   * @param prefKey the preferences key
+   * @param prefName the preference name
+   * @param prefKey the preference key
    * @param fileExtension the filename extension (including the leading dot)
    * @param fileType the localized name of the file type
    * @param owner the dialog owner for the selection dialog, null if none
@@ -697,7 +689,14 @@ public class RdcUtilities {
 
     FileChooser fc = new FileChooser();
     if (lastName != null) {
-      fc.setInitialFileName(lastName);
+      // the preference holds an absolute path: the chooser wants the directory and the
+      // plain filename separately, else the whole path ends up in the filename field
+      File lastFile = new File(lastName);
+      fc.setInitialFileName(lastFile.getName());
+      File lastDirectory = lastFile.getParentFile();
+      if (lastDirectory != null && lastDirectory.isDirectory()) {
+        fc.setInitialDirectory(lastDirectory);
+      }
     }
     fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(fileType, fileExtension));
     File selectedFile = fc.showSaveDialog(owner);
@@ -720,7 +719,6 @@ public class RdcUtilities {
     }
     return selectedFile;
   }
-
 
   /**
    * Gets the main stage of the current application.
@@ -754,7 +752,6 @@ public class RdcUtilities {
   protected <T extends PersistentDomainObject<T>> boolean isCrudCachingEnabled(T pdo) {
     return cachingEnabled;
   }
-
 
   /**
    * Detects when the theme has changed and invalidates the caches.

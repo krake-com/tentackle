@@ -67,6 +67,11 @@ public class PdoBrowserUtils {
     return false;
   }
 
+  public static boolean isFindingReferencesPossible(DataNode dataNode) {
+    return dataNode instanceof DataObject dataObject && dataObject.getPdo() != null &&
+           dataObject.getEntity() != null && !dataObject.getEntity().isEmbedded();
+  }
+
   public static MenuItem createCopySqlItem(EventHandler<ActionEvent> handler) {
     MenuItem copySqlItem = Fx.create(MenuItem.class);
     copySqlItem.setOnAction(handler);
@@ -74,13 +79,21 @@ public class PdoBrowserUtils {
     return copySqlItem;
   }
 
+  public static MenuItem createFindReferencesItem(EventHandler<ActionEvent> handler) {
+    MenuItem findReferencesItem = Fx.create(MenuItem.class);
+    findReferencesItem.setOnAction(handler);
+    findReferencesItem.setText("copy SQL SELECT statements of referencing PDOs to clipboard");
+    return findReferencesItem;
+  }
+
   public static void configureContextMenu(DataNode dataNode, MenuItem copyFQCNItem, MenuItem copyTableItem,
-                                          MenuItem copyClassIdItem, MenuItem copySqlItem) {
+                                          MenuItem copyClassIdItem, MenuItem copySqlItem, MenuItem findReferencesItem) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     copyFQCNItem.setVisible(false);
     copyTableItem.setVisible(false);
     copyClassIdItem.setVisible(false);
     copySqlItem.setVisible(isCreatingSqlPossible(dataNode));
+    findReferencesItem.setVisible(isFindingReferencesPossible(dataNode));
     if (typeInfo != null) {
       if (typeInfo.fqcn() != null) {
         copyFQCNItem.setText("copy FQCN \"" + typeInfo.fqcn() + "\" to clipboard");
@@ -123,6 +136,12 @@ public class PdoBrowserUtils {
   public static void copySql(DataNode dataNode) {
     if (dataNode != null) {
       Fx.copyToClipboard(SqlCodeFactory.createSelect(dataNode));
+    }
+  }
+
+  public static void copyReferencingSql(DataNode dataNode) {
+    if (dataNode != null) {
+      Fx.copyToClipboard(SqlCodeFactory.createReferencingSelects(dataNode));
     }
   }
 

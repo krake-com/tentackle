@@ -513,6 +513,37 @@ public final class ReflectionHelper {
   }
 
   /**
+   * Determines the name a class is mapped by.<br>
+   * Member classes must keep the {@code $xxx} of their binary name to stay loadable by
+   * {@code Class.forName()}. Arrays are named by their component class, followed by the
+   * array suffix, since an array is neither a member class nor does it have an enclosing
+   * class, no matter what its component class is.
+   *
+   * @param clazz the class
+   * @return the name to map, never null
+   */
+  public static String getMappingName(Class<?> clazz) {
+    int dimensions = 0;
+    Class<?> componentClass = clazz;
+    while (componentClass.isArray()) {
+      componentClass = componentClass.getComponentType();
+      dimensions++;
+    }
+    String className;
+    if (componentClass.getEnclosingClass() != null && componentClass.isMemberClass()) {
+      className = componentClass.getName();
+    }
+    else {
+      className = componentClass.getCanonicalName();
+      if (className == null) {
+        // local class (or anonymous or hidden -> useless but better than null name)
+        className = componentClass.getName();
+      }
+    }
+    return dimensions == 0 ? className : className + "[]".repeat(dimensions);
+  }
+
+  /**
    * Gets the canonical constructor of a record class or of a regular class
    * with its constructor annotated with {@link CanonicalConstructor}.
    * <p>
@@ -554,7 +585,6 @@ public final class ReflectionHelper {
       return canonicalConstructor;
     }
   }
-
 
   /**
    * The canonical builder info.

@@ -32,7 +32,7 @@ import java.util.Set;
  * If batching is enabled for a session, transactions will run in batched mode. In this mode, well-defined standard prepared
  * statements are collected and executed later as a JDBC batch, which will gain some performance.
  * <p>
- * Batching is only performed within the same type of root entities, because the execution order is
+ * Batching is only performed within the same type of root entities because the execution order is
  * important to ensure referential integrity. Furthermore, the batch is flushed on every savepoint,
  * whenever the same object is persisted again, a non-batchable statement is executed or the transaction committed.
  * <p>
@@ -41,7 +41,7 @@ import java.util.Set;
  * treated individually, the application can provide its own {@link org.tentackle.session.SessionFactory} and
  * override {@link Db#createTransaction(String, boolean)} as well as {@link DbTransaction#createBatch()}.
  * <p>
- * IMPORTANT: batching is not enabled by default, because it has its drawbacks, especially when it comes to
+ * IMPORTANT: batching is not enabled by default because it has its drawbacks, especially when it comes to
  * exceptions and error diagnosis. Furthermore, the performance gains depend on a lot of parameters,
  * for example, the type of database backend, how indexes are affected, etc...
  * Some JDBC drivers also need special connection parameters to take full advantage of batching.
@@ -97,7 +97,7 @@ public class DbBatch {
    * Adds a statement and its related PDO to this batch.
    *
    * @param modType the statement type
-   * @param statement the insert, update or delete statement
+   * @param statement the insert, update, or delete statement
    * @param object the PDO affected by the statement
    * @param rootClassId the root class ID
    */

@@ -1,0 +1,32 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent-osgi-activators</artifactId>
+    <version>25.1.3</version>
+  </parent>
+
+  <artifactId>tentackle-quiche-osgi-activator</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Tentackle QUICHE OSGi Bundle Activator</name>
+  <description>OSGi Activator for the Tentackle QUICHE Module</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-common</artifactId>
+    </dependency>
+  </dependencies>
+
+</project>

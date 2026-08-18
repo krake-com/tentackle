@@ -23,13 +23,13 @@ import java.util.Objects;
 /**
  * The statement key.
  * <p>
- * The key describes the statement within its usage scope, i.e. the StatementId and using class.
+ * The key describes the statement within its usage scope, i.e., the StatementId and using class.
  * The using class is necessary to locate the prepared statement because a select method may be
  * implemented in a superclass of the actual class using the statement, which may result in a
  * different SQL string.
  * <p>
- * As an alternative, a statement key may be expressed directly by an SQL string.
- * In this case, no using class is required. Notice that ths SQL string must be
+ * As an alternative, an SQL string may express a statement key directly.
+ * In this case, no using class is required. Notice that the SQL string must be
  * exactly the string sent to the database backend! If there are different backends
  * with different SQLs, each SQL must get its own statement key.
  *

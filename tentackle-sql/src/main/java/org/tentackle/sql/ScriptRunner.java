@@ -110,6 +110,9 @@ public interface ScriptRunner {
    * Requests that the script should be executed within a transaction.<br>
    * If there is already a transaction running, this method has no effect,
    * even if {@code transactional} is false.
+   * <p>
+   * A transaction started by the script runner is committed if the script ran to completion
+   * and rolled back if the script failed or was canceled.
    *
    * @param transactional true if start a transaction if none is running
    */

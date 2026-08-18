@@ -43,6 +43,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <!-- the mock delegates, re-exposed to downstream projects -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo-mock</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-model</artifactId>
       <version>${project.version}</version>
@@ -76,6 +82,14 @@
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <!-- for AnalyzeClassNamesTest: build-support cannot depend on the modules
+           its ClassNames.properties refers to, so the check has to live here -->
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-build-support</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -226,5 +240,28 @@
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Additionally run the tests that need a real PostgreSQL server.
+        The database must be created from the generated DDL beforehand.
+      -->
+      <id>postgres</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <suiteXmlFiles>
+                <suiteXmlFile>src/test/testng-postgres.xml</suiteXmlFile>
+              </suiteXmlFiles>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

@@ -52,7 +52,7 @@ public interface SessionHolder extends Serializable {
   /**
    * Sets the session to immutable.
    *
-   * @param sessionImmutable true if session cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   void setSessionImmutable(boolean sessionImmutable);
 
@@ -64,7 +64,7 @@ public interface SessionHolder extends Serializable {
   boolean isSessionImmutable();
 
   /**
-   * Gets the session info associated to the session.
+   * Gets the session info associated with the session.
    *
    * @return the session info
    */

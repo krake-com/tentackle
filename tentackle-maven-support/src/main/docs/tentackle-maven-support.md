@@ -176,9 +176,12 @@ inspect classes from the project being built. It exposes `addURL` publicly.
 ### `PackageInfo`
 
 [`PackageInfo`](../java/org/tentackle/maven/PackageInfo.java) is the value object produced by the base mojo's
-package scan: the package name, the owning, and the directory path. `isContainingFiles()` underpins
+package scan: the package name, the owning Maven project, and the directory path. `isContainingFiles()` underpins
 split-package detection, and `getEmptyDuplicates()`/`setEmptyDuplicates(...)` track empty package directories that
 occur in several modules (which cannot be used in profiles, since the generator could not decide which to pick).
+Hidden files are ignored by both the scan and `isContainingFiles()`, so a leftover directory holding nothing but
+a `.gitignore` stays an empty package. `PackageInfo.isHidden(File)` decides this, treating a leading dot as hidden
+on all platforms, since Windows only knows the DOS hidden attribute.
 
 ---
 
@@ -186,10 +189,10 @@ occur in several modules (which cannot be used in profiles, since the generator 
 
 ```
                 tentackle-maven-support
-                ┌──────────────────────────────────────────┐
+                ┌────────────────────────────────────────────┐
                 │ AbstractTentackleMojo                      │  lifecycle, toolchains,
                 │   └─ AbstractTentackleAnnotationProcessing │  skip/verbosity, utilities
-                └──────────────────────────────────────────┘
+                └────────────────────────────────────────────┘
                         ▲           ▲            ▲
         ┌───────────────┘     ┌─────┘       ┌────┴───────────┐
   tentackle-maven-plugin  …-sql-…   …-i18n-… / …-check-… / …-jlink-… / …-wizard-…

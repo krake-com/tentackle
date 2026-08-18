@@ -64,6 +64,11 @@ public class TableMetaData {
 
   /**
    * Sets up the column from the database metadata result.
+   * <p>
+   * The method is idempotent: any state left over from a previous attempt is discarded.
+   * This is essential because the caller retries with different name patterns and metadata
+   * sources until the table is found (see {@code Backend#getTableMetaData}), and a failed
+   * attempt may already have collected some columns.
    *
    * @param metaData the database metadata
    * @param schemas valid schemas to scan, null if all
@@ -73,6 +78,13 @@ public class TableMetaData {
    * @throws BackendException if logical meta data processing error
    */
   public void setupTableFromMetaData(DatabaseMetaData metaData, String[] schemas, String schemaPattern, String tablePattern) throws SQLException {
+    schemaName = null;
+    tableName = null;
+    comment = null;
+    columns.clear();
+    indexes.clear();
+    foreignKeys.clear();
+
     try (ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null)) {
       boolean valid = false;    // true if valid table found
       while (resultSet.next()) {
@@ -146,23 +158,31 @@ public class TableMetaData {
       }
     }
 
-    // extract foreign keys
-    ForeignKeyMetaData foreignKeyMetaData;
+    // Extract the foreign keys. A composite foreign key spans one row per column,
+    // with KEY_SEQ holding the column's ordinal position starting at 1.
+    // The JDBC ordering guarantee for getImportedKeys does not include the foreign key name,
+    // so the rows of two foreign keys referencing the same table may be interleaved.
+    // Therefore, the rows are grouped by name rather than by the position of a KEY_SEQ 1.
+    Map<String, ForeignKeyMetaData> foreignKeysByName = new TreeMap<>();
     try (ResultSet resultSet = metaData.getImportedKeys(null, schemaName, tableName)) {
       while (resultSet.next()) {
-        short keySeq = resultSet.getShort("KEY_SEQ");
-        if (keySeq == 1) {
-          // new foreign key
+        String foreignKeyName = ForeignKeyMetaData.extractForeignKeyName(resultSet);
+        if (foreignKeyName == null) {
+          throw new BackendException("unnamed foreign key in " + getFullTableName() +
+                                     " referencing " + resultSet.getString("PKTABLE_NAME"));
+        }
+        ForeignKeyMetaData foreignKeyMetaData = foreignKeysByName.get(foreignKeyName);
+        if (foreignKeyMetaData == null) {
+          // first column of a foreign key not seen so far
           foreignKeyMetaData = new ForeignKeyMetaData(this);
           foreignKeyMetaData.setupForeignKeyFromMetaData(resultSet);
-          if (foreignKeyMetaData.getForeignKeyName() != null &&
-              !modelMetaData.getBackend().isTemporaryName(foreignKeyMetaData.getForeignKeyName())) {
-            foreignKeys.put(foreignKeyMetaData.getForeignKeyName(), foreignKeyMetaData);
+          foreignKeysByName.put(foreignKeyName, foreignKeyMetaData);
+          if (!modelMetaData.getBackend().isTemporaryName(foreignKeyName)) {
+            foreignKeys.put(foreignKeyName, foreignKeyMetaData);
           }
         }
-        else {
-          throw new BackendException("unexpected KEY_SEQ " + keySeq + " in foreign key meta data");
-        }
+        // else: another column of an already known foreign key.
+        // setupForeignKeyColumnFromMetaData asserts that the row is consistent with the first one.
         ForeignKeyColumnMetaData column = new ForeignKeyColumnMetaData(foreignKeyMetaData);
         column.setupForeignKeyColumnFromMetaData(resultSet);
         foreignKeyMetaData.addForeignKeyColumn(column);

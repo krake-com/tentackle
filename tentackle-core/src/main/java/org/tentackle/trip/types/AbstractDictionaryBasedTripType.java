@@ -48,11 +48,23 @@ import java.util.Collection;
  */
 public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripType<T> {
 
-  private boolean componentProviderSet;
-  private TripComponentProvider<T> componentProvider;
+  /**
+   * The lazily resolved component provider and its resolution flag.<br>
+   * Trip types are shared singletons, hence the fields must be volatile: without it, another thread
+   * could observe the flag being set while the provider is still null. The flag must always be
+   * written <em>after</em> the provider.
+   */
+  private volatile boolean componentProviderSet;
+  private volatile TripComponentProvider<T> componentProvider;
 
-  private boolean instanceCreatorSet;
-  private TripInstanceCreator<T> instanceCreator;
+  /**
+   * The lazily resolved instance creator and its resolution flag.<br>
+   * Volatile for the same reason as {@link #componentProvider}. This one is resolved on the
+   * deserialization path (see {@link ObjectTripType#readComponents}) whenever the constructor
+   * did not resolve it already, i.e. for delayed construction and non-instantiable types.
+   */
+  private volatile boolean instanceCreatorSet;
+  private volatile TripInstanceCreator<T> instanceCreator;
 
   /**
    * An optional method provided by {@link TripSerializable} to prepare the object before serialization.
@@ -233,8 +245,11 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    */
   public TripComponentProvider<T> getComponentProvider() {
     if (!componentProviderSet) {
+      // Deliberately unlocked: the factory creates a new provider on each call anyway, so concurrent
+      // threads may resolve it more than once. The providers are stateless and interchangeable,
+      // and locking here would nest a type's lock inside the factory's recursive type creation.
       componentProvider = TripFactory.getInstance().getComponentProvider(getObjectClass());
-      componentProviderSet = true;
+      componentProviderSet = true;    // must be set last, see field declaration
     }
     return componentProvider;
   }
@@ -246,8 +261,9 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    */
   public TripInstanceCreator<T> getInstanceCreator() {
     if (!instanceCreatorSet) {
+      // deliberately unlocked, see getComponentProvider()
       instanceCreator = TripFactory.getInstance().getInstanceCreator(getObjectClass());
-      instanceCreatorSet = true;
+      instanceCreatorSet = true;    // must be set last, see field declaration
     }
     return instanceCreator;
   }

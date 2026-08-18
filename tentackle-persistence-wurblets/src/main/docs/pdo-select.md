@@ -124,7 +124,7 @@ The full form of a single argument (parsed by
 [`WurbletArgument`](../../../../tentackle-wurblets/src/main/java/org/tentackle/wurblet/WurbletArgument.java)) is:
 
 ```
-[ * | + | - ] [ relation | .Entity [ .relation … ] ] [ attribute[#column] [name] ] [ :relop [ :value | #value ] ]
+[ * | + | - ] [ relation | .Entity [ .relation … ] ] [ attribute[#column] [name] [?boolean] ] [ :relop [ :value | #value ] ]
 ```
 
 - **leading `*` / `+` / `-`** — load join / ascending sort / descending sort. Absent ⇒ a `WHERE` condition.
@@ -133,11 +133,113 @@ The full form of a single argument (parsed by
   address one column by its suffix/getter name; `#*` selects all columns. Omitted ⇒ the type's default column
   (or all columns for `=`).
 - **`[name]`** — rename the generated method parameter (e.g. `poolId[from]:>=` ⇒ parameter `from`).
+- **`?boolean`** — make the condition optional (see [below](#optional-conditions-qbf-style-finders)). Must precede
+  the relop.
 - **`:relop[:value]`** — the operator (`=` default; `:null`/`:notnull`, `:like`/`:notlike`, `:in`/`:notin`,
   `…any`/`…all` array operators) and an optional inline `?`-bound `:value` or literal `#value`.
 
 Both `PdoSelectList` and `PdoSelectUnique` set `@{config pathAllowed}@`, so relation paths are permitted in their
 expressions.
+
+### Optional conditions — QBF-style finders
+
+A generated finder normally builds one fixed SQL statement, which is exactly what a cached prepared statement
+needs. A query-by-form dialog, however, restricts by whatever the user actually filled in, so the statement has
+to be assembled per invocation. Marking a condition with `?<boolean>` does that:
+
+```java
+// @wurblet findMatching PdoSelectList --private name?withName code?withCode
+```
+
+```java
+private List<Article> findMatching(String name, boolean withName, String code, boolean withCode) { … }
+```
+
+Each marked condition adds a `boolean` method parameter. It is applied — both its SQL text and its statement
+parameters — only if that boolean is true. Several conditions may share one boolean; it then appears only once
+in the signature. A condition with a fixed value (`processed?withProcessed:=:null`) gets its boolean but no value
+parameter.
+
+Because the SQL text is no longer fixed, such a finder always creates a one-shot prepared statement, i.e.
+`--oneshot` is implied (and `--resultset`/`--cursor` are therefore rejected). Optional conditions are supported by
+the four select wurblets only — the update, delete and reference-check wurblets cache their statement and refuse
+them. They are also not allowed in a load-join filter or on a sorting argument.
+
+Such finders are usually **not** part of the PDO interface (hence `--private` or `--noif`). The public method
+deriving the booleans from the user's input is written by hand, because that logic is domain logic:
+
+```java
+@Override
+public List<Article> findByForm(ArticleForm form) {
+  return findMatching(form.getName(), form.getName() != null,
+                      form.getCode(), form.getCode() != null);
+}
+```
+
+**How the SQL stays valid.** The generator guards each condition with an `if`, but emits the operators and
+parentheses unconditionally — taking the booleans into account when building nested expressions would be far more
+complex than cleaning up afterwards. Skipping conditions can therefore leave empty groups and dangling operators
+behind, e.g. `code=? AND NOT ()`. The statement is passed through
+[`Backend.reduceSql`](../../../../tentackle-sql/src/main/java/org/tentackle/sql/Backend.java) before any trailing
+clause is appended, which reduces that to `code=?`. Backends may override the reduction if necessary.
+
+Conditions reached through a relation path are wrapped in one `EXISTS` clause. The clause is generated if at least
+one of its conditions applies:
+
+```java
+if (withKey || withValue) {
+  sql.append(Backend.SQL_EXISTS)
+     …
+}
+```
+
+---
+
+## When the query itself is dynamic — `Query`
+
+Optional conditions vary *whether* a condition is applied, but the set of possible conditions is still fixed at
+build time. When even that shape is not known until runtime, drop down to
+[`Query`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/Query.java) — a small builder that
+collects SQL fragments together with their parameters and executes them against a session:
+
+```java
+Query query = createQuery();                                    // SELECT <all columns> FROM <table> WHERE 1=1
+if (from != null) {
+  query.add(" AND " + getColumnName(CN_WHEN) + ">=?", from);    // SQL fragment + its parameters
+}
+query.add(" ORDER BY " + getTableAlias() + "." + CN_ID);
+return executeQuery(query);                                     // TrackedList<Message>
+```
+
+- [`createQuery()`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/AbstractPersistentObject.java)
+  starts from the entity's own `SELECT`, ending in `WHERE 1=1`, so every fragment can simply begin with `AND`.
+  `createQuery(js)` adds a [`JoinedSelect`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/JoinedSelect.java)
+  for eager loading.
+- `executeQuery(query[, js])` turns the rows into PDOs exactly as a generated finder does and returns a
+  `TrackedList`; `executeScrollableQuery(query[, js])` returns a cursor instead. Plain `query.execute(db)` yields
+  the `ResultSetWrapper`, `query.getRowCount(db)` a `SELECT COUNT(*)` over the same query.
+- `setLimit`/`setOffset` are rendered backend-specifically, so pagination stays portable.
+- Parameters accept all predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md#datatype) and
+  `Convertible`s. Multi-column types (`BMoney`, `ZonedDateTime`, …) consume more than one question mark —
+  the fragment must provide them.
+
+**Prefer the wurblets.** They validate attributes and paths against the model, cache their prepared statement,
+generate the remote delegate, the load joins and the tracked list, and they keep the query visible in the source.
+A `Query` gives up all of that: its SQL is assembled on every invocation and prepared as a one-shot statement
+(`setStatementCached(true)` re-enables caching, but only for a query whose SQL string is in fact fixed), and
+nothing checks it until the statement reaches the backend. Use `getColumnName(CN_…)` and `getTableAlias()` rather
+than literal names so that a model change still propagates. A hand-written method also needs its own
+`// @wurblet <name> RemoteMethod` anchor to be callable over a remote session.
+
+So reach for `Query` only when the statement's *structure* depends on runtime data:
+
+| Situation                                                                    | Use                                    |
+|------------------------------------------------------------------------------|----------------------------------------|
+| fixed condition set                                                          | `PdoSelectList` / `PdoSelectUnique`    |
+| known conditions, applied selectively (query by form)                        | optional conditions (`?boolean`)       |
+| condition count unknown at build time (ad-hoc filter lists, generated `IN` …) | `Query`                                |
+| `ORDER BY` chosen by the user, or paging over an arbitrary sort              | `Query`                                |
+| one-off administrative or reporting statements outside the entity's shape    | `Query` (or a plain `PreparedStatementWrapper`) |
 
 ---
 
@@ -266,6 +368,7 @@ into a single joined statement, and the generated body therefore returns `execut
 | `--lock`                      | Generate `SELECT … FOR UPDATE`; asserts a running transaction.                                                                                                                                         |
 | `--append=<sqltext>`          | Append a literal SQL fragment to the generated statement.                                                                                                                                              |
 | `--classvar=<classvariables>` | Take the cached `StatementId` from the referenced class-variables holder instead of emitting a local `private static final StatementId`.                                                               |
+| `--oneshot`                   | Create the prepared statement for a single use (`createPreparedStatement` within a try-with-resources) instead of caching it under a `StatementId`. No `StatementId` is generated at all. Implied by [optional conditions](#optional-conditions-qbf-style-finders). Incompatible with `--resultset` and `--cursor`, which hand out a result still bound to the statement. |
 | `--immutable`                 | Mark the returned PDO / list [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md).                                                                                                              |
 | `--finallyImmutable`          | Mark the result *finally* immutable (can never become mutable again).                                                                                                                                  |
 | `--mutable`                   | Force a mutable result, overriding the automatic immutability that filtered joins otherwise impose.                                                                                                    |
@@ -280,8 +383,8 @@ into a single joined statement, and the generated body therefore returns `execut
 |---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `--limit`     | Add a parameter limiting the number of returned rows (dialect-aware paging).                                                                                                                                                        |
 | `--offset`    | Add a parameter skipping the first rows.                                                                                                                                                                                            |
-| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability).                                                                                                                          |
-| `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results — see [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md). Incompatible with `--resultset`, immutability and tracking; with joins the query must be sorted by `id`. |
+| `--resultset` | Return the raw `ResultSetWrapper` instead of a `List` (disables remoting; incompatible with immutability and `--oneshot`).                                                                                                                          |
+| `--cursor`    | Return a `ScrollableResource<Pdo>` (a `ResultSetCursor`, `RemoteResultSetCursor` when remote) for streaming large results — see [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md). Incompatible with `--resultset`, `--oneshot`, immutability and tracking; with joins the query must be sorted by `id`. |
 | `--bounded`   | Return `List<? extends MainClass>` instead of `List<MainClass>`.                                                                                                                                                                    |
 
 ### `PdoSelectUnique` only
@@ -390,6 +493,8 @@ relation-generated ones.
   locks, tracked lists, and the objects these queries return.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType` / `Backend` used to build the
   SQL and bind parameters.
+- [Tentackle Database](../../../../tentackle-database/src/main/docs/database.md) — `Query`, the statement
+  wrappers and the result sets the generated methods run on.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets
   consume.
 - [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the remoting protocol behind the generated remote

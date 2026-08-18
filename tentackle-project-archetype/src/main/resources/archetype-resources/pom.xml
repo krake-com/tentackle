@@ -402,6 +402,16 @@
         </plugin>
 
         <plugin>
+          <groupId>org.tentackle</groupId>
+          <artifactId>tentackle-mcp-maven-plugin</artifactId>
+          <version>\${symbol_dollar}{tentackle.version}</version>
+          <configuration>
+            <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
+            <backends>postgresql, h2</backends>
+          </configuration>
+        </plugin>
+
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven.compiler.plugin.version}</version>

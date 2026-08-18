@@ -200,7 +200,9 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
   @Override
   public void setContainerChangeable(boolean containerChangeable) {
     if (!isContainerChangeableIgnored()) {
-      setContainerChangeable(getComponents(), containerChangeable);
+      // a container that has been set non-changeable itself stays non-changeable,
+      // no matter what its own container says (same rule as in FxComponentDelegate)
+      setContainerChangeable(getComponents(), containerChangeable && isControlChangeable());
       // leave disable property untouched as disabling the container
       // will gray out all components way too much
       // don't invoke updateChangeable() as this would overwrite local controlChangeable!
@@ -208,7 +210,7 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
   }
 
   /**
-   * Updates the container changeable flag of all components.
+   * Updates the container-changeable flag of all components.
    *
    * @param components the components
    * @param changeable true if changeable

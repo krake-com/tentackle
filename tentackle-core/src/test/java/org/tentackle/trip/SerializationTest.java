@@ -22,11 +22,17 @@ import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class SerializationTest {
@@ -189,6 +195,55 @@ public class SerializationTest {
     tunnel(Double.POSITIVE_INFINITY, serializer::serializeDouble, deserializer::deserializeDouble);
     tunnel(Double.NEGATIVE_INFINITY, serializer::serializeDouble, deserializer::deserializeDouble);
     tunnel(Double.MIN_NORMAL, serializer::serializeDouble, deserializer::deserializeDouble);
+  }
+
+
+  /**
+   * A broken connection must be reported as a closed stream, no matter whether the peer
+   * shut it down cleanly or it failed with an I/O error. Callers such as the
+   * {@code RemoteInvocationHandler} and the session's keep-alive task rely on that
+   * distinction to tell a dead connection from a serialization problem.
+   */
+  @Test
+  void reportsBrokenConnectionsAsClosedStream() {
+    deserializer.setInputStream(new ByteArrayInputStream(new byte[0]));
+    TripStreamClosedException eof = expectThrows(TripStreamClosedException.class, deserializer::deserializeInt);
+    assertTrue(eof.getMessage().contains("end of input stream"), eof.getMessage());
+
+    IOException failure = new IOException("Connection reset");
+    deserializer.setInputStream(new InputStream() {
+      @Override
+      public int read() throws IOException {
+        throw failure;
+      }
+      @Override
+      public int read(byte[] b, int off, int len) throws IOException {
+        throw failure;
+      }
+    });
+    TripStreamClosedException reset = expectThrows(TripStreamClosedException.class, deserializer::deserializeInt);
+    assertSame(reset.getCause(), failure);
+  }
+
+  /**
+   * The write side reports a broken connection the same way.
+   */
+  @Test
+  void reportsBrokenOutputAsClosedStream() {
+    IOException failure = new IOException("Broken pipe");
+    Serializer failing = TripFactory.getInstance().createSerializer(new OutputStream() {
+      @Override
+      public void write(int b) throws IOException {
+        throw failure;
+      }
+      @Override
+      public void write(byte[] b, int off, int len) throws IOException {
+        throw failure;
+      }
+    });
+    failing.serializeInt(4711);
+    TripStreamClosedException broken = expectThrows(TripStreamClosedException.class, failing::flush);
+    assertSame(broken.getCause(), failure);
   }
 
 

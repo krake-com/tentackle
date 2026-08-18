@@ -40,7 +40,7 @@ public class TransactionStatistics {
   private static final Logger LOGGER = Logger.get(TransactionStatistics.class);
 
   /**
-   * Statistics map txname:result
+   * Statistics map {@code txname:result}
    */
   private final Map<String, TransactionStatisticsResult> stats;
 
@@ -58,7 +58,8 @@ public class TransactionStatistics {
    * @param rolledBack true if transaction was rolled back, false if committed
    */
   public synchronized void countTransaction(DbTransaction transaction, boolean rolledBack) {
-    TransactionStatisticsResult result = stats.computeIfAbsent(transaction.getTxName(), k -> new TransactionStatisticsResult());
+    TransactionStatisticsResult result = stats.computeIfAbsent(transaction.getTxName(),
+                                                               _ -> new TransactionStatisticsResult());
     result.count(transaction.getTimeKeeper().end());
     if (rolledBack) {
       result.countRollback();

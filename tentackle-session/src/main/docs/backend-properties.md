@@ -45,19 +45,19 @@ Read by [`BackendInfo`](../../../../tentackle-sql/src/main/java/org/tentackle/sq
 and [`Db`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/Db.java) when the session
 opens.
 
-| Key | Value |
-|-----|-------|
-| `url` | Where the persistence layer lives. Three forms, see below. |
-| `user` | The username for the *technical* database connection (not necessarily the application user logging in). |
-| `password` | The password, usually `~`-encrypted. |
-| `schemas` | Optional comma-separated list of database schemas. |
-| `driver` | Optional JDBC driver to load at runtime: `<driver-class>:<jar-url>`. Registers the driver via a `URLClassLoader`, for drivers that are not on the module path (e.g. added to an already-shipped image). |
+| Key               | Value                                                                                                                                                                                                                   |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `url`             | Where the persistence layer lives. Three forms, see below.                                                                                                                                                              |
+| `user`            | The username for the *technical* database connection (not necessarily the application user logging in).                                                                                                                 |
+| `password`        | The password, usually `~`-encrypted.                                                                                                                                                                                    |
+| `schemas`         | Optional comma-separated list of database schemas.                                                                                                                                                                      |
+| `driver`          | Optional JDBC driver to load at runtime: `<driver-class>:<jar-url>`. Registers the driver via a `URLClassLoader`, for drivers that are not on the module path (e.g. added to an already-shipped image).                 |
 | `jdbcIdleTimeout` | Optional connection inactivity timeout in **minutes**, `0` (default) = none. Some managed/cloud databases close idle connections no matter what; when set, a dummy `SELECT` revives a connection idle longer than this. |
-| `jdbcKeepAlive` | Boolean, default `false`. Only meaningful with `jdbcIdleTimeout`: `true` sends the dummy `SELECT` *periodically* on idle connections; `false` sends it only when an idle connection is re-used. |
-| `batchsize` | Enables [JDBC statement batching](../../../../tentackle-database/src/main/docs/batching.md); off by default. |
-| `idsource` | Selects a non-default [id source](../../../../tentackle-database/src/main/docs/database.md#id-sources) configuration. |
-| `backend` | Redirects the *technical* connection settings to another source — see [Redirecting the Backend](#redirecting-the-backend-user-system-and-named-files) below. |
-| `application` | Overrides the application name (normally derived from the main class). Needed in tests that resolve `@user`/`@system` backend configurations, which are stored per application name. |
+| `jdbcKeepAlive`   | Boolean, default `false`. Only meaningful with `jdbcIdleTimeout`: `true` sends the dummy `SELECT` *periodically* on idle connections; `false` sends it only when an idle connection is re-used.                         |
+| `batchsize`       | Enables [JDBC statement batching](../../../../tentackle-database/src/main/docs/batching.md); off by default.                                                                                                            |
+| `idsource`        | Selects a non-default [id source](../../../../tentackle-database/src/main/docs/database.md#id-sources) configuration.                                                                                                   |
+| `backend`         | Redirects the *technical* connection settings to another source — see [Redirecting the Backend](#redirecting-the-backend-user-system-and-named-files) below.                                                            |
+| `application`     | Overrides the application name (normally derived from the main class). Needed in tests that resolve `@user`/`@system` backend configurations, which are stored per application name.                                    |
 
 ### The three forms of `url`
 
@@ -81,11 +81,11 @@ dialect explicitly when it cannot (or should not) be derived — e.g.
 By default, the technical connection settings come from the session properties themselves. The
 `backend` key redirects them:
 
-| Value | Effect |
-|-------|--------|
-| `@user` / `@system` | The [login dialog](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login) lets the user manage named backend configurations (URL, credentials, optional runtime-loaded driver) through the UI and pick one at login. They are stored as `BackendConfiguration`s in the **user** (`@user`) or **system** (`@system`) [preferences](../../../../tentackle-core/src/main/docs/preferences.md), per application name. |
-| `@user:<name>` / `@system:<name>` | Loads the backend configuration `<name>` directly from the user/system preferences — no dialog interaction. Falls back to the session properties (with a logged warning) if no such configuration exists. |
-| `<propertiesName>` | Loads the technical settings from another properties resource — e.g. to keep technical credentials separate from the session configuration. |
+| Value                             | Effect                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@user` / `@system`               | The [login dialog](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login) lets the user manage named backend configurations (URL, credentials, optional runtime-loaded driver) through the UI and pick one at login. They are stored as `BackendConfiguration`s in the **user** (`@user`) or **system** (`@system`) [preferences](../../../../tentackle-core/src/main/docs/preferences.md), per application name. |
+| `@user:<name>` / `@system:<name>` | Loads the backend configuration `<name>` directly from the user/system preferences — no dialog interaction. Falls back to the session properties (with a logged warning) if no such configuration exists.                                                                                                                                                                                                                                     |
+| `<propertiesName>`                | Loads the technical settings from another properties resource — e.g. to keep technical credentials separate from the session configuration.                                                                                                                                                                                                                                                                                                   |
 
 If the key is missing, the session properties (and possibly user input from the login dialog) are
 used as-is.
@@ -95,27 +95,70 @@ used as-is.
 Read by [`TripServer`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/TripServer.java)
 when the tier is an application server (see [Multi-Tier Cascade](../../../../src/main/docs/tiers.md)).
 
-| Key | Value |
-|-----|-------|
-| `service` | The TRIP endpoint the server listens to, as a URI: the scheme selects the transport, the path the connection class registered at the `Registry`, and query parameters are transport-specific — e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. |
-| `service_<name>` | Additional endpoints if the server listens on more than one transport, e.g. `service_plain`, `service_ssl`, `service_quic` — each with its own URI. |
-| `connectionclass` | The fully qualified name of the `RemoteDbConnection` class to export; usually provided programmatically. |
-| `timeout` | The session timeout for dead client connections, in polling intervals. Defaults to `30` (i.e. 30 seconds at the default interval). |
-| `timeoutinterval` | The polling interval for dead sessions in milliseconds. Defaults to `1000`; `0` turns the cleanup thread off entirely (risky). |
-| `updateService`, `updateURL` | Publish the [self-update service](../../../../tentackle-update/src/main/docs/update.md) for jlink-based clients. |
+| Key                          | Value                                                                                                                                                                                                                                                   |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `service`                    | The TRIP endpoint the server listens to, as a URI: the scheme selects the transport, the path the connection class registered at the `Registry`, and query parameters are transport-specific — e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. |
+| `service_<name>`             | Additional endpoints if the server listens on more than one transport, e.g. `service_plain`, `service_ssl`, `service_quic` — each with its own URI.                                                                                                     |
+| `connectionclass`            | The fully qualified name of the `RemoteDbConnection` class to export; usually provided programmatically.                                                                                                                                                |
+| `timeout`                    | The session timeout for dead client connections, in polling intervals. Defaults to `30` (i.e. 30 seconds at the default interval).                                                                                                                      |
+| `timeoutinterval`            | The polling interval for dead sessions in milliseconds. Defaults to `1000`; `0` turns the cleanup thread off entirely (risky).                                                                                                                          |
+| `updateService`, `updateURL` | Publish the [self-update service](../../../../tentackle-update/src/main/docs/update.md) for jlink-based clients.                                                                                                                                        |
 
 > **Two different timeouts.** `timeout` is the *TRIP session* timeout — how long a server keeps a
 > dead client session around. `jdbcIdleTimeout` is the *database connection* inactivity timeout on
 > the JDBC side. They are unrelated; a typical server sets both.
 
+### Deriving service URIs
+
+When a server listens on several transports, the endpoints usually differ only slightly — the same
+host, a neighboring port, the same application path. Rather than spelling out (or externally
+configuring, e.g., from a Maven profile) a full URI for every `service_<name>`, you can **derive** it
+from the default `service` URI with a small expression language. It is provided by the general-purpose
+[`UriHelper.expand`](../../../../tentackle-core/src/main/java/org/tentackle/io/UriHelper.java) and can
+therefore be reused to derive any URI from another, not just TRIP service endpoints.
+
+A variable is written as `$name`, or as `${expression}` when arithmetic is needed. The following
+components of the default `service` URI are available (names are case-insensitive):
+
+| Variable    | Value from the default `service` URI                |
+|-------------|-----------------------------------------------------|
+| `scheme`    | the URI scheme, e.g. `trips`                        |
+| `userinfo`  | the user-info part, if any                          |
+| `host`      | the host                                            |
+| `port`      | the port (numeric)                                  |
+| `authority` | the full authority (`userinfo@host:port`)           |
+| `path`      | the path *without* its leading `/`, e.g. `MyApp`    |
+| `rawpath`   | the path *including* its leading `/`, e.g. `/MyApp` |
+| `query`     | the query string without the leading `?`, if any    |
+| `fragment`  | the fragment, if any                                |
+
+Inside `${...}` an arithmetic expression over the numeric components and integer literals may be
+used, with the operators `+`, `-`, `*`, `/` and `%`, the usual operator precedence and parentheses
+for grouping, e.g. `${port+1}` or `${(port+1000)/2}`. It is evaluated with integer semantics.
+A literal `$` is escaped with a backslash (`\$`).
+
+```properties
+service=trips://myserver:18000/MyApp?idle=10&backlog=100
+
+# derived: same host and path, next port, compressed transport
+service_compressed=tripcs://$host:${port+1}/$path?$query
+```
+
+Here `service_compressed` expands to `tripcs://myserver:18001/MyApp?idle=10&backlog=100`.
+Referencing a variable while no default `service` is defined — or referencing a component the default
+URI does not carry (e.g. `$query` when it has no query string) — is a configuration error and fails
+startup. The default `service` URI itself is always used verbatim; only the derived `service_<name>`
+entries are expanded.
+
 ## Desktop Client Keys
 
 Interpreted by the [Rich Desktop Client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md).
 
-| Key | Value |
-|-----|-------|
-| `autologin` | Log the user in with the `user`/`password` from the properties without asking for credentials. **The mere presence of the key enables it** (even `autologin=false`!) — remove the key to disable. A failed autologin terminates the application instead of offering retries. |
-| `noRdcCache` | The presence of the key disables the RDC's GUI caching — useful while editing database-backed bundles with [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), so changes become visible immediately. |
+| Key              | Value                                                                                                                                                                                                                                                                                                                                            |
+|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `autologin`      | Log the user in with the `user`/`password` from the properties without asking for credentials. **The mere presence of the key enables it** (even `autologin=false`!) — remove the key to disable. A failed autologin terminates the application instead of offering retries.                                                                     |
+| `authentication` | Name of the authentication method, i.e. of the [`CredentialsProvider`](authentication.md#the-client-side-obtaining-the-credentials) used to obtain the credentials before the session is opened. Defaults to `password`. An interactive method (single sign-on) replaces the username and password fields of the login view by a sign-in button. |
+| `noRdcCache`     | The presence of the key disables the RDC's GUI caching — useful while editing database-backed bundles with [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), so changes become visible immediately.                                                                                                                      |
 
 ## Application-Level Keys
 
@@ -143,8 +186,8 @@ updateService=trips://myserver:18000/UpdateService
 updateURL=https://myserver/updates
 timeout=30
 
-^javax.net.ssl.keyStore=@{RUNTIMEDIR?.}/conf/keystore.jks
-^javax.net.ssl.keyStorePassword=~o93jd2iJdqw2Mss3uAA71g==
+^tentackle.ssl.keyStore=@{RUNTIMEDIR?.}/conf/keystore.p12
+^tentackle.ssl.keyStorePassword=~o93jd2iJdqw2Mss3uAA71g==
 ```
 
 A three-tier desktop client connecting to that server, with user-managed backends:
@@ -152,13 +195,14 @@ A three-tier desktop client connecting to that server, with user-managed backend
 ```properties
 url=trips://myserver:18000/MyApp
 backend=@user
-^javax.net.ssl.trustStore=@{RUNTIMEDIR?.}/conf/truststore.jks
-^javax.net.ssl.trustStorePassword=~x0PoR8fFPqmboo3sJ11w7A==
+^tentackle.ssl.trustStore=@{RUNTIMEDIR?.}/conf/truststore.p12
+^tentackle.ssl.trustStorePassword=~x0PoR8fFPqmboo3sJ11w7A==
 ```
 
 ## Related Documentation
 
 - [Tentackle Session](session.md) — the session abstraction the properties configure.
+- [Authentication](authentication.md) — the `authentication` key: what a credentials provider is and how a login is verified.
 - [Application Bootstrap](../../../../tentackle-pdo/src/main/docs/application.md) — how properties files, command-line options and system properties come together at startup.
 - [Cryptor and EncryptedProperties](../../../../tentackle-common/src/main/docs/cryptor.md) — the `~`-encryption of secrets in these files.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `BackendInfo` and the backend (dialect) abstraction behind the `url` key.

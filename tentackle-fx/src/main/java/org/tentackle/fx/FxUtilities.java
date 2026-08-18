@@ -49,6 +49,7 @@ import org.tentackle.validate.ValidationResult;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.TransformationList;
 import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -137,6 +138,10 @@ public class FxUtilities {
 
   private static final Logger LOGGER = Logger.get(FxUtilities.class);
 
+  /**
+   * Gap between a column header's text and its graphic.
+   */
+  private static final double HEADER_GRAPHIC_TEXT_GAP = 4.0;
 
   /**
    * Executor for {@link #runAndWait(Runnable)} below.
@@ -216,6 +221,17 @@ public class FxUtilities {
    */
   public int getDefaultTextAreaColumns(FxTextArea textArea) {
     return 30;
+  }
+
+  /**
+   * Gets the number of rows of the multi-line editor a one-line text area expands to,
+   * if not set on the component.
+   *
+   * @param textArea the text area component
+   * @return the row count (default is 6)
+   */
+  public int getDefaultExpandedRowCount(FxTextArea textArea) {
+    return 6;
   }
 
   /**
@@ -1143,6 +1159,61 @@ public class FxUtilities {
     }
   }
 
+
+  /**
+   * Gets the root source of a list.<br>
+   * The items of a table view are usually wrapped in a chain of transformation lists,
+   * for example a {@link javafx.collections.transformation.FilteredList} within a
+   * {@link javafx.collections.transformation.SortedList}. Transformation lists are immutable,
+   * so modifications must be applied to the root source.
+   *
+   * @param list the list; may be a transformation list
+   * @param <E> the element type
+   * @return the root source, the list itself if it is no transformation list
+   */
+  @SuppressWarnings("unchecked")
+  public <E> ObservableList<E> getRootSource(ObservableList<E> list) {
+    while (list instanceof TransformationList) {
+      list = (ObservableList<E>) ((TransformationList<E, ?>) list).getSource();
+    }
+    return list;
+  }
+
+  /**
+   * Maps a view index to the index within the root source.
+   *
+   * @param list the list; may be a transformation list
+   * @param viewIndex the index within the given list
+   * @param <E> the element type
+   * @return the index within the root source, -1 if the element is not in the source
+   * @see #getRootSource(ObservableList)
+   */
+  @SuppressWarnings("unchecked")
+  public <E> int getSourceIndex(ObservableList<E> list, int viewIndex) {
+    int index = viewIndex;
+    while (list instanceof TransformationList<E, ?> transformationList && index >= 0) {
+      index = transformationList.getSourceIndex(index);
+      list = (ObservableList<E>) transformationList.getSource();
+    }
+    return index;
+  }
+
+  /**
+   * Replaces an element addressed by a view index in the root source.
+   *
+   * @param list the list; may be a transformation list
+   * @param viewIndex the index within the given list
+   * @param element the new element
+   * @param <E> the element type
+   * @see #getSourceIndex(ObservableList, int)
+   */
+  public <E> void setSourceElement(ObservableList<E> list, int viewIndex, E element) {
+    int sourceIndex = getSourceIndex(list, viewIndex);
+    if (sourceIndex >= 0) {
+      getRootSource(list).set(sourceIndex, element);
+    }
+  }
+
   /**
    * Prints a node.<br>
    * The user selects the printer, and the node is scaled down if too large for the paper.
@@ -1238,9 +1309,11 @@ public class FxUtilities {
                 cell.updateTableColumn(column);
                 cell.updateTableView(table);
                 cell.setText(column.getText());
-                cell.setGraphic(column.getGraphic());
+                // never set the column's graphic on the measuring cell: a node has only one parent,
+                // and the header's graphic (a filter button, for example) would be moved to this cell!
+                cell.setGraphic(null);
                 cell.setFont(headerFont);
-                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin) + headerGraphicWidth(column.getGraphic());
                 cell.setFont(cellFont);
                 for (int row=first; row <= last; row++) {
                   cell.updateIndex(row);
@@ -1290,9 +1363,11 @@ public class FxUtilities {
                 cell.updateTableColumn(column);
                 cell.updateTreeTableView(table);
                 cell.setText(column.getText());
-                cell.setGraphic(column.getGraphic());
+                // never set the column's graphic on the measuring cell: a node has only one parent,
+                // and the header's graphic (a filter button, for example) would be moved to this cell!
+                cell.setGraphic(null);
                 cell.setFont(headerFont);
-                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin) + headerGraphicWidth(column.getGraphic());
                 cell.setFont(cellFont);
                 for (int row=first; row <= last; row++) {
                   cell.updateIndex(row);
@@ -1479,7 +1554,9 @@ public class FxUtilities {
 
 
   /**
-   * Applies a single binding option to a text component.
+   * Applies a single binding option to a text component.<br>
+   * The option's key is uppercased, but a value following the {@code =} is passed on
+   * as written, since options such as {@code FILLER='a'} are case-sensitive.
    *
    * @param comp the component
    * @param member the binding member
@@ -1594,16 +1671,14 @@ public class FxUtilities {
         if (value.isBlank()) {
           comp.setFiller(' ');    // default
         }
-        else {
-          if (value.charAt(0) == '\'' && value.length() == 3 && value.charAt(2) == '\'') {
-            comp.setFiller(value.charAt(1));
-          }
-          else {
-            int fillCode = Integer.decode(value);
-            comp.setFiller((char) fillCode);
-          }
-          processed = true;
+        else if (value.charAt(0) == '\'' && value.length() == 3 && value.charAt(2) == '\'') {
+          comp.setFiller(value.charAt(1));
         }
+        else {
+          int fillCode = Integer.decode(value);
+          comp.setFiller((char) fillCode);
+        }
+        processed = true;
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_FILLER + " @Bindable option \"" +
@@ -1694,6 +1769,20 @@ public class FxUtilities {
 
 
   /**
+   * Normalizes a single binding option.<br>
+   * The key is uppercased so that options can be written in any case, but a value following
+   * the {@code =} is left untouched: {@code FILLER='a'} must not become {@code FILLER='A'}.
+   *
+   * @param option the option as written by the application
+   * @return the normalized option
+   */
+  private String normalizeBindingOption(String option) {
+    int ndx = option.indexOf('=');
+    return ndx < 0 ? option.toUpperCase(Locale.ROOT)
+                   : option.substring(0, ndx + 1).toUpperCase(Locale.ROOT) + option.substring(ndx + 1);
+  }
+
+  /**
    * Updates the maximum column width.
    *
    * @param maxWidth the current max width
@@ -1729,6 +1818,18 @@ public class FxUtilities {
       treeTableSkin.getChildren().remove(cell);
     }
     return maxWidth;
+  }
+
+  /**
+   * Determines the width a column header's graphic contributes to the column width.<br>
+   * The graphic itself must not be added to the measuring cell, since a node has only one parent
+   * and the graphic would be removed from the header.
+   *
+   * @param graphic the header's graphic, null if none
+   * @return the width to add to the column width, 0.0 if no graphic
+   */
+  private double headerGraphicWidth(Node graphic) {
+    return graphic == null ? 0.0 : graphic.prefWidth(-1) + HEADER_GRAPHIC_TEXT_GAP;
   }
 
 
@@ -1882,9 +1983,9 @@ public class FxUtilities {
   @SuppressWarnings("rawtypes")
   private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     if (options != null) {
-      StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
+      StringTokenizer stok = new StringTokenizer(options, ",");
       while (stok.hasMoreTokens()) {
-        String token = stok.nextToken().trim();
+        String token = normalizeBindingOption(stok.nextToken().trim());
         boolean processed;
         if (comp != null) {
           processed = applyBindingOption(comp, member, token);

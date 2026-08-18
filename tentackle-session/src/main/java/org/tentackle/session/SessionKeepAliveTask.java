@@ -96,7 +96,7 @@ public class SessionKeepAliveTask extends AbstractTask {
           if (!session.isOpen() || remoteClosed) {
             // this is usually a race condition, when sessions are closed while the keepalive task is running in parallel
             LOGGER.info("session {0} closed in the meantime{1}", session, remoteClosed ? " by remote server" : "");
-            daemon.removeAliveTask(session);
+            daemon.removeAliveTask(session, this);
           }
           else {
             failCount++;
@@ -106,7 +106,7 @@ public class SessionKeepAliveTask extends AbstractTask {
               // non-blocking close
               daemon.getExecutorService().submit(createCloseCallable());
               // it is up to the application to re-open it
-              daemon.removeAliveTask(session);
+              daemon.removeAliveTask(session, this);
             }
           }
         }
@@ -119,12 +119,12 @@ public class SessionKeepAliveTask extends AbstractTask {
         // non-blocking close requested
         LOGGER.fine("close requested for {0}", session);
         daemon.getExecutorService().submit(createCloseCallable());
-        daemon.removeAliveTask(session);
+        daemon.removeAliveTask(session, this);
       }
     }
     else {
       LOGGER.info("{0} is closed", session);
-      daemon.removeAliveTask(session);
+      daemon.removeAliveTask(session, this);
     }
   }
 

@@ -18,7 +18,7 @@ arguments:
 <li><em>--noselects:</em> don't generate PdoSelect... wurblet anchors.</li>
 <li><em>--nodeletes:</em> don't generate PdoDelete... wurblet anchors.</li>
 <li><em>--novalidate:</em> don't generate validate method.</li>
-<li><em>--mock:</em> generate code for mock object.</li>
+<li><em>--mock:</em> generate code for a mock object.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -178,12 +178,29 @@ For more options, see {\@link DbModelWurblet}.
         if (rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite() || generateMock)  {
           String type = rel.getDeclaredJavaType(false);
           String transientModifier = isRelationTransient(rel) ? "transient " : "";
+          if (generateMock) {
+            if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
+              String varListType  = (rel.isTracked() ? "TrackedArrayList" : "List") + "<>";
+]@
+
+  // @(rel)@
+  private final @(type)@ @(rel.getVariableName())@ = new @(varListType)@();
+@[
+            }
+            else {
+]@
+
+  // @(rel)@
+  private @(type)@ @(rel.getVariableName())@;
+@[
+            }
+          }
+          else {
 ]@
 
   // @(rel)@
   private @(transientModifier)@@(type)@ @(rel.getVariableName())@;
 @[
-          if (!generateMock) {
             if ((rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) &&
                 (rel.getForeignRelation() == null || !rel.getForeignRelation().isEmbedding()))  {
 ]@
@@ -716,7 +733,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 
-        if (!generateMock && rel.isComposite() &&
+        if (rel.isComposite() &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
           if (rel.getAccessScope() == AccessScope.PUBLIC) {
 ]@
@@ -736,7 +753,25 @@ For more options, see {\@link DbModelWurblet}.
           }
 ]@
   @(scope)@ boolean is@(StringHelper.firstToUpper(var))@Loaded() {
+@[
+          if (generateMock) {
+            if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
+]@
+    return true;
+@[
+            }
+            else {
+]@
+    return @(var)@ != null;
+@[
+            }
+          }
+          else {
+]@
     return @(var)@Loaded;
+@[
+          }
+]@
   }
 @[
         }
@@ -928,7 +963,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 
-        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !isEmbeddingFromParent &&
+        if (!generateMock && rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !isEmbeddingFromParent &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 
@@ -948,7 +983,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // gerenate setSession and setDomainContext for referenced objects (necessary for TRIP)
-    if (generateSetSession)  {
+    if (generateSetSession && !generateMock)  {
 ]@
 
   \@Override
@@ -1383,7 +1418,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // generate code to validate
-    if (Boolean.TRUE.equals(generateValidate))  {
+    if (Boolean.TRUE.equals(generateValidate) && !generateMock)  {
 ]@
 
   \@Override

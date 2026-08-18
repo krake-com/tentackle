@@ -101,9 +101,14 @@ public interface DictionaryEntry {
   /**
    * Gets the trip type's component for the entry's component ordinal.<br>
    * Notice that the entry's ordinal need not necessarily correspond to the type's component ordinals.
+   * <p>
+   * Returns null if this side does not provide the sender's component, which is tolerated:
+   * unknown components are skipped. An ordinal outside the entry's components is not, since the
+   * ordinals are read from the stream: it throws a {@link TripRuntimeException}, just like
+   * {@link #getComponent(int)}.
    *
    * @param ordinal the ordinal
-   * @return the trip component, null if no such component
+   * @return the trip component, null if this side does not provide it
    */
   TripComponent<?, ?> getTypeComponent(int ordinal);
 

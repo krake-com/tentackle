@@ -256,3 +256,4 @@ itself serial-checked, the two reinforce rather than duplicate each other.
 - [persistence.md → Token locking](persistence.md#token-locking)
 - [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) — the token-lock family on the PDO API
 - [model-definition.md → Entity-level option flags](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags) — the `tokenlock` and `tableserial` options
+- [exceptions.md](../../../../src/main/docs/exceptions.md) — `LockException` and `NotFoundException` in the framework's exception model, and why both are *temporary*

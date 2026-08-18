@@ -18,7 +18,6 @@
 
 package org.tentackle.session;
 
-
 /**
  * A handler invoked whenever a Session is closed.
  * <p>
@@ -37,7 +36,6 @@ public interface SessionCloseHandler {
    * @param session the closing session
    */
   void beforeClose(Session session);
-
 
   /**
    * Invoked after closing.

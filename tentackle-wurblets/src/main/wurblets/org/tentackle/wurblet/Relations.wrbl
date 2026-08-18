@@ -162,7 +162,7 @@ For more options, see {\@link ModelWurblet}.
 @[
         if (attr != null && attr.getOptions().isBindable()) {
 ]@
-  @(attr.getBindableAnnotation())@
+  \@Bindable
 @[
         }
         for (String annotation: rel.getAnnotations()) {

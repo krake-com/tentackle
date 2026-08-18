@@ -27,6 +27,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.maven.plugin.wizard.fx.BrowseContainer;
+import org.tentackle.maven.plugin.wizard.pdodata.JavaCodeFactory;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -38,6 +39,10 @@ import org.tentackle.sql.datatypes.AbstractDataType;
 
 import javafx.application.Platform;
 import javafx.stage.Stage;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -69,7 +74,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   /**
    * Limits the number of lines in generated multi-line string literals.
    */
-  @Parameter
+  @Parameter(property = "maxLines")
   public int maxLinesInStringLiteral;
 
   /**
@@ -77,6 +82,43 @@ public class BrowseMojo extends AbstractWizardMojo {
    */
   @Parameter(property = "tentackle.mapSchemas")
   public boolean mapSchemas;
+
+  /**
+   * The PDOs to generate code for.<br>
+   * Turns on batch mode in conjunction with the {@code output} parameter.
+   * <p>
+   * The format is: {@code -Dpdo=<entity>[id[,id,...]]}, where:
+   * <ul>
+   *   <li>{@code entity} is the entity name, for example {@code Customer}
+   *   <li>{@code id} is one or more object IDs, separated by commas.
+   * </ul>
+   * Example: {@code -Dpdo=Customer[17878,221221,333]}
+   */
+  @Parameter(property = "pdo")
+  private String pdoConfig;
+
+  /**
+   * The generated output file.<br>
+   * Turns on batch mode in conjunction with the {@code pdo} parameter.
+   */
+  @Parameter(property = "output")
+  private File outputFile;
+
+  /**
+   * By default, the variables of the created entities are reused for the
+   * 2nd, 3rd, etc... instances. If this flag is true, the variable names
+   * are numbered starting at {@link #variableOffset}.
+   */
+  @Parameter(property = "distinct")
+  private boolean distinctVariables;
+
+  /**
+   * If {@link #distinctVariables} is true, the variable names are numbered.
+   * If {@code variableOffset} is null, the first instance has no number.
+   * Otherwise, it starts with the given offset.
+   */
+  @Parameter(property = "offset")
+  private Integer variableOffset;
 
 
   private Stage stage;
@@ -92,34 +134,67 @@ public class BrowseMojo extends AbstractWizardMojo {
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
+    boolean isBatchMode = pdoConfig != null && outputFile != null;
     try {
       Session session = Pdo.createSession(sessionInfo);
       try {
         DomainContext context = Pdo.createDomainContext(session);
-        ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
-        pdoTracker.setSession(session);
-        CountDownLatch latch = new CountDownLatch(1);
+        ModificationTracker pdoTracker = ModificationTracker.getInstance();
+        pdoTracker.setSession(session.clone("MT"));
+        pdoTracker.start();   // caches need a running tracker (also in batch mode!)
 
-        Platform.startup(() -> {
-          try {
-            configureFx();
-            registerUncaughtExceptionHandler();
-            session.makeCurrent();
-            browseContainer = new BrowseContainer(this, context);
-            stage = browseContainer.show();
-            stage.setOnHidden(_ -> latch.countDown());
-          }
-          catch (Throwable t) {
-            getLog().error(t);
-            latch.countDown();
-          }
-        });
+        JavaCodeFactory.distinctVariables = distinctVariables;
+        JavaCodeFactory.variableOffset = variableOffset;
 
-        try {
-          latch.await();
+        if (isBatchMode) {
+          int ndx = pdoConfig.indexOf('[');
+          if (ndx >= 0 && pdoConfig.endsWith("]")) {
+            String entityName = pdoConfig.substring(0, ndx);
+            String ids = pdoConfig.substring(ndx + 1, pdoConfig.length() - 1);
+            List<Long> idList = new ArrayList<>();
+            StringTokenizer stok = new StringTokenizer(ids, ", ");
+            while (stok.hasMoreTokens()) {
+              String idStr = stok.nextToken();
+              try {
+                idList.add(Long.valueOf(idStr));
+              }
+              catch (NumberFormatException nx) {
+                throw new MojoExecutionException("invalid ID: " + idStr);
+              }
+            }
+            if (idList.isEmpty()) {
+              throw new MojoExecutionException("no IDs specified");
+            }
+
+            new BatchPdoGenerator(this, context, entityName, idList, outputFile).generate();
+          }
+          else {
+            throw new MojoExecutionException("invalid pdo parameter: " + pdoConfig);
+          }
         }
-        catch (InterruptedException e) {
-          throw new InterruptedRuntimeException(e);
+        else {
+          CountDownLatch latch = new CountDownLatch(1);
+          Platform.startup(() -> {
+            try {
+              configureFx();
+              registerUncaughtExceptionHandler();
+              session.makeCurrent();
+              browseContainer = new BrowseContainer(this, context);
+              stage = browseContainer.show();
+              stage.setOnHidden(_ -> latch.countDown());
+            }
+            catch (Throwable t) {
+              getLog().error(t);
+              latch.countDown();
+            }
+          });
+
+          try {
+            latch.await();
+          }
+          catch (InterruptedException e) {
+            throw new InterruptedRuntimeException(e);
+          }
         }
       }
       catch (PersistenceException ex) {
@@ -128,6 +203,7 @@ public class BrowseMojo extends AbstractWizardMojo {
       }
       finally {
         if (session != null) {
+          ModificationTracker.getInstance().terminate();
           session.close();
         }
       }

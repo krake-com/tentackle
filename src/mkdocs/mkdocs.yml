@@ -67,6 +67,7 @@ nav:
       - Tentackle Modules: modules.md
       - Multi-Tier Cascade: tiers.md
       - Correctness First: correctness-first.md
+      - Exceptions and Error Handling: exceptions.md
       - Technical & Scientific Applications: technical-scientific.md
       - PDOs vs. Traditional ORMs: pdo-vs-orm.md
   - Persistent Domain Objects (PDO):
@@ -85,7 +86,9 @@ nav:
       - Model Definition Syntax: model-definition.md
       - Wurblets — Interface-Level Generation: wurblets.md
       - The DTO Wurblet and @RecordDTO: dto-wurblet.md
+      - The Wurblet API — Class Reference: wurblet-api.md
       - Persistence Wurblets: persistence-wurblets.md
+      - The Persistence Wurblet API — Class Reference: persistence-wurblet-api.md
       - PdoSelectList and PdoSelectUnique: pdo-select.md
       - Eager Relations: eager-relations.md
       - Embedded Entities vs. DataTypes: embedded-vs-datatype.md
@@ -95,14 +98,20 @@ nav:
       - Cursors — Streaming Large Result Sets: cursors.md
       - Tentackle Domain: domain.md
       - Tentackle Session: session.md
+      - Authentication — Credentials, Providers, SSO: authentication.md
+      - Table Names — Schemas & Prefixes: table-names.md
       - Modification Tracking: modification-tracking.md
       - Backend Properties: backend-properties.md
       - Tentackle Database: database.md
+      - The Query DSL: query-dsl.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
+      - The Oracle Backend: oracle.md
+      - The MySQL and MariaDB Backends: mysql.md
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md
+      - TRIP over Cloudflare quiche: quiche.md
       - I/O and Networking: io.md
   - Core Foundations:
       - Tentackle Core: core.md
@@ -160,7 +169,11 @@ nav:
       - I18N Maven Plugin: tentackle-i18n-maven-plugin.md
       - Jlink/Jpackage Maven Plugin: jlinkpackage.md
       - Wizard Maven Plugin: tentackle-wizard-maven-plugin.md
+      - MCP Maven Plugin: tentackle-mcp-maven-plugin.md
+  - AI Agent Support:
+      - AI Agent Tooling Support: ai-agents.md
   - Testing:
+      - tentackle-pdo-mock: pdo-mock.md
       - tentackle-test-pdo: tentackle-test-pdo.md
       - tentackle-test-fx-rdc: tentackle-test-fx-rdc.md
   - Legacy:

@@ -23,12 +23,10 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.AlreadyLoggedInException;
-import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
 
 import java.text.MessageFormat;
-import java.util.Objects;
 
 /**
  * Application-specific remote session.
@@ -53,35 +51,14 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
 
   @Override
   public void verifySessionInfo(SessionInfo sessionInfo) {
-    DomainContext context = Pdo.createDomainContext(getSession());
-    String username = sessionInfo.getUserName();
-    User user = Pdo.create(User.class, context).selectByUniqueDomainKey(username);
-    if (user == null) {
-      // don't log the username, since it could be the password (mixed up by the user accidently)
-      LOGGER.warning("attempt to login for unknown user");
-    }
-    else {
-      if (Objects.equals(user.hash(sessionInfo.getPassword()), user.selectPasswordHash())) {
-        if (!user.isLoginAllowed()) {
-          LOGGER.warning("attempt to login for disabled user {0} (matching password)", username);
-          user = null;
-        }
-      }
-      else {
-        LOGGER.warning("attempt to login with wrong password for user {0}", username);
-        user = null;
-      }
-    }
+    // verify the credentials: hands them to the configured AuthenticationProviders
+    // (see ${application}PasswordAuthenticationProvider) and sets the user id
+    super.verifySessionInfo(sessionInfo);
 
-    if (user == null) {
-      throw new LoginFailedException("login refused");
-    }
-
-    sessionInfo.setUserId(user.getId());
-    sessionInfo.setUserClassId(user.getClassId());
     LocaleProvider.getInstance().setCurrentLocale(sessionInfo.getLocale());
     getSession().makeCurrent();
 
+    // what's left here belongs to the session, not to the verification of the credentials
     if (!sessionInfo.isCloned()) {
       // user must be logged in only once (per main session)
       SessionInfo otherInfo = isUserLoggedIn(sessionInfo);
@@ -89,6 +66,8 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
         throw new AlreadyLoggedInException(getSession(), otherInfo);
       }
       if (!getSession().isRemote()) {
+        DomainContext context = Pdo.createDomainContext(getSession());
+        User user = Application.getInstance().getUser(context, sessionInfo.getUserId());
         String message=MessageFormat.format(ServerBundle.getString("user {0} logged in from {1} with {2}, session {3}"),
         user,sessionInfo.getHostInfo(),sessionInfo.getApplicationName(),getSessionNumber());
         Message.log(MessageType.LOGIN,user,message,user);
@@ -111,7 +90,7 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
           session.makeCurrent();
           String message = null;
           if (user == null) {
-            // don't log the username, since it could be the password (mixed up by the user accidently)
+            // don't log the username, since it could be the password (mixed up by the user accidentally)
             message = MessageFormat.format(ServerBundle.getString("bad login attempt with {0} from {1}"),
                                            sessionInfo.getApplicationName(), sessionInfo.getHostInfo());
           }

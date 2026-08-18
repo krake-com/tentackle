@@ -219,6 +219,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public static final String TX_UPDATE_TOKENLOCK_ONLY   = "update lock only";
   /** select tokenlocked **/
   public static final String TX_SELECT_TOKENLOCKED      = "select locked";
+  /** insert a token-locked object **/
+  public static final String TX_INSERT_TOKENLOCKED      = "insert locked object";
+  /** update a token-locked object **/
+  public static final String TX_UPDATE_TOKENLOCKED      = "update locked object";
+  /** delete a token-locked object **/
+  public static final String TX_DELETE_TOKENLOCKED      = "delete locked object";
 
 
 
@@ -1771,12 +1777,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     rs.skip(nextPo.getColumnCount());
 
     for (Join<? super T,?> join: js.getJoins()) {
-      readJoin(rs, nextPdo, (Join<T,?>) join);
+      readJoin(rs, js.getJoinState(), nextPdo, (Join<T,?>) join);
     }
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, J nextPdo, Join<? super J,?> join) {
+  private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, JoinState joinState,
+                                                              J nextPdo, Join<? super J,?> join) {
     PersistentDomainObject joinedPdo = join.createJoinedPdo(nextPdo);
     AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
 
@@ -1787,7 +1794,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       joinedPo = joinedPo.readFromResultSetWrapper(rs);
       joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
       if (joinedPdo != null) {
-        joinedPdo = ((Join) join).join(nextPdo, joinedPdo);
+        joinedPdo = ((Join) join).join(joinState, nextPdo, joinedPdo);
       }
     }
 
@@ -1800,7 +1807,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     // recursively read the joined joins
     for (Join<?,?> subJoin: join.getJoins()) {
-      readJoin(rs, joinedPdo, (Join) subJoin);
+      readJoin(rs, joinState, joinedPdo, (Join) subJoin);
     }
   }
 
@@ -3290,28 +3297,54 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void updateObject() {
     // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
     updateNormText();
-    super.updateObject();
-    if (isTokenLockProvided()) {
-      LockManager.getInstance().update(pdo);
-    }
+    withLockManagerUpdate(TX_UPDATE_TOKENLOCKED, super::updateObject);
   }
 
   @Override
   public void insertObject() {
     // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
     updateNormText();
-    super.insertObject();
-    if (isTokenLockProvided()) {
-      LockManager.getInstance().update(pdo);
-    }
+    withLockManagerUpdate(TX_INSERT_TOKENLOCKED, super::insertObject);
   }
 
   @Override
   public void deleteObject() {
     // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
-    super.deleteObject();
-    if (isTokenLockProvided()) {
-      LockManager.getInstance().update(pdo);
+    withLockManagerUpdate(TX_DELETE_TOKENLOCKED, super::deleteObject);
+  }
+
+  /**
+   * Runs a persistence operation and notifies the {@link LockManager} about the token lock afterwards.
+   * <p>
+   * Both must happen within the <em>same</em> transaction, since the lock table is written by the
+   * lock manager while the token columns are written by the operation itself. The operations below
+   * open and commit a transaction of their own, which is nested (and thus a no-op) whenever the
+   * application already runs one -- as it does via {@code save()} or {@code persist()}. Called
+   * directly and outside a transaction, however, the operation would already be committed by the
+   * time the lock manager gets to see it, leaving the lock table permanently out of sync.
+   * The extra transaction here closes that gap.
+   *
+   * @param txName the transaction name
+   * @param persistenceOperation the operation to run
+   */
+  private void withLockManagerUpdate(String txName, Runnable persistenceOperation) {
+    Db db = getSession();
+    if (isTokenLockProvided() && !db.isRemote()) {
+      long txVoucher = db.begin(txName);
+      try {
+        persistenceOperation.run();
+        LockManager.getInstance().update(pdo);
+        db.commit(txVoucher);
+      }
+      catch (RuntimeException ex) {
+        db.rollback(txVoucher);
+        throw ex;
+      }
+    }
+    else {
+      // a remote session rejects these operations anyway (see AbstractPersistentObjectRemoteDelegateImpl),
+      // so don't spend a round trip on a transaction that only wraps the resulting exception
+      persistenceOperation.run();
     }
   }
 

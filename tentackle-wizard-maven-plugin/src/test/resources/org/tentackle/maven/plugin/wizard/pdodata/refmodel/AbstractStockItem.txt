@@ -1,0 +1,13 @@
+## the abstract stock item (table per concrete class)
+name := AbstractStockItem
+inheritance := plain
+
+## attributes
+[root]
+
+Long            articleId       article_id      object ID of the article
+
+## relations
+# the article on stock
+Article:
+    select = lazy

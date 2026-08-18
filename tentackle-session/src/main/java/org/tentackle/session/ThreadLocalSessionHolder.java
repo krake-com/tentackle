@@ -22,7 +22,7 @@ import java.io.Serial;
 
 /**
  * A session holder returning the thread-local session.<br>
- * Nice if no domain context available, e.g. for low-level AbstractDbObjects.
+ * Nice if no domain context available, e.g., for low-level AbstractDbObjects.
  *
  * @author harald
  */

@@ -26,6 +26,10 @@ import org.tentackle.session.AlreadyLoggedInException;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
+import org.tentackle.session.auth.Credentials;
+import org.tentackle.session.auth.CredentialsExpiredException;
+import org.tentackle.session.auth.CredentialsProvider;
+import org.tentackle.session.auth.PasswordCredentials;
 
 import javafx.application.Platform;
 import javafx.scene.Parent;
@@ -40,11 +44,18 @@ public class LoginFailedHandler {
 
   private static final Logger LOGGER = Logger.get(LoginFailedHandler.class);
 
+  /**
+   * Login failed exit-value.
+   */
+  public static final int EXIT_LOGIN_FAILED = 98;
+
+
   private final DesktopApplication<?> application;  // the desktop application
   private final Parent view;                        // the FX view
   private final SessionInfo sessionInfo;            // the session info
 
   private int loginCount;                           // number of login attempts
+  private boolean renewed;                          // true if the credentials have been renewed already
 
   /**
    * Creates a login failed handler.
@@ -96,6 +107,14 @@ public class LoginFailedHandler {
   public Runnable handle(Exception ex) {
     LOGGER.severe(ex.getMessage(), ex);
 
+    if (ex instanceof CredentialsExpiredException) {
+      Runnable retry = renewCredentials();
+      if (retry != null) {
+        return retry;   // renewed: this doesn't count as a login attempt
+      }
+      // could not renew: fall through and treat it like any other refused login
+    }
+
     if (ex instanceof AlreadyLoggedInException) {
       application.showApplicationStatus(ex.getLocalizedMessage(), 0.0);
     }
@@ -115,9 +134,12 @@ public class LoginFailedHandler {
         case 2 -> application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (LAST RETRY)"), 0.0);
         default -> {
           application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED!"), 0.0);
+          // there is no username and password to check unless the credentials are password-based
+          String message = sessionInfo.getCredentials() instanceof PasswordCredentials
+                           ? AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD")
+                           : AppFxRdcBundle.getString("LOGIN REFUSED!");
           // this will close the login scene and terminate the application
-          Platform.runLater(() -> Fx.info(view, AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"),
-                                          () -> view.getScene().getWindow().hide()));
+          Platform.runLater(() -> Fx.info(view, message, () -> view.getScene().getWindow().hide()));
         }
       }
     }
@@ -125,7 +147,7 @@ public class LoginFailedHandler {
       LOGGER.severe("login failed", ex);
       Platform.runLater(() -> {
         if (application.getFxApplication() != null) {
-          application.getFxApplication().setStopReason(98, ex);
+          application.getFxApplication().setStopReason(EXIT_LOGIN_FAILED, ex);
         }
         Fx.error(view,
                  AppFxRdcBundle.getString("LOGIN FAILED!") +
@@ -136,6 +158,37 @@ public class LoginFailedHandler {
     }
 
     return null;
+  }
+
+
+  /**
+   * Renews expired credentials and retries the login.
+   * <p>
+   * Asks the configured {@link CredentialsProvider} to refresh the credentials, which for a
+   * token-based method means using the refresh token instead of bothering the user again.
+   * Only tried once per handler, so that a server insisting on "expired" cannot spin the client.
+   *
+   * @return the retry, null if the credentials could not be renewed
+   */
+  protected Runnable renewCredentials() {
+    if (renewed) {
+      return null;
+    }
+    renewed = true;
+    Credentials credentials;
+    try {
+      credentials = CredentialsProvider.getInstance(sessionInfo).refresh(sessionInfo.getCredentials());
+    }
+    catch (RuntimeException rx) {
+      LOGGER.warning("could not renew the credentials", rx);
+      return null;
+    }
+    if (credentials == null) {
+      return null;
+    }
+    sessionInfo.setCredentials(credentials);
+    application.showApplicationStatus(AppFxRdcBundle.getString("RENEWING CREDENTIALS..."), 0.05);
+    return () -> Platform.runLater(() -> application.login(view, sessionInfo));
   }
 
 }

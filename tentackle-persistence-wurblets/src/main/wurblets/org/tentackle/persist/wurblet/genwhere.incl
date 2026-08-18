@@ -55,6 +55,14 @@
         }
 @[
       }
+
+      if (isWithOptionalArguments()) {
+        // skipped conditions may leave empty sub-expressions and dangling operators behind.
+        // must be applied before any trailing clause is appended.
+]@
+        b.reduceSql(sql);
+@[
+      }
     }
 
     String orderByStr = createOrderBy();

@@ -39,7 +39,6 @@ import java.util.Objects;
  */
 public class JavaCodeFactory {
 
-
   /**
    * Stereotype for attributes and relations to skip test code generation.
    */
@@ -50,15 +49,15 @@ public class JavaCodeFactory {
 
   /**
    * By default, the variables of the created entities are reused for the
-   * 2nd, 3rd, etc... instances. If this flag is true, the variables names
+   * 2nd, 3rd, etc... instances. If this flag is true, the variable names
    * are numbered starting at {@link #variableOffset}.
    */
   public static boolean distinctVariables;
 
   /**
    * If {@link #distinctVariables} is true, the variable names are numbered.
-   * If {@code variableOffset} is null, the first instance has no number,
-   * otherwise it starts with the given offset.
+   * If {@code variableOffset} is null, the first instance has no number.
+   * Otherwise, it starts with the given offset.
    */
   public static Integer variableOffset;
 
@@ -114,7 +113,7 @@ public class JavaCodeFactory {
 
 
   private Holder<Integer> getVariableCount(String varName) {
-    return nameMap.computeIfAbsent(varName, n -> new Holder<>(variableOffset == null ? 0 : variableOffset));
+    return nameMap.computeIfAbsent(varName, _ -> new Holder<>(variableOffset == null ? 0 : variableOffset));
   }
 
   private String createVarName(String type) {

@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  * Select items according to a prefix.<br>
  * Useful for (non-editable) ComboBoxes and ChoiceBoxes but can be applied to any control providing a list of items
  * that can be selected.<br>
- * The prefix selection is case-sensitive, if the first typed character is uppercase.
+ * The prefix selection is case-sensitive if the first typed character is uppercase.
  *
  * @author harald
  * @param <T> the control type
@@ -221,23 +221,40 @@ public class PrefixSelectionFeature<T extends Control> {
   }
 
   /**
-   * Returns whether item is matching prefix string.
+   * Gets the text displayed for an item.<br>
+   * Both the item and the converter's result may be null: the default converter of a
+   * {@link javafx.scene.control.ComboBox} maps a null item to a null text.
    *
-   * @param prefix the prefix string
-   * @param item the item
-   * @return true if matching
+   * @param item the item; may be null
+   * @return the displayed text, null if the item has none
    */
   @SuppressWarnings("unchecked")
+  protected String getItemText(Object item) {
+    StringConverter converter = itemConverter == null ? null : itemConverter.get();
+    if (converter != null) {
+      return converter.toString(item);
+    }
+    return item == null ? null : item.toString();
+  }
+
+  /**
+   * Returns whether the item is matching prefix string.<br>
+   * Items without a displayable text never match. Notice that a null item is perfectly valid,
+   * as it is the common idiom for the "nothing selected" entry of a dropdown list.
+   *
+   * @param prefix the prefix string
+   * @param item the item; may be null
+   * @return true if matching
+   */
   protected boolean isItemMatching(String prefix, Object item) {
     boolean matches = false;
-    if (!StringHelper.isAllWhitespace(prefix)) {
+    String itemText = getItemText(item);
+    if (itemText != null && !StringHelper.isAllWhitespace(prefix)) {
       int prefixLength = prefix.length();
-      StringConverter converter = itemConverter == null ? null : itemConverter.get();
-      String itemText = converter == null ? item.toString() : converter.toString(item);
       int itemTextLength = itemText.length();
       if (itemTextLength >= prefixLength) {
         boolean camelCase = isCamelCaseEnabled();
-        if (Character.isUpperCase(prefix.charAt(0))) {  // case sensitive
+        if (Character.isUpperCase(prefix.charAt(0))) {  // case-sensitive
           if (camelCase) {
             int prefixNdx = 0;
             for (int itemNdx=0; itemNdx < itemTextLength && prefixNdx < prefixLength; itemNdx++) {
@@ -267,7 +284,7 @@ public class PrefixSelectionFeature<T extends Control> {
             matches = itemText.startsWith(prefix);
           }
         }
-        else {  // case insensitive
+        else {  // case-insensitive
           if (camelCase) {
             // find only uppercase letters in itemText
             int prefixNdx = 0;

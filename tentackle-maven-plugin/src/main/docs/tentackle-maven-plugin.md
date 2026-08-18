@@ -146,6 +146,11 @@ never lands in the artifact:
         <converter>@org.tentackle.common.Cryptor</converter>
         <property>encryptedPasswd</property>
       </propertyDescriptor>
+      <propertyDescriptor>
+        <input>${dbPort} + 1</input>
+        <converter>org.tentackle.common.NumericEvaluator</converter>
+        <property>nextPort</property>
+      </propertyDescriptor>
     </propertyDescriptors>
   </configuration>
 </plugin>
@@ -244,4 +249,4 @@ metadata the second consumes.
 
 - [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)
 - [Wurbelizer](https://wurbelizer.org/) — the code generation engine
-- [Plugin reference (generated)](https://tentackle.org/static-content/sitedocs/tentackle/latest/tentackle-maven-plugin/plugin-info.html)
+- [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-maven-plugin/plugin-info.html)

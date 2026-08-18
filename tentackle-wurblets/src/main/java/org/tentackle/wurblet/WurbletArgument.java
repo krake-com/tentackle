@@ -49,7 +49,7 @@ import java.util.Set;
  * <p>
  * An argument is of the form:
  * <p>
- * <code>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}[#column]</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</code>
+ * <code>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}[#column]</b>[<b>[name]</b>][<b>?boolean</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</code>
  * <ul>
  * <li>argument type:
  *  <ul>
@@ -59,7 +59,7 @@ import java.util.Set;
  *  </ul>
  * </li>
  * <li>relation-path: list of relations.<br>
- * Optional for conditions, required for load joins. Illegal for updates and sorting.<br>
+ * Optional for conditions, required for load joins. Illegal for updates.<br>
  * If the current entity is a root-entity, the path starts with a dot and is followed by the name of
  * a pointsToComponent, the pointsToComponent is replaced by its relation path, if there is only one path.<br>
  * For load joins, asterisks must be used between joins.
@@ -75,6 +75,14 @@ import java.util.Set;
  * defines a default column, this column is taken. A <code>*</code> will explicitly select all columns.</li>
  * <li>name: optional name of the method argument.<br>
  * Only allowed for conditions and updates.
+ * </li>
+ * <li>boolean: makes the condition optional.<br>
+ * Only allowed for conditions.<br>
+ * Adds a boolean method argument of that name to the generated finder. The condition becomes part of the
+ * SQL statement and its parameters are set only if the boolean is true. Since the SQL text is no longer
+ * fixed, such finders always create a one-shot prepared statement (see the {@code --oneshot} option).<br>
+ * More than one argument may refer to the same boolean. Sub-expressions that end up empty are removed
+ * from the generated SQL by {@link Backend#reduceSql(StringBuilder)}.
  * </li>
  * <li>relop-expression: optional relop.<br>
  * Only allowed for conditions.<br>
@@ -96,6 +104,9 @@ import java.util.Set;
  *          poolId[from]:&gt;=             -&gt; attribute=poolId, arg=from, relop="&gt;="
  *          code:=:"Hurrz"              -&gt; attribute=code, relop="=", value="Hurz"
  *          code:=#"Hurrz"              -&gt; attribute=code, relop="=", value="Hurz", literally=true
+ *
+ *          code?withCode               -&gt; condition applied only if the boolean argument withCode is true
+ *          code[from]?withCode:&gt;=      -&gt; same with a named method argument and an explicit relop
  *
  *          +poolId -kurzname           -&gt; ORDER BY pool_id ASC, kurzname DESC
  *
@@ -128,6 +139,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
   /** name of the method argument. */
   private String name;
+
+  /** name of the boolean method argument if this is an optional condition, null if mandatory. */
+  private String optionalName;
 
   /** relational operator. */
   private String relop;
@@ -170,6 +184,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
   /** set of components in EXISTS-clause. */
   private Set<Entity> existsComponents;
+
+  /** all path arguments sharing the current EXISTS-clause. */
+  private List<WurbletArgument> existsArguments;
 
   /** true if this is the last argument of the EXISTS-clause. */
   private boolean endOfExistsClause;
@@ -314,6 +331,24 @@ public class WurbletArgument implements WurbletArgumentOperand {
     }
     else {
       str = text;
+    }
+
+    if (value != null && !value.isEmpty() && value.charAt(0) != '"' && value.indexOf('?') >= 0) {
+      // catch a misplaced optional marker instead of silently making it part of the value
+      throw new WurbelException("the optional marker '?' must precede the relop in argument '" + this.text + "'");
+    }
+
+    ndx = str.indexOf('?');
+    if (ndx >= 0) {
+      if (!argumentType.isConditionOptional()) {
+        throw new WurbelException("optional conditions not allowed for " + argumentType + "-argument '" + this.text + "'");
+      }
+      optionalName = str.substring(ndx + 1);
+      str = str.substring(0, ndx);
+      if (!StringHelper.isValidJavaIdentifier(optionalName)) {
+        throw new WurbelException("'" + optionalName + "' is not a valid name for the boolean method argument in '" +
+                                  this.text + "'");
+      }
     }
 
     ndx = str.indexOf('[');
@@ -686,6 +721,25 @@ public class WurbletArgument implements WurbletArgumentOperand {
   }
 
   /**
+   * Gets all path arguments sharing the current SQL EXISTS clause.<br>
+   * The list is the same instance for all arguments of the clause.
+   *
+   * @return the arguments, null if this argument is not part of an EXISTS clause
+   */
+  public List<WurbletArgument> getExistsArguments() {
+    return existsArguments;
+  }
+
+  /**
+   * Sets all path arguments sharing the current SQL EXISTS clause.
+   *
+   * @param existsArguments the arguments
+   */
+  public void setExistsArguments(List<WurbletArgument> existsArguments) {
+    this.existsArguments = existsArguments;
+  }
+
+  /**
    * Returns whether this is the last argument of the current SQL EXISTS clause.
    *
    * @return true if finish clause
@@ -781,6 +835,29 @@ public class WurbletArgument implements WurbletArgumentOperand {
    */
   public boolean isMethodArgument() {
     return attribute != null && value == null;
+  }
+
+
+  /**
+   * Returns whether this condition is optional.<br>
+   * Optional conditions become part of the generated SQL only if the boolean
+   * method argument named {@link #getOptionalName()} is true.
+   *
+   * @return true if optional
+   */
+  public boolean isOptional() {
+    return optionalName != null;
+  }
+
+  /**
+   * Gets the name of the boolean method argument determining whether this condition
+   * is part of the query.<br>
+   * More than one argument may refer to the same boolean.
+   *
+   * @return the name, null if this condition is mandatory
+   */
+  public String getOptionalName() {
+    return optionalName;
   }
 
   /**

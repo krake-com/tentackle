@@ -47,45 +47,77 @@ import static org.tentackle.common.Constants.BIND_STRIP_RIGHT;
  */
 public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
-  /** don't generate declaration. */
+  /**
+   * Suppresses the backing-field declaration in the generated persistence implementation.
+   * The column is still mapped (read from and written to the database), but no field is
+   * emitted, because the value is held elsewhere (e.g. a derived or superclass field).
+   */
   public static final String OPTION_NODECLARE = "NODECLARE";
 
-  /** don't generate accessor methods. */
+  /**
+   * Suppresses the getter and setter in the generated PDO interface and implementation.
+   * The attribute is still declared and persisted, just not exposed through accessors.
+   */
   public static final String OPTION_NOMETHOD = "NOMETHOD";
 
-  /** don't generate static constants. */
+  /**
+   * Suppresses the generated name constants for this element (the {@code AN_}/{@code CN_}
+   * attribute- and column-name constants and the size constant).
+   */
   public static final String OPTION_NOCONSTANT = "NOCONSTANT";
 
-  /** element is mute (not part of PDO). */
+  /**
+   * Marks the element as mute: mapped to a database column but deliberately invisible to the PDO.
+   * No field, no accessors, no interface declaration, and excluded from snapshots and copies.
+   * Since persistence never touches it, a mute column must be nullable or carry a database default.
+   * Used for columns populated outside the object lifecycle (trigger, migration, hand-written code).
+   */
   public static final String OPTION_MUTE = "MUTE";
 
-  /** element is derived from superclass. */
+  /**
+   * Marks the element as inherited from a non-modeled superclass. The generator uses the attribute
+   * (in queries, the domain key, etc.) but emits no field, name constant or accessors for it,
+   * because they already exist upstream. (Implies {@code NODECLARE} and {@code NOMETHOD}.)
+   */
   public static final String OPTION_SUPER = "SUPER";
 
-  /** don't generate a set-method. */
+  /**
+   * Generates a getter only, no setter, so the application cannot modify the value.
+   * (The persistence layer still writes the column when the row is created.)
+   */
   public static final String OPTION_READONLY = "READONLY";
 
-  /** don't generate a get-method. */
+  /** Generates a setter only, no getter, so the application cannot read the value back. */
   public static final String OPTION_WRITEONLY = "WRITEONLY";
 
-  /** trim string to size when reading from the database. */
+  /** Truncates the string value to the column's size when reading it from the database. */
   public static final String OPTION_TRIM_READ = "TRIMREAD";
 
-  /** trim string to size when writing to the database. */
+  /** Truncates the string value to the column's size when writing it to the database. */
   public static final String OPTION_TRIM_WRITE = "TRIMWRITE";
 
-  /** trim string to size when reading from and writing to the database. */
+  /** Truncates the string value to the column's size on both read and write ({@code TRIMREAD} + {@code TRIMWRITE}). */
   public static final String OPTION_TRIM = "TRIM";
 
-  /** map null to non-null value. */
+  /**
+   * Maps {@code null} to a non-null sentinel (empty string or 0) in the database, so a nullable
+   * Java value can be stored in a {@code NOT NULL} column. The conversion is applied in both
+   * directions by the generated JDBC read/write code.
+   */
   public static final String OPTION_MAPNULL = "MAPNULL";
 
-  /** add binding information. */
+  /**
+   * Annotates the generated accessors with {@code @Bindable}, making the property usable by the
+   * FX binding layer. Setting any of the binding options below implies this option.
+   */
   public static final String OPTION_BIND = "BIND";
 
   // binding options. Setting a binding option automatically turns on OPTION_BIND
 
-  /** set max columns and/or scale. */
+  /**
+   * Adds the {@code maxcols} binding option to the {@code @Bindable} annotation, limiting the
+   * bound input length to the column's size (and, where applicable, the numeric scale).
+   */
   public static final String BIND_SIZE = "SIZE";
 
 

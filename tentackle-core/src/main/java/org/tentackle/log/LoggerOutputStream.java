@@ -73,10 +73,18 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
     this(logger, Level.SEVERE);
   }
 
+  /**
+   * Logs the buffered bytes and clears the buffer.
+   * <p>
+   * Nothing is logged if the buffer is empty. This matters because a {@link PrintStream} wrapping
+   * this stream flushes it more than once when being closed.
+   */
   @Override
   public void flush() {
-    logger.log(level, toString());    // print Bytearray output stream
-    reset();
+    if (size() > 0) {
+      logger.log(level, toString());    // print Bytearray output stream
+      reset();
+    }
   }
 
   @Override

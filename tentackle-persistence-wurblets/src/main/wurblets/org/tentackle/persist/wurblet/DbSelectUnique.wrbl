@@ -5,18 +5,21 @@
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; DbSelectUnique
-    [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--private] [--oneshot] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
     [--sort] [--lock]
     &lt;expression&gt;
 <p>
 arguments:
 <ul>
 <li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--oneshot:</em> use the prepared statement only once (no StatementId)</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
 <li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.<br>
+Conditions marked with <em>?&lt;boolean&gt;</em> are optional, i.e. become part of the query only if the
+boolean method argument is true. Such finders always create a one-shot prepared statement.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -28,6 +31,7 @@ For more options, see {\@link DbModelWurblet}.
 
     String  classVar    = null;
     String  scope       = "public";
+    boolean oneshot     = isWithOptionalArguments();    // optional conditions imply --oneshot
     boolean lock        = false;
     boolean sort        = false;
     String  append      = null;
@@ -36,6 +40,9 @@ For more options, see {\@link DbModelWurblet}.
       if (arg.equals("private")) {
         scope = "private";
         setRemote(false);
+      }
+      else if (arg.equals("oneshot")) {
+        oneshot = true;
       }
       else if (arg.equals("sort")) {
         if (isWithDefaultSorting()) {
@@ -102,8 +109,17 @@ For more options, see {\@link DbModelWurblet}.
     }
 @[
     } // end if remote
+    if (oneshot) {
+]@
+    try (PreparedStatementWrapper st = createPreparedStatement(
+@[
+    }
+    else {
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
+@[
+    }
+]@
       b -> {
         StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
@@ -125,8 +141,17 @@ For more options, see {\@link DbModelWurblet}.
 ]@
         return sql.toString();
       }
+@[
+    if (oneshot) {
+]@
+    )) {
+@[
+    }
+    else {
+]@
     );
 @[
+    }
     if (needLimit) {
 ]@
     int ndx = getBackend().setLeadingSelectParameters(st, 1, 0);
@@ -152,9 +177,16 @@ For more options, see {\@link DbModelWurblet}.
       }
       return null;  // not found
     }
+@[
+    if (oneshot) {
+]@
+    }
+@[
+    }
+]@
   }
 @[
-    if (classVar.isEmpty()) {
+    if (classVar.isEmpty() && !oneshot) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();

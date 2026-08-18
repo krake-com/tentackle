@@ -306,6 +306,14 @@ interface that lets an application substitute its own login view) and
 [`Backends`](../java/org/tentackle/fx/rdc/login/Backends.java) (add / edit /
 remove the server backends the user can connect to).
 
+Which credentials the view collects is decided by the `authentication` key of
+`backend.properties`. With the default `password` method the user fills in the username and password
+fields. With an interactive (single sign-on) method those fields are hidden and a sign-in button runs
+the application's `CredentialsProvider` on a background thread —
+[`FxCredentialsPrompt`](../java/org/tentackle/fx/rdc/login/FxCredentialsPrompt.java) opens the system
+browser and reports progress back into the view. See
+[Authentication](../../../../tentackle-session/src/main/docs/authentication.md).
+
 A minimal startup therefore looks like:
 
 ```text

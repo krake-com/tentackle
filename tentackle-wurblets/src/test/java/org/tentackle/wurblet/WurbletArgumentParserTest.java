@@ -32,6 +32,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -165,6 +168,74 @@ public class WurbletArgumentParserTest {
       fail(wx.getMessage(), wx);
     }
 
+  }
+
+
+  /**
+   * Tests the optional conditions, i.e. arguments with a "?boolean" suffix.
+   */
+  @Test
+  public void testOptionalArguments() {
+    try {
+      WurbletArgumentParser parser = new WurbletArgumentParser(entity, false,
+              Arrays.asList("user?withUser", "AND", "NOT", "(", "processed?withProcessed:=:null", "OR", "modType", ")"));
+
+      assertTrue(parser.isWithOptionalArguments());
+      List<WurbletArgument> args = parser.getExpressionArguments();
+      assertEquals(args.size(), 3);
+
+      // the boolean is separate from the value argument
+      WurbletArgument user = args.get(0);
+      assertTrue(user.isOptional());
+      assertEquals(user.getOptionalName(), "withUser");
+      assertEquals(user.getMethodArgumentName(), "user");
+      assertEquals(user.getAttribute().getName(), "user");
+
+      // an argument with a fixed value can be optional as well
+      WurbletArgument processed = args.get(1);
+      assertTrue(processed.isOptional());
+      assertEquals(processed.getOptionalName(), "withProcessed");
+      assertEquals(processed.getValue(), "null");
+
+      // mandatory arguments are unaffected
+      assertFalse(args.get(2).isOptional());
+      assertNull(args.get(2).getOptionalName());
+    }
+    catch(WurbelException wx) {
+      fail(wx.getMessage(), wx);
+    }
+
+    try {
+      // more than one argument may refer to the same boolean
+      WurbletArgumentParser parser = new WurbletArgumentParser(entity, false,
+              Arrays.asList("user?withText", "OR", "user[user2]?withText"));
+      assertEquals(parser.getExpressionArguments().get(0).getOptionalName(), "withText");
+      assertEquals(parser.getExpressionArguments().get(1).getOptionalName(), "withText");
+      assertEquals(parser.getExpressionArguments().get(1).getMethodArgumentName(), "user2");
+    }
+    catch(WurbelException wx) {
+      fail(wx.getMessage(), wx);
+    }
+
+    // the boolean must not collide with another method argument
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("user?user")));
+
+    // the boolean must be a valid java identifier
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("user?with user")));
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("user?")));
+
+    // the marker must precede the relop, not end up in the value
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("processed:=:null?withProcessed")));
+
+    // only conditions can be optional
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("+txId?withTxId")));
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, true, Arrays.asList("user", "|", "modType?withModType")));
   }
 
 }

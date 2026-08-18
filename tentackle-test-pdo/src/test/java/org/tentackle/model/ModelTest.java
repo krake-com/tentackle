@@ -26,7 +26,7 @@ import java.util.Collection;
 
 public class ModelTest {
 
-  @Test
+  @Test(groups = "local")
   public void loadFromClasspath() {
     Reporter.log("ModelTest.loadFromClasspath <br>", true);
     Model model = Model.getInstance();

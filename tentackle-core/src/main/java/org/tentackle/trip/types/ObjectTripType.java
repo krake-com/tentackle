@@ -24,6 +24,7 @@ import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.TripComponent;
+import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
@@ -32,12 +33,15 @@ import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeCategory;
 import org.tentackle.trip.impl.DefaultOpCode;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -89,6 +93,28 @@ import java.util.function.Consumer;
  * and the corresponding fields are annotated with {@link org.tentackle.reflect.CanonicalField}.
  * Another option is to provide a {@link org.tentackle.trip.TripInstanceCreator}. The components
  * could also be configured with a {@link org.tentackle.trip.TripComponentProvider}.
+ * <p>
+ * A canonical member that is not backed by a serializable field &ndash; because the field is transient
+ * or declared in a JDK class, for example &ndash; gets a component of its own, provided the member is
+ * a {@link org.tentackle.reflect.CanonicalGetter}. This is how a {@link MapTripType} or
+ * {@link CollectionTripType} transports state that lives in a JDK field, see
+ * {@link org.tentackle.misc.ChainedProperties}.
+ * <p>
+ * These alternatives delay the construction of the object until some or all of its component values
+ * are known, which limits how far a component may back-reference the object it belongs to:
+ * <ul>
+ *   <li>With a no-args constructor, the object exists before any component is read. Every component
+ *       may back-reference it, directly or indirectly. This is the only case without restrictions.</li>
+ *   <li>With a {@link org.tentackle.reflect.CanonicalConstructor}, the object is created as soon as
+ *       all constructor arguments have been read. The canonical components themselves cannot
+ *       back-reference the object, but all remaining components can, since they are read
+ *       afterward.</li>
+ *   <li>With a {@link org.tentackle.reflect.CanonicalBuilder}, the object does not exist before
+ *       <em>all</em> components have been read. No component can back-reference it (the same
+ *       restriction that applies to records, see {@link RecordTripType}).</li>
+ * </ul>
+ * Violating this results in a "no such reference id" {@link TripRuntimeException} during
+ * deserialization. Objects forming such a cycle must provide a no-args constructor.
  * <p>
  * Application-specific object types should extend this class and annotate
  * it with @{@link org.tentackle.trip.TripTypeService}.
@@ -284,28 +310,64 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
   protected TripComponent<T, ?>[] createComponents(T object) {
     TripComponent<T, ?>[] tripComponents = super.createComponents(object);
     if (object == null) {
+      Member[] members = getCanonicalMembers();
       // canonical components must come first (ordered according to the canonical constructor)
-      TripComponent<T, ?>[] allComponents = new TripComponent[tripComponents.length];
-      int otherIndex = getCanonicalMembers().length;    // offset for all other components
+      TripComponent<T, ?>[] canonicalComponents = new TripComponent[members.length];
+      Collection<TripComponent<T, ?>> otherComponents = new ArrayList<>();
       for (TripComponent<T, ?> tripComponent : tripComponents) {
         int canonicalIndex = getCanonicalIndex(tripComponent.getName());
         if (canonicalIndex >= 0) {
-          allComponents[canonicalIndex] = tripComponent;
+          canonicalComponents[canonicalIndex] = tripComponent;
         }
         else {
-          if (otherIndex >= allComponents.length) {
-            // Some components could not be assigned to canonical members.
-            // For example, a @CanonicalMethod name does not correspond to any of the declared fields
-            // In such a case a TripComponentProvider must be used!
-            throw new TripRuntimeException("unmatched canonical members in " + getObjectClass());
-          }
-          allComponents[otherIndex++] = tripComponent;
+          otherComponents.add(tripComponent);
         }
+      }
+      // The ordinals of the components above are already taken, so the synthesized ones continue
+      // after them. Only the array order is canonical: the ordinals stay as they are, since
+      // they address the components within the dictionary entry.
+      int ordinal = tripComponents.length;
+      for (int i = 0; i < canonicalComponents.length; i++) {
+        if (canonicalComponents[i] == null) {
+          canonicalComponents[i] = createCanonicalComponent(members[i], i, ordinal++);
+        }
+      }
+      TripComponent<T, ?>[] allComponents = new TripComponent[canonicalComponents.length + otherComponents.size()];
+      System.arraycopy(canonicalComponents, 0, allComponents, 0, canonicalComponents.length);
+      int otherIndex = canonicalComponents.length;
+      for (TripComponent<T, ?> tripComponent : otherComponents) {
+        allComponents[otherIndex++] = tripComponent;
       }
       return allComponents;
     }
     // no canonical fields
     return tripComponents;
+  }
+
+  /**
+   * Creates a component for a canonical member that is not covered by a component of its own.
+   * <p>
+   * This is the case if the member's field is not serializable, for example, because it is
+   * transient or declared in a JDK class (see {@link MapTripType#isFieldSerializable(Field)}).
+   * If the member is a {@link org.tentackle.reflect.CanonicalGetter}, the getter provides the value.
+   * The component needs no setter, since its value is passed to the canonical constructor.
+   *
+   * @param member the canonical member
+   * @param canonicalIndex the index of the member within the canonical constructor's parameters
+   * @param ordinal the ordinal to assign to the component
+   * @return the component
+   */
+  protected TripComponent<T, ?> createCanonicalComponent(Member member, int canonicalIndex, int ordinal) {
+    if (member instanceof Method getter) {
+      // the default is the parameter type's default, just as in createCanonicalArgs()
+      Class<?> parameterType = canonicalConstructor == null ? getter.getReturnType() :
+                               canonicalConstructor.getParameterTypes()[canonicalIndex];
+      Object defaultValue = Array.get(Array.newInstance(parameterType, 1), 0);
+      return TripFactory.getInstance().createComponent(this, ordinal, getter, null, true, defaultValue);
+    }
+    // A field member without a component, i.e., the field is not serializable.
+    // Provide a @CanonicalGetter or a TripComponentProvider!
+    throw new TripRuntimeException("unmatched canonical member " + member + " in " + getObjectClass());
   }
 
   /**
@@ -358,8 +420,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
                              Reference<T> reference, T value, Consumer<T> initializer,
                              Map<TripComponent<T, ?>, Object> componentValues) {
 
-    int canonicalFieldCount = 0;    // number of canonical fields read from the stream
-    Object[] canonicalArgs = canonicalConstructor == null ? null : new Object[getCanonicalMembers().length];
+    Object[] canonicalArgs = null;           // the canonical constructor's arguments
+    boolean[] canonicalArgsAssigned = null;  // which of them were read from the stream
+    int canonicalArgsMissing = 0;            // how many of them are still missing
+    if (canonicalConstructor != null) {
+      canonicalArgs = createCanonicalArgs();
+      canonicalArgsAssigned = new boolean[canonicalArgs.length];
+      canonicalArgsMissing = canonicalArgs.length;
+    }
     Object canonicalBuilder = null;
     if (canonicalBuilderInfo != null) {
       try {
@@ -432,27 +500,13 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
               int canonicalIndex = getCanonicalIndex(component.getName());
               if (canonicalIndex >= 0) {
                 canonicalArgs[canonicalIndex] = componentValue;
-                if (++canonicalFieldCount == canonicalArgs.length) {
-                  // we got all canonical fields -> create the object
-                  try {
-                    try {
-                      value = canonicalConstructor.newInstance(canonicalArgs);
-                    }
-                    catch (IllegalAccessException ix) {
-                      canonicalConstructor.setAccessible(true);
-                      value = canonicalConstructor.newInstance(canonicalArgs);
-                    }
-                    if (initializer != null) {
-                      initializer.accept(value);
-                    }
-                  }
-                  catch (InaccessibleObjectException | InstantiationException | IllegalAccessException |
-                         InvocationTargetException e) {
-                    throw new TripInstantiationException(getObjectClass(), "cannot create instance via canonical constructor", e);
-                  }
-                  if (reference != null) {
-                    stream.addReference(reference, value, isDeduplicateable(value));
-                    // from now on, components may back-reference the object
+                if (!canonicalArgsAssigned[canonicalIndex]) {
+                  // count each argument once: a repeated ordinal must not create the object early,
+                  // i.e. with arguments that were not read from the stream yet
+                  canonicalArgsAssigned[canonicalIndex] = true;
+                  if (--canonicalArgsMissing == 0) {
+                    // we got all canonical fields -> create the object
+                    value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
                   }
                 }
               }
@@ -467,6 +521,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       opCode = stream.receiveOpCode();
     }
 
+    if (value == null && canonicalConstructor != null && canonicalBuilderInfo == null && componentValues == null) {
+      // Not all canonical components arrived, for example because the sender's version of the class
+      // does not provide them (anymore). Create the object from what we got instead of returning
+      // null: the missing arguments keep their default value, just like the components of a class
+      // created by its no-args constructor would.
+      value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
+    }
+
     if (canonicalBuilderInfo != null) {
       try {
         value = (T) canonicalBuilderInfo.buildMethod().invoke(canonicalBuilder);
@@ -476,6 +538,19 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
                                              "cannot create value via builder " +
                                              canonicalBuilderInfo.constructor().getDeclaringClass(),
                                              e);
+      }
+      if (componentValues == null) {
+        // if componentValues is set, the instance creator builds the object from the values (see caller)
+        if (initializer != null) {
+          initializer.accept(value);
+        }
+        if (reference != null) {
+          // Register the object so that it can be back-referenced later in the stream.
+          // Unlike the canonical constructor, the object does not exist before all components
+          // are read. Components can therefore not back-reference the object itself
+          // (the same restriction as for records).
+          stream.addReference(reference, value, isDeduplicateable(value));
+        }
       }
     }
 
@@ -490,7 +565,9 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
    * @param entry the dictionary entry
    * @param reference the optional reference
    * @param value the object, null for delayed construction
-   * @param initializer the object initializer invoked after the new object is created
+   * @param initializer the object initializer invoked after the new object is created.
+   *        Notice that a {@link TripInstanceCreator} creating the object from its component values
+   *        replaces the instance the initializer was applied to (see below).
    * @return the object
    */
   protected T readComponents(TripStream stream, OpCode opCode, DictionaryEntry entry,
@@ -508,6 +585,13 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
     if (componentValues != null) {
       value = instanceCreator.create(getObjectClass(), componentValues);
+      if (reference != null) {
+        // The creator returned a new instance, replacing the one the reference was registered for
+        // (either the bare instance from createInitializedDefault() or a canonically constructed one).
+        // Re-register it so that back-references later in the stream resolve to the object
+        // that is actually returned instead of the discarded one.
+        stream.addReference(reference, value, isDeduplicateable(value));
+      }
     }
 
     return value;
@@ -597,6 +681,61 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
     }
     return canonicalMembers;
+  }
+
+  /**
+   * Creates the canonical constructor's argument array, preset with the parameters' default values.
+   * <p>
+   * Arguments that are not provided by the stream keep their default, so that a component missing
+   * from the sender's class does not prevent the object from being created. Without the presets,
+   * a missing primitive argument would make {@link Constructor#newInstance(Object...)} fail.
+   *
+   * @return the arguments, all at their default value
+   */
+  protected Object[] createCanonicalArgs() {
+    Object[] args = new Object[getCanonicalMembers().length];
+    Class<?>[] parameterTypes = canonicalConstructor.getParameterTypes();
+    for (int i = 0; i < args.length && i < parameterTypes.length; i++) {
+      // a fresh array element is the type's default: 0, false, '\0' for primitives, null otherwise
+      args[i] = Array.get(Array.newInstance(parameterTypes[i], 1), 0);
+    }
+    return args;
+  }
+
+  /**
+   * Creates the object from the canonical constructor's arguments.<br>
+   * Applies the initializer and registers the object for back-references, if any.
+   *
+   * @param stream the stream to read from
+   * @param reference the optional reference
+   * @param initializer the object initializer invoked after the new object is created
+   * @param canonicalArgs the constructor's arguments
+   * @return the object, never null
+   */
+  protected T createFromCanonicalArgs(TripStream stream, Reference<T> reference,
+                                      Consumer<T> initializer, Object[] canonicalArgs) {
+    T value;
+    try {
+      try {
+        value = canonicalConstructor.newInstance(canonicalArgs);
+      }
+      catch (IllegalAccessException ix) {
+        canonicalConstructor.setAccessible(true);
+        value = canonicalConstructor.newInstance(canonicalArgs);
+      }
+      if (initializer != null) {
+        initializer.accept(value);
+      }
+    }
+    catch (InaccessibleObjectException | InstantiationException | IllegalAccessException |
+           InvocationTargetException e) {
+      throw new TripInstantiationException(getObjectClass(), "cannot create instance via canonical constructor", e);
+    }
+    if (reference != null) {
+      stream.addReference(reference, value, isDeduplicateable(value));
+      // from now on, components may back-reference the object
+    }
+    return value;
   }
 
   /**

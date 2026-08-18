@@ -19,13 +19,13 @@
 
 package org.tentackle.fx.table;
 
-import javafx.geometry.Pos;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TreeTableColumn;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
 
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 import java.lang.reflect.Type;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
@@ -33,12 +33,12 @@ import java.time.format.DateTimeFormatter;
 /**
  * Configuration for a table or treetable column.
  *
- * @param <S> type of the objects contained within the table's or treetable's items list
+ * @param <S> type of the objects contained within the table's or tree-table's item list
  * @param <T> type of the content in all cells in this column
  *
  * @author harald
  */
-public interface TableColumnConfiguration<S,T> {
+public interface TableColumnConfiguration<S, T> {
 
   /**
    * Gets the table configuration.
@@ -67,8 +67,9 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the column name displayed in the column header.
    *
    * @param displayName the display name of the column
+   * @return this configuration
    */
-  void setDisplayedName(String displayName);
+  TableColumnConfiguration<S, T> setDisplayedName(String displayName);
 
   /**
    * Determines the class for a given column.
@@ -101,7 +102,7 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the specific table cell type.
    *
-   * @return the cell type, null to determine from column type
+   * @return the cell type, null to determine from the column type
    * @see #getName()
    */
   TableCellType<T> getCellType();
@@ -109,13 +110,47 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Sets the specific table cell type.
    *
-   * @param cellType the cell type, null to determine from column type
+   * @param cellType the cell type, null to determine from the column type
+   * @return this configuration
    */
-  void setCellType(TableCellType<T> cellType);
+  TableColumnConfiguration<S, T> setCellType(TableCellType<T> cellType);
+
+  /**
+   * Gets the effective table cell type.<br>
+   * This is either the specific cell type or the one determined from the column type.
+   *
+   * @return the cell type, never null
+   */
+  default TableCellType<T> getEffectiveCellType() {
+    TableCellType<T> cellType = getCellType();
+    return cellType == null ? getTableConfiguration().getTableCellType(getType()) : cellType;
+  }
+
+  /**
+   * Gets the text displayed for a value of this column.
+   *
+   * @param value the value; may be null
+   * @return the displayed text, null if none
+   * @see TableCellType#getText(TableColumnConfiguration, Object)
+   */
+  default String getText(T value) {
+    return value == null ? null : getEffectiveCellType().getText(this, value);
+  }
+
+  /**
+   * Gets the graphic displayed for a value of this column.
+   *
+   * @param value the value; may be null
+   * @return a newly created graphic, null if the value is rendered as text only
+   * @see TableCellType#getGraphic(TableColumnConfiguration, Object)
+   */
+  default Node getGraphic(T value) {
+    return value == null ? null : getEffectiveCellType().getGraphic(this, value);
+  }
 
   /**
    * Defines the format for numeric or date/time-types.<br>
-   * If null is returned a default format will be used according to the column class.
+   * If null is returned, a default format will be used according to the column class.
    *
    * @return the format pattern or null if default
    */
@@ -125,8 +160,9 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the formatting string.
    *
    * @param pattern the format pattern
+   * @return this configuration
    */
-  void setPattern(String pattern);
+  TableColumnConfiguration<S, T> setPattern(String pattern);
 
   /**
    * Gets the number format.
@@ -153,78 +189,84 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the alignment within the cell.
    *
    * @param alignment the alignment
+   * @return this configuration
    */
-  void setAlignment(Pos alignment);
+  TableColumnConfiguration<S, T> setAlignment(Pos alignment);
 
   /**
-   * Defines the "blankzero" attribute of the column.
+   * Defines the {@code blankzero} attribute of the column.
    *
-   * @return true if blank zeros, false if not, null if use default from editor
+   * @return true if blank zeros, false if not, null to use default from the editor
    */
   Boolean isBlankZero();
 
   /**
    * Sets whether to blank out numeric zero values.
    *
-   * @param blankZero true if blank zeros, false if not, null if use default from editor
+   * @param blankZero true if blank zeros, false if not, null to use default from the editor
+   * @return this configuration
    */
-  void setBlankZero(Boolean blankZero);
+  TableColumnConfiguration<S, T> setBlankZero(Boolean blankZero);
 
   /**
    * Sets whether a numeric field is unsigned or signed.
    *
-   * @param unsigned true if unsigned, null if use default from editor
+   * @param unsigned true if unsigned, null to use default from the editor
+   * @return this configuration
    */
-  void setUnsigned(Boolean unsigned);
+  TableColumnConfiguration<S, T> setUnsigned(Boolean unsigned);
 
   /**
    * Returns whether a numeric field is unsigned or signed.
    *
-   * @return true if unsigned, null if use default from editor
+   * @return true if unsigned, null to use default from the editor
    */
   Boolean isUnsigned();
 
   /**
    * Sets allowed characters.
    *
-   * @param validChars the valid characters, null to use default from editor
+   * @param validChars the valid characters, null to use default from the editor
+   * @return this configuration
    */
-  void setValidChars(String validChars);
+  TableColumnConfiguration<S, T> setValidChars(String validChars);
 
   /**
    * Gets allowed characters.
    *
-   * @return the valid characters, null to use default from editor
+   * @return the valid characters, null to use default from the editor
    */
   String getValidChars();
 
   /**
    * Sets invalid characters.
    *
-   * @param invalidChars the invalid characters, null to use default from editor
+   * @param invalidChars the invalid characters, null to use default from the editor
+   * @return this configuration
    */
-  void setInvalidChars(String invalidChars);
+  TableColumnConfiguration<S, T> setInvalidChars(String invalidChars);
 
   /**
    * Gets invalid characters.
    *
-   * @return the invalid characters, null to use default from editor
+   * @return the invalid characters, null to use default from the editor
    */
   String getInvalidChars();
 
   /**
    * Gets the autoselect flag.
    *
-   * @return true if autoselect, false if not, null if use default from editor
+   * @return true if autoselect, false if not, null to use default from the editor
    */
   Boolean isAutoSelect();
 
   /**
    * Sets the autoselect feature.
    *
-   * @param autoSelect true if autoselect, false if not, null if use default from editor
+   * @param autoSelect true if autoselect, false if not, null to use default from the editor
+   * @return this configuration
    */
-  void setAutoSelect(Boolean autoSelect);
+  TableColumnConfiguration<S, T> setAutoSelect(Boolean autoSelect);
 
   /**
    * Gets the maximum columns for text cell editors.
@@ -237,8 +279,9 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the max columns.
    *
    * @param maxColumns the max columns, null if not defined
+   * @return this configuration
    */
-  void setMaxColumns(Integer maxColumns);
+  TableColumnConfiguration<S, T> setMaxColumns(Integer maxColumns);
 
   /**
    * Gets the scale for fractional numeric cell editors.
@@ -251,8 +294,9 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the numeric scale.
    *
    * @param scale the scale, null if not defined
+   * @return this configuration
    */
-  void setScale(Integer scale);
+  TableColumnConfiguration<S, T> setScale(Integer scale);
 
   /**
    * Gets the case conversion.
@@ -265,29 +309,58 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the case conversion.
    *
    * @param caseConversion true = convert to uppercase, false = lowercase, null = no conversion (default)
+   * @return this configuration
    */
-  void setCaseConversion(Boolean caseConversion);
+  TableColumnConfiguration<S, T> setCaseConversion(Boolean caseConversion);
 
   /**
    * Determines whether the column is summable.<br>
    *
-   * @return true if column is summable
+   * @return true if the column is summable
    */
   boolean isSummable();
 
   /**
    * Sets whether the column is summable.
    *
-   * @param summable {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL if numeric type
+   * @param summable {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL to derive from type
+   * @return this configuration
    */
-  void setSummable(Boolean summable);
+  TableColumnConfiguration<S, T> setSummable(Boolean summable);
 
   /**
    * Returns whether the column is summable.
    *
-   * @return {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL if numeric type
+   * @return {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL to derive from type
    */
   Boolean getSummable();
+
+  /**
+   * Determines whether the column provides a filter UI in its header.<br>
+   * Filtering must be enabled for the whole table as well.
+   *
+   * @return true if the column can be filtered by the user
+   * @see TableConfiguration#isFilterEnabled()
+   */
+  default boolean isFilterable() {
+    return !Boolean.FALSE.equals(getFilterable()) &&
+           getTableConfiguration() != null && getTableConfiguration().isFilterEnabled();
+  }
+
+  /**
+   * Sets whether the column provides a filter UI in its header.
+   *
+   * @param filterable {@link Boolean#FALSE} to suppress the filter for this column, else null or {@link Boolean#TRUE}
+   * @return this configuration
+   */
+  TableColumnConfiguration<S, T> setFilterable(Boolean filterable);
+
+  /**
+   * Returns whether the column provides a filter UI in its header.
+   *
+   * @return {@link Boolean#FALSE} if the filter is suppressed for this column, else null or {@link Boolean#TRUE}
+   */
+  Boolean getFilterable();
 
   /**
    * Returns whether the column is editable.
@@ -300,11 +373,12 @@ public interface TableColumnConfiguration<S,T> {
    * Sets whether the column is editable.
    *
    * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   * @return this configuration
    */
-  void setEditable(Boolean editable);
+  TableColumnConfiguration<S, T> setEditable(Boolean editable);
 
   /**
-   * Returns whether column is editable.
+   * Returns whether the column is editable.
    *
    * @return true if editable, the default is false
    */
@@ -313,16 +387,17 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the editor component.
    *
-   * @return the editor, null to use default from {@link TableCellType#getEditor()}
+   * @return the editor; null to use default from {@link TableCellType#getEditor()}
    */
   FxComponent getEditor();
 
   /**
    * Sets the editor component.
    *
-   * @param editor the editor, null to use default from {@link TableCellType#getEditor()}
+   * @param editor the editor; null to use default from {@link TableCellType#getEditor()}
+   * @return this configuration
    */
-  void setEditor(FxComponent editor);
+  TableColumnConfiguration<S, T> setEditor(FxComponent editor);
 
   /**
    * Gets the binding for this column.
@@ -335,8 +410,9 @@ public interface TableColumnConfiguration<S,T> {
    * Sets the binding.
    *
    * @param binding the binding
+   * @return this configuration
    */
-  void setBinding(FxTableBinding<S, T> binding);
+  TableColumnConfiguration<S, T> setBinding(FxTableBinding<S, T> binding);
 
   /**
    * Gets or creates the table column.<br>

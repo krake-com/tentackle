@@ -34,12 +34,16 @@ import org.tentackle.reflect.ReflectionHelper;
 
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Paint;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
@@ -478,6 +482,22 @@ public class DefaultFxFactory implements FxFactory {
     Image snapshot = node.snapshot(snapshotParameters, null);
     conversionPane.getChildren().remove(node);
     return snapshot;
+  }
+
+  @Override
+  public StackPane createButton(String styleClass, String graphicName, String bundleKey, Runnable action) {
+    StackPane button = new StackPane(Fx.createGraphic(graphicName));
+    button.getStyleClass().add(styleClass);
+    button.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);   // else a layout pane would stretch it
+    button.setCursor(Cursor.DEFAULT);   // the text cursor of the text component would be misleading
+    Tooltip.install(button, new Tooltip(FxFxBundle.getString(bundleKey)));
+    button.setOnMousePressed(event -> {
+      if (event.getButton() == MouseButton.PRIMARY) {
+        action.run();
+        event.consume();    // don't move the caret
+      }
+    });
+    return button;
   }
 
   @Override

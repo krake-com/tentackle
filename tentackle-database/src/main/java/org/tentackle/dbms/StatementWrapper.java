@@ -48,14 +48,14 @@ public class StatementWrapper implements AutoCloseable {
   /** the SQL string. */
   protected String sql;
 
-  /** flag if statement is marked ready for being consumed. */
+  /** flag if the statement is marked ready for being consumed. */
   protected boolean ready;
 
-  /** flag if statement is currently running. */
+  /** flag if the statement is currently running. */
   protected boolean running;
 
-  /** flag if statement has been cancelled. */
-  protected boolean cancelled;
+  /** flag if the statement has been canceled. */
+  protected boolean canceled;
 
   /** flag to tell that parallel execution should not be logged. */
   protected boolean parallelOk;
@@ -63,22 +63,20 @@ public class StatementWrapper implements AutoCloseable {
   /** optional stacktrace that invoked the last query or update. */
   protected String stackTrace;
 
-  /** pending open result set. */
+  /** the pending open result set. */
   protected WeakReference<ResultSetWrapper> openResultSet;
-
 
 
   /**
    * Creates a wrapper for a sql statement.
    *
    * @param con the connection
-   * @param stmt the sql statement
+   * @param stmt the SQL statement
    */
   public StatementWrapper (ManagedConnection con, Statement stmt) {
     this.con  = con;
     this.stmt = stmt;
   }
-
 
 
   /**
@@ -90,19 +88,17 @@ public class StatementWrapper implements AutoCloseable {
     return con;
   }
 
-
   /**
    * Gets the wrapped statement.
    *
    * @return the statement, null if closed
    */
-  public Statement getStatement ()  {
+  public Statement getStatement()  {
     return stmt;
   }
 
-
   /**
-   * Returns whether parallel execution on same connection should be logged.
+   * Returns whether parallel execution on the same connection should be logged.
    *
    * @see ManagedConnection#getLogLevelForParallelOpenResultSets()
    * @return true if parallel is select ok
@@ -112,8 +108,8 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Sets whether parallel execution on same connection should be logged.<br>
-   * Multiple open result sets on a single connection usually means, that
+   * Sets whether parallel execution on the same connection should be logged.<br>
+   * Multiple open result sets on a single connection usually mean that
    * other selects are submitted while processing the result set. Under rare conditions
    * this might be ok, but usually it's not.
    *
@@ -157,7 +153,7 @@ public class StatementWrapper implements AutoCloseable {
 
   /**
    * Same as {@link #getSession()} but nullsafe.<br>
-   * Throws PersistenceException if statement no more attached to connection.
+   * Throws PersistenceException if statement no more attached to the connection.
    *
    * @return the session, never null
    */
@@ -169,7 +165,6 @@ public class StatementWrapper implements AutoCloseable {
     return db;
   }
 
-
   /**
    * Marks the statement to be ready for being consumed by a {@link Db} attached
    * to a {@link ConnectionManager}.<br>
@@ -177,7 +172,7 @@ public class StatementWrapper implements AutoCloseable {
    * a statement is being used only once after {@link Db#createStatement()}
    * (for non-prepared statements) or after {@link Db#getPreparedStatement}
    * for prepared statements.<p>
-   * If a statement is marked ready more than once, i.e. an open result
+   * If a statement is marked ready more than once, i.e., an open result
    * exists (which would be closed according to the JDBC specs), a PersistenceException is thrown.
    * The specs in {@link java.sql.Statement} say:
    * <pre>
@@ -199,7 +194,7 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(session, msg);
     }
     ready = true;
-    cancelled = false;
+    canceled = false;
   }
 
   /**
@@ -216,7 +211,6 @@ public class StatementWrapper implements AutoCloseable {
     setRunning(false);
   }
 
-
   /**
    * Returns whether this statement is marked ready.<br>
    * Used to determine unused pending statements in servers when closing
@@ -227,10 +221,9 @@ public class StatementWrapper implements AutoCloseable {
     return ready;
   }
 
-
   /**
    * Consume a statement without executing it.<br>
-   * The method is invoked if a rollback is performed prior to consuming the statement.
+   * The method is invoked if a rollback is performed before consuming the statement.
    */
   public void consume() {
     LOGGER.fine("statement {0} consumed", this);
@@ -238,16 +231,14 @@ public class StatementWrapper implements AutoCloseable {
     detachSession();
   }
 
-
   /**
-   * Gets the sql string.
+   * Gets the SQL string.
    *
-   * @return the sql string
+   * @return the SQL string
    */
   public String getSql() {
     return sql;
   }
-
 
   @Override
   public String toString() {
@@ -271,35 +262,6 @@ public class StatementWrapper implements AutoCloseable {
     }
     return buf.toString();
   }
-
-
-  /**
-   * Detach the session from the connection.<br>
-   * Statements detach the session on executeUpdate or
-   * on close() in the {@link ResultSetWrapper} after executeQuery.
-   */
-  protected void detachSession() {
-    Db db = con.getSession();
-    if (db != null) {
-      // if not already cleaned up
-      db.detach();
-    }
-  }
-
-
-  /**
-   * Implementation of executeUpdate.<br>
-   *
-   * @param sql the sql string
-   * @return the number of affected rows
-   * @throws SQLException if update failed
-   */
-  protected int executeUpdateImpl(String sql) throws SQLException {
-    this.sql = sql;
-    StatementTracer.getInstance().trace(this);
-    return stmt.executeUpdate(sql);
-  }
-
 
   /**
    * Executes the given SQL statement.
@@ -416,51 +378,10 @@ public class StatementWrapper implements AutoCloseable {
     }
   }
 
-
-  /**
-   * Implementation of executeQuery.<br>
-   *
-   * @param sql the sql string
-   * @return the result set
-   * @throws SQLException if query failed
-   */
-  protected ResultSet executeQueryImpl(String sql) throws SQLException {
-    this.sql = sql;
-    StatementTracer.getInstance().trace(this);
-    return stmt.executeQuery(sql);
-  }
-
-
-  /**
-   * Creates a result set wrapper from a result set.
-   *
-   * @param history the statement history
-   * @param jdbcResultSet the low-level jdbc result set
-   * @return the wrapper
-   */
-  ResultSetWrapper createResultSetWrapper(StatementHistory history, ResultSet jdbcResultSet) {
-    ResultSetWrapper rs = new ResultSetWrapper(this, history, jdbcResultSet);
-    con.addResultSet(rs);
-    openResultSet = new WeakReference<>(rs);
-    return rs;
-  }
-
-
-  /**
-   * Forgets about the given result set.
-   *
-   * @param rs the result set wrapper
-   */
-  void forgetResultSetWrapper(ResultSetWrapper rs) {
-    con.removeResultSet(rs);
-    openResultSet = null;
-  }
-
-
   /**
    * Executes a query.
    *
-   * @param sql is the query sql string
+   * @param sql is the query SQL string
    * @param withinTx is true if start a transaction for this query.
    *
    * @return the result set as a ResultSetWrapper
@@ -480,7 +401,7 @@ public class StatementWrapper implements AutoCloseable {
       setRunning(true);   // will be cleared when the result set is closed
       if (withinTx) {
         txVoucher = db.begin("executeQuery");
-        // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
+        // returns true if autocommit on, i.e., we were not within a transaction, and begin() started a new one.
       }
       StatementHistory history = con.logStatementHistory(this, sql);
       ResultSetWrapper resultSet = createResultSetWrapper(history, executeQueryImpl(sql));
@@ -516,46 +437,25 @@ public class StatementWrapper implements AutoCloseable {
     }
   }
 
-
   /**
    * Executes a query.
    *
-   * @param sql is the query sql string
+   * @param sql the query SQL string
    * @return the result set as a ResultSetWrapper
    */
   public ResultSetWrapper executeQuery (String sql) {
     return executeQuery(sql, false);
   }
 
-
-
-  /**
-   * Sets the running flag of this statements.<br>
-   * Updates the running statements in {@link ManagedConnection}.
-   *
-   * @param running true if running, false if finished
-   */
-  protected synchronized void setRunning(boolean running) {
-    this.running = running;
-    if (running) {
-      con.addRunningStatement(this);
-    }
-    else  {
-      con.removeRunningStatement(this);
-    }
-  }
-
-
   /**
    * Returns whether the statement is being executed.<br>
    * May be invoked from any thread.
    *
-   * @return true if statement is running
+   * @return true if the statement is running
    */
   public synchronized boolean isRunning() {
     return running;
   }
-
 
   /**
    * Cancels a statement.
@@ -567,24 +467,22 @@ public class StatementWrapper implements AutoCloseable {
         stmt.cancel();
       }
       setRunning(false);
-      cancelled = true;
+      canceled = true;
     }
     catch (SQLException e) {
       throw new PersistenceException(getSession(), this.toString(), e);
     }
   }
 
-
   /**
-   * Returns whether this statement has been cancelled.<br>
+   * Returns whether this statement has been canceled.<br>
    * May be invoked from any thread.
    *
-   * @return true if cancelled
+   * @return true if canceled
    */
-  public synchronized boolean isCancelled() {
-    return cancelled;
+  public synchronized boolean isCanceled() {
+    return canceled;
   }
-
 
   /**
    * Closes this statement.
@@ -623,7 +521,6 @@ public class StatementWrapper implements AutoCloseable {
     }
   }
 
-
   /**
    * Determines whether this statement is closed.
    *
@@ -632,8 +529,6 @@ public class StatementWrapper implements AutoCloseable {
   public boolean isClosed() {
     return stmt == null;
   }
-
-
 
   /**
    * Gives the JDBC driver a hint as to the number of rows that should
@@ -654,7 +549,6 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(getSession(), this.toString(), e);
     }
   }
-
 
   /**
    * Retrieves the number of result set rows that is the default
@@ -678,10 +572,9 @@ public class StatementWrapper implements AutoCloseable {
     }
   }
 
-
   /**
    * Sets the limit for the maximum number of rows that any
-   * <code>ResultSet</code> object  generated by this <code>Statement</code>
+   * <code>ResultSet</code> object generated by this <code>Statement</code>
    * object can contain to the given number.
    * If the limit is exceeded, the excess
    * rows are silently dropped.
@@ -698,7 +591,6 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(getSession(), this.toString(), e);
     }
   }
-
 
   /**
    * Retrieves the maximum number of rows that a
@@ -720,7 +612,6 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(getSession(), this.toString(), e);
     }
   }
-
 
   /**
    * Gives the driver a hint as to the direction in which
@@ -746,7 +637,6 @@ public class StatementWrapper implements AutoCloseable {
     }
   }
 
-
   /**
    * Retrieves the direction for fetching rows from
    * database tables that is the default for result sets
@@ -771,6 +661,85 @@ public class StatementWrapper implements AutoCloseable {
 
 
   /**
+   * Detach the session from the connection.<br>
+   * Statements detach the session on executeUpdate or
+   * on close() in the {@link ResultSetWrapper} after executeQuery.
+   */
+  protected void detachSession() {
+    Db db = con.getSession();
+    if (db != null) {
+      // if not already cleaned up
+      db.detach();
+    }
+  }
+
+  /**
+   * Implementation of executeUpdate.<br>
+   *
+   * @param sql the SQL string
+   * @return the number of affected rows
+   * @throws SQLException if the update failed
+   */
+  protected int executeUpdateImpl(String sql) throws SQLException {
+    this.sql = sql;
+    StatementTracer.getInstance().trace(this);
+    return stmt.executeUpdate(sql);
+  }
+
+  /**
+   * Implementation of executeQuery.<br>
+   *
+   * @param sql the SQL string
+   * @return the result set
+   * @throws SQLException if the query failed
+   */
+  protected ResultSet executeQueryImpl(String sql) throws SQLException {
+    this.sql = sql;
+    StatementTracer.getInstance().trace(this);
+    return stmt.executeQuery(sql);
+  }
+
+  /**
+   * Creates a result set wrapper from a result set.
+   *
+   * @param history the statement history
+   * @param jdbcResultSet the low-level jdbc result set
+   * @return the wrapper
+   */
+  protected ResultSetWrapper createResultSetWrapper(StatementHistory history, ResultSet jdbcResultSet) {
+    ResultSetWrapper rs = new ResultSetWrapper(this, history, jdbcResultSet);
+    con.addResultSet(rs);
+    openResultSet = new WeakReference<>(rs);
+    return rs;
+  }
+
+  /**
+   * Forgets about the given result set.
+   *
+   * @param rs the result set wrapper
+   */
+  protected void forgetResultSetWrapper(ResultSetWrapper rs) {
+    con.removeResultSet(rs);
+    openResultSet = null;
+  }
+
+  /**
+   * Sets the running flag of this statement.<br>
+   * Updates the running statements in {@link ManagedConnection}.
+   *
+   * @param running true if running, false if finished
+   */
+  protected synchronized void setRunning(boolean running) {
+    this.running = running;
+    if (running) {
+      con.addRunningStatement(this);
+    }
+    else  {
+      con.removeRunningStatement(this);
+    }
+  }
+
+  /**
    * Asserts the statement is open.
    */
   protected void assertOpen() {
@@ -778,7 +747,6 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(getSession(), "statement already closed");
     }
   }
-
 
   /**
    * Asserts db is writable.
@@ -789,7 +757,6 @@ public class StatementWrapper implements AutoCloseable {
       throw new PersistenceException(db, "is read-only");
     }
   }
-
 
   /**
    * Detaches the Db after a severe error.
