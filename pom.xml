@@ -757,7 +757,7 @@
             </reports>
             <configuration>
               <!-- aggregate does not allow mixing modular and non-modular artifacts: exclude automatic modules -->
-              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-mcp-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi</skippedModules>
+              <skippedModules>tentackle-build-support,tentackle-wurblets,tentackle-maven-support,tentackle-maven-plugin,tentackle-sql-maven-plugin,tentackle-mcp-maven-plugin,tentackle-check-maven-plugin,tentackle-persistence-wurblets,tentackle-i18n-maven-plugin,tentackle-wizard-maven-plugin,tentackle-test-pdo,tentackle-test-fx-rdc,tentackle-jlink-maven-plugin,tentackle-script-groovy,tentackle-script-ruby,tentackle-fx-rdc-poi,tentackle-pdo-mock</skippedModules>
             </configuration>
           </reportSet>
         </reportSets>
