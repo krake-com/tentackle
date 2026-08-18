@@ -58,6 +58,8 @@ public class QuicProtocolConnectionTest {
     transport = new RecordingTransport(URI.create(
       "tripq://localhost:" + QuicTestSupport.freeUdpPort() + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     transport.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
   }
 
   @AfterClass

@@ -267,6 +267,10 @@ public class QuicRemoteInvocationTest {
     Transport server = TripFactory.getInstance().createTransport(URI.create(
       scheme + "://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(keyStore)));
     server.accept();
+
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
+
     assertTrue(server.isAccepting());
     server.getRegistry().register(service, "echo");
 

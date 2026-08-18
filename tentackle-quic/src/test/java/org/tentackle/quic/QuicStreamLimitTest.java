@@ -149,6 +149,8 @@ public class QuicStreamLimitTest {
       QuicTripTransport.PROTOCOL + "://localhost:" + port + "?" +
       QuicTestSupport.keyStoreParameters(keyStore) + "&maxstreams=" + MAX_STREAMS));
     server.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
 
     // fails to create as many connections as the server grants streams: without releasing them,
     // there would be no stream left for the connections that follow
@@ -234,6 +236,8 @@ public class QuicStreamLimitTest {
       QuicTripTransport.PROTOCOL + "://localhost:" + port + "?" +
       QuicTestSupport.keyStoreParameters(keyStore) + "&maxstreams=" + MAX_STREAMS));
     server.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
 
     Transport client = TripFactory.getInstance().createTransport(URI.create(
       QuicTripTransport.PROTOCOL + "://localhost:" + port + "?initial=1&increment=1" + clientParameters));

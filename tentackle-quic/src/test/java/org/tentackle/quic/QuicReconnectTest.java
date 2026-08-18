@@ -83,6 +83,8 @@ public class QuicReconnectTest {
 
     Transport server = TripFactory.getInstance().createTransport(URI.create(serverUri));
     server.accept();
+    // wait for the server to start accepting connections, otherwise the client will fail to connect
+    Thread.sleep(1000);
     Transport client = TripFactory.getInstance().createTransport(URI.create(
       QuicTripTransport.PROTOCOL + "://localhost:" + port + "?initial=1&increment=1&quicidle=" + QUIC_IDLE));
     try {
@@ -97,6 +99,8 @@ public class QuicReconnectTest {
       // ... and comes up again, so that the pool can re-establish the QUIC connection
       server = TripFactory.getInstance().createTransport(URI.create(serverUri));
       server.accept();
+      // wait for the server to start accepting connections, otherwise the client will fail to connect
+      Thread.sleep(1000);
 
       Connection reconnected = client.getConnection();
       assertTrue(reconnected.isOpen(), "the pool did not re-establish the QUIC connection");
