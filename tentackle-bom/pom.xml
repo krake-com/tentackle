@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>25.18.2.1</version>
+    <version>25.19.0.0</version>
   </parent>
 
   <artifactId>tentackle-bom</artifactId>
@@ -18,141 +18,141 @@
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-common</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-update</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-core</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-quic</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-quiche</artifactId>
-        <version>25.0-SNAPSHOT</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-session</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-pdo</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-log-log4j2v</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-log-slf4j</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-script-groovy</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-script-ruby</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-script-jsr</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-domain</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-database</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-persistence</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-i18n</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx-rdc</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx-rdc-poi</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx-rdc-update</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx-atlanta</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-web</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-model</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
       </dependency>
 
       <!-- test dependencies -->
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-pdo-mock</artifactId>
-        <version>25.0-SNAPSHOT</version>
+        <version>25.19.0.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-test-pdo</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
         <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-test-fx-rdc</artifactId>
-        <version>25.18.2.1</version>
+        <version>25.19.0.0</version>
         <scope>test</scope>
       </dependency>
     </dependencies>

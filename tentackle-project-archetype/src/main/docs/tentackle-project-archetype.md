@@ -42,7 +42,7 @@ The archetype declares one required property, `application`, in
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=25.0 \
+    -DarchetypeVersion=25.19.0.0 \
     -DgroupId=com.example \
     -DartifactId=myapp \
     -Dversion=1.0-SNAPSHOT \
