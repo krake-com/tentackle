@@ -60,7 +60,7 @@ public class TcpConnection extends AbstractConnection {
 
   @Override
   public String toString() {
-    return getTransport().toString() + socket.toString();
+    return socket.toString();
   }
 
 }
