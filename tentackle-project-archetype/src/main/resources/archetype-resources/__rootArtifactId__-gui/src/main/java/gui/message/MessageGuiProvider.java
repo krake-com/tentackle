@@ -46,12 +46,13 @@ public class MessageGuiProvider extends DefaultGuiProvider<Message> {
   @Override
   public TableConfiguration<Message> createTableConfiguration() {
     TableConfiguration<Message> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
-    config.addColumn(Message.AN_MESSAGENUMBER, getBundle().getString(Message.AN_MESSAGENUMBER));
+    config.addColumn(Message.AN_MESSAGENUMBER, getBundle().getString(Message.AN_MESSAGENUMBER)).setFilterable(false);
     config.addColumn(Message.AN_MESSAGETYPE, getBundle().getString(Message.AN_MESSAGETYPE));
-    config.addColumn(Message.AN_WHEN, getBundle().getString(Message.AN_WHEN));
+    config.addColumn(Message.AN_WHEN, getBundle().getString(Message.AN_WHEN)).setFilterable(false);
     config.addColumn("formattedRefersTo", getBundle().getString("formattedRefersTo"));
     config.addColumn(Message.RN_ORGUNIT, getBundle().getString(Message.RN_ORGUNIT));
     config.addColumn(Message.AN_TEXT, getBundle().getString(Message.AN_TEXT));
+    config.setFilterEnabled(true);
     return config;
   }
 
