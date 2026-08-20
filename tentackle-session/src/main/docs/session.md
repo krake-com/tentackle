@@ -77,20 +77,57 @@ other than the default.
 ### SessionInfo
 
 [`SessionInfo`](../java/org/tentackle/session/SessionInfo.java) is the **immutable, serializable descriptor** of
-*who* and *what* a session represents: user id/name/class-id, password (held in `char[]`, wipeable via
-`clearPassword()`), application name/id, locale, timezone, client version, host/OS/VM info, and the connection
-`properties`/`propertiesName`. It travels to the server via TRIP when a remote session logs
-in, and the server may write values back (e.g., the resolved user-id) for the client to read.
+*who* and *what* a session represents: user id/name/class-id, the
+[`Credentials`](../java/org/tentackle/session/auth/Credentials.java) proving that identity, application name/id,
+locale, timezone, client version, host/OS/VM info, and the connection `properties`/`propertiesName`. It travels to
+the server via TRIP when a remote session logs in, and the server may write values back (e.g., the resolved
+user-id) for the client to read.
+
+The credentials default to
+[`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java), so `getUserName()`,
+`getPassword()`, `setPassword(char[])` and `clearPassword()` simply read, write and wipe the default credentials
+underneath. `setCredentials(...)` replaces them by another kind — a bearer token, for instance — which is how
+single sign-on plugs in; see [Authentication](authentication.md).
 
 `SessionInfo`s are created by the [`SessionInfoFactory`](../java/org/tentackle/session/SessionInfoFactory.java)
 singleton (default implementation
 [`DefaultSessionInfoFactory`](../java/org/tentackle/session/DefaultSessionInfoFactory.java) producing
 [`DefaultSessionInfo`](../java/org/tentackle/session/DefaultSessionInfo.java)), which can build one from a
 username/password, from a properties name, or from an
-[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) object — honouring
+[`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) object — honoring
 `Cryptor`-encrypted credentials. It also
 carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and `checkServerVersion`
 for client/server version validation (`VersionIncompatibleException`).
+
+### Authentication
+
+Verifying the credentials is a concern of its own, described in full in
+[Authentication](authentication.md). In outline, and living entirely in `org.tentackle.session.auth`:
+
+- On the client, a [`CredentialsProvider`](../java/org/tentackle/session/auth/CredentialsProvider.java) obtains
+  the credentials before the session is opened — interactively if the method requires it, using the UI-agnostic
+  [`CredentialsPrompt`](../java/org/tentackle/session/auth/CredentialsPrompt.java) callbacks. Providers are
+  `MappedService`s registered by method name via
+  [`@CredentialsProviderService`](../java/org/tentackle/session/auth/CredentialsProviderService.java) and selected
+  through the `authentication` key in `backend.properties`; the default is `password`, served by the built-in
+  non-interactive [`PasswordCredentialsProvider`](../java/org/tentackle/session/auth/PasswordCredentialsProvider.java).
+- On the server, the [`AuthenticationManager`](../java/org/tentackle/session/auth/AuthenticationManager.java)
+  drives a priority-ordered chain of
+  [`AuthenticationProvider`](../java/org/tentackle/session/auth/AuthenticationProvider.java) `@Service`s. Each one
+  either returns an [`Authentication`](../java/org/tentackle/session/auth/Authentication.java) (name, claims,
+  roles), abstains with `null`, or vetoes by throwing an
+  [`AuthenticationException`](../java/org/tentackle/session/auth/AuthenticationException.java). Authentication is
+  **deny by default**: without a provider, every login is refused.
+- An optional [`UserResolver`](../java/org/tentackle/session/auth/UserResolver.java) maps the proven identity onto
+  the application's user entity, yielding the `userId`/`userClassId` that are written back onto the `SessionInfo`
+  and drive `DomainContext` and the `SecurityManager`.
+
+Confidential values are held in a [`Secret`](../java/org/tentackle/session/auth/Secret.java), which keeps them
+encrypted in memory — and hence also on the wire — whenever a
+[`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md) is configured.
+
+Note that this applies to sessions reaching the database through a Tentackle server. A direct two-tier session
+(`jdbc:`/`jndi:` URL) authenticates at the database itself and never runs the provider chain.
 
 ### Session creation, factory, and pooling
 
@@ -226,6 +263,11 @@ A family of (mostly persistence-related) exceptions is defined here so the upper
 [`NotRemovableException`](../java/org/tentackle/session/NotRemovableException.java) and
 [`ConstraintException`](../java/org/tentackle/session/ConstraintException.java).
 
+The authentication failures live next to their SPI in `org.tentackle.session.auth`:
+[`AuthenticationException`](../java/org/tentackle/session/auth/AuthenticationException.java) and its subclass
+[`CredentialsExpiredException`](../java/org/tentackle/session/auth/CredentialsExpiredException.java), which tells
+the client that refreshing the credentials and retrying is worth a try.
+
 ---
 
 ## Package Layout
@@ -233,6 +275,7 @@ A family of (mostly persistence-related) exceptions is defined here so the upper
 | Package                         | Contents                                                                                                                                                                                                                                                           |
 |---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `org.tentackle.session`         | The whole public API: `Session`, `SessionInfo`, the factories and pools, the modification-tracking and master-serial types, the task-dispatcher types, the configuration classes, the model annotations, the `Default*` helper implementations and the exceptions. |
+| `org.tentackle.session.auth`    | Authentication: the `Credentials` types and their `Secret`, the server-side `AuthenticationProvider`/`AuthenticationManager`/`UserResolver` SPI, the client-side `CredentialsProvider`/`CredentialsPrompt` SPI, and the authentication exceptions.                                             |
 | `org.tentackle.session.service` | The [`Hook`](../java/org/tentackle/session/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module.                                                                                                                                 |
 | `org.tentackle.session.apt`     | The annotation processor [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java) for `@MasterSerialEventService`.                                                                      |
 
@@ -246,7 +289,8 @@ Application code rarely constructs sessions directly; it usually receives one fr
 context. At the lowest level, however, the flow is:
 
 ```java
-// describe who/what
+// describe who/what (the username/password form creates PasswordCredentials;
+// setCredentials(...) would swap in a token instead)
 SessionInfo info = SessionInfoFactory.getInstance().create("scott", password, "myapp");
 
 // create an open session (local or remote, decided by the configuration/URL)
@@ -278,6 +322,10 @@ The very same code runs unchanged whether `session.isRemote()` is true or false.
 where a mirror session does the actual JDBC work; `getRemoteSession()` exposes server-side helpers (e.g.,
 server-side logging). For a local session, the implementation in `tentackle-database` talks to JDBC directly.
 
+The difference shows at login: a remote session sends its `SessionInfo` — credentials included — to the server,
+which runs the [authentication](authentication.md) provider chain and writes the resolved user back onto the info,
+whereas a local session authenticates at the database itself.
+
 ### Reacting to changes across clients
 
 A client registers a `ModificationListener` with the `ModificationTracker`. The tracker (in remote mode)
@@ -294,8 +342,9 @@ another.
   `@MasterSerialEventService(YourEvent.class)`. The server stays oblivious to handlers; clients bind their own.
 - **Custom session info:** provide a `SessionInfo`/`SessionInfoFactory` implementation via the SPI to carry extra
   per-session attributes between client and server.
-- **Custom authentication:** register an `AuthenticationProvider` to verify a new kind of credentials on the server,
-  and a `CredentialsProvider` to obtain them on the client — see [Authentication](authentication.md).
+- **Custom authentication:** register an `@Service` `AuthenticationProvider` to verify a new kind of credentials on
+  the server, and a `@CredentialsProviderService` `CredentialsProvider` to obtain them on the client — see
+  [Authentication](authentication.md).
 - **Reacting to session lifecycle:** register a `SessionCloseHandler` (per session, or globally via the
   `SessionFactory`) — but keep it non-blocking, as it runs during close.
 
@@ -307,8 +356,9 @@ another.
 
 - It **requires transitive** [`tentackle-core`](../../../../tentackle-core/src/main/docs/core.md) (and through it `tentackle-common`):
   TRIP serialization, tasks/dispatchers, validation, binding, reflection and service discovery.
-- It **opens** `org.tentackle.session` to `org.tentackle.core` for TRIP, because `SessionInfo`, modification and
-  master-serial events travel between JVMs.
+- It **exports** `org.tentackle.session` and `org.tentackle.session.auth`, and **opens** both to
+  `org.tentackle.core` for TRIP, because `SessionInfo` and its credentials, modification and master-serial events
+  travel between JVMs.
 - It **provides** a `ModuleHook` service (`org.tentackle.session.service.Hook`) for i18n bundle resolution.
 - It depends on **neither** `tentackle-sql` nor `tentackle-database`; those (and the remoting modules) depend on
   *it* and supply the concrete local/remote `Session` implementations.
