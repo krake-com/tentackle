@@ -52,7 +52,7 @@ myapp (root pom — aggregator + pluginManagement + model defaults)
 ├── myapp-persistence   persistence *implementations* + TRIP remote delegates  (open module)
 ├── myapp-gui           JavaFX RDC controllers, editors, finders, FXML/CSS, images  (open module)
 ├── myapp-client        the desktop FX client application
-├── myapp-server        the middle-tier TRIP server + update service
+├── myapp-server        the middle-tier TRIP server: session, authentication + update service
 ├── myapp-daemon        the headless console client
 └── jlink               jlink/jpackage images (only built under the "jlink" profile)
     ├── client
@@ -367,7 +367,7 @@ as services** (`@Service(...)`), so the framework picks them up automatically:
 
 | Class                       | Extends / implements             | Why it exists                                                                     |
 |-----------------------------|----------------------------------|-----------------------------------------------------------------------------------|
-| `MyAppSessionInfo`          | `DefaultSessionInfo`             | login credentials + connection params; here it forces usernames to **uppercase**  |
+| `MyAppSessionInfo`          | `DefaultSessionInfo`             | [credentials](../../../../tentackle-session/src/main/docs/authentication.md) + connection params; here it forces usernames to **uppercase** |
 | `MyAppSessionInfoFactory`   | `@Service(SessionInfoFactory)`   | builds `MyAppSessionInfo` from username/password/properties                       |
 | `MyAppDomainContext`        | `DefaultDomainContext`           | the per-call context; narrows `getSessionInfo()` to `MyAppSessionInfo`            |
 | `MyAppDomainContextFactory` | `@Service(DomainContextFactory)` | builds `MyAppDomainContext`                                                       |
@@ -379,8 +379,11 @@ as services** (`@Service(...)`), so the framework picks them up automatically:
 
 The **`SessionInfo` / `DomainContext`** pair is worth internalizing early:
 
-- A **`SessionInfo`** describes *who is connecting and how* (user, password, backend properties). `MyAppSessionInfo`
-  uppercases usernames because the model declares the `OrgUnit.name` key as `uc` — the two must agree.
+- A **`SessionInfo`** describes *who is connecting and how* (the credentials plus the backend properties).
+  `MyAppSessionInfo` uppercases usernames because the model declares the `OrgUnit.name` key as `uc` — the two must
+  agree. `getUserName()`, `getPassword()` and `setPassword(...)` read and write the default
+  [`PasswordCredentials`](../../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
+  underneath; a token-based login replaces them by `TokenCredentials` without touching this class.
 - A **`DomainContext`** is the ambient handle threaded through every PDO call: it carries the `Session` (database or
   remote connection) and is what you pass to `Pdo.create(Clazz.class, context)`. The FX controllers obtain it via
   `Application.getInstance().getDomainContext()` (see `MainController.getDomainContext()`).
@@ -477,7 +480,8 @@ new messages. It illustrates that PDO change events, like PDO methods, cross the
 ## 9. Remoting and the login lifecycle (TRIP)
 
 > Reference: [TRIP](../../../../tentackle-core/src/main/docs/trip.md),
-> [session](../../../../tentackle-session/src/main/docs/session.md).
+> [session](../../../../tentackle-session/src/main/docs/session.md),
+> [authentication](../../../../tentackle-session/src/main/docs/authentication.md).
 
 The `trip` packages contain the connection/session classes that make remoting concrete:
 
@@ -494,10 +498,12 @@ authentication happens — split along the line between *verifying credentials* 
 - `MyAppRemoteDbConnectionImpl.checkClientVersion(...)` rejects clients whose `Version.RELEASE` differs from the
   server's — version skew is caught at connect time (`VersionIncompatibleException`).
 - `MyAppPasswordAuthenticationProvider` is a `@Service(AuthenticationProvider.class)` and does the **credential
-  check**: it looks up the `User` by unique domain key (the uppercase username), compares `user.hash(password)`
-  against `user.selectPasswordHash()` (recall the hash is `[MUTE]`d out of the PDO and fetched on demand), enforces
-  `isLoginAllowed()`, and returns the proven identity with the user's id. Adding single sign-on means adding a
-  second provider next to it, not editing this one.
+  check**. It `supports()` `PasswordCredentials`, looks up the `User` by unique domain key (the uppercase username),
+  compares `user.hash(password)` against `user.selectPasswordHash()` (recall the hash is `[MUTE]`d out of the PDO and
+  fetched on demand), enforces `isLoginAllowed()`, and returns a `DefaultAuthentication` carrying the proven name and
+  the user's id and class id — so no `UserResolver` is needed. A refused login throws `AuthenticationException`.
+  It is the *only* provider the archetype ships, and authentication is **deny by default**: remove it and every login
+  fails.
 - `MyAppRemoteDbSessionImpl.verifySessionInfo(...)` calls `super` — which runs that provider chain — and then adds
   what belongs to the **session**: it sets the locale, rejects duplicate logins of the same main session
   (`AlreadyLoggedInException`), and **logs a `LOGIN` message**.
@@ -506,6 +512,28 @@ authentication happens — split along the line between *verifying credentials* 
 
 Notice how login/logout auditing reuses the very same `Message.log(...)` PDO that the rest of the app uses — the
 framework's pieces compose.
+
+### 9.1 Adding single sign-on
+
+That split is what makes the generated code extensible: `verifySessionInfo` is about the *session*, the provider chain
+is about the *credentials*. Adding OIDC, Kerberos or a client certificate therefore means adding classes next to the
+generated ones, never editing them — and both mechanisms then coexist, which is what a mix of human users and service
+accounts needs. Per [Authentication](../../../../tentackle-session/src/main/docs/authentication.md):
+
+1. a second `@Service(AuthenticationProvider.class)` in `myapp-server/.../server/auth` that `supports()`
+   `TokenCredentials`, verifies the token and leaves the user id at zero (a lower `getPriority()` puts it ahead of the
+   password provider; returning `null` abstains, throwing vetoes);
+2. a `@Service(UserResolver.class)` mapping the proven name onto MyApp's `User` — the same `selectByUniqueDomainKey` /
+   `isLoginAllowed()` lookup the password provider does, only without the hash comparison;
+3. on the client, a `@CredentialsProviderService("oidc")` that runs the browser flow via the `CredentialsPrompt` and
+   returns `TokenCredentials`, selected with `authentication=oidc` in `backend.properties` (§12). The RDC
+   [login view](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login) then replaces the
+   username and password fields of `MyAppLoginApplication` by a single sign-in button, and retries once on a
+   `CredentialsExpiredException`.
+
+Nothing in `MyAppSessionInfo`, `MyAppRemoteDbSessionImpl` or the security layer changes: the `userId`/`userClassId`
+pair `verifySessionInfo` copies onto the session info is the same either way, so `DomainContext`, the
+[`SecurityManager`](../../../../tentackle-pdo/src/main/docs/security.md) and the modification log carry on unchanged.
 
 ---
 
@@ -566,7 +594,9 @@ appear:
   `url=${dbService}` (a `trip://…` server URL) and the daemon an H2 in-memory URL; the *packaged images* get their
   own filtered `backend.properties` (under `jlink/*/src/main/filtered-resources`) — the client connects to the TRIP
   service, the daemon additionally carries its fixed `daemon` account. Commented lines show optional
-  auto-login / view-only setups.
+  auto-login / view-only setups. The optional `authentication` key selects the client-side credentials provider and
+  defaults to `password`; see [Backend Properties](../../../../tentackle-session/src/main/docs/backend-properties.md)
+  for the full key list.
 - **`server.properties`** gives the server its JDBC `url`/`user`/`password`, the TRIP `service` URL to publish, and a
   `timeout`.
 
@@ -662,6 +692,9 @@ step by step.
   and add a `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
+- **Add another login method.** Write a second `AuthenticationProvider` (plus a `UserResolver`, and a
+  `CredentialsProvider` on the client) as sketched in §9.1 — see
+  [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md).
 - **Evolve the schema.** Add or change an attribute in the entity's
   [model block](../../../../tentackle-model/src/main/docs/model-definition.md) and rebuild: the wurblets regenerate
   the accessors and column plumbing, and the
@@ -689,6 +722,7 @@ step by step.
 | Remoting / TRIP                        | [trip.md](../../../../tentackle-core/src/main/docs/trip.md) · [session.md](../../../../tentackle-session/src/main/docs/session.md)                                                                                                                                              |
 | The FX desktop UI                      | [rdc.md](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) · [fx.md](../../../../tentackle-fx/src/main/docs/fx.md) · [atlanta.md](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)                                                                                   |
 | Auto-update                            | [update.md](../../../../tentackle-update/src/main/docs/update.md) · [fx-rdc-update.md](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)                                                                                                                      |
+| Authentication / single sign-on        | [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md) · [backend-properties.md](../../../../tentackle-session/src/main/docs/backend-properties.md)                                                                                                 |
 | Security                               | [security.md](../../../../tentackle-pdo/src/main/docs/security.md)                                                                                                                                                                                                              |
 | Application startup & lifecycle        | [application.md](../../../../tentackle-pdo/src/main/docs/application.md)                                                                                                                                                                                                        |
 | Validation & binding                   | [validation.md](../../../../tentackle-core/src/main/docs/validation.md) · [binding.md](../../../../tentackle-core/src/main/docs/binding.md) · [tables.md](../../../../tentackle-fx/src/main/docs/tables.md)                                                                     |
