@@ -32,6 +32,25 @@ matter of the connection URI scheme.
 - **Protocol schemes:** `tripq` (plain QUIC), `tripcq` (QUIC + compression)
 - **License:** LGPL 2.1
 
+### Two QUIC implementations
+
+Tentackle ships QUIC twice. [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
+is this module's sibling: the same transport, but built on
+[Cloudflare quiche](https://github.com/cloudflare/quiche) — the Rust implementation — bound through
+the JDK's FFM API instead of on KWIK. Both speak RFC-9000 and **interoperate**: a KWIK client can call
+a quiche server and vice versa, which `QuicheKwikInteropTest` verifies on every build.
+
+|                 | `tentackle-quic` (KWIK) | `tentackle-quiche` (Cloudflare quiche)    |
+|-----------------|-------------------------|-------------------------------------------|
+| Implementation  | pure Java               | Rust, called through FFM                  |
+| Platforms       | anywhere a JVM runs     | linux/macOS/Windows on x86-64 and aarch64 |
+| Extra JVM flags | none                    | `--enable-native-access`                  |
+| Schemes         | `tripq`, `tripcq`       | `tripj`, `tripcj`                         |
+
+Start here. Reach for `tentackle-quiche` when you want the reference implementation's congestion control
+and packet processing, or when you are already shipping native code anyway. The two register different
+schemes, so nothing stops an application from deploying both and letting each client pick.
+
 ---
 
 ## How it fits into TRIP
@@ -195,7 +214,7 @@ the blocking socket streams of the TCP transports: an interrupt of the calling
 thread neither aborts the operation nor gets lost. It is withheld for the duration
 of the call and re-asserted before returning.
 
-This is not a detail. Tentackle's [task dispatchers](../../../tentackle-core/src/main/docs/tasks-daemon.md)
+This is not a detail. Tentackle's [task dispatchers](../../../../tentackle-core/src/main/docs/tasks-daemon.md)
 interrupt their own thread whenever work is queued, to cut a pending sleep
 short — see `DefaultTaskDispatcher.interrupt()`. Such an interrupt regularly lands
 while the thread is inside a remote invocation (`DbModificationTracker` polls from
@@ -215,8 +234,8 @@ consumes the interrupt without restoring it. Hence
   operations, restoring it once they return.
 
 An interrupt that arrives *while* KWIK is already blocked is still KWIK's to handle,
-which no wrapper can change. The `tentackle-quiche` transport does not have that
-limitation because it implements the blocking streams itself.
+which no wrapper can change. The [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
+transport does not have that limitation because it implements the blocking streams itself.
 
 ---
 
@@ -394,6 +413,11 @@ blocking across the many pooled connections a busy client maintains. The trade-o
 is a UDP-based stack and the additional KWIK dependency, which is why it ships as
 its own optional module.
 
+The `tripj` and `tripcj` schemes of
+[`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) are the same two choices on
+the quiche stack, and they talk to `tripq`/`tripcq` peers — the scheme selects the local implementation,
+not the wire protocol. The compression of `tripcq`/`tripcj`, on the other hand, must match on both ends.
+
 ---
 
 ## See also
@@ -401,6 +425,8 @@ its own optional module.
 - [TRIP — Tentackle Remote Invocation Protocol](../../../../tentackle-core/src/main/docs/trip.md)
   — the protocol this transport plugs into, including the
   [custom-transport guide](../../../../tentackle-core/src/main/docs/trip.md#writing-a-custom-transport).
+- [TRIP over Cloudflare quiche](../../../../tentackle-quiche/src/main/docs/quiche.md) — the sibling
+  module providing the same transport on the quiche stack, and how the two compare.
 - [KWIK](https://github.com/ptrd/kwik) — the underlying QUIC implementation
   (`tech.kwik.core`).
 - RFC 9000 — QUIC: A UDP-Based Multiplexed and Secure Transport.

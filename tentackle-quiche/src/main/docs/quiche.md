@@ -2,12 +2,12 @@
 
 ## Overview
 
-`tentackle-quiche` carries [TRIP](../../../tentackle-core/src/main/docs/trip.md) over
+`tentackle-quiche` carries [TRIP](../../../../tentackle-core/src/main/docs/trip.md) over
 [QUIC](https://www.rfc-editor.org/rfc/rfc9000), using
 [Cloudflare quiche](https://github.com/cloudflare/quiche) — the Rust implementation that runs a
 noticeable share of the public internet — through the Java FFM API (`java.lang.foreign`).
 
-It is the sibling of [tentackle-quic](../../../tentackle-quic/src/main/docs/quic.md), which provides the
+It is the sibling of [tentackle-quic](../../../../tentackle-quic/src/main/docs/quic.md), which provides the
 same transport on top of [KWIK](https://github.com/ptrd/kwik), a QUIC stack written in pure Java. Both
 speak RFC-9000 and **interoperate**: a quiche client can call a KWIK server and vice versa, which the
 module's `QuicheKwikInteropTest` verifies on every build.
@@ -33,7 +33,7 @@ stops you from deploying both: they register different schemes, so a single appl
 ## How it fits into TRIP
 
 Exactly as every other transport does — through the
-[transport SPI](../../../tentackle-common/src/main/docs/services.md). Nothing in the application changes
+[transport SPI](../../../../tentackle-common/src/main/docs/services.md). Nothing in the application changes
 but the URI:
 
 ```java
@@ -119,7 +119,7 @@ A blocked read, a blocked write and the handshake wait are **interrupt-agnostic*
 blocking socket streams of the TCP transports: an interrupt of the calling thread does not abort them.
 It is remembered and re-asserted when the call returns, so nothing is swallowed either.
 
-This is not a detail. Tentackle's [task dispatchers](../../../tentackle-core/src/main/docs/tasks-daemon.md)
+This is not a detail. Tentackle's [task dispatchers](../../../../tentackle-core/src/main/docs/tasks-daemon.md)
 interrupt their own thread whenever work is queued, in order to cut a pending sleep short — see
 `DefaultTaskDispatcher.interrupt()`. Such an interrupt regularly lands while the thread is inside a remote
 invocation (`DbModificationTracker` polls from its dispatcher thread), and a transport that treated it as
@@ -275,7 +275,7 @@ Freemarker template needs to be updated accordingly.
 
 ## See also
 
-- [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md) — the KWIK-based sibling.
-- [TRIP](../../../tentackle-core/src/main/docs/trip.md) — the protocol and its transport SPI.
-- [I/O and Networking](../../../tentackle-core/src/main/docs/io.md) — `SslParameters` and the stream helpers.
-- [Multi-tier cascade](../../../src/main/docs/tiers.md) — where the schemes fit in.
+- [TRIP over QUIC](../../../../tentackle-quic/src/main/docs/quic.md) — the KWIK-based sibling.
+- [TRIP](../../../../tentackle-core/src/main/docs/trip.md) — the protocol and its transport SPI.
+- [I/O and Networking](../../../../tentackle-core/src/main/docs/io.md) — `SslParameters` and the stream helpers.
+- [Multi-tier cascade](../../../../src/main/docs/tiers.md) — where the schemes fit in.
