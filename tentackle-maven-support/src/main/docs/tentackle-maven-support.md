@@ -7,7 +7,7 @@ helpers shared by every Tentackle Maven plugin. It is not a plugin itself and de
 the `AbstractMojo` subclasses, the toolchain/tool-location plumbing, the annotation-processing harness, and the
 assorted utilities that the actual plugins extend.
 
-Six plugins build on it:
+Seven plugins build on it:
 
 - [`tentackle-maven-plugin`](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the analyze phase, property/beaninfo/version generation
 - [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — DDL generation
@@ -15,6 +15,7 @@ Six plugins build on it:
 - [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) — model/consistency checks
 - [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — jlink/jpackage image building
 - [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) — project wizard
+- [`tentackle-mcp-maven-plugin`](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) — MCP server serving the model to coding agents
 
 By factoring the recurring concerns into one place, each plugin only has to implement its own goal logic. The
 module is packaged with an `Automatic-Module-Name` of `org.tentackle.maven` and is never shipped inside, nor used
@@ -195,7 +196,7 @@ on all platforms, since Windows only knows the DOS hidden attribute.
                 └────────────────────────────────────────────┘
                         ▲           ▲            ▲
         ┌───────────────┘     ┌─────┘       ┌────┴───────────┐
-  tentackle-maven-plugin  …-sql-…   …-i18n-… / …-check-… / …-jlink-… / …-wizard-…
+  tentackle-maven-plugin  …-sql-…   …-i18n-… / …-check-… / …-jlink-… / …-wizard-… / …-mcp-…
         (analyze, properties,  (DDL)   (each implements executeImpl())
          beaninfo, versions)
                         │
@@ -217,5 +218,6 @@ drives produce the service descriptors and analyze-info files later consumed by 
 - [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) ·
   [i18n Maven Plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) ·
   [Check Maven Plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) ·
-  [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+  [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) ·
+  [MCP Maven Plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
 - [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)
