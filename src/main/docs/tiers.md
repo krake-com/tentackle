@@ -418,3 +418,4 @@ tier. The cascade depth is limited only by latency budget, not by the framework.
 - [PDO / Persistent Domain Objects](../../../tentackle-pdo/src/main/docs/pdo.md) — the objects that travel the cascade.
 - [PDO Cache](../../../tentackle-pdo/src/main/docs/cache.md) — the cache internals (indexes, strategies, tableserial expiry) behind the stacked, per-tier caches described above.
 - [Modules](./modules.md) — where the server, session, and database modules sit in the overall module graph.
+- [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md) — what the tier boundary costs in each approach, and why a cascade is not a shape REST or RMI can take.

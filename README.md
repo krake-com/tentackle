@@ -1,11 +1,36 @@
 ![Tentackle](./src/main/docs/assets/tentackle_Logo_V6.png)
 
-**Tentackle** is a Java framework for building modular, multi-tier,
-enterprise-grade applications — from the database up to a JavaFX desktop client —
-with a single, location-transparent programming model. It is Open Source (LGPL 2.1),
-available from [Maven Central](https://search.maven.org/search?q=org.tentackle),
-and requires Java 25 or later (older LTS lines are maintained on the `java21`,
-`java17`, `java11` and `java8` branches).
+> **Tentackle lets you build a JavaFX desktop app and its multi-tier backend as one
+> domain model — call any entity method in any JVM, with no REST plumbing between
+> your tiers.**
+
+Write `invoice.approve()` once, in the domain layer. Call it from a desktop client
+three tiers away from the database, and it works: the object arrives fully alive,
+navigates its relations on demand, and opens a real transaction on the tier that
+owns the connection. There is no DTO layer, no endpoint, no fetch plan, and no
+`LazyInitializationException` — the exception type does not exist here.
+
+```java
+// domain layer — written once, deployed everywhere
+@Transaction
+public void approve() {
+  Customer customer = getCustomer();                    // fetched on demand, locally or over the wire
+  if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {
+    throw new DomainException("credit limit exceeded");
+  }
+  setState(InvoiceState.APPROVED);
+  me().persist();                                       // validates the whole aggregate, then writes
+}
+
+// JavaFX client, three tiers from the database — the entire call site
+invoice.approve();
+```
+
+Which tier that code runs on is a connection URL in a properties file, not a
+decision baked into the source. Tentackle is Open Source (LGPL 2.1), available from
+[Maven Central](https://search.maven.org/search?q=org.tentackle), and requires
+Java 25 or later (older LTS lines are maintained on the `java21`, `java17`,
+`java11` and `java8` branches).
 
 ## Why Tentackle?
 
@@ -53,13 +78,64 @@ Five things set Tentackle apart from other Java frameworks:
    [auto-update](tentackle-update/src/main/docs/update.md) and rich
    [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md) desktop clients.
 
-For a sense of where Tentackle excels, read
-[Why Tentackle Fits Technical and Scientific Applications](src/main/docs/technical-scientific.md).
+## When to use Tentackle — and when not to
+
+A framework that fits everything fits nothing. Tentackle makes a specific trade:
+it gives up polyglot reach and ecosystem size to buy a single, coherent domain
+model that runs unchanged on every tier. That trade is excellent for some projects
+and a poor deal for others, so here is the honest filter.
+
+### Tentackle is probably a good fit if…
+
+- **You build both ends.** Java on the client (or the edge node) *and* Java on the
+  server, shipped by one team from one model. This is the central assumption.
+- **Your domain is rich and long-lived** — invariants, aggregates, workflows,
+  business rules that outlive three UI rewrites — rather than CRUD over a table.
+- **The topology is imposed on you, or simply awkward:** JVMs pinned to hardware,
+  more than two tiers, NAT or a gateway in the middle, links that are slow, lossy,
+  or without a PKI. See
+  [Technical and Scientific Applications](src/main/docs/technical-scientific.md).
+- **You need a real desktop client** — tables, trees, master/detail forms, keyboard
+  workflows, auto-update — not a web page. `tentackle-fx-rdc` is a first-class
+  citizen here, not an afterthought.
+- **Being wrong is expensive.** Money, materials, measurements, regulated records:
+  domains where a quietly corrupted row costs more than a night of downtime. See
+  [Correctness First](src/main/docs/correctness-first.md).
+- **You are tired of the DTO/mapper/fetch-plan layer** and would rather not
+  maintain a second, weaker copy of your model just to move it between your own
+  processes.
+
+### Look elsewhere if…
+
+- **You are building a stateless web API or microservices.** Use Quarkus, Spring
+  Boot, or Micronaut. They are excellent at it, Tentackle is not aiming at it, and
+  its location-transparency machinery solves a problem you do not have.
+- **Your clients are browsers, mobile apps, or other teams' services.** They cannot
+  speak TRIP and should not have to. You *can* put a Tentackle
+  [web node](tentackle-web/src/main/docs/web.md) behind a REST edge — but if that
+  edge is the whole product, the framework earns little.
+- **You need polyglot services, or infrastructure you do not control.** Tentackle
+  assumes JVM-to-JVM communication on a network you own.
+- **You want to bolt it onto an existing Spring/JPA codebase.** Tentackle is a
+  programming model, not a library you add to fix a DTO layer.
+- **Two teams must deploy on genuinely independent schedules.** A shared domain
+  model means coordinated releases; an organizational seam wants a negotiated wire
+  contract instead.
+- **It is a one-tier CRUD app**, or ecosystem size and hiring familiarity outrank
+  architectural fit. Both are legitimate reasons to choose something else.
+- **You need hard real-time.** Tentackle runs on a standard JVM. Its sweet spot is
+  the soft-real-time layer *above* hard-real-time PLCs and firmware.
+
+If you are weighing Tentackle against the alternatives at the tier boundary, the
+detailed argument — with code on both sides — is in
+[Location Transparency vs. REST, RMI and Spring Remoting](src/main/docs/remoting-comparison.md).
 
 ## Where to go next
 
 - 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build, and run a
   complete multi-tier application in minutes.
+- ⚖️ **[Tentackle vs. REST, RMI and Spring Remoting](src/main/docs/remoting-comparison.md)** —
+  what the tier boundary costs in each approach, and where each one wins.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
 - 🤖 **[AI Agent Tooling](src/main/docs/ai-agents.md)** — the MCP model server, the

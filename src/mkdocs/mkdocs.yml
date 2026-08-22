@@ -70,6 +70,7 @@ nav:
       - Exceptions and Error Handling: exceptions.md
       - Technical & Scientific Applications: technical-scientific.md
       - PDOs vs. Traditional ORMs: pdo-vs-orm.md
+      - vs. REST, RMI and Spring Remoting: remoting-comparison.md
   - Persistent Domain Objects (PDO):
       - PDO — Persistent Domain Objects: pdo.md
       - The DomainContextProvider: domain-context-provider.md
