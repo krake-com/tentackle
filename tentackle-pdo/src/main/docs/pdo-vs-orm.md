@@ -479,5 +479,7 @@ defining property of an ordinary Java object.**
   lets a PDO stay fully functional on any tier.
 - [session.md](../../../../tentackle-session/src/main/docs/session.md) — what a
   `Session` is (a resource), and crucially what it is *not* (a persistence context).
+- [remoting-comparison.md](../../../../src/main/docs/remoting-comparison.md) — the companion comparison:
+  the same argument applied to the tier boundary (REST, RMI, Spring Remoting).
 - [cursors.md](../../../../tentackle-persistence/src/main/docs/cursors.md) — the
   cursor used in the batch example above, and why it works remotely too.

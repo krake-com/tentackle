@@ -20,6 +20,7 @@ the [Index](./index.md).
 - [Exceptions and Error Handling](./exceptions.md) — the exception hierarchy, the `temporary` flag behind transparent retry, session-aware messages, and how a `Throwable` survives a trip between tiers.
 - [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md) — where location transparency shines.
 - [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md) — why a PDO is never in a degraded state.
+- [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md) — what the tier boundary costs in each approach, the classic "location transparency is a lie" objection answered, and where each alternative wins.
 - [Embedded Entities vs. Application-Specific DataTypes](./embedded-vs-datatype.md) — choosing the right modeling tool.
 
 ## Persistent Domain Objects (PDO)

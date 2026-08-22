@@ -112,6 +112,7 @@ topic-grouped listing of every document, see the
 
 ## L
 
+- **Location transparency (and its limits)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Locking (optimistic `serial`, token locks)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **`Loggable` (how much of an exception to log)** — [Exceptions and Error Handling](./exceptions.md#loggable-how-much-of-an-exception-to-log), [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md)
 - **Logging** — [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md), [SLF4J Provider](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md), [Log4J 2 Provider](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md)
@@ -180,7 +181,9 @@ topic-grouped listing of every document, see the
 - **Reconnection (dead resources, policies)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **`@RecordDTO` (generating DTOs from records)** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md)
 - **Remote delegates (naming, lookup, preloading)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates)
-- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
+- **Remoting** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [vs. REST, RMI and Spring Remoting](./remoting-comparison.md)
+- **REST (why not between your own tiers, and where it does belong)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md), [Tentackle Web](../../../tentackle-web/src/main/docs/web.md)
+- **RMI (comparison and migration)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md#part-2--tentackle-vs-rmi-and-spring-remoting), [Migrate from RMI to TRIP](./migrate_rmi_trip.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
@@ -202,6 +205,7 @@ topic-grouped listing of every document, see the
 - **SessionTaskDispatcher (session-aware background tasks)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md#which-dispatcher-do-i-want), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
 - **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
+- **Spring Remoting (comparison)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md#part-2--tentackle-vs-rmi-and-spring-remoting)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
@@ -236,6 +240,7 @@ topic-grouped listing of every document, see the
 ## W
 
 - **Walkthrough (generated application)** — [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)
+- **When to use Tentackle (and when not to)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md#choosing), [Technical & Scientific Applications](./technical-scientific.md), [What a Seasoned Java Developer Would Not Expect](./unexpected.md)
 - **Web integration** — [Tentackle Web](../../../tentackle-web/src/main/docs/web.md)
 - **Wizard (PDO/operation generator)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md), [AI Agent Tooling Support](./ai-agents.md) (headless batch modes)
 - **Wurblet API (`ModelWurblet`, `WurbletArgument`, `JoinPath`)** — [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md), [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md) (`DbModelWurblet`, the clause generators)

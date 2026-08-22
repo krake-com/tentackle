@@ -239,3 +239,4 @@ mainstream framework is the better fit is
 - [TRIP](../../../tentackle-core/src/main/docs/trip.md) — the wire protocol.
 - [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md) — build-time service resolution.
 - [AI Agent Tooling Support](./ai-agents.md) — the MCP server, the headless batch modes, and the bundled agent skills.
+- [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md) — the same deviations argued against the alternatives, with the honest limits named.
