@@ -279,6 +279,7 @@ and without bothering the user.
 
 ## See Also
 
+- [Single Sign-On with Google](../../../../src/main/docs/google-sso.md) — the OIDC sketches above worked out end to end: the browser flow with PKCE, offline ID token verification, and the resolver.
 - [Tentackle Session](session.md) — the session the login creates, and `SessionInfo` itself.
 - [Backend Properties](backend-properties.md) — the `authentication` key and the other connection settings.
 - [Security — Permissions, Rules, and Grantees](../../../../tentackle-pdo/src/main/docs/security.md) — authorization, i.e. what the authenticated user may do.
