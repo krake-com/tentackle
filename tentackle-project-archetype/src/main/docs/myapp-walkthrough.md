@@ -518,7 +518,8 @@ framework's pieces compose.
 That split is what makes the generated code extensible: `verifySessionInfo` is about the *session*, the provider chain
 is about the *credentials*. Adding OIDC, Kerberos or a client certificate therefore means adding classes next to the
 generated ones, never editing them — and both mechanisms then coexist, which is what a mix of human users and service
-accounts needs. Per [Authentication](../../../../tentackle-session/src/main/docs/authentication.md):
+accounts needs. Per [Authentication](../../../../tentackle-session/src/main/docs/authentication.md) — and worked
+out class by class in [Single Sign-On with Google](../../../../src/main/docs/google-sso.md):
 
 1. a second `@Service(AuthenticationProvider.class)` in `myapp-server/.../server/auth` that `supports()`
    `TokenCredentials`, verifies the token and leaves the user id at zero (a lower `getPriority()` puts it ahead of the
@@ -694,7 +695,8 @@ step by step.
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
 - **Add another login method.** Write a second `AuthenticationProvider` (plus a `UserResolver`, and a
   `CredentialsProvider` on the client) as sketched in §9.1 — see
-  [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md).
+  [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md) for the SPI and
+  [Single Sign-On with Google](../../../../src/main/docs/google-sso.md) for a complete worked example.
 - **Evolve the schema.** Add or change an attribute in the entity's
   [model block](../../../../tentackle-model/src/main/docs/model-definition.md) and rebuild: the wurblets regenerate
   the accessors and column plumbing, and the

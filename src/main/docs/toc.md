@@ -55,6 +55,7 @@ the [Index](./index.md).
 - [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md) — the domain-logic layer base.
 - [Tentackle Session](../../../tentackle-session/src/main/docs/session.md) — the persistence and security context.
 - [Authentication — Credentials, Providers, and Single Sign-On](../../../tentackle-session/src/main/docs/authentication.md) — the pluggable login: password, OAuth2/OIDC tokens, and your own.
+- [Single Sign-On with Google](./google-sso.md) — a step-by-step walkthrough: the OAuth client, the browser flow with PKCE, ID token verification, and mapping the identity onto a user.
 - [Table Names](../../../tentackle-session/src/main/docs/table-names.md) — schemas, schema mapping and table prefixes: `@TableName`, the wurblet properties and the maven parameters.
 - [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md) — the change-notification bus: serials, listeners, master serial events.
 - [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md) — the `backend.properties` reference: connection, server, and client configuration keys.
