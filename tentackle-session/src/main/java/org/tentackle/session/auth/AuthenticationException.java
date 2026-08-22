@@ -57,4 +57,12 @@ public class AuthenticationException extends LoginFailedException {
     super(message, cause);
   }
 
+  /**
+   * Constructs a new authentication exception.<br>
+   * No-args constructor mainly for serialization.
+   */
+  public AuthenticationException() {
+    super();
+  }
+
 }

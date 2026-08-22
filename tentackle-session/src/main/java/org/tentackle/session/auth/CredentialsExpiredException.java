@@ -54,4 +54,12 @@ public class CredentialsExpiredException extends AuthenticationException {
     super(message, cause);
   }
 
+  /**
+   * Constructs a new credentials expired exception.<br>
+   * No-args constructor mainly for serialization.
+   */
+  public CredentialsExpiredException() {
+    super();
+  }
+
 }
