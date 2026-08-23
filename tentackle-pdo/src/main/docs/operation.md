@@ -354,7 +354,12 @@ the operation has a domain part, a persistence part, or both** (at least one is
 required — it stops with *"neither domain- nor persistence-part defined"*
 otherwise). From your answers it generates the interface(s) and implementation(s)
 in the right modules, including the SPI annotations and, for a remoting-capable
-persistence part, the remote delegate scaffolding. New projects created from the
+persistence part, the delegate import and the `getRemoteDelegate()` override in the
+persistence implementation. The remote delegate itself is not written by the wizard —
+it is generated *when needed* by the
+[persistence wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
+on the first build in which the persistence implementation carries a remote-capable
+wurblet (`AssertRemote` or a `RemoteMethod` block). New projects created from the
 [project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) ship with the same
 templates under `templates/operation`.
 
