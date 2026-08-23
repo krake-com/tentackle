@@ -107,6 +107,7 @@ topic-grouped listing of every document, see the
 ## J
 
 - **JPMS / Jigsaw (modules, automatic modules)** — [Tentackle Modules](./modules.md#named-modules-and-automatic-modules), [Quickstart](./quickstart.md)
+- **JPMS: exporting new packages (wizard profiles, first operation)** — [Quickstart](./quickstart.md#the-first-operation-jpms-does-not-come-for-free), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#how-the-wizard-places-files-the-model-and-profiles)
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
 - **JWT / ID token verification** — [Single Sign-On with Google](./google-sso.md)
 
