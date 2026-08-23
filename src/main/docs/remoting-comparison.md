@@ -128,8 +128,7 @@ forwards, with its own controllers, its own DTOs, and its own mapping. The tax i
 tier.
 
 In Tentackle a proxy tier is a configuration value: point the node's `url` at the tier above instead
-of at the database, and it forwards everything, including calls that did not exist when it was
-deployed. See the [Multi-Tier Cascade](./tiers.md).
+of at the database, and it forwards everything. See the [Multi-Tier Cascade](./tiers.md).
 
 ### Side by side
 
@@ -268,7 +267,7 @@ over HTTP. TRIP replaces it with a format designed for this job:
 RMI hands the client a stub containing the server's host, IP and port. Behind NAT, a relay, or an
 SD-WAN, that address is meaningless and the call fails — the classic `java.rmi.server.hostname`
 ordeal. **TRIP never sends a host, IP or port back downstream**, so gateways and relays work without
-special configuration, and each new remote proxy costs no extra round trip.
+special configuration.
 
 Transport choice is per link, by URL scheme: plain TCP, TLS, deflate compression for thin WAN links,
 pre-shared-key encryption where no PKI exists, and [QUIC/RFC-9000](../../../tentackle-quic/src/main/docs/quic.md)
