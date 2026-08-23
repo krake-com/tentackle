@@ -693,7 +693,11 @@ step by step.
   when the wurblets generate the remote delegate pair from the `Remote*.ftl` templates — and add a
   `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
-  [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
+  [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md). The *first* one costs a
+  little setup: the profile's three packages (`…pdo.operation`, `…domain.operation`,
+  `…persist.operation`) do not exist yet, so their directories have to be created before the wizard
+  runs and the `exports` added to the `module-info.java` files afterwards — see
+  [The First Operation](../../../../src/main/docs/quickstart.md#the-first-operation-jpms-does-not-come-for-free).
 - **Add another login method.** Write a second `AuthenticationProvider` (plus a `UserResolver`, and a
   `CredentialsProvider` on the client) as sketched in §9.1 — see
   [authentication.md](../../../../tentackle-session/src/main/docs/authentication.md) for the SPI and

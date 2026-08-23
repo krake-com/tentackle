@@ -26,7 +26,9 @@ one operation.
 2. Run from the **reactor root**. The goal is an aggregator and must see every module to place files.
 3. At least one `OperationProfile` must be configured for the plugin in the POM. Read it before
    writing anything — it defines the target packages and the super types. Its packages must already
-   exist and each must map to exactly one module, or the goal fails outright.
+   exist **as directories** under some module's `src/main/java`, and each must map to exactly one
+   module, or the goal fails outright. If one does not exist, `mkdir -p` it in the module that owns
+   it — do not change the profile.
 4. **Is this really an operation?** Behavior that belongs to one entity belongs *in* that entity, not
    in an operation. Operations are for behavior that spans entities or none at all.
 
@@ -64,10 +66,13 @@ and `SendInvoicePersistenceImpl` (the exact names come from the framework's nami
    with no database access of its own; persistence-only (`-DdomainInterface=-`) is rare. If in doubt,
    generate both, which is the default.
 3. Run the goal and **read the log**: it prints one `generated …` line per file.
-4. **Export new packages.** If the operation is the first class in its package, add the `exports` to
-   that module's `module-info.java` — no wizard goal touches it, and the build fails with *"package …
-   is not visible"* until you do.
-5. Fill in the business logic, then `mvn install`.
+4. **Export new packages — after generating, never before.** If the operation is the first class in
+   its package, add the `exports` to that module's `module-info.java`; no wizard goal touches it, and
+   the build fails with *"package … is not visible"* until you do. It only works in this order:
+   javac rejects an `exports` for a package with no compilation unit (`package is empty or does not
+   exist`), and a `package-info.java` does not count as one.
+5. Fill in the business logic, then `mvn install`. For a remotable operation, add
+   `exports <persistenceImplPackage>.trip;` once that build has generated the delegates.
 
 ## Things that will trip you up
 
@@ -88,8 +93,21 @@ and `SendInvoicePersistenceImpl` (the exact names come from the framework's nami
   not remotable, generate with `-Dremote=false` instead.
 - **One operation per invocation.** There is no batch directory and no way to list several names; call
   the goal once per operation.
-- **Profile packages must already exist** and each must map to exactly one module of the reactor. Do
-  not invent a new package in a profile.
+- **Profile packages must already exist as directories.** The goal maps a package to a module by
+  looking for its directory in the reactor's compile source roots; a package that exists nowhere
+  aborts the build with `cannot determine module for package …`. This is the normal state of the
+  first operation in a project scaffolded from the archetype: the `operation` profile is
+  preconfigured, but nothing has ever been generated into its packages. Create each one — empty is
+  fine, dot-files such as a `.gitignore` placeholder are ignored — in the module that owns it, e.g.
+
+  ```bash
+  mkdir -p myapp-pdo/src/main/java/com/example/myapp/pdo/operation \
+           myapp-domain/src/main/java/com/example/myapp/domain/operation \
+           myapp-persistence/src/main/java/com/example/myapp/persist/operation
+  ```
+
+  Exactly one module per package name: the same empty package in two modules is a split package and
+  aborts with `empty split package detected`. Never invent a new package in a profile instead.
 - **No class IDs.** Operations have none, so nothing here consumes the `.classid` status files the PDO
   wizard maintains.
 - **This goal never touches a database.** It writes Java files. If the task needs data, that is the

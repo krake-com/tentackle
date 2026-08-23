@@ -224,6 +224,75 @@ persistence code and the SQL plugin produces the DDL (or a
 [migration script](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md)
 for existing databases).
 
+## The First Operation: JPMS Does Not Come for Free
+
+There is one trap on the way to the first *operation*. The generated root `pom.xml` already
+configures an `operation` profile for the wizard, but the packages it names do not exist yet —
+the project simply has no operation:
+
+| Profile element                                             | Package                       | Module              |
+|-------------------------------------------------------------|-------------------------------|---------------------|
+| `operationPackage`, `domainPackage`, `persistencePackage`   | `com.example.myapp.pdo.operation`     | `myapp-pdo`         |
+| `domainImplPackage`                                         | `com.example.myapp.domain.operation`  | `myapp-domain`      |
+| `persistenceImplPackage`                                    | `com.example.myapp.persist.operation` | `myapp-persistence` |
+
+The wizard decides which module a generated file belongs to by **looking for the package's
+directory** in the compile source roots of the reactor. A package without a directory belongs to
+no module, so the very first run fails:
+
+```
+mvn tentackle-wizard:operation
+...
+[ERROR] cannot determine module for package com.example.myapp.pdo.operation
+```
+
+And you cannot get ahead of it by declaring the packages in the `module-info.java` files first:
+javac rejects an `exports` for a package that holds no compilation unit —
+`package is empty or does not exist` — and a lone `package-info.java` does not make it non-empty
+either. The directories must exist *before* the wizard runs, the `exports` can only be added
+*after* it has written the sources. That is JPMS being strict, not the wizard being awkward.
+
+So, once per project:
+
+**1. Create the three directories.** Empty is enough — the wizard accepts an empty package, and
+files whose name starts with a dot are ignored, so a `.gitignore` placeholder to make git keep the
+directory stays invisible to it:
+
+```
+mkdir -p myapp-pdo/src/main/java/com/example/myapp/pdo/operation \
+         myapp-domain/src/main/java/com/example/myapp/domain/operation \
+         myapp-persistence/src/main/java/com/example/myapp/persist/operation
+```
+
+Create each package in **exactly one** module. The same empty package in two modules is a split
+package, and the goal aborts with `empty split package detected`.
+
+**2. Run the wizard** from the reactor root (it is an aggregator goal and must see every module):
+
+```
+mvn tentackle-wizard:operation
+```
+
+**3. Add the `exports`** to the `module-info.java` of the three modules — possible now that the
+packages contain sources. At least `exports com.example.myapp.pdo.operation;` in `myapp-pdo` is
+required; without it the domain and persistence implementations do not compile
+(*"package com.example.myapp.pdo.operation is not visible"*).
+
+**4. Build.** `mvn install`. If the operation is remotable, the
+[remote delegate](../../../tentackle-core/src/main/docs/trip.md) pair
+`com.example.myapp.persist.operation.trip.<Name>RemoteDelegate` / `…RemoteDelegateImpl` is written by
+the wurblets on the first build in which the operation's persistence implementation carries a
+remote-capable wurblet — an explicit `// @wurblet <tag> AssertRemote` or the `RemoteMethod` blocks
+the operation needs anyway. That creates a fourth new package; export it from `myapp-persistence`
+too, mirroring the `…persist.md.trip` and `…persist.td.trip` entries already there.
+
+From the second operation onward none of this applies — the packages exist and are exported. The
+same one-time sequence is needed whenever you add a **new profile** to the wizard configuration, for
+PDOs just as for operations; the `masterdata` and `transactiondata` profiles work out of the box
+only because the archetype ships their packages, populated with the example entities. See
+[How the Wizard Places Files](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#how-the-wizard-places-files-the-model-and-profiles)
+for the profile elements, and [Tentackle Modules](./modules.md) for the module layout as a whole.
+
 ## Further Reading
 * [Tentackle Project Archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — what the archetype scaffolds and how each generated module fits together.
 * [MyApp Walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md) — a guided tour through the generated application's code, tier by tier.
