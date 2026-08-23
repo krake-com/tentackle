@@ -688,9 +688,10 @@ step by step.
 
 - **Add an entity.** The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
   is pre-configured in the root POM with `masterdata` / `transactiondata` / `operation` profiles (package conventions
-  and class-id ranges) and FreeMarker templates under `templates/`. It scaffolds the PDO interface, facets,
-  implementations, and remote delegate consistently with the examples. Then author the model block, run `mvn install`,
-  and add a `GuiProvider`/`Editor` if it needs UI.
+  and class-id ranges) and FreeMarker templates under `templates/`. It scaffolds the PDO interface, facets, and
+  implementations consistently with the examples. Then author the model block, run `mvn install` — which is also
+  when the wurblets generate the remote delegate pair from the `Remote*.ftl` templates — and add a
+  `GuiProvider`/`Editor` if it needs UI.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md).
 - **Add another login method.** Write a second `AuthenticationProvider` (plus a `UserResolver`, and a

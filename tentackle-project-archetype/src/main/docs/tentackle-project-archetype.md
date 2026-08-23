@@ -206,6 +206,8 @@ is configured (but not bound to a phase) so the developer can *grow* the generat
 (`masterdata`, `transactiondata`) and `OperationProfile` (`operation`) capture the package conventions and class-id
 ranges, and the [FreeMarker templates](../resources/archetype-resources/templates) under `templates/pdo` and
 `templates/operation` are the scaffolds it uses to generate new PDOs and operations consistently with the example.
+The `RemoteInterface.ftl` / `RemoteImplementation.ftl` pair in those directories is the exception: the wizard only
+installs it, the wurbelizer renders it when a remote delegate is missing.
 
 ### The MCP plugin
 
@@ -223,8 +225,8 @@ build sees it — to a coding agent over MCP. It is read-only and needs the mode
                           │ mvn archetype:generate -Dapplication=MyApp
                           ▼
         ┌──────────────────────────────────────────────────────────────┐
-        │  generated multi-module project (common → pdo → domain /      │
-        │  persistence → gui → client / server / daemon, + jlink)        │
+        │  generated multi-module project (common → pdo → domain /     │
+        │  persistence → gui → client / server / daemon, + jlink)      │
         └──────────────────────────────────────────────────────────────┘
                           │ mvn install  (drives the plugin pipeline)
                           ▼

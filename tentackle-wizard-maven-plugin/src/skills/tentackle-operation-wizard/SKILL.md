@@ -80,8 +80,12 @@ and `SendInvoicePersistenceImpl` (the exact names come from the framework's nami
   name is already taken — nothing checks whether an operation of that name exists elsewhere.
 - **Remoting pulls in a delegate the wizard does not write.** With remoting enabled (the default in
   most projects), the generated persistence implementation references a
-  `<persistenceImplPackage>.trip.<Name>RemoteDelegate`. The wizard does not create it — exactly as for
-  PDOs — so either add it (copy a neighboring one) or generate with `-Dremote=false`.
+  `<persistenceImplPackage>.trip.<Name>RemoteDelegate`. No wizard goal ever creates that file — the
+  wurblets do, on the first build in which the persistence implementation carries a remote-capable
+  wurblet. For a PDO that happens by itself (its `MethodsImpl` anchor triggers it); a generated
+  operation implementation has no anchor at all, so add one — `// @wurblet <tag> AssertRemote`, or the
+  `RemoteMethod` blocks the operation needs anyway — and run `mvn install`. For an operation that is
+  not remotable, generate with `-Dremote=false` instead.
 - **One operation per invocation.** There is no batch directory and no way to list several names; call
   the goal once per operation.
 - **Profile packages must already exist** and each must map to exactly one module of the reactor. Do

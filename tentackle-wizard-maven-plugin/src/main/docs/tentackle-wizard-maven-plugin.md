@@ -9,8 +9,8 @@ and the wurbelizer take care of *generating* the persistence layer from an exist
 It scaffolds the Java source files for new
 [PDOs](../../../../tentackle-pdo/src/main/docs/pdo.md) and
 [operations](../../../../tentackle-pdo/src/main/docs/operation.md), filling in the boilerplate
-(interfaces, implementations, the remote layer, the model comment block, class IDs, package
-declarations, wurblet anchors) so that all you have to do afterward is describe the attributes and write the business
+(interfaces, implementations, the model comment block, class IDs, package declarations,
+wurblet anchors) so that all you have to do afterward is describe the attributes and write the business
 logic. Its goals open an interactive JavaFX wizard, but the `pdo`, `operation`, `browse`, and `script`
 goals can also run unattended in batch mode.
 
@@ -100,11 +100,22 @@ This is the main goal. It creates the set of source files for a new PDO:
 
 - the PDO interface (carrying the model comment block),
 - the domain interface and the persistence interface,
-- the domain implementation and the persistence implementation,
-- and, if remoting is enabled, the remote interface and remote implementation.
+- the domain implementation and the persistence implementation.
 
 Each file is written into the directory of the module that owns its package, as derived from the
 selected profile.
+
+**The goal does not write the remote delegate.** Enabling remoting only *tailors* the generated
+files: the persistence implementation gets the import of the delegate interface (the matching
+`getRemoteDelegate()` accessor is woven in later by the `MethodsImpl` wurblet). The delegate pair itself —
+`<persistenceImplPackage>.trip.<Name>RemoteDelegate` and `…RemoteDelegateImpl`, see
+[Naming Rules](../../../../tentackle-common/src/main/docs/naming-rules.md) — is created *when needed* by the
+[persistence wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md):
+`AssertRemote` and every other remote-capable wurblet construct `RemoteIncludes`, which generates the
+two files from the `RemoteInterface.ftl` and `RemoteImplementation.ftl` templates if they do not exist
+yet. Those templates are installed by the wizard (see *Templates* below), but never used by its goals.
+For a PDO this is automatic: the generated persistence implementation carries the `MethodsImpl`
+wurblet anchor, so the delegates appear on the next build.
 
 **Interactive mode** (the default) opens the *PDO Wizard*, a JavaFX dialog. You pick a profile,
 enter the entity name, choose the inheritance type and the super entity (if any), the table name, whether caching and remoting are
@@ -144,6 +155,12 @@ domain and persistence interfaces and their implementations. Configuration mirro
 `OperationProfile`s; at least one must be configured. There is no class-ID handling (operations have
 no class IDs).
 
+As for the `pdo` goal, the remote delegate is **not** generated here; remoting only adds the delegate
+import and the `getRemoteDelegate()` override to the persistence implementation. Unlike a PDO, a
+generated operation implementation contains no wurblet anchor at all, so the delegate pair is created
+on the first build in which the implementation carries a remote-capable wurblet — either an explicit
+`// @wurblet <tag> AssertRemote` or the `RemoteMethod` blocks the operation needs anyway.
+
 **Interactive mode** (the default) opens the *Operation Wizard*. You pick a profile, enter the
 operation name and a description, optionally a super operation, and decide whether the operation is
 abstract and whether remoting is supported. The names of the four generated types are derived from
@@ -168,7 +185,7 @@ mvn tentackle-wizard:operation \
 | `profile`                   | The `OperationProfile` to use, matched case-insensitively. Optional if only one is configured.      |
 | `comment`                   | The short description. Mandatory — the generator rejects an operation without one.                  |
 | `longComment`               | The long description.                                                                               |
-| `remote`                    | Whether remoting is supported. Defaults to the `remote` option of the project's model defaults.     |
+| `remote`                    | Whether remoting is supported. Only tailors the generated persistence implementation (delegate import and `getRemoteDelegate()`); it does not generate the delegate. Defaults to the `remote` option of the project's model defaults. |
 | `superOperation`            | The super operation, determining all five super types. Defaults to the profile / framework types.   |
 | `abstract`                  | Generate an abstract operation (default `false`).                                                   |
 | `domainInterface`           | Override the derived name. An empty value or `-` generates no domain interface and no domain implementation. |
@@ -507,6 +524,14 @@ categories hold one `*.ftl` per generated artifact, e.g. `pdo/PdoInterface.ftl`,
 `pdo/DomainImplementation.ftl`, `operation/OperationInterface.ftl`, and so on. The `script/` category
 holds a single `groovy-example.ftl` — an example Groovy harness you can copy and adapt for the `script`
 goal.
+
+Two templates are the exception: `RemoteInterface.ftl` and `RemoteImplementation.ftl` (in both `pdo/`
+and `operation/`) correspond to no file any goal writes. The wizard only *installs* them; they are
+rendered later by the
+[persistence wurblets](../../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md),
+which look them up under `templateDir` or `<projectRoot>/templates/{pdo|operation}` when a remote
+delegate is missing. Customize them the same way — but keep them, or the wurbelizer run terminates
+when it needs to generate a delegate.
 
 Because the templates are plain files in your project, you can customize them — adjust the license
 header, add house-style javadoc, change default imports — and every subsequently generated file will
