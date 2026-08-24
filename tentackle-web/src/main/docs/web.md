@@ -134,7 +134,10 @@ public Session getSession(T sessionKey) {
 If the application is a remote client to another Tentackle node, `getSession()` must be overridden to update the
 session's `SessionInfo` before returning it, if it's not already bound to the user identity yet. This happens
 only once per session. Otherwise, the security checks will only be applied in the remote node but not in the 
-local one, and token locking would not work as well, since the userId 0 would be sent to the remote node.
+local one, and other features such as token locking would not work as expected.
+Another approach would be to get the `name -> id` mapping earlier, so that it's known before `addWebSession()`. 
+Ultimately, it depends on the implementation of the authentication source and is therefore not already 
+implemented in `WebApplication`.
 
 ```java
   @Override
