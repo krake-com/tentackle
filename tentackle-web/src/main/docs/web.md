@@ -43,8 +43,8 @@ of, or in addition to, a desktop UI. Like every other node, its role is decided 
               │  https://   (REST/JSON, Spring Security, …)
               ▼
      ┌─────────────────────┐
-     │  WebApplication      │   ← Tentackle node:  AbstractServerApplication
-     │  (e.g. Spring Boot)  │      + WebSessionKeyCache  (HTTP session ↔ SessionInfo)
+     │  WebApplication     │   ← Tentackle node:  AbstractServerApplication
+     │  (e.g. Spring Boot) │     + WebSessionKeyCache  (HTTP session ↔ SessionInfo)
      └──────────┬──────────┘
                 │  url = jdbc:… │ jndi:…  →  DB-connected (owns a SessionPool)
                 │  url = trip…           →  proxy (owns a remote MultiUserSessionPool)
@@ -131,6 +131,27 @@ public Session getSession(T sessionKey) {
   return null;
 }
 ```
+If the application is a remote client to another Tentackle node, `getSession()` must be overridden to update the
+session's `SessionInfo` before returning it, if it's not already bound to the user identity yet. This happens
+only once per session. Otherwise, the security checks will only be applied in the remote node but not in the 
+local one, and token locking would not work as well, since the userId 0 would be sent to the remote node.
+
+```java
+  @Override
+  public Session getSession(String sessionKey) {
+    Session session = super.getSession(sessionKey);
+    if (session.getSessionInfo().getUserId() == 0) {
+      if (session.isRemote()) {
+        session.getSessionInfo().setUserId(session.getRemoteSession().getClientSessionInfo().getUserId());
+        session.getSessionInfo().setUserClassId(session.getRemoteSession().getClientSessionInfo().getUserClassId());
+      }
+      else {
+        throw new AuthenticationException("cannot determine userId and userClassId");
+      }
+    }
+    return session;
+  }
+```
 
 The web layer never sees the pooling distinction — it asks for "the session for this web key" and gets one bound
 to the right user. Attaching the `SessionInfo` is what makes the borrowed session execute *as that user* for the
@@ -205,8 +226,8 @@ which web framework drives it:
 1. authenticate            web framework verifies credentials, yields a principal + a web session id (key T)
 2. session = getSession(key)
        └─ cache miss?  →  createSessionInfo(user, password)         (build a Tentackle identity)
-                          addWebSession(key, sessionInfo)            (cache it under the web key)
-                          getSession(key)                            (now borrow a pooled session)
+                          addWebSession(key, sessionInfo)           (cache it under the web key)
+                          getSession(key)                           (now borrow a pooled session)
 3. session.makeCurrent()   bind the borrowed session to the current thread for the request
 4. … handle the request …  controllers/services run PDO calls as the authenticated user
 5. session.clearCurrent()  unbind from the thread
