@@ -21,7 +21,11 @@ package org.tentackle.misc;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
@@ -204,6 +208,77 @@ public class AbstractPoolTest {
 
 
   /**
+   * {@link AbstractPool#getSlotCountPerThread()} groups lent slots by the lending thread.
+   */
+  @Test
+  public void getSlotCountPerThreadCountsLentSlotsByThread() {
+    TestPool pool = new TestPool();
+    pool.get();
+    pool.get();   // second lease enlarges the pool by incrementSize=1
+
+    List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+    assertEquals(slotCounts.size(), 1, "both slots were lent by the same (current) thread");
+    Map.Entry<String, Integer> entry = slotCounts.get(0);
+    assertTrue(entry.getKey().contains(Thread.currentThread().getName()), entry.getKey());
+    assertEquals(entry.getValue().intValue(), 2);
+  }
+
+  /**
+   * {@link AbstractPool#getSlotCountPerThread()} sorts by slot count, highest first.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void getSlotCountPerThreadSortsHighestCountFirst() throws InterruptedException {
+    TestPool pool = new TestPool();
+    pool.get();   // 1 slot lent by the current (main test) thread
+
+    CountDownLatch leased = new CountDownLatch(1);
+    CountDownLatch releaseLease = new CountDownLatch(1);
+    Thread background = new Thread(() -> {
+      pool.get();
+      pool.get();   // 2 slots lent by the background thread
+      leased.countDown();
+      try {
+        releaseLease.await();
+      }
+      catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+    }, "background-lease-thread");
+    background.start();
+    leased.await();
+
+    try {
+      List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+      assertEquals(slotCounts.size(), 2, "one entry per lending thread");
+      assertEquals(slotCounts.get(0).getValue().intValue(), 2, "background thread leased the most slots");
+      assertTrue(slotCounts.get(0).getKey().contains("background-lease-thread"), slotCounts.get(0).getKey());
+      assertEquals(slotCounts.get(1).getValue().intValue(), 1);
+      assertTrue(slotCounts.get(1).getKey().contains(Thread.currentThread().getName()), slotCounts.get(1).getKey());
+    }
+    finally {
+      releaseLease.countDown();
+      background.join(AWAIT_TIMEOUT);
+    }
+  }
+
+  /**
+   * Pool exhaustion is a resource leak candidate, so it must log which threads hold the slots.
+   */
+  @Test
+  public void exhaustingThePoolLogsSlotCountPerThread() {
+    TestPool pool = new TestPool("exhausted pool", 1);   // maximum size 1
+    pool.get();   // the only slot the pool is allowed to create
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+
+    assertTrue(exception.getMessage().contains("max. pool size"), exception.getMessage());
+    assertEquals(pool.logSlotCountPerThreadInvocations.get(), 1);
+  }
+
+
+  /**
    * Finds the shared pool timeout thread.
    *
    * @return the thread, null if not running
@@ -281,6 +356,7 @@ public class AbstractPoolTest {
   private static class TestPool extends AbstractPool<TestResource> {
 
     private final AtomicInteger monitorCount = new AtomicInteger();   // number of monitor() invocations
+    private final AtomicInteger logSlotCountPerThreadInvocations = new AtomicInteger();
     private int createdCount;
     private boolean createOpen = true;
     private boolean slotsRemovable = true;
@@ -292,6 +368,16 @@ public class AbstractPoolTest {
 
     private TestPool(String name) {
       super(name, 1, 1, 1, 0, 0, 0);
+    }
+
+    private TestPool(String name, int maximumSize) {
+      super(name, 1, 1, 1, maximumSize, 0, 0);
+    }
+
+    @Override
+    public void logSlotCountPerThread(Logger.Level level) {
+      logSlotCountPerThreadInvocations.incrementAndGet();
+      super.logSlotCountPerThread(level);
     }
 
     private int getCreatedCount() {

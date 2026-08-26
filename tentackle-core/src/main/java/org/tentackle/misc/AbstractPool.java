@@ -23,6 +23,10 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -59,7 +63,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * @param name the name of the pool
    * @param initialSize the initial pool size
    * @param incrementSize the number of resource instances to enlarge the pool if all in use
-   * @param minimumSize the minimum number of resource instances to keep in pool, &lt; 0 if auto shutdown pool if all resources timed out
+   * @param minimumSize the minimum number of resource instances to keep in the pool, &lt; 0 if auto shutdown pool if all resources timed out
    * @param maximumSize the maximum number of resource instances, 0 = unlimited
    * @param idleMinutes the idle timeout in minutes to close unused resource instances, 0 = unlimited
    * @param usageMinutes the max. used time in minutes, 0 = unlimited
@@ -316,6 +320,65 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     }
   }
 
+  @Override
+  public void monitor() {
+    boolean shutdownPool;
+
+    synchronized (this) {
+      if (isShutdown()) {
+        return;   // shut down concurrently: nothing left to monitor
+      }
+      shutdownPool = monitorSlots();
+    }
+
+    if (shutdownPool && !isShutdown()) {
+      // outside the monitor: shutdown() waits for the resources to be closed
+      shutdown();
+    }
+  }
+
+  /**
+   * Logs a summary of the used slots per thread.<br>
+   * Provided primarily for debugging purposes and in case of resource leaks.
+   *
+   * @param level the log level to use, defaults to {@link Logger.Level#INFO}
+   */
+  public void logSlotCountPerThread(Logger.Level level) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("pool ").append(this).append(", used slots:");
+    for (Map.Entry<String, Integer> entry : getSlotCountPerThread()) {
+      buf.append('\n').append(entry.getKey()).append(": ").append(entry.getValue());
+    }
+    LOGGER.log(level, buf.toString(), (Throwable) null);
+  }
+
+  /**
+   * Gets the number of used slots per thread.<br>
+   * Provided primarily for debugging purposes and in case of resource leaks.
+   *
+   * @return the sorted list of the number of used slots per thread, highest slot count first
+   */
+  public List<Map.Entry<String, Integer>> getSlotCountPerThread() {
+    Map<String, Integer> slotCounts = new HashMap<>();  // slots used per thread
+    synchronized (this) {
+      for (PoolSlot<T> slot : slots) {
+        if (slot != null) {
+          String threadName = slot.getUsingThreadStr();
+          Integer count = slotCounts.get(threadName);
+          if (count == null) {
+            count = 0;
+          }
+          slotCounts.put(threadName, count + 1);
+        }
+      }
+    }
+    // sort by count (highest first)
+    List<Map.Entry<String, Integer>> sorted = new ArrayList<>(slotCounts.entrySet());
+    sorted.sort((o1, o2) -> Integer.compare(o2.getValue(), o1.getValue()));
+    return sorted;
+  }
+
+
   /**
    * Determines whether the given slot can be removed from the pool.<br>
    * By default, a slot can be removed if its resource is not in use.
@@ -327,12 +390,11 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     return slot.getPoolable() != null;   // must not be lent!
   }
 
-
   /**
    * Creates new slots of resources.<br>
    * The number of created slots is at least 1.
    * <p>
-   * Throws a {@link TentackleRuntimeException} if pool is exhausted and maximum pool size reached.
+   * Throws a {@link TentackleRuntimeException} if the pool is exhausted and maximum pool size reached.
    *
    * @param num the number of slots to add to the pool
    */
@@ -346,7 +408,8 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
       }
       if (nSize <= slots.length) {
         TentackleRuntimeException pex = createException("cannot create more resource instances, max. pool size " + maximumSize + " reached");
-        pex.setTemporary(true);
+        pex.setTemporary(true);   // may go away if just a misconfiguration, hence temporary
+        logSlotCountPerThread(Logger.Level.WARNING);   // could be a sign of a resource leak as well, hence log it
         throw pex;
       }
       PoolSlot<T>[] nPool  = new PoolSlot[nSize];
@@ -423,22 +486,6 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     }
   }
 
-  @Override
-  public void monitor() {
-    boolean shutdownPool;
-
-    synchronized (this) {
-      if (isShutdown()) {
-        return;   // shut down concurrently: nothing left to monitor
-      }
-      shutdownPool = monitorSlots();
-    }
-
-    if (shutdownPool && !isShutdown()) {
-      // outside the monitor: shutdown() waits for the resources to be closed
-      shutdown();
-    }
-  }
 
   /**
    * Closes timed out resources and re-establishes the minimum pool size.<br>
