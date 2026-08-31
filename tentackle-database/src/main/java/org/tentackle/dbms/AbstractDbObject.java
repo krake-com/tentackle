@@ -318,7 +318,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   public void acceptPersistenceVisitor(PersistenceVisitor visitor, ModificationType modType) {
     try {
-      visitor.visit(this, new Class<?>[] {Character.TYPE}, modType);
+      visitor.visit(this, new Class<?>[] {getClass(), Character.class}, this, modType.toExternal());
     }
     catch (NoSuchMethodException nsm) {
       throw new PersistenceException(getSession(), "no visit method for " + getClass().getName() + " in " + visitor.getClass().getName(), nsm);
