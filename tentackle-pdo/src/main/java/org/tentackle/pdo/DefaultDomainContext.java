@@ -55,7 +55,7 @@ public class DefaultDomainContext implements DomainContext {
   private transient boolean sessionValid;     // false if not created by constructor, i.e., sent over wire
 
   /**
-   * session immutable flag.
+   * session-immutable flag.
    */
   private transient boolean sessionImmutable;
 
@@ -74,7 +74,7 @@ public class DefaultDomainContext implements DomainContext {
   private transient String chainedName;
 
 
-  // non transient
+  // non-transient
 
   /**
    * ID of the root entity.<br>
@@ -157,7 +157,7 @@ public class DefaultDomainContext implements DomainContext {
 
   /**
    * {@inheritDoc}<br>
-   * If the context's session is null the thread's local
+   * If the context's session is null, the thread's local
    * session is returned.
    *
    * @see Session#getCurrentSession()
@@ -406,6 +406,7 @@ public class DefaultDomainContext implements DomainContext {
     }
     DefaultDomainContext context = cloneKeepRoot();
     context.namesList = null;
+    context.chainedName = null;   // cloned from the template, but the name chain differs
     if (context.names == null) {
       context.names = new String[]{"", name};
     }
