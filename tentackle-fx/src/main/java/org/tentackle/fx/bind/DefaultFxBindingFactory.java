@@ -107,7 +107,7 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
         binding = con.newInstance(binder, parents, member, component, componentOptions);
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-             SecurityException | InvocationTargetException ex) {
+             InvocationTargetException ex) {
         throw new BindingException("could not instantiate binding " + bindingClass.getName(), ex);
       }
     }

@@ -90,7 +90,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
               methodName = value;
             }
           }
-          catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException |
+          catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException |
                  InvocationTargetException nme) {
             print(Kind.ERROR, "no value method for @" + StringHelper.lastAfter(annotationClass.getName(), '.'), element);
             continue;

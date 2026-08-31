@@ -111,7 +111,7 @@ public class AbstractBindingFactory implements BindingFactory {
         element = con.newInstance(camelName);
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-             SecurityException | InvocationTargetException ex) {
+             InvocationTargetException ex) {
         throw new BindingException("could not instantiate bindable element " + elementClass.getName(), ex);
       }
     }

@@ -67,7 +67,7 @@ public class DefaultValidationSeverityFactory implements ValidationSeverityFacto
       }
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException | ValidationRuntimeException nfe) {
+           NoSuchMethodException | InvocationTargetException | ValidationRuntimeException nfe) {
       throw new ValidationRuntimeException("supported severities could not be determined", nfe);
     }
   }

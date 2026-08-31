@@ -677,8 +677,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       exportMethod.invoke(null, os, this, subtree);   // static method
     }
     catch (ClassNotFoundException | InaccessibleObjectException | IllegalAccessException |
-           IllegalArgumentException | NoSuchMethodException |
-           SecurityException | InvocationTargetException ex) {
+           IllegalArgumentException | NoSuchMethodException | InvocationTargetException ex) {
       LOGGER.severe("exporting node failed", ex);
     }
   }

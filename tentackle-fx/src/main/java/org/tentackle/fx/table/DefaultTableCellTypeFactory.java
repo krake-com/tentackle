@@ -64,7 +64,7 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
         cellType = cellTypeClass.getDeclaredConstructor().newInstance();
         cellTypeMap.put(itemClass, cellType);
       }
-      catch (ClassNotFoundException | SecurityException | InstantiationException |
+      catch (ClassNotFoundException | InstantiationException |
              IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException("cannot load table cell type for " + itemClass, ex);
       }

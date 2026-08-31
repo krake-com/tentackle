@@ -882,7 +882,7 @@ public class ValidationUtilities {
       }
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException ex) {
+           InvocationTargetException ex) {
       throw new ValidationRuntimeException("could not create validator", ex);
     }
   }

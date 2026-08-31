@@ -112,7 +112,7 @@ public class DefaultLoggerFactory implements LoggerFactory {
           constructor = (Constructor<Logger>) loggerClass.getConstructor(String.class);
           constructors.put(loggerClass, constructor);
         }
-        catch (NoSuchMethodException | SecurityException e) {
+        catch (NoSuchMethodException e) {
           constructorException = e;
         }
       }

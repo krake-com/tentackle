@@ -165,7 +165,7 @@ public class DefaultScriptFactory implements ScriptFactory {
       }
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-        NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+        NoSuchMethodException | InvocationTargetException nfe) {
       throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
     }
   }

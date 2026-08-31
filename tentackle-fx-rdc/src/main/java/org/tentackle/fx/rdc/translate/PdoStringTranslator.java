@@ -168,7 +168,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                   runSearch(proxy);
                   return pdoAddon.getPdo();
                 }
-                catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
+                catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                         IllegalArgumentException e) {
                   throw new RdcRuntimeException("could not create domain key: " + udkClass.getName() +
                                                 "(" + v.getClass().getName() + ")", e);
@@ -270,8 +270,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         }
       }
     }
-    catch (SecurityException | IllegalAccessException | IllegalArgumentException |
-            InvocationTargetException e1) {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e1) {
       throw new RdcRuntimeException("cannot create lenient domain key", e1);
     }
     catch (NoSuchMethodException nm) {

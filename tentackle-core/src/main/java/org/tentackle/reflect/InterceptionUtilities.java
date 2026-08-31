@@ -158,7 +158,7 @@ public class InterceptionUtilities {
       return interceptor;
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+           NoSuchMethodException | InvocationTargetException ex) {
       throw new TentackleRuntimeException("interceptor @" + annotation + " could not be created", ex);
     }
   }

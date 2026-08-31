@@ -70,7 +70,7 @@ public class MavenLogHandler extends Handler {
   }
 
   @Override
-  public void close() throws SecurityException {
+  public void close() {
     // nothing to do
   }
 }

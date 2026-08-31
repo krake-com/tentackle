@@ -119,7 +119,7 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
       }
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-           NoSuchMethodException | SecurityException | InvocationTargetException | ValidationRuntimeException nfe) {
+           NoSuchMethodException | InvocationTargetException | ValidationRuntimeException nfe) {
       throw new ValidationRuntimeException("supported scopes could not be determined", nfe);
     }
   }

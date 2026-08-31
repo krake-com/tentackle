@@ -58,7 +58,7 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
         messageConverterMap.put(language, converter);
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+          NoSuchMethodException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("message script converter configuration failed", ex);
       }
     }
@@ -73,7 +73,7 @@ public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundVa
         validationConverterMap.put(language, converter);
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+          NoSuchMethodException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("validation script converter configuration failed", ex);
       }
     }

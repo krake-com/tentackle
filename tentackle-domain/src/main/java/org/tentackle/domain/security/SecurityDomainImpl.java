@@ -26,6 +26,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityDomain;

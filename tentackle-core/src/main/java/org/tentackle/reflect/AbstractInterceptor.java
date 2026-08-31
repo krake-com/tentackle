@@ -59,7 +59,7 @@ public abstract class AbstractInterceptor implements Interceptor {
     try {
       chainedMethod = chainedInterceptor.getClass().getMethod("invoke", Object.class, Method.class, Object[].class);
     }
-    catch (NoSuchMethodException | SecurityException e) {
+    catch (NoSuchMethodException e) {
       throw new TentackleRuntimeException("cannot determine the 'invoke' method of the chained interceptor " + chainedInterceptor.getClass().getName(), e);
     }
   }

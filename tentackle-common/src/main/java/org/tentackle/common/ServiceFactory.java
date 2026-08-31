@@ -284,7 +284,7 @@ public class ServiceFactory {
       return createServiceClass(serviceClass).getDeclaredConstructor().newInstance();
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException ex) {
+           InvocationTargetException ex) {
       throw new TentackleRuntimeException("cannot create instance for " + serviceClass, ex);
     }
   }
@@ -319,7 +319,7 @@ public class ServiceFactory {
         return defaultClass.getDeclaredConstructor().newInstance();
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-             SecurityException | InvocationTargetException ex) {
+             InvocationTargetException ex) {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);
       }
     }
@@ -677,7 +677,7 @@ public class ServiceFactory {
         getFinderMap().put(key, finder);
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-             SecurityException | InvocationTargetException ex) {
+             InvocationTargetException ex) {
         throw new TentackleRuntimeException("cannot instantiate service finder", ex);
       }
     }

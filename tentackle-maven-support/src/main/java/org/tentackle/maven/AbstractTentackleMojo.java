@@ -267,7 +267,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       List<Toolchain> toolchains = (List<Toolchain>) method.invoke(toolchainManager, mavenSession, type, selector);
       return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
     }
-    catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+    catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
       throw new MojoExecutionException("loading toolchain failed for type=" + type + ", selector=" + selector, e);
     }
   }

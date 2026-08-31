@@ -25,6 +25,7 @@ import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.security.Permission;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 

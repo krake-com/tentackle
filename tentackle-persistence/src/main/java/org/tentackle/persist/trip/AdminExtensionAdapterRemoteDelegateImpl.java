@@ -29,6 +29,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AdminExtensionAdapter;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
