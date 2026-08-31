@@ -100,8 +100,11 @@ public final class LocalDateType extends AbstractDateTimeType<LocalDate> {
   @Override
   public LocalDate get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     Date date = resultSet.getDate(pos[0]);
-    if (date == null || (mapNull && date.equals(DateHelper.MIN_DATE)))  {
-      // mindate is translated back to null
+    if (date == null || (mapNull && date.toLocalDate().equals(DateHelper.MIN_DATE.toLocalDate())))  {
+      // mindate is translated back to null.
+      // Notice that a DATE column carries no time of day: the value read back is the local midnight
+      // of the stored day, which equals MIN_DATE only in GMT. Comparing the local dates is symmetric
+      // to what set() wrote in any timezone.
       return null;
     }
     return date.toLocalDate();

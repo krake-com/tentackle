@@ -26,11 +26,15 @@ package org.tentackle.sql.metadata;
  */
 public class PostgresIndexMetaData extends IndexMetaData {
 
+  /** the postgres type names consisting of more than one word, which the simple regex below cannot strip. */
   private static final String[] CASTS = {
       "::timestamp without time zone",
       "::timestamp with time zone",
       "::time without time zone",
       "::time with time zone",
+      "::character varying",
+      "::bit varying",
+      "::double precision",
   };
 
   /**

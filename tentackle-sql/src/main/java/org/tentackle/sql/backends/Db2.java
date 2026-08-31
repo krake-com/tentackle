@@ -178,8 +178,10 @@ public class Db2 extends AbstractSql2003Backend {
     return  SQL_ALTER_TABLE + tableName +
             SQL_ALTER_COLUMN +
             columnName +
-            " DATA TYPE " +
-            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            " SET DATA TYPE " +
+            // DB2 takes only the type here: the column name is already part of the ALTER COLUMN
+            // clause, and the NOT NULL and DEFAULT constraints are separate column alterations
+            columnTypeToString(sqlType, size, scale) +
             ";\n";
   }
 
