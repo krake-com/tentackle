@@ -156,7 +156,10 @@ delivering the final block.
 
 Block size is `setFetchSize(rows)` — forwarded to the remote cursor or to the JDBC result set as
 appropriate. If the fetch size is unset (`< 1`), `fetch()` falls back to reading everything, marking
-the list closed and closing the cursor.
+the list closed and closing the cursor. Notice that for a local session the fetch size is only a
+*hint* to the JDBC driver, which the driver may discard: H2 does, and `getFetchSize()` then keeps
+reporting 0, so every `fetch()` against it takes the fallback. Blocking therefore pays off where it
+was meant to — remote cursors and drivers that honor the hint, PostgreSQL among them.
 
 `toList()` and `toListAndClose()` are the "actually, it does fit in memory" shortcuts, and are still
 worth using remotely: they collect on the server side and return in one round trip rather than a

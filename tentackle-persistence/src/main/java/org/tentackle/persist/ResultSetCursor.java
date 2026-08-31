@@ -316,7 +316,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (js != null) {
       js.initialize(null);
       eof = false;
-      noNext = true;
+      /*
+       * Not noNext = true: the joined select has just been re-initialized, so there is no row
+       * that has already been read and that the next next() would have to skip over. Worse, the
+       * next() a few lines below would consume the flag itself and return true without advancing,
+       * leaving the cursor before the first row with row == 0 -- which get() reads as "no row".
+       */
+      noNext = false;
     }
 
     /*
@@ -444,9 +450,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     assertNoJoins();
     boolean rv = resources.rs.previous();
-    if (rv) {
-      row--;
-    }
+    /*
+     * Take the row from the result set instead of decrementing the counter, just like last() and
+     * setRow() do. ResultSet.getRow() is 0 whenever the cursor is not on a row, so afterLast()
+     * leaves this cursor's counter at 0 -- decrementing would yield -1, which get() reads as
+     * "no row" although the result set is sitting on the last one.
+     */
+    row = rv ? resources.rs.getRow() : 0;
     firstInvoked = false;
     return rv;
   }
@@ -584,7 +594,16 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       else {
         T pdo = js.currentPdo();
         for (;;) {
-          if (!firstInvoked && !next()) {
+          if (firstInvoked) {
+            /*
+             * first() has positioned the cursor on a row without anyone reading it yet, so this
+             * iteration reads that row instead of advancing. The flag must be cleared here: it is
+             * otherwise only reset by next(), which this branch skips, so the loop would keep
+             * reading the very same row.
+             */
+            firstInvoked = false;
+          }
+          else if (!next()) {
             eof = true;
             break;    // EOF
           }

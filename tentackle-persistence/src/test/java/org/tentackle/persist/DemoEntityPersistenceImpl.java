@@ -18,9 +18,12 @@
 
 package org.tentackle.persist;
 
+import org.tentackle.dbms.PreparedStatementWrapper;
+import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.session.Session;
+import org.tentackle.sql.Backend;
 
 import java.io.Serial;
 import java.util.ArrayList;
@@ -167,6 +170,71 @@ public class DemoEntityPersistenceImpl extends AbstractPersistentObject<DemoEnti
   public void setComponentList(List<DemoComponent> componentList) {
     this.componentList = componentList == null ? null : new ArrayList<>(componentList);
   }
+
+
+  //<editor-fold defaultstate="collapsed" desc="mapping">
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A hand-written equivalent of what the {@code Fields} wurblet generates. The columns are looked
+   * up by name once per section, hence the order only has to match the sequence of the getters
+   * below, not the order of the columns in the table.
+   *
+   * @param rs the result set
+   */
+  @Override
+  public void getFields(ResultSetWrapper rs) {
+    super.getFields(rs);
+    if (rs.configureSection(CLASSVARIABLES)) {
+      rs.configureColumn(CN_NAME);
+      rs.configureColumn(CN_ID);
+      rs.configureColumn(CN_SERIAL);
+    }
+    name = rs.getString();
+    setId(rs.getLong());
+    setSerial(rs.getLong());
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The parameter order must match {@link #createInsertSql(Backend)} and
+   * {@link #createUpdateSql(Backend)}.
+   *
+   * @param st the statement
+   * @return the number of fields set
+   */
+  @Override
+  public int setFields(PreparedStatementWrapper st) {
+    int ndx = super.setFields(st);
+    st.setString(++ndx, name);
+    st.setLong(++ndx, getId());
+    st.setLong(++ndx, getSerial());
+    return ndx;
+  }
+
+  @Override
+  public String createInsertSql(Backend backend) {
+    return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
+           CN_NAME + Backend.SQL_COMMA +
+           CN_ID + Backend.SQL_COMMA +
+           CN_SERIAL +
+           Backend.SQL_INSERT_VALUES +
+           Backend.SQL_PAR_COMMA.repeat(2) +
+           Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
+  }
+
+  @Override
+  public String createUpdateSql(Backend backend) {
+    return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
+           CN_NAME + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
+           Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
+  }
+
+  //</editor-fold>
 
 
   /**

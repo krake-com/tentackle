@@ -163,6 +163,11 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
   backend is H2, so a plain `mvn clean install` is self-contained.
   - `tentackle-test-pdo` and `tentackle-test-fx-rdc` use an in-memory database
     (`jdbc:h2:mem:default`) and build the schema from the model via `DbTestUtilities`.
+  - `tentackle-persistence` uses an in-memory database (`jdbc:h2:mem:persistence`) for the tests
+    extending `AbstractPersistenceDbTest`, and builds the schema from two scripts: the DDL its own
+    build generates into `META-INF/sql/H2/createttmodel.sql` (the `tokenlock` and modification
+    tables) plus the hand-written `demo-schema.sql` of the `Demo*` test PDOs, which have no model.
+    Its other tests need no session at all (see `tentackle-persistence/src/test/README.md`).
   - `tentackle-database` uses a file-backed database in `AUTO_SERVER` mode under `target/`,
     because `MultiJVMPreferencesTest` shares it with a second JVM, and builds the schema from
     the DDL its own build generates into `META-INF/sql/H2/createttmodel.sql`. Cross-JVM access

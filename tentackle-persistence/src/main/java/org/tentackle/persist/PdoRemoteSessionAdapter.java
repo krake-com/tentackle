@@ -24,6 +24,7 @@ import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextDependable;
 import org.tentackle.pdo.PdoRemoteSession;
+import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityManager;
 import org.tentackle.security.SecurityResult;
@@ -67,8 +68,8 @@ public class PdoRemoteSessionAdapter extends RemoteSessionAdapter implements Pdo
       m.invoke(adapter, context);
       return adapter;
     }
-    catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException |
-            InvocationTargetException ex) {
+    catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException |
+           InvocationTargetException ex) {
       throw new PersistenceException("could not create adapter for " + extIf, ex);
     }
   }

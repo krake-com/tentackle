@@ -18,6 +18,8 @@
 
 package org.tentackle.persist;
 
+import org.tentackle.dbms.PreparedStatementWrapper;
+import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.session.Session;
@@ -49,6 +51,12 @@ public class DemoComponentPersistenceImpl extends AbstractPersistentObject<DemoC
 
 
   private String text;
+  /*
+   * No initializer, on purpose: determineContextId() runs from the AbstractPersistentObject
+   * constructor, i.e. before the field initializers of this class, so an initializer here would
+   * silently overwrite the value that was just determined. The generated code has none either.
+   */
+  private long contextId;
   private transient StringBuilder attributesNormText;
   private transient StringBuilder relationsNormText;
   private transient long contextUserId;
@@ -129,6 +137,24 @@ public class DemoComponentPersistenceImpl extends AbstractPersistentObject<DemoC
     return Backend.SQL_AND + getColumnName(CN_ROOTID) + "=?";
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The parameter of {@link #getSqlContextCondition()}: the ID of the root entity the component
+   * belongs to. Determined once when the domain context is set, exactly like the generated code
+   * of a context-dependent entity does.
+   */
+  @Override
+  public void determineContextId() {
+    DomainContext context = getDomainContext();
+    contextId = context == null ? -1 : context.getRootId();
+  }
+
+  @Override
+  public long getContextId() {
+    return contextId;
+  }
+
   @Override
   public String getText() {
     return text;
@@ -199,6 +225,101 @@ public class DemoComponentPersistenceImpl extends AbstractPersistentObject<DemoC
   public void setContextUserId(long contextUserId) {
     this.contextUserId = contextUserId;
   }
+
+  //<editor-fold defaultstate="collapsed" desc="mapping">
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A hand-written equivalent of what the {@code Fields} wurblet generates for an entity with root
+   * columns, a normtext and the token lock. All of those live in {@link AbstractPersistentObject},
+   * so the generated code only has to read and write them.
+   *
+   * @param rs the result set
+   */
+  @Override
+  public void getFields(ResultSetWrapper rs) {
+    super.getFields(rs);
+    if (rs.configureSection(CLASSVARIABLES)) {
+      rs.configureColumn(CN_TEXT);
+      rs.configureColumn(CN_ROOTID);
+      rs.configureColumn(CN_ROOTCLASSID);
+      rs.configureColumn(CN_NORMTEXT);
+      rs.configureColumn(CN_EDITEDBY);
+      rs.configureColumn(CN_EDITEDSINCE);
+      rs.configureColumn(CN_EDITEDEXPIRY);
+      rs.configureColumn(CN_ID);
+      rs.configureColumn(CN_SERIAL);
+    }
+    text = rs.getString();
+    setRootId(rs.getLong());
+    setRootClassId(rs.getInt());
+    setNormText(rs.getString());
+    setEditedBy(rs.getLong());
+    setEditedSince(rs.getTimestamp());
+    setEditedExpiry(rs.getTimestamp());
+    setId(rs.getLong());
+    setSerial(rs.getLong());
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The parameter order must match {@link #createInsertSql(Backend)} and
+   * {@link #createUpdateSql(Backend)}.
+   *
+   * @param st the statement
+   * @return the number of fields set
+   */
+  @Override
+  public int setFields(PreparedStatementWrapper st) {
+    int ndx = super.setFields(st);
+    st.setString(++ndx, text);
+    st.setLong(++ndx, getRootId());
+    st.setInt(++ndx, getRootClassId());
+    st.setString(++ndx, getNormText());
+    st.setLong(++ndx, getEditedBy());
+    st.setTimestamp(++ndx, getEditedSince());
+    st.setTimestamp(++ndx, getEditedExpiry());
+    st.setLong(++ndx, getId());
+    st.setLong(++ndx, getSerial());
+    return ndx;
+  }
+
+  @Override
+  public String createInsertSql(Backend backend) {
+    return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
+           CN_TEXT + Backend.SQL_COMMA +
+           CN_ROOTID + Backend.SQL_COMMA +
+           CN_ROOTCLASSID + Backend.SQL_COMMA +
+           CN_NORMTEXT + Backend.SQL_COMMA +
+           CN_EDITEDBY + Backend.SQL_COMMA +
+           CN_EDITEDSINCE + Backend.SQL_COMMA +
+           CN_EDITEDEXPIRY + Backend.SQL_COMMA +
+           CN_ID + Backend.SQL_COMMA +
+           CN_SERIAL +
+           Backend.SQL_INSERT_VALUES +
+           Backend.SQL_PAR_COMMA.repeat(8) +
+           Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
+  }
+
+  @Override
+  public String createUpdateSql(Backend backend) {
+    return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
+           CN_TEXT + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_ROOTID + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_ROOTCLASSID + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_NORMTEXT + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_EDITEDBY + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_EDITEDSINCE + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_EDITEDEXPIRY + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
+           Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
+  }
+
+  //</editor-fold>
+
 
   /**
    * Copies the attributes back from the snapshot.

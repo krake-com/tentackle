@@ -18,7 +18,6 @@
 
 package org.tentackle.persist;
 
-import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.common.StringNormalizer;
@@ -52,10 +51,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testNullInputMatchesAll() {
-    Reporter.log("NormTextTest.testNullInputMatchesAll <br>", true);
-
     NormText normText = new NormText(null);
     assertTrue(normText.isMatchingAll(), "null input must match all");
     assertNull(normText.getPattern(), "matching-all pattern must be null");
@@ -63,10 +60,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testEmptyInputMatchesAll() {
-    Reporter.log("NormTextTest.testEmptyInputMatchesAll <br>", true);
-
     NormText normText = new NormText("");
     assertTrue(normText.isMatchingAll(), "empty input must match all");
     assertNull(normText.getPattern(), "matching-all pattern must be null");
@@ -74,10 +69,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testPunctuationOnlyMatchesAll() {
-    Reporter.log("NormTextTest.testPunctuationOnlyMatchesAll <br>", true);
-
     // input that normalizes to the empty string (only wildcards/whitespace)
     NormText normText = new NormText("  %_  ");
     assertTrue(normText.isMatchingAll(), "input that normalizes to empty must match all");
@@ -86,10 +79,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testPlainWord() {
-    Reporter.log("NormTextTest.testPlainWord <br>", true);
-
     NormText normText = new NormText("Mueller");
     assertFalse(normText.isMatchingAll(), "a real word must not match all");
     assertFalse(normText.isInverted(), "a plain word must not be inverted");
@@ -97,10 +88,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testPatternIsWrappedWithWildcards() {
-    Reporter.log("NormTextTest.testPatternIsWrappedWithWildcards <br>", true);
-
     String pattern = new NormText("Mueller").getPattern();
     assertTrue(pattern.startsWith("%"), "pattern must start with a wildcard");
     assertTrue(pattern.endsWith("%"), "pattern must end with a wildcard");
@@ -108,10 +97,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testInvertedWithExclamationMark() {
-    Reporter.log("NormTextTest.testInvertedWithExclamationMark <br>", true);
-
     NormText normText = new NormText("!Mueller");
     assertTrue(normText.isInverted(), "leading '!' must select NOT LIKE");
     assertFalse(normText.isMatchingAll(), "there is still content to match");
@@ -122,10 +109,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testInvertedWithMinusSign() {
-    Reporter.log("NormTextTest.testInvertedWithMinusSign <br>", true);
-
     NormText normText = new NormText("-Mueller");
     assertTrue(normText.isInverted(), "leading '-' must select NOT LIKE");
     assertFalse(normText.isMatchingAll(), "there is still content to match");
@@ -133,10 +118,8 @@ public class NormTextTest {
   }
 
 
-  @Test(groups = "local")
+  @Test
   public void testInvertedButEmptyStillMatchesAll() {
-    Reporter.log("NormTextTest.testInvertedButEmptyStillMatchesAll <br>", true);
-
     // a lone '!' is detected as inverted but normalizes to empty
     NormText normText = new NormText("!");
     assertTrue(normText.isInverted(), "lone '!' is still detected as inverted");

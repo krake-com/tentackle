@@ -30,6 +30,12 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!-- the test backend: the database-backed tests build their schema in an in-memory H2 -->
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -144,6 +150,59 @@
             </fileset>
           </filesets>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <!--
+          Create the DDL for the tables the database-backed tests need, so that
+          AbstractPersistenceDbTest can build the schema of the in-memory H2 from the classpath.
+          Notice that this module sits below tentackle-test-pdo in the reactor and cannot use its
+          DbTestUtilities, which would build the same script from the model.
+          The tables of the Demo* test PDOs are not in here: they have no model at all and bring
+          their own hand-written DDL (src/test/resources/demo-schema.sql).
+        -->
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <verbosity>info</verbosity>
+              <generateHeaderComment>false</generateHeaderComment>
+              <checkReservedTables>false</checkReservedTables>
+              <backendNames>H2</backendNames>
+              <sqlDir>${project.build.directory}/generated-test-resources/META-INF/sql</sqlDir>
+              <sqlFileName>createttmodel.sql</sqlFileName>
+              <filesets>
+                <fileset>
+                  <!--
+                    The model dir is shared by the whole reactor, so the entities must be named
+                    explicitly. Otherwise, an incremental build would pull in the models of other
+                    modules as well.
+                    tokenlock is this module's own table; modification and modlog are needed
+                    because saving a PDO counts its modification.
+                  -->
+                  <directory>${tentackle.modelDir}</directory>
+                  <includes>
+                    <include>tokenlock.map</include>
+                    <include>modification.map</include>
+                    <include>modlog.map</include>
+                  </includes>
+                </fileset>
+              </filesets>
+              <sequences>
+                <sequence>
+                  <name>object_sequence_id</name>
+                  <comment>to generate the ID of PDOs</comment>
+                </sequence>
+              </sequences>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
