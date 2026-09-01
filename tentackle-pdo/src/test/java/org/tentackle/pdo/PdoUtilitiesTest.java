@@ -40,11 +40,6 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * Unit tests for {@link PdoUtilities}.
- * <p>
- * The PDOs of this module ({@link Security}, {@link NumberPool} and {@link NumberRange}) provide
- * the annotations the utilities read, so everything below works off the service index created by
- * the build - no database and no PDO instances are involved. Where a PDO is needed at all, a
- * dynamic proxy stands in for it, just as the real {@link PdoFactory} creates them.
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class PdoUtilitiesTest {
