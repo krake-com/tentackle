@@ -42,8 +42,7 @@ Address:
 ```
 
 `n` is the number of relation hops the generated join tree may span, counting this relation as the first one.
-It defaults to `1` — the single-level join described below — so a plain `eager` behaves exactly as it always
-did.
+It defaults to `1` — the single-level join described below.
 
 With `Invoice -eager:2-> Address` and `Address -eager-> Country`, every generic read of an invoice becomes a
 single statement:
