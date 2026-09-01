@@ -1741,34 +1741,239 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * The TT persistence layer provides an optimized {@code select} for a single eager relation via a LeftJoin.
+   * The TT persistence layer provides an optimized {@code select} for eager relations via LeftJoins.
+   * <p>
+   * The joins are applied to the generic selects, i.e. to every read of the entity. Each relation
+   * cascades as deep as its {@link Relation#getEagerDepth()} allows, the default 1 joining the
+   * related entity only. Deeper levels follow the eager relations of the joined entity, which is
+   * what turns {@code A -eager-&gt; B -eager-&gt; C} into a single statement.
+   * <p>
+   * The whole optimization is abandoned (an empty list is returned, so the relations are loaded by
+   * follow-up selects) if a subclass of the entity declares an eager relation, because the joins of
+   * a polymorphic select cannot depend on the row's class.
    *
-   * @return the eager relations, empty list if no optimization possible or no eager relations at all
+   * @return the eager join tree, empty list if no optimization possible or no eager relations at all
    */
-  public List<Relation> getEagerRelations() {
-    List<Relation> eagerRelations = new ArrayList<>();
-    outer:
-    for (Relation relation: getEntity().getRelations()) {
-      if (relation.getSelectionType() == SelectionType.EAGER) {
-        // verify that no subclass has an eager relation
-        for (Relation rel: getEntity().getSubEntityRelations()) {
-          if (rel.getSelectionType() == SelectionType.EAGER) {
-            break outer;
-          }
-        }
-        // verify that none of the direct components of this relation has an eager relation
-        for (Entity component: relation.getForeignEntity().getComponentsIncludingInherited()) {
-          for (Relation rel: component.getAllRelations()) {
-            if (rel.getSelectionType() == SelectionType.EAGER) {
-              break outer;
-            }
-          }
-        }
-        // fine:
-        eagerRelations.add(relation);
+  public List<EagerJoin> getEagerJoinTree() {
+    // the joins of a select on the base class cannot depend on the class of the row
+    for (Relation rel: getEntity().getSubEntityRelations()) {
+      if (rel.getSelectionType() == SelectionType.EAGER) {
+        return new ArrayList<>();
       }
     }
-    return eagerRelations;
+    return createEagerJoinTree(getEntity().getRelations(), "e", 0);
+  }
+
+  /**
+   * Creates the eager joins for one level of the tree.
+   *
+   * @param relations the relations to inspect
+   * @param aliasPrefix the alias prefix of this level
+   * @param remainingDepth the number of hops still allowed, 0 to take it from the relation itself
+   * @return the joins, empty if none
+   */
+  private List<EagerJoin> createEagerJoinTree(List<Relation> relations, String aliasPrefix, int remainingDepth) {
+    List<EagerJoin> eagerJoins = new ArrayList<>();
+    int joinCount = 0;
+    for (Relation relation: relations) {
+      if (relation.getSelectionType() == SelectionType.EAGER) {
+        // a root relation brings its own budget, a cascaded one spends the budget of its root
+        int depth = remainingDepth == 0 ? relation.getEagerDepth() : remainingDepth;
+        String alias = aliasPrefix + "_" + ++joinCount;
+        EagerJoin eagerJoin = new EagerJoin(relation, alias);
+        if (depth > 1) {
+          eagerJoin.getJoins().addAll(
+                  createEagerJoinTree(relation.getForeignEntity().getRelationsIncludingInherited(), alias, depth - 1));
+        }
+        eagerJoins.add(eagerJoin);
+      }
+    }
+    return eagerJoins;
+  }
+
+  /**
+   * Creates the java code for the eager joins of the class variables.
+   * <p>
+   * The result is the whole trailing argument of {@code PersistentObjectClassVariables.create(...)},
+   * i.e. either {@code null);} or the complete {@code List.of(...));} block.
+   * <p>
+   * This is deliberately kept apart from {@link #createJoins()}, which emits the same kind of join
+   * tree for the load joins of the {@code PdoSelect} wurblets: the class variables are a <em>static</em>
+   * initializer, so the joined columns must be plain string literals, whereas {@code createJoins()}
+   * runs in an instance context and can refer to {@code getColumnName(...)}.
+   *
+   * @return the generated Java code
+   * @throws WurbelException if failed
+   * @throws ModelException if the model does not allow the eager joins
+   */
+  public String createEagerJoins() throws WurbelException, ModelException {
+    List<EagerJoin> eagerJoins = getEagerJoinTree();
+    if (eagerJoins.isEmpty()) {
+      return "                    null);\n";
+    }
+    StringBuilder buf = new StringBuilder("                    List.of(\n");
+    buf.append(String.join(",\n",
+                           createEagerJoinTexts(getEntity(), getPdoClassName(), getEntity().getTableAlias(),
+                                                "                      ", eagerJoins, true)));
+    buf.append("\n                    )\n                );\n");
+    return buf.toString();
+  }
+
+  /**
+   * Creates the java code for one level of the eager join tree.
+   *
+   * @param entity the entity holding the relations
+   * @param pdoName the PDO class name of that entity
+   * @param parentName the table alias of that entity within the statement, also the lambda parameter name
+   * @param inset the leading whitespace
+   * @param eagerJoins the joins of this level
+   * @param topLevel true if the joins belong to the entity the class variables are generated for
+   * @return one text per join, without the separating comma
+   * @throws WurbelException if failed
+   * @throws ModelException if the model does not allow the eager joins
+   */
+  private List<String> createEagerJoinTexts(Entity entity, String pdoName, String parentName, String inset,
+                                            List<EagerJoin> eagerJoins, boolean topLevel)
+         throws WurbelException, ModelException {
+
+    List<String> texts = new ArrayList<>();
+    String poImpl = deriveClassNameForEntity(entity);
+
+    for (EagerJoin eagerJoin: eagerJoins) {
+      Relation relation = eagerJoin.getRelation();
+      if (relation.getMethodArgs().size() > 1) {
+        throw new ModelException("eager relations with 'args=...' are currently not supported", relation);
+      }
+      Entity foreignEntity = relation.getForeignEntity();
+      String joinClass = foreignEntity.getName();
+      String sqlAlias = eagerJoin.getAlias();
+      // the lambda parameter names must be unique within the lambda: below the top level the table
+      // aliases of the statement are used, because a relation may well point back to its own entity
+      String joinName = topLevel ? foreignEntity.getTopSuperEntity().getTableAlias() : sqlAlias;
+      // an abstract PDO cannot be inferred, and neither can the left side of a cascaded join
+      boolean explicitTypes = foreignEntity.isAbstract() || !topLevel;
+
+      String columnName;
+      String joinedColumnName;
+      if (relation.getRelationType() == RelationType.LIST) {
+        columnName = parentName + ".id";
+        joinedColumnName = sqlAlias + "." + relation.getForeignAttribute().getColumnName();
+      }
+      else {
+        columnName = parentName + "." + relation.getAttribute().getColumnName();
+        joinedColumnName = sqlAlias + ".id";
+      }
+
+      /*
+       * A join carrying cascaded joins becomes the receiver of addJoin(), and the type of a
+       * receiver is inferred on its own: the diamond would leave the owning PDO type unresolved,
+       * so it has to be spelled out. A leaf join keeps the diamond, whose type arguments the
+       * enclosing List.of() provides.
+       */
+      String diamond = eagerJoin.getJoins().isEmpty() ? "<>" : ("<" + pdoName + ", " + joinClass + ">");
+
+      StringBuilder buf = new StringBuilder();
+      buf.append(inset).append("new Join").append(diamond).append("(JoinType.LEFT, \"").append(columnName).append("\", \"")
+         .append(joinedColumnName).append("\", ").append(joinClass).append(".class, \"").append(sqlAlias).append("\",\n")
+         .append(inset).append("  (");
+      if (explicitTypes) {
+        buf.append(pdoName).append(' ');
+      }
+      buf.append(parentName).append(", ");
+      if (explicitTypes) {
+        buf.append(joinClass).append(' ');
+      }
+      buf.append(joinName).append(") -> {\n");
+
+      String body = inset + "    ";
+      if (foreignEntity.isAbstract()) {
+        if (relation.getRelationType() == RelationType.LIST) {
+          buf.append(body).append(poImpl).append(" po = (").append(poImpl).append(") ")
+             .append(parentName).append(".getPersistenceDelegate();\n")
+             .append(body).append("po.").append(relation.getGetterName()).append("Blunt().add(")
+             .append(joinName).append(");\n");
+        }
+        else {
+          buf.append(body).append(parentName).append('.').append(relation.getSetterName())
+             .append('(').append(joinName).append(");\n");
+        }
+      }
+      else if (relation.getRelationType() == RelationType.LIST) {
+        if (relation.isReversed()) {
+          buf.append(body).append("((").append(poImpl).append(") ").append(parentName)
+             .append(".getPersistenceDelegate()).").append(relation.getSetterName())
+             .append(relation.isSerialized() ? "Blunt" : "").append('(').append(joinName).append(");\n");
+        }
+        else {
+          buf.append(body).append("((").append(poImpl).append(") ").append(parentName)
+             .append(".getPersistenceDelegate()).").append(relation.getGetterName())
+             .append("Blunt().addBlunt(").append(joinName).append(");\n");
+          if (relation.getLinkMethodName() != null) {
+            buf.append(body).append("((").append(deriveClassNameForEntity(foreignEntity)).append(") ")
+               .append(joinName).append(".getPersistenceDelegate()).")
+               .append(createRelationUpdateReferenceCode(relation, parentName, true)).append(";\n");
+          }
+        }
+      }
+      else {
+        buf.append(body).append(parentName).append('.').append(relation.getSetterName())
+           .append(relation.isSerialized() ? "Blunt" : "").append('(').append(joinName).append(");\n");
+      }
+
+      buf.append(inset).append("  }\n").append(inset).append(')');
+
+      for (String subText: createEagerJoinTexts(foreignEntity, joinClass, sqlAlias, inset + "    ",
+                                                eagerJoin.getJoins(), false)) {
+        buf.append('\n').append(inset).append("  .addJoin(\n")
+           .append(subText).append('\n')
+           .append(inset).append("  )");
+      }
+
+      texts.add(buf.toString());
+    }
+
+    return texts;
+  }
+
+
+  /**
+   * Gets the eager joins as load join terms of the {@code PdoSelect} wurblets.
+   * <p>
+   * Used to add the eager relations to the generated relation finders, so that they load the same
+   * object graph as the generic selects do.
+   * <p>
+   * The tree differs from {@link #getEagerJoinTree()} in two ways, both of which predate the
+   * cascade: the <em>inherited</em> eager relations are part of it, because a generated finder gets
+   * no merging of the superclass joins the way
+   * {@code PersistentObjectClassVariables#getEagerJoins()} does it at runtime; and the joins are
+   * kept even when a subclass declares an eager relation.
+   *
+   * @return the paths, e.g. {@code "*invoice*lines"}, empty if no eager relations
+   */
+  public List<String> getEagerJoinPaths() {
+    List<String> paths = new ArrayList<>();
+    appendEagerJoinPaths(paths, "", createEagerJoinTree(getEntity().getRelationsIncludingInherited(), "e", 0));
+    return paths;
+  }
+
+  /**
+   * Collects the load join terms of an eager join tree.
+   *
+   * @param paths the collected paths
+   * @param prefix the path leading to these joins
+   * @param eagerJoins the joins of this level
+   */
+  private void appendEagerJoinPaths(List<String> paths, String prefix, List<EagerJoin> eagerJoins) {
+    for (EagerJoin eagerJoin: eagerJoins) {
+      String path = prefix + "*" + eagerJoin.getRelation().getName();
+      if (eagerJoin.getJoins().isEmpty()) {
+        paths.add(path);
+      }
+      else {
+        // only the leaves are added: a load join term already implies all its parents
+        appendEagerJoinPaths(paths, path, eagerJoin.getJoins());
+      }
+    }
   }
 
 }

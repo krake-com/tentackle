@@ -49,6 +49,9 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
   /** the alias of the joined table. */
   private static final String JOIN_ALIAS = "e_1";
 
+  /** the alias of the table joined to the joined table. */
+  private static final String NESTED_JOIN_ALIAS = "e_1_1";
+
   /** the components collected by the joiner, per entity ID. */
   private final List<String> joinedPairs = new ArrayList<>();
 
@@ -58,8 +61,18 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
                           ((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).getText());
 
 
+  /** the roots collected by the cascaded joiner. */
+  private final List<String> backJoinedPairs = new ArrayList<>();
+
+  private final BiConsumer<DemoComponent, DemoEntity> backJoiner =
+      (component, entity) ->
+          backJoinedPairs.add(((DemoComponentPersistenceImpl) component.getPersistenceDelegate()).getText() + "->" +
+                              ((DemoEntityPersistenceImpl) entity.getPersistenceDelegate()).getName());
+
+
   @BeforeMethod
   public void clearJoinedPairs() {
+    backJoinedPairs.clear();
     joinedPairs.clear();    // TestNG shares the instance among all test methods
   }
 
@@ -74,6 +87,17 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
     return new Join<>(type, DemoEntityPersistenceImpl.CLASSVARIABLES.tableAlias + "." + AbstractPersistentObject.CN_ID,
                       JOIN_ALIAS + "." + AbstractPersistentObject.CN_ROOTID,
                       DemoComponent.class, JOIN_ALIAS, joiner);
+  }
+
+  /**
+   * Creates the cascaded object join from a component back to its root entity.
+   *
+   * @return the join
+   */
+  private Join<DemoComponent, DemoEntity> backJoin() {
+    return new Join<>(JoinType.LEFT, JOIN_ALIAS + "." + AbstractPersistentObject.CN_ROOTID,
+                      NESTED_JOIN_ALIAS + "." + AbstractPersistentObject.CN_ID,
+                      DemoEntity.class, NESTED_JOIN_ALIAS, backJoiner);
   }
 
   private DemoEntityPersistenceImpl entity(String name) {
@@ -119,6 +143,49 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
                  "SELECT dem.*,e_1.* FROM demoentity dem" +
                  " LEFT JOIN (SELECT dcm.* FROM democomponent dcm WHERE dcm.rootid=?) e_1" +
                  " ON dem.id=e_1.rootid WHERE 1=1");
+  }
+
+  /**
+   * The eager joins of the class variables may cascade, so the SQL builder has to descend into the
+   * sub-joins of a join. Here the components are joined back to their root entity, which is the
+   * shape a cascading {@code select = eager:2} produces.
+   */
+  @Test
+  public void testCreateJoinedSqlDescendsIntoCascadedJoins() {
+    DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
+    JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT).addJoin(backJoin())));
+    assertEquals(joinedSql(pdo, js),
+                 "SELECT dem.*,e_1.*,e_1_1.* FROM demoentity dem" +
+                 " LEFT JOIN (SELECT dcm.* FROM democomponent dcm WHERE dcm.rootid=?) e_1" +
+                 " ON dem.id=e_1.rootid" +
+                 " LEFT JOIN (SELECT dem.* FROM demoentity dem) e_1_1" +
+                 " ON e_1.rootid=e_1_1.id WHERE 1=1");
+  }
+
+  /**
+   * A cascaded join must be read from the same result set, i.e. all levels are populated by one
+   * statement -- this is what a cascading eager relation relies on.
+   */
+  @Test
+  public void testCascadedJoinsArePopulatedFromTheSameRow() {
+    DemoEntityPersistenceImpl root = entity("root");
+    root.save();
+    component(root, "a");
+    component(root, "b");
+
+    DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
+    DemoEntityPersistenceImpl po = (DemoEntityPersistenceImpl) pdo.getPersistenceDelegate();
+    JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT).addJoin(backJoin())));
+
+    List<DemoEntity> list = new ArrayList<>();
+    try (ResultSetWrapper rs = joinedStatement(pdo, js, root).executeQuery()) {
+      po.executeQueryToList(rs, js, list);
+    }
+
+    assertEquals(list.size(), 1, "two joined rows, one root entity");
+    assertEquals(joinedPairs, List.of("root<-a", "root<-b"));
+    // and the second level rode along in the very same statement
+    assertEquals(backJoinedPairs, List.of("a->root", "b->root"));
   }
 
   @Test

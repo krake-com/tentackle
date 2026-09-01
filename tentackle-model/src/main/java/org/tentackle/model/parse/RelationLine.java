@@ -57,10 +57,13 @@ import java.util.Map;
  * by the attribute.
  * <p>
  *
- * select = &lt;always|eager|lazy|embedded&gt; [cached] [| wurbletargs]
+ * select = &lt;always|eager[:depth]|lazy|embedded&gt; [cached] [| wurbletargs]
  * <ul>
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
+ *    <li>depth: number of relation hops the eager join cascade may span, at least 1 (the default).<br>
+ *        A depth &gt; 1 also joins the eager relations of the related entity, and so on.<br>
+ *        Example: <code>select = eager:2</code></li>
  *    <li>lazy: fetched within the first get only (default if not cached)</li>
  *    <li>embedded: fetched by parent (default if the related entity's type is embedded)</li>
  *    <li>cached: use caching select methods if possible (only for objects-relations)</li>

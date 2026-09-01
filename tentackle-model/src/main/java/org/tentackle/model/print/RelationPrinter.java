@@ -157,18 +157,18 @@ public class RelationPrinter {
       boolean selectionTypePrinted = false;
       if (relation.isSelectionCached()) {
         if (relation.getSelectionType() != SelectionType.ALWAYS) {
-          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
+          appendSelectionType(buf, relation);
           selectionTypePrinted = true;
         }
         buf.append(' ').append(RelationImpl.CACHED);
       }
       else if (relation.getSelectionType() != SelectionType.LAZY) {
-        buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
+        appendSelectionType(buf, relation);
         selectionTypePrinted = true;
       }
       if (relation.getSelectionWurbletArguments() != null) {
         if (!selectionTypePrinted) {
-          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
+          appendSelectionType(buf, relation);
         }
         if (relation.getSelectionWurbletArguments().startsWith("|")) {
           buf.append(' ');
@@ -333,6 +333,19 @@ public class RelationPrinter {
     }
     buf.append("    ");
     return buf;
+  }
+
+  /**
+   * Appends the selection strategy, followed by the eager depth if it is not the default.
+   *
+   * @param buf the buffer to append to
+   * @param relation the relation
+   */
+  private void appendSelectionType(StringBuilder buf, Relation relation) {
+    buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
+    if (relation.getSelectionType() == SelectionType.EAGER && relation.getEagerDepth() > 1) {
+      buf.append(RelationImpl.DEPTH_SEPARATOR).append(relation.getEagerDepth());
+    }
   }
 
 }

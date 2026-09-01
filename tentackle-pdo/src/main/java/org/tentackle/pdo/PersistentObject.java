@@ -699,8 +699,10 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Selects all objects of this class.<br>
-   * Eager relations are loaded as well, but limited to the first level to prevent join hogs.
-   * If more than one level must be eagerly loaded, use explicit finders.
+   * Eager relations are loaded as well, cascading as deep as the model declares
+   * ({@code select = eager:<depth>}). The default depth of 1 joins the related entity only, which
+   * keeps the generic selects from turning into join hogs. If a deeper or filtered graph is needed
+   * for one access path only, use an explicit finder with load joins instead.
    *
    * @return the list of objects
    */

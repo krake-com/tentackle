@@ -140,6 +140,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
+  /** separates the strategy from the eager depth, e.g. {@code eager:2}. */
+  public static final char DEPTH_SEPARATOR = ':';
+
   /** cascade delete flag. */
   public static final String CASCADE = "cascade";
 
@@ -178,6 +181,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionTypeDetermined;
+  private int eagerDepth = 1;
   private boolean selectionCached;
   private String selectionWurbletArguments;
   private String methodName;
@@ -466,11 +470,35 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
                   setSelectionCached(true);
                 }
                 else {
+                  // the strategy may carry an eager depth, e.g. "eager:2"
+                  String strategy = token;
+                  String depth = null;
+                  int sepNdx = token.indexOf(DEPTH_SEPARATOR);
+                  if (sepNdx >= 0) {
+                    strategy = token.substring(0, sepNdx);
+                    depth = token.substring(sepNdx + 1);
+                  }
                   try {
-                    setSelectionType(SelectionType.valueOf(token.toUpperCase(Locale.ROOT)));
+                    setSelectionType(SelectionType.valueOf(strategy.toUpperCase(Locale.ROOT)));
                   }
                   catch (IllegalArgumentException ex) {
                     throw createModelException("illegal keyword in select property: " + token);
+                  }
+                  if (depth != null) {
+                    if (getSelectionType() != SelectionType.EAGER) {
+                      throw createModelException("a depth is only allowed for the eager strategy: " + token);
+                    }
+                    int eagerDepthValue;
+                    try {
+                      eagerDepthValue = Integer.parseInt(depth);
+                    }
+                    catch (NumberFormatException ex) {
+                      throw createModelException("illegal eager depth in select property: " + token);
+                    }
+                    if (eagerDepthValue < 1) {
+                      throw createModelException("the eager depth must be at least 1: " + token);
+                    }
+                    setEagerDepth(eagerDepthValue);
                   }
                 }
               }
@@ -1182,6 +1210,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   @Override
+  public int getEagerDepth() {
+    return eagerDepth;
+  }
+
+  @Override
   public boolean isSelectionCached() {
     return selectionCached;
   }
@@ -1312,6 +1345,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   public void setSelectionType(SelectionType selectionType) {
     this.selectionType = selectionType;
+  }
+
+  public void setEagerDepth(int eagerDepth) {
+    this.eagerDepth = eagerDepth;
   }
 
   public void setSelectionCached(boolean selectionCached) {

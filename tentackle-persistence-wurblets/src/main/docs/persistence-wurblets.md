@@ -104,7 +104,7 @@ documentation in their leading `@{comment ...}@` block. They fall into four grou
 | Wurblet                                                                           | Generates                                                                                                                                                                  |
 |-----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`Declare`](../wurblets/org/tentackle/persist/wurblet/Declare.wrbl)               | Field declarations for the entity's attributes. Options: `--protected`, `--annotations`, `--mock`.                                                                         |
-| [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl) | The per-class `PersistentObjectClassVariables` holder (table alias, statement-id registry, super/sub-class wiring, eager relations) shared by all instances of the entity. |
+| [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl) | The per-class `PersistentObjectClassVariables` holder (table alias, statement-id registry, super/sub-class wiring, the cascaded eager join tree) shared by all instances of the entity. |
 | [`MethodsImpl`](../wurblets/org/tentackle/persist/wurblet/MethodsImpl.wrbl)       | Getter/setter and other method *implementations*. Options: `--noif` (no interface ⇒ no `@Override`), `--noudk`, `--noisroot`, `--mock`.                                    |
 | [`MethodCache`](../wurblets/org/tentackle/persist/wurblet/MethodCache.wrbl)       | The `PdoMethodCache` for an embedded entity.                                                                                                                               |
 | [`QueryDSL`](../wurblets/org/tentackle/persist/wurblet/QueryDSL.wrbl)             | The table- and field constants of the [query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md). Options: `--public`, `--protected`, `--prefix[=<prefix>]`, `--table=<constant>`, `--alias=<alias>`, `--noalias`. |
@@ -320,7 +320,7 @@ running application.
 - [Tentackle Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — the interface-side counterpart, the wurblet anchor mechanism, and the wurblet-argument query language.
 - [The Wurblet API](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — `ModelWurblet`, the argument mini-language and the join model this module builds on.
 - [`PdoSelectList` / `PdoSelectUnique`](pdo-select.md) — generating finder methods, including eager-loading `*` load joins.
-- [Eager Relations](eager-relations.md) — model-level `select = eager` vs. domain-level load joins, and why eager loading never cascades.
+- [Eager Relations](eager-relations.md) — model-level `select = eager[:depth]` vs. domain-level load joins, and how far each of them cascades.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the model the wurblets consume.
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects these implementations realize.
 - [Tentackle SQL](../../../../tentackle-sql/src/main/docs/sql.md) — `DataType`/`Backend` used to build the SQL and bind parameters.

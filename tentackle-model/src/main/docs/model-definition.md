@@ -584,7 +584,7 @@ when the aggregate is tracked). See
 #### `select`
 
 ```
-select = [<strategy>] [cached] [| wurbletArgs]
+select = [<strategy>[:<depth>]] [cached] [| wurbletArgs]
 ```
 
 | Strategy   | Description                                                                                                                                                       |
@@ -593,6 +593,17 @@ select = [<strategy>] [cached] [| wurbletArgs]
 | `always`   | Fetched on every get (for very special cases, not recommended)                                                                                                    |
 | `eager`    | Fetched together with the parent entity via left outer join (see [eager relations](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md)). |
 | `embedded` | Default for embedded related entities (only used when printing the model).                                                                                        |
+
+- `:<depth>` — only for `eager`: the number of relation hops the generated join tree may span, counting this
+ relation as the first one. Defaults to `1`, which joins the related entity alone. A higher value additionally
+ joins the `eager` relations of the related entity, and so on, until the depth is exhausted; the remaining
+ levels are then fetched by follow-up selects. Because every generic read of the entity pays for the whole
+ tree, raise it only for a small, bounded chain that is virtually always needed together — see
+ [eager relations](../../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md).
+
+```
+select = eager:2
+```
 
 - `cached` — use caching select methods. Default if the related entity's `cached` option is set
  and the strategy is missing. Notice that "lazy cached" is allowed but won't update the loaded reference even if

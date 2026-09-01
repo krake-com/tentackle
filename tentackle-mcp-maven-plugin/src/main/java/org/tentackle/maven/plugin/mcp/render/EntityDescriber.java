@@ -214,7 +214,7 @@ public class EntityDescriber {
       table.add(relation.getName(),
                 relation.getRelationType(),
                 relation.getForeignEntity() == null ? relation.getClassName() : relation.getForeignEntity().getName(),
-                relation.getSelectionType(),
+                Flags.selection(relation),
                 Flags.join(Flags.of(relation)),
                 relation.getComment());
     }

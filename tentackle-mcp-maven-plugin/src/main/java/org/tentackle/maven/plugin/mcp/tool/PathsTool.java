@@ -155,7 +155,7 @@ public class PathsTool implements ModelTool {
                   relation.getRelationType(),
                   relation.getForeignEntity() == null ? relation.getClassName()
                                                       : relation.getForeignEntity().getName(),
-                  relation.getSelectionType(),
+                  Flags.selection(relation),
                   Flags.join(Flags.of(relation)));
       }
       buf.append(table.isEmpty() ? "none\n" : table.toString());

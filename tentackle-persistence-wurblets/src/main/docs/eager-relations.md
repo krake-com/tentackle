@@ -11,8 +11,8 @@ firing a follow-up query (the classic N+1 problem):
    method, independent of the model.
 
 The two look similar but solve different problems and have very different scope. The most important thing to
-understand is that **model-level eager loading never cascades**, whereas **load joins are explicit and may chain
-to any depth you ask for**.
+understand is that **model-level eager loading cascades only as far as the model declares**, and by default not
+at all, whereas **load joins are explicit and may chain to any depth you ask for**.
 
 ---
 
@@ -32,6 +32,33 @@ The available strategies are `lazy` (the default — fetched on first access), `
 With `eager`, the related object is loaded **together with its parent via a `LEFT OUTER JOIN`** rather than on
 first access.
 
+The strategy may carry a **cascade depth**, written `eager:<n>`:
+
+```
+## relations
+Address:
+    relation = object,
+    select   = eager:2
+```
+
+`n` is the number of relation hops the generated join tree may span, counting this relation as the first one.
+It defaults to `1` — the single-level join described below — so a plain `eager` behaves exactly as it always
+did.
+
+With `Invoice -eager:2-> Address` and `Address -eager-> Country`, every generic read of an invoice becomes a
+single statement:
+
+```sql
+SELECT inv.*, e_1.*, e_1_1.*
+  FROM invoice inv
+  LEFT JOIN (SELECT adr.* FROM address adr) e_1   ON inv.address_id = e_1.id
+  LEFT JOIN (SELECT cty.* FROM country cty) e_1_1 ON e_1.country_id = e_1_1.id
+```
+
+At depth `1` the country would instead be fetched by a follow-up select on first access. Note that the
+`Address -eager-> Country` relation needs no depth of its own: the budget comes from the relation that starts
+the chain.
+
 ### What "eager" actually applies to
 
 Eager loading is wired into the **generic selects** — the methods the persistence layer generates for *every*
@@ -39,48 +66,54 @@ entity: `select(id)`, `selectAll()`, and the relation finders that other entitie
 entity (`selectByXxx`). Concretely:
 
 - The eager joins are baked into the entity's `CLASSVARIABLES` as a list of
-  [`Join`](../../../../tentackle-pdo/src/main/docs/pdo.md)s (one `LEFT JOIN` per eager relation), assembled by
-  [`DbModelWurblet.getEagerRelations()`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)
+  [`Join`](../../../../tentackle-pdo/src/main/docs/pdo.md)s (one `LEFT JOIN` per eager relation, each carrying
+  its cascaded sub-joins), assembled by
+  [`DbModelWurblet.getEagerJoinTree()`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java)
   and emitted by [`ClassVariables`](../wurblets/org/tentackle/persist/wurblet/ClassVariables.wrbl). The runtime
   applies these joins to the standard by-id / select-all statements.
 - When another entity's relation generates a finder for this entity,
-  [`PdoRelations`](../wurblets/org/tentackle/persist/wurblet/PdoRelations.wrbl) appends each eager relation as a
-  `*relation` load join to that generated `PdoSelectList` / `PdoSelectUnique`, so the eager objects ride along
+  [`PdoRelations`](../wurblets/org/tentackle/persist/wurblet/PdoRelations.wrbl) appends the same join tree as
+  `*relation` load joins to that generated `PdoSelectList` / `PdoSelectUnique`, so the eager objects ride along
   in the relation select as well.
 
-In other words, "eager" is a property of how the entity is *generically* read. It is **not** a cascade
-instruction, and it does not magically change handwritten queries.
+In other words, "eager" is a property of how the entity is *generically* read. It does not magically change
+handwritten queries.
 
-### Eager never cascades — and why
+### The cascade is capped — and why
 
-This is the crucial rule. The optimized eager join is generated **only one level deep**.
-[`getEagerRelations()`](../java/org/tentackle/persist/wurblet/DbModelWurblet.java) walks the entity's
-eager relations and **abandons the whole join optimization** (returns nothing, falling back to follow-up
-selects) if either of these holds:
+The depth is the **only** thing that ends the cascade. A relation is followed when it is declared `eager` and
+the budget of the relation that started the chain still allows another hop; when the budget runs out, the
+remaining levels are loaded by ordinary follow-up selects. A cycle
+(`A -eager-> B -eager-> A`) is therefore harmless: it simply produces a bounded chain of joins.
 
-- a **subclass** of the entity declares an eager relation, or
-- any **direct component of the eagerly-joined entity** itself declares an eager relation.
+The depth of the **root** relation governs its whole subtree. A nested relation must still be declared `eager`
+to be pulled in, but its own `:n` is not consulted while it is nested — that value applies when *its* entity is
+the one being selected. So the emitted join tree is a function of a single number, which keeps it predictable.
 
-So an eager relation whose target also has eager relations does **not** produce a chain of nested
-`LEFT JOIN`s. The chain is intentionally broken.
+There is one case in which the optimization is abandoned altogether (nothing is joined and every relation falls
+back to a follow-up select): when a **subclass** of the entity declares an eager relation. The joins of a
+polymorphic select cannot depend on the class of the row.
 
-The reason is performance. A naive transitively-cascading eager strategy is the classic way to destroy a
-relational application: each additional eager level multiplies into the join, every parent row is fanned out
-across the cross-product of all its descendants, the row count explodes, and a query that was meant to fetch
-"one object and its address" ends up dragging half the database through a single statement. Long `LEFT JOIN`
-chains are slow to plan, slow to execute, and slow to de-duplicate on the client. By capping eager loading at a
-single level, Tentackle keeps the generic selects predictable: at worst, one parent plus a bounded set of
-directly-joined relations.
+**Why the default is 1.** A transitively-cascading eager strategy is the classic way to destroy a relational
+application: each additional eager level over a *list* relation multiplies into the join, every parent row is
+fanned out across the cross-product of all its descendants, the row count explodes, and a query that was meant
+to fetch "one object and its address" ends up dragging half the database through a single statement. Long
+`LEFT JOIN` chains are slow to plan, slow to execute, and slow to de-duplicate on the client. Because a
+model-level eager relation is paid for by **every** generic read of the entity, the cascade is off unless you
+ask for it.
 
-If you find yourself wanting eager loading to cascade, that is a signal that you want a **load join in a
-specific finder** (next section), not a model-wide eager flag.
+Raise the depth when the whole chain is small, bounded and virtually always needed together — typically a
+series of 1:1 / N:1 hops, which add no rows at all. If instead only certain queries need the deeper graph, or
+you need to filter it, that is a signal that you want a **load join in a specific finder** (next section), not
+a model-wide depth.
 
 ### When to use it
 
 Reach for `select = eager` only when a related object is *almost always* needed together with its parent and
 the relation is shallow and bounded (a 1:1 link to a small satellite row, a short component list). It is a
-blunt, global instrument: every generic read of the entity pays for it. For everything else, prefer `lazy`
-(the default) and add targeted load joins where a particular access path needs them.
+blunt, global instrument: every generic read of the entity pays for it, and a depth greater than 1 multiplies
+that cost. For everything else, prefer `lazy` (the default) and add targeted load joins where a particular
+access path needs them.
 
 ---
 
@@ -106,7 +139,7 @@ This is **domain-related, not model-related.** Key differences from model eager:
 |----------------|-----------------------------------------|--------------------------------------------------------------|
 | Where declared | In the model (relation line)            | In a finder anchor in the persistence implementation         |
 | Scope          | Global — affects **every** generic read | Local — affects **only that one finder**                     |
-| Cascading      | **Never** — capped at one level         | **Explicit** — you chain `*a*b*c` to whatever depth you need |
+| Cascading      | Capped by `eager:<n>`, **1** by default  | **Explicit** — you chain `*a*b*c` to whatever depth you need |
 | Filtering      | No                                      | Yes — `*lines                                                |no:<:10` loads a subset                    |
 | Granularity    | All-or-nothing for the entity           | Tuned per access path                                        |
 
@@ -124,7 +157,7 @@ grammar, join consolidation, immutability rules, and the `--cursor` constraint.
 ## Choosing between the two
 
 - The relation is small, shallow, and needed on virtually every read of the parent ⇒ **`select = eager`** in
-  the model.
+  the model — plus a depth if the entity behind it is just as inseparable.
 - Only certain queries need the related data, or you need to follow a deeper / filtered path, or you want to
   avoid burdening other readers ⇒ **leave the relation `lazy` and add a `*` load join** in the specific finder.
 
@@ -140,6 +173,6 @@ inflating every select of a central entity.
   full `*relation` grammar and filtered joins.
 - [Tentackle Persistence Wurblets](persistence-wurblets.md) — the module overview and wurblet catalogue.
 - [Model Definition → `select`](../../../../tentackle-model/src/main/docs/model-definition.md#select) — the
-  relation `select` strategies (`lazy`, `eager`, `always`, `embedded`).
+  relation `select` strategies (`lazy`, `eager[:depth]`, `always`, `embedded`).
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — aggregates, components,
   immutability, and the `JoinedSelect` machinery these loads build on.

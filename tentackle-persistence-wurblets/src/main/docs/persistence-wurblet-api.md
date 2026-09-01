@@ -236,7 +236,8 @@ These build the code `PdoRelations` and `ClassVariables` weave into the persiste
 | `createRelationDeleteCode` / `createRelationLinkCode`             | The bulk-delete call and the back-reference setter (honoring an explicit link method and its optional index argument).                                                                                                                                                                                                 |
 | `createRelationUpdateReferenceCode(relation, pdo, blunt)`         | The code that writes the back-reference. The `blunt` request is **silently downgraded** unless the opposite relation is a serialized object relation with lazy or eager selection; a declared link method wins over the setter when not blunt. The one-argument overload fixes the PDO to `me()` and never uses blunt. |
 | `createRelationSetFirstArgMethodName` / `getFirstMethodAttribute` | The setter for a single-argument relation; both raise a `ModelException` on a relation whose method arguments do not fit.                                                                                                                                                                                              |
-| `getEagerRelations()`                                             | The relations eligible for the persistence layer's optimized single-join eager select.                                                                                                                                                                                                                                 |
+| `getEagerJoinTree()` / `getEagerJoinPaths()`                      | The eager join tree of the entity, cascaded to each relation's `select = eager:<depth>`, and the same tree as `*a*b` load join terms for the generated relation finders. Both return nothing when a subclass declares an eager relation, because a polymorphic select cannot vary its joins by row class.               |
+| `createEagerJoins()`                                              | The whole trailing `List.of(...)` argument of `PersistentObjectClassVariables.create(...)` — nested `addJoin(...)` chains with hierarchical table aliases (`e_1`, `e_1_1`). Deliberately separate from `createJoins()`: the class variables are a *static* initializer, so joined columns must be string literals.      |
 
 ---
 
@@ -502,7 +503,8 @@ actually emits.
 - [The Wurblet API](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md) — the base classes, the argument
   mini-language and the join model this package consumes.
 - [PdoSelectList and PdoSelectUnique](pdo-select.md) — the query language from the user's point of view.
-- [Eager Relations](eager-relations.md) — what `createJoins()` produces, and why eager loading never cascades.
+- [Eager Relations](eager-relations.md) — what `createJoins()` and `createEagerJoins()` produce, and how far a
+  model-level eager relation cascades.
 - [Wurblets — Interface-Level Code Generation](../../../../tentackle-wurblets/src/main/docs/wurblets.md) — the
   interface-side counterpart.
 - [The Query DSL](../../../../tentackle-database/src/main/docs/query-dsl.md) — what `DslDeclarationFactory` feeds.

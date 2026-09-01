@@ -311,6 +311,18 @@ public interface Relation extends ModelElement, Commented {
   SelectionType getSelectionType();
 
   /**
+   * Gets the depth of the eager join cascade.
+   * <p>
+   * Only meaningful for {@link SelectionType#EAGER}. It is the number of relation hops the
+   * generated join tree may span, counting this relation as the first one. The default 1 joins
+   * the related entity only; a higher value additionally joins the eager relations of the
+   * related entity, and so on, until the depth is exhausted.
+   *
+   * @return the depth, always &gt;= 1, 1 by default
+   */
+  int getEagerDepth();
+
+  /**
    * Returns whether the select method is caching.
    *
    * @return true if cached
