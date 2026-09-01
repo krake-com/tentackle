@@ -23,11 +23,13 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.JoinType;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -35,7 +37,7 @@ import static org.testng.Assert.expectThrows;
  * Database-backed tests for {@link JoinedSelect}.
  * <p>
  * {@link JoinedSelectTest} covers the in-memory bookkeeping of a joined select; what needs a
- * session is {@link JoinedSelect#createJoinedSql}, which takes the {@link org.tentackle.sql.Backend}
+ * session is {@code JoinedSelect#createJoinedSql}, which takes the {@link org.tentackle.sql.Backend}
  * from the PDO's session, and the row collapsing of {@link ResultSetCursor#get()}, which turns the
  * n rows of a 1:n join back into one PDO carrying n joined PDOs.
  *
@@ -160,6 +162,25 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
     return st;
   }
 
+  /**
+   * Like {@link #joinedStatement}, but scrollable so a {@link ResultSetCursor} built over it can
+   * rewind via {@code beforeFirst()}.
+   *
+   * @param pdo the entity PDO the select starts from
+   * @param js the joined select
+   * @param root the saved root entity
+   * @return the executable statement
+   */
+  private PreparedStatementWrapper scrollableJoinedStatement(DemoEntity pdo, JoinedSelect<DemoEntity> js,
+                                                              DemoEntityPersistenceImpl root) {
+    String sql = joinedSql(pdo, js) + " ORDER BY " + JOIN_ALIAS + "." + DemoComponentPersistenceImpl.CN_TEXT;
+    PreparedStatementWrapper st = getSession().createPreparedStatement(
+        _ -> sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+    // the joined select of a component carries its own context condition, hence this parameter
+    st.setLong(1, root.getId());
+    return st;
+  }
+
   @Test
   public void testTheJoinedSqlIsAcceptedByTheDatabaseAndCollapsesTheRows() {
     DemoEntityPersistenceImpl root = entity("root");
@@ -235,6 +256,35 @@ public class JoinedSelectDbTest extends AbstractPersistenceDbTest {
                    List.of("rootA", "rootB"));
     }
     assertEquals(joinedPairs, List.of("rootA<-a1", "rootA<-a2"));
+  }
+
+  @Test
+  public void testBeforeFirstRewindsAJoinedCursor() {
+    DemoEntityPersistenceImpl root = entity("root");
+    root.save();
+    component(root, "a");
+    component(root, "b");
+    component(root, "c");
+
+    DemoEntity pdo = Pdo.create(DemoEntity.class, getDomainContext());
+    JoinedSelect<DemoEntity> js = new JoinedSelect<>(List.of(listJoin(JoinType.LEFT)));
+
+    try (ResultSetCursor<DemoEntity> cursor =
+             new ResultSetCursor<>(pdo, scrollableJoinedStatement(pdo, js, root).executeQuery(), js)) {
+      assertTrue(cursor.next());
+      assertNotNull(cursor.get(), "the first row must be readable before any rewind");
+
+      cursor.beforeFirst();
+      assertTrue(cursor.isBeforeFirst());
+      assertEquals(cursor.getRow(), 0);
+
+      assertTrue(cursor.next(), "a row exists after rewinding a joined cursor");
+      DemoEntity afterRewind = cursor.get();
+      assertNotNull(afterRewind, "get() must return the row next() just reported after beforeFirst()");
+      assertEquals(((DemoEntityPersistenceImpl) afterRewind.getPersistenceDelegate()).getName(), "root");
+    }
+    // every component must be joined exactly once per pass, before and after the rewind
+    assertEquals(joinedPairs, List.of("root<-a", "root<-b", "root<-c", "root<-a", "root<-b", "root<-c"));
   }
 
 }

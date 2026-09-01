@@ -407,6 +407,15 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     boolean rv;
+    /*
+     * true if this call may be positioning a joined cursor onto its very first row (row == 0,
+     * captured before it is mutated below): that row has not been read by get() yet, unlike every
+     * other row next() ever lands on, which get() has already peeked at while assembling the
+     * previous PDO. first() marks this explicitly via its own trailing firstInvoked = rv; this
+     * lets a raw next() -- e.g. right after beforeFirst() -- do the same, so get() reads the row
+     * instead of skipping past it.
+     */
+    boolean freshStart = js != null && row == 0;
 
     if (eof) {
       rv = false;
@@ -422,7 +431,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       }
     }
 
-    firstInvoked = false;
+    firstInvoked = freshStart && rv;
     return rv;
   }
 
@@ -506,7 +515,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (js != null) {
       js.initialize(null);
       eof = false;
-      noNext = true;
+      /*
+       * Not noNext = true: the joined select has just been re-initialized, so there is no row
+       * that has already been read and that the next next() would have to skip over. Worse, the
+       * next() a few lines below would consume the flag itself and return true without advancing,
+       * leaving the cursor before the first row with row == 0 -- which get() reads as "no row".
+       */
+      noNext = false;
     }
     resources.rs.beforeFirst();
     row = 0;
