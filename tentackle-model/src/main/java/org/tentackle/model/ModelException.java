@@ -38,6 +38,14 @@ public class ModelException extends Exception {
 
 
   /**
+   * Creates a model exception with <code>null</code> as its detail message and no related element.
+   */
+  public ModelException() {
+    super();
+    this.element = null;
+  }
+
+  /**
    * Creates a model exception.
    *
    * @param message the error message

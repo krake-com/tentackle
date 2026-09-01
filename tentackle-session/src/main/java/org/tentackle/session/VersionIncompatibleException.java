@@ -30,8 +30,19 @@ public class VersionIncompatibleException extends LoginFailedException {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  private static final String UNKNOWN_VERSION = "?";
+
   private final String clientVersion;
   private final String serverVersion;
+
+  /**
+   * Creates a version incompatible exception with the unknown version information {@code "?"}.
+   */
+  public VersionIncompatibleException() {
+    super();
+    this.clientVersion = UNKNOWN_VERSION;
+    this.serverVersion = UNKNOWN_VERSION;
+  }
 
   /**
    * Creates a version incompatible exception.

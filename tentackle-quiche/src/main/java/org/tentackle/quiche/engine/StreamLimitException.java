@@ -34,6 +34,13 @@ public class StreamLimitException extends QuicheException {
   private static final long serialVersionUID = 1L;
 
   /**
+   * Creates an exception with {@code null} as its detail message.
+   */
+  public StreamLimitException() {
+    super();
+  }
+
+  /**
    * Creates an exception.
    *
    * @param message the message

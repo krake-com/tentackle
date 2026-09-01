@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import java.io.Serial;
@@ -37,6 +36,16 @@ public class BindingVetoException extends Exception {
   private final boolean rethrowEnabled;       // true if rethrowEnabled as Binding(Runtime)Exception
   private final boolean resyncRequested;      // true if model/view should be resync'd
 
+
+  /**
+   * Constructs a <code>BindingVetoException</code> with <code>null</code> as its detail
+   * message, no resync and no rethrow requested.
+   */
+  public BindingVetoException() {
+    super();
+    this.resyncRequested = false;
+    this.rethrowEnabled = false;
+  }
 
   /**
    * Constructs a <code>BindingVetoException</code> with optional resync of model or view.
@@ -62,7 +71,6 @@ public class BindingVetoException extends Exception {
     this.rethrowEnabled = rethrowEnabled;
   }
 
-
   /**
    * Constructs a <code>BindingVetoException</code>.
    *
@@ -85,7 +93,7 @@ public class BindingVetoException extends Exception {
   }
 
   /**
-   * Returns whether veto exception should be rethrown as a binding runtime exception after being processed.
+   * Returns whether the veto exception should be rethrown as a binding runtime exception after being processed.
    *
    * @return true if re-throw, false if process silently
    */
