@@ -20,6 +20,7 @@ package org.tentackle.session;
 
 import org.testng.annotations.Test;
 
+import java.io.Serial;
 import java.lang.reflect.Proxy;
 
 import static org.testng.Assert.assertEquals;
@@ -45,6 +46,9 @@ public class SessionTaskDispatcherTest {
    * A session task remembering whether it ran.
    */
   private static class TestTask extends AbstractSessionTask {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void run() {

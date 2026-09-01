@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.misc.Identifiable;
 
+import java.io.Serial;
 import java.lang.reflect.Proxy;
 
 import static org.testng.Assert.assertEquals;
@@ -41,6 +42,9 @@ public class PersistenceExceptionTest {
    */
   private static class Thing implements Identifiable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     @Override
     public long getId() {
       return 7;
@@ -57,6 +61,10 @@ public class PersistenceExceptionTest {
    */
   private static class AttachedThing extends Thing implements SessionProvider {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @SuppressWarnings("serial")
     private final Session session;
 
     AttachedThing(Session session) {

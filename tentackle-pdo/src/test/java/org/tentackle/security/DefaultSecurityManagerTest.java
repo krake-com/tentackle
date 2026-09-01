@@ -26,6 +26,7 @@ import org.tentackle.security.permissions.ReadPermissionImpl;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.SessionInfo;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 
@@ -50,6 +51,9 @@ public class DefaultSecurityManagerTest {
    * A domain context providing a session-info without a session.
    */
   private static class TestDomainContext extends DefaultDomainContext {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final SessionInfo sessionInfo;
 

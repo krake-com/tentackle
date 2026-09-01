@@ -47,7 +47,7 @@ import static org.testng.Assert.assertTrue;
  *
  * @author harald
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class DefaultLockManagerDbTest extends AbstractPersistenceDbTest {
 
   private static final int DEMO_LOCKABLE_CLASS_ID = 9005;
