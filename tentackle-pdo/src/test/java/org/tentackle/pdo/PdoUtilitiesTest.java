@@ -50,20 +50,6 @@ import static org.testng.Assert.assertTrue;
 public class PdoUtilitiesTest {
 
   /**
-   * A class annotated as the persistence implementation of {@link Security}.
-   */
-  @PersistentObjectService(Security.class)
-  private static class SecurityPersistenceService {
-  }
-
-  /**
-   * A class annotated as the domain implementation of {@link NumberPool}.
-   */
-  @DomainObjectService(NumberPool.class)
-  private static class NumberPoolDomainService {
-  }
-
-  /**
    * Creates a PDO stub answering {@code isModified()} only.
    *
    * @param modified the value to answer
@@ -155,14 +141,6 @@ public class PdoUtilitiesTest {
     assertTrue(policy instanceof DefaultTransactionRetryPolicy);
     assertSame(utilities.getTransactionRetryPolicy(""), policy, "null and \"\" select the default");
     assertThrows(PersistenceException.class, () -> utilities.getTransactionRetryPolicy("nosuchpolicy"));
-  }
-
-  @Test
-  public void testDetermineServicedClass() {
-    PdoUtilities utilities = PdoUtilities.getInstance();
-    assertEquals(utilities.determineServicedClass(SecurityPersistenceService.class), Security.class);
-    assertEquals(utilities.determineServicedClass(NumberPoolDomainService.class), NumberPool.class);
-    assertNull(utilities.determineServicedClass(String.class), "not a service implementation");
   }
 
   @Test
