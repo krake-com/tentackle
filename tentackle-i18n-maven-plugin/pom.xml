@@ -47,6 +47,12 @@
       <artifactId>tentackle-domain</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <!-- the test backend: the mojo tests run against the stored bundles of an in-memory H2 -->
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -54,6 +60,18 @@
   </properties>
 
   <build>
+
+    <testResources>
+      <testResource>
+        <!-- the default, overridden by the generated one below and hence to be listed explicitly -->
+        <directory>src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <!-- the DDL of the stored bundles, generated below -->
+        <directory>target/generated-test-resources</directory>
+      </testResource>
+    </testResources>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -74,6 +92,58 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <!--
+          Create the DDL of the tables the mojo tests need, so that AbstractI18nMojoDbTest can
+          build the schema of the in-memory H2 from the classpath. The recipe is the one of
+          tentackle-persistence: this module sits below tentackle-test-pdo in the reactor and
+          cannot use its DbTestUtilities, which would build the same script from the model.
+        -->
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <verbosity>info</verbosity>
+              <generateHeaderComment>false</generateHeaderComment>
+              <checkReservedTables>false</checkReservedTables>
+              <backendNames>H2</backendNames>
+              <sqlDir>${project.build.directory}/generated-test-resources/META-INF/sql</sqlDir>
+              <sqlFileName>createttmodel.sql</sqlFileName>
+              <filesets>
+                <fileset>
+                  <!--
+                    The model dir is shared by the whole reactor, so the entities must be named
+                    explicitly. Otherwise, an incremental build would pull in the models of other
+                    modules as well.
+                    bundle and bundlekey are the tables the i18n mojos work on; modification and
+                    modlog are needed because saving a stored bundle counts its modification.
+                  -->
+                  <directory>${tentackle.modelDir}</directory>
+                  <includes>
+                    <include>bundle.map</include>
+                    <include>bundlekey.map</include>
+                    <include>modification.map</include>
+                    <include>modlog.map</include>
+                  </includes>
+                </fileset>
+              </filesets>
+              <sequences>
+                <sequence>
+                  <name>object_sequence_id</name>
+                  <comment>to generate the ID of PDOs</comment>
+                </sequence>
+              </sequences>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>

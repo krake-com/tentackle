@@ -199,7 +199,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     try {
       for (MavenProject project : projects) {
         List<String> classpathElements = project.getCompileClasspathElements();
-        ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+        ClassLoader classLoader = createProjectClassLoader(classpathElements);
 
         session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
           // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
@@ -238,6 +238,18 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     catch (RuntimeException rex) {
       throw new MojoExecutionException("processing the bundles failed", rex);
     }
+  }
+
+  /**
+   * Creates the classloader to load the bundles of a project from.
+   *
+   * @param classpathElements the compile classpath elements of the project
+   * @return the classloader
+   * @throws MalformedURLException if a classpath element is not a valid path
+   */
+  protected ClassLoader createProjectClassLoader(List<String> classpathElements) throws MalformedURLException {
+    // the plugin's classloader is the plexus class realm, which is a URLClassLoader
+    return new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
   }
 
   /**
