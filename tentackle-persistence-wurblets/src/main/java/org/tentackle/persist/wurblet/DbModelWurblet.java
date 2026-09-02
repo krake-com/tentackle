@@ -924,7 +924,7 @@ public class DbModelWurblet extends ModelWurblet {
         Relation relation = join.getWurbletRelation().getRelation();
         lastJoinName = join.getName();
         String poImpl = deriveClassNameForEntity(relation.getEntity());
-        String alias = lastNonEmbeddedEntity.getTopSuperEntity().getTableAlias();
+        String alias = lastNonEmbeddedEntity.getTableProvidingEntity().getTableAlias();
         String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : lastNonEmbeddedEntity.getName();
         String joinClass = relation.getForeignEntity().getName();
         String joinAlias = relation.getForeignEntity().getTableProvidingEntity().getTableAlias();
