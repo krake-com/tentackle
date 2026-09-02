@@ -622,6 +622,10 @@ public class JLinkResolver {
       throw new MojoExecutionException("cannot resolve paths", e);
     }
 
+    if (maxNameLength == 0) {
+      maxNameLength = 1;    // a zero column width is illegal in a format string (see below)
+    }
+
     // run jdeps on non-JPMS modules
     for (Artifact artifact: artifacts) {
       JavaModuleDescriptor moduleDescriptor = artifactJavaModuleDescriptorMap.get(artifact);

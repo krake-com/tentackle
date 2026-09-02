@@ -89,6 +89,11 @@ public class InitMojo extends AbstractJLinkMojo {
   // ------------- unused abstract methods -----------------
 
   @Override
+  protected void validateTemplates() {
+    // nothing to validate: the goal installs the templates under the names the plugin ships them
+  }
+
+  @Override
   protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
   }
 

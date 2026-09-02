@@ -511,18 +511,22 @@ public class JPackageMojo extends AbstractJLinkMojo {
       if (jpackageMajorRuntimeVersion != getJavaMajorRuntimeVersion()) {
         getLog().warn("jpackage tool's major version " + jpackageMajorRuntimeVersion + " differs from jlink/jdeps version " + getJavaMajorRuntimeVersion());
       }
-      if (packageImageTemplate == null) {
-        throw new MojoExecutionException("packageImageTemplate missing");
-      }
-      if (packageInstallerTemplate == null) {
-        throw new MojoExecutionException("packageInstallerTemplate missing");
-      }
-      if (isWithUpdater() && StringHelper.isAllWhitespace(packageUpdateTemplate)) {
-        throw new MojoExecutionException("packageUpdateTemplate missing");
-      }
       return true;
     }
     return false;
+  }
+
+  @Override
+  protected void validateTemplates() throws MojoExecutionException {
+    if (StringHelper.isAllWhitespace(packageImageTemplate)) {
+      throw new MojoExecutionException("packageImageTemplate missing");
+    }
+    if (StringHelper.isAllWhitespace(packageInstallerTemplate)) {
+      throw new MojoExecutionException("packageInstallerTemplate missing");
+    }
+    if (isWithUpdater() && StringHelper.isAllWhitespace(packageUpdateTemplate)) {
+      throw new MojoExecutionException("packageUpdateTemplate missing");
+    }
   }
 
   @Override

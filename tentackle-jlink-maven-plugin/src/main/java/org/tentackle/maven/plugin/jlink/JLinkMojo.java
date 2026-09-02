@@ -181,20 +181,16 @@ public class JLinkMojo extends AbstractJLinkMojo {
   }
 
   @Override
-  protected boolean validate() throws MojoExecutionException {
-    if (super.validate()) {
-      if (StringHelper.isAllWhitespace(nameTemplate)) {
-        throw new MojoExecutionException("nameTemplate missing");
-      }
-      if (StringHelper.isAllWhitespace(runTemplate)) {
-        throw new MojoExecutionException("runTemplate missing");
-      }
-      if (isWithUpdater() && StringHelper.isAllWhitespace(updateTemplate)) {
-        throw new MojoExecutionException("updateTemplate missing");
-      }
-      return true;
+  protected void validateTemplates() throws MojoExecutionException {
+    if (StringHelper.isAllWhitespace(nameTemplate)) {
+      throw new MojoExecutionException("nameTemplate missing");
     }
-    return false;
+    if (StringHelper.isAllWhitespace(runTemplate)) {
+      throw new MojoExecutionException("runTemplate missing");
+    }
+    if (isWithUpdater() && StringHelper.isAllWhitespace(updateTemplate)) {
+      throw new MojoExecutionException("updateTemplate missing");
+    }
   }
 
   @Override

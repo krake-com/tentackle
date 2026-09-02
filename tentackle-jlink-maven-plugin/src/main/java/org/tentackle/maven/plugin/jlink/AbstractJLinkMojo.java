@@ -676,6 +676,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
 
   /**
+   * Checks the configured template names.<br>
+   * Invoked before {@link #installTemplates(boolean)}, since the names are used as filenames there.
+   *
+   * @throws MojoExecutionException if a template name is missing
+   */
+  abstract protected void validateTemplates() throws MojoExecutionException;
+
+
+  /**
    * Copies the templates to the template directory.
    *
    * @param overwrite true if overwrite existing templates, false if install only missing
@@ -850,6 +859,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       else {
         getLog().info("template directory created: " + templateDir.getPath());
       }
+      validateTemplates();        // the names must be valid before they are used as filenames
       installTemplates(false);    // install any missing template
 
       if (mainClass == null) {
