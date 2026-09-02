@@ -45,6 +45,7 @@ public final class TransactionInterceptor extends RemoteMethodAwareInterceptor {
   private boolean rollbackSilently;                       // true: don't log rollbacks
   private TransactionIsolation transactionIsolation;      // the isolation level
   private TransactionWritability transactionWritability;  // the writability
+  private boolean deferred;                               // whether to defer deferrable constraints
   private boolean transactionRetry;                       // whether to retry the transaction after a transient exception
   private String transactionRetryPolicy;                  // the policy name
   private Logger.Level transactionRetryLogLevel;          // the retry log level
@@ -66,6 +67,7 @@ public final class TransactionInterceptor extends RemoteMethodAwareInterceptor {
     rollbackSilently = txAnno.rollbackSilently();
     transactionIsolation = txAnno.isolation();
     transactionWritability = txAnno.writability();
+    deferred = txAnno.deferred();
     transactionRetry = txAnno.retry();
     transactionRetryPolicy = txAnno.retryPolicy();
     transactionRetryLogLevel = txAnno.retryLogLevel();
@@ -105,6 +107,9 @@ public final class TransactionInterceptor extends RemoteMethodAwareInterceptor {
 
       for (int retryCount = 1; ; retryCount++) {
         long txVoucher = session.begin(txName, transactionIsolation, transactionWritability);
+        if (deferred && txVoucher != 0) {
+          session.setConstraintsDeferred(true);
+        }
         try {
           Object result = method.invoke(proxy, args);
           session.commit(txVoucher);

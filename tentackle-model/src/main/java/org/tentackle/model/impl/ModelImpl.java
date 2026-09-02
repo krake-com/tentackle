@@ -26,6 +26,7 @@ import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CustomModelValidator;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
@@ -394,13 +395,20 @@ public class ModelImpl implements Model {
   public void updateRelations() throws ModelException {
     updateRelations(null);
 
+    ModelDefaults defaults = getModelDefaults();
+    boolean setDeferrability = defaults != null && defaults.getDeferrability() != null &&
+                               defaults.getDeferrability() != Deferrability.NOT_DEFERRABLE;
+
     // indexes are parsed when the model is complete
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       EntityImpl entity = (EntityImpl) entityInfo.getEntity();
-      for (Index idx: entity.getIndexes()) {
+      for (Index idx : entity.getIndexes()) {
         IndexImpl index = (IndexImpl) idx;
         if (!index.isParsed()) {
           index.parse(entity);
+          if (setDeferrability && index.isUnique() && index.getFilterCondition() == null) {
+            index.applyDefaultDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
+          }
         }
       }
       entity.validate();  // validate again
@@ -621,6 +629,20 @@ public class ModelImpl implements Model {
       }
 
       foreignKeys = foreignKeyMap.values();
+
+      // apply the model defaults' deferrability: foreign keys are not user-declared,
+      // so this is the only way to set their deferrability, always as DEFERRABLE_IMMEDIATE
+      // (deferred is never propagated automatically, see ModelDefaults#getDeferred())
+      for (ForeignKey foreignKey : foreignKeys) {
+        Entity referencingEntity = foreignKey.getReferencingEntity();
+        if (!referencingEntity.getOptions().noModelDefaults()) {
+          EntityInfo referencingEntityInfo = nameToEntityInfoMap.get(referencingEntity.getName().toLowerCase(Locale.ROOT));
+          ModelDefaults defaults = referencingEntityInfo != null ? referencingEntityInfo.getModelDefaults() : null;
+          if (defaults != null && defaults.getDeferrability() != null && defaults.getDeferrability() != Deferrability.NOT_DEFERRABLE) {
+            ((ForeignKeyImpl) foreignKey).setDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
+          }
+        }
+      }
     }
 
     return foreignKeys;

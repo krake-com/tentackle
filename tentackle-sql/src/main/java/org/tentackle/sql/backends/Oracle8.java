@@ -25,12 +25,16 @@ import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.Deferrability;
+import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.OracleColumnMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -38,6 +42,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -526,6 +532,53 @@ public class Oracle8 extends AbstractSql2003Backend {
       sql = sql.substring(0, ndx);
     }
     return sql;
+  }
+
+  @Override
+  public boolean isSetConstraintsDeferredSupported() {
+    return true;
+  }
+
+  @Override
+  public String sqlSetConstraintsDeferred(boolean deferred) {
+    return "SET CONSTRAINTS ALL " + (deferred ? "DEFERRED" : "IMMEDIATE");
+  }
+
+  @Override
+  public void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                        DatabaseMetaData metaData) throws SQLException {
+    if (indexesByName.isEmpty()) {
+      return;
+    }
+    String schemaName = tableMetaData.getSchemaName();
+    if (schemaName == null) {
+      schemaName = getDefaultSchema();
+    }
+    String sql = "SELECT constraint_name, deferrable, deferred FROM all_constraints " +
+                 "WHERE constraint_type = 'U' AND table_name = ? AND owner = ?";
+    try (PreparedStatement stmt = metaData.getConnection().prepareStatement(sql)) {
+      stmt.setString(1, tableMetaData.getTableName().toUpperCase(Locale.ROOT));
+      stmt.setString(2, schemaName.toUpperCase(Locale.ROOT));
+      try (ResultSet resultSet = stmt.executeQuery()) {
+        while (resultSet.next()) {
+          IndexMetaData indexMetaData = indexesByName.get(resultSet.getString("constraint_name"));
+          if (indexMetaData != null) {
+            boolean deferrable = "DEFERRABLE".equals(resultSet.getString("deferrable"));
+            Deferrability deferrability;
+            if (!deferrable) {
+              deferrability = Deferrability.NOT_DEFERRABLE;
+            }
+            else if ("DEFERRED".equals(resultSet.getString("deferred"))) {
+              deferrability = Deferrability.DEFERRABLE_DEFERRED;
+            }
+            else {
+              deferrability = Deferrability.DEFERRABLE_IMMEDIATE;
+            }
+            indexMetaData.setDeferrability(deferrability);
+          }
+        }
+      }
+    }
   }
 
 }

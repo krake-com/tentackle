@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -1348,6 +1349,22 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public boolean isDropIfExistsEnabled() {
     return dropIfExistsEnabled && isDropIfExistsSupported();
+  }
+
+  @Override
+  public boolean isSetConstraintsDeferredSupported() {
+    return false;
+  }
+
+  @Override
+  public String sqlSetConstraintsDeferred(boolean deferred) {
+    throw new BackendException(this + " does not support deferred constraints");
+  }
+
+  @Override
+  public void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                        DatabaseMetaData metaData) throws SQLException {
+    // no-op by default: only backends supporting isSetConstraintsDeferredSupported() need this
   }
 
   @Override

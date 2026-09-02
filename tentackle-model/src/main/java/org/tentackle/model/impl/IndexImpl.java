@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
@@ -103,6 +104,8 @@ public class IndexImpl implements Index {
   private boolean unique;
   private boolean optional;
   private String filterCondition;
+  private Deferrability deferrability = Deferrability.NOT_DEFERRABLE;
+  private boolean deferrabilityExplicit;
   private boolean parsed;
 
 
@@ -187,6 +190,27 @@ public class IndexImpl implements Index {
               throw sourceLine.createModelException("keyword 'optional' not allowed after 'index'");
             }
             setOptional(true);
+            break;
+
+          case "deferred":
+            if (indexFound) {
+              throw sourceLine.createModelException("keyword 'deferred' not allowed after 'index'");
+            }
+            setDeferrability(Deferrability.DEFERRABLE_DEFERRED);
+            break;
+
+          case "deferrable":
+            if (indexFound) {
+              throw sourceLine.createModelException("keyword 'deferrable' not allowed after 'index'");
+            }
+            setDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
+            break;
+
+          case "immediate":
+            if (indexFound) {
+              throw sourceLine.createModelException("keyword 'immediate' not allowed after 'index'");
+            }
+            setDeferrability(Deferrability.NOT_DEFERRABLE);
             break;
 
           default:
@@ -384,6 +408,11 @@ public class IndexImpl implements Index {
   }
 
   @Override
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
+  @Override
   public List<IndexAttribute> getAttributes() {
     return attributes;
   }
@@ -415,6 +444,32 @@ public class IndexImpl implements Index {
     }
     else  {
       this.filterCondition = filterCondition.trim();
+    }
+  }
+
+  public void setDeferrability(Deferrability deferrability) {
+    this.deferrability = deferrability;
+    this.deferrabilityExplicit = true;
+  }
+
+  /**
+   * Returns whether the deferrability was set explicitly on the index line, as opposed to
+   * being inherited from the model defaults.
+   *
+   * @return true if set explicitly via the {@code deferred}/{@code deferrable}/{@code immediate} keyword
+   */
+  public boolean isDeferrabilityExplicit() {
+    return deferrabilityExplicit;
+  }
+
+  /**
+   * Applies the model default deferrability, unless the index line already sets its own.
+   *
+   * @param deferrability the deferrability propagated from the model defaults
+   */
+  public void applyDefaultDeferrability(Deferrability deferrability) {
+    if (!deferrabilityExplicit) {
+      this.deferrability = deferrability;
     }
   }
 
@@ -461,6 +516,21 @@ public class IndexImpl implements Index {
       throw createModelException(diag);
     }
     // the leading underscore is ok, because the index name gets the tablename prepended
+
+    if (deferrability != Deferrability.NOT_DEFERRABLE) {
+      if (!isUnique()) {
+        throw createModelException("'" + (deferrability == Deferrability.DEFERRABLE_DEFERRED ? "deferred" : "deferrable") +
+                                    "' is only allowed on unique indexes");
+      }
+      if (getFilterCondition() != null) {
+        throw createModelException("a filtered/partial unique index cannot be deferrable");
+      }
+      for (IndexAttribute attribute : getAttributes()) {
+        if (attribute.getFunctionName() != null) {
+          throw createModelException("a function-based unique index cannot be deferrable");
+        }
+      }
+    }
 
     for (Backend backend: factory.getBackends()) {
       try {

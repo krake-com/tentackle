@@ -301,6 +301,19 @@ public class CodeFactory {
         throw new BackendException("index " + index + " not supported by backend " + backend);
       }
     }
+    else if (index.isUnique() && index.getDeferrability() != Deferrability.NOT_DEFERRABLE &&
+             backend.isSetConstraintsDeferredSupported()) {
+      // deferrability applies to constraints, not plain indexes -> ALTER TABLE ADD CONSTRAINT
+      // instead of CREATE UNIQUE INDEX (validate() already rejects function-based/filtered
+      // combinations, so a plain column list is all that's needed here)
+      String[] plainColumnNames = new String[columnNames.length];
+      for (int i = 0; i < columnNames.length; i++) {
+        String columnName = columnNames[i];
+        plainColumnNames[i] = columnName.startsWith("-") ? columnName.substring(1) : columnName;
+      }
+      buf.append(backend.sqlCreateUniqueConstraint(entity.getTableName(), index.createDatabaseIndexName(entity),
+                                                   toSqlDeferrability(index.getDeferrability()), plainColumnNames));
+    }
     else {
       buf.append(backend.sqlCreateIndex(entity.getTableName(), index.createDatabaseIndexName(entity),
                                         index.isUnique(), index.getFilterCondition(), columnNames));
@@ -330,7 +343,22 @@ public class CodeFactory {
         foreignKey.getReferencedTableProvidingEntity().getTableName(),
         foreignKey.getReferencedAttribute().getColumnName(),
         fkName,
-        foreignKey.isComposite() && foreignKey.getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase());
+        foreignKey.isComposite() && foreignKey.getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase(),
+        toSqlDeferrability(foreignKey.getDeferrability()));
+  }
+
+  /**
+   * Maps the model-level deferrability to the sql-layer's equivalent, used by {@link Backend}.
+   *
+   * @param deferrability the model deferrability
+   * @return the sql-layer deferrability
+   */
+  private static org.tentackle.sql.metadata.Deferrability toSqlDeferrability(Deferrability deferrability) {
+    return switch (deferrability) {
+      case NOT_DEFERRABLE -> org.tentackle.sql.metadata.Deferrability.NOT_DEFERRABLE;
+      case DEFERRABLE_IMMEDIATE -> org.tentackle.sql.metadata.Deferrability.DEFERRABLE_IMMEDIATE;
+      case DEFERRABLE_DEFERRED -> org.tentackle.sql.metadata.Deferrability.DEFERRABLE_DEFERRED;
+    };
   }
 
 }

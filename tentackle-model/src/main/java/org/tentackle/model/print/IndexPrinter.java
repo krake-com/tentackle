@@ -21,6 +21,7 @@ package org.tentackle.model.print;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
+import org.tentackle.model.impl.IndexImpl;
 
 /**
  * Prints the model spec of an index.
@@ -65,6 +66,13 @@ public class IndexPrinter {
     }
     if (index.isUnique()) {
       buf.append("unique ");
+    }
+    if (index instanceof IndexImpl indexImpl && indexImpl.isDeferrabilityExplicit()) {
+      buf.append(switch (index.getDeferrability()) {
+        case DEFERRABLE_DEFERRED -> "deferred ";
+        case DEFERRABLE_IMMEDIATE -> "deferrable ";
+        case NOT_DEFERRABLE -> "immediate ";
+      });
     }
     buf.append("index ").append(index.getName()).append(" := ");
     boolean needComma = false;

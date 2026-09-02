@@ -173,6 +173,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       model.setSchemaNameMapped(mapSchemas);
       model.loadFromDirectory(modelDirName, true);
       foreignKeys = model.getForeignKeys();
+      warnIfDeferredNotSupported(backend, model.getAllEntities(), foreignKeys);
     }
     catch (ModelException mex) {
       getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());

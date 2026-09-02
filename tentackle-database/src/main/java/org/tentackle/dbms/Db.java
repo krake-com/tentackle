@@ -595,6 +595,7 @@ public class Db implements Session, Cloneable {
   private boolean logModificationTxEnabled;                   // true if log the transaction begin/commit in the modification log
   private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in the modification log
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
+  private boolean constraintsDeferred;                        // true if deferrable constraints are deferred for the current tx
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction (only for local sessions)
   private RemoteTransaction remoteTransaction;                // the running transaction (only for remote sessions)
@@ -1976,6 +1977,7 @@ public class Db implements Session, Cloneable {
           logCommitTx();
           setAutoCommit(null);    // according to the specs: this will commit!
           logModificationDeferred = false;
+          constraintsDeferred = false;
           long txNo = getTxNumber();
           transaction = null;
           modificationLogList = null;
@@ -2078,6 +2080,7 @@ public class Db implements Session, Cloneable {
               autoCommit = true;
             }
             logModificationDeferred = false;
+            constraintsDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
             long txNo = getTxNumber();
@@ -2712,6 +2715,7 @@ public class Db implements Session, Cloneable {
       transaction = null;
       logModificationTxId = 0;
       logModificationDeferred = false;
+      constraintsDeferred = false;
       modificationLogList = null;
       immediatelyRolledBack = 0;
       applicationProperties = null;
@@ -3081,6 +3085,33 @@ public class Db implements Session, Cloneable {
    */
   public boolean isLogModificationDeferred() {
     return logModificationDeferred;
+  }
+
+
+  @Override
+  public void setConstraintsDeferred(boolean deferred) {
+    assertOpen();
+    assertTxRunning();
+    if (isRemote()) {
+      constraintsDeferred = resources.rdel.setConstraintsDeferred(deferred);
+    }
+    else {
+      Backend backend = getBackend();
+      if (!backend.isSetConstraintsDeferredSupported()) {
+        throw new PersistenceException(this, backend + " does not support deferred constraints");
+      }
+      if (constraintsDeferred != deferred) {
+        try (StatementWrapper stmt = createStatement()) {
+          stmt.executeUpdate(backend.sqlSetConstraintsDeferred(deferred));
+        }
+        constraintsDeferred = deferred;
+      }
+    }
+  }
+
+  @Override
+  public boolean isConstraintsDeferred() {
+    return constraintsDeferred;
   }
 
 

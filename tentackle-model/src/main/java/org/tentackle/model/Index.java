@@ -68,6 +68,15 @@ public interface Index extends ModelElement, Commented {
   String getFilterCondition();
 
   /**
+   * Gets the deferrability of this index's unique constraint.<br>
+   * Only meaningful for unique indexes: {@link #validate()} rejects a deferrability other than
+   * {@link Deferrability#NOT_DEFERRABLE} on a non-unique index.
+   *
+   * @return the deferrability, {@link Deferrability#NOT_DEFERRABLE} if none
+   */
+  Deferrability getDeferrability();
+
+  /**
    * Gets the index attributes.
    *
    * @return the attributes

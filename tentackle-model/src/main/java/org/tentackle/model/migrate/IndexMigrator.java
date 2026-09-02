@@ -168,7 +168,8 @@ public class IndexMigrator {
    * @return true if they are different, false if logically equal
    */
   public static boolean isLogicallyDifferent(Backend backend, Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
-    boolean different = modelIndex.isUnique() != dbIndex.isUnique();
+    boolean different = modelIndex.isUnique() != dbIndex.isUnique() ||
+                         !modelIndex.getDeferrability().name().equals(dbIndex.getDeferrability().name());
     if (!different) {
       // check filter condition
       String modelFilter = modelIndex.getFilterCondition();
@@ -228,6 +229,10 @@ public class IndexMigrator {
    * @return the SQL code
    */
   private String dropIndex() {
+    if (indexMetaData.getDeferrability() != org.tentackle.sql.metadata.Deferrability.NOT_DEFERRABLE) {
+      // the index exists in the database as a unique constraint, not a plain index
+      return backend.sqlDropConstraint(indexMetaData.getTableMetaData().getFullTableName(), indexMetaData.getIndexName());
+    }
     return backend.sqlDropIndex(indexMetaData.getTableMetaData().getSchemaName(),
                                 indexMetaData.getTableMetaData().getTableName(),
                                 indexMetaData.getIndexName());

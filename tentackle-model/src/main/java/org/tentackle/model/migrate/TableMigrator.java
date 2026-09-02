@@ -719,6 +719,9 @@ public class TableMigrator {
 
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
 
+           foreignKey.getDeferrability().name().equals(existingForeignKey.getDeferrability() != null ?
+               existingForeignKey.getDeferrability().name() : "NOT_DEFERRABLE") &&
+
            foreignKey.getReferencingAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(0).getForeignKeyColumn()) &&
            (mapSchemas || StringHelper.equalsIgnoreCase(referencingTableProvidingEntity.getSchemaName(), existingForeignKey.getForeignKeySchema())) &&
            referencingTableProvidingEntity.getTableNameWithoutSchema().equalsIgnoreCase(existingForeignKey.getForeignKeyTable()) &&

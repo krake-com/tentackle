@@ -42,6 +42,7 @@ public class IndexMetaData {
   private boolean unique;                                   // true if unique index
   private String filterCondition;                           // filter condition
   private String comment;                                   // the comment
+  private Deferrability deferrability = Deferrability.NOT_DEFERRABLE;   // deferrability of the backing unique constraint, if any
 
 
   /**
@@ -180,6 +181,27 @@ public class IndexMetaData {
    */
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  /**
+   * Gets the deferrability of the unique constraint backing this index, if any.<br>
+   * Not populated from the standard JDBC index metadata (which has no such column) but by
+   * {@link org.tentackle.sql.Backend#enrichIndexDeferrability}, and only for backends
+   * supporting {@link org.tentackle.sql.Backend#isSetConstraintsDeferredSupported()}.
+   *
+   * @return the deferrability, {@link Deferrability#NOT_DEFERRABLE} if none or not applicable
+   */
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
+  /**
+   * Sets the deferrability of the unique constraint backing this index.
+   *
+   * @param deferrability the deferrability
+   */
+  public void setDeferrability(Deferrability deferrability) {
+    this.deferrability = deferrability;
   }
 
   /**

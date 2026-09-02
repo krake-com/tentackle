@@ -97,6 +97,19 @@ public @interface Transaction {
   TransactionWritability writability() default TransactionWritability.DEFAULT;
 
   /**
+   * Determines whether deferrable constraints should be deferred to the end of the transaction.<br>
+   * If true, {@link org.tentackle.session.Session#setConstraintsDeferred(boolean)} is invoked with
+   * {@code true} right after the transaction is started (only if this call actually started a new
+   * transaction, i.e. not when joining an already running one). Requires a backend supporting it
+   * (see {@code isSetConstraintsDeferredSupported} in the SQL backend) and at least one
+   * deferrable unique index or foreign key (see the model's {@code deferred}/{@code deferrable}
+   * index keywords and model defaults).
+   *
+   * @return true to defer deferrable constraints, false is default
+   */
+  boolean deferred() default false;
+
+  /**
    * Determines whether a transaction rolled back due to a temporary exception should be retried.<br>
    * By default, transactions will not be retried.<br>
    * Isolation levels {@link TransactionIsolation#REPEATABLE_READ} and {@link TransactionIsolation#SERIALIZABLE}

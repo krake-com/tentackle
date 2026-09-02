@@ -559,6 +559,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           model.loadFromDirectory(modelDirName, true);
         }
         foreignKeys = model.getForeignKeys();
+        warnIfDeferredNotSupported(backendInfo.getBackend(), model.getAllEntities(), foreignKeys);
         // build table rename maps if hints given
         renamedTables = determineRenamedTables(hints);
         revRenamedTables = new HashMap<>();

@@ -29,9 +29,11 @@ import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityInfo;
+import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
@@ -878,6 +880,31 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
     }
     return false;
+  }
+
+  /**
+   * Warns once if the model uses deferred/deferrable unique indexes or foreign keys but the
+   * backend does not support deferring constraint checks.<br>
+   * DDL generation itself already degrades gracefully in that case (falling back to plain,
+   * non-deferrable DDL), so this is purely diagnostic.
+   *
+   * @param backend the backend
+   * @param entities the entities to check for deferrable indexes
+   * @param foreignKeys the foreign keys to check for deferrability, null if none available
+   */
+  protected void warnIfDeferredNotSupported(Backend backend, Collection<Entity> entities, Collection<ForeignKey> foreignKeys) {
+    if (!backend.isSetConstraintsDeferredSupported()) {
+      boolean deferredUsed = foreignKeys != null && foreignKeys.stream()
+          .anyMatch(foreignKey -> foreignKey.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+      if (!deferredUsed && entities != null) {
+        deferredUsed = entities.stream().flatMap(entity -> entity.getIndexes().stream())
+            .anyMatch(index -> index.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+      }
+      if (deferredUsed) {
+        getLog().warn("backend " + backend + " does not support deferred constraints -> " +
+                       "deferred/deferrable indexes and foreign keys will be created as NOT DEFERRABLE");
+      }
+    }
   }
 
 }

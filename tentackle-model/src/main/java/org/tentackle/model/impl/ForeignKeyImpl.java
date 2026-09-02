@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import org.tentackle.common.Compare;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.sql.Backend;
@@ -39,6 +40,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
   private final Entity referencedEntity;
   private final Attribute referencedAttribute;
   private boolean composite;
+  private Deferrability deferrability = Deferrability.NOT_DEFERRABLE;
 
 
   /**
@@ -126,6 +128,15 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
 
   public void setComposite(boolean composite) {
     this.composite = composite;
+  }
+
+  @Override
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
+  public void setDeferrability(Deferrability deferrability) {
+    this.deferrability = deferrability;
   }
 
 

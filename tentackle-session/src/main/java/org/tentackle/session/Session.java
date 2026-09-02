@@ -337,6 +337,25 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   int getTxLevel();
 
   /**
+   * Defers or immediately checks deferrable constraints for the rest of the current
+   * transaction.<br>
+   * Requires a running transaction and a backend supporting it (see the {@code deferred}
+   * attribute of {@code @Transaction} for the declarative equivalent).
+   * The state is reset to false after each begin/commit/rollback.
+   *
+   * @param deferred true to defer deferrable constraints, false to check them immediately again
+   * @throws PersistenceException if no transaction is running or the backend does not support it
+   */
+  void setConstraintsDeferred(boolean deferred);
+
+  /**
+   * Gets the state for constraintsDeferred.
+   *
+   * @return true if deferrable constraints are deferred, false if checked immediately (default)
+   */
+  boolean isConstraintsDeferred();
+
+  /**
    * Runs code within a transaction.
    * <p>
    * Provided as an alternative to the {@code @Transaction}-interceptor, if the class holding the implementation of the

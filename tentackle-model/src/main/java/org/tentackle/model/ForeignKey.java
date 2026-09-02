@@ -65,6 +65,16 @@ public interface ForeignKey {
   boolean isComposite();
 
   /**
+   * Gets the deferrability of this foreign key constraint.<br>
+   * Foreign keys are not user-declared in the model, so this is derived purely from the
+   * {@code deferred}/{@code deferrable} model defaults option, never from a per-foreign-key
+   * override.
+   *
+   * @return the deferrability, {@link Deferrability#NOT_DEFERRABLE} if none
+   */
+  Deferrability getDeferrability();
+
+  /**
    * Creates the foreign key creation sql code.
    *
    * @param backend the backend to create sql code for

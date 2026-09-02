@@ -176,6 +176,16 @@ not be specified in the global options line. Typical model defaults are:
 <tentackle.modelDefaults>remote, bind, size, autoselect, tracked, root, rootid, rootclassid</tentackle.modelDefaults>
 ```
 
+The project-level model defaults also accept `deferred`, `deferrable` and `immediate` (unlike
+the options above, these are *not* valid in an entity's own global options line — they only
+control the default deferrability of unique indexes and foreign keys, see
+[Index Lines](#7-index-lines)). Setting `deferred` or `deferrable` there makes every unique
+index and foreign key that doesn't specify its own keyword `DEFERRABLE INITIALLY IMMEDIATE`
+(never `INITIALLY DEFERRED` — the project-wide default never changes existing behavior unless a
+transaction explicitly opts in via `@Transaction(deferred=true)`). `immediate` is a documented
+no-op, kept for symmetry with the index-line grammar. Backends that don't support deferred
+constraint checking silently fall back to plain, non-deferrable DDL (with a build-time warning).
+
 Whereas `root`, `rootid` and `rootclassid` are automatically determined by inspecting the
 model as a whole. The following rules apply:
 
@@ -496,7 +506,7 @@ Lines: @NotNull
 Index lines appear in the `## indexes` section.
 
 ```
-[unique | optional] index <indexName> := [+|-]<col1> [asc|desc], <col2>, ... [|/where <filter>]
+[unique | optional] [deferred | deferrable | immediate] index <indexName> := [+|-]<col1> [asc|desc], <col2>, ... [|/where <filter>]
 ```
 
 - `unique` — creates a unique index.
@@ -510,6 +520,30 @@ Not every backend can do all of this. If a backend supports neither the requeste
 index is skipped when declared `optional` and rejected at build time otherwise. Oracle has no partial indexes at
 all and emulates them with a `CASE` expression — the conditional uniqueness is enforced, but the index is not
 used for reads. See [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md).
+
+### Deferred constraint checking
+
+`deferred`, `deferrable` and `immediate` control whether the unique index is created as a
+*deferrable* constraint, letting a transaction postpone its check to commit time (e.g. Postgres,
+Oracle) instead of checking it immediately after every statement. They are only allowed on
+`unique` indexes (a plain index has nothing to defer) and are mutually exclusive with a filter
+condition or a function-based column (deferrable constraints must be a plain column list).
+
+| Keyword      | DDL                                | Meaning                                                              |
+|--------------|-------------------------------------|------------------------------------------------------------------------|
+| *(none)*     | `CREATE UNIQUE INDEX`               | Not deferrable (default, unchanged behavior).                          |
+| `immediate`  | `CREATE UNIQUE INDEX`               | Explicitly not deferrable — overrides a project-wide `deferred`/`deferrable` model default. |
+| `deferrable` | `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...) DEFERRABLE INITIALLY IMMEDIATE` | Deferrable, but checked immediately unless a transaction opts in via `@Transaction(deferred=true)` / `Session.setConstraintsDeferred(true)`. |
+| `deferred`   | `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...) DEFERRABLE INITIALLY DEFERRED`  | Deferrable and checked at the end of every transaction by default.     |
+
+On a backend that doesn't support deferred constraint checking (e.g. H2), a `deferred`/
+`deferrable` index or foreign key silently falls back to plain, non-deferrable DDL — a build-time
+warning is logged, but the build does not fail. This is what lets `deferred`/`deferrable` be set
+in the project-wide model defaults even for projects whose CI runs against H2.
+
+Foreign keys are never declared explicitly (they're derived from `integrity`/relations), so their
+deferrability can only come from the project-wide model default, never from a per-foreign-key
+keyword — see [Global Options Line](#4-global-options-line).
 
 ### Examples
 

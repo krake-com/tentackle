@@ -165,6 +165,12 @@ public class DbRemoteDelegateImpl extends RemoteDbDelegateImpl<Db>
   }
 
   @Override
+  public boolean setConstraintsDeferred(boolean flag) {
+    getSession().setConstraintsDeferred(flag);
+    return getSession().isConstraintsDeferred();
+  }
+
+  @Override
   public List<ModificationLog> popModificationLogsOfTransaction() {
     return getSession().popModificationLogsOfTransaction();
   }

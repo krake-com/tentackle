@@ -29,6 +29,7 @@ import org.tentackle.sql.ScriptRunner;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.Deferrability;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.PostgresColumnMetaData;
@@ -37,6 +38,8 @@ import org.tentackle.sql.metadata.PostgresIndexMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -46,6 +49,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -451,6 +455,55 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   protected boolean isDropIfExistsSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isSetConstraintsDeferredSupported() {
+    return true;
+  }
+
+  @Override
+  public String sqlSetConstraintsDeferred(boolean deferred) {
+    return "SET CONSTRAINTS ALL " + (deferred ? "DEFERRED" : "IMMEDIATE");
+  }
+
+  @Override
+  public void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                        DatabaseMetaData metaData) throws SQLException {
+    if (indexesByName.isEmpty()) {
+      return;
+    }
+    String schemaName = tableMetaData.getSchemaName();
+    if (schemaName == null) {
+      schemaName = getDefaultSchema();
+    }
+    String sql = "SELECT c.conname, c.condeferrable, c.condeferred " +
+                 "FROM pg_catalog.pg_constraint c " +
+                 "JOIN pg_catalog.pg_class t ON t.oid = c.conrelid " +
+                 "JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace " +
+                 "WHERE c.contype = 'u' AND t.relname = ? AND n.nspname = ?";
+    try (PreparedStatement stmt = metaData.getConnection().prepareStatement(sql)) {
+      stmt.setString(1, tableMetaData.getTableName());
+      stmt.setString(2, schemaName);
+      try (ResultSet resultSet = stmt.executeQuery()) {
+        while (resultSet.next()) {
+          IndexMetaData indexMetaData = indexesByName.get(resultSet.getString("conname"));
+          if (indexMetaData != null) {
+            Deferrability deferrability;
+            if (!resultSet.getBoolean("condeferrable")) {
+              deferrability = Deferrability.NOT_DEFERRABLE;
+            }
+            else if (resultSet.getBoolean("condeferred")) {
+              deferrability = Deferrability.DEFERRABLE_DEFERRED;
+            }
+            else {
+              deferrability = Deferrability.DEFERRABLE_IMMEDIATE;
+            }
+            indexMetaData.setDeferrability(deferrability);
+          }
+        }
+      }
+    }
   }
 
 }

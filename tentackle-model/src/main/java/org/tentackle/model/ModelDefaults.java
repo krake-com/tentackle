@@ -78,6 +78,16 @@ public class ModelDefaults {
    */
   private Boolean remote;
 
+  /**
+   * The default deferrability of unique indexes and foreign keys.<br>
+   * {@code deferred} and {@code deferrable} both auto-propagate as
+   * {@link Deferrability#DEFERRABLE_IMMEDIATE} to indexes/foreign keys without their own
+   * explicit keyword, never as {@link Deferrability#DEFERRABLE_DEFERRED} — so turning this on
+   * never changes existing behavior unless a transaction explicitly opts in.
+   * {@code immediate} is a documented no-op, kept for symmetry with the index-line grammar.
+   */
+  private Deferrability deferred;
+
   // more to come...
 
 
@@ -152,6 +162,24 @@ public class ModelDefaults {
         case "remote":
           remote = on;
           break;
+        case "deferred":
+          if (!on) {
+            throw new ModelException("'!deferred' is not supported, use 'immediate' instead");
+          }
+          deferred = Deferrability.DEFERRABLE_DEFERRED;
+          break;
+        case "deferrable":
+          if (!on) {
+            throw new ModelException("'!deferrable' is not supported, use 'immediate' instead");
+          }
+          deferred = Deferrability.DEFERRABLE_IMMEDIATE;
+          break;
+        case "immediate":
+          if (!on) {
+            throw new ModelException("'!immediate' is not supported, use 'deferred' or 'deferrable' instead");
+          }
+          deferred = Deferrability.NOT_DEFERRABLE;
+          break;
 
         default:
           throw new ModelException("unknown model default: " + token);
@@ -213,6 +241,13 @@ public class ModelDefaults {
       }
       buf.append("REMOTE, ");
     }
+    if (deferred != null) {
+      buf.append(switch (deferred) {
+        case DEFERRABLE_DEFERRED -> "DEFERRED";
+        case DEFERRABLE_IMMEDIATE -> "DEFERRABLE";
+        case NOT_DEFERRABLE -> "IMMEDIATE";
+      }).append(", ");
+    }
     String str = buf.toString();
     if (str.endsWith(", ")) {
       str = str.substring(0, str.length() - 2);
@@ -233,6 +268,7 @@ public class ModelDefaults {
     size = null;
     autoSelect = null;
     remote = null;
+    deferred = null;
   }
 
   /**
@@ -314,6 +350,15 @@ public class ModelDefaults {
    */
   public Boolean getRemote() {
     return remote;
+  }
+
+  /**
+   * Gets the deferrability default for unique indexes and foreign keys.
+   *
+   * @return the deferrability, null if not specified
+   */
+  public Deferrability getDeferrability() {
+    return deferred;
   }
 
 }

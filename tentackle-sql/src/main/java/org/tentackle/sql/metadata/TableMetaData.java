@@ -189,6 +189,8 @@ public class TableMetaData {
       }
     }
 
+    modelMetaData.getBackend().enrichIndexDeferrability(this, indexes, metaData);
+
     validate();
   }
 

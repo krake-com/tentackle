@@ -68,6 +68,7 @@ Two consistency rules apply at the join point:
 | `rollbackSilently` | `false`            | Never log rollback details for this method.                                                                 |
 | `isolation`        | `DEFAULT`          | Transaction isolation: `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`, `NONE`.     |
 | `writability`      | `DEFAULT`          | `READ_WRITE` or `READ_ONLY` (a hint the database may use to optimize).                                      |
+| `deferred`         | `false`            | Defer deferrable constraint checks to commit time (see [below](#deferring-constraint-checks-with-deferred)).|
 | `retry`            | `false`            | Retry the transaction after a *temporary* failure.                                                          |
 | `retryPolicy`      | `""` (the default) | Name of the [`TransactionRetryPolicy`](../java/org/tentackle/pdo/TransactionRetryPolicy.java) to use.       |
 | `retryLogLevel`    | `WARNING`          | Level at which each retry is logged.                                                                        |
@@ -100,6 +101,23 @@ Not every rollback is worth a stack trace. The interceptor distinguishes:
 
 `rollbackSilently = true` forces the silent variant for methods where rollbacks are expected
 behavior and would only clutter the log.
+
+### Deferring constraint checks with `deferred`
+
+Some databases (Postgres, Oracle) can postpone checking `DEFERRABLE` unique- and foreign-key
+constraints to commit time via `SET CONSTRAINTS ... DEFERRED`, instead of after every statement.
+This is useful for operations that temporarily violate a constraint mid-transaction — swapping two
+rows' unique values, or reordering a self-referencing hierarchy — without having to restructure
+the transaction around the violation.
+
+```java
+@Transaction(deferred = true)
+```
+
+calls `Session.setConstraintsDeferred(true)` right after the transaction actually starts (not when
+joining an already-running one), for the rest of that transaction. It only has an effect on
+constraints declared `deferred` or `deferrable` in the model — see
+[Index Lines](../../../tentackle-model/src/main/docs/model-definition.md#7-index-lines).
 
 ### Remote sessions
 

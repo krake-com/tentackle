@@ -20,6 +20,7 @@ package org.tentackle.sql;
 
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
+import org.tentackle.sql.metadata.Deferrability;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
@@ -31,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -1045,6 +1047,20 @@ public interface Backend {
   String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition, String... columnNames);
 
   /**
+   * Generates the ALTER TABLE statement to add a unique constraint.<br>
+   * Used instead of {@link #sqlCreateIndex} whenever the index is unique and deferrable
+   * (see {@link #isSetConstraintsDeferredSupported()}), since deferrability applies to
+   * constraints, not to plain indexes.
+   *
+   * @param tableName the table name
+   * @param constraintName the name of the constraint
+   * @param deferrability the deferrability, {@link Deferrability#NOT_DEFERRABLE} for none
+   * @param columnNames the column names
+   * @return the SQL code
+   */
+  String sqlCreateUniqueConstraint(String tableName, String constraintName, Deferrability deferrability, String... columnNames);
+
+  /**
    * Gets the column name for the comment of within an index meta-data result set.
    *
    * @return the column name, null if not supported by the backend
@@ -1082,6 +1098,31 @@ public interface Backend {
   String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName);
 
   /**
+   * Generates the ALTER TABLE statement to drop a named constraint (unique or foreign key).
+   *
+   * @param tableName the table name
+   * @param constraintName the name of the constraint
+   * @return the SQL code
+   */
+  String sqlDropConstraint(String tableName, String constraintName);
+
+  /**
+   * Enriches previously read index metadata with the deferrability of the unique constraint
+   * backing each deferrable unique index, if any.<br>
+   * The standard JDBC {@code DatabaseMetaData.getIndexInfo()} result has no deferrability
+   * column (unlike {@code getImportedKeys()}), so backends that support
+   * {@link #isSetConstraintsDeferredSupported()} must look this up via their own system
+   * catalogs. Does nothing by default.
+   *
+   * @param tableMetaData the table the indexes belong to
+   * @param indexesByName the indexes read so far for this table, keyed by index name
+   * @param metaData the JDBC database metadata, to get at the connection/catalog if needed
+   * @throws SQLException if the lookup fails
+   */
+  void enrichIndexDeferrability(TableMetaData tableMetaData, Map<String, IndexMetaData> indexesByName,
+                                 DatabaseMetaData metaData) throws SQLException;
+
+  /**
    * Generates the DROP TABLE statement.
    *
    * @param schemaName the optional schema, null for none
@@ -1099,11 +1140,12 @@ public interface Backend {
    * @param referencedColumnName the referenced primary column name
    * @param foreignKeyName the name of the foreign key
    * @param composite true if the referencing table is a component of the referenced table
+   * @param deferrability the deferrability, {@link Deferrability#NOT_DEFERRABLE} for none
    * @return the SQL code
    */
   String sqlCreateForeignKey(String referencingTableName, String referencingColumnName,
                              String referencedTableName, String referencedColumnName,
-                             String foreignKeyName, boolean composite);
+                             String foreignKeyName, boolean composite, Deferrability deferrability);
 
   /**
    * Generates the SQL statement to drop a foreign key constraint.
@@ -1275,6 +1317,24 @@ public interface Backend {
    * @return true if {@code IF EXISTS} is turned on and supported, false if not supported or turned off
    */
   boolean isDropIfExistsEnabled();
+
+  /**
+   * Returns whether the backend supports deferring constraint checks to the end of a
+   * transaction, i.e. {@code DEFERRABLE} constraints plus {@code SET CONSTRAINTS ... DEFERRED}.
+   *
+   * @return true if supported
+   */
+  boolean isSetConstraintsDeferredSupported();
+
+  /**
+   * Generates the statement to defer or immediately check deferrable constraints for the
+   * rest of the current transaction.<br>
+   * Only called if {@link #isSetConstraintsDeferredSupported()} returns true.
+   *
+   * @param deferred true to defer, false to check immediately
+   * @return the SQL code
+   */
+  String sqlSetConstraintsDeferred(boolean deferred);
 
   /**
    * Converts a backend-specific type name to an internal name used by driver-specific methods.

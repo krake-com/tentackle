@@ -45,6 +45,7 @@ public class ForeignKeyMetaData {
   private String primaryKeyTable;                             // the table of the pk
   private ForeignKeyAction updateRule;                        // the update-rule
   private ForeignKeyAction deleteRule;                        // the delete-rule
+  private Deferrability deferrability;                        // the deferrability
   private final Set<ForeignKeyColumnMetaData> columns;        // fk columns
 
 
@@ -180,6 +181,15 @@ public class ForeignKeyMetaData {
     return deleteRule;
   }
 
+  /**
+   * Gets the deferrability.
+   *
+   * @return the deferrability, null if not read from metadata
+   */
+  public Deferrability getDeferrability() {
+    return deferrability;
+  }
+
 
   /**
    * Extracts the foreign key name from a row of the database metadata result.<br>
@@ -219,6 +229,7 @@ public class ForeignKeyMetaData {
     primaryKeyTable = StringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
     updateRule = ForeignKeyAction.createFromAction(resultSet.getShort("UPDATE_RULE"));
     deleteRule = ForeignKeyAction.createFromAction(resultSet.getShort("DELETE_RULE"));
+    deferrability = Deferrability.createFromAction(resultSet.getShort("DEFERRABILITY"));
 
     validate();
   }

@@ -227,7 +227,8 @@ public class MetaDataStructureTest {
                        "PKTABLE_NAME", "customer",
                        "PKCOLUMN_NAME", columnName.replace("customer_", ""),
                        "UPDATE_RULE", (short) DatabaseMetaData.importedKeyNoAction,
-                       "DELETE_RULE", (short) DatabaseMetaData.importedKeyCascade)));
+                       "DELETE_RULE", (short) DatabaseMetaData.importedKeyCascade,
+                       "DEFERRABILITY", (short) DatabaseMetaData.importedKeyNotDeferrable)));
       resultSet.next();
       if (position == 1) {
         foreignKey.setupForeignKeyFromMetaData(resultSet);
