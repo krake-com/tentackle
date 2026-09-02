@@ -122,6 +122,8 @@ the project's resource roots). If a property file does not exist yet it is creat
 only when it is missing from the file or differs from the stored value; changed files are rewritten
 with a comment recording the source URL and the user/host that pulled them. Keys that exist in the
 file but not in the database are left in place — removing obsolete keys is the job of `cleanup`.
+A bundle that has no `StoredBundle` at all — one that has never been pushed, or a locale nobody has
+translated yet — is reported as a warning and skipped, leaving no empty property file behind.
 
 ### The `verify` Goal
 

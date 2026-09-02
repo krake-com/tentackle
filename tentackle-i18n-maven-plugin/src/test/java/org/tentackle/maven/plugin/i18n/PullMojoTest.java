@@ -169,6 +169,44 @@ public class PullMojoTest extends AbstractI18nMojoTest {
   }
 
   /**
+   * A bundle nobody has pushed yet has nothing to pull: it is reported as a warning, and no empty
+   * property file is left behind.
+   */
+  @Test
+  public void warnsAboutABundleThatIsNotStoredYet() throws Exception {
+    bundle(APP_BUNDLE, "greeting=Hello");    // but never pushed
+
+    run(mojo);
+
+    assertFalse(propertyFile(APP_BUNDLE, null).exists(), "wrote a property file for nothing");
+    assertTrue(RecordingLog.contains(getLog().getWarnMessages(),
+                                     "missing stored bundle: " + resourceName(APP_BUNDLE, null)),
+               getLog().getWarnMessages().toString());
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
+                                     "1 bundle processed, 1 warning, 0 errors, 0 updates"),
+               getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * The same for a locale that has not been translated yet: the bundles of the other locales are
+   * pulled nevertheless.
+   */
+  @Test
+  public void anUntranslatedLocaleDoesNotStopThePull() throws Exception {
+    bundle(APP_BUNDLE);
+    I18nTestSupport.setField(mojo, "locales", "de");
+    storeBundle(APP_BUNDLE, null, "greeting", "Hello");    // but no german bundle
+
+    run(mojo);
+
+    assertEquals(translations(propertyFile(APP_BUNDLE, null)), List.of("greeting=Hello"));
+    assertFalse(propertyFile(APP_BUNDLE, "de").exists(), "wrote a property file for nothing");
+    assertTrue(RecordingLog.contains(getLog().getWarnMessages(),
+                                     "missing stored bundle: " + resourceName(APP_BUNDLE, "de")),
+               getLog().getWarnMessages().toString());
+  }
+
+  /**
    * A bundle of a dependency is registered on the classpath just like the project's own ones, but
    * it has no package in the project's resources and is therefore left alone.
    */

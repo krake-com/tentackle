@@ -62,6 +62,12 @@ public class PullMojo extends AbstractI18nMojo {
     PackageInfo info = packageMap.get(packageName);
     if (info != null) {   // if part of the project
       bundleCount++;
+      if (bundle == null) {
+        // never pushed, or not translated for that locale: there is nothing to pull
+        getLog().warn("missing stored bundle: " + resourceName);
+        warnings++;
+        return;
+      }
       int ndx = resourceName.lastIndexOf('/');
       String fileName = ndx >= 0 ? resourceName.substring(ndx + 1) : resourceName;
       File file = new File(info.getPath(), fileName);
