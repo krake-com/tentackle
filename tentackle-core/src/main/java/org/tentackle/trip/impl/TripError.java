@@ -18,6 +18,8 @@
 
 package org.tentackle.trip.impl;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripRuntimeException;
 
@@ -68,18 +70,27 @@ public class TripError extends TripRuntimeException {
    * @param opCode the opcode that caused this error
    * @param message the detail message
    */
+  @CanonicalConstructor
   public TripError(OpCode opCode, String message) {
     super(opCode + ": " + message);
     this.opCode = opCode;
   }
+
 
   /**
    * Gets the opcode that caused this error.
    *
    * @return the opcode
    */
+  @CanonicalGetter(ordinal = 0)
   public OpCode getOpCode() {
     return opCode;
+  }
+
+  @Override
+  @CanonicalGetter(ordinal = 1)
+  public String getMessage() {
+    return super.getMessage();
   }
 
   /**
