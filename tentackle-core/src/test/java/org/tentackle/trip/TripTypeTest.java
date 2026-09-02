@@ -40,6 +40,7 @@ import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.impl.CanonicalDto;
 import org.tentackle.trip.impl.CanonicalList;
 import org.tentackle.trip.impl.ControlledDeduplicatableRecord;
+import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.impl.DtoWithCanonicalBuilder;
 import org.tentackle.trip.impl.EchoTransceiver;
 import org.tentackle.trip.impl.Employees;
@@ -49,6 +50,7 @@ import org.tentackle.trip.impl.NoNoArgsInstantiatable;
 import org.tentackle.trip.impl.NotReferencableClass;
 import org.tentackle.trip.impl.PartialCanonicalTripType;
 import org.tentackle.trip.impl.PreparedSerializableClass;
+import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestClassWithArray;
 import org.tentackle.trip.impl.TestEnum;
@@ -1606,6 +1608,48 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     ValidateSerializableClass obj = new ValidateSerializableClass();
     ValidateSerializableClass tunnelled = tunnel(obj, tripType);
     assertEquals(tunnelled.getResult(), "validated");
+  }
+
+  @Test
+  void testTripInstantiationException() {
+    TripInstantiationException exception =
+      new TripInstantiationException(TestClass.class, "cannot instantiate", new IllegalStateException("inner"));
+    TripType<TripInstantiationException> tripType = TripFactory.getInstance().getType(TripInstantiationException.class);
+    TripInstantiationException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getClazz(), TestClass.class);
+    assertEquals(tunnelled.getMessage(), "cannot instantiate");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "inner");
+  }
+
+  @Test
+  void testTripNoSuchDelegateException() {
+    UUID delegateId = UUID.randomUUID();
+    TripNoSuchDelegateException exception = new TripNoSuchDelegateException(delegateId);
+    TripType<TripNoSuchDelegateException> tripType = TripFactory.getInstance().getType(TripNoSuchDelegateException.class);
+    TripNoSuchDelegateException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getDelegateId(), delegateId);
+    assertEquals(tunnelled.getMessage(), exception.getMessage());
+  }
+
+  @Test
+  void testTripStreamClosedException() {
+    TripStreamClosedException exception = new TripStreamClosedException("stream closed", new IOException("io"));
+    TripType<TripStreamClosedException> tripType = TripFactory.getInstance().getType(TripStreamClosedException.class);
+    TripStreamClosedException tunnelled = tunnelPhenotypic(exception, tripType);
+    assertEquals(tunnelled.getMessage(), "stream closed");
+    assertNotNull(tunnelled.getCause());
+    assertEquals(tunnelled.getCause().getMessage(), "io");
+  }
+
+  @Test
+  void testTripError() {
+    TripError error = new TripError(DefaultOpCode.NO_SUCH_DELEGATE, "no delegate");
+    TripType<TripError> tripType = TripFactory.getInstance().getType(TripError.class);
+    TripError tunnelled = tunnelPhenotypic(error, tripType);
+    assertEquals(tunnelled.getOpCode(), DefaultOpCode.NO_SUCH_DELEGATE);
+    assertTrue(tunnelled.isNoSuchDelegate());
+    assertEquals(tunnelled.getMessage(), error.getMessage());
   }
 
 

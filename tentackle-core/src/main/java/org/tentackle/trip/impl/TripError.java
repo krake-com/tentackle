@@ -21,6 +21,7 @@ package org.tentackle.trip.impl;
 import org.tentackle.reflect.CanonicalConstructor;
 import org.tentackle.reflect.CanonicalGetter;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.TripIgnore;
 import org.tentackle.trip.TripRuntimeException;
 
 import java.io.Serial;
@@ -63,6 +64,7 @@ public class TripError extends TripRuntimeException {
   private static final long serialVersionUID = 1L;
 
   private final OpCode opCode;
+  private final String rawMessage;   // the message as passed to the constructor, without the opcode prefix
 
   /**
    * Constructs a new trip error.
@@ -74,6 +76,7 @@ public class TripError extends TripRuntimeException {
   public TripError(OpCode opCode, String message) {
     super(opCode + ": " + message);
     this.opCode = opCode;
+    this.rawMessage = message;
   }
 
 
@@ -87,10 +90,28 @@ public class TripError extends TripRuntimeException {
     return opCode;
   }
 
-  @Override
+  /**
+   * Gets the raw, unprefixed message passed to the constructor.<br>
+   * Used by TRIP to reconstruct this error via the canonical constructor: {@link #getMessage()}
+   * already carries the opcode prefix, so feeding it back into the constructor would prefix it twice.
+   *
+   * @return the raw message
+   */
   @CanonicalGetter(ordinal = 1)
+  public String getRawMessage() {
+    return rawMessage;
+  }
+
+  @TripIgnore
+  @Override
   public String getMessage() {
     return super.getMessage();
+  }
+
+  @TripIgnore
+  @Override
+  public Throwable getCause() {
+    return super.getCause();
   }
 
   /**
