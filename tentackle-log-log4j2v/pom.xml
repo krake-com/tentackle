@@ -26,7 +26,6 @@
       <artifactId>log4j-api</artifactId>
     </dependency>
     <dependency>
-      <!-- still not modularized, but ok as dependency since not required in module-info -->
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
     </dependency>
@@ -54,6 +53,19 @@
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!--
+          log4j-core ships its own module-info.class, so surefire's whitebox test-patching (which only adds
+          a read edge to ALL-UNNAMED) does not let test code read it. Main code never needs this;
+          it stays out of module-info.java's requires on purpose, so the extra read is added here,
+          for tests only.
+        -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Duser.language=en -Duser.region=US --add-reads org.tentackle.log.log4j2v=org.apache.logging.log4j.core</argLine>
         </configuration>
       </plugin>
     </plugins>

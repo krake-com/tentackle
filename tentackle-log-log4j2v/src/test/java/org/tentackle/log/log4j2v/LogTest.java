@@ -22,8 +22,14 @@ import org.testng.annotations.Test;
 
 import org.tentackle.log.Logger;
 
+import static org.testng.Assert.assertTrue;
+
 /**
- * Tests some logging.
+ * Tests that {@link Logger#get()} resolves to {@link Log4J2Logger} end-to-end, i.e. that the
+ * {@code @Service(Logger.class)} on {@link Log4J2Logger} is actually picked up by
+ * {@code DefaultLoggerFactory}'s reflective backend discovery. The behavior of the resolved logger
+ * itself is covered in detail by {@link Log4J2LoggerTest}, which constructs {@link Log4J2Logger}
+ * directly.
  *
  * @author harald
  */
@@ -34,6 +40,7 @@ public class LogTest {
 
   @Test
   public void testLogging() {
+    assertTrue(LOGGER instanceof Log4J2Logger, LOGGER.getClass().getName());
     LOGGER.info("this is {0}", "fine");
   }
 
