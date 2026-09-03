@@ -24,6 +24,13 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+    <dependency>
+      <!-- slf4j-simple (inherited test-scope from the parent) has no capturing appender and a
+           level fixed once from system properties, so tests need a real, per-test-mutable binding -->
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
@@ -59,6 +66,28 @@
               <Automatic-Module-Name>org.tentackle.log.slf4j</Automatic-Module-Name>
             </manifestEntries>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!--
+          slf4j-simple (inherited test-scope from the parent) and logback-classic (needed by tests
+          for a real, per-test-mutable capturing binding) would otherwise both sit on the test
+          classpath as competing SLF4JServiceProviders, so which one SLF4J picks at runtime would
+          be nondeterministic - excluded here rather than at the dependency level, since a directly
+          inherited parent dependency cannot be removed by a child's exclusions.
+
+          logback-classic ships its own module-info.class, so surefire's whitebox test-patching
+          (which only adds a read edge to ALL-UNNAMED) does not let test code read it. Main code
+          never needs this; it stays out of module-info.java's requires on purpose, so the extra
+          read is added here, for tests only.
+        -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
+          </classpathDependencyExcludes>
+          <argLine>-Duser.language=en -Duser.region=US --add-reads org.tentackle.log.slf4j=ch.qos.logback.classic --add-reads org.tentackle.log.slf4j=ch.qos.logback.core</argLine>
         </configuration>
       </plugin>
     </plugins>

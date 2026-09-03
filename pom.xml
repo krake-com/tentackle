@@ -100,6 +100,7 @@
     <junit.version>6.1.3</junit.version>
     <kwik.version>0.11</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
+    <logback.version>1.5.34</logback.version>
     <plexus.archiver.version>4.12.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
@@ -270,6 +271,12 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
+      </dependency>
+      <dependency>
+        <!-- test-only capturing backend for tentackle-log-slf4j -->
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${logback.version}</version>
       </dependency>
 
       <dependency>
