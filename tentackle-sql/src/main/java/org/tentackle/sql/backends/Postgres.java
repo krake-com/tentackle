@@ -161,7 +161,8 @@ public class Postgres extends AbstractSql92Backend {
         return true;
       }
     }
-    return super.isReservedSchemaName(name);
+    return !"public".equalsIgnoreCase(name) && // public is a legal schema name (it's the default schema)
+           super.isReservedSchemaName(name);
   }
 
   @Override

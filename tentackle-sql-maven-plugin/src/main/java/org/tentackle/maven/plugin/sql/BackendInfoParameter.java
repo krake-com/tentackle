@@ -131,12 +131,10 @@ public class BackendInfoParameter {
       schemaArray = schemas.toArray(new String[0]);
     }
 
-    char[] passwd = password == null ? null : password.toCharArray();
-
     if (serverId != null && !serverId.isEmpty()) {
       Server server = mojo.getSettings().getServer(serverId);
       if (server != null) {
-        if (user != null || passwd != null) {
+        if (user != null || password != null) {
           mojo.getLog().warn("replacing user/password from pom.xml by settings.xml for server id '" + serverId + "'");
         }
         user = server.getUsername();
@@ -163,6 +161,8 @@ public class BackendInfoParameter {
         throw new MojoExecutionException("no such server id in settings.xml: " + serverId);
       }
     }
+
+    char[] passwd = password == null ? null : password.toCharArray();
 
     return BackendInfoFactory.getInstance().create(url, user, passwd, schemaArray);
   }

@@ -58,7 +58,8 @@ public class DatabaseMetaDataTableHeader {
    * @return true if standard table
    */
   public boolean isUserTable() {
-    return type == null || type.isEmpty() || "TABLE".equals(type);
+    // some drivers (e.g. H2 >= 2.x) report the ANSI term "BASE TABLE" instead of "TABLE"
+    return type == null || type.isEmpty() || "TABLE".equals(type) || "BASE TABLE".equals(type);
   }
 
   /**
