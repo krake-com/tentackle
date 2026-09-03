@@ -122,6 +122,26 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
     return field;
   }
 
+  /**
+   * Gets the handle to access the field.
+   *
+   * @return the var handle, never null
+   */
+  protected VarHandle getHandle() {
+    return handle;
+  }
+
+  /**
+   * Returns whether the field is final.
+   * <p>
+   * A final field cannot be written through the {@link VarHandle}, see {@link #setValue}.
+   *
+   * @return true if the field is final
+   */
+  protected boolean isFinalField() {
+    return isFinalField;
+  }
+
   @Override
   public String getName() {
     return componentName;

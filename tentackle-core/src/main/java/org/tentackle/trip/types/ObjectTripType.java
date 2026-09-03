@@ -29,7 +29,6 @@ import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
-import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeCategory;
 import org.tentackle.trip.impl.DefaultOpCode;
 
@@ -41,10 +40,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -133,6 +132,22 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
   private final boolean delayedConstruction;
 
   /**
+   * The canonical constructor's arguments at their default value, cloned per read.<br>
+   * Null if there is no canonical constructor.
+   *
+   * @see #createCanonicalArgs()
+   */
+  private final Object[] canonicalArgDefaults;
+
+  /**
+   * Maps a component ordinal to its index in the canonical constructor, -1 if not canonical.<br>
+   * Null if there is no canonical constructor.
+   *
+   * @see #getCanonicalIndex(int)
+   */
+  private final int[] canonicalIndexByOrdinal;
+
+  /**
    * Creates the type.
    *
    * @param clazz the object's class
@@ -144,6 +159,47 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     canonicalBuilderInfo = ReflectionHelper.getCanonicalBuilderInfo(clazz);
     delayedConstruction = canonicalConstructor != null || canonicalBuilderInfo != null;
     components = createComponents(createInitializedDefault());
+    canonicalArgDefaults = canonicalConstructor == null ? null : createCanonicalArgDefaults();
+    canonicalIndexByOrdinal = canonicalConstructor == null ? null : createCanonicalIndexByOrdinal();
+  }
+
+  /**
+   * Creates the canonical constructor's arguments at their default value.
+   * <p>
+   * Done once per type: obtaining a type's default reflectively allocates a one-element array and
+   * boxes its only element, which is far too much work to repeat for every object read.
+   *
+   * @return the arguments, all at their default value
+   */
+  private Object[] createCanonicalArgDefaults() {
+    Object[] args = new Object[getCanonicalMembers().length];
+    Class<?>[] parameterTypes = canonicalConstructor.getParameterTypes();
+    for (int i = 0; i < args.length && i < parameterTypes.length; i++) {
+      // a fresh array element is the type's default: 0, false, '\0' for primitives, null otherwise
+      args[i] = Array.get(Array.newInstance(parameterTypes[i], 1), 0);
+    }
+    return args;
+  }
+
+  /**
+   * Maps each component's ordinal to its index in the canonical constructor.
+   * <p>
+   * Done once per type, so that reading a component is an array load instead of a linear scan
+   * over the canonical members comparing names.
+   *
+   * @return the canonical index per component ordinal, -1 for a non-canonical component
+   */
+  private int[] createCanonicalIndexByOrdinal() {
+    int maxOrdinal = -1;
+    for (TripComponent<T, ?> component : components) {
+      maxOrdinal = Math.max(maxOrdinal, component.getOrdinal());
+    }
+    int[] indexes = new int[maxOrdinal + 1];
+    Arrays.fill(indexes, -1);
+    for (TripComponent<T, ?> component : components) {
+      indexes[component.getOrdinal()] = getCanonicalIndex(component.getName());
+    }
+    return indexes;
   }
 
   @Override
@@ -376,29 +432,12 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
    * @param value the object to write
    * @param stream the stream to write to
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected void writeComponents(T value, TripStream stream) {
     int lastOrdinal = -1;
     for (TripComponent<T, ?> component : getComponents()) {
-      Object componentValue = component.getValue(value);
-      // send the component if it's not the default value
-      if (!component.hasDefaultValue() ||
-          !Objects.equals(componentValue, component.getDefaultValue())) {
-        // send ordinal of the component in the dictionary
-        lastOrdinal = stream.writeNextComponentOrdinal(lastOrdinal, component);
-        if (componentValue == null) {
-          // default is not null -> send null code
-          sendNull(stream);
-        }
-        else {
-          TripType componentType = component.getType();
-          if (!componentType.isFinal()) {
-            // if the component type is not final: determine the type dynamically
-            componentType = stream.getType(componentValue.getClass());
-          }
-          componentType.write(componentValue, stream);
-        }
-      }
+      // the component writes its ordinal and value, or nothing if it holds its default value.
+      // Delegating lets a primitive component keep its value unboxed, see PrimitiveFieldTripComponent.
+      lastOrdinal = component.write(value, stream, lastOrdinal);
     }
     sendEnd(stream);
   }
@@ -459,62 +498,59 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
         ordinal = ++lastOrdinal;
       }
       TripComponent component = entry.getTypeComponent(ordinal);
-      // component may be null if not provided locally -> take type from dictionary.
-      // the componentType is the compile-time type!
-      TripType componentType = component == null ? entry.getComponent(ordinal).getType() : component.getType();
-      Object componentValue;
 
-      if (opCode == DefaultOpCode.NULL) {
-        componentValue = null;
+      if (component == null) {
+        // not provided locally -> consume the value with the type the sender's dictionary names
+        TripComponent.readValue(entry.getComponent(ordinal).getType(), stream, opCode);
+        // next component
+        opCode = stream.receiveOpCode();
+        continue;
       }
-      else {
-        if (!componentType.isFinal()) {
-          componentType = stream.deriveType(opCode);
-          if (componentType.isDictionaryBased()) {
-            // the next opcode is a reference or the component ordinal
-            opCode = stream.receiveOpCode();
-          }
-        }
-        componentValue = componentType.read(stream, opCode);
+
+      if (componentValues == null && value != null) {
+        // The common case: the object exists, so the component reads straight into it. This is
+        // the only branch a primitive component can serve without boxing, which is why it is
+        // separated from the delayed-construction ones below.
+        component.read(value, stream, opCode);
+        // next component
+        opCode = stream.receiveOpCode();
+        continue;
       }
-      if (component != null) {
-        if (componentValues == null) {
-          if (value != null) {
-            component.setValue(value, componentValue);
-          }
-          else {
-            if (canonicalBuilderInfo != null) {
-              Method method = canonicalBuilderInfo.getMethod(component.getName());
-              if (method == null) {
-                throw new TripInstantiationException(getObjectClass(), "no builder method for " + component);
-              }
-              try {
-                method.invoke(canonicalBuilder, componentValue);
-              }
-              catch (IllegalAccessException | InvocationTargetException e) {
-                // the method must be public (no setAccessible)
-                throw new TripInstantiationException(getObjectClass(), "cannot invoke builder method " + method, e);
-              }
-            }
-            else if (canonicalConstructor != null) {
-              int canonicalIndex = getCanonicalIndex(component.getName());
-              if (canonicalIndex >= 0) {
-                canonicalArgs[canonicalIndex] = componentValue;
-                if (!canonicalArgsAssigned[canonicalIndex]) {
-                  // count each argument once: a repeated ordinal must not create the object early,
-                  // i.e. with arguments that were not read from the stream yet
-                  canonicalArgsAssigned[canonicalIndex] = true;
-                  if (--canonicalArgsMissing == 0) {
-                    // we got all canonical fields -> create the object
-                    value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
-                  }
-                }
-              }
-            }
-          }
+
+      // The object does not exist yet (delayed construction), or the instance creator builds it
+      // from the values: either way the value cannot be assigned, only collected.
+      Object componentValue = component.readValue(stream, opCode);
+      if (componentValues != null) {
+        componentValues.put(component, componentValue);
+      }
+      else if (canonicalBuilderInfo != null) {
+        Method method = canonicalBuilderInfo.getMethod(component.getName());
+        if (method == null) {
+          throw new TripInstantiationException(getObjectClass(), "no builder method for " + component);
         }
-        else {
-          componentValues.put(component, componentValue);
+        try {
+          method.invoke(canonicalBuilder, componentValue);
+        }
+        catch (IllegalAccessException | InvocationTargetException e) {
+          // the method must be public (no setAccessible)
+          throw new TripInstantiationException(getObjectClass(), "cannot invoke builder method " + method, e);
+        }
+      }
+      else if (canonicalConstructor != null) {
+        // the local component's own ordinal, not the stream's: for the receiver the two
+        // differ whenever the sender declares the components in another order
+        int canonicalIndex = getCanonicalIndex(component.getOrdinal());
+        if (canonicalIndex >= 0) {
+          canonicalArgs[canonicalIndex] = componentValue;
+          if (!canonicalArgsAssigned[canonicalIndex]) {
+            // count each argument once: a repeated ordinal must not create the object early,
+            // i.e. with arguments that were not read from the stream yet
+            canonicalArgsAssigned[canonicalIndex] = true;
+            if (--canonicalArgsMissing == 0) {
+              // we got all canonical fields -> create the object
+              value = createFromCanonicalArgs(stream, reference, initializer, canonicalArgs);
+            }
+          }
         }
       }
       // next component
@@ -693,13 +729,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
    * @return the arguments, all at their default value
    */
   protected Object[] createCanonicalArgs() {
-    Object[] args = new Object[getCanonicalMembers().length];
-    Class<?>[] parameterTypes = canonicalConstructor.getParameterTypes();
-    for (int i = 0; i < args.length && i < parameterTypes.length; i++) {
-      // a fresh array element is the type's default: 0, false, '\0' for primitives, null otherwise
-      args[i] = Array.get(Array.newInstance(parameterTypes[i], 1), 0);
-    }
-    return args;
+    return canonicalArgDefaults.clone();
   }
 
   /**
@@ -736,6 +766,20 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       // from now on, components may back-reference the object
     }
     return value;
+  }
+
+  /**
+   * Gets the index in the canonical constructor of the component with the given ordinal.
+   * <p>
+   * The lookup is precomputed, so this is an array load rather than the linear name scan of
+   * {@link #getCanonicalIndex(String)}, which would otherwise run for every component of every
+   * object read.
+   *
+   * @param ordinal the ordinal of the component
+   * @return the index, or -1 if not a canonical component or the ordinal is out of range
+   */
+  protected int getCanonicalIndex(int ordinal) {
+    return ordinal >= 0 && ordinal < canonicalIndexByOrdinal.length ? canonicalIndexByOrdinal[ordinal] : -1;
   }
 
   /**

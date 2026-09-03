@@ -27,7 +27,6 @@ import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
-import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeCategory;
 import org.tentackle.trip.impl.DefaultOpCode;
 
@@ -132,21 +131,9 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
         prepareWrite(value);
         int lastOrdinal = -1;
         for (TripComponent<T, ?> component : getComponents()) {
-          Object componentValue = component.getValue(value);
-          // send ordinal of the component in the dictionary
-          lastOrdinal = stream.writeNextComponentOrdinal(lastOrdinal, component);
-          if (componentValue == null) {
-            // default is not null -> send null code
-            sendNull(stream);
-          }
-          else {
-            TripType componentType = component.getType();
-            if (!componentType.isFinal()) {
-              // if the component type is not final: determine the type dynamically
-              componentType = stream.getType(componentValue.getClass());
-            }
-            componentType.write(componentValue, stream);
-          }
+          // A record component never has a default value, so this always writes the ordinal and
+          // the value. Delegating lets a primitive component stay unboxed, see RecordTripComponent.
+          lastOrdinal = component.write(value, stream, lastOrdinal);
         }
         sendEnd(stream);
       }
@@ -213,22 +200,9 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
           throw new TripRuntimeException(getObjectClass() + " does not provide the component " +
                                          entry.getComponent(ordinal).getComponentName());
         }
-        TripType componentType = component.getType();
-        Object componentValue;
-        if (opCode == DefaultOpCode.NULL) {
-          componentValue = null;
-        }
-        else {
-          if (!componentType.isFinal()) {
-            componentType = stream.deriveType(opCode);
-            if (componentType.isDictionaryBased()) {
-              // the next opcode is a reference or the component ordinal
-              opCode = stream.receiveOpCode();
-            }
-          }
-          componentValue = componentType.read(stream, opCode);
-        }
-        constructorArgs[component.getOrdinal()] = componentValue;
+        // the canonical constructor takes its arguments as objects, so a primitive component
+        // has to be boxed here no matter what
+        constructorArgs[component.getOrdinal()] = component.readValue(stream, opCode);
         // next component
         opCode = stream.receiveOpCode();
       }

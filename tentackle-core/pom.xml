@@ -55,6 +55,15 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- TripBenchmark measures throughput and takes minutes: opt in via -Pbenchmark -->
+          <excludedGroups>benchmark</excludedGroups>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <compilerArgs>
@@ -68,5 +77,31 @@
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Run the TRIP throughput benchmark instead of the tests: mvn -Pbenchmark test
+        Tunable with -Dtrip.bench.warmupMillis, -Dtrip.bench.measureMillis and -Dtrip.bench.runs.
+      -->
+      <id>benchmark</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- the class name matches none of surefire's default includes, so name it here -->
+              <includes>
+                <include>**/TripBenchmark.java</include>
+              </includes>
+              <groups>benchmark</groups>
+              <excludedGroups combine.self="override"/>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

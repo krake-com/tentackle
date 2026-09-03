@@ -137,17 +137,18 @@ public final class CharacterArrayTripType extends AbstractPredefinedArrayTripTyp
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case DefaultOpCode.CHARN -> {
-            int blockLen = deserializer.deserializeByteAsUnsigned();
-            while (blockLen-- > 0) {
-              result[count++] = (char) deserializer.deserializeByteAsUnsigned();
-            }
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else if (opCode == DefaultOpCode.CHARN) {
+          int blockLen = deserializer.deserializeByteAsUnsigned();
+          while (blockLen-- > 0) {
+            result[count++] = (char) deserializer.deserializeByteAsUnsigned();
           }
-          case null, default -> result[count++] = characterTripType.read(stream, opCode);
+        }
+        else {
+          result[count++] = characterTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);

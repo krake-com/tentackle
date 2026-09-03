@@ -138,7 +138,7 @@ public class DefaultSerializer implements Serializer {
 
   @Override
   public void serializeOpCode(OpCode opCode) {
-    serializeUnsignedAsByte(opCode.toExternal());
+    serializeUnsignedAsByte(opCode.getCode());
   }
 
   @Override

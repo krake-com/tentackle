@@ -163,13 +163,15 @@ public class StringTripType extends AbstractTripType<String> {
     }
 
     if (readContent) {
-      int len = switch (orgCode) {
-        case DefaultOpCode.STRING -> deserializer.deserializeInt();
-        case DefaultOpCode.STRING2 -> deserializer.deserializeShortAsUnsigned();
-        case DefaultOpCode.STRING1 -> deserializer.deserializeByteAsUnsigned();
-        case DefaultOpCode.STRING_EMPTY -> 0;
-        default -> -1;
-      };
+      // narrowed to DefaultOpCode before switching, see AbstractPredefinedArrayTripType#readSkip
+      int len = orgCode instanceof DefaultOpCode code ?
+                  switch (code) {
+                    case STRING -> deserializer.deserializeInt();
+                    case STRING2 -> deserializer.deserializeShortAsUnsigned();
+                    case STRING1 -> deserializer.deserializeByteAsUnsigned();
+                    case STRING_EMPTY -> 0;
+                    default -> -1;
+                  } : -1;
       if (len == 0) {
         value = "";
       }

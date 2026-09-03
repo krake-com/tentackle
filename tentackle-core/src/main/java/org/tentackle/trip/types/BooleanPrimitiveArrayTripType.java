@@ -123,17 +123,18 @@ public final class BooleanPrimitiveArrayTripType extends AbstractPredefinedArray
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case DefaultOpCode.BOOLN -> {
-            int blockLen = deserializer.deserializeByteAsUnsigned();
-            while (blockLen-- > 0) {
-              result[count++] = deserializer.deserializeBoolean();
-            }
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else if (opCode == DefaultOpCode.BOOLN) {
+          int blockLen = deserializer.deserializeByteAsUnsigned();
+          while (blockLen-- > 0) {
+            result[count++] = deserializer.deserializeBoolean();
           }
-          case null, default -> result[count++] = booleanTripType.read(stream, opCode);
+        }
+        else {
+          result[count++] = booleanTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);

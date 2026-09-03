@@ -123,17 +123,18 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
       int count = 0;
       while (count < length) {
         opCode = stream.receiveOpCode();
-        switch (opCode) {
-          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
-          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
-          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
-          case DefaultOpCode.BYTEN -> {
-            int blockLen = deserializer.deserializeByteAsUnsigned();
-            while (blockLen-- > 0) {
-              result[count++] = deserializer.deserializeByte();
-            }
-          }
-          case null, default -> result[count++] = byteTripType.read(stream, opCode);
+        int skip = readSkip(deserializer, opCode);
+        if (skip != NO_SKIP) {
+          count += skip;
+        }
+        else if (opCode == DefaultOpCode.BYTEN) {
+          int blockLen = deserializer.deserializeByteAsUnsigned();
+          // one bulk System.arraycopy instead of a capacity check per byte
+          deserializer.deserialize(result, count, blockLen);
+          count += blockLen;
+        }
+        else {
+          result[count++] = byteTripType.read(stream, opCode);
         }
       }
       stream.addReference(reference, result, false);
@@ -149,9 +150,8 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
   private void flushBlock(Serializer serializer, byte[] value, int blockStart, int blockLen) {
     serializer.serializeOpCode(DefaultOpCode.BYTEN);
     serializer.serializeUnsignedAsByte(blockLen);
-    while (blockLen-- > 0) {
-      serializer.serializeByte(value[blockStart++]);
-    }
+    // one bulk System.arraycopy instead of a capacity check per byte
+    serializer.serialize(value, blockStart, blockLen);
   }
 
 }

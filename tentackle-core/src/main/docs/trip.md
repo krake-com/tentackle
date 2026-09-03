@@ -263,14 +263,37 @@ A `TripComponent<P, T>` (`org.tentackle.trip.TripComponent`) describes one seria
 - `getType()` — the `TripType` for this component
 - `getOrdinal()` — position in the serialized dictionary
 - `hasDefaultValue()` / `getDefaultValue()` — components with default values are omitted during serialization
+- `write(parent, stream, lastOrdinal)` / `read(parent, stream, opCode)` — serialize the component
+  of a parent object, and deserialize it back into one. This is what `ObjectTripType` and
+  `RecordTripType` drive their component loops with, rather than combining `getValue`/`setValue`
+  with the component's `TripType` themselves. Writing goes through the component so that the
+  value is read from the parent exactly once, and so that a component of a primitive type can
+  keep its value unboxed all the way to the serializer.
 
 Component implementations:
 
-| Type              | Implementation        | Access mechanism                                 |
-|-------------------|-----------------------|--------------------------------------------------|
-| Fields            | `FieldTripComponent`  | `VarHandle` (fast) or `Field.set` (final fields) |
-| Getters/setters   | `MethodTripComponent` | Reflection methods                               |
-| Record components | `RecordTripComponent` | `RecordComponent`                                |
+| Type                     | Implementation                 | Access mechanism                                 |
+|--------------------------|--------------------------------|--------------------------------------------------|
+| Fields                   | `FieldTripComponent`           | `VarHandle` (fast) or `Field.set` (final fields) |
+| Fields of primitive type | `PrimitiveFieldTripComponent`  | `VarHandle`, invoked with a primitive signature  |
+| Getters/setters          | `MethodTripComponent`          | Reflection methods                               |
+| Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
+
+##### Why primitive components have their own implementation
+
+Because of erasure, `FieldTripComponent` invokes its `VarHandle` through a call site typed
+`(Object)Object`. An `int`, `long` or `double` field is therefore boxed to read it, boxed again to
+compare it with the component's default value, and unboxed once more inside the `TripType` — and on
+the way back a box is allocated per field. `Long` and `Double` allocate every time, `Integer`
+whenever the value falls outside its cache. An entity with a dozen numeric columns pays that a dozen
+times per instance, on both sides, for every object of a result list.
+
+`PrimitiveFieldTripComponent` keeps the value primitive throughout: the `VarHandle` is invoked with
+a primitive signature, the default is compared as a primitive, and the value is handed to the
+primitive codec of its trip type (`IntegerTripType.writeInt`/`readInt` and its siblings, the
+primitive counterparts of `write`/`read`). `RecordTripComponent` does the same through a
+`MethodHandle` bound to the record's accessor. The factory picks the implementation, so nothing in
+the model or in a `@TripComponentProvider` has to know about it.
 
 #### Dictionary
 

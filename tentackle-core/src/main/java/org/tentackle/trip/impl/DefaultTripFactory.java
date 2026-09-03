@@ -188,6 +188,10 @@ public class DefaultTripFactory implements TripFactory {
 
   @Override
   public <P, T> TripComponent<P, T> createComponent(TripType<P> parentType, int ordinal, Field field, boolean hasDefaultValue, T defaultValue) {
+    if (field.getType().isPrimitive()) {
+      // keeps the value primitive end to end, instead of boxing it on the way out and in
+      return new PrimitiveFieldTripComponent<>(parentType, ordinal, field, hasDefaultValue, defaultValue);
+    }
     return new FieldTripComponent<>(parentType, ordinal, field, hasDefaultValue, defaultValue);
   }
 
