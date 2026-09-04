@@ -279,22 +279,6 @@ Component implementations:
 | Getters/setters          | `MethodTripComponent`          | Reflection methods                               |
 | Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
 
-##### Why primitive components have their own implementation
-
-Because of erasure, `FieldTripComponent` invokes its `VarHandle` through a call site typed
-`(Object)Object`. An `int`, `long` or `double` field is therefore boxed to read it, boxed again to
-compare it with the component's default value, and unboxed once more inside the `TripType` — and on
-the way back a box is allocated per field. `Long` and `Double` allocate every time, `Integer`
-whenever the value falls outside its cache. An entity with a dozen numeric columns pays that a dozen
-times per instance, on both sides, for every object of a result list.
-
-`PrimitiveFieldTripComponent` keeps the value primitive throughout: the `VarHandle` is invoked with
-a primitive signature, the default is compared as a primitive, and the value is handed to the
-primitive codec of its trip type (`IntegerTripType.writeInt`/`readInt` and its siblings, the
-primitive counterparts of `write`/`read`). `RecordTripComponent` does the same through a
-`MethodHandle` bound to the record's accessor. The factory picks the implementation, so nothing in
-the model or in a `@TripComponentProvider` has to know about it.
-
 #### Dictionary
 
 The `Dictionary` (`org.tentackle.trip.Dictionary`) is a type registry shared across connections. It maps class names to `DictionaryEntry` objects, each with a unique ordinal.

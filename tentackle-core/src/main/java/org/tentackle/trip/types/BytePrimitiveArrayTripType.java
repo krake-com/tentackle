@@ -150,7 +150,6 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
   private void flushBlock(Serializer serializer, byte[] value, int blockStart, int blockLen) {
     serializer.serializeOpCode(DefaultOpCode.BYTEN);
     serializer.serializeUnsignedAsByte(blockLen);
-    // one bulk System.arraycopy instead of a capacity check per byte
     serializer.serialize(value, blockStart, blockLen);
   }
 
