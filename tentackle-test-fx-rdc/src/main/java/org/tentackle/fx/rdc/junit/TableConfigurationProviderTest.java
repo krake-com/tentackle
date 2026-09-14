@@ -20,8 +20,7 @@ package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.jupiter.api.TestReporter;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.table.TableConfigurationProvider;
@@ -47,8 +46,6 @@ import org.tentackle.reflect.ClassMapper;
  */
 public abstract class TableConfigurationProviderTest extends FxRdcTestApplication {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TableConfigurationProviderTest.class);
-
   private final String packagePrefix;
   private final ClassMapper classMapper;
 
@@ -71,7 +68,7 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
   }
 
   @Test
-  public void testTableConfigurationProviders() {
+  public void testTableConfigurationProviders(TestReporter reporter) {
     for (String servicedClassName : classMapper.getMap().keySet()) {
       try {
         Class<?> servicedClass = Class.forName(servicedClassName);
@@ -84,12 +81,12 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
           TableConfigurationProviderService anno = provider.getClass().getAnnotation(TableConfigurationProviderService.class);
           if (anno == null || anno.test()) {
             runFx(provider.getClass().getName(), () -> {
-              LOGGER.info(() -> "testing table configuration provider " + provider.getClass().getName());
+              reporter.publishEntry("testing table configuration provider " + provider.getClass().getName());
               provider.createTableConfiguration();
             });
           }
           else {
-            LOGGER.info(() -> "table configuration provider " + provider.getClass().getName() + " not tested");
+            reporter.publishEntry("table configuration provider " + provider.getClass().getName() + " not tested!");
           }
         }
       }

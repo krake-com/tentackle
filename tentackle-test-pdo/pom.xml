@@ -64,6 +64,14 @@
       <artifactId>junit-jupiter-api</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+    </dependency>
 
     <dependency>
       <!-- switch TT logging to target/logs/test.log
@@ -121,10 +129,15 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <dependencies>
-          <!-- override auto detection of junit -->
+          <!-- override auto detection: run the TestNG and the Junit5 tests -->
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
             <artifactId>surefire-testng</artifactId>
+            <version>${maven.surefire.plugin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
             <version>${maven.surefire.plugin.version}</version>
           </dependency>
         </dependencies>

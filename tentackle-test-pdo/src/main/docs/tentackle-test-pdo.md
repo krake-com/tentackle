@@ -75,6 +75,17 @@ rare scenario that must persist.
   `rollbackLogged` so the rolled-back statements are logged for diagnosis.
 - `@AfterSuite closeSessionsAndTerminateModificationTracker()` — terminates the tracker and closes the session.
 
+**JUnit lifecycle.** The JUnit variant behaves the same way. JUnit creates a new test instance per method by
+default, so the base class is annotated with `@TestInstance(PER_CLASS)` (inherited by subclasses). That makes
+`@BeforeAll beforeClass()`/`@AfterAll afterClass()` instance methods, so a `CLASS` transaction really does span all
+methods of the class. JUnit has no suite annotations, so the nested `AbstractPdoTest.SuiteExtension` stands in for
+them. Before the first test class runs, it opens the session and starts the tracker. It then registers an
+`AutoCloseable` in the root `ExtensionContext.Store`, which JUnit closes when the whole test run ends. If opening
+the session fails, the failure is remembered and rethrown for every later class instead of being retried. A test
+method that throws sets `rollbackLogged`, just like a failed TestNG `ITestResult`. When no backend is reachable,
+the tests are aborted with `TestAbortedException`, which reports them as skipped. As with TestNG, test classes
+must not run in parallel.
+
 **Extension points** a concrete test can override:
 
 | Method                     | Purpose                                                                                                                                                                      |
@@ -94,9 +105,9 @@ tests — see `testng.xml`'s `remote1`/`remote2` groups).
 The base class for tests that must run as a full
 [`AbstractApplication`](../../../../tentackle-pdo/src/main/docs/pdo.md) — i.e., with the complete application
 bootstrap (`SessionInfo`, property application, registration) rather than just a bare session. Same in-memory
-table creation/population, but driven through the application lifecycle. The JUnit variant keeps a static reference
-to the running application because JUnit's `@AfterAll` must be static, and guards against two `TestApplication`s
-running at once.
+table creation/population, but driven through the application lifecycle. `setUpClass()` and `tearDownClass()`
+run once per test class: TestNG's `@BeforeClass`/`@AfterClass` there, JUnit's `@BeforeAll`/`@AfterAll` instance
+methods here (via `@TestInstance(PER_CLASS)`).
 
 ---
 
@@ -161,7 +172,9 @@ downstream tests (and this module's tests) can stand up the **TT tables** in mem
 
   These land under `META-INF`, are declared as a `<resource>` directory, and are therefore baked into the jar.
 - **`maven-jar-plugin`** — sets `Automatic-Module-Name: org.tentackle.pdo.test`.
-- **`maven-surefire-plugin`** — overridden to use the TestNG provider and the `src/test/testng.xml` suite.
+- **`maven-surefire-plugin`** — declares both the TestNG provider (running the `src/test/testng.xml` suite) and
+  the JUnit platform provider (running the JUnit tests). Surefire runs each provider in its own forked JVM, so the
+  two flavors never share the static session, the modification tracker or the in-memory database.
 
 ### Why the framework dependencies are `optional`
 
@@ -202,6 +215,11 @@ The `testng.xml` suite runs three groups — `local`, `remote1`, `remote2` — s
 
 > **A test method without a group never runs.** Because the suite selects methods by group, a plain `@Test` is
 > silently skipped. Annotate new tests with `groups = "local"` unless they belong in one of the others.
+
+The JUnit base classes are covered by `ClassTransactionTest`, `MethodTransactionTest` and `NoTransactionTest` in
+`org.tentackle.pdo.junit`. Together they have several methods across several classes, which exercises the
+suite-wide session, the per-class and per-method transactions, and the rollback between methods. They are run
+by the JUnit platform provider, not by the TestNG suite.
 
 ### Test configuration
 
@@ -266,6 +284,28 @@ public class CustomerTest extends org.tentackle.pdo.testng.AbstractPdoTest {
 
 Override `createDatabaseTables(Db)` to add your application's model on top of the framework's TT tables, and choose
 `TransactionType.METHOD` (or `commit = true`) where the default per-class rollback doesn't fit.
+
+The JUnit flavor looks the same, minus the groups:
+
+```java
+public class CustomerTest extends org.tentackle.pdo.junit.AbstractPdoTest {
+
+  @Test
+  public void createAndReload() {
+    Customer c = on(Customer.class);
+    c.setName("Acme");
+    c.save();
+    Assertions.assertNotEquals(0, c.getId());
+  }
+}
+```
+
+> **Align the JUnit platform launcher.** Surefire's JUnit platform provider falls back to its own
+> `junit-platform-launcher`. If that version differs from the Jupiter engine, discovery fails with
+> *"OutputDirectoryCreator not available; probably due to unaligned versions"*. Declare
+> `org.junit.platform:junit-platform-launcher` with the same version as `junit-jupiter-engine` in test scope.
+> Because this artifact carries both TestNG and JUnit, surefire picks the JUnit provider by default. A TestNG
+> project therefore has to pin `surefire-testng` as a plugin dependency.
 
 ### Generating Fixture Code with the PDO Browser
 

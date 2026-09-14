@@ -19,14 +19,16 @@
 package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.jupiter.api.TestReporter;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
+import org.tentackle.session.Session;
+
+import javafx.application.Platform;
 
 /**
  * Junit5 test to verify that controllers can be loaded and bound.<br>
@@ -41,8 +43,6 @@ import org.tentackle.fx.FxFactory;
  * @author harald
  */
 public abstract class ControllerTest extends FxRdcTestApplication {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(ControllerTest.class);
 
   private final String packagePrefix;
 
@@ -64,13 +64,17 @@ public abstract class ControllerTest extends FxRdcTestApplication {
   }
 
   @Test
-  public void testControllers() {
+  public void testControllers(TestReporter reporter) {
+
+    // set the current session in the FX-thread as well (in case controllers use Platform.runLater)
+    Platform.runLater(() -> Session.setCurrentSession(getSession()));
+
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {
         FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
         if (anno == null || anno.test()) {
           runFx(clazz.getName(), () -> {
-            LOGGER.info(() -> "testing controller " + clazz.getName());
+            reporter.publishEntry("testing controller " + clazz.getName());
             FxController controller = Fx.load(clazz);
             controller.validateInjections();
             if (anno == null || anno.binding() != FxControllerService.BINDING.NO) {
@@ -79,7 +83,7 @@ public abstract class ControllerTest extends FxRdcTestApplication {
           });
         }
         else {
-          LOGGER.info(() -> "controller " + clazz.getName() + " not tested!");
+          reporter.publishEntry("controller " + clazz.getName() + " not tested!");
         }
       }
     }

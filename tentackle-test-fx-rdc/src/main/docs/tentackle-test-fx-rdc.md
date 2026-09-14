@@ -67,7 +67,12 @@ The abstract base of all three test types. It adds the JavaFX dimension to the i
 
 - **`@BeforeSuite startFx()`** — starts the JavaFX toolkit with `Platform.startup(...)`. If the JVM is **headless**
   (`GraphicsEnvironment.isHeadless()`) or FX is unavailable, it throws TestNG's `SkipException` so the suite is
-  **skipped, not failed** in CI without a display.
+  **skipped, not failed** in CI without a display. The JUnit variant cannot use a `@BeforeAll` method here,
+  because JUnit runs a superclass's `@BeforeAll` methods first. The session would already be open and the
+  in-memory database populated, and when the class aborted, that leaked connection would keep the database alive
+  for the next class. Instead, the nested `FxExtension` (a `BeforeAllCallback`, which JUnit runs before every
+  `@BeforeAll` method) calls the idempotent `startFx()`. A headless JVM or missing FX support raises
+  `TestAbortedException`, and the tests are reported as skipped.
 - **`setDomainContext(...)` override** — when the inherited context is set, it **clones the session for the FX
   thread** (`context.getSession().clone("FX")`) and makes that clone the current session *inside* `Platform.runLater`,
   so controllers that touch persistence from the UI thread work correctly. It also installs an uncaught-exception
@@ -122,7 +127,7 @@ calls `createTableConfiguration()` on the FX thread.
 | **Package prefix** | Each base class takes an optional `packagePrefix` constructor argument; only matching classes are tested. `null`/empty = all.                   |
 | **Opt-out**        | The matching `@*Service(test=false)` annotation excludes an implementation; it is logged as "not tested" rather than run.                       |
 | **Discovery**      | Implementations are found through the SPI registries (`FxFactory`, `ClassMapper`, the provider factories), so nothing has to be listed by hand. |
-| **Reporting**      | Every step is written to the TestNG `Reporter` / JUnit log for a readable per-class trace.                                                      |
+| **Reporting**      | Every step is written to the TestNG `Reporter` / the JUnit `TestReporter` for a readable per-class trace.                                       |
 
 ---
 
@@ -157,8 +162,10 @@ public class TestGuiProviders extends GuiProviderTest {
 }
 ```
 
-These are exactly the example tests shipped in this module's own `src/test/java` (`org.tentackle.test.fx.rdc`),
-which double as the canonical usage reference. Database connection parameters come from
+These are exactly the example tests shipped in this module's own `src/test/java`: `org.tentackle.test.fx.rdc`
+for TestNG and `org.tentackle.test.fx.rdc.junit` for JUnit. The JUnit package also contains `ApplicationTest`,
+which runs a plain JUnit `TestApplication` with more than one test method. These tests double as the canonical
+usage reference. Database connection parameters come from
 `backend.properties`, which selects the in-memory H2 database, inherited from the
 [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) session machinery. Unlike
 test-pdo's, the URL deliberately carries **no `DB_CLOSE_DELAY=-1`**: `TestApplication` opens its session and
@@ -172,11 +179,13 @@ each class starts from an empty one. Keeping the database alive across classes w
 > ### ⚠️ The surefire provider has to be pinned
 >
 > This module puts **both** TestNG and JUnit Jupiter on the classpath, because it offers a base class for each.
-> Surefire's auto-detection then picks the JUnit platform provider, which finds nothing — the tests above extend
-> the *TestNG* base classes — and the module silently reports `Tests run: 0` while the build stays green. The POM
-> therefore declares `surefire-testng` as a plugin dependency, exactly as
-> [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) does. A downstream project that
-> depends on both flavors needs to do the same.
+> Surefire's auto-detection then picks only the JUnit platform provider. TestNG tests are silently not run: the
+> module reports `Tests run: 0` while the build stays green. The POM therefore declares **both**
+> `surefire-testng` and `surefire-junit-platform` as plugin dependencies, exactly as
+> [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) does. Surefire runs each provider
+> in its own forked JVM. A downstream TestNG project pins `surefire-testng`. A downstream JUnit project needs
+> `junit-jupiter-engine` and a `junit-platform-launcher` of the same version in test scope; otherwise surefire's
+> bundled launcher does not match the engine and test discovery fails.
 
 ---
 

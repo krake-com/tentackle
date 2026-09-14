@@ -45,6 +45,14 @@
       <artifactId>junit-jupiter-api</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -99,14 +107,18 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <dependencies>
           <!--
-            Override auto detection of junit. The module offers both a TestNG and a JUnit
-            flavor and therefore has both on the classpath, whereupon surefire picks the
-            JUnit platform provider - which finds nothing, because the tests below extend
-            the TestNG base classes.
+            Override auto detection. The module offers both a TestNG and a JUnit flavor and
+            therefore has both on the classpath, whereupon surefire would pick only the JUnit
+            platform provider. Declaring both providers runs the tests of both flavors.
           -->
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
             <artifactId>surefire-testng</artifactId>
+            <version>${maven.surefire.plugin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
             <version>${maven.surefire.plugin.version}</version>
           </dependency>
         </dependencies>

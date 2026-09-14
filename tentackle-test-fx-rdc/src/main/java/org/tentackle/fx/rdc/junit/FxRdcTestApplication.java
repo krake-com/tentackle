@@ -19,10 +19,10 @@
 package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
-import org.opentest4j.AssertionFailedError;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.junit.TestApplication;
@@ -36,15 +36,43 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * FX Junit5 test application.
+ * <p>
+ * The FX toolkit is started once by the {@link FxExtension}, before any {@code @BeforeAll} method
+ * of the first test class runs (TestNG's {@code @BeforeSuite}).
+ * The tests are aborted (i.e. skipped) if the JVM is headless or FX is not supported.
  *
  * @author harald
  */
+@ExtendWith(FxRdcTestApplication.FxExtension.class)
 public abstract class FxRdcTestApplication extends TestApplication {
+
+  /**
+   * Starts the FX toolkit before the application is set up.
+   * <p>
+   * A {@code @BeforeAll} method cannot be used, since Junit runs the {@code @BeforeAll} methods of the
+   * superclass first, i.e. the session would already be open and the database populated when the tests are aborted.
+   */
+  public static class FxExtension implements BeforeAllCallback {
+
+    /**
+     * Creates the extension.
+     */
+    public FxExtension() {
+      // see -Xlint:missing-explicit-ctor
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext context) {
+      startFx();
+    }
+  }
+
 
   private static final String HEADLESS_MSG = "JVM is headless -> no FX tests";
   private static final int DEFAULT_FX_TIMEOUT = 30;       // timeout in seconds to wait for failing test
-  private static final Logger LOGGER = LoggerFactory.getLogger(FxRdcTestApplication.class);
-  private static boolean fxStarted;
+
+  private static boolean fxStarted;                       // true if FX toolkit is running
+  private static TestAbortedException fxFailure;          // != null if FX could not be started
 
   private final AtomicReference<Throwable> unhandledException = new AtomicReference<>();
   private Session fxSession;
@@ -79,23 +107,33 @@ public abstract class FxRdcTestApplication extends TestApplication {
     return fxTimeout;
   }
 
-  @BeforeAll
-  public static void startFx() {
-    synchronized (FxRdcTestApplication.class) {
-      if (!fxStarted) {
+  /**
+   * Starts the FX toolkit, if not already started.
+   *
+   * @throws TestAbortedException if the JVM is headless or FX is not supported
+   */
+  public static synchronized void startFx() {
+    if (!fxStarted) {
+      if (fxFailure == null) {
         if (GraphicsEnvironment.isHeadless()) {
-          System.out.println(HEADLESS_MSG);   // Reporter.log ignored with SkipException
-          throw new AssertionFailedError(HEADLESS_MSG);
+          System.out.println(HEADLESS_MSG);
+          fxFailure = new TestAbortedException(HEADLESS_MSG);
         }
         else {
           try {
-            Platform.startup(() -> LOGGER.info(() -> "FX started"));
+            Platform.startup(() -> System.out.println("FX started"));
+            fxStarted = true;
+          }
+          catch (IllegalStateException ix) {
+            fxStarted = true;   // toolkit already initialized by someone else
           }
           catch (RuntimeException rex) {
-            throw new AssertionFailedError("FX not supported -> no FX tests");
+            fxFailure = new TestAbortedException("FX not supported -> no FX tests", rex);
           }
         }
-        fxStarted = true;
+      }
+      if (fxFailure != null) {
+        throw fxFailure;
       }
     }
   }
@@ -103,32 +141,27 @@ public abstract class FxRdcTestApplication extends TestApplication {
   @Override
   protected void setDomainContext(DomainContext context) {
     super.setDomainContext(context);
-    if (fxStarted) {
-      fxSession = context.getSession().clone("FX");
-      CountDownLatch latch = new CountDownLatch(1);
-      Platform.runLater(() -> {
-        Session.setCurrentSession(fxSession);
-        unhandledException.set(null);
-        Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
-        latch.countDown();
-      });
-      try {
-        if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
-          Assertions.fail("waiting for FX failed");
-        }
-      }
-      catch (InterruptedException e) {
-        Assertions.fail("FX setup interrupted", e);
+    fxSession = context.getSession().clone("FX");
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      Session.setCurrentSession(fxSession);
+      unhandledException.set(null);
+      Thread.currentThread().setUncaughtExceptionHandler((_, e) -> unhandledException.set(e));
+      latch.countDown();
+    });
+    try {
+      if (!latch.await(getFxTimeout(), TimeUnit.SECONDS)) {
+        Assertions.fail("waiting for FX failed");
       }
     }
-    else {
-      throw new AssertionFailedError(HEADLESS_MSG);
+    catch (InterruptedException e) {
+      Assertions.fail("FX setup interrupted", e);
     }
   }
 
   @Override
   public void unregister() {
-    if (fxStarted) {
+    if (fxSession != null) {
       super.unregister();
       fxSession.close();
     }

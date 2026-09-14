@@ -335,6 +335,20 @@
         <artifactId>junit-jupiter-api</artifactId>
         <version>${junit.version}</version>
       </dependency>
+      <dependency>
+        <!-- runs the Junit5 tests of the test support modules -->
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <!-- aligns surefire's launcher with the engine, otherwise discovery fails -->
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
 
       <!-- test dependencies -->
       <dependency>

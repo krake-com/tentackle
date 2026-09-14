@@ -19,6 +19,8 @@
 package org.tentackle.pdo.junit;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.opentest4j.AssertionFailedError;
 import org.opentest4j.TestAbortedException;
 
@@ -39,27 +41,16 @@ import org.tentackle.sql.Backend;
 
 /**
  * Base class for Junit5 tests that must run as an application.
+ * <p>
+ * Works like its TestNG counterpart {@code org.tentackle.pdo.testng.TestApplication}:
+ * one test instance per class ({@link TestInstance.Lifecycle#PER_CLASS}), the application
+ * is set up before and torn down after all test methods of the class.
+ * Test classes must not run in parallel.
  *
  * @author harald
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TestApplication extends AbstractApplication {
-
-  private static TestApplication application;   // necessary because @AfterAll must annotate a static method in Junit
-
-  @AfterAll
-  public static synchronized void tearDownClass() {
-    if (application != null) {
-      Session session = application.getSession();
-      if (session != null) {
-        session.close();
-        Session.setCurrentSession(null);
-        application.unregister();
-      }
-      application = null;
-    }
-  }
-
-
 
   /**
    * Creates a test application.
@@ -69,15 +60,15 @@ public abstract class TestApplication extends AbstractApplication {
    */
   public TestApplication(String name, String version) {
     super(name, version);
+  }
 
-    synchronized (TestApplication.class) {
-      if (application != null) {
-        // misbehaving tests running in parallel? (still experimental Junit feature?)
-        throw new AssertionFailedError("another TestApplication is still running: " + application.getClass().getName());
-      }
-      application = this;
-    }
-
+  /**
+   * Opens the session and registers the application.
+   *
+   * @throws Exception if failed
+   */
+  @BeforeAll
+  public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
     sessionInfo.applyProperties();
     Session session;
@@ -114,6 +105,21 @@ public abstract class TestApplication extends AbstractApplication {
 
     if (populate) {
       populateDatabase();
+    }
+  }
+
+  /**
+   * Closes the session and unregisters the application.
+   *
+   * @throws Exception if failed
+   */
+  @AfterAll
+  public void tearDownClass() throws Exception {
+    Session session = getSession();
+    if (session != null) {
+      session.close();
+      Session.setCurrentSession(null);
+      unregister();
     }
   }
 

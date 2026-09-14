@@ -21,10 +21,15 @@ package org.tentackle.pdo.junit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.platform.commons.logging.Logger;
-import org.junit.platform.commons.logging.LoggerFactory;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.opentest4j.AssertionFailedError;
+import org.opentest4j.TestAbortedException;
 
 import org.tentackle.dbms.Db;
 import org.tentackle.model.Model;
@@ -51,9 +56,21 @@ import java.util.Set;
 
 /**
  * Base class for Junit5 tests on PDO level.
+ * <p>
+ * Works like its TestNG counterpart {@code org.tentackle.pdo.testng.AbstractPdoTest}:
+ * <ul>
+ *   <li>one test instance per class ({@link TestInstance.Lifecycle#PER_CLASS}), so
+ *   the lifecycle methods are instance methods and the transaction may span the whole class</li>
+ *   <li>the session and the modification tracker are opened once for all test classes and closed
+ *   when the test run ends (TestNG's {@code @BeforeSuite}/{@code @AfterSuite})</li>
+ *   <li>the tests are aborted (i.e. skipped) if no backend is available</li>
+ * </ul>
+ * Test classes must not run in parallel.
  *
  * @author harald
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ExtendWith(AbstractPdoTest.SuiteExtension.class)
 public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
@@ -70,17 +87,66 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     NONE
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPdoTest.class);
 
-  private static Session session;               // session for all methods in all test classes
-  private static DomainContext context;         // domain context for all methods in all test classes
-  private static AbstractPdoTest currentTest;   // the currently running test
+  /**
+   * Opens the session once for all test classes and closes it when the test run ends.<br>
+   * Also marks the rolled back statements to be logged if a test method fails.
+   */
+  public static class SuiteExtension implements BeforeAllCallback, TestExecutionExceptionHandler {
 
-  private final boolean closeIt;                // true if we're the first test that created the session
-  private final TransactionType txType;         // transaction handling
-  private final boolean commit;                 // true if commit transaction, else rollback (default)
-  private boolean rollbackLogged;               // true to log the rollback, even if the test succeeds
-  private long txVoucher;                       // transaction voucher for the current test class
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(SuiteExtension.class);
+
+    private static RuntimeException setupFailure;   // != null if opening the session failed
+
+    /**
+     * Creates the extension.
+     */
+    public SuiteExtension() {
+      // see -Xlint:missing-explicit-ctor
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext context) {
+      synchronized (SuiteExtension.class) {
+        if (setupFailure != null) {
+          throw setupFailure;   // tried once already: skip or fail the remaining classes as well
+        }
+        AbstractPdoTest test = (AbstractPdoTest) context.getRequiredTestInstance();
+        context.getRoot().getStore(NAMESPACE).computeIfAbsent(SuiteExtension.class, _ -> {
+          try {
+            test.openSessionsAndStartModificationTracker();
+          }
+          catch (RuntimeException rex) {
+            setupFailure = rex;
+            throw rex;
+          }
+          catch (Exception ex) {
+            setupFailure = new IllegalStateException("opening the session failed", ex);
+            throw setupFailure;
+          }
+          // closed by Junit when the test run ends
+          return (AutoCloseable) test::closeSessionsAndTerminateModificationTracker;
+        }, AutoCloseable.class);
+      }
+    }
+
+    @Override
+    public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+      if (context.getRequiredTestInstance() instanceof AbstractPdoTest test) {
+        test.setRollbackLogged(true);    // log statements rolled back if the test failed
+      }
+      throw throwable;
+    }
+  }
+
+
+  private static Session session;           // session for all methods in all test classes
+  private static DomainContext context;     // domain context for all methods in all test classes
+
+  private final TransactionType txType;     // transaction handling
+  private final boolean commit;             // true if commit transaction, else rollback (default)
+  private boolean rollbackLogged;           // true to log the rollback, even if the test succeeds
+  private long txVoucher;                   // transaction voucher for the current test class
 
 
   /**
@@ -92,10 +158,6 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   public AbstractPdoTest(TransactionType txType, boolean commit) {
     this.txType = txType;
     this.commit = commit;
-    closeIt = openSessionsAndStartModificationTracker();
-    if (txType == TransactionType.CLASS) {
-      beginTransaction();
-    }
   }
 
   /**
@@ -138,69 +200,80 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Opens the sessions and starts the modification tracker exactly once.<br>
+   * Opens the sessions and starts the modification tracker.<br>
    * If the database is in-memory, it will be populated before the tracker is started.
+   * <p>
+   * Invoked once before the first test class by the {@link SuiteExtension}.
    *
+   * @throws Exception if failed
    * @see #createDatabaseTables(Db)
    */
-  public boolean openSessionsAndStartModificationTracker() {
-    synchronized (AbstractPdoTest.class) {
-      if (currentTest != null) {
-        throw new AssertionFailedError("another AbstractPdoTest is currently running: " + currentTest.getClass().getName());
+  public void openSessionsAndStartModificationTracker() throws Exception {
+    session = openSession();
+    context = createDomainContext();
+
+    boolean populate = false;
+    if (session instanceof Db db) {
+      Backend backend = db.getBackend();
+      if (backend.isDatabaseInMemory(session.getUrl())) {
+        createDatabaseTables(db);
+        populate = true;
       }
-      currentTest = this;
-      if (session == null) {
-        session = openSession();
-        context = createDomainContext();
+    }
 
-        boolean populate = false;
-        if (session instanceof Db db) {
-          Backend backend = db.getBackend();
-          if (backend.isDatabaseInMemory(session.getUrl())) {
-            createDatabaseTables(db);
-            populate = true;
-          }
-        }
-
-        // set the default scripting language, if not already set and exactly one provided
-        if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
-          Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
-          if (languages.size() == 1) {
-            ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
-          }
-        }
-
-        ModificationTracker tracker = ModificationTracker.getInstance();
-        tracker.setSession(session.clone(null));
-        tracker.setSleepInterval(500);   // fast polling for tests
-        tracker.start();
-
-        if (populate) {
-          populateDatabase();
-        }
-
-        return true;
+    // set the default scripting language, if not already set and exactly one provided
+    if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
+      Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
+      if (languages.size() == 1) {
+        ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
       }
-      return false;
+    }
+
+    ModificationTracker tracker = ModificationTracker.getInstance();
+    tracker.setSession(session.clone(null));
+    tracker.setSleepInterval(500);   // fast polling for tests
+    tracker.start();
+
+    if (populate) {
+      populateDatabase();
     }
   }
 
   /**
    * Terminates the modification tracker and closes the sessions.
+   * <p>
+   * Invoked once when the test run ends.
+   *
+   * @throws Exception if failed
+   */
+  public void closeSessionsAndTerminateModificationTracker() throws Exception {
+    if (session != null) {
+      ModificationTracker.getInstance().terminate();
+      session.close();
+    }
+  }
+
+  /**
+   * Begins the transaction if type is {@link TransactionType#CLASS}.
+   *
+   * @throws Exception if failed
+   */
+  @BeforeAll
+  public void beforeClass() throws Exception {
+    if (txType == TransactionType.CLASS) {
+      beginTransaction();
+    }
+  }
+
+  /**
+   * Ends the transaction if type is {@link TransactionType#CLASS}.
+   *
+   * @throws Exception if failed
    */
   @AfterAll
-  public static synchronized void closeSessionsAndTerminateModificationTracker() {
-    if (currentTest != null) {
-      if (currentTest.txType == TransactionType.CLASS) {
-        currentTest.endTransaction();
-      }
-      if (currentTest.closeIt && session != null) {
-        ModificationTracker.getInstance().terminate();
-        session.close();
-        session = null;
-        context = null;
-      }
-      currentTest = null;
+  public void afterClass() throws Exception {
+    if (txType == TransactionType.CLASS) {
+      endTransaction();
     }
   }
 
@@ -283,7 +356,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete
-      throw new AssertionFailedError("no backend found -> no tests", ex);
+      throw new TestAbortedException("no backend found -> no tests", ex);
     }
     s.makeCurrent();
     return s;
@@ -408,13 +481,12 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       System.arraycopy(args, 0, aCmd, cmd.length, args.length);
       cmd = aCmd;
     }
-    String msg = "running: " + Arrays.toString(cmd);
-    LOGGER.info(() -> msg);
+    System.out.println("running: " + Arrays.toString(cmd));
     return Runtime.getRuntime().exec(cmd);
   }
 
   /**
-   * Waits for the process to terminate and write stdout and stderr to the junit log.
+   * Waits for the process to terminate and write stdout and stderr to the console.
    *
    * @param process the process
    * @throws IOException if some IO failed
@@ -431,8 +503,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     try (BufferedReader in = new BufferedReader(r)) {
       String line;
       while ((line = in.readLine()) != null) {
-        String msg = line;
-        LOGGER.info(() -> msg);
+        System.out.println(line);
       }
     }
     // collect stderr
@@ -440,8 +511,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     try (BufferedReader in = new BufferedReader(r)) {
       String line;
       while ((line = in.readLine()) != null) {
-        String msg = line;
-        LOGGER.info(() -> msg);
+        System.out.println(line);
       }
     }
   }
