@@ -197,7 +197,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
           TypeElement parentAnnotation = (TypeElement) mi.getAnnotationType().asElement();
           if (++depth > MAX_DEPTH) {
             getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR,
+                  Kind.WARNING,
                   "annotation-loop detected while processing " + parentAnnotation + " -> ignored",
                   annotationType);
             return;
