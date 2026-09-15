@@ -89,9 +89,9 @@
 
     <asm.version>9.10.1</asm.version>
     <atlantafx.version>2.1.0</atlantafx.version>
-    <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>5.1.0</groovy.version>
-    <h2.version>2.4.240</h2.version>
+    <freemarker.version>2.3.35</freemarker.version>
+    <groovy.version>5.1.2</groovy.version>
+    <h2.version>2.5.250</h2.version>
     <helidon.mcp.version>1.2.0</helidon.mcp.version>
     <helidon.version>4.5.0</helidon.version>
     <ikonli.version>12.4.0</ikonli.version>
@@ -100,13 +100,13 @@
     <junit.version>6.1.3</junit.version>
     <kwik.version>0.11</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
-    <logback.version>1.5.34</logback.version>
-    <plexus.archiver.version>4.12.0</plexus.archiver.version>
+    <logback.version>1.6.3</logback.version>
+    <plexus.archiver.version>4.14.0</plexus.archiver.version>
     <plexus.java.version>1.5.2</plexus.java.version>
     <poi.version>5.5.1</poi.version>
     <postgresql.version>42.7.13</postgresql.version>
     <quiche.native.version>0.29.3</quiche.native.version>
-    <slf4j.version>2.0.18</slf4j.version>
+    <slf4j.version>2.0.19</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
@@ -118,27 +118,27 @@
 
     <maven.archetype.plugin.version>3.4.1</maven.archetype.plugin.version>
     <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
-    <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.16.0</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.11.0</maven.dependency.plugin.version>
-    <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
+    <maven.deploy.plugin.version>3.2.0</maven.deploy.plugin.version>
     <maven.enforcer.plugin.version>3.6.3</maven.enforcer.plugin.version>
     <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
     <maven.help.plugin.version>3.5.2</maven.help.plugin.version>
-    <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
+    <maven.install.plugin.version>3.2.0</maven.install.plugin.version>
     <maven.jar.plugin.version>3.5.1</maven.jar.plugin.version>
     <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
     <maven.keytool.plugin.version>2.0.2</maven.keytool.plugin.version>
     <maven.owasp.plugin.version>13.0.0</maven.owasp.plugin.version>
-    <maven.plugin.plugin.version>3.15.2</maven.plugin.plugin.version>
-    <maven.plugin.report.plugin.version>3.15.2</maven.plugin.report.plugin.version>
+    <maven.plugin.plugin.version>3.16.0</maven.plugin.plugin.version>
+    <maven.plugin.report.plugin.version>3.16.0</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.9.0</maven.project.info.reports.plugin.version>
     <maven.resources.plugin.version>3.5.0</maven.resources.plugin.version>
     <maven.site.plugin.version>3.22.0</maven.site.plugin.version>
     <maven.fluido.skin.version>2.1.0</maven.fluido.skin.version>
     <maven.source.plugin.version>3.4.0</maven.source.plugin.version>
     <maven.surefire.plugin.version>3.5.6</maven.surefire.plugin.version>
-    <maven.versions.plugin.version>2.21.0</maven.versions.plugin.version>
+    <maven.versions.plugin.version>2.22.0</maven.versions.plugin.version>
     <maven.central-publishing.plugin.version>0.11.0</maven.central-publishing.plugin.version>
 
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>

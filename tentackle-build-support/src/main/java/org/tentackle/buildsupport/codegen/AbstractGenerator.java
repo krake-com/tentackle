@@ -56,7 +56,7 @@ public abstract class AbstractGenerator {
    * @throws IOException if there's some trouble with the template directory
    */
   public Configuration createFreemarkerConfiguration() throws IOException {
-    Configuration cfg = new Configuration(Configuration.VERSION_2_3_34);
+    Configuration cfg = new Configuration(Configuration.VERSION_2_3_35);
     if (templateDirectory != null) {
       cfg.setDirectoryForTemplateLoading(templateDirectory);
     }
