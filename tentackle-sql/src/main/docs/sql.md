@@ -10,7 +10,8 @@ Its central abstraction is the [`Backend`](../java/org/tentackle/sql/Backend.jav
 *everything* dialect-specific about one kind of database: how to build a `SELECT` with a `LIMIT`/`OFFSET`, what an
 empty string looks like, how to create a sequence, whether `UUID` is supported natively, how to render a
 `CREATE TABLE` column, how to rename an index, which words are reserved, how to recognize a deadlock, and much
-more. Everything that differs between PostgreSQL, Oracle, DB2, SQL Server, MySQL/MariaDB, Informix, and H2 is
+more. Everything that differs between PostgreSQL, CockroachDB, Oracle, DB2, SQL Server, SAP HANA, MySQL/MariaDB,
+Firebird, Informix, and H2 is
 funneled through this one interface, so the layers above it can stay completely database-agnostic.
 
 The module serves two distinct audiences:
@@ -200,41 +201,54 @@ AbstractBackend
     ├── H2
     ├── Informix
     ├── Postgres
+    │   └── CockroachDb
     ├── MySql
     │   └── MariaDb
     └── AbstractSql2003Backend
         ├── Db2
+        ├── Hana
         ├── MsSql
-        └── Oracle8
-            └── Oracle
-        (AbstractSql2008Backend extends AbstractSql2003Backend)
+        ├── Oracle8
+        │   └── Oracle
+        └── AbstractSql2008Backend
+            └── Firebird
 ```
 
-| Backend    | Name         | Matches JDBC URL containing           |
-|------------|--------------|---------------------------------------|
-| `Postgres` | `PostgreSQL` | `:postgresql`                         |
-| `H2`       | `H2`         | `:h2:` (in-memory when `:mem:`)       |
-| `MySql`    | `MySQL`      | `:mysql`                              |
-| `MariaDb`  | `MariaDB`    | `:mariadb`                            |
-| `Oracle`   | `Oracle`     | `:oracle:`                            |
-| `Oracle8`  | `Oracle8`    | `:oracle:` (legacy, selected by name) |
-| `Db2`      | `DB2`        | `:db2`                                |
-| `MsSql`    | `MsSQL`      | `:sqlserver`                          |
-| `Informix` | `Informix`   | `:informix`                           |
+| Backend       | Name          | Matches JDBC URL containing                       |
+|---------------|---------------|---------------------------------------------------|
+| `Postgres`    | `PostgreSQL`  | `:postgresql`                                     |
+| `CockroachDb` | `CockroachDB` | never (PostgreSQL driver, selected by name)       |
+| `H2`          | `H2`          | `:h2:` (in-memory when `:mem:`)                   |
+| `MySql`       | `MySQL`       | `:mysql`                                          |
+| `MariaDb`     | `MariaDB`     | `:mariadb`                                        |
+| `Oracle`      | `Oracle`      | `:oracle:`                                        |
+| `Oracle8`     | `Oracle8`     | `:oracle:` (legacy, selected by name)             |
+| `Db2`         | `DB2`         | `:db2`                                            |
+| `MsSql`       | `MsSQL`       | `:sqlserver`                                      |
+| `Hana`        | `HANA`        | `:sap:`                                           |
+| `Firebird`    | `Firebird`    | `:firebird` (`jdbc:firebirdsql:`, `jdbc:firebird:`) |
+| `Informix`    | `Informix`    | `:informix`                                       |
 
 When several backends could match the same URL (e.g. `Oracle` and the deprecated `Oracle8`), only one matches by
-URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. Backends marked
+URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. `CockroachDB` is reached
+through the PostgreSQL driver and cannot be told apart by its URL at all, so it never matches one. Backends marked
 `isDeprecated()` are excluded from `BackendFactory.getAllBackends()`.
 
-Two products deviate from the others far enough to warrant their own document:
+Several products deviate from the others far enough to warrant their own document:
 
 - [The Oracle Backend](oracle.md) — most notably how filtered indexes are emulated and what that means for the
   query optimizer.
 - [The MySQL and MariaDB Backends](mysql.md) — the type mapping (`LONGTEXT`/`LONGBLOB`, decimal scale, fractional
   seconds), the index key limits, migration by full column declaration, and sequences on MariaDB.
+- [The SAP HANA Backend](hana.md) — `NVARCHAR` strings, the unsigned `TINYINT`, and column alterations that
+  replace the whole declaration.
+- [The Firebird Backend](firebird.md) — the explicit row lock, the sort order per index, and tables that cannot
+  be renamed.
+- [The CockroachDB Backend](cockroachdb.md) — selecting it by name, index names per table, and serializable
+  transactions.
 
-Both refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12, MySQL 8.0,
-MariaDB 10.3.
+The backends refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12,
+MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
 
 **H2 is the backend Tentackle's own tests run on** (see
 [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)), so two of its
@@ -335,6 +349,9 @@ where the dialect deviates (type strings, paging syntax, sequence support, reser
 
 - [The Oracle Backend](oracle.md) — the peculiarities of Oracle: emulated filtered indexes, virtual index columns, empty strings and more.
 - [The MySQL and MariaDB Backends](mysql.md) — the peculiarities of MySQL and MariaDB: type mapping, index key limits, migration by full column declaration, sequences.
+- [The SAP HANA Backend](hana.md) — the peculiarities of SAP HANA: type mapping, migration by full column declaration, vendor error codes.
+- [The Firebird Backend](firebird.md) — the peculiarities of Firebird: row locks, index sort order, migration limits.
+- [The CockroachDB Backend](cockroachdb.md) — the deviations of CockroachDB from PostgreSQL and how to select it.
 - [Table Names](../../../../tentackle-session/src/main/docs/table-names.md) — schema mapping and table prefixes for the backends whose `isSchemaSupported()` returns `false`.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — where attributes and their data types are declared.
 - [Tentackle SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — generates DDL and migration scripts from the model using this module.

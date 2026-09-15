@@ -66,6 +66,9 @@ the [Index](./index.md).
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 - [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.
 - [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) — type mapping, index key limits, migration by full column declaration, sequences.
+- [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md) — `NVARCHAR` strings, unsigned `TINYINT`, migration by full column declaration.
+- [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md) — explicit row locks, sort order per index, tables that cannot be renamed.
+- [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md) — selecting it by name, index names per table, serializable transactions.
 
 ## Remoting
 

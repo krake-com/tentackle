@@ -34,8 +34,9 @@ returns `false` for:
 | **MySQL**, **MariaDB**| `CREATE SCHEMA` is a synonym for `CREATE DATABASE` — a schema is a database of its own, not a namespace inside one. `MariaDb` extends `MySql` and inherits this. |
 | **Oracle**            | A schema *is* a user. Putting `md.` and `td.` into schemas means creating two extra users, with their own grants. See [The Oracle Backend](../../../../tentackle-sql/src/main/docs/oracle.md). |
 | **Informix**          | "there is a `CREATE SCHEMA`, but this is a different beast" (`Informix:190`).     |
+| **Firebird**          | Schemas arrive with Firebird 6 only. See [The Firebird Backend](../../../../tentackle-sql/src/main/docs/firebird.md). |
 
-PostgreSQL, H2, SQL Server and DB2 support schemas, so a model using them needs no mapping there. If your
+PostgreSQL, CockroachDB, H2, SQL Server, DB2 and SAP HANA support schemas, so a model using them needs no mapping there. If your
 application must run on *both* kinds of backend, map the schemas — the flattened names work everywhere.
 
 Calling `sqlCreateSchema()` on a backend that does not support schemas throws a `BackendException`, so this is

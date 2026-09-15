@@ -221,9 +221,10 @@ public class BackendSqlHelpersTest {
   public void testValueToLiteral(Backend backend) {
     assertEquals(backend.valueToLiteral(SqlType.VARCHAR, "abc"), "'abc'", backend.toString());
     assertEquals(backend.valueToLiteral(SqlType.INTEGER, 42), "42", backend.toString());
-    // oracle has no boolean type and renders it as a number
-    assertEquals(backend.valueToLiteral(SqlType.BIT, true),
-                 backend instanceof Oracle8 ? "1" : "'true'", backend.toString());
+    // oracle has no boolean type and renders it as a number, HANA and Firebird get a boolean literal
+    String expected = backend instanceof Oracle8 ? "1" :
+                      backend instanceof Hana || backend instanceof Firebird ? "TRUE" : "'true'";
+    assertEquals(backend.valueToLiteral(SqlType.BIT, true), expected, backend.toString());
   }
 
   @Test(dataProvider = "backends")

@@ -160,6 +160,23 @@ public class BackendExceptionMappingTest {
     assertTrue(new MsSql().isTransientTransactionException(withErrorCode(1222)));
     assertTrue(new MsSql().isTransientTransactionException(withState("HY008")));
 
+    // HANA: lock wait timeout, deadlock and NOWAIT, reported as vendor error codes only
+    assertTrue(new Hana().isTransientTransactionException(withErrorCode(131)));
+    assertTrue(new Hana().isTransientTransactionException(withErrorCode(133)));
+    assertTrue(new Hana().isTransientTransactionException(withErrorCode(146)));
+    assertFalse(new Hana().isTransientTransactionException(withErrorCode(301)), "unique violation is permanent");
+    assertTrue(new Hana().isConstraintException(withErrorCode(301)));
+    assertTrue(new Hana().isCommunicationLinkException(withErrorCode(-10807)));
+
+    // firebird: deadlock, lock conflict, update conflict and lock timeout
+    assertTrue(new Firebird().isTransientTransactionException(withErrorCode(335544336)));
+    assertTrue(new Firebird().isTransientTransactionException(withErrorCode(335544345)));
+    assertTrue(new Firebird().isTransientTransactionException(withErrorCode(335544451)));
+    assertTrue(new Firebird().isTransientTransactionException(withErrorCode(335544510)));
+
+    // cockroachdb: "restart transaction" under serializable isolation
+    assertTrue(new CockroachDb().isTransientTransactionException(withState("40001")));
+
     // and a chained vendor error code counts as well
     assertTrue(new MySql().isTransientTransactionException(chained(withErrorCode(1213))));
   }

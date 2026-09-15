@@ -35,6 +35,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
@@ -97,14 +98,17 @@ public class BackendDdlTest {
    */
   @Test(dataProvider = "backends")
   public void testStatementsAreTerminated(Backend backend) {
-    for (String sql : List.of(backend.sqlCreateIndex(TABLE, "ddltest_name", false, null, "name"),
-                              backend.sqlAddColumn(TABLE, "extra", null, SqlType.INTEGER, 0, 0, true, null),
-                              backend.sqlDropColumn(TABLE, "extra"),
-                              backend.sqlAlterColumnType(TABLE, "name", null, SqlType.VARCHAR, 64, 0, true, null),
-                              backend.sqlAlterColumnDefault(TABLE, "name", SqlType.VARCHAR, "x"),
-                              backend.sqlUpdateToNotNull(TABLE, "name", SqlType.VARCHAR, null, true),
-                              backend.sqlDropIndex(null, TABLE, "ddltest_name"),
-                              backend.sqlDropTable(null, TABLE))) {
+    for (String sql : Arrays.asList(backend.sqlCreateIndex(TABLE, "ddltest_name", false, null, "name"),
+                                    backend.sqlAddColumn(TABLE, "extra", null, SqlType.INTEGER, 0, 0, true, null),
+                                    backend.sqlDropColumn(TABLE, "extra"),
+                                    backend.sqlAlterColumnType(TABLE, "name", null, SqlType.VARCHAR, 64, 0, true, null),
+                                    backend.sqlAlterColumnDefault(TABLE, "name", SqlType.VARCHAR, "x"),
+                                    backend.sqlUpdateToNotNull(TABLE, "name", SqlType.VARCHAR, null, true),
+                                    backend.sqlDropIndex(null, TABLE, "ddltest_name"),
+                                    backend.sqlDropTable(null, TABLE))) {
+      if (sql == null) {
+        continue;   // the backend needs another statement for that, such as HANA for the default
+      }
       assertEquals(sql.charAt(sql.length() - 1), '\n', backend + ": [" + sql + "] must end with a newline");
       assertTrue(sql.trim().endsWith(backend.getStatementSeparator()),
                  backend + ": [" + sql + "] must be terminated by " + backend.getStatementSeparator());
@@ -202,7 +206,13 @@ public class BackendDdlTest {
    */
   @Test(dataProvider = "backends")
   public void testRenames(Backend backend) {
-    assertTrue(backend.sqlRenameTable(TABLE, "renamed").contains("renamed"), backend.toString());
+    if (backend instanceof Firebird) {
+      // must fail loudly rather than generate a migration that cannot be applied
+      expectThrows(BackendException.class, () -> backend.sqlRenameTable(TABLE, "renamed"));
+    }
+    else {
+      assertTrue(backend.sqlRenameTable(TABLE, "renamed").contains("renamed"), backend.toString());
+    }
     assertTrue(backend.sqlRenameColumn(TABLE, "name", "label").contains("label"), backend.toString());
     String renameIndex = backend.sqlRenameIndex(TABLE, "ddltest_name", "ddltest_label");
     if (renameIndex != null) {

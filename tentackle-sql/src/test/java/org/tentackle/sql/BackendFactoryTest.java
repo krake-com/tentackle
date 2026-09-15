@@ -65,6 +65,22 @@ public class BackendFactoryTest {
     assertEquals(factory.getBackendByUrl("jdbc:sqlserver://localhost").getName(), "MsSQL");
     assertEquals(factory.getBackendByUrl("jdbc:db2://localhost/tentackle").getName(), "DB2");
     assertEquals(factory.getBackendByUrl("jdbc:informix-sqli://localhost/tentackle").getName(), "Informix");
+    assertEquals(factory.getBackendByUrl("jdbc:sap://localhost:30015").getName(), "HANA");
+    assertEquals(factory.getBackendByUrl("jdbc:firebirdsql://localhost/tentackle").getName(), "Firebird");
+    assertEquals(factory.getBackendByUrl("jdbc:firebird://localhost/tentackle").getName(), "Firebird");
+  }
+
+  /**
+   * CockroachDB is reached via the postgres driver, so its URL must still select postgres,
+   * and CockroachDB only by name.
+   */
+  @Test
+  public void testCockroachDbIsSelectedByNameOnly() {
+    String url = "jdbc:postgresql://localhost:26257/tentackle";
+    assertEquals(factory.getBackendByUrl(url).getName(), "PostgreSQL");
+    BackendInfo info = BackendInfoFactory.getInstance().create(url + "|CockroachDB", "root", new char[0], null);
+    assertEquals(info.getBackend().getName(), "CockroachDB");
+    assertEquals(info.getUrl(), url);
   }
 
   /**

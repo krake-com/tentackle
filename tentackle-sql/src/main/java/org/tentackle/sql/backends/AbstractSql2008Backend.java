@@ -31,6 +31,10 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
   /** FETCH FIRST string. */
   public static final String SQL_FETCH_FIRST = " FETCH FIRST ? ROWS ONLY";
 
+  // the leading keywords of the clauses above, to cut them off
+  private static final String SQL_OFFSET_KEYWORD = " OFFSET ";
+  private static final String SQL_FETCH_FIRST_KEYWORD = " FETCH FIRST ";
+
 
   /**
    * Parent constructor.
@@ -39,13 +43,17 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The clauses follow the order of the SQL standard: the OFFSET clause precedes the
+   * FETCH FIRST clause and the locking clause comes last.
+   * The trailing parameters are bound in the same order (see {@link #setTrailingSelectParameters}).
+   */
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
-    }
-    if (writeLock) {
-      sqlBuilder.append(SQL_FOR_UPDATE);
     }
     if (offset > 0) {
       sqlBuilder.append(SQL_OFFSET);
@@ -53,7 +61,23 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
     if (limit > 0) {
       sqlBuilder.append(SQL_FETCH_FIRST);
     }
+    if (writeLock) {
+      sqlBuilder.append(SQL_FOR_UPDATE);
+    }
   }
 
+  @Override
+  protected String extractWhereClause(String sql, int whereOffset) {
+    sql = super.extractWhereClause(sql, whereOffset);
+    int ndx = sql.lastIndexOf(SQL_FETCH_FIRST_KEYWORD);
+    if (ndx >= 0) {
+      sql = sql.substring(0, ndx);
+    }
+    ndx = sql.lastIndexOf(SQL_OFFSET_KEYWORD);
+    if (ndx >= 0) {
+      sql = sql.substring(0, ndx);
+    }
+    return sql;
+  }
 
 }

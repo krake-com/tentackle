@@ -38,6 +38,7 @@ topic-grouped listing of every document, see the
 - **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
+- **CockroachDB (backend peculiarities, selection by name)** — [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **Column defaults (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (defaults stored as source text)
 - **Code generation** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md), [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md)
@@ -51,7 +52,7 @@ topic-grouped listing of every document, see the
 
 ## D
 
-- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md)
+- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md), [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md), [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
@@ -80,6 +81,7 @@ topic-grouped listing of every document, see the
 ## F
 
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
+- **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Formatting (localized patterns)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
 - **Freezable value types** — [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **FX / JavaFX** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
@@ -97,7 +99,7 @@ topic-grouped listing of every document, see the
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
 - **I/O streams (compression, encryption, packet framing)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md)
-- **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (filtered indexes on Oracle), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) (index key limits)
+- **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (filtered indexes on Oracle), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) (index key limits), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md) (sort order per index)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
@@ -190,9 +192,10 @@ topic-grouped listing of every document, see the
 
 ## S
 
+- **SAP HANA (backend peculiarities)** — [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md)
 - **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
-- **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
+- **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Schema migration (`tentackle-sql:migrate`, migration hints)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-migrate-goal), [AI Agent Tooling Support](./ai-agents.md#following-the-model-tentackle-sqlmigrate)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)

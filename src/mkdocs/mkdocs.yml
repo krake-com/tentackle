@@ -110,6 +110,9 @@ nav:
       - Tentackle SQL: sql.md
       - The Oracle Backend: oracle.md
       - The MySQL and MariaDB Backends: mysql.md
+      - The SAP HANA Backend: hana.md
+      - The Firebird Backend: firebird.md
+      - The CockroachDB Backend: cockroachdb.md
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md
