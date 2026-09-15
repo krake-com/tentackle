@@ -128,12 +128,21 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <!--
+          RemoteTransactionTest uses dependsOnGroups across classes (remote1 depends on local).
+          Surefire 3.6.0's unified JUnit-Platform TestNG engine has a confirmed upstream
+          regression evaluating such cross-class group dependencies during its classpath scan
+          (https://github.com/apache/maven-surefire/issues/3457), which also removed
+          suiteXmlFiles support entirely - so this module stays pinned to the last working 3.5.x
+          release until that's fixed upstream.
+        -->
+        <version>${maven.surefire.plugin.pinned.version}</version>
         <dependencies>
           <!-- override auto detection: run the TestNG and the Junit5 tests -->
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
             <artifactId>surefire-testng</artifactId>
-            <version>${maven.surefire.plugin.version}</version>
+            <version>${maven.surefire.plugin.pinned.version}</version>
           </dependency>
           <dependency>
             <groupId>org.apache.maven.surefire</groupId>
