@@ -21,7 +21,6 @@ package org.tentackle.maven.plugin;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -32,6 +31,9 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.tentackle.common.StringHelper;
 
@@ -99,7 +101,8 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
   /**
    * The default dependency builder.
    */
-  @Component(hint = "default" )
+  @Inject
+  @Named("default")
   private DependencyGraphBuilder dependencyGraphBuilder;
 
   /**

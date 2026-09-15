@@ -21,13 +21,14 @@ package org.tentackle.maven.plugin.jlink;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
-import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
@@ -341,19 +342,20 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * JPMS support.
    */
-  @Component
+  @Inject
   private LocationManager locationManager;
 
   /**
    * To attach artifacts with classifier.
    */
-  @Component
+  @Inject
   private MavenProjectHelper projectHelper;
 
   /**
    * The archiver to zip the image.
    */
-  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
+  @Inject
+  @Named(ZIP_EXTENSION)
   private ZipArchiver zipArchiver;
 
 

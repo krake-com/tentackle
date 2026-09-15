@@ -24,7 +24,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
@@ -35,6 +34,8 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.apache.maven.toolchain.java.JavaToolchainImpl;
 import org.slf4j.LoggerFactory;
 import org.wurbelizer.misc.Verbosity;
+
+import javax.inject.Inject;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.ToolRunner;
@@ -93,7 +94,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Parameter(defaultValue = "${settings}", readonly = true)
   private org.apache.maven.settings.Settings settings;
 
-  @Component
+  @Inject
   private SettingsDecrypter settingsDecrypter;
 
   /**
@@ -127,7 +128,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Toolchain manager to locate tools.
    */
-  @Component
+  @Inject
   private ToolchainManager toolchainManager;
 
 

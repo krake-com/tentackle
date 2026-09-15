@@ -115,6 +115,7 @@
     <maven.dependency.tree.version>3.3.0</maven.dependency.tree.version>
     <maven.file.management.version>3.2.0</maven.file.management.version>
     <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
+    <javax.inject.version>1</javax.inject.version>
 
     <maven.archetype.plugin.version>3.4.1</maven.archetype.plugin.version>
     <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
@@ -401,6 +402,12 @@
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-settings-builder</artifactId>
         <version>${maven.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>${javax.inject.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
