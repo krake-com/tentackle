@@ -34,7 +34,7 @@ stdio, stdout *is* the protocol channel and Maven writes to it unconditionally.
 
 ### Prerequisites
 
-JDK >= 25 and Maven >= 3.9.0, like the rest of Tentackle. The model must have been generated at least once, so
+JDK >= 25 and Maven >= 3.9.10, like the rest of Tentackle. The model must have been generated at least once, so
 run a build before the first start:
 
 ```bash

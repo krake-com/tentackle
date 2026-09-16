@@ -20,7 +20,7 @@ e.g. `mvn tentackle-wizard:pdo`.
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.0). Because the wizards are JavaFX applications, the interactive goals
+(JDK >= 25, Maven >= 3.9.10). Because the wizards are JavaFX applications, the interactive goals
 (`pdo`, `operation`, `browse`, `script`) need a graphical desktop; the `browse` and `script` goals
 additionally need a reachable Tentackle backend (database or remote server). The `init` goal and the
 batch variants of `pdo`, `operation`, `browse`, and `script` run headless (the batch variant of

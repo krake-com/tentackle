@@ -17,7 +17,7 @@ e.g. `mvn tentackle-i18n:push`.
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.0). Every goal connects to a live database, so a reachable backend and the
+(JDK >= 25, Maven >= 3.9.10). Every goal connects to a live database, so a reachable backend and the
 matching JDBC driver on the plugin's classpath are required (add the driver to the plugin's
 `<dependencies>`).
 

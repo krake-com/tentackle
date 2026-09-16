@@ -21,7 +21,7 @@ e.g. `mvn tentackle-sql:create`.
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.0). The `migrate`, `validate` and `run` goals connect to a live database
+(JDK >= 25, Maven >= 3.9.10). The `migrate`, `validate` and `run` goals connect to a live database
 and therefore need a reachable backend and the matching JDBC driver on the plugin's classpath (add it
 to the plugin's `<dependencies>`).
 
