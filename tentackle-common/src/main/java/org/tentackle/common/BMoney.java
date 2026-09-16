@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.Serial;
@@ -83,7 +82,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Creates a BMoney from a BMoney (useful to rescale)
    *
    * @param val the BMoney value
-   * @param scale the digits after comma the value should be rounded to
+   * @param scale digits after comma the value should be rounded to
    */
   public BMoney (BMoney val, int scale) {
     super(val.setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);

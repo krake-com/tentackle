@@ -74,16 +74,16 @@ The trailing semicolon is optional. Leading and trailing whitespace around key a
 
 ### Entity configuration keys
 
-| Key           | Value                                                                 | Description                                                                  |
-|---------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------|
-| `name`        | string (often `$classname`)                                           | Entity name (class simple name). Must be unique in the model.                |
-| `id`          | integer (often `$classid`)                                            | Unique numeric class ID (non-abstract classes only).                         |
+| Key           | Value                                                                 | Description                                                                                                                                                  |
+|---------------|-----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`        | string (often `$classname`)                                           | Entity name (class simple name). Must be unique in the model.                                                                                                |
+| `id`          | integer (often `$classid`)                                            | Unique numeric class ID (non-abstract classes only).                                                                                                         |
 | `table`       | string (often `$tablename`)                                           | Database table name (if applicable). May include schema: `schema.tablename` — see [Table Names](../../../../tentackle-session/src/main/docs/table-names.md). |
-| `alias`       | string                                                                | Short table alias used in SQL joins. Auto-generated if omitted.              |
-| `integrity`   | see [Integrity Modes](#integrity-modes)                               | Referential integrity strategy.                                              |
-| `comment`     | string                                                                | optional entity description (overriding any previous comment)                |
-| `extends`     | entity name                                                           | Inheritance: this entity extends the named entity.                           |
-| `inheritance` | see [Inheritance Mapping Strategies](#inheritance-mapping-strategies) | Inheritance mapping strategy.                                                |
+| `alias`       | string                                                                | Short table alias used in SQL joins. Auto-generated if omitted.                                                                                              |
+| `integrity`   | see [Integrity Modes](#integrity-modes)                               | Referential integrity strategy.                                                                                                                              |
+| `comment`     | string                                                                | optional entity description (overriding any previous comment)                                                                                                |
+| `extends`     | entity name                                                           | Inheritance: this entity extends the named entity.                                                                                                           |
+| `inheritance` | see [Inheritance Mapping Strategies](#inheritance-mapping-strategies) | Inheritance mapping strategy.                                                                                                                                |
 
 ### Integrity Modes
 
@@ -145,28 +145,28 @@ prefixed with `#`.
 
 ### Entity-level option flags
 
-| Option        | Description                                                                  |
-|---------------|------------------------------------------------------------------------------|
-| `root`        | This is a root entity.                                                       |
-| `rootid`      | Adds the `rootId` attribute (filled with the root entity's id).              |
-| `rootclassid` | Adds the `rootClassId` attribute (for multi-homed components).               |
-| `remote`      | Supports remoting via TRIP.                                                  |
-| `tracked`     | Tracks whether the PDO was modified or not.                                  |
-| `attracked`   | Tracks the modification state per attribute.                                 |
-| `fulltracked` | Full tracking per attribute including access to the old persisted value.     |
-| `untracked`   | No tracking (default, also used to override the model default).              |
-| `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`)    |
+| Option        | Description                                                                                                                          |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `root`        | This is a root entity.                                                                                                               |
+| `rootid`      | Adds the `rootId` attribute (filled with the root entity's id).                                                                      |
+| `rootclassid` | Adds the `rootClassId` attribute (for multi-homed components).                                                                       |
+| `remote`      | Supports remoting via TRIP.                                                                                                          |
+| `tracked`     | Tracks whether the PDO was modified or not.                                                                                          |
+| `attracked`   | Tracks the modification state per attribute.                                                                                         |
+| `fulltracked` | Full tracking per attribute including access to the old persisted value.                                                             |
+| `untracked`   | No tracking (default, also used to override the model default).                                                                      |
+| `tokenlock`   | Adds the tokenlock attributes (`editedBy`, `editedSince`, `editedExpiry`)                                                            |
 | `tableserial` | Adds the `tableSerial` attribute (table-wide serial bumped on every modification; used for change detection and cache invalidation). |
-| `normtext`    | Adds the `normText` attribute for full-text search.                          |
-| `nopkey`      | No primary key `id`.                                                         |
-| `nodefaults`  | Ignore global model defaults entirely.                                       |
-| `cached`      | Entity provides a cache (root entities only).                                |
-| `provided`    | DDL is maintained externally; no SQL generation.                             |
-| `bind`        | Annotate methods with `@Bindable` to enable binding.                         |
-| `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.      |
-| `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable. |
-| `..strip`     | All stripping options (nostrip, lstrip, rstrip, strip = default)             |
-| `#Name`       | Custom stereotype `Name`.                                                    |
+| `normtext`    | Adds the `normText` attribute for full-text search.                                                                                  |
+| `nopkey`      | No primary key `id`.                                                                                                                 |
+| `nodefaults`  | Ignore global model defaults entirely.                                                                                               |
+| `cached`      | Entity provides a cache (root entities only).                                                                                        |
+| `provided`    | DDL is maintained externally; no SQL generation.                                                                                     |
+| `bind`        | Annotate methods with `@Bindable` to enable binding.                                                                                 |
+| `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.                                                              |
+| `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable.                                                         |
+| `..strip`     | All stripping options (nostrip, lstrip, rstrip, strip = default)                                                                     |
+| `#Name`       | Custom stereotype `Name`.                                                                                                            |
 
 Case doesn't matter for the options.
 Most of these options are inherited from the project-level model defaults and need
@@ -239,18 +239,13 @@ All four positional fields are required (comment and options are optional).
 
 ### Java types
 
-| Category   | Types                                                                                                                                                                                 |
-|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                  |
-| Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                         |
-| Numeric    | `BigDecimal`, `BMoney` (big money), `DMoney` (double money)                                                                                                                           |
+| Category   | Types                                                                                                                                                                                           |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                            |
+| Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                                   |
+| Numeric    | `BigDecimal`, `BMoney`, `DMoney`                                                                                                                                                                |
 | Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `SQLXML` |
-| Custom     | Any other class name (application-specific type)                                                                                                                                      |
-
-`SQLXML` maps to a `String`-typed attribute bridged through the JDBC `java.sql.SQLXML` interface to a native XML
-column where the backend supports it (`Backend.isSqlxmlSupported()`), falling back to CLOB/VARCHAR otherwise. The
-Java field stays a plain `String` — the `SQLXML` object itself is never exposed, since it is only valid for the
-transaction that created it.
+| Custom     | Any other class name (application-specific type)                                                                                                                                                |
 
 ### Size and scale
 
@@ -305,17 +300,17 @@ initializer, and the two need not agree.
 
 #### Semantic options
 
-| Option      | Description                                                                                         |
-|-------------|-----------------------------------------------------------------------------------------------------|
+| Option      | Description                                                                                                           |
+|-------------|-----------------------------------------------------------------------------------------------------------------------|
 | `key`       | Marks this attribute as part of the [unique domain key](../../../../tentackle-pdo/src/main/docs/domain-key.md) (UDK). |
-| `contextid` | This attribute holds the context entity's ID.                                                       |
-| `utc`       | Timestamp only: set the UTC serialization flag.                                                     |
-| `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method). |
-| `normtext`  | Include this attribute's value in the entity's normtext column.                                     |
-| `shallow`   | Exclude this attribute from snapshot and copy operations.                                           |
-| `hidden`    | Attribute is not declared in the interface (implementation only).                                   |
-| `mute`      | Not part of the PDO — mapped to the database table only.                                            |
-| `mapnull`   | Map `null` to a constant (typically empty string `""` or 0) in the database.                        |
+| `contextid` | This attribute holds the context entity's ID.                                                                         |
+| `utc`       | Timestamp only: set the UTC serialization flag.                                                                       |
+| `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method).                   |
+| `normtext`  | Include this attribute's value in the entity's normtext column.                                                       |
+| `shallow`   | Exclude this attribute from snapshot and copy operations.                                                             |
+| `hidden`    | Attribute is not declared in the interface (implementation only).                                                     |
+| `mute`      | Not part of the PDO — mapped to the database table only.                                                              |
+| `mapnull`   | Map `null` to a constant (typically empty string `""` or 0) in the database.                                          |
 
 ##### Timezone handling (`utc` and `tz`)
 
@@ -369,15 +364,15 @@ rather than a plain setter.
 
 #### Access and generation options
 
-| Option           | Description                                                                             |
-|------------------|-----------------------------------------------------------------------------------------|
-| `readonly`       | Generate getter only; no setter.                                                        |
-| `writeonly`      | Generate setter only; no getter.                                                        |
-| `nomethod`       | Generate neither getter nor setter.                                                     |
+| Option           | Description                                                                                                                                             |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `readonly`       | Generate getter only; no setter.                                                                                                                        |
+| `writeonly`      | Generate setter only; no getter.                                                                                                                        |
+| `nomethod`       | Generate neither getter nor setter.                                                                                                                     |
 | `nodeclare`      | Do not emit the backing-field declaration. The column is still mapped (read/written); the value is held elsewhere (e.g. a derived or superclass field). |
-| `noconstant`     | Do not generate the name constants (the `AN_`/`CN_` attribute- and column-name constants and the size constant). |
-| `super`          | Attribute is inherited from a super entity (if not in model of superclass)              |
-| `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`. |
+| `noconstant`     | Do not generate the name constants (the `AN_`/`CN_` attribute- and column-name constants and the size constant).                                        |
+| `super`          | Attribute is inherited from a super entity (if not in model of superclass)                                                                              |
+| `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`.                                                                 |
 
 ##### `super`
 
@@ -534,12 +529,12 @@ Oracle) instead of checking it immediately after every statement. They are only 
 `unique` indexes (a plain index has nothing to defer) and are mutually exclusive with a filter
 condition or a function-based column (deferrable constraints must be a plain column list).
 
-| Keyword      | DDL                                | Meaning                                                              |
-|--------------|-------------------------------------|------------------------------------------------------------------------|
-| *(none)*     | `CREATE UNIQUE INDEX`               | Not deferrable (default, unchanged behavior).                          |
-| `immediate`  | `CREATE UNIQUE INDEX`               | Explicitly not deferrable — overrides a project-wide `deferred`/`deferrable` model default. |
+| Keyword      | DDL                                                                              | Meaning                                                                                                                                      |
+|--------------|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| *(none)*     | `CREATE UNIQUE INDEX`                                                            | Not deferrable (default, unchanged behavior).                                                                                                |
+| `immediate`  | `CREATE UNIQUE INDEX`                                                            | Explicitly not deferrable — overrides a project-wide `deferred`/`deferrable` model default.                                                  |
 | `deferrable` | `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...) DEFERRABLE INITIALLY IMMEDIATE` | Deferrable, but checked immediately unless a transaction opts in via `@Transaction(deferred=true)` / `Session.setConstraintsDeferred(true)`. |
-| `deferred`   | `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...) DEFERRABLE INITIALLY DEFERRED`  | Deferrable and checked at the end of every transaction by default.     |
+| `deferred`   | `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...) DEFERRABLE INITIALLY DEFERRED`  | Deferrable and checked at the end of every transaction by default.                                                                           |
 
 On a backend that doesn't support deferred constraint checking (e.g. H2), a `deferred`/
 `deferrable` index or foreign key silently falls back to plain, non-deferrable DDL — a build-time

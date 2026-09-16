@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.Serial;
@@ -41,7 +40,7 @@ public class DMoney extends BMoney {
    * Creates a DMoney value.
    *
    * @param val double-representation of the number
-   * @param scale the digits after comma the value should be rounded to
+   * @param scale digits after comma the value should be rounded to
    */
   public DMoney (double val, int scale)   {
     super(val, scale);
@@ -50,8 +49,8 @@ public class DMoney extends BMoney {
   /**
    * Creates a DMoney value.
    *
-   * @param  val     the string
-   * @param  scale   the digits after comma the value should be rounded to
+   * @param  val     source string
+   * @param  scale   digits after comma the value should be rounded to
    */
   public DMoney (String val, int scale)  {
     super(val, scale);
@@ -60,7 +59,7 @@ public class DMoney extends BMoney {
   /**
    * Creates a zero DMoney value.
    *
-   * @param  scale the digits after comma
+   * @param  scale digits after comma
    */
   public DMoney (int scale)  {
     super(scale);
@@ -82,7 +81,7 @@ public class DMoney extends BMoney {
    * Creates a DMoney from a BMoney (useful to rescale)
    *
    * @param val the BMoney or DMoney value
-   * @param scale the digits after comma the value should be rounded to
+   * @param scale digits after comma the value should be rounded to
    */
   public DMoney (BMoney val, int scale) {
     super(val, scale);
