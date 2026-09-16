@@ -27,6 +27,7 @@ import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
@@ -111,14 +112,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   private boolean configurationLogged;          // true if configuration logged (once)
 
-  private record VersionInfo(int majorVersion, int minorVersion) {
-    @Override
-    public String toString() {
-      return majorVersion + "." + minorVersion;
-    }
-  }
-
-  private final Map<String,VersionInfo> versionInfoMap;   // version info per URL
+  private final Map<String, BackendVersionInfo> versionInfoMap;   // version info per URL
 
 
   /**
@@ -632,7 +626,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
     Connection con;
     ManagedConnection mc;
-    VersionInfo versionInfo;
+    BackendVersionInfo versionInfo;
 
     try {
       con = backendInfo.connect();
@@ -645,7 +639,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
         try {
           DatabaseMetaData metaData = con.getMetaData();    // maybe a lengthy operation -> cached per URL
-          return new VersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
+          return new BackendVersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
         }
         catch (SQLException sx) {
           throw new PersistenceException(this + ": connection metadata could not be retrieved", sx);
@@ -653,8 +647,8 @@ public class DefaultConnectionManager implements ConnectionManager {
       });
 
       Backend backend = backendInfo.getBackend();
-      backend.validateVersion(versionInfo.majorVersion, versionInfo.minorVersion);
-      mc = new ManagedConnection(this, backend, con);
+      backend.validateVersion(versionInfo.majorVersion(), versionInfo.minorVersion());
+      mc = new ManagedConnection(this, backend, versionInfo, con);
       if (backendInfo.getBackendTimeout() > 0) {
         mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
         mc.setConnectionKeepAliveEnabled(backendInfo.isBackendKeepAliveEnabled());

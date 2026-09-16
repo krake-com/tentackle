@@ -60,6 +60,7 @@ public class DefaultConnectionManagerTest {
       try {
         db.attach();
         assertConnectionWorks(db);
+        assertTrue(db.connection().getBackendVersionInfo().majorVersion() > 0);
         db.detach();
 
         // a second session must be able to attach cleanly afterward

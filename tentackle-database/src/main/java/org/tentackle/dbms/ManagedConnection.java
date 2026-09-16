@@ -29,6 +29,7 @@ import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendVersionInfo;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
@@ -324,6 +325,7 @@ public class ManagedConnection {
   private final Cleanable cleanable;                      // to clean up the connection
   private final ConnectionManager manager;                // the manager that created this connection
   private final Backend backend;                          // the backend
+  private final BackendVersionInfo backendVersionInfo;    // the backend's database version
   private final String backendId;                         // a unique ID to identify the connection at the backend
   private final long instanceNumber;                      // unique instance number (for logging only)
   private final long establishedSince;                    // connection established establishedSince... (epochal [ms])
@@ -355,11 +357,13 @@ public class ManagedConnection {
    *
    * @param manager the connection manager
    * @param backend the backend
+   * @param backendVersionInfo the backend's database version
    * @param connection the low-level JDBC connection
    */
-  public ManagedConnection(ConnectionManager manager, Backend backend, Connection connection) {
+  public ManagedConnection(ConnectionManager manager, Backend backend, BackendVersionInfo backendVersionInfo, Connection connection) {
     this.manager = Objects.requireNonNull(manager, "manager");
     this.backend = Objects.requireNonNull(backend, "backend");
+    this.backendVersionInfo = Objects.requireNonNull(backendVersionInfo, "backendVersionInfo");
 
     backendId = backend.getBackendId(Objects.requireNonNull(connection, "connection"));
     instanceNumber = INSTANCE_COUNTER.incrementAndGet();
@@ -399,6 +403,15 @@ public class ManagedConnection {
    */
   public Backend getBackend() {
     return backend;
+  }
+
+  /**
+   * Gets the version of the backend's database this connection is bound to.
+   *
+   * @return the backend version info
+   */
+  public BackendVersionInfo getBackendVersionInfo() {
+    return backendVersionInfo;
   }
 
   /**
