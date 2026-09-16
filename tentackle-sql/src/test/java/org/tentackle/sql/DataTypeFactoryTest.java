@@ -24,6 +24,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.I18NText;
 import org.tentackle.sql.datatypes.ConvertibleType;
 import org.tentackle.sql.datatypes.LargeStringType;
+import org.tentackle.sql.datatypes.SQLXMLType;
 import org.tentackle.sql.datatypes.StringType;
 import org.testng.annotations.Test;
 
@@ -112,6 +113,20 @@ public class DataTypeFactoryTest {
     assertEquals(plain.getSqlType(null, 0), SqlType.VARCHAR);
     assertEquals(large.getSqlType(null, 0), SqlType.CLOB);
     assertEquals(large.getDataTypeConstant(), "DT_STRING_LARGE");
+  }
+
+  /**
+   * Same as {@link #testVariant()}, for the SQLXML-bridged variant of {@code String}.
+   */
+  @Test
+  public void testSqlxmlVariant() {
+    DataType<?> plain = factory.get("String");
+    DataType<?> sqlxml = factory.get("String", DataTypeFactory.SQLXML_VARIANT);
+    assertTrue(plain instanceof StringType);
+    assertTrue(sqlxml instanceof SQLXMLType);
+    assertEquals(sqlxml.getVariant(), DataTypeFactory.SQLXML_VARIANT);
+    assertEquals(sqlxml.getSqlType(null, 0), SqlType.SQLXML);
+    assertEquals(sqlxml.getDataTypeConstant(), "DT_STRING_SQLXML");
   }
 
   @Test

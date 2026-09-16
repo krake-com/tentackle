@@ -19,6 +19,7 @@ version 4 and passes as well.
 | `VARCHAR`    | `NVARCHAR(5000)` | an attribute without a size                                                           |
 | `CHAR`       | `NCHAR(1)`       | for the same reason                                                                   |
 | `CLOB`       | `NCLOB`          |                                                                                       |
+| `SQLXML`     | `NCLOB`          | no native XML type; `isSqlxmlSupported()` is `false`                                 |
 | `BLOB`       | `BLOB`           |                                                                                       |
 | `BIT`        | `BOOLEAN`        | defaults are written as `TRUE`/`FALSE`, not as strings                                |
 | `TINYINT`    | `SMALLINT`       | HANA's `TINYINT` is **unsigned** (0–255) and cannot hold a negative Java `byte`       |

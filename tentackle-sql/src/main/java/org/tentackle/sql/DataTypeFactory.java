@@ -38,6 +38,13 @@ public interface DataTypeFactory {
   String LARGE_VARIANT = "Large";
 
   /**
+   * SQLXML variant of a type.<br>
+   * Distinguishes a {@code String} bridged through the JDBC {@link java.sql.SQLXML} interface to a
+   * native XML column from a plain VARCHAR or CLOB-backed one.
+   */
+  String SQLXML_VARIANT = "Sqlxml";
+
+  /**
    * Type name for the wrapper type implementing <code>org.tentackle.misc.Convertible</code>.
    */
   String CONVERTIBLE_TYPE = "implementing Convertible";

@@ -307,6 +307,7 @@ public class MySql extends AbstractSql92Backend {
       // BLOB and TEXT are limited to 64k
       case BLOB -> TYPE_LONGBLOB;
       case CLOB -> TYPE_LONGTEXT;
+      case SQLXML -> TYPE_LONGTEXT;   // no native XML type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

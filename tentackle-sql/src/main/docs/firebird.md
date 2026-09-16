@@ -20,6 +20,7 @@ up to 63 characters and decimals with a precision of up to 38 digits.
 | `VARCHAR(n)`       | `VARCHAR(n)`                 | `n` is capped at 8191: 32 765 bytes with up to 4 bytes per UTF-8 character |
 | `VARCHAR`          | `VARCHAR(8191)`              | an attribute without a size                                               |
 | `CLOB`             | `BLOB SUB_TYPE TEXT`         |                                                                           |
+| `SQLXML`           | `BLOB SUB_TYPE TEXT`         | no native XML type; `isSqlxmlSupported()` is `false`                     |
 | `BLOB`             | `BLOB SUB_TYPE BINARY`       |                                                                           |
 | `BIT`              | `BOOLEAN`                    | defaults are written as `TRUE`/`FALSE`, not as strings                    |
 | `TINYINT`          | `SMALLINT`                   | there is no `TINYINT`                                                     |

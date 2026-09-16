@@ -145,6 +145,7 @@ public class MsSql extends AbstractSql2003Backend {
       case DATE, TIME, TIMESTAMP -> TYPE_DATETIME;
       case BLOB -> TYPE_VARBINARY_MAX;
       case CLOB -> TYPE_CLOB;
+      case SQLXML -> TYPE_XML;
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -181,6 +182,17 @@ public class MsSql extends AbstractSql2003Backend {
 
   @Override
   protected boolean isDropIfExistsSupported() {
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Needs at least {@code sqljdbc4.jar} on the classpath.
+   * Does not work with {@code sqljdbc3.jar}!
+   */
+  @Override
+  public boolean isSqlxmlSupported() {
     return true;
   }
 }

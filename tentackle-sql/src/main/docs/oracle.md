@@ -196,6 +196,7 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **An extra commit is required** (`isExtraCommitRequired()`), and `SELECT` without a table needs `FROM DUAL`.
 - **Paging** uses `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` in `Oracle`, but the nested
   `ROWNUM` construct in `Oracle8`.
+- **SQLXML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
 
 ---
 

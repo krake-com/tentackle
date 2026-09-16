@@ -178,6 +178,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isSqlxmlSupported() {
+    return true;   // pgjdbc registers a native "xml" type bound to Types.SQLXML
+  }
+
+  @Override
   public boolean isUUIDSupported() {
     return true;
   }
@@ -297,6 +302,7 @@ public class Postgres extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BYTEA;
       case CLOB -> TYPE_TEXT;
+      case SQLXML -> TYPE_XML;
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };

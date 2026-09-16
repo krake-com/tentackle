@@ -1439,6 +1439,9 @@ public class DbModelWurblet extends ModelWurblet {
       if ("String".equals(dataType.getJavaType()) && DataTypeFactory.LARGE_VARIANT.equals(dataType.getVariant())) {
         buf.append("LargeString");
       }
+      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
+        buf.append("Sqlxml");
+      }
       else {
         buf.append(dataType.getJavaType());
       }
@@ -1476,7 +1479,12 @@ public class DbModelWurblet extends ModelWurblet {
           }
           break;
       }
-      buf.append(dataType.getJavaType());
+      if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
+        buf.append("Sqlxml");    // getSqlxml, not getSqlxmlString
+      }
+      else {
+        buf.append(dataType.getJavaType());
+      }
     }
     return buf.toString();
   }

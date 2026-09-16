@@ -108,6 +108,8 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_VARBINARY_MAX = "VARBINARY(MAX)";
   protected static final String TYPE_VARCHAR = "VARCHAR";
   protected static final String TYPE_UUID = "UUID";
+  protected static final String TYPE_XML = "XML";
+  protected static final String TYPE_XMLTYPE = "XMLTYPE";
 
 
   private static final String STATEMENT_SEPARATOR = ";";
@@ -315,7 +317,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public int getMaxSize(SqlType sqlType) {
     return switch (sqlType) {
-      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB -> -1;    // sizeless type
+      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, SQLXML -> -1;    // sizeless type
       default -> 0;   // default is unlimited
     };
   }
@@ -995,6 +997,10 @@ public abstract class AbstractBackend implements Backend {
         sqlType = SqlType.CLOB;
         break;
 
+      case Types.SQLXML:
+        sqlType = SqlType.SQLXML;
+        break;
+
       default:
         return new SqlType[0];
     }
@@ -1324,6 +1330,13 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public boolean isClobSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isSqlxmlSupported() {
+    // unlike isClobSupported(), this defaults to false: JDBC SQLXML driver support is far less
+    // consistent across backends, and only a backend that has actually verified it should opt in.
+    return false;
   }
 
   @Override

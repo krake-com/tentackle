@@ -167,6 +167,7 @@ public class Informix extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_DATETIME_YEAR_TO_SECOND;
       case BLOB -> TYPE_BYTE;
       case CLOB -> TYPE_CLOB;
+      case SQLXML -> TYPE_CLOB;   // no native XML type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

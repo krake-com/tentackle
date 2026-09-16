@@ -252,6 +252,7 @@ public class Hana extends AbstractSql2003Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_NCLOB;
+      case SQLXML -> TYPE_NCLOB;   // no native XML type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

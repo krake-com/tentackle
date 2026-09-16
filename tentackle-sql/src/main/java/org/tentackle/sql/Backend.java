@@ -1280,6 +1280,15 @@ public interface Backend {
   boolean isClobSupported();
 
   /**
+   * Returns whether the backend supports the JDBC {@link java.sql.SQLXML} binding natively, i.e. a native
+   * XML column type plus a driver implementing {@code createSQLXML}/{@code setSQLXML}/{@code getSQLXML}.<br>
+   * If not, XML content is emulated as CLOB/VARCHAR.
+   *
+   * @return true if supported, false if emulated
+   */
+  boolean isSqlxmlSupported();
+
+  /**
    * Returns whether the backend supports the {@link java.util.UUID} natively via JDBC setObject/getObject.
    *
    * @return true if supported, false if mapped to VARCHAR(36)

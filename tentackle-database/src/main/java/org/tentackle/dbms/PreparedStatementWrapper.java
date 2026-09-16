@@ -39,6 +39,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -510,6 +511,10 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         setLargeString(p, object == null ? null : object.toString());
         break;
 
+      case SQLXML:
+        setSqlxml(p, object == null ? null : object.toString());
+        break;
+
       case DECIMAL:
         setBigDecimal(p, (BigDecimal) object);
         break;
@@ -654,6 +659,38 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public void setLargeString(int p, String s) {
     setLargeString(p, s, false);
+  }
+
+  @Override
+  public void setSqlxml(int p, String s, boolean mapNull) {
+    if (con.getBackend().isSqlxmlSupported()) {
+      try {
+        int ep = effectivePosition(p);
+        if (s == null && mapNull) {
+          s = con.getBackend().getEmptyString();
+        }
+        if (s != null) {
+          SQLXML sqlxml = con.getConnection().createSQLXML();
+          sqlxml.setString(s);
+          getStatement().setSQLXML(p, sqlxml);
+        }
+        else {
+          getStatement().setNull(ep, Types.SQLXML);
+        }
+        rememberParameter(ep, s);
+      }
+      catch (SQLException e)  {
+        throw new PersistenceException(getSession(), this.toString(), e);
+      }
+    }
+    else {
+      setString(p, s, mapNull);
+    }
+  }
+
+  @Override
+  public void setSqlxml(int p, String s) {
+    setSqlxml(p, s, false);
   }
 
   @Override

@@ -43,6 +43,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -1113,7 +1114,14 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       if (resources.stmt.getConnection().getBackend().isClobSupported()) {
         Clob clob = resources.rs.getClob(name);
-        String str = clob == null ? null : clob.getSubString(1, (int) clob.length());
+        String str;
+        if (clob != null) {
+          str = clob.getSubString(1, (int) clob.length());
+          clob.free();
+        }
+        else {
+          str = null;
+        }
         if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
           return null;
         }
@@ -1140,6 +1148,52 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getLargeString (String name) {
     return getLargeString(name, false);
+  }
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.<br>
+   * The backend usually stores such strings in a native XML column, or emulates it as CLOB/VARCHAR.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (String name, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(name);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(name, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml (String name) {
+    return getSqlxml(name, false);
   }
 
 
@@ -2088,6 +2142,51 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (int pos, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(pos + columnOffset);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(pos, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml (int pos) {
+    return getSqlxml(pos, false);
+  }
+
+
+  /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * a <code>boolean</code> in the Java programming language.
@@ -2978,6 +3077,49 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getLargeString () {
     return getLargeString(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getSqlxml (boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isSqlxmlSupported()) {
+        SQLXML sqlxml = resources.rs.getSQLXML(nextConfiguredIndex() + columnOffset);
+        String str = null;
+        if (sqlxml != null) {
+          str = sqlxml.getString();
+          sqlxml.free();
+        }
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string bridged through the JDBC {@code SQLXML} interface.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getSqlxml(java.lang.String, boolean)
+   */
+  public String getSqlxml () {
+    return getSqlxml(nextConfiguredIndex(), false);
   }
 
 

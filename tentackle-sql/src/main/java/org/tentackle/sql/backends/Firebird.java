@@ -244,6 +244,7 @@ public class Firebird extends AbstractSql2008Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB_BINARY;
       case CLOB -> TYPE_BLOB_TEXT;
+      case SQLXML -> TYPE_BLOB_TEXT;   // no native XML type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

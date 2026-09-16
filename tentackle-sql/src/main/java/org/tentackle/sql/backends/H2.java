@@ -254,9 +254,15 @@ public class H2 extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
+      case SQLXML -> TYPE_CLOB;   // H2's SQLXML implementation is backed by a CLOB internally
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };
+  }
+
+  @Override
+  public boolean isSqlxmlSupported() {
+    return true;
   }
 
 

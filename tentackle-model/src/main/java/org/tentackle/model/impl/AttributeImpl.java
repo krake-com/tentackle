@@ -222,8 +222,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
     try {
       DataType<?> dataType = DataTypeFactory.getInstance().get(line.getJavaType());
       if (dataType == null) {
+        if ("SQLXML".equals(line.getJavaType())) {
+          // SQLXML is not a DataType's javaType of its own: it selects the SQLXML variant of String,
+          // bridged through the JDBC SQLXML interface to a native XML column where supported.
+          setDataType(DataTypeFactory.getInstance().get("String", DataTypeFactory.SQLXML_VARIANT));
+        }
         // maybe the special Convertible type (see org.tentackle.misc.Convertible)
-        if (line.getInnerType() != null) {
+        else if (line.getInnerType() != null) {
           setDataType(DataTypeFactory.getInstance().getConvertibleType());
           setInnerTypeName(line.getInnerType());
           setApplicationTypeName(line.getJavaType());

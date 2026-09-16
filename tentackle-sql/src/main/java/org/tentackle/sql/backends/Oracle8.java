@@ -249,6 +249,16 @@ public class Oracle8 extends AbstractSql2003Backend {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Needs {@code xdb.jar} and {@code xmlparserv2.jar} on the classpath!
+   */
+  @Override
+  public boolean isSqlxmlSupported() {
+    return true;
+  }
+
   @Override
   public boolean isTemporaryName(String name) {
     // oracle does not allow identifiers to start with an underscore -> we use "tmp_" instead.
@@ -409,6 +419,7 @@ public class Oracle8 extends AbstractSql2003Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
+      case SQLXML -> TYPE_XMLTYPE;
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

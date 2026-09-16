@@ -156,6 +156,7 @@ public class DataTypeRoundTripTest {
       { TypeCase.of("BigDecimal", new java.math.BigDecimal("12345.6789"), "DECIMAL(20,4)") },
       { TypeCase.of("String", "hello world", "VARCHAR(64)") },
       { new TypeCase("String", DataTypeFactory.LARGE_VARIANT, "a somewhat larger text", "CLOB") },
+      { new TypeCase("String", DataTypeFactory.SQLXML_VARIANT, "<root>hello</root>", "CLOB") },
       { TypeCase.of("UUID", UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), "UUID") },
       { TypeCase.of("BMoney", new BMoney(12.34, 2), "DOUBLE PRECISION", "SMALLINT") },
       { TypeCase.of("DMoney", new DMoney("12.3456", 4), "DECIMAL(20,0)", "SMALLINT") },

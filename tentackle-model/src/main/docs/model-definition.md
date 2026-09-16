@@ -244,8 +244,13 @@ All four positional fields are required (comment and options are optional).
 | Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                  |
 | Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                         |
 | Numeric    | `BigDecimal`, `BMoney` (big money), `DMoney` (double money)                                                                                                                           |
-| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary` |
+| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `SQLXML` |
 | Custom     | Any other class name (application-specific type)                                                                                                                                      |
+
+`SQLXML` maps to a `String`-typed attribute bridged through the JDBC `java.sql.SQLXML` interface to a native XML
+column where the backend supports it (`Backend.isSqlxmlSupported()`), falling back to CLOB/VARCHAR otherwise. The
+Java field stays a plain `String` — the `SQLXML` object itself is never exposed, since it is only valid for the
+transaction that created it.
 
 ### Size and scale
 

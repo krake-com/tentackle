@@ -21,6 +21,7 @@ package org.tentackle.sql.backends;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -60,6 +61,19 @@ public class CockroachDb extends Postgres {
   @Override
   public boolean isMatchingUrl(String url) {
     return false;   // same URL as postgres -> select by name
+  }
+
+  @Override
+  public boolean isSqlxmlSupported() {
+    return false;   // unlike Postgres, CockroachDB has no native "xml" type
+  }
+
+  @Override
+  public String sqlTypeToString(SqlType sqlType, int size) {
+    if (sqlType == SqlType.SQLXML) {
+      return TYPE_TEXT;
+    }
+    return super.sqlTypeToString(sqlType, size);
   }
 
   @Override
