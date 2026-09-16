@@ -496,6 +496,29 @@ public interface BackendPreparedStatement {
   void setSqlxml(int p, String s);
 
   /**
+   * Sets a string holding a JSON document.<br>
+   * This is usually converted to a native JSON column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   * Notice that the document is not validated by tentackle, and that a backend with a native type
+   * may normalize it.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value
+   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL.
+   *        Ignored if the backend stores the value in a native JSON column, since the empty
+   *        string is not a JSON document
+   */
+  void setJson(int p, String s, boolean mapNull);
+
+  /**
+   * Sets a string holding a JSON document.<br>
+   * This is usually converted to a native JSON column, or emulated as <code>CLOB</code>/<code>VARCHAR</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value, null if the value should be set to SQL NULL
+   */
+  void setJson(int p, String s);
+
+  /**
    * Sets the designated parameter to the given <code>java.sql.Time</code> value.
    * The driver converts this
    * to an SQL <code>TIME</code> value when it sends it to the database.

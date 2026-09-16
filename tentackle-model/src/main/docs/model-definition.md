@@ -244,7 +244,7 @@ All four positional fields are required (comment and options are optional).
 | Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                            |
 | Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                                   |
 | Numeric    | `BigDecimal`, `BMoney`, `DMoney`                                                                                                                                                                |
-| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `SQLXML` |
+| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `SQLXML`, `JSON` |
 | Custom     | Any other class name (application-specific type)                                                                                                                                                |
 
 ### Size and scale

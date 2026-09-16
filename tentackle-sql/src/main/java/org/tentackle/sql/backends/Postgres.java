@@ -183,6 +183,23 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isJsonSupported() {
+    return true;   // native jsonb
+  }
+
+  @Override
+  public void setJson(PreparedStatement statement, int pos, String json) throws SQLException {
+    // pgjdbc refuses setString into a json/jsonb column ("column is of type jsonb but expression is
+    // of type character varying") unless the URL says stringtype=unspecified, which we must not require
+    if (json == null) {
+      statement.setNull(pos, Types.OTHER);
+    }
+    else {
+      statement.setObject(pos, json, Types.OTHER);
+    }
+  }
+
+  @Override
   public boolean isUUIDSupported() {
     return true;
   }
@@ -280,9 +297,26 @@ public class Postgres extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
-      case Types.OTHER -> new SqlType[] { SqlType.UUID };
+      // uuid, json and jsonb are all reported as OTHER: without the type name all of them are possible
+      case Types.OTHER -> new SqlType[] { SqlType.UUID, SqlType.JSON };
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale) {
+    if (jdbcType == Types.OTHER && typeName != null) {
+      // the type name is the only thing telling the OTHER types apart. Without it the migration
+      // would mistake a jsonb column for a uuid one and alter or rename it for nothing.
+      if (typeName.equalsIgnoreCase(TYPE_JSON) || typeName.equalsIgnoreCase(TYPE_JSONB)) {
+        return new SqlType[] { SqlType.JSON };
+      }
+      if (typeName.equalsIgnoreCase(TYPE_UUID)) {
+        return new SqlType[] { SqlType.UUID };
+      }
+      return new SqlType[0];
+    }
+    return super.jdbcTypeToSqlType(jdbcType, typeName, size, scale);
   }
 
   @Override
@@ -303,6 +337,7 @@ public class Postgres extends AbstractSql92Backend {
       case BLOB -> TYPE_BYTEA;
       case CLOB -> TYPE_TEXT;
       case SQLXML -> TYPE_XML;
+      case JSON -> TYPE_JSONB;   // jsonb is indexable and validates on write, unlike json
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };

@@ -133,6 +133,7 @@ public class Db2 extends AbstractSql2003Backend {
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
       case SQLXML -> TYPE_XML;
+      case JSON -> TYPE_CLOB;   // no native JSON column type
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.NonStandardCommons;
+import org.tentackle.sql.SqlType;
 
 /**
  * Backend for MariaDB.
@@ -88,6 +89,22 @@ public class MariaDb extends MySql {
   @Override
   public boolean isSequenceSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    // unlike MySQL, MariaDB's JSON is only an alias for LONGTEXT plus a json_valid() check
+    return false;
+  }
+
+  @Override
+  public String sqlTypeToString(SqlType sqlType, int size) {
+    if (sqlType == SqlType.JSON) {
+      // spell it LONGTEXT, which is what MariaDB stores and what the driver reports back:
+      // declaring it as JSON would make the metadata drift away from the model
+      return TYPE_LONGTEXT;
+    }
+    return super.sqlTypeToString(sqlType, size);
   }
 
   @Override

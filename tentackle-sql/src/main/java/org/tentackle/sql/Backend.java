@@ -29,7 +29,9 @@ import org.tentackle.sql.metadata.TableMetaData;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -1199,6 +1201,23 @@ public interface Backend {
   SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale);
 
   /**
+   * Converts the JDBC data type integer plus the backend-specific type name to tentackle SqlTypes.
+   * <p>
+   * Some drivers report more than one logical type as the same JDBC type: pgjdbc, for example,
+   * reports {@code uuid}, {@code json} and {@code jsonb} all as {@link Types#OTHER}, and only the
+   * type name tells them apart. Without the name both are possible, which would make the migration
+   * mistake one for the other. Backends that do not need the name simply ignore it.
+   *
+   * @param jdbcType the jdbc data type
+   * @param typeName the backend-specific type name, may be null
+   * @param size the column size
+   * @param scale the column's scale
+   * @return the SqlTypes, empty array if no mapping available
+   * @see #jdbcTypeToSqlType(int, int, int)
+   */
+  SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale);
+
+  /**
    * Gets the table metadata for a given table name.
    *
    * @param modelMetaData the model the table belongs to
@@ -1289,6 +1308,17 @@ public interface Backend {
   boolean isSqlxmlSupported();
 
   /**
+   * Returns whether the backend stores JSON in a native JSON column.<br>
+   * If not, JSON content is emulated as CLOB/VARCHAR.
+   * <p>
+   * Unlike {@link #isSqlxmlSupported()} there is no JDBC binding to rely on, so a backend opting in
+   * must also implement {@link #setJson} and, if reading differs from a plain string, {@link #getJson}.
+   *
+   * @return true if stored natively, false if emulated
+   */
+  boolean isJsonSupported();
+
+  /**
    * Returns whether the backend supports the {@link java.util.UUID} natively via JDBC setObject/getObject.
    *
    * @return true if supported, false if mapped to VARCHAR(36)
@@ -1371,6 +1401,34 @@ public interface Backend {
    * @param operator the array operator
    */
   void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements, String operator) throws SQLException;
+
+  /**
+   * Sets a JSON parameter in a prepared statement.
+   * <p>
+   * JDBC has no JSON binding, and the backends disagree on what a native JSON column accepts:
+   * postgres wants an object of type {@link Types#OTHER}, H2 only accepts the UTF-8 bytes (a java
+   * string would be stored as a JSON <em>string value</em>), and mysql takes a plain string.
+   * The default implementation sets a plain string, which is correct for every backend emulating
+   * JSON as a text column.
+   *
+   * @param statement the prepared statement
+   * @param pos the parameter position (starting at 1)
+   * @param json the JSON document, null to set SQL NULL
+   * @throws SQLException if setting the parameter failed
+   * @see #isJsonSupported()
+   */
+  void setJson(PreparedStatement statement, int pos, String json) throws SQLException;
+
+  /**
+   * Gets a JSON parameter from a result set.
+   *
+   * @param resultSet the result set
+   * @param pos the column position (starting at 1)
+   * @return the JSON document, null if SQL NULL
+   * @throws SQLException if reading the column failed
+   * @see #isJsonSupported()
+   */
+  String getJson(ResultSet resultSet, int pos) throws SQLException;
 
   /**
    * Returns whether the backend supports schemas.

@@ -101,6 +101,27 @@ public class DbModelWurbletTest {
   }
 
   /**
+   * A {@code JSON} attribute is a {@code String} with a variant, so the accessor name cannot come
+   * from the java type alone: it must be {@code getJson}/{@code setJson}, not {@code getString}.
+   * <p>
+   * Going through the model DSL covers the {@code JSON} keyword as well, which is what selects
+   * the variant in the first place.
+   */
+  @Test
+  public void derivesTheJsonAccessorNames() throws Exception {
+    Entity jsonEntity = createEntity("""
+        name := Payload
+        id := 2
+        table := payload
+
+        JSON  doc  doc  the JSON document
+        """);
+    Attribute doc = attribute(jsonEntity, "doc");
+    assertEquals(wurblet.createJdbcGetterName(doc), "getJson");
+    assertEquals(wurblet.createJdbcSetterName(doc.getEffectiveDataType()), "setJson");
+  }
+
+  /**
    * Column-name constants are what the generated SQL refers to; the suffix disambiguates the
    * columns of a multi-column type.
    */

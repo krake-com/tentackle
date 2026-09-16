@@ -227,6 +227,11 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
           // bridged through the JDBC SQLXML interface to a native XML column where supported.
           setDataType(DataTypeFactory.getInstance().get("String", DataTypeFactory.SQLXML_VARIANT));
         }
+        else if ("JSON".equals(line.getJavaType())) {
+          // same for JSON: it selects the JSON variant of String, stored in a native JSON column
+          // where the backend has one. Notice that tentackle does not validate the document.
+          setDataType(DataTypeFactory.getInstance().get("String", DataTypeFactory.JSON_VARIANT));
+        }
         // maybe the special Convertible type (see org.tentackle.misc.Convertible)
         else if (line.getInnerType() != null) {
           setDataType(DataTypeFactory.getInstance().getConvertibleType());

@@ -245,6 +245,7 @@ public class Firebird extends AbstractSql2008Backend {
       case BLOB -> TYPE_BLOB_BINARY;
       case CLOB -> TYPE_BLOB_TEXT;
       case SQLXML -> TYPE_BLOB_TEXT;   // no native XML type
+      case JSON -> TYPE_BLOB_TEXT;     // no native JSON type either
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -255,7 +256,7 @@ public class Firebird extends AbstractSql2008Backend {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       // a BLOB SUB_TYPE TEXT is reported as LONGVARCHAR
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
-              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.JSON};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }

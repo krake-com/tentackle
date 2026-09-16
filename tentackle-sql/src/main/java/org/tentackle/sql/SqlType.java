@@ -81,6 +81,9 @@ public enum SqlType {
   /** XML content, usually stored in a native XML column or emulated as CLOB. */
   SQLXML("", SqlType::removeSingleQuotes),
 
+  /** JSON content, usually stored in a native JSON column or emulated as CLOB. */
+  JSON("", SqlType::removeSingleQuotes),
+
   /** BigDecimal and DMoney. */
   DECIMAL(new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);

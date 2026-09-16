@@ -23,6 +23,7 @@ defaults on `TEXT` columns; only the major version is available for the check).
 | `VARCHAR`   | `LONGTEXT`         | an attribute **without a size** — see [Sizeless Strings](#sizeless-strings) |
 | `CLOB`      | `LONGTEXT`         | there is no `CLOB`, and `TEXT` holds only 64 KB                            |
 | `SQLXML`    | `LONGTEXT`         | no native XML type either; `isSqlxmlSupported()` is `false`                |
+| `JSON`      | `JSON`             | native since 5.7.8, and takes a plain string; **MariaDB** uses `LONGTEXT`   |
 | `BLOB`      | `LONGBLOB`         | `BLOB` holds only 64 KB                                                    |
 | `DECIMAL`   | `DECIMAL(19)`      | if the model gives no size — see [Decimals](#decimals)                     |
 | `TIMESTAMP` | `DATETIME(6)`      | without the `(6)` MySQL truncates to whole seconds                         |
@@ -42,9 +43,17 @@ key** — and with `utf8mb4` a single `VARCHAR(4096)` already claims 16 KB of bo
 > declare a size of at most 768 characters** (3072 bytes ÷ 4 for `utf8mb4`). This is a MySQL limitation, not a
 > Tentackle one: PostgreSQL, Oracle, H2 and SQL Server index a large string column without complaining.
 
-Because `TEXT` and `BLOB` columns accept a default only when it is written as an *expression*
+Because `TEXT`, `BLOB` and `JSON` columns accept a default only when it is written as an *expression*
 (MySQL 8.0.13+, MariaDB 10.2.1+), `columnTypeNullDefaultToString()` emits `DEFAULT ('x')` rather than
 `DEFAULT 'x'` for them.
+
+### JSON
+
+MySQL stores a `JSON` attribute in its native `JSON` column, which accepts a plain string parameter, so no
+`setJson` override is needed. **MariaDB is different**: there `JSON` is merely an alias for `LONGTEXT` plus a
+`json_valid()` check constraint, and the driver reports it as `LONGTEXT`. `MariaDb` therefore declares the column
+as `LONGTEXT` outright — spelling it `JSON` would make the metadata drift away from the model on every migration
+— and leaves `isJsonSupported()` at `false`.
 
 ### Decimals
 

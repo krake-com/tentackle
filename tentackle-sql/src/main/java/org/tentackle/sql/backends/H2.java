@@ -28,7 +28,9 @@ import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -231,9 +233,24 @@ public class H2 extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
-      case Types.OTHER -> new SqlType[] { SqlType.UUID };
+      case Types.OTHER -> new SqlType[] { SqlType.UUID, SqlType.JSON };
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale) {
+    if (jdbcType == Types.OTHER && typeName != null) {
+      // H2 reports a JSON column as OTHER with the type name "JSON"
+      if (typeName.equalsIgnoreCase(TYPE_JSON)) {
+        return new SqlType[] { SqlType.JSON };
+      }
+      if (typeName.equalsIgnoreCase(TYPE_UUID)) {
+        return new SqlType[] { SqlType.UUID };
+      }
+      return new SqlType[0];
+    }
+    return super.jdbcTypeToSqlType(jdbcType, typeName, size, scale);
   }
 
   @Override
@@ -255,6 +272,7 @@ public class H2 extends AbstractSql92Backend {
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
       case SQLXML -> TYPE_CLOB;   // H2's SQLXML implementation is backed by a CLOB internally
+      case JSON -> TYPE_JSON;
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };
@@ -263,6 +281,23 @@ public class H2 extends AbstractSql92Backend {
   @Override
   public boolean isSqlxmlSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    return true;
+  }
+
+  @Override
+  public void setJson(PreparedStatement statement, int pos, String json) throws SQLException {
+    // H2 reads a java string as a JSON *string value* and would store "{}" instead of {}.
+    // Only the UTF-8 bytes are parsed as a document -- and are validated by H2 on the way in.
+    if (json == null) {
+      statement.setNull(pos, Types.OTHER);
+    }
+    else {
+      statement.setBytes(pos, json.getBytes(StandardCharsets.UTF_8));
+    }
   }
 
 

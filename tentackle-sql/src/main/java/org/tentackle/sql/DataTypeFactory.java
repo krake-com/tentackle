@@ -45,6 +45,14 @@ public interface DataTypeFactory {
   String SQLXML_VARIANT = "Sqlxml";
 
   /**
+   * JSON variant of a type.<br>
+   * Distinguishes a {@code String} bound to a native JSON column from a plain VARCHAR or
+   * CLOB-backed one. Unlike {@link #SQLXML_VARIANT}, JDBC provides no JSON binding of its own,
+   * so how the string reaches the column is up to the backend.
+   */
+  String JSON_VARIANT = "Json";
+
+  /**
    * Type name for the wrapper type implementing <code>org.tentackle.misc.Convertible</code>.
    */
   String CONVERTIBLE_TYPE = "implementing Convertible";

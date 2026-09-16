@@ -146,6 +146,7 @@ public class MsSql extends AbstractSql2003Backend {
       case BLOB -> TYPE_VARBINARY_MAX;
       case CLOB -> TYPE_CLOB;
       case SQLXML -> TYPE_XML;
+      case JSON -> TYPE_NVARCHAR_MAX;   // no native json type before SQL Server 2025
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -155,6 +156,9 @@ public class MsSql extends AbstractSql2003Backend {
     return switch (jdbcType) {
       case Types.BIT, Types.BOOLEAN, Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.BIT, SqlType.TINYINT, SqlType.SMALLINT};
       case Types.DATE, Types.TIMESTAMP, Types.TIME -> new SqlType[]{SqlType.DATE, SqlType.TIME, SqlType.TIMESTAMP};
+      // JSON is emulated as NVARCHAR(MAX), so a character column must match a JSON attribute too
+      case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.JSON};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }

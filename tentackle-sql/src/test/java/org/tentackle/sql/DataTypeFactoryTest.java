@@ -24,6 +24,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.I18NText;
 import org.tentackle.sql.datatypes.ConvertibleType;
 import org.tentackle.sql.datatypes.LargeStringType;
+import org.tentackle.sql.datatypes.JsonType;
 import org.tentackle.sql.datatypes.SQLXMLType;
 import org.tentackle.sql.datatypes.StringType;
 import org.testng.annotations.Test;
@@ -39,6 +40,7 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
@@ -127,6 +129,25 @@ public class DataTypeFactoryTest {
     assertEquals(sqlxml.getVariant(), DataTypeFactory.SQLXML_VARIANT);
     assertEquals(sqlxml.getSqlType(null, 0), SqlType.SQLXML);
     assertEquals(sqlxml.getDataTypeConstant(), "DT_STRING_SQLXML");
+  }
+
+  /**
+   * Same as {@link #testVariant()}, for the JSON variant of {@code String}.
+   * <p>
+   * Unlike the other string variants this one does not support MAPNULL, because the empty string
+   * is not a JSON document.
+   */
+  @Test
+  public void testJsonVariant() {
+    DataType<?> plain = factory.get("String");
+    DataType<?> json = factory.get("String", DataTypeFactory.JSON_VARIANT);
+    assertTrue(plain instanceof StringType);
+    assertTrue(json instanceof JsonType);
+    assertEquals(json.getVariant(), DataTypeFactory.JSON_VARIANT);
+    assertEquals(json.getSqlType(null, 0), SqlType.JSON);
+    assertEquals(json.getDataTypeConstant(), "DT_STRING_JSON");
+    assertTrue(plain.isMapNullSupported());
+    assertFalse(json.isMapNullSupported());
   }
 
   @Test

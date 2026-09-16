@@ -1442,6 +1442,9 @@ public class DbModelWurblet extends ModelWurblet {
       else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
         buf.append("Sqlxml");
       }
+      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.JSON_VARIANT.equals(dataType.getVariant())) {
+        buf.append("Json");
+      }
       else {
         buf.append(dataType.getJavaType());
       }
@@ -1481,6 +1484,9 @@ public class DbModelWurblet extends ModelWurblet {
       }
       if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
         buf.append("Sqlxml");    // getSqlxml, not getSqlxmlString
+      }
+      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.JSON_VARIANT.equals(dataType.getVariant())) {
+        buf.append("Json");      // getJson, not getJsonString
       }
       else {
         buf.append(dataType.getJavaType());

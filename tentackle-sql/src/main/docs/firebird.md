@@ -21,6 +21,7 @@ up to 63 characters and decimals with a precision of up to 38 digits.
 | `VARCHAR`          | `VARCHAR(8191)`              | an attribute without a size                                               |
 | `CLOB`             | `BLOB SUB_TYPE TEXT`         |                                                                           |
 | `SQLXML`           | `BLOB SUB_TYPE TEXT`         | no native XML type; `isSqlxmlSupported()` is `false`                     |
+| `JSON`             | `BLOB SUB_TYPE TEXT`         | no native JSON type; `isJsonSupported()` is `false`                      |
 | `BLOB`             | `BLOB SUB_TYPE BINARY`       |                                                                           |
 | `BIT`              | `BOOLEAN`                    | defaults are written as `TRUE`/`FALSE`, not as strings                    |
 | `TINYINT`          | `SMALLINT`                   | there is no `TINYINT`                                                     |

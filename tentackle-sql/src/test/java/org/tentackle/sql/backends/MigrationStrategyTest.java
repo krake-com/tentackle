@@ -31,6 +31,8 @@ import java.sql.Types;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests the migration strategy the backends derive from the difference between the model and the
@@ -81,6 +83,72 @@ public class MigrationStrategyTest {
     return List.of(backend.getMigrationStrategy(column, COLUMN, COMMENT, SqlType.VARCHAR, 32, 0, false, null));
   }
 
+
+  /**
+   * Creates the metadata of an existing column the driver reports as {@link Types#OTHER}.
+   *
+   * @param backend the backend
+   * @param typeName the backend-specific type name
+   * @return the column metadata
+   */
+  private ColumnMetaData otherColumn(Backend backend, String typeName) {
+    TableMetaData table = new TableMetaData(new ModelMetaData(backend, new DatabaseMetaData[0], null), "foo");
+    ColumnMetaData column = new ColumnMetaData(table);
+    column.setColumnName(COLUMN);
+    column.setComment(COMMENT);
+    column.setType(Types.OTHER);
+    column.setTypeName(typeName);
+    column.setSize(0);
+    column.setScale(0);
+    column.setNullable(false);
+    column.setDefaultValue(null);
+    return column;
+  }
+
+
+  /**
+   * A JSON column must be recognized as one, or the migration would alter it on every single run.
+   * <p>
+   * The JDBC type alone cannot tell: pgjdbc reports {@code uuid}, {@code json} and {@code jsonb} all
+   * as {@link Types#OTHER}, so only the type name disambiguates them.
+   */
+  @Test
+  public void testJsonColumnIsRecognized() {
+    for (Backend backend : List.of(new Postgres(), new H2())) {
+      ColumnMetaData column = otherColumn(backend, backend instanceof Postgres ? "jsonb" : "JSON");
+      assertTrue(column.matchesSqlType(SqlType.JSON), backend + ": a json column must match a JSON attribute");
+      assertFalse(column.matchesSqlType(SqlType.UUID), backend + ": a json column is not a uuid one");
+      assertEquals(List.of(backend.getMigrationStrategy(column, COLUMN, COMMENT, SqlType.JSON, 0, 0, false, null)),
+                   List.of(), backend + ": an unchanged json column needs no migration");
+    }
+  }
+
+  /**
+   * The converse: a uuid column must not be mistaken for a JSON one, which would make the
+   * migrator rename or alter it for nothing.
+   */
+  @Test
+  public void testUuidColumnIsNotMistakenForJson() {
+    for (Backend backend : List.of(new Postgres(), new H2())) {
+      ColumnMetaData column = otherColumn(backend, "uuid");
+      assertTrue(column.matchesSqlType(SqlType.UUID), backend + ": a uuid column must match a UUID attribute");
+      assertFalse(column.matchesSqlType(SqlType.JSON), backend + ": a uuid column is not a json one");
+    }
+  }
+
+  /**
+   * A backend without a native JSON type emulates it as CLOB, so such a column must match a
+   * JSON attribute as well.
+   */
+  @Test
+  public void testEmulatedJsonColumnIsRecognized() {
+    Backend backend = new Oracle();
+    ColumnMetaData column = column(backend);
+    column.setType(Types.CLOB);
+    column.setTypeName("CLOB");
+    column.setSize(0);
+    assertTrue(column.matchesSqlType(SqlType.JSON), backend + ": a CLOB column must match a JSON attribute");
+  }
 
   @Test
   public void testNothingChanged() {

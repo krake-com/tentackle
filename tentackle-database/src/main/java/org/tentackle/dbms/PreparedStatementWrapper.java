@@ -515,6 +515,10 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         setSqlxml(p, object == null ? null : object.toString());
         break;
 
+      case JSON:
+        setJson(p, object == null ? null : object.toString());
+        break;
+
       case DECIMAL:
         setBigDecimal(p, (BigDecimal) object);
         break;
@@ -640,7 +644,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         if (s != null) {
           Clob clob = con.getConnection().createClob();
           clob.setString(1, s);
-          getStatement().setClob(p, clob);
+          getStatement().setClob(ep, clob);
         }
         else {
           getStatement().setNull(ep, Types.CLOB);
@@ -672,7 +676,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         if (s != null) {
           SQLXML sqlxml = con.getConnection().createSQLXML();
           sqlxml.setString(s);
-          getStatement().setSQLXML(p, sqlxml);
+          getStatement().setSQLXML(ep, sqlxml);
         }
         else {
           getStatement().setNull(ep, Types.SQLXML);
@@ -691,6 +695,29 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public void setSqlxml(int p, String s) {
     setSqlxml(p, s, false);
+  }
+
+  @Override
+  public void setJson(int p, String s, boolean mapNull) {
+    if (con.getBackend().isJsonSupported()) {
+      try {
+        int ep = effectivePosition(p);
+        // mapNull is not applicable to a native JSON column: the empty string is no JSON document
+        con.getBackend().setJson(getStatement(), ep, s);
+        rememberParameter(ep, s);
+      }
+      catch (SQLException e)  {
+        throw new PersistenceException(getSession(), this.toString(), e);
+      }
+    }
+    else {
+      setString(p, s, mapNull);
+    }
+  }
+
+  @Override
+  public void setJson(int p, String s) {
+    setJson(p, s, false);
   }
 
   @Override

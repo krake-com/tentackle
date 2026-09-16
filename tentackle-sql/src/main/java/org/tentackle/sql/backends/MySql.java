@@ -308,17 +308,25 @@ public class MySql extends AbstractSql92Backend {
       case BLOB -> TYPE_LONGBLOB;
       case CLOB -> TYPE_LONGTEXT;
       case SQLXML -> TYPE_LONGTEXT;   // no native XML type
+      case JSON -> TYPE_JSON;         // native since 5.7.8, and we require 8.0.13 anyway
       default -> super.sqlTypeToString(sqlType, size);
     };
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    // a native JSON column, but it takes a plain string like any text column -> no setJson override
+    return true;
   }
 
   @Override
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
     return switch (jdbcType) {
       case Types.BIT, Types.BOOLEAN, Types.TINYINT -> new SqlType[]{SqlType.BIT, SqlType.TINYINT};
-      // VARCHAR and LONGTEXT are both used for strings, sized or not
+      // VARCHAR and LONGTEXT are both used for strings, sized or not, and the driver reports
+      // a JSON column as one of the character types as well
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
-              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.JSON};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -351,7 +359,7 @@ public class MySql extends AbstractSql92Backend {
    */
   protected boolean isLobDeclaration(SqlType sqlType, int size) {
     return switch (sqlType) {
-      case CLOB, BLOB -> true;
+      case CLOB, BLOB, JSON -> true;   // mysql rejects a literal default on a JSON column too
       case VARCHAR -> (size == 0 ? getDefaultSize(sqlType) : size) == 0;
       default -> false;
     };

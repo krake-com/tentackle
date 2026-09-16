@@ -396,6 +396,82 @@ public class SpecialDataTypeTest {
   }
 
 
+  // ---- the JSON string -----------------------------------------------------
+
+  /**
+   * The document must survive a real, native JSON column unchanged.
+   * <p>
+   * This is the test that catches a plain {@code setString}: H2 would take it as a JSON
+   * <em>string value</em> and store {@code "{\"a\":1}"} instead of the document itself.
+   *
+   * @throws SQLException if the test failed
+   */
+  @Test
+  public void testJsonUsesTheNativeColumn() throws SQLException {
+    JsonType type = new JsonType();
+    assertTrue(h2.isJsonSupported());
+
+    try (PreparedStatement stmt = table("jsonnative", "c0 JSON")) {
+      type.set(h2, stmt, 1, "{\"a\":1}", false, null);
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("jsonnative")) {
+      assertEquals(type.get(h2, rs, new int[] { 1 }, false, null), "{\"a\":1}");
+    }
+  }
+
+  /**
+   * On a backend without a native JSON column the document falls back to the plain string
+   * handling and is stored verbatim.
+   *
+   * @throws SQLException if the test failed
+   */
+  @Test
+  public void testJsonFallsBackWithoutNativeSupport() throws SQLException {
+    JsonType type = new JsonType();
+    Backend oracle = new Oracle();
+    assertFalse(oracle.isJsonSupported());
+
+    try (PreparedStatement stmt = table("jsonfallback", "c0 VARCHAR(64)")) {
+      type.set(oracle, stmt, 1, "{\"a\":1}", false, null);
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("jsonfallback")) {
+      assertEquals(type.get(oracle, rs, new int[] { 1 }, false, null), "{\"a\":1}");
+    }
+  }
+
+  /**
+   * A null document stays null, on the native column as well as on the emulating one.
+   *
+   * @throws SQLException if the test failed
+   */
+  @Test
+  public void testJsonNull() throws SQLException {
+    JsonType type = new JsonType();
+
+    try (PreparedStatement stmt = table("jsonnull", "c0 JSON")) {
+      type.set(h2, stmt, 1, null, false, null);
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("jsonnull")) {
+      assertNull(type.get(h2, rs, new int[] { 1 }, false, null));
+    }
+  }
+
+  /**
+   * MAPNULL is not applicable to JSON: the empty string is not a document, and a native column
+   * rejects it outright.
+   */
+  @Test
+  public void testJsonRejectsMapNull() {
+    JsonType type = new JsonType();
+    assertFalse(type.isMapNullSupported());
+    BackendException ex = expectThrows(BackendException.class, () -> type.getMappedNullValue(h2, 0));
+    assertTrue(ex.getMessage().contains("MAPNULL"), ex.getMessage());
+  }
+
+
   // ---- the UUID ------------------------------------------------------------
 
   /**

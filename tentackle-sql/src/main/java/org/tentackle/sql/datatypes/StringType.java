@@ -36,7 +36,7 @@ import java.sql.Types;
  * Notice that there are two types of strings. This one is for the SQL type <code>VARCHAR</code>.
  */
 @Service(DataType.class)
-public sealed class StringType extends AbstractDataType<String> permits LargeStringType, SQLXMLType {
+public sealed class StringType extends AbstractDataType<String> permits LargeStringType, SQLXMLType, JsonType {
 
   public StringType() {
     // see -Xlint:missing-explicit-ctor since Java 16

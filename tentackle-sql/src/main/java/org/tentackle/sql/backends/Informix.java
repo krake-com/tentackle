@@ -168,6 +168,7 @@ public class Informix extends AbstractSql92Backend {
       case BLOB -> TYPE_BYTE;
       case CLOB -> TYPE_CLOB;
       case SQLXML -> TYPE_CLOB;   // no native XML type
+      case JSON -> TYPE_CLOB;     // informix has a native JSON type, but only in some editions
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

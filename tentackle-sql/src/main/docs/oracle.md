@@ -197,6 +197,9 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **Paging** uses `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` in `Oracle`, but the nested
   `ROWNUM` construct in `Oracle8`.
 - **SQLXML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
+- **JSON is stored as a `CLOB`.** Oracle's native `JSON` type only exists from 21c, while `Oracle` covers 12 and
+  newer and `sqlTypeToString` has no version information at DDL-generation time. A `CLOB` is readable by every
+  supported version, so `isJsonSupported()` stays `false` and the document is bound as a plain string.
 
 ---
 

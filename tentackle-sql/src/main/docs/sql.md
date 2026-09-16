@@ -57,7 +57,7 @@ of groups:
 | **DDL generation**              | `sqlCreateTableIntro`, `sqlCreateColumn`, `sqlCreateIndex`, `sqlCreateForeignKey`, `sqlCreateSequence`, `sqlCreateSchema`, `sqlDropTable`                                    | Emit `CREATE`/`DROP` statements for the schema generator.                                                             |
 | **Schema migration**            | `getMigrationStrategy`, `sqlRenameColumn`, `sqlAlterColumnType`, `sqlAlterColumnNullConstraint`, `sqlAlterColumnDefault`, `isDefaultEqual`                                   | Compute and emit the `ALTER` statements that morph an existing schema into the model's.                               |
 | **Type mapping**                | `sqlTypeToString`, `columnTypeToString`, `columnTypeNullDefaultToString`, `jdbcTypeToSqlType`, `getMaxSize`, `getMaxScale`, `valueToLiteral`                                 | Translate Tentackle [`SqlType`](#sqltype)s to the database's own type declarations and back.                          |
-| **Capability flags**            | `isSequenceSupported`, `isSchemaSupported`, `isClobSupported`, `isUUIDSupported`, `isFunctionBasedIndexSupported`, `isFilteredIndexSupported`, `isReleaseSavepointSupported` | Let callers ask what the database can do instead of hard-coding product checks.                                       |
+| **Capability flags**            | `isSequenceSupported`, `isSchemaSupported`, `isClobSupported`, `isSqlxmlSupported`, `isJsonSupported`, `isUUIDSupported`, `isFunctionBasedIndexSupported`, `isFilteredIndexSupported`, `isReleaseSavepointSupported` | Let callers ask what the database can do instead of hard-coding product checks.                                       |
 | **Naming & reserved words**     | `assertValidName`, `getMaxNameLength`, `getReservedWords`, `isReservedTableName`, `isTemporaryName`                                                                          | Validate identifiers against the dialect's rules.                                                                     |
 | **Error classification**        | `isConstraintException`, `isCommunicationLinkException`, `isTransientTransactionException`                                                                                   | Interpret vendor-specific `SQLException`s so the upper layers can decide whether to retry a transaction or reconnect. |
 | **Metadata**                    | `getMetaData`, `getModelMetaData`, `getTableMetaData`, `createColumnMetaData`, `createIndexMetaData`                                                                         | Read the live database schema for migration and verification.                                                         |
@@ -103,9 +103,9 @@ Passwords are held in `char[]` and can be wiped from memory with `clearPassword(
 ### SqlType
 
 [`SqlType`](../java/org/tentackle/sql/SqlType.java) is a small, type-safe enum that is Tentackle's curated subset
-of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `SQLXML`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`, `SMALLINT`,
-`INTEGER`, `BIGINT`, `FLOAT`, `DOUBLE`, `DATE`, `TIME`, `TIMESTAMP`, `UUID` and `JAVA_OBJECT`. Each value knows
-its Java default value and how to parse a literal coming back from JDBC metadata.
+of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `SQLXML`, `JSON`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`,
+`SMALLINT`, `INTEGER`, `BIGINT`, `FLOAT`, `DOUBLE`, `DATE`, `TIME`, `TIMESTAMP`, `UUID` and `JAVA_OBJECT`. Each
+value knows its Java default value and how to parse a literal coming back from JDBC metadata.
 
 `SqlType` is the **physical** view — one `SqlType` corresponds to one database column. It is what the backend
 turns into an actual type declaration via `columnTypeToString` and friends.
@@ -118,7 +118,7 @@ more** columns. For example [`BMoneyType`](../java/org/tentackle/sql/datatypes/B
 `BMoney` value to two columns (amount + scale).
 
 `DataType` is deliberately an interface, not an enum, so that **applications can define their own column types**.
-The module ships ~37 predefined implementations under
+The module ships ~38 predefined implementations under
 [`org.tentackle.sql.datatypes`](../java/org/tentackle/sql/datatypes) covering the primitive wrappers and their
 primitives, `String`/`Character`, the `java.time` types (`LocalDate`, `LocalDateTime`, `Instant`,
 `ZonedDateTime`, `OffsetDateTime`, …), the legacy `java.sql` date/time types, `BigDecimal`, `UUID`, binary/large
@@ -129,6 +129,12 @@ Each `DataType` is a stateless singleton annotated with `@Service(DataType.class
 an optional *variant* (e.g., the `"Large"` variant distinguishes a `CLOB`-backed `String` from a `VARCHAR` one,
 and the `"Sqlxml"` variant bridges a `String` through the JDBC [`SQLXML`](../java/org/tentackle/sql/datatypes/SQLXMLType.java)
 interface to a native XML column where the backend supports it — see [`Backend.isSqlxmlSupported()`](../java/org/tentackle/sql/Backend.java)).
+The [`"Json"` variant](../java/org/tentackle/sql/datatypes/JsonType.java) does the same for a native JSON column,
+but JDBC offers no binding to bridge it with: there is no `Types.JSON` and no `createJSON()`. The backends
+therefore disagree on both ends — a `jsonb` parameter is set as `Types.OTHER`, H2 only accepts the UTF-8 bytes
+(a plain string would be stored as a JSON *string value*), and a JSON column is reported back as `Types.OTHER`
+with only the type name to tell it from a `uuid`. Both ends are hence the backend's business, via
+`setJson`/`getJson` and the type-name-aware `jdbcTypeToSqlType` overload.
 
 The interface serves three roles at once, which is why it is so broad:
 

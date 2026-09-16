@@ -420,6 +420,7 @@ public class Oracle8 extends AbstractSql2003Backend {
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
       case SQLXML -> TYPE_XMLTYPE;
+      case JSON -> TYPE_CLOB;   // the native JSON type needs 21c, but Oracle covers 12+
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

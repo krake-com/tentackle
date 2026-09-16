@@ -110,6 +110,8 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_UUID = "UUID";
   protected static final String TYPE_XML = "XML";
   protected static final String TYPE_XMLTYPE = "XMLTYPE";
+  protected static final String TYPE_JSON = "JSON";
+  protected static final String TYPE_JSONB = "JSONB";
 
 
   private static final String STATEMENT_SEPARATOR = ";";
@@ -317,7 +319,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public int getMaxSize(SqlType sqlType) {
     return switch (sqlType) {
-      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, SQLXML -> -1;    // sizeless type
+      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, SQLXML, JSON -> -1;    // sizeless type
       default -> 0;   // default is unlimited
     };
   }
@@ -501,7 +503,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
     return switch (sqlType) {
-      case CHAR, VARCHAR, CLOB, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
+      case CHAR, VARCHAR, CLOB, SQLXML, JSON, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
       default -> value.toString();
     };
   }
@@ -994,8 +996,9 @@ public abstract class AbstractBackend implements Backend {
 
       case Types.CLOB:
       case Types.NCLOB:
-        sqlType = SqlType.CLOB;
-        break;
+        // a backend without a native JSON type emulates it as CLOB, so a CLOB column
+        // must match a JSON attribute as well, or the migration would alter it forever
+        return new SqlType[] { SqlType.CLOB, SqlType.JSON };
 
       case Types.SQLXML:
         sqlType = SqlType.SQLXML;
@@ -1006,6 +1009,11 @@ public abstract class AbstractBackend implements Backend {
     }
 
     return new SqlType[] { sqlType };
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, String typeName, int size, int scale) {
+    return jdbcTypeToSqlType(jdbcType, size, scale);    // the type name is only needed by some backends
   }
 
   @Override
@@ -1337,6 +1345,29 @@ public abstract class AbstractBackend implements Backend {
     // unlike isClobSupported(), this defaults to false: JDBC SQLXML driver support is far less
     // consistent across backends, and only a backend that has actually verified it should opt in.
     return false;
+  }
+
+  @Override
+  public boolean isJsonSupported() {
+    // same rationale as isSqlxmlSupported(): there is no JDBC binding for JSON at all,
+    // so only a backend that has actually verified its native type should opt in.
+    return false;
+  }
+
+  @Override
+  public void setJson(PreparedStatement statement, int pos, String json) throws SQLException {
+    // correct for every backend emulating JSON as a text column
+    if (json == null) {
+      statement.setNull(pos, Types.VARCHAR);
+    }
+    else {
+      statement.setString(pos, json);
+    }
+  }
+
+  @Override
+  public String getJson(ResultSet resultSet, int pos) throws SQLException {
+    return resultSet.getString(pos);
   }
 
   @Override

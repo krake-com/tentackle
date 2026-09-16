@@ -123,6 +123,8 @@ public class MySqlTest {
     Assert.assertEquals(backend.columnTypeToString(SqlType.VARCHAR, 0, 0), "LONGTEXT");
     // mysql has no CLOB, and TEXT is limited to 64k
     Assert.assertEquals(backend.columnTypeToString(SqlType.CLOB, 0, 0), "LONGTEXT");
+    // unlike MariaDB, mysql has a native JSON column type
+    Assert.assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "JSON");
     // BLOB is limited to 64k as well
     Assert.assertEquals(backend.columnTypeToString(SqlType.BLOB, 0, 0), "LONGBLOB");
   }

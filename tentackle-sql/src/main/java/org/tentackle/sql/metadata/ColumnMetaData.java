@@ -238,7 +238,7 @@ public class ColumnMetaData {
    */
   public boolean matchesSqlType(SqlType sqlType) {
     Backend backend = tableMetaData.getModelMetaData().getBackend();
-    SqlType[] possibleSqlTypes = backend.jdbcTypeToSqlType(type, size, scale);
+    SqlType[] possibleSqlTypes = backend.jdbcTypeToSqlType(type, typeName, size, scale);
     for (SqlType possibleType: possibleSqlTypes) {
       if (sqlType == possibleType) {
         return true;

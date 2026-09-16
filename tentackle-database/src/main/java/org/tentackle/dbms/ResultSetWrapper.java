@@ -1196,6 +1196,42 @@ public class ResultSetWrapper implements AutoCloseable {
     return getSqlxml(name, false);
   }
 
+  /**
+   * Gets a string holding a JSON document.<br>
+   * The backend usually stores such strings in a native JSON column, or emulates it as CLOB/VARCHAR.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (String name, boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, resources.rs.findColumn(name));   // the hook is position-based
+      }
+      else {
+        return getString(name, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson (String name) {
+    return getJson(name, false);
+  }
+
 
   /**
    * Retrieves the value of the designated column in the current row
@@ -2187,6 +2223,43 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
+   * Gets a string holding a JSON document.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (int pos, boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, pos + columnOffset);
+      }
+      else {
+        return getString(pos, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson (int pos) {
+    return getJson(pos, false);
+  }
+
+
+  /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * a <code>boolean</code> in the Java programming language.
@@ -3120,6 +3193,41 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getSqlxml () {
     return getSqlxml(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @param mapNull if empty strings should be treated as null values, ignored for a native JSON column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getJson (boolean mapNull)  {
+    try {
+      Backend backend = resources.stmt.getConnection().getBackend();
+      if (backend.isJsonSupported()) {
+        return backend.getJson(resources.rs, nextConfiguredIndex() + columnOffset);
+      }
+      else {
+        return getString(mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Gets a string holding a JSON document.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getJson(java.lang.String, boolean)
+   */
+  public String getJson () {
+    return getJson(nextConfiguredIndex(), false);
   }
 
 

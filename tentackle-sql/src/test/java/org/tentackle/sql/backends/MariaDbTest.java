@@ -22,6 +22,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.SqlType;
 
 /**
  * Tests for the MariaDB backend.
@@ -77,6 +78,21 @@ public class MariaDbTest {
     finally {
       backend.setDropIfExistsEnabled(false);
     }
+  }
+
+  /**
+   * MariaDB's JSON is only an alias for LONGTEXT plus a {@code json_valid()} check constraint, and
+   * the driver reports it as LONGTEXT. Declaring it as JSON would make the metadata drift away from
+   * the model and provoke an ALTER on every migration run.
+   */
+  @Test
+  public void testJsonIsLongText() {
+    Assert.assertFalse(backend.isJsonSupported());
+    Assert.assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "LONGTEXT");
+    // unlike MariaDB, mysql has a real JSON column type
+    MySql mySql = new MySql();
+    Assert.assertTrue(mySql.isJsonSupported());
+    Assert.assertEquals(mySql.columnTypeToString(SqlType.JSON, 0, 0), "JSON");
   }
 
   /**

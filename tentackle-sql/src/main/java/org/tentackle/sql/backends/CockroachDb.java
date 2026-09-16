@@ -73,6 +73,8 @@ public class CockroachDb extends Postgres {
     if (sqlType == SqlType.SQLXML) {
       return TYPE_TEXT;
     }
+    // JSON deliberately falls through to postgres: unlike "xml", CockroachDB does have a
+    // native JSONB type and the driver binds it exactly as postgres does
     return super.sqlTypeToString(sqlType, size);
   }
 

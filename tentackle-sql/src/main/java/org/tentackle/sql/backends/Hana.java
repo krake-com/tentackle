@@ -253,6 +253,7 @@ public class Hana extends AbstractSql2003Backend {
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_NCLOB;
       case SQLXML -> TYPE_NCLOB;   // no native XML type
+      case JSON -> TYPE_NCLOB;     // no native JSON column type either
       default -> super.sqlTypeToString(sqlType, size);
     };
   }

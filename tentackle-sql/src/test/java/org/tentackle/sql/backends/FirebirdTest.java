@@ -86,6 +86,7 @@ public class FirebirdTest {
     assertEquals(backend.columnTypeToString(SqlType.DOUBLE, 0, 0), "DOUBLE PRECISION");
     assertEquals(backend.columnTypeToString(SqlType.VARCHAR, 0, 0), "VARCHAR(8191)");
     assertEquals(backend.columnTypeToString(SqlType.CLOB, 0, 0), "BLOB SUB_TYPE TEXT");
+    assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "BLOB SUB_TYPE TEXT");   // no native JSON type
     assertEquals(backend.columnTypeToString(SqlType.BLOB, 0, 0), "BLOB SUB_TYPE BINARY");
     // a bare DECIMAL would be DECIMAL(9,0)
     assertEquals(backend.columnTypeToString(SqlType.DECIMAL, 0, 0), "DECIMAL(19)");

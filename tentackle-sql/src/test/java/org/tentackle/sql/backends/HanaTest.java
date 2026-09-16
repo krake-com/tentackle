@@ -95,6 +95,7 @@ public class HanaTest {
     assertEquals(backend.columnTypeToString(SqlType.VARCHAR, 0, 0), "NVARCHAR(5000)");
     assertEquals(backend.columnTypeToString(SqlType.CHAR, 0, 0), "NCHAR(1)");
     assertEquals(backend.columnTypeToString(SqlType.CLOB, 0, 0), "NCLOB");
+    assertEquals(backend.columnTypeToString(SqlType.JSON, 0, 0), "NCLOB");   // no native JSON type
     assertEquals(backend.columnTypeToString(SqlType.BIT, 0, 0), "BOOLEAN");
     assertEquals(backend.columnTypeToString(SqlType.DECIMAL, 0, 0), "DECIMAL");
     assertFalse(backend.isUUIDSupported());
