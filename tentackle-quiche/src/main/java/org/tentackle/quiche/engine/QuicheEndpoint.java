@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -376,7 +377,19 @@ public class QuicheEndpoint implements Closeable {
   private void receiveAll() throws IOException {
     while (!closed) {
       receiveByteBuffer.clear();
-      SocketAddress source = channel.receive(receiveByteBuffer);
+      SocketAddress source;
+      try {
+        source = channel.receive(receiveByteBuffer);
+      }
+      catch (PortUnreachableException e) {
+        // an earlier datagram to some peer bounced off an ICMP "port unreachable". On Windows this
+        // surfaces here, on the next receive(), even though this channel was never connected and the
+        // datagram that provoked it has nothing to do with whatever is received next - so it is exactly
+        // as harmless as the same condition already is in send(). Not catching it here would kill this
+        // whole endpoint's event loop over a single stray packet.
+        LOGGER.fine("ignoring a port-unreachable notification on {0}: {1}", localAddress, e.getMessage());
+        continue;
+      }
       if (source == null) {
         return;
       }
