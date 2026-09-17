@@ -97,7 +97,7 @@ public class HandshakeTest {
   }
 
 
-  @Test
+  @Test(timeOut = 30000)
   public void testExportedPemIsWellFormed() throws Exception {
     Reporter.log("the keystore is exported to PEM files BoringSSL can read", true);
     String certificate = Files.readString(certificateChain);
@@ -117,7 +117,7 @@ public class HandshakeTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testHandshakeAndStreamExchange() {
     Reporter.log("a client and a server complete the handshake and exchange data on a stream", true);
     try (QuicheConfig clientConfig = clientConfig();
@@ -170,7 +170,7 @@ public class HandshakeTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testStreamLimitIsAdvertised() {
     Reporter.log("the peer grants exactly the number of streams the configuration asks for", true);
     try (QuicheConfig clientConfig = clientConfig();
@@ -188,7 +188,7 @@ public class HandshakeTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testAlpnMismatchFailsTheHandshake() {
     Reporter.log("a client offering a different ALPN protocol is refused", true);
     try (QuicheConfig clientConfig = clientConfig().setApplicationProtocols("something-else");
@@ -205,7 +205,7 @@ public class HandshakeTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testConnectionIdsAreExchanged() {
     Reporter.log("each side learns the connection id the other chose", true);
     try (QuicheConfig clientConfig = clientConfig();

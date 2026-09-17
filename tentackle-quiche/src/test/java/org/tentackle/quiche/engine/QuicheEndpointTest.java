@@ -103,7 +103,7 @@ public class QuicheEndpointTest {
   }
 
 
-  @Test
+  @Test(timeOut = 60000)
   public void testHandshakeOverUdp() throws Exception {
     Reporter.log("a client connects to a server over a real UDP socket", true);
     startServer(stream -> { });
@@ -113,7 +113,7 @@ public class QuicheEndpointTest {
     assertEquals(serverEndpoint.getConnectionCount(), 1, "the server did not keep the connection");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testStreamEcho() throws Exception {
     Reporter.log("data written on a stream comes back through the server's echo handler", true);
     startServer(this::echo);
@@ -127,7 +127,7 @@ public class QuicheEndpointTest {
     assertEquals(readFully(stream.getInputStream()), "hello over udp");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testLargePayloadCrossesTheFlowControlWindow() throws Exception {
     Reporter.log("a payload larger than the flow control window is transferred in full", true);
     startServer(this::echo);
@@ -157,7 +157,7 @@ public class QuicheEndpointTest {
     assertEquals(received, payload);
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testSeveralConcurrentStreams() throws Exception {
     Reporter.log("several streams of one connection are served independently", true);
     startServer(this::echo);
@@ -197,7 +197,7 @@ public class QuicheEndpointTest {
    * either &mdash; the blocking socket streams the TCP transports use behave exactly that way, and the
    * layers above rely on it.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void testAnInterruptDoesNotAbortABlockedRead() throws Exception {
     Reporter.log("an interrupt while parked in a read is remembered, not turned into a failure", true);
     startServer(this::echo);
@@ -238,7 +238,7 @@ public class QuicheEndpointTest {
     assertTrue(interruptSeen.get(), "the interrupt was swallowed instead of re-asserted");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testStreamLimitIsEnforced() throws Exception {
     Reporter.log("opening more streams than the peer grants is refused, not blocked forever", true);
     startServer(stream -> { });
@@ -253,7 +253,7 @@ public class QuicheEndpointTest {
     assertTrue(e.getMessage().contains("no further streams"), e.getMessage());
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testServerRefusesAnAlpnMismatch() throws Exception {
     Reporter.log("a client speaking a different application protocol never gets established", true);
     startServer(stream -> { });
@@ -265,7 +265,7 @@ public class QuicheEndpointTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testClosingTheClientTerminatesTheServerSide() throws Exception {
     Reporter.log("closing the client endpoint makes the server drop its connection too", true);
     startServer(stream -> { });
@@ -283,7 +283,7 @@ public class QuicheEndpointTest {
     assertEquals(serverEndpoint.getConnectionCount(), 0, "the server kept a connection that is gone");
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void testUnknownConnectionIdIsDroppedByAClientEndpoint() throws Exception {
     Reporter.log("a client endpoint drops datagrams for connections it does not know", true);
     clientEndpoint = new QuicheEndpoint(loopback(0));

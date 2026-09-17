@@ -28,6 +28,7 @@ import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -61,6 +62,14 @@ public final class QuicheTestSupport {
   }
 
   /**
+   * The seconds waited for {@code keytool} to finish generating a keystore.
+   * <p>
+   * A safety net, not a realistic budget: a local {@code -genkeypair} normally completes in well
+   * under a second. Without a bound, a stuck subprocess would hang test setup indefinitely.
+   */
+  private static final long KEYTOOL_TIMEOUT_SECONDS = 30;
+
+  /**
    * Creates a PKCS12 keystore holding a single self-signed certificate under
    * {@link #CERTIFICATE_ALIAS}.<br>
    * BoringSSL, which quiche builds on, accepts RSA and EC certificates only; any other key algorithm
@@ -90,7 +99,11 @@ public final class QuicheTestSupport {
       .redirectErrorStream(true)
       .start();
     String output = new String(process.getInputStream().readAllBytes());
-    assertTrue(process.waitFor() == 0, "keytool failed: " + output);
+    if (!process.waitFor(KEYTOOL_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+      process.destroyForcibly();
+      fail("keytool did not finish within " + KEYTOOL_TIMEOUT_SECONDS + " seconds, output so far: " + output);
+    }
+    assertTrue(process.exitValue() == 0, "keytool failed: " + output);
     return keyStore;
   }
 

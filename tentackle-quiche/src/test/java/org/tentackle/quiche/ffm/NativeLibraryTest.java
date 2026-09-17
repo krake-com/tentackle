@@ -34,14 +34,14 @@ import static org.testng.Assert.assertTrue;
  */
 public class NativeLibraryTest {
 
-  @Test
+  @Test(timeOut = 30000)
   public void testPlatformIsSupported() {
     Reporter.log("platform is one of the directories in the quiche binary artifact", true);
     String platform = NativeLibrary.getPlatform();
     assertTrue(platform.matches("(darwin|linux|win32)-(x86-64|aarch64)"), "unexpected platform " + platform);
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testLibraryNameMatchesThePlatform() {
     Reporter.log("the library file name follows the platform's convention", true);
     String name = NativeLibrary.getLibraryName();
@@ -57,13 +57,13 @@ public class NativeLibraryTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testLibraryIsLoaded() {
     Reporter.log("the native library is loaded and exports its symbols", true);
     assertNotNull(NativeLibrary.getLookup().find("quiche_version").orElse(null));
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testVersion() {
     Reporter.log("quiche_version returns a version string", true);
     String version = Quiche.version();
@@ -72,7 +72,7 @@ public class NativeLibraryTest {
     assertTrue(version.matches("\\d+\\.\\d+\\.\\d+.*"), "unexpected version string '" + version + "'");
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testVersionIsSupported() {
     Reporter.log("the library speaks QUIC version 1 (RFC-9000), and not the old drafts", true);
     assertTrue(Quiche.versionIsSupported(Quiche.PROTOCOL_VERSION));
@@ -80,7 +80,7 @@ public class NativeLibraryTest {
     assertFalse(Quiche.versionIsSupported(0xdead_beef));
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testErrorName() {
     Reporter.log("error codes are translated to their names", true);
     assertEquals(Quiche.errorName(Quiche.ERR_DONE), "DONE");
@@ -89,7 +89,7 @@ public class NativeLibraryTest {
     assertEquals(Quiche.errorName(-4711), "-4711");
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testUnknownSymbolIsReported() {
     Reporter.log("binding a symbol the library does not export fails with a clear message", true);
     try {

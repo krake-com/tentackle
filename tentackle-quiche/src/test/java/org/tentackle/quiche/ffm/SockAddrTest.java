@@ -54,7 +54,7 @@ public class SockAddrTest {
     };
   }
 
-  @Test(dataProvider = "addresses")
+  @Test(dataProvider = "addresses", timeOut = 30000)
   public void testRoundTrip(InetSocketAddress address) {
     Reporter.log("an address survives the trip through a sockaddr unchanged: " + address, true);
     try (Arena arena = Arena.ofConfined()) {
@@ -68,7 +68,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testPortIsBigEndian() {
     Reporter.log("the port is in network byte order, regardless of the platform", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -79,7 +79,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testFamilyLayoutMatchesThePlatform() {
     Reporter.log("the BSDs put a length byte in front of the family, Linux and Windows do not", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -99,7 +99,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testAddressBytesAreInNetworkOrder() {
     Reporter.log("the address bytes are copied verbatim, not byte-swapped", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -111,7 +111,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testTailIsZeroed() {
     Reporter.log("the unused tail is zeroed so quiche never compares against stale bytes", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -124,7 +124,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testReencodingReplacesAnIpv6AddressCompletely() {
     Reporter.log("an IPv4 address written over an IPv6 one leaves nothing of the latter behind", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -136,7 +136,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testUnknownFamilyIsRejected() {
     Reporter.log("an address family the transport cannot use is reported, not misread", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -153,7 +153,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testUnresolvedAddressIsRejected() {
     Reporter.log("an unresolved address cannot be encoded and says so", true);
     try (Arena arena = Arena.ofConfined()) {
@@ -163,7 +163,7 @@ public class SockAddrTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void testStructureSizes() {
     Reporter.log("the structure sizes are the ones the C library expects", true);
     assertEquals(SockAddr.SOCKADDR_IN_SIZE, 16);
