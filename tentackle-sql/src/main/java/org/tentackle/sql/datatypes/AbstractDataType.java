@@ -190,6 +190,11 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public boolean isComparable() {
+    return true;
+  }
+
+  @Override
   public boolean isNumeric() {
     return false;
   }

@@ -80,6 +80,18 @@ public final class SQLXMLType extends StringType {
                                ": the empty string is not an XML document");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Databases provide no comparator for XML documents: comparing or ordering by an XML
+   * column is meaningless, and meaningful queries require the backend's native XML query
+   * language instead.
+   */
+  @Override
+  public boolean isComparable() {
+    return false;
+  }
+
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, String object, boolean mapNull, Integer size) throws SQLException {
     if (backend.isSqlxmlSupported()) {

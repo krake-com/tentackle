@@ -130,6 +130,11 @@ public class DataTypeContractTest {
   }
 
   @Test(dataProvider = "allDataTypes")
+  public void testComparableByDefault(DataType<?> dataType) {
+    assertTrue(dataType.isComparable(), dataType + " must be comparable unless overridden");
+  }
+
+  @Test(dataProvider = "allDataTypes")
   public void testEqualsAndHashCode(DataType<?> dataType) {
     // data types are singletons, but equals/hashCode must still be sane
     assertEquals(dataType, dataType);

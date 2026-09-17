@@ -87,6 +87,18 @@ public final class JsonType extends StringType {
                                ": the empty string is not a JSON document");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Databases provide no comparator for JSON documents: comparing or ordering by a JSON
+   * column is meaningless, and meaningful queries require the backend's native JSON query
+   * language instead.
+   */
+  @Override
+  public boolean isComparable() {
+    return false;
+  }
+
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, String object, boolean mapNull, Integer size) throws SQLException {
     if (backend.isJsonSupported()) {

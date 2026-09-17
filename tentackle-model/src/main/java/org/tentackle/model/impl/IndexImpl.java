@@ -552,6 +552,13 @@ public class IndexImpl implements Index {
     if (getAttributes().isEmpty()) {
       throw createModelException("index " + this + " does not contain any attributes");
     }
+
+    for (IndexAttribute attribute : getAttributes()) {
+      if (!attribute.getAttribute().getEffectiveDataType().isComparable()) {
+        throw createModelException(
+            "attribute " + attribute.getAttribute() + " has a non-comparable data type and cannot be part of an index");
+      }
+    }
   }
 
   /**

@@ -58,7 +58,8 @@ public class WurbletArgumentParserTest {
                 "long       txId      txid\n" +
                 "char       modType   modtype\n" +
                 "String(32) user      moduser\n" +
-                "Timestamp  processed processed"),
+                "Timestamp  processed processed\n" +
+                "JSON       payload   payload"),
                 null);
     }
     catch (ModelException mx) {
@@ -236,6 +237,35 @@ public class WurbletArgumentParserTest {
             new WurbletArgumentParser(entity, false, Arrays.asList("+txId?withTxId")));
     assertThrows(WurbelException.class, () ->
             new WurbletArgumentParser(entity, true, Arrays.asList("user", "|", "modType?withModType")));
+  }
+
+  @Test
+  public void testNonComparableAttributeRejectedAsConditionOrSort() {
+    // a JSON column has no database comparator, so it cannot be used as a condition or sort argument
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("payload:=:\"{}\"")));
+    assertThrows(WurbelException.class, () ->
+            new WurbletArgumentParser(entity, false, Arrays.asList("+payload")));
+
+    // but it can still be used as a plain update value (EXTRA), which needs no comparison
+    try {
+      new WurbletArgumentParser(entity, true, Arrays.asList("txId", "|", "payload"));
+    }
+    catch (WurbelException wx) {
+      fail(wx.getMessage(), wx);
+    }
+  }
+
+  @Test
+  public void testNonComparableAttributeAllowedForIsNullCheck() {
+    // "IS NULL"/"IS NOT NULL" need no comparator, so they're fine even for a non-comparable datatype
+    try {
+      new WurbletArgumentParser(entity, false, Arrays.asList("payload:null"));
+      new WurbletArgumentParser(entity, false, Arrays.asList("payload:notnull"));
+    }
+    catch (WurbelException wx) {
+      fail(wx.getMessage(), wx);
+    }
   }
 
 }

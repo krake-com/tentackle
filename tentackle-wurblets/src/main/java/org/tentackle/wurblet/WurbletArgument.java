@@ -482,6 +482,22 @@ public class WurbletArgument implements WurbletArgumentOperand {
           if (dataType.isColumnCountBackendSpecific()) {
             throw new WurbelException("backend-specific datatype " + dataType + " cannot be used as a wurblet argument");
           }
+
+          if (!dataType.isComparable()) {
+            if (argumentType == WurbletArgumentType.SORT) {
+              throw new WurbelException("non-comparable datatype " + dataType + " cannot be used for sorting");
+            }
+            if (argumentType == WurbletArgumentType.CONDITION) {
+              // "IS NULL"/"IS NOT NULL" need no comparator, so they're fine even for a non-comparable datatype
+              if (!Backend.SQL_ISNULL.equals(relop) && !Backend.SQL_ISNOTNULL.equals(relop)) {
+                if (relop != null) {
+                  throw new WurbelException("non-comparable datatype " + dataType +
+                                            " cannot be used in conjunction with '" + relop + "'");
+                }
+                throw new WurbelException("non-comparable datatype " + dataType + " cannot be used as a wurblet argument");
+              }
+            }
+          }
         }
         catch (ModelException mx) {
           throw new WurbelException("cannot determine datatype of " + attribute, mx);

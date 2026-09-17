@@ -177,6 +177,17 @@ public interface DataType<T> {
 
 
   /**
+   * Returns whether this type can be compared, e.g., for equality or ordering.<br>
+   * Some types have no backend-provided comparator at all, for example, SQLXML or JSON
+   * documents: comparing or ordering by such a column is meaningless, and such types
+   * cannot be part of an index or used as a query/sort argument.
+   *
+   * @return true if comparable (default), false if the backend provides no comparator
+   */
+  boolean isComparable();
+
+
+  /**
    * Gets the indexes to the sortable columns.<br>
    * The number and order of the indexes is reflected in the generated order-by SQL clause.
    *

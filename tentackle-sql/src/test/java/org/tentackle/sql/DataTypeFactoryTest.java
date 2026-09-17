@@ -134,6 +134,8 @@ public class DataTypeFactoryTest {
     assertEquals(sqlxml.getDataTypeConstant(), "DT_STRING_SQLXML");
     assertTrue(plain.isMapNullSupported());
     assertFalse(sqlxml.isMapNullSupported());
+    assertTrue(plain.isComparable());
+    assertFalse(sqlxml.isComparable(), "databases provide no comparator for XML documents");
   }
 
   /**
@@ -163,6 +165,8 @@ public class DataTypeFactoryTest {
     assertEquals(json.getDataTypeConstant(), "DT_STRING_JSON");
     assertTrue(plain.isMapNullSupported());
     assertFalse(json.isMapNullSupported());
+    assertTrue(plain.isComparable());
+    assertFalse(json.isComparable(), "databases provide no comparator for JSON documents");
   }
 
   /**
