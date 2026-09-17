@@ -246,7 +246,7 @@ public class PullMojoTest extends AbstractI18nMojoTest {
   private List<String> translations(File file) {
     assertTrue(file.isFile(), "no such property file: " + file);
     List<String> lines = new ArrayList<>();
-    for (String line : I18nTestSupport.readFile(file).split("\n")) {
+    for (String line : I18nTestSupport.readFile(file).lines().toList()) {
       if (!line.isBlank() && !line.startsWith("#")) {
         lines.add(line);
       }

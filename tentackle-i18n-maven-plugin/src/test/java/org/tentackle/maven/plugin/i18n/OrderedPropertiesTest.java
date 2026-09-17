@@ -177,7 +177,7 @@ public class OrderedPropertiesTest {
     StringWriter writer = new StringWriter();
     props.store(writer, null);
     List<String> lines = new ArrayList<>();
-    for (String line : writer.toString().split("\n")) {
+    for (String line : writer.toString().lines().toList()) {
       if (!line.isBlank() && !line.startsWith("#")) {
         lines.add(line.trim());
       }
