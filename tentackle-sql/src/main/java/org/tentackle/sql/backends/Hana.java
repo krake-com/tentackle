@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlNameType;
@@ -124,10 +125,10 @@ public class Hana extends AbstractSql2003Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < MIN_MAJOR_VERSION) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < MIN_MAJOR_VERSION) {
       throw new BackendException(this + " needs at least SAP HANA " + MIN_MAJOR_VERSION + ".0" +
-                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion);
+                                 ", but is connected to " + versionInfo);
     }
   }
 

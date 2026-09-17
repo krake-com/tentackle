@@ -21,6 +21,7 @@ package org.tentackle.sql.backends;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
@@ -119,10 +120,10 @@ public class Firebird extends AbstractSql2008Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < MIN_MAJOR_VERSION) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < MIN_MAJOR_VERSION) {
       throw new BackendException(this + " needs at least Firebird " + MIN_MAJOR_VERSION + ".0" +
-                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion);
+                                 ", but is connected to " + versionInfo);
     }
   }
 

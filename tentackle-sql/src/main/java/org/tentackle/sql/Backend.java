@@ -292,11 +292,10 @@ public interface Backend {
    * <p>
    * Throws {@link BackendException} if incompatible.
    *
-   * @param databaseMajorVersion the major version
-   * @param databaseMinorVersion the minor version
+   * @param versionInfo the database version
    * @see BackendInfo#BackendInfo(String, String, char[], String[])
    */
-  void validateVersion(int databaseMajorVersion, int databaseMinorVersion);
+  void validateVersion(BackendVersionInfo versionInfo);
 
   /**
    * Gets the name of the backend.<br>
@@ -358,7 +357,7 @@ public interface Backend {
   /**
    * Checks whether this a reserved table name for this backend.<br>
    * Applies only to tables. Not to be mixed up with {@link #getReservedWords()}.<br>
-   * Useful to avoid conflicts with naming conventions for backend specific things,
+   * Useful to avoid conflicts with naming conventions for backend-specific things,
    * such as snapshots.
    *
    * @param name the table name
@@ -466,7 +465,7 @@ public interface Backend {
    * Returns whether the backend provides locking-free sequences.<br>
    * Sequences must not take part in transactions, i.e., no read- or write-locks!
    *
-   * @return true if database supports sequences
+   * @return true if the database supports sequences
    */
   boolean isSequenceSupported();
 
@@ -480,9 +479,9 @@ public interface Backend {
   String sqlAsBeforeTableAlias();
 
   /**
-   * Returns whether backend requires an alias for a sub select.
+   * Returns whether the backend requires an alias for a sub-select.
    *
-   * @return true if sub-select needs an alias.
+   * @return true if a sub-select needs an alias.
    */
   boolean isAliasRequiredForSubSelect();
 
@@ -523,7 +522,7 @@ public interface Backend {
   String sqlCreateSchema(String name);
 
   /**
-   * Create comment SQL code that is interpreted as a comment by the backend.
+   * Create SQL code interpreted as a comment by the backend.
    *
    * @param text any text, single or multiline
    * @return the comment, null if the text was null
@@ -542,7 +541,7 @@ public interface Backend {
   String sqlJoin(JoinType type, String joinedTableName, String joinedTableAlias, String join);
 
   /**
-   * Creates an sql function expression.
+   * Creates an SQL function expression.
    * <p>
    * Example:
    * <pre>
@@ -556,7 +555,7 @@ public interface Backend {
   String sqlFunction(String functionName, String expression);
 
   /**
-   * Checks for the (postgres) bug that fetch-size is ignored if not within a new transaction.
+   * Checks for the (Postgres) bug that fetch-size is ignored if not within a new transaction.
    *
    * @return true if start tx
    */
@@ -669,7 +668,7 @@ public interface Backend {
   ModelMetaData getModelMetaData(DatabaseMetaData[] metaData, String[] schemas, String... tableNames);
 
   /**
-   * Creates a column meta data instance.
+   * Creates a column metadata instance.
    *
    * @param tableMetaData the table metadata this column belongs to
    * @return the meta data
@@ -686,7 +685,7 @@ public interface Backend {
   TableMetaData createTableMetaData(ModelMetaData metaData, String tableName);
 
   /**
-   * Creates an index meta data instance.
+   * Creates an index metadata instance.
    *
    * @param tableMetaData the table metadata this index belongs to
    * @return the meta data
@@ -696,7 +695,7 @@ public interface Backend {
   /**
    * Creates an index column meta data instance.
    *
-   * @param indexMetaData the meta meta data this column belongs to
+   * @param indexMetaData the metameta this column belongs to
    * @return the meta data
    */
   IndexColumnMetaData createIndexColumnMetaData(IndexMetaData indexMetaData);
@@ -711,7 +710,7 @@ public interface Backend {
   String sqlTypeToString(SqlType sqlType, int size);
 
   /**
-   * Converts the given SQL type, size and scale to a database type declaration.
+   * Converts the given SQL type, size, and scale to a database type declaration.
    *
    * @param sqlType the SQL type
    * @param size the size
@@ -721,7 +720,7 @@ public interface Backend {
   String columnTypeToString(SqlType sqlType, int size, int scale);
 
   /**
-   * Converts an sqltype, size, scale, nullable and default value to a database type declaration.
+   * Converts an SqlType, size, scale, nullable, and default value to a database type declaration.
    *
    * @param columnName the database column name
    * @param sqlType the JDBC SQL type
@@ -822,7 +821,7 @@ public interface Backend {
    *
    * @param tableName the table name
    * @param comment optional comment, null if none
-   * @return the SQL code, empty string if comment is created via {@link #sqlCreateTableIntro} or {@link #sqlCreateTableClosing}
+   * @return the SQL code, empty string if the comment is created via {@link #sqlCreateTableIntro} or {@link #sqlCreateTableClosing}
    */
   String sqlCreateTableComment(String tableName, String comment);
 
@@ -989,8 +988,8 @@ public interface Backend {
   /**
    * Generates SQL code to change the null-constraint of a column, given its full declaration.<br>
    * Some backends (MySQL, for example) cannot change a single property of a column: the whole
-   * declaration must be repeated. Backends that can change the null-constraint on its own
-   * simply ignore the type, size, scale and default.
+   * declaration must be repeated. Backends that can change the null-constraint on their own
+   * simply ignore the type, size, scale, and default.
    *
    * @param tableName the tablename
    * @param columnName the new column name
@@ -1022,7 +1021,7 @@ public interface Backend {
    * @param tableName the table name
    * @param columnName the column name
    * @param comment optional comment, null if none
-   * @return the SQL code, empty string if comment is created via {@link #sqlCreateColumn}
+   * @return the SQL-code, the empty string if comment is created via {@link #sqlCreateColumn}
    */
   String sqlCreateColumnComment(String tableName, String columnName, String comment);
 
@@ -1063,7 +1062,7 @@ public interface Backend {
   String sqlCreateUniqueConstraint(String tableName, String constraintName, Deferrability deferrability, String... columnNames);
 
   /**
-   * Gets the column name for the comment of within an index meta-data result set.
+   * Gets the column name for the comment of within an index metadata result set.
    *
    * @return the column name, null if not supported by the backend
    */
@@ -1159,7 +1158,7 @@ public interface Backend {
   String sqlDropForeignKey(String referencingTableName, String foreignKeyName);
 
   /**
-   * Generate SQL-code for joining a table with an existing {@code SELECT}.
+   * Generate SQL code for joining a table with an existing {@code SELECT}.
    *
    * @param type the join type
    * @param addColumns true if columns of the joined table should be added to the result set
@@ -1173,7 +1172,7 @@ public interface Backend {
                       String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
 
   /**
-   * Generate SQL-code for joining a table with an existing {@code SELECT}.
+   * Generate SQL code for joining a table with an existing {@code SELECT}.
    *
    * @param type the join type
    * @param addColumns true if columns of the joined table should be added to the result set
@@ -1209,7 +1208,7 @@ public interface Backend {
    * mistake one for the other. Backends that do not need the name simply ignore it.
    *
    * @param jdbcType the jdbc data type
-   * @param typeName the backend-specific type name, may be null
+   * @param typeName the backend-specific type name; may be null
    * @param size the column size
    * @param scale the column's scale
    * @return the SqlTypes, empty array if no mapping available
@@ -1260,16 +1259,16 @@ public interface Backend {
    * The reduction removes parenthesized groups without any operand, along with the
    * {@link #SQL_NOT}, {@link #SQL_AND} and {@link #SQL_OR} operators becoming superfluous.
    * If two operators become adjacent because the operand in between was skipped, the first one
-   * is removed, i.e. the operand takes its leading operator with it.<br>
+   * is removed, i.e., the operand takes its leading operator with it.<br>
    * Only parentheses that are an operand of a logical expression are removed. Parentheses belonging
    * to an operand, such as {@code now()} or {@code id IN()}, are left alone, as is anything within quotes.
    * Only uppercase keywords are treated as operators. If you don't want your statements
    * getting reduced, use lowercase for those keywords.<br>
-   * The SQL text must end with the logical expression, i.e. the reduction must be applied
+   * The SQL text must end with the logical expression, i.e., the reduction must be applied
    * before appending an ORDER BY or any other trailing clause. Otherwise, a dangling operator
    * at the end of the expression cannot be detected.
    *
-   * @param sql the SQL code, will be modified in place
+   * @param sql the SQL code; will be modified in place
    */
   void reduceSql(StringBuilder sql);
 
@@ -1299,7 +1298,7 @@ public interface Backend {
   boolean isClobSupported();
 
   /**
-   * Returns whether the backend supports the JDBC {@link java.sql.SQLXML} binding natively, i.e. a native
+   * Returns whether the backend supports the JDBC {@link java.sql.SQLXML} binding natively, i.e., a native
    * XML column type plus a driver implementing {@code createSQLXML}/{@code setSQLXML}/{@code getSQLXML}.<br>
    * If not, XML content is emulated as CLOB/VARCHAR.
    *
@@ -1335,7 +1334,7 @@ public interface Backend {
   /**
    * Returns whether backend supports filtered indexes.
    *
-   * @return true if supported, false if model will raise an error if a filtered index is used
+   * @return true if supported, false if the model will raise an error if a filtered index is used
    */
   boolean isFilteredIndexSupported();
 
@@ -1406,7 +1405,7 @@ public interface Backend {
    * Sets a JSON parameter in a prepared statement.
    * <p>
    * JDBC has no JSON binding, and the backends disagree on what a native JSON column accepts:
-   * postgres wants an object of type {@link Types#OTHER}, H2 only accepts the UTF-8 bytes (a java
+   * Postgres wants an object of type {@link Types#OTHER}, H2 only accepts the UTF-8 bytes (a java
    * string would be stored as a JSON <em>string value</em>), and mysql takes a plain string.
    * The default implementation sets a plain string, which is correct for every backend emulating
    * JSON as a text column.

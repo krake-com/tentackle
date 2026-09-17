@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -58,9 +59,9 @@ public class HanaTest {
 
   @Test
   public void testValidateVersion() {
-    expectThrows(BackendException.class, () -> backend.validateVersion(1, 0));
-    backend.validateVersion(2, 0);
-    backend.validateVersion(4, 0);    // HANA Cloud
+    expectThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(1, 0)));
+    backend.validateVersion(new BackendVersionInfo(2, 0));
+    backend.validateVersion(new BackendVersionInfo(4, 0));    // HANA Cloud
   }
 
   @Test

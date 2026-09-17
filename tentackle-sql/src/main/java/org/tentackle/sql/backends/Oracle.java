@@ -21,6 +21,7 @@ package org.tentackle.sql.backends;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.OracleIndexColumnMetaData;
@@ -71,9 +72,9 @@ public class Oracle extends Oracle8 {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < 12) {
-      throw new BackendException(this + " needs at least Oracle 12, but is connected to " + databaseMajorVersion + "." + databaseMinorVersion +
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < 12) {
+      throw new BackendException(this + " needs at least Oracle 12, but is connected to " + versionInfo +
                                  " (consider adding '|Oracle8' to the connection URL)");
     }
   }

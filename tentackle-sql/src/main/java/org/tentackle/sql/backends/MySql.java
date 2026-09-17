@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.SqlNameType;
@@ -151,10 +152,10 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < MIN_MAJOR_VERSION) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < MIN_MAJOR_VERSION) {
       throw new BackendException(this + " needs at least MySQL " + MIN_MAJOR_VERSION + ".0.13" +
-                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion);
+                                 ", but is connected to " + versionInfo);
     }
   }
 

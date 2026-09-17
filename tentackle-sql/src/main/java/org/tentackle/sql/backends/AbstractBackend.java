@@ -23,6 +23,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.DefaultScriptRunner;
 import org.tentackle.sql.JoinType;
 import org.tentackle.sql.MigrationStrategy;
@@ -142,7 +143,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
     // ok, by default
   }
 
@@ -1141,7 +1142,7 @@ public abstract class AbstractBackend implements Backend {
 
   /**
    * Splits the SQL text into tokens.<br>
-   * The tokens hold the original text, i.e. concatenating all tokens restores the SQL text.
+   * The tokens hold the original text, i.e., concatenating all tokens restores the SQL text.
    * Only uppercase keywords are recognized as operators. Text within quotes is never interpreted.
    *
    * @param sql the SQL text
@@ -1187,9 +1188,10 @@ public abstract class AbstractBackend implements Backend {
       }
       else if (isKeywordAt(sql, index, "NOT")) {
         // "NOT IN", "NOT LIKE" and "IS NOT NULL" belong to the operand
-        if (isKeywordAt(sql, skipBlanks(sql, index + 3), "IN") ||
-            isKeywordAt(sql, skipBlanks(sql, index + 3), "LIKE") ||
-            isKeywordAt(sql, skipBlanks(sql, index + 3), "NULL")) {
+        int skipBlanks = skipBlanks(sql, index + 3);
+        if (isKeywordAt(sql, skipBlanks, "IN") ||
+            isKeywordAt(sql, skipBlanks, "LIKE") ||
+            isKeywordAt(sql, skipBlanks, "NULL")) {
           length = 3;
         }
         else {
@@ -1264,11 +1266,11 @@ public abstract class AbstractBackend implements Backend {
 
 
   /**
-   * The kind of an {@link SqlToken}.
+   * Kind of an {@link SqlToken}.
    */
   private enum SqlTokenType {
 
-    /** anything that is not an operator, a parenthesis or whitespace. */
+    /** anything that is not an operator, a parenthesis, or whitespace. */
     OPERAND,
 
     /** whitespace between tokens. */
@@ -1292,7 +1294,7 @@ public abstract class AbstractBackend implements Backend {
     /**
      * Returns whether this is a logical operator.
      *
-     * @return true if AND, OR or NOT
+     * @return true if AND, OR, or NOT
      */
     private boolean isOperator() {
       return this == AND || this == OR || this == NOT;

@@ -21,6 +21,7 @@ package org.tentackle.sql.backends;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlType;
 
@@ -64,11 +65,11 @@ public class MariaDb extends MySql {
   }
 
   @Override
-  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
-    if (databaseMajorVersion < MIN_MAJOR_VERSION ||
-        databaseMajorVersion == MIN_MAJOR_VERSION && databaseMinorVersion < MIN_MINOR_VERSION) {
+  public void validateVersion(BackendVersionInfo versionInfo) {
+    if (versionInfo.majorVersion() < MIN_MAJOR_VERSION ||
+        versionInfo.majorVersion() == MIN_MAJOR_VERSION && versionInfo.minorVersion() < MIN_MINOR_VERSION) {
       throw new BackendException(this + " needs at least MariaDB " + MIN_MAJOR_VERSION + "." + MIN_MINOR_VERSION +
-                                 ", but is connected to " + databaseMajorVersion + "." + databaseMinorVersion +
+                                 ", but is connected to " + versionInfo +
                                  " (the MariaDB driver connects to MySQL servers as well: consider adding '|MySQL' " +
                                  "to the connection URL if this is a MySQL server)");
     }

@@ -426,7 +426,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     if (t != null) {
-      // shutdown monitoring thread, unsynchronized: the thread locks this manager
+      // shutdown monitoring thread, not synchronized: the thread locks this manager
       t.requestTermination();
       t.interrupt();
       try {
@@ -437,8 +437,8 @@ public class DefaultConnectionManager implements ConnectionManager {
         LOGGER.warning(this + ": stopping the timeout thread failed", ex);
       }
       if (t.isAlive()) {
-        // the thread is stuck, most probably in a lengthy detach.
-        // it is a daemon thread and will terminate as soon as it is done.
+        // The thread is stuck.
+        // It is a daemon thread and will terminate as soon as it is done.
         LOGGER.warning("{0}: the timeout thread did not terminate within {1} ms", this, TIMEOUT_THREAD_JOIN_MS);
       }
     }
@@ -647,7 +647,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       });
 
       Backend backend = backendInfo.getBackend();
-      backend.validateVersion(versionInfo.majorVersion(), versionInfo.minorVersion());
+      backend.validateVersion(versionInfo);
       mc = new ManagedConnection(this, backend, versionInfo, con);
       if (backendInfo.getBackendTimeout() > 0) {
         mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
@@ -749,7 +749,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     /**
      * Requests this thread to terminate.<br>
      * The flag belongs to the thread, not to the manager, so that a thread already retired
-     * cannot be revived by re-enabling the attach timeout, which would start a second thread.
+     * cannot be revived by re-enabling the attach-timeout, which would start a second thread.
      */
     void requestTermination() {
       terminationRequested = true;

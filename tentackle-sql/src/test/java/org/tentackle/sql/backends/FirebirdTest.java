@@ -21,6 +21,7 @@ package org.tentackle.sql.backends;
 import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -53,9 +54,9 @@ public class FirebirdTest {
 
   @Test
   public void testValidateVersion() {
-    expectThrows(BackendException.class, () -> backend.validateVersion(3, 0));
-    backend.validateVersion(4, 0);
-    backend.validateVersion(5, 0);
+    expectThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(3, 0)));
+    backend.validateVersion(new BackendVersionInfo(4, 0));
+    backend.validateVersion(new BackendVersionInfo(5, 0));
   }
 
   /**

@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 
@@ -228,9 +229,9 @@ public class MySqlTest {
 
   @Test
   public void testValidateVersion() {
-    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(5, 7));
-    backend.validateVersion(8, 0);
-    backend.validateVersion(9, 1);
+    Assert.assertThrows(BackendException.class, () -> backend.validateVersion(new BackendVersionInfo(5, 7)));
+    backend.validateVersion(new BackendVersionInfo(8, 0));
+    backend.validateVersion(new BackendVersionInfo(9, 1));
   }
 
 }
