@@ -99,7 +99,18 @@ public interface DataTypeFactory {
    * @return the datatype, null if no such type
    */
   default DataType<?> get(String javaType) {
-    return get(javaType, "");
+    DataType<?> dataType = get(javaType, "");
+    if (dataType == null) {
+      // SQLXML/JSON are not DataType keys of their own: they alias the matching variant of String,
+      // bridged to a native XML/JSON column where the backend supports it.
+      if ("SQLXML".equals(javaType)) {
+        dataType = get("String", SQLXML_VARIANT);
+      }
+      else if ("JSON".equals(javaType)) {
+        dataType = get("String", JSON_VARIANT);
+      }
+    }
+    return dataType;
   }
 
 

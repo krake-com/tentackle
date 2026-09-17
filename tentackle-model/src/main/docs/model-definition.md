@@ -247,9 +247,17 @@ All four positional fields are required (comment and options are optional).
 | Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `SQLXML`, `JSON` |
 | Custom     | Any other class name (application-specific type)                                                                                                                                                |
 
+`JSON` and `SQLXML` are string variants and affect the database's column type only, i.e., the java type 
+seen by the application is `String`. Postgres, for example, provides a special query syntax for those types.
+If the application needs real JSON or XML objects, wrap the type within a `Convertible` (see below),
+for example: `MyJsonObject<JSON>`. Tentackle does not provide such implementations to avoid dependencies
+on any of the various JSON or XML implementations.
+See the concrete backends of what is supported and how it is mapped.
+
 ### Size and scale
 
 Appended directly to the type: `String(128)`, `Double(10,2)`, `BigDecimal(15,4)`.
+`String(0)` selects a large string (a string variant), that is mapped to a `CLOB` in the database, if supported by the database.
 
 ### Inner/generic type
 

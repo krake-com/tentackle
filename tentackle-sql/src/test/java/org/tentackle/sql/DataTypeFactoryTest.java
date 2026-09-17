@@ -132,6 +132,16 @@ public class DataTypeFactoryTest {
   }
 
   /**
+   * {@code "SQLXML"} is not a {@link DataType} key of its own: looking it up by plain java type
+   * name must alias the SQLXML variant of {@code String}, since that is what the model uses
+   * (see the {@code SQLXML} attribute type in the model definition).
+   */
+  @Test
+  public void testSqlxmlAlias() {
+    assertSame(factory.get("SQLXML"), factory.get("String", DataTypeFactory.SQLXML_VARIANT));
+  }
+
+  /**
    * Same as {@link #testVariant()}, for the JSON variant of {@code String}.
    * <p>
    * Unlike the other string variants this one does not support MAPNULL, because the empty string
@@ -148,6 +158,16 @@ public class DataTypeFactoryTest {
     assertEquals(json.getDataTypeConstant(), "DT_STRING_JSON");
     assertTrue(plain.isMapNullSupported());
     assertFalse(json.isMapNullSupported());
+  }
+
+  /**
+   * {@code "JSON"} is not a {@link DataType} key of its own: looking it up by plain java type
+   * name must alias the JSON variant of {@code String}, since that is what the model uses
+   * (see the {@code JSON} attribute type in the model definition).
+   */
+  @Test
+  public void testJsonAlias() {
+    assertSame(factory.get("JSON"), factory.get("String", DataTypeFactory.JSON_VARIANT));
   }
 
   @Test
