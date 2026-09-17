@@ -22,6 +22,7 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.sql.backends.H2;
 import org.tentackle.sql.backends.Oracle;
 import org.tentackle.sql.backends.Oracle21;
+import org.tentackle.sql.backends.Oracle23;
 import org.tentackle.sql.backends.Oracle8;
 import org.testng.annotations.Test;
 
@@ -103,6 +104,19 @@ public class BackendFactoryTest {
     assertEquals(factory.getBackendByUrl(url).getName(), new Oracle().getName());
     BackendInfo info = BackendInfoFactory.getInstance().create(url + "|Oracle21", "scott", new char[0], null);
     assertEquals(info.getBackend().getName(), new Oracle21().getName());
+    assertEquals(info.getUrl(), url);
+  }
+
+  /**
+   * {@code Oracle23} opts in to the native BOOLEAN type and DROP ... IF EXISTS, but matches the
+   * very same URL as {@code Oracle} and must therefore be selected by name only.
+   */
+  @Test
+  public void testOracle23IsSelectedByNameOnly() {
+    String url = "jdbc:oracle:thin:@localhost:1521:tentackle";
+    assertEquals(factory.getBackendByUrl(url).getName(), new Oracle().getName());
+    BackendInfo info = BackendInfoFactory.getInstance().create(url + "|Oracle23", "scott", new char[0], null);
+    assertEquals(info.getBackend().getName(), new Oracle23().getName());
     assertEquals(info.getUrl(), url);
   }
 

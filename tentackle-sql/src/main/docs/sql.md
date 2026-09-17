@@ -50,17 +50,17 @@ SQL you execute at runtime are guaranteed to agree.
 design — because it enumerates every point at which relational databases disagree. Its methods fall into a handful
 of groups:
 
-| Group                           | Examples                                                                                                                                                                     | Purpose                                                                                                               |
-|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| **Identification & connection** | `isMatchingUrl`, `isMatchingName`, `getDriverClassName`, `createConnection`, `validateVersion`                                                                               | Recognize the database from a JDBC URL or name and open connections to it.                                            |
-| **Query construction**          | `buildSelectSql`, `setLeadingSelectParameters`, `setTrailingSelectParameters`, `sqlJoin`, `sqlJoinSelects`, `sqlFunction`, `optimizeSql`                                     | Assemble `SELECT`s with dialect-correct paging, write-locking, joins and function calls.                              |
-| **DDL generation**              | `sqlCreateTableIntro`, `sqlCreateColumn`, `sqlCreateIndex`, `sqlCreateForeignKey`, `sqlCreateSequence`, `sqlCreateSchema`, `sqlDropTable`                                    | Emit `CREATE`/`DROP` statements for the schema generator.                                                             |
-| **Schema migration**            | `getMigrationStrategy`, `sqlRenameColumn`, `sqlAlterColumnType`, `sqlAlterColumnNullConstraint`, `sqlAlterColumnDefault`, `isDefaultEqual`                                   | Compute and emit the `ALTER` statements that morph an existing schema into the model's.                               |
-| **Type mapping**                | `sqlTypeToString`, `columnTypeToString`, `columnTypeNullDefaultToString`, `jdbcTypeToSqlType`, `getMaxSize`, `getMaxScale`, `valueToLiteral`                                 | Translate Tentackle [`SqlType`](#sqltype)s to the database's own type declarations and back.                          |
+| Group                           | Examples                                                                                                                                                                                                             | Purpose                                                                                                               |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Identification & connection** | `isMatchingUrl`, `isMatchingName`, `getDriverClassName`, `createConnection`, `validateVersion`                                                                                                                       | Recognize the database from a JDBC URL or name and open connections to it.                                            |
+| **Query construction**          | `buildSelectSql`, `setLeadingSelectParameters`, `setTrailingSelectParameters`, `sqlJoin`, `sqlJoinSelects`, `sqlFunction`, `optimizeSql`                                                                             | Assemble `SELECT`s with dialect-correct paging, write-locking, joins and function calls.                              |
+| **DDL generation**              | `sqlCreateTableIntro`, `sqlCreateColumn`, `sqlCreateIndex`, `sqlCreateForeignKey`, `sqlCreateSequence`, `sqlCreateSchema`, `sqlDropTable`                                                                            | Emit `CREATE`/`DROP` statements for the schema generator.                                                             |
+| **Schema migration**            | `getMigrationStrategy`, `sqlRenameColumn`, `sqlAlterColumnType`, `sqlAlterColumnNullConstraint`, `sqlAlterColumnDefault`, `isDefaultEqual`                                                                           | Compute and emit the `ALTER` statements that morph an existing schema into the model's.                               |
+| **Type mapping**                | `sqlTypeToString`, `columnTypeToString`, `columnTypeNullDefaultToString`, `jdbcTypeToSqlType`, `getMaxSize`, `getMaxScale`, `valueToLiteral`                                                                         | Translate Tentackle [`SqlType`](#sqltype)s to the database's own type declarations and back.                          |
 | **Capability flags**            | `isSequenceSupported`, `isSchemaSupported`, `isClobSupported`, `isSqlxmlSupported`, `isJsonSupported`, `isUUIDSupported`, `isFunctionBasedIndexSupported`, `isFilteredIndexSupported`, `isReleaseSavepointSupported` | Let callers ask what the database can do instead of hard-coding product checks.                                       |
-| **Naming & reserved words**     | `assertValidName`, `getMaxNameLength`, `getReservedWords`, `isReservedTableName`, `isTemporaryName`                                                                          | Validate identifiers against the dialect's rules.                                                                     |
-| **Error classification**        | `isConstraintException`, `isCommunicationLinkException`, `isTransientTransactionException`                                                                                   | Interpret vendor-specific `SQLException`s so the upper layers can decide whether to retry a transaction or reconnect. |
-| **Metadata**                    | `getMetaData`, `getModelMetaData`, `getTableMetaData`, `createColumnMetaData`, `createIndexMetaData`                                                                         | Read the live database schema for migration and verification.                                                         |
+| **Naming & reserved words**     | `assertValidName`, `getMaxNameLength`, `getReservedWords`, `isReservedTableName`, `isTemporaryName`                                                                                                                  | Validate identifiers against the dialect's rules.                                                                     |
+| **Error classification**        | `isConstraintException`, `isCommunicationLinkException`, `isTransientTransactionException`                                                                                                                           | Interpret vendor-specific `SQLException`s so the upper layers can decide whether to retry a transaction or reconnect. |
+| **Metadata**                    | `getMetaData`, `getModelMetaData`, `getTableMetaData`, `createColumnMetaData`, `createIndexMetaData`                                                                                                                 | Read the live database schema for migration and verification.                                                         |
 
 A long list of `SQL_*` string constants (`SQL_WHERE`, `SQL_SELECT`, `SQL_AND`, `SQL_EQUAL_PAR`, …) is also defined
 on the interface. These are the building blocks the persistence layer concatenates into statements; sharing them
@@ -219,32 +219,35 @@ AbstractBackend
         ├── Oracle8
         │   └── Oracle
         │       └── Oracle21
+        │           └── Oracle23
         └── AbstractSql2008Backend
             └── Firebird
 ```
 
-| Backend       | Name          | Matches JDBC URL containing                       |
-|---------------|---------------|---------------------------------------------------|
-| `Postgres`    | `PostgreSQL`  | `:postgresql`                                     |
-| `CockroachDb` | `CockroachDB` | never (PostgreSQL driver, selected by name)       |
-| `H2`          | `H2`          | `:h2:` (in-memory when `:mem:`)                   |
-| `MySql`       | `MySQL`       | `:mysql`                                          |
-| `MariaDb`     | `MariaDB`     | `:mariadb`                                        |
-| `Oracle`      | `Oracle`      | `:oracle:`                                        |
-| `Oracle8`     | `Oracle8`     | `:oracle:` (legacy, selected by name)             |
-| `Oracle21`    | `Oracle21`    | never (native JSON opt-in, selected by name)      |
-| `Db2`         | `DB2`         | `:db2`                                            |
-| `MsSql`       | `MsSQL`       | `:sqlserver`                                      |
-| `Hana`        | `HANA`        | `:sap:`                                           |
-| `Firebird`    | `Firebird`    | `:firebird` (`jdbc:firebirdsql:`, `jdbc:firebird:`) |
-| `Informix`    | `Informix`    | `:informix`                                       |
+| Backend       | Name          | Matches JDBC URL containing                               |
+|---------------|---------------|-----------------------------------------------------------|
+| `Postgres`    | `PostgreSQL`  | `:postgresql`                                             |
+| `CockroachDb` | `CockroachDB` | never (PostgreSQL driver, selected by name)               |
+| `H2`          | `H2`          | `:h2:` (in-memory when `:mem:`)                           |
+| `MySql`       | `MySQL`       | `:mysql`                                                  |
+| `MariaDb`     | `MariaDB`     | `:mariadb`                                                |
+| `Oracle`      | `Oracle`      | `:oracle:`                                                |
+| `Oracle8`     | `Oracle8`     | `:oracle:` (legacy, selected by name)                     |
+| `Oracle21`    | `Oracle21`    | never (native JSON opt-in, selected by name)              |
+| `Oracle23`    | `Oracle23`    | never (native BOOLEAN/IF EXISTS opt-in, selected by name) |
+| `Db2`         | `DB2`         | `:db2`                                                    |
+| `MsSql`       | `MsSQL`       | `:sqlserver`                                              |
+| `Hana`        | `HANA`        | `:sap:`                                                   |
+| `Firebird`    | `Firebird`    | `:firebird` (`jdbc:firebirdsql:`, `jdbc:firebird:`)       |
+| `Informix`    | `Informix`    | `:informix`                                               |
 
 When several backends could match the same URL (e.g. `Oracle` and the deprecated `Oracle8`), only one matches by
 URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. `CockroachDB` is reached
-through the PostgreSQL driver and cannot be told apart by its URL at all, so it never matches one. `Oracle21` is
-the same idea used for an opt-in rather than a legacy dialect: it matches the very same URL as `Oracle`, but stores
-JSON in a native `JSON` column (see [The Oracle Backend](oracle.md#other-oracle-peculiarities)), so it must be
-requested explicitly with `|Oracle21`. Backends marked `isDeprecated()` are excluded from
+through the PostgreSQL driver and cannot be told apart by its URL at all, so it never matches one. `Oracle21` and
+`Oracle23` are the same idea used for opt-ins rather than a legacy dialect: each matches the very same URL as
+`Oracle`, but adds a version-specific native feature (JSON for `Oracle21`; `BOOLEAN` and `DROP ... IF EXISTS`
+for `Oracle23`, see [The Oracle Backend](oracle.md#other-oracle-peculiarities)), so each must be requested
+explicitly with `|Oracle21`/`|Oracle23`. Backends marked `isDeprecated()` are excluded from
 `BackendFactory.getAllBackends()`.
 
 Several products deviate from the others far enough to warrant their own document:
@@ -261,7 +264,7 @@ Several products deviate from the others far enough to warrant their own documen
   transactions.
 
 The backends refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12
-(21 for `Oracle21`), MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
+(21 for `Oracle21`, 23 for `Oracle23`), MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
 
 **H2 is the backend Tentackle's own tests run on** (see
 [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)), so two of its
