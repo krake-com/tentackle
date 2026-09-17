@@ -482,7 +482,9 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param s the parameter value
-   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL
+   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL.
+   *        Ignored if the backend stores the value in a native XML column, since the empty
+   *        string is not an XML document
    */
   void setSqlxml(int p, String s, boolean mapNull);
 

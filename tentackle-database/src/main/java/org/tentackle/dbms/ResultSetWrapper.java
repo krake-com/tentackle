@@ -1155,7 +1155,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * The backend usually stores such strings in a native XML column, or emulates it as CLOB/VARCHAR.
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
-   * @param mapNull if empty strings should be treated as null values
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -1167,9 +1167,6 @@ public class ResultSetWrapper implements AutoCloseable {
         if (sqlxml != null) {
           str = sqlxml.getString();
           sqlxml.free();
-        }
-        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
-          return null;
         }
         return str;
       }
@@ -2181,7 +2178,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Gets a string bridged through the JDBC {@code SQLXML} interface.
    *
    * @param pos the parameter index in the result set
-   * @param mapNull if empty strings should be treated as null values
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2193,9 +2190,6 @@ public class ResultSetWrapper implements AutoCloseable {
         if (sqlxml != null) {
           str = sqlxml.getString();
           sqlxml.free();
-        }
-        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
-          return null;
         }
         return str;
       }
@@ -3156,7 +3150,7 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Gets a string bridged through the JDBC {@code SQLXML} interface.
    *
-   * @param mapNull if empty strings should be treated as null values
+   * @param mapNull if empty strings should be treated as null values, ignored for a native XML column
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -3168,9 +3162,6 @@ public class ResultSetWrapper implements AutoCloseable {
         if (sqlxml != null) {
           str = sqlxml.getString();
           sqlxml.free();
-        }
-        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
-          return null;
         }
         return str;
       }

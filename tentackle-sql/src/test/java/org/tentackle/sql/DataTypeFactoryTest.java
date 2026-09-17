@@ -119,6 +119,9 @@ public class DataTypeFactoryTest {
 
   /**
    * Same as {@link #testVariant()}, for the SQLXML-bridged variant of {@code String}.
+   * <p>
+   * Unlike the other string variants this one does not support MAPNULL, because the empty string
+   * is not an XML document.
    */
   @Test
   public void testSqlxmlVariant() {
@@ -129,6 +132,8 @@ public class DataTypeFactoryTest {
     assertEquals(sqlxml.getVariant(), DataTypeFactory.SQLXML_VARIANT);
     assertEquals(sqlxml.getSqlType(null, 0), SqlType.SQLXML);
     assertEquals(sqlxml.getDataTypeConstant(), "DT_STRING_SQLXML");
+    assertTrue(plain.isMapNullSupported());
+    assertFalse(sqlxml.isMapNullSupported());
   }
 
   /**

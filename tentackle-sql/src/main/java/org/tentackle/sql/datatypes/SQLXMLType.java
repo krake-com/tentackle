@@ -20,6 +20,7 @@ package org.tentackle.sql.datatypes;
 
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
@@ -62,12 +63,26 @@ public final class SQLXMLType extends StringType {
     return SqlType.SQLXML;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Unlike a plain string, an XML document has no empty representation: the empty string is not
+   * a well-formed XML document and a backend with a native type rejects it.
+   */
+  @Override
+  public boolean isMapNullSupported() {
+    return false;
+  }
+
+  @Override
+  public Object getMappedNullValue(Backend backend, int index) {
+    throw new BackendException("MAPNULL is not supported for " + this +
+                               ": the empty string is not an XML document");
+  }
+
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, String object, boolean mapNull, Integer size) throws SQLException {
     if (backend.isSqlxmlSupported()) {
-      if (object == null && mapNull) {
-        object = backend.getEmptyString();
-      }
       if (object != null) {
         SQLXML sqlxml = statement.getConnection().createSQLXML();
         sqlxml.setString(object);
@@ -78,7 +93,9 @@ public final class SQLXMLType extends StringType {
       }
       return new Object[] { object };
     }
-    return super.set(backend, statement, pos, object, mapNull, size);
+    // mapNull is never true for this type (see isMapNullSupported) and passing it on would
+    // silently write the empty string into the emulating column
+    return super.set(backend, statement, pos, object, false, size);
   }
 
   @Override
@@ -90,12 +107,9 @@ public final class SQLXMLType extends StringType {
         str = sqlxml.getString();
         sqlxml.free();
       }
-      if (mapNull && str != null && str.equals(backend.getEmptyString())) {
-        return null;
-      }
       return str;
     }
-    return super.get(backend, resultSet, pos, mapNull, size);
+    return super.get(backend, resultSet, pos, false, size);
   }
 
 }

@@ -670,9 +670,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     if (con.getBackend().isSqlxmlSupported()) {
       try {
         int ep = effectivePosition(p);
-        if (s == null && mapNull) {
-          s = con.getBackend().getEmptyString();
-        }
+        // mapNull is not applicable to a native XML column: the empty string is no XML document
         if (s != null) {
           SQLXML sqlxml = con.getConnection().createSQLXML();
           sqlxml.setString(s);
