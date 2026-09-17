@@ -75,7 +75,7 @@ For the `jdbc:` and `jndi:` forms, the URL may carry a `|<BackendName>` suffix t
 dialect explicitly when it cannot (or should not) be derived — e.g.
 `jndi:jdbc/mydb|PostgreSQL`, or `jdbc:postgresql://host:26257/mydb|CockroachDB`, whose URL alone would
 select PostgreSQL. The names are those of the registered backends: `PostgreSQL`, `CockroachDB`, `H2`,
-`MariaDB`, `MySQL`, `MsSQL`, `Oracle`, `Oracle8`, `DB2`, `HANA`, `Firebird`, `Informix`.
+`MariaDB`, `MySQL`, `MsSQL`, `Oracle`, `Oracle8`, `Oracle21`, `DB2`, `HANA`, `Firebird`, `Informix`.
 
 ### Redirecting the Backend: `@user`, `@system`, and Named Files
 

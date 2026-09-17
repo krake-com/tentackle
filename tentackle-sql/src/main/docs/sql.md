@@ -218,6 +218,7 @@ AbstractBackend
         ├── MsSql
         ├── Oracle8
         │   └── Oracle
+        │       └── Oracle21
         └── AbstractSql2008Backend
             └── Firebird
 ```
@@ -231,6 +232,7 @@ AbstractBackend
 | `MariaDb`     | `MariaDB`     | `:mariadb`                                        |
 | `Oracle`      | `Oracle`      | `:oracle:`                                        |
 | `Oracle8`     | `Oracle8`     | `:oracle:` (legacy, selected by name)             |
+| `Oracle21`    | `Oracle21`    | never (native JSON opt-in, selected by name)      |
 | `Db2`         | `DB2`         | `:db2`                                            |
 | `MsSql`       | `MsSQL`       | `:sqlserver`                                      |
 | `Hana`        | `HANA`        | `:sap:`                                           |
@@ -239,8 +241,11 @@ AbstractBackend
 
 When several backends could match the same URL (e.g. `Oracle` and the deprecated `Oracle8`), only one matches by
 URL and the others are selected explicitly by name via the `|<BackendName>` URL suffix. `CockroachDB` is reached
-through the PostgreSQL driver and cannot be told apart by its URL at all, so it never matches one. Backends marked
-`isDeprecated()` are excluded from `BackendFactory.getAllBackends()`.
+through the PostgreSQL driver and cannot be told apart by its URL at all, so it never matches one. `Oracle21` is
+the same idea used for an opt-in rather than a legacy dialect: it matches the very same URL as `Oracle`, but stores
+JSON in a native `JSON` column (see [The Oracle Backend](oracle.md#other-oracle-peculiarities)), so it must be
+requested explicitly with `|Oracle21`. Backends marked `isDeprecated()` are excluded from
+`BackendFactory.getAllBackends()`.
 
 Several products deviate from the others far enough to warrant their own document:
 
@@ -255,8 +260,8 @@ Several products deviate from the others far enough to warrant their own documen
 - [The CockroachDB Backend](cockroachdb.md) — selecting it by name, index names per table, and serializable
   transactions.
 
-The backends refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12,
-MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
+The backends refuse to connect to a server older than their minimum version (`validateVersion`): Oracle 12
+(21 for `Oracle21`), MySQL 8.0, MariaDB 10.3, SAP HANA 2.0, Firebird 4.0.
 
 **H2 is the backend Tentackle's own tests run on** (see
 [tentackle-test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)), so two of its

@@ -21,6 +21,7 @@ package org.tentackle.sql;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.sql.backends.H2;
 import org.tentackle.sql.backends.Oracle;
+import org.tentackle.sql.backends.Oracle21;
 import org.tentackle.sql.backends.Oracle8;
 import org.testng.annotations.Test;
 
@@ -90,6 +91,19 @@ public class BackendFactoryTest {
   public void testOracleUrlPrefersTheCurrentBackend() {
     assertEquals(factory.getBackendByUrl("jdbc:oracle:thin:@localhost:1521:tentackle").getName(),
                  new Oracle().getName());
+  }
+
+  /**
+   * {@code Oracle21} opts in to the native JSON type, but matches the very same URL as {@code Oracle}
+   * and must therefore be selected by name only.
+   */
+  @Test
+  public void testOracle21IsSelectedByNameOnly() {
+    String url = "jdbc:oracle:thin:@localhost:1521:tentackle";
+    assertEquals(factory.getBackendByUrl(url).getName(), new Oracle().getName());
+    BackendInfo info = BackendInfoFactory.getInstance().create(url + "|Oracle21", "scott", new char[0], null);
+    assertEquals(info.getBackend().getName(), new Oracle21().getName());
+    assertEquals(info.getUrl(), url);
   }
 
   @Test

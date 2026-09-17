@@ -2,12 +2,15 @@
 
 Oracle deviates from the SQL standard — and from every other backend Tentackle supports — in more ways than any
 other product. Most of those deviations are handled silently by
-[`Oracle8`](../java/org/tentackle/sql/backends/Oracle8.java) (the deprecated backend for versions 8 to 11) and
-[`Oracle`](../java/org/tentackle/sql/backends/Oracle.java) (version 12 and newer), but a few of them leak into
-what you may reasonably expect from your model. This document collects them.
+[`Oracle8`](../java/org/tentackle/sql/backends/Oracle8.java) (the deprecated backend for versions 8 to 11),
+[`Oracle`](../java/org/tentackle/sql/backends/Oracle.java) (version 12 and newer) and
+[`Oracle21`](../java/org/tentackle/sql/backends/Oracle21.java) (an opt-in for 21c and newer, adding the native
+`JSON` column type), but a few of them leak into what you may reasonably expect from your model. This document
+collects them.
 
-> Pick the backend by JDBC URL (`jdbc:oracle:...` selects `Oracle`) and append `|Oracle8` to the URL to pin the
-> legacy dialect. `Oracle` refuses to connect to a server older than 12 (`validateVersion`).
+> Pick the backend by JDBC URL (`jdbc:oracle:...` selects `Oracle`) and append `|Oracle8` to pin the legacy
+> dialect, or `|Oracle21` to opt in to native JSON support on 21c and newer. `Oracle` refuses to connect to a
+> server older than 12, `Oracle21` refuses one older than 21 (`validateVersion`).
 
 ---
 
@@ -197,9 +200,14 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **Paging** uses `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` in `Oracle`, but the nested
   `ROWNUM` construct in `Oracle8`.
 - **SQLXML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
-- **JSON is stored as a `CLOB`.** Oracle's native `JSON` type only exists from 21c, while `Oracle` covers 12 and
-  newer and `sqlTypeToString` has no version information at DDL-generation time. A `CLOB` is readable by every
-  supported version, so `isJsonSupported()` stays `false` and the document is bound as a plain string.
+- **JSON is stored as a `CLOB`, unless you opt in to `Oracle21`.** Oracle's native `JSON` type only exists from
+  21c, while `Oracle` covers 12 and newer and `sqlTypeToString` has no version information at DDL-generation
+  time. A `CLOB` is readable by every supported version, so `Oracle.isJsonSupported()` stays `false` and the
+  document is bound as a plain string. If your server is 21c or newer, append `|Oracle21` to the connection URL:
+  `Oracle21.isJsonSupported()` is `true`, `sqlTypeToString` emits `JSON` instead of `CLOB`, and
+  `jdbcTypeToSqlType` recognizes an existing native `JSON` column (reported as `Types.OTHER` with type name
+  `"JSON"`) so the migrator does not try to recreate it on every run. `Oracle21.validateVersion` refuses to
+  connect to a server older than 21.
 
 ---
 
