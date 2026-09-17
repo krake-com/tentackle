@@ -96,7 +96,7 @@ public class QuicLoggerTest {
   }
 
 
-  @Test
+  @Test(timeOut = 30000)
   public void forwardsInfoAndWarningsToTheTentackleLogger() {
     Reporter.log("forwardsInfoAndWarningsToTheTentackleLogger", true);
     QuicLogger log = new QuicLogger();
@@ -120,7 +120,7 @@ public class QuicLoggerTest {
    * KWIK's categories are switched off by default; nothing may reach the Tentackle logger
    * unless the category was enabled.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void suppressesCategoriesThatAreNotEnabled() {
     Reporter.log("suppressesCategoriesThatAreNotEnabled", true);
     QuicLogger log = new QuicLogger();
@@ -134,7 +134,7 @@ public class QuicLoggerTest {
     assertEquals(recordsMatching("marker-off"), List.of());
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void forwardsErrorsWithACauseAsSevere() {
     Reporter.log("forwardsErrorsWithACauseAsSevere", true);
     QuicLogger log = new QuicLogger();
@@ -156,7 +156,7 @@ public class QuicLoggerTest {
    * the call with {@code isFineLoggable()} to avoid rendering the hex block when it would be
    * discarded anyway &mdash; that optimization cannot be observed through the logger.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void rendersHexDumpsAtFineLevel() {
     Reporter.log("rendersHexDumpsAtFineLevel", true);
     QuicLogger log = new QuicLogger();

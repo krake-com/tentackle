@@ -69,7 +69,7 @@ public class QuicProtocolConnectionTest {
   }
 
 
-  @Test
+  @Test(timeOut = 60000)
   public void dispatchesThePeerInitiatedStreamToAConnectionHandler() throws Exception {
     Reporter.log("dispatchesThePeerInitiatedStreamToAConnectionHandler", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
@@ -91,7 +91,7 @@ public class QuicProtocolConnectionTest {
   /**
    * A handler blowing up must not leak the QUIC stream &mdash; it is closed in a {@code finally} block.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void closesTheStreamWhenTheHandlerFails() throws Exception {
     Reporter.log("closesTheStreamWhenTheHandlerFails", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
@@ -110,7 +110,7 @@ public class QuicProtocolConnectionTest {
    * KWIK calls this from a shared callback thread and discards whatever it throws, so the failure
    * would go unnoticed, and the client would wait for an answer on that stream forever.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void closesTheStreamWhenItCannotBeDispatched() throws Exception {
     Reporter.log("closesTheStreamWhenItCannotBeDispatched", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);

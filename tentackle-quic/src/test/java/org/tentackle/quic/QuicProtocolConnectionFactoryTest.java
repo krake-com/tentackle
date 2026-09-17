@@ -35,7 +35,7 @@ import static org.testng.Assert.assertNotSame;
 @SuppressWarnings("missing-explicit-ctor")
 public class QuicProtocolConnectionFactoryTest {
 
-  @Test
+  @Test(timeOut = 30000)
   public void createsOneProtocolConnectionPerQuicConnection() {
     Reporter.log("createsOneProtocolConnectionPerQuicConnection", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
@@ -60,7 +60,7 @@ public class QuicProtocolConnectionFactoryTest {
    * while the number of bidirectional streams is left to the server configuration
    * ({@code maxstreams}) rather than being capped here.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void declaresBidirectionalStreamsOnly() {
     Reporter.log("declaresBidirectionalStreamsOnly", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));

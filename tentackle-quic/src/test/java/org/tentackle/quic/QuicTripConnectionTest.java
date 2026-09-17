@@ -67,7 +67,7 @@ public class QuicTripConnectionTest {
    * transport's UUID, which the server uses to pick the matching dictionary, and a flag telling
    * whether that dictionary is still empty.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void sendsTheTripPreambleOnCreation() {
     Reporter.log("sendsTheTripPreambleOnCreation", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
@@ -89,7 +89,7 @@ public class QuicTripConnectionTest {
    * A client transport that already learned dictionary entries says so in the preamble, so that
    * the server can reject it instead of serving it with a new, empty dictionary.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void reportsAPopulatedDictionaryInThePreamble() {
     Reporter.log("reportsAPopulatedDictionaryInThePreamble", true);
     dictionary.addEntry(dictionary.createEntry(String.class));
@@ -103,7 +103,7 @@ public class QuicTripConnectionTest {
     assertEquals(written[written.length - 1], (byte) 0);
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void closesBothHalvesOfTheQuicStream() {
     Reporter.log("closesBothHalvesOfTheQuicStream", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
@@ -116,7 +116,7 @@ public class QuicTripConnectionTest {
     assertTrue(quicStream.isInputClosed());
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void reportsTheTransportAndTheQuicStreamInToString() {
     Reporter.log("reportsTheTransportAndTheQuicStreamInToString", true);
     FakeQuicStream quicStream = new FakeQuicStream(new byte[0]);
@@ -125,7 +125,7 @@ public class QuicTripConnectionTest {
     assertEquals(connection.toString(), quicStream.toString());
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void wrapsIoExceptionWhileClosing() {
     Reporter.log("wrapsIoExceptionWhileClosing", true);
     IOException failure = new IOException("stream is gone");
@@ -147,7 +147,7 @@ public class QuicTripConnectionTest {
    * by the max idle timeout of either peer (RFC-9000, 10.1). The stream is unusable then, and the
    * connection must report that, so the pool drops it instead of handing it out.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void isNotOpenOnceTheQuicConnectionIsGone() {
     Reporter.log("isNotOpenOnceTheQuicConnectionIsGone", true);
     AtomicBoolean connected = new AtomicBoolean(true);

@@ -51,7 +51,7 @@ public class CompressedQuicTripTransportTest {
   private static final int BLOB_SIZE = 64 * 1024;
 
 
-  @Test
+  @Test(timeOut = 30000)
   public void wrapsTheStreamsInTheCompressionLayer() {
     Reporter.log("wrapsTheStreamsInTheCompressionLayer", true);
     CompressedQuicTripTransport transport =
@@ -67,7 +67,7 @@ public class CompressedQuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void compressedStreamsRoundTrip() throws Exception {
     Reporter.log("compressedStreamsRoundTrip", true);
     CompressedQuicTripTransport transport =
@@ -93,7 +93,7 @@ public class CompressedQuicTripTransportTest {
   /**
    * Blocks below {@code mincompress} are sent verbatim, so tiny payloads are not paid for twice.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void leavesBlocksBelowMinCompressUncompressed() throws Exception {
     Reporter.log("leavesBlocksBelowMinCompressUncompressed", true);
     CompressedQuicTripTransport transport =
@@ -120,7 +120,7 @@ public class CompressedQuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void defaultsMinCompressWhenNotConfigured() {
     Reporter.log("defaultsMinCompressWhenNotConfigured", true);
     CompressedQuicTripTransport transport =
@@ -137,7 +137,7 @@ public class CompressedQuicTripTransportTest {
    * {@code createStream} is the client-side bridge; for {@code tripcq} it must deflate,
    * unlike the plain {@code tripq} transport.
    */
-  @Test
+  @Test(timeOut = 30000)
   public void createStreamCompressesTheQuicStream() {
     Reporter.log("createStreamCompressesTheQuicStream", true);
     CompressedQuicTripTransport compressed =

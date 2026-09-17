@@ -52,7 +52,7 @@ public class InterruptAgnosticStreamsTest {
   }
 
 
-  @Test
+  @Test(timeOut = 30000)
   public void withholdsThePendingInterruptAndRestoresIt() throws Exception {
     Reporter.log("KWIK sees no interrupt, the caller gets it back", true);
     InputStream in = InterruptAgnosticStreams.wrap(recordingInput(7));
@@ -82,7 +82,7 @@ public class InterruptAgnosticStreamsTest {
     assertEquals(seen, List.of(false, false, false, false, false), "the interrupt status reached KWIK");
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void restoresTheInterruptEvenWhenTheOperationFails() throws Exception {
     Reporter.log("a failing operation must not eat the interrupt either", true);
     IOException failure = new IOException("broken");
@@ -98,7 +98,7 @@ public class InterruptAgnosticStreamsTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void leavesAnUninterruptedThreadAlone() throws Exception {
     Reporter.log("nothing is interrupted that was not interrupted before", true);
     InputStream in = InterruptAgnosticStreams.wrap(recordingInput(3));

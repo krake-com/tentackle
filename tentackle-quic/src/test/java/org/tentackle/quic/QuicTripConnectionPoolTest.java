@@ -42,7 +42,7 @@ import static org.testng.Assert.expectThrows;
 @SuppressWarnings("missing-explicit-ctor")
 public class QuicTripConnectionPoolTest {
 
-  @Test
+  @Test(timeOut = 30000)
   public void rejectsUriWithoutPort() {
     Reporter.log("rejectsUriWithoutPort", true);
     // unlike TCP, a QUIC client has no default port to fall back to
@@ -81,7 +81,7 @@ public class QuicTripConnectionPoolTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 30000)
   public void rejectsNonPositiveConnectTimeout() {
     Reporter.log("rejectsNonPositiveConnectTimeout", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?connecttimeout=0"));

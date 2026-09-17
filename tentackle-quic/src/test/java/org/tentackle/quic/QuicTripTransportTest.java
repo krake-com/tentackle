@@ -64,7 +64,7 @@ public class QuicTripTransportTest {
   }
 
 
-  @Test
+  @Test(timeOut = 60000)
   public void refusesToAcceptWithoutKeyStore() {
     Reporter.log("refusesToAcceptWithoutKeyStore", true);
     // QUIC mandates TLS, hence a server certificate is not optional
@@ -79,7 +79,7 @@ public class QuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void refusesToAcceptWithoutPort() {
     Reporter.log("refusesToAcceptWithoutPort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
@@ -95,7 +95,7 @@ public class QuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void refusesToAcceptWithOutOfRangePort() {
     Reporter.log("refusesToAcceptWithOutOfRangePort", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
@@ -110,7 +110,7 @@ public class QuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void acceptsAndRefusesToAcceptTwice() throws Exception {
     Reporter.log("acceptsAndRefusesToAcceptTwice", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create(
@@ -135,7 +135,7 @@ public class QuicTripTransportTest {
    * Closing an accepting transport must shut down the KWIK server connector, so that the UDP
    * port is free again. Re-binding the very same port is the proof.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void closeReleasesTheServerPort() throws Exception {
     Reporter.log("closeReleasesTheServerPort", true);
     int port = QuicTestSupport.freeUdpPort();
@@ -167,7 +167,7 @@ public class QuicTripTransportTest {
    * The UDP socket is bound before KWIK validates the server certificate, so a keystore KWIK
    * cannot use must not leave the port bound behind.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void failedAcceptReleasesTheServerPort() throws Exception {
     Reporter.log("failedAcceptReleasesTheServerPort", true);
     // KWIK supports RSA and EC certificates only, so a DSA one makes ServerConnector.build() fail
@@ -195,7 +195,7 @@ public class QuicTripTransportTest {
   /**
    * Closing a transport that never accepted, or closing twice, must not fail.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void closeIsIdempotent() throws Exception {
     Reporter.log("closeIsIdempotent", true);
     QuicTripTransport clientSide = new QuicTripTransport(URI.create("tripq://localhost:12345"));
@@ -212,7 +212,7 @@ public class QuicTripTransportTest {
     assertFalse(serverSide.isAccepting());
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void readsMaxStreamsFromTheUriQuery() {
     Reporter.log("readsMaxStreamsFromTheUriQuery", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345?maxstreams=7"));
@@ -225,7 +225,7 @@ public class QuicTripTransportTest {
     }
   }
 
-  @Test
+  @Test(timeOut = 60000)
   public void defaultsMaxStreamsWhenNotConfigured() {
     Reporter.log("defaultsMaxStreamsWhenNotConfigured", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
@@ -242,7 +242,7 @@ public class QuicTripTransportTest {
    * must end up as the deserializer/serializer of the returned {@code TripStream}, wrapped so that KWIK
    * never sees the interrupt status of the calling thread.
    */
-  @Test
+  @Test(timeOut = 60000)
   public void createsTripStreamOnTopOfTheQuicStream() throws Exception {
     Reporter.log("createsTripStreamOnTopOfTheQuicStream", true);
     QuicTripTransport transport = new QuicTripTransport(URI.create("tripq://localhost:12345"));
