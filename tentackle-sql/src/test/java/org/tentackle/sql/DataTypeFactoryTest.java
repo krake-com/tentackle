@@ -115,7 +115,7 @@ public class DataTypeFactoryTest {
     assertEquals(large.getVariant(), LargeStringType.VARIANT);
     assertEquals(plain.getSqlType(null, 0), SqlType.VARCHAR);
     assertEquals(large.getSqlType(null, 0), SqlType.CLOB);
-    assertEquals(large.getDataTypeConstant(), "DT_STRING_LARGE");
+    assertEquals(large.getDataTypeConstant(), "DT_STRING_LARGESTRING");
   }
 
   /**
