@@ -511,7 +511,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         setLargeString(p, object == null ? null : object.toString());
         break;
 
-      case SQLXML:
+      case XML:
         setSqlxml(p, object == null ? null : object.toString());
         break;
 

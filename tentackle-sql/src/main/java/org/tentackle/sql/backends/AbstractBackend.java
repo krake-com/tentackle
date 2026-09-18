@@ -320,7 +320,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public int getMaxSize(SqlType sqlType) {
     return switch (sqlType) {
-      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, SQLXML, JSON -> -1;    // sizeless type
+      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB, XML, JSON -> -1;    // sizeless type
       default -> 0;   // default is unlimited
     };
   }
@@ -504,7 +504,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
     return switch (sqlType) {
-      case CHAR, VARCHAR, CLOB, SQLXML, JSON, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
+      case CHAR, VARCHAR, CLOB, XML, JSON, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
       default -> value.toString();
     };
   }
@@ -1002,7 +1002,7 @@ public abstract class AbstractBackend implements Backend {
         return new SqlType[] { SqlType.CLOB, SqlType.JSON };
 
       case Types.SQLXML:
-        sqlType = SqlType.SQLXML;
+        sqlType = SqlType.XML;
         break;
 
       default:

@@ -70,7 +70,7 @@ public class CockroachDb extends Postgres {
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
-    if (sqlType == SqlType.SQLXML) {
+    if (sqlType == SqlType.XML) {
       return TYPE_TEXT;
     }
     // JSON deliberately falls through to postgres: unlike "xml", CockroachDB does have a

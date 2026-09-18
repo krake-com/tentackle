@@ -79,7 +79,7 @@ public enum SqlType {
   CLOB("", SqlType::removeSingleQuotes),
 
   /** XML content, usually stored in a native XML column or emulated as CLOB. */
-  SQLXML("", SqlType::removeSingleQuotes),
+  XML("", SqlType::removeSingleQuotes),
 
   /** JSON content, usually stored in a native JSON column or emulated as CLOB. */
   JSON("", SqlType::removeSingleQuotes),

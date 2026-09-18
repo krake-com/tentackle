@@ -1400,37 +1400,48 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     if (isEmbedded()) {
       if (getSorting() != null) {
-        throw new ModelException("sorting not applicable to embedded entities");
+        throw new ModelException("sorting not applicable to embedded entities", this);
       }
       if (getSuperEntityName() != null) {
-        throw new ModelException("embedded entities cannot extend other entities");
+        throw new ModelException("embedded entities cannot extend other entities", this);
       }
       if (getOptions().isRoot()) {
-        throw new ModelException("embedded entities cannot be root entities");
+        throw new ModelException("embedded entities cannot be root entities", this);
       }
       if (getOptions().isCached()) {
-        throw new ModelException("embedded entities cannot be cached");
+        throw new ModelException("embedded entities cannot be cached", this);
       }
       if (getOptions().isProvided()) {
-        throw new ModelException("embedded entities cannot be provided by foreign applications");
+        throw new ModelException("embedded entities cannot be provided by foreign applications", this);
       }
       if (getOptions().isNoPrimaryKey()) {
-        throw new ModelException("[NOPKEY] option is not applicable to embedded entities");
+        throw new ModelException("[NOPKEY] option is not applicable to embedded entities", this);
       }
       if (getOptions().isRootIdProvided()) {
-        throw new ModelException("embedded entities cannot provide a rootid column");
+        throw new ModelException("embedded entities cannot provide a rootid column", this);
       }
       if (getOptions().isRootClassIdProvided()) {
-        throw new ModelException("embedded entities cannot provide a rootclassid column");
+        throw new ModelException("embedded entities cannot provide a rootclassid column", this);
       }
       if (getOptions().isNormTextProvided()) {
-        throw new ModelException("embedded entities cannot provide a normtext");
+        throw new ModelException("embedded entities cannot provide a normtext", this);
       }
       if (getOptions().isTableSerialProvided()) {
-        throw new ModelException("embedded entities cannot provide a table serial");
+        throw new ModelException("embedded entities cannot provide a table serial", this);
       }
       if (getOptions().isTokenLockProvided()) {
-        throw new ModelException("embedded entities cannot provide a token lock");
+        throw new ModelException("embedded entities cannot provide a token lock", this);
+      }
+    }
+    else {
+      List<AttributeSorting> defaultSorting = getSorting();
+      if (defaultSorting != null) {
+        for (AttributeSorting attributeSorting : defaultSorting) {
+          if (!attributeSorting.attribute().getEffectiveDataType().isComparable()) {
+            throw new ModelException("default sorting attribute " +
+                                     attributeSorting.attribute().getName() + " is not comparable", this);
+          }
+        }
       }
     }
 

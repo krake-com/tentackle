@@ -21,7 +21,6 @@ package org.tentackle.sql.datatypes;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
 import java.sql.Clob;
@@ -39,6 +38,13 @@ import java.sql.Types;
 public final class LargeStringType extends StringType {
 
   /**
+   * Large string variant.<br>
+   * For example, to distinguish standard VARCHAR Strings from CLOBs.
+   */
+  public static final String VARIANT = "LargeString";
+
+
+  /**
    * Creates the datatype for the large variant of {@link String}.
    */
   public LargeStringType() {
@@ -47,7 +53,7 @@ public final class LargeStringType extends StringType {
 
   @Override
   public String getVariant() {
-    return DataTypeFactory.LARGE_VARIANT;
+    return VARIANT;
   }
 
   @Override

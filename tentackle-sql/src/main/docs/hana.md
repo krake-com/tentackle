@@ -19,7 +19,7 @@ version 4 and passes as well.
 | `VARCHAR`    | `NVARCHAR(5000)` | an attribute without a size                                                           |
 | `CHAR`       | `NCHAR(1)`       | for the same reason                                                                   |
 | `CLOB`       | `NCLOB`          |                                                                                       |
-| `SQLXML`     | `NCLOB`          | no native XML type; `isSqlxmlSupported()` is `false`                                 |
+| `XML`        | `NCLOB`          | no native XML type; `isSqlxmlSupported()` is `false`                                 |
 | `JSON`       | `NCLOB`          | no native JSON column type; `isJsonSupported()` is `false`                            |
 | `BLOB`       | `BLOB`           |                                                                                       |
 | `BIT`        | `BOOLEAN`        | defaults are written as `TRUE`/`FALSE`, not as strings                                |

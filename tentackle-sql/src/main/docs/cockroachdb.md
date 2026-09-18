@@ -39,7 +39,7 @@ There is **no version check**: CockroachDB reports a PostgreSQL version to the d
 - **Sequences cannot be commented**, so `sqlCreateSequenceComment()` returns an empty string.
 - **The backend id** is CockroachDB's session id (`SHOW session_id`).
 - **Reserved schemas**: `crdb_internal` and `pg_extension`, in addition to PostgreSQL's.
-- **No native `xml` type**, so `SQLXML` is declared as `TEXT` and `isSqlxmlSupported()` is `false`.
+- **No native `xml` type**, so `XML` is declared as `TEXT` and `isSqlxmlSupported()` is `false`.
   **`JSON` is not affected**: CockroachDB has a native `JSONB` and inherits PostgreSQL's mapping,
   its `Types.OTHER` handling and its parameter binding unchanged.
 

@@ -145,7 +145,7 @@ public class MsSql extends AbstractSql2003Backend {
       case DATE, TIME, TIMESTAMP -> TYPE_DATETIME;
       case BLOB -> TYPE_VARBINARY_MAX;
       case CLOB -> TYPE_CLOB;
-      case SQLXML -> TYPE_XML;
+      case XML -> TYPE_XML;
       case JSON -> TYPE_NVARCHAR_MAX;   // no native json type before SQL Server 2025
       default -> super.sqlTypeToString(sqlType, size);
     };

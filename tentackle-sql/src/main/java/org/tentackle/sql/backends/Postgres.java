@@ -336,7 +336,7 @@ public class Postgres extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BYTEA;
       case CLOB -> TYPE_TEXT;
-      case SQLXML -> TYPE_XML;
+      case XML -> TYPE_XML;
       case JSON -> TYPE_JSONB;   // jsonb is indexable and validates on write, unlike json
       case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);

@@ -34,7 +34,6 @@ import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.wurblet.Join;
 import org.tentackle.wurblet.JoinPath;
 import org.tentackle.wurblet.ModelWurblet;
@@ -348,7 +347,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Arguments referring to the same boolean method argument are considered only once.
    *
    * @param args the wurblet arguments
-   * @return the java code, null if the arguments are always part of the query
+   * @return the Java code, null if the arguments are always part of the query
    */
   public String createOptionalCondition(List<WurbletArgument> args) {
     StringBuilder buf = new StringBuilder();
@@ -1436,17 +1435,12 @@ public class DbModelWurblet extends ModelWurblet {
       buf.append(StringHelper.firstToUpper(dataType.getJavaType()));
     }
     else  {
-      if ("String".equals(dataType.getJavaType()) && DataTypeFactory.LARGE_VARIANT.equals(dataType.getVariant())) {
-        buf.append("LargeString");
-      }
-      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
-        buf.append("Sqlxml");
-      }
-      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.JSON_VARIANT.equals(dataType.getVariant())) {
-        buf.append("Json");
+      String variant = dataType.getVariant();
+      if (variant.isEmpty()) {
+        buf.append(dataType.getJavaType());
       }
       else {
-        buf.append(dataType.getJavaType());
+        buf.append(variant);
       }
     }
     return buf.toString();
@@ -1475,21 +1469,13 @@ public class DbModelWurblet extends ModelWurblet {
         case "Double":
           buf.append('A');   // ABoolean, AByte, etc...
           break;
-
-        case "String":
-          if (DataTypeFactory.LARGE_VARIANT.equals(dataType.getVariant())) {
-            buf.append("Large");    // LargeString
-          }
-          break;
       }
-      if ("String".equals(dataType.getJavaType()) && DataTypeFactory.SQLXML_VARIANT.equals(dataType.getVariant())) {
-        buf.append("Sqlxml");    // getSqlxml, not getSqlxmlString
-      }
-      else if ("String".equals(dataType.getJavaType()) && DataTypeFactory.JSON_VARIANT.equals(dataType.getVariant())) {
-        buf.append("Json");      // getJson, not getJsonString
+      String variant = dataType.getVariant();
+      if (variant.isEmpty()) {
+        buf.append(dataType.getJavaType());
       }
       else {
-        buf.append(dataType.getJavaType());
+        buf.append(variant);
       }
     }
     return buf.toString();
@@ -1953,7 +1939,7 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * Gets the eager joins as load join terms of the {@code PdoSelect} wurblets.
    * <p>
-   * Used to add the eager relations to the generated relation finders, so that they load the same
+   * Used to add the eager relations to the generated relation finders so that they load the same
    * object graph as the generic selects do.
    * <p>
    * The tree differs from {@link #getEagerJoinTree()} in two ways, both of which predate the

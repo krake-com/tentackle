@@ -22,7 +22,6 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
 import java.sql.PreparedStatement;
@@ -37,7 +36,7 @@ import java.sql.SQLException;
  * exposed to the application is always a plain {@link String}: tentackle neither parses nor
  * validates it.
  * <p>
- * Unlike the {@link SQLXMLType}, there is no JDBC binding for JSON at all, so how a string reaches
+ * Unlike the {@link XMLType}, there is no JDBC binding for JSON at all, so how a string reaches
  * the column differs per backend — Postgres takes it as an object of type {@code OTHER}, H2 only
  * accepts the UTF-8 bytes, and mysql is happy with a plain string. The backend knows, the datatype
  * does not, hence {@link Backend#setJson} and {@link Backend#getJson}.
@@ -51,6 +50,15 @@ import java.sql.SQLException;
 public final class JsonType extends StringType {
 
   /**
+   * JSON variant.<br>
+   * Distinguishes a {@code String} bound to a native JSON column from a plain VARCHAR or
+   * CLOB-backed one. Unlike {@link XMLType#VARIANT}, JDBC provides no JSON binding of its own,
+   * so how the string reaches the column is up to the backend.
+   */
+  public static final String VARIANT = "Json";
+
+
+  /**
    * Creates the datatype for the JSON variant of {@link String}.
    */
   public JsonType() {
@@ -59,7 +67,12 @@ public final class JsonType extends StringType {
 
   @Override
   public String getVariant() {
-    return DataTypeFactory.JSON_VARIANT;
+    return VARIANT;
+  }
+
+  @Override
+  public String getModelType() {
+    return "JSON";
   }
 
   @Override

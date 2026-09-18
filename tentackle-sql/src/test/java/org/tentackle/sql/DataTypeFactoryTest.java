@@ -18,16 +18,17 @@
 
 package org.tentackle.sql;
 
+import org.testng.annotations.Test;
+
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.I18NText;
 import org.tentackle.sql.datatypes.ConvertibleType;
-import org.tentackle.sql.datatypes.LargeStringType;
 import org.tentackle.sql.datatypes.JsonType;
-import org.tentackle.sql.datatypes.SQLXMLType;
+import org.tentackle.sql.datatypes.LargeStringType;
+import org.tentackle.sql.datatypes.XMLType;
 import org.tentackle.sql.datatypes.StringType;
-import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -107,11 +108,11 @@ public class DataTypeFactoryTest {
   @Test
   public void testVariant() {
     DataType<?> plain = factory.get("String");
-    DataType<?> large = factory.get("String", DataTypeFactory.LARGE_VARIANT);
+    DataType<?> large = factory.get("String", LargeStringType.VARIANT);
     assertTrue(plain instanceof StringType);
     assertTrue(large instanceof LargeStringType);
     assertEquals(plain.getVariant(), "");
-    assertEquals(large.getVariant(), DataTypeFactory.LARGE_VARIANT);
+    assertEquals(large.getVariant(), LargeStringType.VARIANT);
     assertEquals(plain.getSqlType(null, 0), SqlType.VARCHAR);
     assertEquals(large.getSqlType(null, 0), SqlType.CLOB);
     assertEquals(large.getDataTypeConstant(), "DT_STRING_LARGE");
@@ -126,11 +127,11 @@ public class DataTypeFactoryTest {
   @Test
   public void testSqlxmlVariant() {
     DataType<?> plain = factory.get("String");
-    DataType<?> sqlxml = factory.get("String", DataTypeFactory.SQLXML_VARIANT);
+    DataType<?> sqlxml = factory.get("String", XMLType.VARIANT);
     assertTrue(plain instanceof StringType);
-    assertTrue(sqlxml instanceof SQLXMLType);
-    assertEquals(sqlxml.getVariant(), DataTypeFactory.SQLXML_VARIANT);
-    assertEquals(sqlxml.getSqlType(null, 0), SqlType.SQLXML);
+    assertTrue(sqlxml instanceof XMLType);
+    assertEquals(sqlxml.getVariant(), XMLType.VARIANT);
+    assertEquals(sqlxml.getSqlType(null, 0), SqlType.XML);
     assertEquals(sqlxml.getDataTypeConstant(), "DT_STRING_SQLXML");
     assertTrue(plain.isMapNullSupported());
     assertFalse(sqlxml.isMapNullSupported());
@@ -138,14 +139,9 @@ public class DataTypeFactoryTest {
     assertFalse(sqlxml.isComparable(), "databases provide no comparator for XML documents");
   }
 
-  /**
-   * {@code "SQLXML"} is not a {@link DataType} key of its own: looking it up by plain java type
-   * name must alias the SQLXML variant of {@code String}, since that is what the model uses
-   * (see the {@code SQLXML} attribute type in the model definition).
-   */
   @Test
   public void testSqlxmlAlias() {
-    assertSame(factory.get("SQLXML"), factory.get("String", DataTypeFactory.SQLXML_VARIANT));
+    assertSame(factory.get("XML"), factory.get("String", XMLType.VARIANT));
   }
 
   /**
@@ -157,10 +153,10 @@ public class DataTypeFactoryTest {
   @Test
   public void testJsonVariant() {
     DataType<?> plain = factory.get("String");
-    DataType<?> json = factory.get("String", DataTypeFactory.JSON_VARIANT);
+    DataType<?> json = factory.get("String", JsonType.VARIANT);
     assertTrue(plain instanceof StringType);
     assertTrue(json instanceof JsonType);
-    assertEquals(json.getVariant(), DataTypeFactory.JSON_VARIANT);
+    assertEquals(json.getVariant(), JsonType.VARIANT);
     assertEquals(json.getSqlType(null, 0), SqlType.JSON);
     assertEquals(json.getDataTypeConstant(), "DT_STRING_JSON");
     assertTrue(plain.isMapNullSupported());
@@ -169,21 +165,16 @@ public class DataTypeFactoryTest {
     assertFalse(json.isComparable(), "databases provide no comparator for JSON documents");
   }
 
-  /**
-   * {@code "JSON"} is not a {@link DataType} key of its own: looking it up by plain java type
-   * name must alias the JSON variant of {@code String}, since that is what the model uses
-   * (see the {@code JSON} attribute type in the model definition).
-   */
   @Test
   public void testJsonAlias() {
-    assertSame(factory.get("JSON"), factory.get("String", DataTypeFactory.JSON_VARIANT));
+    assertSame(factory.get("JSON"), factory.get("String", JsonType.VARIANT));
   }
 
   @Test
   public void testConvertibleType() {
     ConvertibleType convertibleType = factory.getConvertibleType();
     assertNotNull(convertibleType);
-    assertSame(convertibleType, factory.get(DataTypeFactory.CONVERTIBLE_TYPE));
+    assertSame(convertibleType, factory.get(ConvertibleType.TYPE));
     assertEquals(convertibleType.getSqlType(null, 0), SqlType.JAVA_OBJECT);
     assertTrue(convertibleType.isModelProvidingInnerType());
   }

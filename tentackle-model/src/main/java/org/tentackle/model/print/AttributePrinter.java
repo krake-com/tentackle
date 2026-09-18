@@ -21,6 +21,7 @@ package org.tentackle.model.print;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.ModelException;
+import org.tentackle.sql.DataType;
 
 /**
  * Pretty printer for attribute lines.
@@ -54,7 +55,13 @@ public class AttributePrinter {
     if (printedType == null) {
       StringBuilder buf = new StringBuilder();
       try {
-        buf.append(attribute.getJavaType());
+        DataType<?> dataType = attribute.getDataType();
+        if (dataType.getModelType().equals(dataType.getJavaType())) {
+          buf.append(attribute.getJavaType());
+        }
+        else {
+          buf.append(dataType.getModelType());
+        }
         if (attribute.isConvertible()) {
           buf.append('<').append(attribute.getInnerTypeName()).append('>');
         }

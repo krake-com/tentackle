@@ -69,9 +69,18 @@ public interface DataType<T> {
    */
   String getJavaType();
 
+  /**
+   * Gets the model type string.<br>
+   * This is usually identical to the java type,
+   * but some variants (such as JSON or XML) may differ.
+   *
+   * @return the model type string
+   */
+  String getModelType();
 
   /**
-   * Gets the optional variant of the type.
+   * Gets the optional variant of the type.<br>
+   * If a variant is not empty, it replaces the java type suffix for setters and getters.
    *
    * @return the variant, empty string if none, never null
    */
@@ -85,14 +94,12 @@ public interface DataType<T> {
    */
   boolean isPredefined();
 
-
   /**
-   * Returns whether type is a primitive.
+   * Returns whether the type is a primitive.
    *
    * @return true if primitive
    */
   boolean isPrimitive();
-
 
   /**
    * Gets the non-primitive type if this is a primitive.
@@ -101,7 +108,6 @@ public interface DataType<T> {
    */
   DataType<?> toNonPrimitive();
 
-
   /**
    * Gets the primitive type if this is a non-primitive.
    *
@@ -109,16 +115,14 @@ public interface DataType<T> {
    */
   Optional<DataType<?>> toPrimitive();
 
-
   /**
-   * Returns whether type is a mutable java object.<br>
+   * Returns whether the type is a mutable java object.<br>
    * Mutable objects may change their state and must
    * implement {@link org.tentackle.common.Freezable}.
    *
    * @return true if mutable and freezable
    */
   boolean isMutable();
-
 
   /**
    * Returns whether this is a numeric type.
@@ -127,7 +131,6 @@ public interface DataType<T> {
    */
   boolean isNumeric();
 
-
   /**
    * Returns whether this is a date and/or time type.
    *
@@ -135,9 +138,8 @@ public interface DataType<T> {
    */
   boolean isDateOrTime();
 
-
   /**
-   * Returns whether a {@link java.util.Calendar}-timezone can be applied to this date and/or time related type.<br>
+   * Returns whether a {@link java.util.Calendar}-timezone can be applied to this date and/or time-related type.<br>
    * Only for types where methods with Calendar argument are provided in ResultSet and PreparedStatement.
    *
    * @return true if methods exist with timezone correction
@@ -150,7 +152,6 @@ public interface DataType<T> {
    * @return true if bool
    */
   boolean isBool();
-
 
   /**
    * Returns whether the number of columns is backend-specific.<br>
@@ -165,7 +166,6 @@ public interface DataType<T> {
    */
   boolean isColumnCountBackendSpecific();
 
-
   /**
    * Gets the number of database columns.<br>
    * A tentackle type may be mapped to more than one column for multi-column types such as {@link org.tentackle.common.BMoney}.
@@ -175,17 +175,15 @@ public interface DataType<T> {
    */
   int getColumnCount(Backend backend);
 
-
   /**
    * Returns whether this type can be compared, e.g., for equality or ordering.<br>
-   * Some types have no backend-provided comparator at all, for example, SQLXML or JSON
+   * Some types have no backend-provided comparator at all, for example, XML or JSON
    * documents: comparing or ordering by such a column is meaningless, and such types
    * cannot be part of an index or used as a query/sort argument.
    *
    * @return true if comparable (default), false if the backend provides no comparator
    */
   boolean isComparable();
-
 
   /**
    * Gets the indexes to the sortable columns.<br>
@@ -194,7 +192,6 @@ public interface DataType<T> {
    * @return the column indexes, null or empty if datatype is not sortable in a meaningful manner by the database
    */
   int[] getSortableColumns();
-
 
   /**
    * Gets the SQL type.<br>
@@ -209,7 +206,6 @@ public interface DataType<T> {
    */
   SqlType getSqlType(Backend backend, int index);
 
-
   /**
    * Gets the column size.<br>
    * Sizes may be differently aligned according to the backend.
@@ -220,7 +216,6 @@ public interface DataType<T> {
    * @return the column size
    */
   int getSize(Backend backend, int index, Integer size);
-
 
   /**
    * Gets the column scale.<br>
@@ -233,7 +228,6 @@ public interface DataType<T> {
    */
   int getScale(Backend backend, int index, Integer scale);
 
-
   /**
    * Gets the value of a column.
    *
@@ -244,16 +238,14 @@ public interface DataType<T> {
    */
   Object getColumnValue(Backend backend, int index, T value);
 
-
   /**
    * Returns the java code to get the value of a column.
    *
    * @param index the column index
    * @param varName the java variable name
-   * @return the java code, empty string if this is a single column type
+   * @return Java code, empty string if this is a single column type
    */
   String getColumnGetter(int index, String varName);
-
 
   /**
    * Gets the alias name of a column.
@@ -262,7 +254,6 @@ public interface DataType<T> {
    * @return the column's alias
    */
   String getColumnAlias(int index);
-
 
   /**
    * Gets the optional suffix.<br>
@@ -273,7 +264,6 @@ public interface DataType<T> {
    * @return the optional suffix
    */
   Optional<String> getColumnSuffix(Backend backend, int index);
-
 
   /**
    * Gets the optional comment suffix.<br>
@@ -304,10 +294,9 @@ public interface DataType<T> {
    * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
    * @param columnName the column basename
    * @param separator the separator string between names
-   * @return the names list
+   * @return the name list
    */
   String createColumnNamesAsString(Backend backend, String columnName, String separator);
-
 
   /**
    * Returns whether this type supports mapping null values to some well-defined constant.
@@ -326,14 +315,12 @@ public interface DataType<T> {
    */
   Object getMappedNullValue(Backend backend, int index);
 
-
   /**
    * Returns whether this type supports the UTC option.
    *
    * @return true if UTC supported
    */
   boolean isUTCSupported();
-
 
   /**
    * For certain numeric types, a downcast is necessary when assigning literals.
@@ -342,14 +329,12 @@ public interface DataType<T> {
    */
   boolean isDowncastNecessary();
 
-
   /**
    * Returns whether the model provides an inner type.
    *
-   * @return true if inner type is specified within angle brackets, false if standard type
+   * @return true if the inner type is specified within angle brackets, false if standard type
    */
   boolean isModelProvidingInnerType();
-
 
   /**
    * Returns whether the inner type describes a generified java type.<br>
@@ -359,30 +344,27 @@ public interface DataType<T> {
    */
   boolean isJavaTypeGenerified();
 
-
   /**
    * Returns whether this type can be used literally in a query String.
    *
    * @return true if literal String supported, else false
-   * @param index the column index, null if applies to object of this type
+   * @param index column index, null if applies to the object of this type
    */
   boolean isLiteralSupported(Integer index);
-
 
   /**
    * Takes the string representation of a value and converts it to an SQL literal.<br>
    * Some types need single quotes, for example.
    *
    * @param str the value string
-   * @param index the column index, null if applies to object of this type
+   * @param index column index, null if applies to the object of this type
    * @return the SQL literal
    */
   String toLiteral(String str, Integer index);
 
-
   /**
    * Parses a string and converts to the value of this type.<br>
-   * The method is used to parse a literal (for example the default value defined in the model).
+   * The method is used to parse a literal (for example, the default value defined in the model).
    * <p>
    * Notice: the method doesn't use any locale, so the results are
    * always the same regardless of the JVM's locale.
@@ -392,20 +374,18 @@ public interface DataType<T> {
    */
   T valueOf(String str);
 
-
   /**
    * Creates the java code to apply the valueOf method to a String.
    *
    * @param str the literal to be parsed
-   * @param index the column index, null if applies to object of this type
-   * @return the java code
+   * @param index column index, null if applies to the object of this type
+   * @return Java code
    */
   String valueOfLiteralToCode(String str, Integer index);
 
-
   /**
    * Takes an object and converts it to a string that can in turn be parsed with {@link #valueOf(String)}.<br>
-   * The method is used to print a literal (for example the default value of a dumped attribute).
+   * The method is used to print a literal (for example, the default value of a dumped attribute).
    * <p>
    * Notice: the method doesn't use any locale, so the results are
    * always the same regardless of the JVM's locale.
@@ -415,7 +395,6 @@ public interface DataType<T> {
    */
   String toString(T object);
 
-
   /**
    * Gets the name of the datatype constant.
    *
@@ -423,16 +402,15 @@ public interface DataType<T> {
    */
   String getDataTypeConstant();
 
-
   /**
    * Sets the object into a prepared statement.<br>
    * Must be implemented if {@link #isPredefined()} returns false.
-   * Not invoked by framework otherwise.
+   * Not invoked by the framework otherwise.
    *
    * @param backend the database backend
    * @param statement the prepared statement
    * @param pos the position of the first SQL value
-   * @param object the object, may be null
+   * @param object the object; may be null
    * @param mapNull true if map null-values to non-null values
    * @param size the optional size specified in the model
    * @return the values stored in the prepared statement
@@ -440,16 +418,15 @@ public interface DataType<T> {
    */
   Object[] set(Backend backend, PreparedStatement statement, int pos, T object, boolean mapNull, Integer size) throws SQLException;
 
-
   /**
    * Sets a column of an object into a prepared statement.<br>
    * Must be implemented if {@link #isPredefined()} returns false.
-   * Not invoked by framework otherwise.
+   * Not invoked by the framework otherwise.
    *
    * @param backend the database backend
    * @param statement the prepared statement
    * @param pos the position of the first SQL value
-   * @param object the object, may be null
+   * @param object the object; may be null
    * @param index the column index
    * @param mapNull true if map null-values to non-null values
    * @param size the optional size specified in the model
@@ -458,11 +435,10 @@ public interface DataType<T> {
    */
   Object set(Backend backend, PreparedStatement statement, int pos, T object, int index, boolean mapNull, Integer size) throws SQLException;
 
-
   /**
    * Gets the object from a result set.<br>
    * Must be implemented if {@link #isPredefined()} returns false.
-   * Not invoked by framework otherwise.
+   * Not invoked by the framework otherwise.
    *
    * @param backend the database backend
    * @param resultSet the result set

@@ -22,7 +22,6 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
 import java.sql.PreparedStatement;
@@ -32,27 +31,40 @@ import java.sql.SQLXML;
 import java.sql.Types;
 
 /**
- * Datatype for the SQLXML variant of {@link String}.
+ * Datatype for the XML variant of {@link String}.
  * <p>
- * Bridges a {@link String} attribute to a native XML column via the JDBC {@link java.sql.SQLXML}
+ * Bridges a {@link String} attribute to a native XML column via the JDBC {@link SQLXML}
  * interface where the backend supports it ({@link Backend#isSqlxmlSupported()}), falling back to
  * plain VARCHAR/CLOB otherwise. The value exposed to the application is always a plain, serializable
  * {@link String} — the {@link SQLXML} object itself is never handed out, since it is only valid for
  * the transaction that created it.
  */
 @Service(DataType.class)
-public final class SQLXMLType extends StringType {
+public final class XMLType extends StringType {
 
   /**
-   * Creates the datatype for the SQLXML variant of {@link String}.
+   * XML variant.<br>
+   * Distinguishes a {@code String} bridged through the JDBC {@link java.sql.SQLXML} interface to a
+   * native XML column from a plain VARCHAR or CLOB-backed one.
    */
-  public SQLXMLType() {
+  public static final String VARIANT = "Sqlxml";
+
+
+  /**
+   * Creates the datatype for the XML variant of {@link String}.
+   */
+  public XMLType() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   @Override
   public String getVariant() {
-    return DataTypeFactory.SQLXML_VARIANT;
+    return VARIANT;
+  }
+
+  @Override
+  public String getModelType() {
+    return "XML";
   }
 
   @Override
@@ -60,7 +72,7 @@ public final class SQLXMLType extends StringType {
     if (index != 0) {
       throw new IndexOutOfBoundsException();
     }
-    return SqlType.SQLXML;
+    return SqlType.XML;
   }
 
   /**

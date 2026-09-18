@@ -19,7 +19,6 @@
 package org.tentackle.sql;
 
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.sql.datatypes.ConvertibleType;
 
 interface DataTypeFactoryHolder {
@@ -30,33 +29,6 @@ interface DataTypeFactoryHolder {
  * Loads all data types and creates singletons of each type.
  */
 public interface DataTypeFactory {
-
-  /**
-   * Large variant of a type.<br>
-   * For example, to distinguish standard VARCHAR Strings from CLOBs.
-   */
-  String LARGE_VARIANT = "Large";
-
-  /**
-   * SQLXML variant of a type.<br>
-   * Distinguishes a {@code String} bridged through the JDBC {@link java.sql.SQLXML} interface to a
-   * native XML column from a plain VARCHAR or CLOB-backed one.
-   */
-  String SQLXML_VARIANT = "Sqlxml";
-
-  /**
-   * JSON variant of a type.<br>
-   * Distinguishes a {@code String} bound to a native JSON column from a plain VARCHAR or
-   * CLOB-backed one. Unlike {@link #SQLXML_VARIANT}, JDBC provides no JSON binding of its own,
-   * so how the string reaches the column is up to the backend.
-   */
-  String JSON_VARIANT = "Json";
-
-  /**
-   * Type name for the wrapper type implementing <code>org.tentackle.misc.Convertible</code>.
-   */
-  String CONVERTIBLE_TYPE = "implementing Convertible";
-
 
   /**
    * The singleton.
@@ -88,7 +60,7 @@ public interface DataTypeFactory {
    */
   @SuppressWarnings("unchecked")
   default <T> DataType<T> get(Class<T> clazz, String variant) {
-    return (DataType<T>) get(StringHelper.lastAfter(clazz.getName(), '.'), variant);
+    return (DataType<T>) get(clazz.getSimpleName(), variant);
   }
 
 
@@ -99,18 +71,7 @@ public interface DataTypeFactory {
    * @return the datatype, null if no such type
    */
   default DataType<?> get(String javaType) {
-    DataType<?> dataType = get(javaType, "");
-    if (dataType == null) {
-      // SQLXML/JSON are not DataType keys of their own: they alias the matching variant of String,
-      // bridged to a native XML/JSON column where the backend supports it.
-      if ("SQLXML".equals(javaType)) {
-        dataType = get("String", SQLXML_VARIANT);
-      }
-      else if ("JSON".equals(javaType)) {
-        dataType = get("String", JSON_VARIANT);
-      }
-    }
-    return dataType;
+    return get(javaType, "");
   }
 
 

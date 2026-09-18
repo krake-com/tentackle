@@ -37,6 +37,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlNameType;
+import org.tentackle.sql.datatypes.LargeStringType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -241,7 +242,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
       if ("String".equals(line.getJavaType()) && Integer.valueOf(0).equals(line.getSize())) {
         // special handling for LARGESTRING: String with explicit size of 0
-        setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
+        setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), LargeStringType.VARIANT));
       }
 
       if (isConvertible()) {

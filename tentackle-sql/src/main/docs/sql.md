@@ -103,7 +103,7 @@ Passwords are held in `char[]` and can be wiped from memory with `clearPassword(
 ### SqlType
 
 [`SqlType`](../java/org/tentackle/sql/SqlType.java) is a small, type-safe enum that is Tentackle's curated subset
-of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `SQLXML`, `JSON`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`,
+of `java.sql.Types`: `VARCHAR`, `CHAR`, `CLOB`, `XML`, `JSON`, `BLOB`, `DECIMAL`, `BIT`, `TINYINT`,
 `SMALLINT`, `INTEGER`, `BIGINT`, `FLOAT`, `DOUBLE`, `DATE`, `TIME`, `TIMESTAMP`, `UUID` and `JAVA_OBJECT`. Each
 value knows its Java default value and how to parse a literal coming back from JDBC metadata.
 
@@ -127,7 +127,7 @@ types, and the Tentackle money types `BMoney`/`DMoney`.
 Each `DataType` is a stateless singleton annotated with `@Service(DataType.class)` and located through the
 [`DataTypeFactory`](../java/org/tentackle/sql/DataTypeFactory.java). It is keyed by the plain Java class name plus
 an optional *variant* (e.g., the `"Large"` variant distinguishes a `CLOB`-backed `String` from a `VARCHAR` one,
-and the `"Sqlxml"` variant bridges a `String` through the JDBC [`SQLXML`](../java/org/tentackle/sql/datatypes/SQLXMLType.java)
+and the `"Sqlxml"` variant bridges a `String` through the JDBC [`SQLXML`](../java/org/tentackle/sql/datatypes/XMLType.java)
 interface to a native XML column where the backend supports it — see [`Backend.isSqlxmlSupported()`](../java/org/tentackle/sql/Backend.java)).
 The [`"Json"` variant](../java/org/tentackle/sql/datatypes/JsonType.java) does the same for a native JSON column,
 but JDBC offers no binding to bridge it with: there is no `Types.JSON` and no `createJSON()`. The backends

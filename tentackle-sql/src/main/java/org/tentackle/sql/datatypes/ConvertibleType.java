@@ -21,7 +21,6 @@ package org.tentackle.sql.datatypes;
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
 import java.sql.PreparedStatement;
@@ -36,6 +35,13 @@ import java.sql.SQLException;
 public final class ConvertibleType extends AbstractDataType<Object> {
 
   /**
+   * Type name for the wrapper type implementing <code>org.tentackle.misc.Convertible</code>.
+   */
+  public static final String TYPE = "implementing Convertible";
+
+
+
+  /**
    * Creates the convertible pseudo type.
    */
   public ConvertibleType() {
@@ -44,7 +50,7 @@ public final class ConvertibleType extends AbstractDataType<Object> {
 
   @Override
   public String getJavaType() {
-    return DataTypeFactory.CONVERTIBLE_TYPE;
+    return TYPE;
   }
 
   @Override

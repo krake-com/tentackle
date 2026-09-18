@@ -57,6 +57,11 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public String getModelType() {
+    return getJavaType();
+  }
+
+  @Override
   public boolean isPredefined() {
     return true;
   }

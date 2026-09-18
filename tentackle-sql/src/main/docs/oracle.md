@@ -203,7 +203,7 @@ These are older, and are implemented in `Oracle8` (and thus inherited by `Oracle
 - **An extra commit is required** (`isExtraCommitRequired()`), and `SELECT` without a table needs `FROM DUAL`.
 - **Paging** uses `OFFSET ... ROWS FETCH NEXT ... ROWS ONLY` in `Oracle`, but the nested
   `ROWNUM` construct in `Oracle8`.
-- **SQLXML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
+- **XML is supported**, but needs `xdb.jar` and `xmlparserv2.jar` on the classpath.
 - **JSON is stored as a `CLOB`, unless you opt in to `Oracle21`.** Oracle's native `JSON` type only exists from
   21c, while `Oracle` covers 12 and newer and `sqlTypeToString` has no version information at DDL-generation
   time. A `CLOB` is readable by every supported version, so `Oracle.isJsonSupported()` stays `false` and the

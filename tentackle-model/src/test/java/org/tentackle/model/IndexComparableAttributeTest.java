@@ -27,7 +27,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
 /**
- * Verifies that attributes with a non-comparable data type (JSON, SQLXML) cannot be part of an index,
+ * Verifies that attributes with a non-comparable data type (JSON, XML) cannot be part of an index,
  * since databases provide no comparator for such types.
  *
  * @author harald
@@ -44,8 +44,8 @@ public class IndexComparableAttributeTest {
 
       ## attributes
       String(10)       code            code              the code
-      JSON              payload         payload           the payload
-      SQLXML            document        document          the document
+      JSON             payload         payload           the payload
+      XML              document        document          the document
 
       ## indexes
       index comparableidx := code
