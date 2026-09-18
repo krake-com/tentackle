@@ -108,6 +108,7 @@ nav:
       - The Query DSL: query-dsl.md
       - SQL Statement Batching: batching.md
       - Tentackle SQL: sql.md
+      - The PostgreSQL Backend: postgres.md
       - The Oracle Backend: oracle.md
       - The MySQL and MariaDB Backends: mysql.md
       - The SAP HANA Backend: hana.md

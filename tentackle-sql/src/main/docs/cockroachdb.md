@@ -68,6 +68,7 @@ Some properties of the database cannot be hidden by the backend:
 ## Related Documentation
 
 - [Tentackle SQL](sql.md) — the backend abstraction this backend implements.
+- [The PostgreSQL Backend](postgres.md) — the backend this one extends and mostly inherits, including the `JSON`/`JSONB` mapping.
 - [Backend Properties](../../../../tentackle-session/src/main/docs/backend-properties.md) — the `|<BackendName>`
   URL suffix.
 - [Transactions and Transparent Retry](../../../../tentackle-pdo/src/main/docs/transaction.md) — what happens with
