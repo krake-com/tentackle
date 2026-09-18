@@ -58,7 +58,10 @@ visible in the implementing code.
 - **Only the proxy is interceptable.** Interception is a feature of the dynamic
   proxy serving an [`Interceptable`](#the-interceptable-marker) interface, not of
   the plain delegate object. An interceptor only fires when the method is called
-  *through* the proxy.
+  *through* the proxy. A few methods — `getDomainDelegate()`/`getPersistenceDelegate()`
+  themselves — are invoked directly by the framework's own invocation handler and
+  therefore never reach the proxy's interceptor chain at all; see
+  [`@NotInterceptable`](#notinterceptable--sealing-a-method-against-interception).
 
 ---
 
@@ -403,6 +406,72 @@ session on the server, so the restriction would be meaningless.
 
 ---
 
+## `@NotInterceptable` — sealing a method against interception
+
+Some methods never — or only partly — reach the interceptor chain, no matter
+what annotation is put on them. Applying an interceptor such as `@Transaction`
+to one of these would therefore silently do nothing: no error, no exception,
+just a dead annotation. `@NotInterceptable` turns that silent no-op into a
+**compile error**, on the method itself and on any method that overrides it,
+however deep the override chain:
+
+```java
+@Override
+@NotInterceptable
+PersistentObject<T> getPersistenceDelegate();
+```
+
+`@NotInterceptable` itself is a plain marker; it is not meta-annotated with
+`@Interception` and carries no runtime behavior of its own — it is only
+consulted by the compile-time processors described below. There are two
+reasons a method ends up sealed:
+
+- **Always bypassed.** `PdoInvocationHandler`/`OperationInvocationHandler`
+  (and, for `getEffectiveClass()`/`getEffectiveSuperClasses()`, the generic
+  `InterceptableInvocationHandler` too) special-case these methods by identity
+  and invoke them directly, before the interceptor chain is even consulted —
+  for *every* caller, always:
+  `PersistentDomainObject`/`Operation`'s `getDomainDelegate()`/`getPersistenceDelegate()`,
+  `EffectiveClassProvider.getEffectiveClass()`/`getEffectiveSuperClasses()`,
+  `Identifiable.toGenericString()`, `PdoProvider.getPdo()`,
+  `OperationProvider.getOperation()` (but *not* `on()`/`op()` — those are
+  explicitly routed through the chain).
+- **Bypassed by an internal shortcut.** Ordinary methods that *do* get
+  intercepted correctly when called through the proxy, but which some
+  framework-internal code (mostly `PdoCache`, `AbstractPersistentObject`,
+  `AbstractDomainObject`/`AbstractDomainOperation`) also calls directly on a
+  raw delegate (`.getPersistenceDelegate().x()` / `.getDomainDelegate().x()`)
+  as a performance/re-entrancy shortcut — so any interceptor on them would
+  fire inconsistently depending on the call path. Sealed for this reason:
+  `DomainObject.getUniqueDomainKey()`/`findByUniqueDomainKey()`;
+  `PersistentObject.getId()`, `getClassId()`, `isRootEntity()`, `isAbstract()`,
+  `isEmbedded()`, `getCache()`, `markCacheAccess()`, `isExpired()`,
+  `isCacheable()`, `setExpired()`, `requestTokenLock()`, `selectTokenLocked()`,
+  `selectForCache()`, `getTableName()`; `Snapshotable.createSnapshot()`,
+  `revertToSnapshot()`, `setCopy()`; `DomainContextProvider.getDomainContext()`;
+  `DomainContextDependable.setDomainContext()`, `createValidContext()`;
+  `SessionProvider.getSession()`.
+
+`hashCode()`/`equals()`/`toString()`/`clone()`/`compareTo()` are also
+always-bypassed by identity, but are deliberately **not** sealed — application
+code essentially never redeclares them on a PDO/operation interface, and for
+`compareTo()` a redeclaration already fails a different, worse way (a runtime
+`PdoRuntimeException`) that `@NotInterceptable` would not prevent anyway.
+
+**Placement note:** `@NotInterceptable` always sits on the method's actual,
+pre-existing declaration — never on a fresh redeclaration added just to carry
+it. A PDO/operation proxy's method dispatch identifies a method by its
+declaring class as seen through the specific interface it was reached from;
+introducing a *new* redeclaration on a "closer" interface changes that
+identity and can silently reroute dispatch to the wrong delegate. Where the
+true declaring interface is a generic, non-PDO utility (`Identifiable`,
+`Snapshotable` in `tentackle-core`, also implemented by unrelated types), the
+annotation is placed there directly rather than risking a redeclaration
+elsewhere — harmless for those unrelated implementors, since none of them are
+`Interceptable` proxies in the first place.
+
+---
+
 ## Compile-Time Verification
 
 `@Interception` is itself meta-annotated with `@Analyze`, hooking it into
@@ -417,9 +486,13 @@ a matching processor enforces correct usage:
 - `HiddenInterceptorAnnotationProcessor` — additionally requires the annotation
   to sit on an **implementing method** (`type = HIDDEN`).
 
+All three also verify that the annotated method — or any method it overrides —
+is not marked [`@NotInterceptable`](#notinterceptable--sealing-a-method-against-interception).
+
 Misplacing an interceptor annotation — e.g., putting a `PUBLIC` interceptor on a
-class method, or any interceptor on a method outside an `Interceptable` — is
-therefore reported as a compilation error.
+class method, any interceptor on a method outside an `Interceptable`, or any
+interceptor on a `@NotInterceptable` method — is therefore reported as a
+compilation error.
 
 ---
 

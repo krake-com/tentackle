@@ -21,6 +21,7 @@
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.reflect.NotInterceptable;
 
 
 /**
@@ -46,21 +47,25 @@ public interface Operation<T extends Operation<T>>
   /**
    * Gets the delegate implementing the domain logic.
    * <p>
-   * Note: the method is intercepted and executed by the {@link PdoInvocationHandler}.
+   * Note: the method is invoked directly by the {@link OperationInvocationHandler}, bypassing
+   * the interceptor chain entirely (see {@link NotInterceptable}).
    *
    * @return the domain object
    */
   @Override
+  @NotInterceptable
   DomainOperation<T> getDomainDelegate();
 
   /**
    * Gets the delegate implementing the persistence layer.
    * <p>
-   * Note: the method is intercepted and executed by the {@link PdoInvocationHandler}.
+   * Note: the method is invoked directly by the {@link OperationInvocationHandler}, bypassing
+   * the interceptor chain entirely (see {@link NotInterceptable}).
    *
    * @return the persistent object
    */
   @Override
+  @NotInterceptable
   PersistentOperation<T> getPersistenceDelegate();
 
 }

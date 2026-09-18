@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
+
 /**
  * Provider for an {@link Operation}.
  *
@@ -31,6 +33,7 @@ public interface OperationProvider<T extends Operation<T>> {
    *
    * @return the operation
    */
+  @NotInterceptable
   T getOperation();
 
   /**

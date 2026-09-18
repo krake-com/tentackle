@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
+
 
 /**
  * Interface all persistent objects must implement.<br>
@@ -34,6 +36,7 @@ public interface DomainContextDependable extends DomainContextProvider {
    *
    * @param context the domain context
    */
+  @NotInterceptable
   void setDomainContext(DomainContext context);
 
 
@@ -71,6 +74,7 @@ public interface DomainContextDependable extends DomainContextProvider {
    *
    * @return the new context, never null
    */
+  @NotInterceptable
   DomainContext createValidContext();
 
   /**

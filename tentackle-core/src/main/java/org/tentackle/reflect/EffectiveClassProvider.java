@@ -58,6 +58,7 @@ public interface EffectiveClassProvider<T> {
    *
    * @return the effective class
    */
+  @NotInterceptable
   Class<T> getEffectiveClass();
 
   /**
@@ -65,6 +66,7 @@ public interface EffectiveClassProvider<T> {
    *
    * @return the super classes, never null
    */
+  @NotInterceptable
   List<Class<? super T>> getEffectiveSuperClasses();
 
 }

@@ -177,6 +177,7 @@ lineage the application declared, not the proxy's.
 
 The interception types — [`Interceptable`](../java/org/tentackle/reflect/Interceptable.java),
 [`@Interception`](../java/org/tentackle/reflect/Interception.java),
+[`@NotInterceptable`](../java/org/tentackle/reflect/NotInterceptable.java),
 [`Interceptor`](../java/org/tentackle/reflect/Interceptor.java),
 [`AbstractInterceptor`](../java/org/tentackle/reflect/AbstractInterceptor.java),
 [`InterceptableMethod`](../java/org/tentackle/reflect/InterceptableMethod.java),

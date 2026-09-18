@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
+
 /**
  * DomainContext provider.
  * <p>
@@ -32,6 +34,7 @@ public interface DomainContextProvider {
    *
    * @return the domain context
    */
+  @NotInterceptable
   DomainContext getDomainContext();
 
   /**

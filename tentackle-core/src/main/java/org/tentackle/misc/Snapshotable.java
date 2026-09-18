@@ -18,6 +18,8 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.reflect.NotInterceptable;
+
 import java.util.List;
 
 /**
@@ -41,6 +43,7 @@ public interface Snapshotable<T> {
    *
    * @return the snapshot
    */
+  @NotInterceptable
   T createSnapshot();
 
   /**
@@ -48,6 +51,7 @@ public interface Snapshotable<T> {
    *
    * @param snapshot the snapshot to revert to
    */
+  @NotInterceptable
   void revertToSnapshot(T snapshot);
 
   /**
@@ -108,6 +112,7 @@ public interface Snapshotable<T> {
    *
    * @param copy true if change to a copy, else change to the non-copied object
    */
+  @NotInterceptable
   void setCopy(boolean copy);
 
 }

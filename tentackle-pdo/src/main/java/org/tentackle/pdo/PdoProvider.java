@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
+
 /**
  * Provider for a PDO.
  *
@@ -27,10 +29,11 @@ package org.tentackle.pdo;
 public interface PdoProvider<T extends PersistentDomainObject<T>> {
 
   /**
-   * Gets the PDO.<br>
+   * Gets the PDO.
    *
    * @return the pdo
    */
+  @NotInterceptable
   T getPdo();
 
   /**

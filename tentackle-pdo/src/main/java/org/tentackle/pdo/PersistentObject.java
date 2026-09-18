@@ -27,6 +27,7 @@ import org.tentackle.misc.Modifiable;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.misc.SerialNumbered;
 import org.tentackle.misc.Snapshotable;
+import org.tentackle.reflect.NotInterceptable;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.ModificationTracker;
@@ -58,6 +59,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   @Persistent(comment = "object id")
   @Override
   @Bindable
+  @NotInterceptable
   long getId();
 
   /**
@@ -104,6 +106,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return true if abstract PDO
    */
+  @NotInterceptable
   boolean isAbstract();
 
   /**
@@ -126,6 +129,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return true if root entity
    */
+  @NotInterceptable
   boolean isRootEntity();
 
   /**
@@ -134,6 +138,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return true if embedded entity
    */
+  @NotInterceptable
   boolean isEmbedded();
 
   /**
@@ -198,6 +203,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the table name, null if the class does not map to a database table
    */
+  @NotInterceptable
   String getTableName();
 
   /**
@@ -221,6 +227,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    */
   @Persistent(comment = "class id")
   @Bindable
+  @NotInterceptable
   int getClassId();
 
   /**
@@ -377,6 +384,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param expired true if the object is expired
    */
+  @NotInterceptable
   void setExpired(boolean expired);
 
   /**
@@ -386,6 +394,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return true if the object is expired (in cache)
    */
+  @NotInterceptable
   boolean isExpired();
 
   /**
@@ -502,6 +511,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the cache for this PDO, null if none.
    */
+  @NotInterceptable
   PdoCache<T> getCache();
 
   /**
@@ -522,6 +532,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Marks the cache access.<br>
    * Increments the access counter and sets the last access time.
    */
+  @NotInterceptable
   void markCacheAccess();
 
   /**
@@ -538,6 +549,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return true if the object is cacheable
    */
+  @NotInterceptable
   boolean isCacheable();
 
   /**
@@ -582,6 +594,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Throws a {@link LockException} if locked by another user
    * or a {@link org.tentackle.session.NotFoundException} if removed or updated in the meantime.
    */
+  @NotInterceptable
   void requestTokenLock();
 
   /**
@@ -659,6 +672,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return object if loaded, null if no such object
    */
+  @NotInterceptable
   T selectTokenLocked(long id);
 
   /**
@@ -804,6 +818,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return object if loaded, null if no such object
    */
+  @NotInterceptable
   T selectForCache(long id);
 
   /**

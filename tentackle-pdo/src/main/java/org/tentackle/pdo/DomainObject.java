@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.NotInterceptable;
 import org.tentackle.session.SessionProvider;
 
 /**
@@ -50,6 +51,7 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
    *
    * @return the unique domain key
    */
+  @NotInterceptable
   Object getUniqueDomainKey();
 
   /**
@@ -68,6 +70,7 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
    * @param domainKey the primary domain key
    * @return the object found, null if none
    */
+  @NotInterceptable
   T findByUniqueDomainKey(Object domainKey);
 
   /**
