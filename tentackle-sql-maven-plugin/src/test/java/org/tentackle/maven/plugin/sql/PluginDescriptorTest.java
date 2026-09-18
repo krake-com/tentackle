@@ -78,7 +78,7 @@ public class PluginDescriptorTest {
 
 
   /**
-   * The goals of this plugin. All four are aggregators - they run once for the whole reactor,
+   * The goals of this plugin. All five are aggregators - they run once for the whole reactor,
    * hence documented as {@code mvn tentackle-sql:<goal>} rather than bound to a lifecycle phase.
    *
    * @return the goal name and implementation
@@ -89,7 +89,8 @@ public class PluginDescriptorTest {
       { "create", CreateSqlMojo.class },
       { "migrate", MigrateSqlMojo.class },
       { "validate", ValidateSqlMojo.class },
-      { "run", RunSqlMojo.class }
+      { "run", RunSqlMojo.class },
+      { "document", DocumentSqlMojo.class }
     };
   }
 
@@ -171,6 +172,16 @@ public class PluginDescriptorTest {
   @Test
   public void validateFlagOfMigrateHasNoDeclaredDefault() {
     assertNull(defaultValue("migrate", "validate"));
+  }
+
+  /**
+   * {@code document} shares {@code modelDir} with {@code create}/{@code migrate}, but writes to its
+   * own {@code htmlDir} rather than {@code sqlDir}.
+   */
+  @Test
+  public void documentDefaultsToModelDocDirectory() {
+    assertEquals(defaultValue("document", "modelDir"), "${project.build.directory}/wurbel/model");
+    assertEquals(defaultValue("document", "htmlDir"), "${project.build.directory}/model-doc");
   }
 
   /**
