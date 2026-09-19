@@ -25,6 +25,8 @@ import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +58,7 @@ class ModelHtmlGenerator {
   private final File outputDir;
   private final String title;
   private final File cssFile;
+  private final Backend backend;
 
 
   /**
@@ -66,12 +69,14 @@ class ModelHtmlGenerator {
    * @param title the heading for the index page
    * @param cssFile an optional project-specific stylesheet, copied verbatim to {@code style.css};
    *                if null, a default theme is generated instead
+   * @param backend the backend the attribute tables' SQL types are rendered for
    */
-  ModelHtmlGenerator(Collection<Entity> entities, File outputDir, String title, File cssFile) {
+  ModelHtmlGenerator(Collection<Entity> entities, File outputDir, String title, File cssFile, Backend backend) {
     this.entities = entities;
     this.outputDir = outputDir;
     this.title = title;
     this.cssFile = cssFile;
+    this.backend = backend;
   }
 
 
@@ -249,11 +254,29 @@ class ModelHtmlGenerator {
   }
 
   private void appendAttributesTable(StringBuilder html, Entity entity) throws ModelException {
-    html.append("<h2>Attributes</h2>\n<table>\n<tr><th>Name</th><th>Column</th><th>Type</th><th>Comment</th></tr>\n");
+    List<Attribute> declaredAttributes = new ArrayList<>();
+    List<Attribute> implicitAttributes = new ArrayList<>();
     for (Attribute attribute : entity.getAttributesIncludingInherited()) {
-      if (attribute.isImplicit()) {
-        continue;
-      }
+      (attribute.isImplicit() ? implicitAttributes : declaredAttributes).add(attribute);
+    }
+
+    html.append("<h2>Attributes</h2>\n");
+    appendAttributeTable(html, declaredAttributes, "No attributes.");
+
+    html.append("<h2>Framework Attributes</h2>\n")
+        .append("<p class=\"comment\">Attributes added implicitly by the framework - identity, ")
+        .append("optimistic-locking serial, class id, root/component bookkeeping - not declared in ")
+        .append("the model source.</p>\n");
+    appendAttributeTable(html, implicitAttributes, "No framework attributes.");
+  }
+
+  private void appendAttributeTable(StringBuilder html, List<Attribute> attributes, String emptyText) throws ModelException {
+    if (attributes.isEmpty()) {
+      html.append("<p>").append(escape(emptyText)).append("</p>\n");
+      return;
+    }
+    html.append("<table>\n<tr><th>Name</th><th>Column</th><th>Java Type</th><th>SQL Type</th><th>Comment</th></tr>\n");
+    for (Attribute attribute : attributes) {
       String javaType;
       try {
         javaType = attribute.getJavaType();
@@ -264,9 +287,25 @@ class ModelHtmlGenerator {
       html.append("<tr><td>").append(escape(attribute.getName())).append("</td><td>")
           .append(escape(attribute.getColumnName())).append("</td><td>")
           .append(escape(javaType)).append("</td><td>")
+          .append(escape(getSqlType(attribute))).append("</td><td>")
           .append(escape(attribute.getOptions().getComment())).append("</td></tr>\n");
     }
     html.append("</table>\n");
+  }
+
+  private String getSqlType(Attribute attribute) throws ModelException {
+    DataType<?> dataType = attribute.getEffectiveDataType();
+    int columnCount = dataType.getColumnCount(backend);
+    StringBuilder buf = new StringBuilder();
+    for (int i = 0; i < columnCount; i++) {
+      if (i > 0) {
+        buf.append(", ");
+      }
+      int size = dataType.getSize(backend, i, attribute.getSize());
+      int scale = dataType.getScale(backend, i, attribute.getScale());
+      buf.append(backend.columnTypeToString(dataType.getSqlType(backend, i), size, scale));
+    }
+    return buf.toString();
   }
 
 

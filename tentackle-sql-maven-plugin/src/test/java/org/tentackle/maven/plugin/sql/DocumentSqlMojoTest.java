@@ -38,6 +38,9 @@ import static org.testng.Assert.assertTrue;
  * root entity with a plain, non-composite reference to {@code Bundle} (mirroring the {@code Order}/
  * {@code Customer} fixture used by {@link CreateSqlMojoTest}). This exercises the "referenced by",
  * "composite structure", "references" and "composite membership" sections all at once.
+ * <p>
+ * All tests configure {@code backendNames = "h2"} (H2 is already a reactor test dependency), so pages
+ * are read back from {@code htmlDir/h2/...}, mirroring {@code create}'s per-backend output layout.
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
 public class DocumentSqlMojoTest {
@@ -107,6 +110,45 @@ public class DocumentSqlMojoTest {
     String bundleHtml = html("Bundle");
     assertTrue(bundleHtml.contains("<td>name</td>"), bundleHtml);
     assertTrue(bundleHtml.contains("the bundle&#39;s name") || bundleHtml.contains("the bundle's name"), bundleHtml);
+  }
+
+  /**
+   * The SQL type is backend-specific, which is why pages live under {@code htmlDir/h2/...} in the
+   * first place - a {@code String(128)} attribute must render as an H2 {@code VARCHAR} column.
+   */
+  @Test
+  public void attributesTableShowsSqlType() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configure("attributesTableShowsSqlType");
+    run(mojo);
+
+    String bundleHtml = html("Bundle");
+    assertTrue(bundleHtml.contains("VARCHAR"), bundleHtml);
+  }
+
+  /**
+   * {@code id}/{@code serial} are added implicitly by the framework on every entity - they must show
+   * up in the separate "Framework Attributes" section, not in the regular, user-declared one.
+   */
+  @Test
+  public void frameworkAttributesSectionListsImplicitAttributes() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configure("frameworkAttributesSectionListsImplicitAttributes");
+    run(mojo);
+
+    String bundleHtml = html("Bundle");
+    assertTrue(bundleHtml.contains("Framework Attributes"), bundleHtml);
+
+    int frameworkSectionStart = bundleHtml.indexOf("Framework Attributes");
+    String beforeFrameworkSection = bundleHtml.substring(0, frameworkSectionStart);
+    String frameworkSection = bundleHtml.substring(frameworkSectionStart);
+
+    assertFalse(beforeFrameworkSection.contains("<td>id</td>"), beforeFrameworkSection);
+    assertFalse(beforeFrameworkSection.contains("<td>serial</td>"), beforeFrameworkSection);
+    assertTrue(frameworkSection.contains("<td>id</td>"), frameworkSection);
+    assertTrue(frameworkSection.contains("<td>serial</td>"), frameworkSection);
   }
 
   @Test
@@ -263,6 +305,7 @@ public class DocumentSqlMojoTest {
     SqlTestSupport.setField(mojo, "htmlDir", htmlDir);
     SqlTestSupport.setField(mojo, "modelName", modelName);
     SqlTestSupport.setField(mojo, "title", "Test Model");
+    SqlTestSupport.setField(mojo, "backendNames", "h2");
     return mojo;
   }
 
@@ -274,11 +317,11 @@ public class DocumentSqlMojoTest {
   }
 
   private String html(String pageName) {
-    return SqlTestSupport.readFile(new File(htmlDir, pageName + ".html"));
+    return SqlTestSupport.readFile(new File(new File(htmlDir, "h2"), pageName + ".html"));
   }
 
   private String css(String fileName) {
-    return SqlTestSupport.readFile(new File(htmlDir, fileName + ".css"));
+    return SqlTestSupport.readFile(new File(new File(htmlDir, "h2"), fileName + ".css"));
   }
 
 }

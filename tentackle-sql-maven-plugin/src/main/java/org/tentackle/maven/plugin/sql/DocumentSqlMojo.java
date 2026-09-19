@@ -31,6 +31,8 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelManager;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,8 +116,25 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
   @Parameter(property = "tentackle.cssFile")
   private File cssFile;
 
+  /**
+   * Comma-separated list of backend names to render the SQL type of each attribute for.<br>
+   * One self-contained HTML page tree is generated per backend, nested under {@link #htmlDir} by
+   * backend name - same layout convention as {@code create}'s {@code sqlDir/<backend-name>/} -
+   * since the SQL type shown in the attributes table can differ between backends.
+   * <p>
+   * The following special names are recognized:
+   * <ul>
+   *   <li>all: all non-deprecated backends</li>
+   *   <li>none: does not match any backend</li>
+   *   <li>deprecated: all deprecated backends</li>
+   * </ul>
+   */
+  @Parameter(property = "tentackle.backendNames")
+  private String backendNames;
+
 
   private Model model;
+  private Collection<Backend> backends;
 
 
   @Override
@@ -136,6 +155,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
       if (cssFile != null && !cssFile.isFile()) {
         throw new MojoExecutionException("no such cssFile: " + cssFile.getAbsolutePath());
       }
+      backends = BackendFactory.getInstance().getBackends(backendNames);
       return true;
     }
     return false;
@@ -184,18 +204,28 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException("resolving the model failed", mex);
     }
 
-    if (!htmlDir.isDirectory() && !htmlDir.mkdirs()) {
-      throw new MojoExecutionException("cannot create htmlDir " + htmlDir.getAbsolutePath());
+    if (backends.isEmpty()) {
+      getLog().warn("no backends configured (see tentackle.backendNames) - nothing to document");
+      return;
     }
 
-    try {
-      new ModelHtmlGenerator(entities, htmlDir, title != null ? title : getMavenProject().getName(), cssFile).generate();
-    }
-    catch (IOException iox) {
-      throw new MojoExecutionException("writing the HTML pages failed", iox);
-    }
+    String pageTitle = title != null ? title : getMavenProject().getName();
 
-    getLog().info(entities.size() + " entity page(s) created in " + getPathRelativeToBasedir(htmlDir.getAbsolutePath()));
+    for (Backend backend : backends) {
+      File backendHtmlDir = new File(htmlDir, backend.getName());
+      if (!backendHtmlDir.isDirectory() && !backendHtmlDir.mkdirs()) {
+        throw new MojoExecutionException("cannot create htmlDir " + backendHtmlDir.getAbsolutePath());
+      }
+
+      try {
+        new ModelHtmlGenerator(entities, backendHtmlDir, pageTitle, cssFile, backend).generate();
+      }
+      catch (IOException iox) {
+        throw new MojoExecutionException("writing the HTML pages for backend " + backend.getName() + " failed", iox);
+      }
+
+      getLog().info(entities.size() + " entity page(s) created in " + getPathRelativeToBasedir(backendHtmlDir.getAbsolutePath()));
+    }
   }
 
 
