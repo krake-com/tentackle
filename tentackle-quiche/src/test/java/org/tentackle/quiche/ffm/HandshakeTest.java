@@ -72,6 +72,8 @@ public class HandshakeTest {
   private Path certificateChain;
   private Path privateKey;
   private Path trustedCertificates;
+  private Path otherKeyStoreFile;
+  private Path otherTrustedCertificates;
 
   @BeforeClass
   public void setUp() throws Exception {
@@ -85,11 +87,20 @@ public class HandshakeTest {
                                              QuicheTestSupport.STORE_PASSWORD.toCharArray());
     // the self-signed server certificate is its own CA
     trustedCertificates = PemExporter.writeTrustedCertificates(keyStore);
+
+    // an unrelated CA, so a client trusting only this one must reject the server's certificate
+    otherKeyStoreFile = QuicheTestSupport.createKeyStore();
+    KeyStore otherKeyStore = KeyStore.getInstance("PKCS12");
+    try (var in = Files.newInputStream(otherKeyStoreFile)) {
+      otherKeyStore.load(in, QuicheTestSupport.STORE_PASSWORD.toCharArray());
+    }
+    otherTrustedCertificates = PemExporter.writeTrustedCertificates(otherKeyStore);
   }
 
   @AfterClass
   public void tearDown() throws Exception {
-    for (Path file : new Path[] {keyStoreFile, certificateChain, privateKey, trustedCertificates}) {
+    for (Path file : new Path[] {keyStoreFile, certificateChain, privateKey, trustedCertificates,
+                                 otherKeyStoreFile, otherTrustedCertificates}) {
       if (file != null) {
         Files.deleteIfExists(file);
       }
@@ -201,6 +212,49 @@ public class HandshakeTest {
                                                  SERVER_ADDRESS, CLIENT_ADDRESS, serverConfig)) {
         new Wire(arena, client, server).exchangeQuietly();
         assertFalse(client.isEstablished(), "the handshake must not succeed without a common ALPN protocol");
+      }
+    }
+  }
+
+  /**
+   * This is what {@code QuicheTripConnectionPool.certificateFailure} relies on to tell a rejected
+   * certificate apart from any other handshake failure: {@code quiche_conn_local_error} reporting a
+   * QUIC transport error (not an application one) whose code is a TLS {@code bad_certificate}/
+   * {@code unknown_ca}/... alert, per RFC 9001 &sect;4.8.
+   */
+  @Test(timeOut = 30000)
+  public void testCertificateRejectionReportsTheAlertAsLocalError() {
+    Reporter.log("a client that does not trust the server's certificate reports a TLS alert as its local error", true);
+    // deliberately not clientConfig(): it trusts the server's actual CA, which is exactly what must
+    // be untrusted here - trust only an unrelated CA instead
+    try (QuicheConfig clientConfig = new QuicheConfig()
+                                        .setApplicationProtocols(ALPN)
+                                        .loadVerifyLocations(otherTrustedCertificates)
+                                        .verifyPeer(true)
+                                        .setMaxIdleTimeout(30_000)
+                                        .setInitialMaxData(1_000_000)
+                                        .setInitialMaxStreamDataBidiLocal(100_000)
+                                        .setInitialMaxStreamDataBidiRemote(100_000)
+                                        .setInitialMaxStreamsBidi(4)
+                                        .setInitialMaxStreamsUni(0);
+         QuicheConfig serverConfig = serverConfig();
+         Arena arena = Arena.ofShared()) {
+
+      try (QuicheConn client = QuicheConn.connect("localhost", connectionId(),
+                                                  CLIENT_ADDRESS, SERVER_ADDRESS, clientConfig);
+           QuicheConn server = QuicheConn.accept(connectionId(), null,
+                                                 SERVER_ADDRESS, CLIENT_ADDRESS, serverConfig)) {
+        new Wire(arena, client, server).exchangeQuietly();
+        assertFalse(client.isEstablished(), "the handshake must not succeed with an untrusted certificate");
+
+        ConnectionError error = client.getLocalError();
+        assertTrue(error != null, "expected quiche_conn_local_error to report the rejected certificate");
+        assertFalse(error.isApp(), "a TLS alert is a QUIC transport error, not an application one");
+        long alert = error.errorCode() - 0x100;
+        assertTrue(alert == 42 || alert == 43 || alert == 44 || alert == 45 ||
+                   alert == 46 || alert == 48 || alert == 49 || alert == 116,
+                   "unexpected alert number " + alert + " (error code " + error.errorCode() + "), " +
+                   "reason: " + error.reason());
       }
     }
   }

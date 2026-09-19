@@ -154,7 +154,13 @@ still releases its readers and writers immediately.
 2. The server's certificate is **not** verified by default, as for `tripq`: a Tentackle server usually
    presents a self-signed certificate and TRIP authenticates the peers itself. `certcheck=true` turns
    verification on, and then `tsfile` has to name a truststore holding the server's CA — BoringSSL will
-   not know it either.
+   not know it either. A rejected certificate fails the connection with a `TripRuntimeException` whose
+   cause is an `SSLHandshakeException` — exactly like the TCP/SSL transports and `tripq`/`tripcq` report
+   the same failure, so code reacting to it (such as the client auto-update's
+   `LoginFailedWithUpdateHandler`) does not need to know which transport is in use. This relies on
+   `quiche_conn_local_error`, which reports the QUIC transport error a rejected certificate is encoded as
+   (a TLS alert, per [RFC 9001 §4.8](https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8)) — any other
+   handshake failure is deliberately left without that cause, to avoid mistaking it for one.
 3. `connecttimeout` bounds the handshake.
 4. The connection is kept alive with ack-eliciting packets, see below.
 

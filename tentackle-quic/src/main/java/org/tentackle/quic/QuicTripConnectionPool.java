@@ -21,6 +21,7 @@ package org.tentackle.quic;
 import tech.kwik.core.QuicClientConnection;
 import tech.kwik.core.QuicStream;
 
+import org.tentackle.io.SslParameters;
 import org.tentackle.io.UriHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.PoolSlot;
@@ -30,8 +31,15 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.AbstractConnectionPool;
 import org.tentackle.trip.transport.ConnectionPoolSlot;
 
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -90,6 +98,15 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private QuicClientConnection connection;
 
   /**
+   * The certificate exception the trust manager installed by {@link #createCertificateCheckingTrustManager}
+   * saw during the handshake started by the current or most recent {@link #connect()}, null if there was
+   * none (or {@code certcheck} is not enabled). KWIK discards the original exception once it converts it
+   * into its own {@code BadCertificateAlert}, so this is the only way to recover it for
+   * {@link #wrapCertificateFailure}.
+   */
+  private volatile CertificateException certificateFailure;
+
+  /**
    * Creates a QUIC connection pool.
    *
    * @param transport     the transport associated with this pool
@@ -136,6 +153,9 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
                                             .defaultStreamReceiveBufferSize((long) transport.getStreamWindow());
     if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
       connectionBuilder.noServerCertificateCheck();
+    }
+    else {
+      connectionBuilder.customTrustManager(createCertificateCheckingTrustManager(uri));
     }
 
     connect();
@@ -284,6 +304,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
      */
     closeConnection();
     URI uri = getTransport().getUri();
+    certificateFailure = null;   // stale value of a previous attempt must not be misattributed
 
     CompletableFuture<QuicClientConnection> future = new CompletableFuture<>();
     Thread connector = Thread.ofVirtual().name("QUIC connector " + uri).start(() -> {
@@ -330,13 +351,85 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
     }
     catch (ExecutionException e) {
-      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e.getCause());
+      throw new TripRuntimeException("creating QUIC connection to " + uri + " failed",
+                                      wrapCertificateFailure(e.getCause()));
     }
     finally {
       if (interrupted) {
         Thread.currentThread().interrupt();
       }
     }
+  }
+
+  /**
+   * Creates the {@link X509TrustManager} installed on {@link #connectionBuilder} when {@code certcheck} is
+   * enabled.<br>
+   * KWIK converts any {@link CertificateException} thrown by the trust manager into its own
+   * {@code BadCertificateAlert}, which is in turn downgraded to a plain, causeless {@link java.net.ConnectException}
+   * by the time {@link #connect()} sees it (see {@link #wrapCertificateFailure}). Delegating to a trust
+   * manager of our own, rather than leaving KWIK to build its default one internally, is the only way to
+   * recover the original exception describing <em>why</em> the certificate was rejected.
+   * <p>
+   * The delegate itself is built exactly the way KWIK's own default trust manager is: a {@code PKIX}
+   * {@link TrustManagerFactory} initialized with the truststore configured via {@code tsfile}/{@code tspass}
+   * ({@link SslParameters#getTrustStore()}), or the JVM's default cacerts if none is configured - so
+   * behavior is unchanged for callers that do not set a truststore.
+   *
+   * @param uri the transport URI
+   * @return the trust manager
+   */
+  private X509TrustManager createCertificateCheckingTrustManager(URI uri) {
+    X509TrustManager delegate;
+    try {
+      TrustManagerFactory factory = TrustManagerFactory.getInstance("PKIX");
+      factory.init(new SslParameters(uri).getTrustStore());
+      delegate = (X509TrustManager) factory.getTrustManagers()[0];
+    }
+    catch (GeneralSecurityException e) {
+      throw new TripRuntimeException("cannot create the trust manager for " + uri, e);
+    }
+    return new X509TrustManager() {
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        delegate.checkClientTrusted(chain, authType);
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        try {
+          delegate.checkServerTrusted(chain, authType);
+        }
+        catch (CertificateException e) {
+          certificateFailure = e;
+          throw e;
+        }
+      }
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return delegate.getAcceptedIssuers();
+      }
+    };
+  }
+
+  /**
+   * Wraps a QUIC connect failure caused by a rejected server certificate as an {@link SSLHandshakeException},
+   * matching what the TCP/SSL transport throws for the same failure, so code reacting to a certificate
+   * failure (such as {@code LoginFailedWithUpdateHandler}) does not need to know which transport is in use.
+   *
+   * @param cause the exception KWIK threw, typically a causeless {@code ConnectException}
+   * @return an {@code SSLHandshakeException} wrapping the certificate failure seen by the trust manager
+   *         installed in {@link #createCertificateCheckingTrustManager}, or {@code cause} unchanged if
+   *         there was none
+   */
+  private Throwable wrapCertificateFailure(Throwable cause) {
+    CertificateException certEx = certificateFailure;
+    if (certEx == null) {
+      return cause;
+    }
+    SSLHandshakeException sslEx = new SSLHandshakeException(certEx.getMessage());
+    sslEx.initCause(certEx);
+    return sslEx;
   }
 
   /**

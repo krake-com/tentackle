@@ -138,6 +138,14 @@ public class QuicheConn implements AutoCloseable {
     Quiche.downcall("quiche_conn_peer_streams_left_bidi",
                     FunctionDescriptor.of(ValueLayouts.UINT64, ValueLayouts.POINTER));
 
+  private static final MethodHandle LOCAL_ERROR =
+    Quiche.downcall("quiche_conn_local_error",
+                    FunctionDescriptor.of(ValueLayouts.BOOL, ValueLayouts.POINTER,
+                                          ValueLayouts.POINTER,   // bool *is_app
+                                          ValueLayouts.POINTER,   // uint64_t *error_code
+                                          ValueLayouts.POINTER,   // const uint8_t **reason
+                                          ValueLayouts.POINTER)); // size_t *reason_len
+
   private static final MethodHandle IS_ESTABLISHED = predicate("quiche_conn_is_established");
   private static final MethodHandle IS_CLOSED = predicate("quiche_conn_is_closed");
   private static final MethodHandle IS_DRAINING = predicate("quiche_conn_is_draining");
@@ -151,10 +159,10 @@ public class QuicheConn implements AutoCloseable {
 
 
   private final Arena arena;              // owns the out-parameter scratch below
-  private final MemorySegment finOut;     // bool*, the "fin" out-parameter of streamRecv
-  private final MemorySegment errorOut;   // uint64_t*, the error code out-parameter of the stream calls
-  private final MemorySegment pointerOut; // const uint8_t**, the out-parameter of the accessors
-  private final MemorySegment lengthOut;  // size_t*, the length out-parameter of the accessors
+  private final MemorySegment finOut;     // bool*, the "fin" out-parameter of streamRecv, and "is_app" of localError
+  private final MemorySegment errorOut;   // uint64_t*, the error code out-parameter of the stream calls and localError
+  private final MemorySegment pointerOut; // const uint8_t**, the out-parameter of the accessors and localError
+  private final MemorySegment lengthOut;  // size_t*, the length out-parameter of the accessors and localError
   private MemorySegment conn;             // the native connection, null once closed
 
   /**
@@ -529,6 +537,39 @@ public class QuicheConn implements AutoCloseable {
    */
   public boolean isReadable() {
     return predicate(IS_READABLE, "quiche_conn_is_readable");
+  }
+
+  /**
+   * Gets the QUIC {@code CONNECTION_CLOSE} error this side queued or sent, if any.
+   * <p>
+   * quiche reports handshake failures - including a rejected server certificate - through this call
+   * rather than through the coarse, unstructured {@code ERR_TLS_FAIL} return code that
+   * {@link #recv(MemorySegment, long, RecvInfo)} throws as a {@link QuicheException}: a locally detected
+   * TLS alert is encoded as error code {@code 0x100 + alert-number} per
+   * <a href="https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8">RFC 9001 &sect;4.8</a>, which is
+   * precise enough to tell a certificate failure apart from any other handshake failure.
+   *
+   * @return the error, or null if none was queued or sent (yet)
+   */
+  @SuppressWarnings("restricted")   // reinterpret: quiche reports the length in the out-parameter
+  public ConnectionError getLocalError() {
+    boolean present;
+    try {
+      present = (boolean) LOCAL_ERROR.invokeExact(getSegment(), finOut, errorOut, pointerOut, lengthOut);
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_local_error failed", t);
+    }
+    if (!present) {
+      return null;
+    }
+    long length = lengthOut.get(ValueLayouts.SIZE_T, 0);
+    String reason = "";
+    if (length > 0) {
+      MemorySegment pointer = pointerOut.get(ValueLayouts.POINTER, 0);
+      reason = new String(pointer.reinterpret(length).toArray(ValueLayouts.UINT8), StandardCharsets.UTF_8);
+    }
+    return new ConnectionError(finOut.get(ValueLayouts.BOOL, 0), errorOut.get(ValueLayouts.UINT64, 0), reason);
   }
 
   /**

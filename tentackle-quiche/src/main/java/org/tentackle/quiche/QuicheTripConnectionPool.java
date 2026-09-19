@@ -26,6 +26,7 @@ import org.tentackle.quiche.engine.QuicheConnection;
 import org.tentackle.quiche.engine.QuicheEndpoint;
 import org.tentackle.quiche.engine.QuicheStream;
 import org.tentackle.quiche.engine.StreamLimitException;
+import org.tentackle.quiche.ffm.ConnectionError;
 import org.tentackle.quiche.ffm.PemExporter;
 import org.tentackle.quiche.ffm.QuicheConfig;
 import org.tentackle.quiche.ffm.QuicheException;
@@ -35,6 +36,7 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.AbstractConnectionPool;
 import org.tentackle.trip.transport.ConnectionPoolSlot;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,6 +44,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The QUIC client connection pool.
@@ -251,7 +254,8 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
         String reason = quicConnection.getFailure();
         throw new TripRuntimeException(
           "the QUIC handshake with " + uri + " did not complete within " + connectTimeoutSeconds +
-          " seconds" + (reason == null ? "" : ": " + reason));
+          " seconds" + (reason == null ? "" : ": " + reason),
+          certificateFailure(quicConnection.getLocalError()));
       }
     }
     catch (RuntimeException e) {
@@ -262,6 +266,54 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       quicConnection.setKeepAliveMillis(determineKeepAliveMillis());
     }
     connection = quicConnection;
+  }
+
+  /**
+   * The error code offset of a locally detected TLS alert among the QUIC transport error codes, per
+   * <a href="https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8">RFC 9001 &sect;4.8</a>: a TLS alert
+   * numbered {@code n} is signaled as QUIC error code {@code TLS_ALERT_BASE + n}.
+   */
+  private static final long TLS_ALERT_BASE = 0x100;
+
+  /**
+   * The TLS alert numbers ({@code AlertDescription}, <a href="https://www.rfc-editor.org/rfc/rfc8446.html#section-6">RFC
+   * 8446 &sect;6</a>) that mean the peer's certificate was rejected, as opposed to any other handshake
+   * failure (protocol mismatch, decode error, ...). {@code certcheck=true} is the only thing that can make
+   * quiche's own BoringSSL send one of these.
+   */
+  private static final Set<Long> CERTIFICATE_ALERTS = Set.of(
+    42L,   // bad_certificate
+    43L,   // unsupported_certificate
+    44L,   // certificate_revoked
+    45L,   // certificate_expired
+    46L,   // certificate_unknown
+    48L,   // unknown_ca
+    49L,   // access_denied
+    116L); // certificate_required
+
+  /**
+   * Recognizes a handshake failure caused by a rejected server certificate, and wraps it as an
+   * {@link SSLHandshakeException} - matching what the TCP/SSL transports throw for the same failure - so
+   * that code reacting to a certificate failure (such as the client auto-update's
+   * {@code LoginFailedWithUpdateHandler}) does not need to know which transport is in use.
+   * <p>
+   * Any other handshake failure (an unreachable peer, a protocol mismatch, ...) is deliberately left
+   * without a certificate-specific cause: misclassifying it would risk firing that auto-update for a
+   * problem a new client version cannot fix.
+   *
+   * @param localError the structured error {@link QuicheConnection#getLocalError()} reported, null if none
+   * @return the wrapped certificate failure, or null if {@code localError} is not a certificate alert
+   */
+  private static Throwable certificateFailure(ConnectionError localError) {
+    if (localError == null || localError.isApp()) {
+      return null;
+    }
+    long alert = localError.errorCode() - TLS_ALERT_BASE;
+    if (alert < 0 || !CERTIFICATE_ALERTS.contains(alert)) {
+      return null;
+    }
+    String reason = localError.reason();
+    return new SSLHandshakeException(reason.isEmpty() ? "certificate rejected (alert " + alert + ")" : reason);
   }
 
   /**

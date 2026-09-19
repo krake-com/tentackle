@@ -19,6 +19,7 @@
 package org.tentackle.quiche.engine;
 
 import org.tentackle.log.Logger;
+import org.tentackle.quiche.ffm.ConnectionError;
 import org.tentackle.quiche.ffm.Quiche;
 import org.tentackle.quiche.ffm.QuicheConn;
 import org.tentackle.quiche.ffm.QuicheException;
@@ -94,6 +95,7 @@ public class QuicheConnection implements AutoCloseable {
   private volatile InetSocketAddress peer;
   private volatile boolean failed;                  // true once the connection is unusable
   private volatile String failure;                  // why it became unusable, null if it did not
+  private volatile ConnectionError localError;      // the structured reason, set only on a handshake failure
   private volatile StreamListener streamListener;   // null on a client connection
   private volatile long keepAliveMillis;            // 0 to send no keep-alive packets
   private volatile long nextKeepAliveNanos;         // when the next one is due
@@ -237,6 +239,16 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
+   * Gets the structured QUIC error a rejected packet during the handshake was reported with, in
+   * particular a rejected server certificate (see {@link QuicheConn#getLocalError()}).
+   *
+   * @return the error, or null if the connection did not fail during the handshake this way
+   */
+  public ConnectionError getLocalError() {
+    return localError;
+  }
+
+  /**
    * Waits until the handshake completed or the deadline passed.
    * <p>
    * Like a read or a write on a {@link QuicheStream}, this does not give up when the waiting thread is
@@ -368,22 +380,31 @@ public class QuicheConnection implements AutoCloseable {
       if (conn.isFreed()) {
         return;
       }
-      long offset = 0;
-      // a single datagram may carry several coalesced QUIC packets
-      while (offset < length) {
-        long read = conn.recv(buffer.asSlice(offset), length - offset, info);
-        if (read <= 0) {
-          break;
+      String rejectionMessage = null;
+      try {
+        long offset = 0;
+        // a single datagram may carry several coalesced QUIC packets
+        while (offset < length) {
+          long read = conn.recv(buffer.asSlice(offset), length - offset, info);
+          if (read <= 0) {
+            break;
+          }
+          offset += read;
         }
-        offset += read;
       }
-    }
-    catch (QuicheException e) {
-      // a rejected packet is not fatal in itself - a stray or replayed one is dropped - but quiche
-      // reports a broken connection the same way, so the state decides
-      LOGGER.fine("{0}: a received packet was rejected: {1}", this, e.getMessage());
+      catch (QuicheException e) {
+        // a rejected packet is not fatal in itself - a stray or replayed one is dropped - but quiche
+        // reports a broken connection the same way, so the state decides
+        LOGGER.fine("{0}: a received packet was rejected: {1}", this, e.getMessage());
+        rejectionMessage = e.getMessage();
+      }
+      // quiche does not always throw for a packet that makes it close the connection: rejecting the
+      // peer's certificate, in particular, is reported as a successful recv() that consumed the packet,
+      // with the rejection visible only through is_closed()/local_error() afterward. Checking here,
+      // regardless of whether recv() threw, is the only way to catch that case too.
       if (!conn.isFreed() && conn.isClosed()) {
-        fail(e.getMessage());
+        captureLocalError();
+        fail(rejectionMessage != null ? rejectionMessage : "the connection was closed");
       }
     }
     finally {
@@ -392,6 +413,26 @@ public class QuicheConnection implements AutoCloseable {
     flush();
     signal();
     notifyNewStreams();
+  }
+
+  /**
+   * Captures the structured local error, if any, while the connection can still be queried.
+   * <p>
+   * Must be called while holding {@link #getLock()}, with {@code conn} confirmed neither freed nor
+   * un-closed. This is what tells a rejected certificate (see {@link QuicheConn#getLocalError()}) apart
+   * from any other handshake failure - the plain string {@link #fail}'s caller passes never does.
+   * <p>
+   * In practice, the handshake does not always fail where {@link #receive} would notice it: quiche
+   * sometimes closes the connection without {@code conn.recv()} ever throwing (rejecting the peer's
+   * certificate is reported this way), and the closure only becomes externally visible - {@code is_closed()}
+   * turning true - some time later, by which point nothing may ever call {@link #receive} again to see
+   * it. {@link QuicheEndpoint#reap()} is the backstop for that case, which is why this is package-visible
+   * rather than private to {@link #receive}.
+   */
+  void captureLocalError() {
+    if (localError == null) {
+      localError = conn.getLocalError();
+    }
   }
 
   /**

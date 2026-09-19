@@ -25,8 +25,12 @@ import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.cert.CertificateException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -125,6 +129,98 @@ public class QuicTripConnectionPoolTest {
     finally {
       transport.close();
     }
+  }
+
+  /**
+   * A client connecting with {@code certcheck=true} to a server presenting a certificate the client does
+   * not trust must fail with a {@link TripRuntimeException} whose cause chain reveals exactly that,
+   * matching what the TCP/SSL transport throws for the same situation: an {@link SSLHandshakeException}
+   * wrapping the original {@link CertificateException}. This is what
+   * {@code LoginFailedWithUpdateHandler} looks for to trigger the client auto-update.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsUntrustedCertificateWithCertcheck() throws Exception {
+    Reporter.log("rejectsUntrustedCertificateWithCertcheck", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        // no tsfile configured -> the JVM's default cacerts apply, which do not trust this self-signed cert
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=true"));
+        try {
+          TripRuntimeException exception =
+            expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(client, dictionary()));
+          SSLHandshakeException sslException = assertHandshakeException(exception);
+          assertTrue(sslException.getCause() instanceof CertificateException,
+                     "expected an SSLHandshakeException wrapping a CertificateException, got " +
+                     sslException.getCause());
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * The counterpart of {@link #rejectsUntrustedCertificateWithCertcheck}: a client trusting the server's
+   * certificate via {@code tsfile} must connect successfully with {@code certcheck=true}, proving that
+   * installing the certificate-capturing trust manager did not change the accepted-certificate behavior.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsTrustedCertificateWithCertcheck() throws Exception {
+    Reporter.log("acceptsTrustedCertificateWithCertcheck", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        int port = QuicTestSupport.freeUdpPort();
+        QuicTripTransport server = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          Thread.sleep(1000);   // let the server start accepting connections
+
+          QuicTripTransport client = new QuicTripTransport(URI.create(
+            "tripq://localhost:" + port + "?certcheck=true&" + QuicTestSupport.trustStoreParameters(trustStore)));
+          try {
+            QuicTripConnectionPool pool = new QuicTripConnectionPool(client, dictionary());
+            pool.shutdown();
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  private static SSLHandshakeException assertHandshakeException(TripRuntimeException exception) {
+    Throwable cause = exception.getCause();
+    assertTrue(cause instanceof SSLHandshakeException,
+               "expected the cause to be an SSLHandshakeException, got " + cause);
+    return (SSLHandshakeException) cause;
   }
 
   private static Dictionary dictionary() {

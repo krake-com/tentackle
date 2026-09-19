@@ -475,6 +475,13 @@ public class QuicheEndpoint implements Closeable {
       connection.getLock().lock();
       try {
         closedConnection = connection.getConn().isFreed() || connection.getConn().isClosed();
+        if (!connection.getConn().isFreed() && connection.getConn().isClosed()) {
+          // quiche does not always throw for a packet that makes it close the connection - rejecting the
+          // peer's certificate, in particular, is reported as a successful recv() - so receive() may
+          // never have had a chance to see is_closed() turn true and capture this already; this is the
+          // backstop, still under the connection's own lock while conn can still be queried safely
+          connection.captureLocalError();
+        }
       }
       catch (RuntimeException e) {
         closedConnection = true;
