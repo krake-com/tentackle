@@ -135,7 +135,10 @@ free class ID is pre-filled from the profile's range.
 **Batch mode** is enabled by configuring `batchFilesets`. Instead of opening the UI, the goal reads a
 secondary model from those file sets and generates the code for every entity it contains that does not
 yet exist in the project model. This is handy for bootstrapping a project from an existing schema
-(e.g., a model dumped by the `tentackle-sql-maven-plugin`). Batch parameters:
+(e.g., a model dumped by the `tentackle-sql-maven-plugin`, or reverse-engineered from a *live* database
+by that same plugin's
+[`reveng` goal](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-reveng-goal)).
+Batch parameters:
 
 - `batchFilesets`: the file sets holding the secondary model, in plain model format (as used in the
   wurbelizer here-docs, or as dumped with `dumpAsComment` and `dumpVariables` both `false`).
@@ -618,6 +621,12 @@ mvn tentackle-wizard:script
 # run a single script fragment headless, weaving it into groovy-example.ftl
 mvn tentackle-wizard:script -Dscript=src/scripts/fix-orders.groovy
 
+# reverse-engineer two tables of an existing database (tentackle-sql-maven-plugin's reveng goal),
+# then scaffold PDOs from the result
+mvn tentackle-sql:reveng -Dtentackle.reveng.url=jdbc:postgresql://localhost/legacydb \
+                          -Dtentackle.reveng.user=app -Dtentackle.reveng.tables=CUSTOMER,ORDER_ITEM
+mvn tentackle-wizard:pdo -DbatchDir=target/reveng-model
+
 # restore the default templates
 mvn tentackle-wizard:init
 ```
@@ -636,6 +645,10 @@ in batch mode:
 | `tentackle-operation-wizard` | `tentackle-wizard:operation`  |
 | `tentackle-pdo-browser`      | `tentackle-wizard:browse`     |
 | `tentackle-script-runner`    | `tentackle-wizard:script`     |
+
+The `tentackle-sql-maven-plugin` ships a matching `tentackle-sql-reveng` skill for its `reveng` goal
+(see [its own doc](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-skills)),
+the natural first step before this plugin's `pdo` goal when bootstrapping from an existing database.
 
 They are templates: copy the ones you want into your own project, alongside the `tentackle-model` skill
 of the [MCP plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md).

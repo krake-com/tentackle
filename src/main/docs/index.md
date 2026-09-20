@@ -190,6 +190,7 @@ topic-grouped listing of every document, see the
 - **REST (why not between your own tiers, and where it does belong)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md), [Tentackle Web](../../../tentackle-web/src/main/docs/web.md)
 - **RMI (comparison and migration)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md#part-2--tentackle-vs-rmi-and-spring-remoting), [Migrate from RMI to TRIP](./migrate_rmi_trip.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Retry (transparent transaction retry, backoff policies)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
+- **Reverse engineering (existing database → model source, `reveng` goal)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-reveng-goal), [AI Agent Tooling Support](./ai-agents.md#bootstrapping-from-an-existing-database)
 - **rootId / rootClassId** — [rootId / rootClassId Columns](../../../tentackle-pdo/src/main/docs/root-columns.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 
 ## S

@@ -78,7 +78,7 @@ public class PluginDescriptorTest {
 
 
   /**
-   * The goals of this plugin. All five are aggregators - they run once for the whole reactor,
+   * The goals of this plugin. All six are aggregators - they run once for the whole reactor,
    * hence documented as {@code mvn tentackle-sql:<goal>} rather than bound to a lifecycle phase.
    *
    * @return the goal name and implementation
@@ -90,7 +90,8 @@ public class PluginDescriptorTest {
       { "migrate", MigrateSqlMojo.class },
       { "validate", ValidateSqlMojo.class },
       { "run", RunSqlMojo.class },
-      { "document", DocumentSqlMojo.class }
+      { "document", DocumentSqlMojo.class },
+      { "reveng", RevengMojo.class }
     };
   }
 

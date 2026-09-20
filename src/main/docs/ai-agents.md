@@ -260,6 +260,28 @@ is the part a human or an agent writes next. Then run the build, which drives
 `tentackle:analyze` → Wurbelizer → compiler and produces the persistence mappings and the SQL. Once
 the build is through, call `model_reload` so the MCP server sees the new entities.
 
+### Bootstrapping From an Existing Database
+
+The input format above has to come from somewhere. When the source is an application's own model,
+that is a dump from the [SQL plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md).
+When the source is instead an **existing database** — introducing Tentackle into a brownfield project —
+the same SQL plugin's `tentackle-sql:reveng` goal reads a live schema's columns, indexes and foreign
+keys via JDBC metadata and writes exactly this input format, ready for `-DbatchDir`:
+
+```bash
+mvn tentackle-sql:reveng -Dtentackle.reveng.url=jdbc:postgresql://localhost/legacydb \
+                          -Dtentackle.reveng.user=app -Dtentackle.reveng.tables=CUSTOMER,ORDER_ITEM
+mvn tentackle-wizard:pdo -DbatchDir=target/reveng-model
+```
+
+It never connects to the application's own backend and never generates Java code — it is a narrow,
+one-shot preparation step for the capability above it, not a capability of its own (which is also why
+it lives in the SQL plugin, alongside the other JDBC-metadata tooling, rather than the wizard plugin).
+What it cannot infer (composite/cascade relation semantics, an aggregate boundary) it leaves as a plain
+relation and a logged note for a human or agent to resolve before running `pdo`; see the
+[`reveng` goal](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-reveng-goal)
+and the `tentackle-sql-reveng` skill for what to check in the generated files.
+
 ---
 
 ## Creating Operations: `tentackle-wizard:operation` in Batch Mode
@@ -514,7 +536,8 @@ one thing to be careful about.
 
 ## The Bundled Skills
 
-Each of the seven capabilities ships with a ready-made **agent skill** — a `SKILL.md` describing when to
+Each of the seven capabilities, plus `reveng` (the bootstrapping step ahead of the entity-creation
+capability, see above), ships with a ready-made **agent skill** — a `SKILL.md` describing when to
 reach for the tool, the order of steps that works, and the failure modes that are specific to running it
 headless:
 
@@ -527,6 +550,7 @@ headless:
 | `tentackle-script-runner`    | `tentackle-wizard-maven-plugin/src/skills/`               | `tentackle-wizard:script`       |
 | `tentackle-sql-migrator`     | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:migrate` / `:validate` |
 | `tentackle-sql-runner`       | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:run`             |
+| `tentackle-sql-reveng`       | `tentackle-sql-maven-plugin/src/skills/`                  | `tentackle-sql:reveng`          |
 
 They are **templates**, not something the build installs. Copy the ones you want into your project and
 adapt them — the profile names, the target backend and the harnesses are yours, not the framework's:
@@ -592,6 +616,7 @@ logic.
 | `tentackle-wizard:script`| whatever the script writes           | whatever the script does     |
 | `tentackle-sql:migrate`  | one SQL script per backend           | reads metadata only          |
 | `tentackle-sql:run`      | never                                | whatever the SQL does, on every configured backend |
+| `tentackle-sql:reveng`   | model source files (not Java)        | reads metadata, of a database that need not be the application's own |
 
 Four more notes:
 
