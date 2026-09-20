@@ -119,8 +119,9 @@ public class QuicheKwikInteropTest {
       assertTrue(server.isAccepting());
       server.getRegistry().register(service, "echo");
 
+      // this test is not about certificate checking, and the server's certificate is self-signed
       Transport client = TripFactory.getInstance().createTransport(URI.create(
-        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60"));
+        clientScheme + "://localhost:" + port + "?alpnid=" + ALPN + "&idle=1&connecttimeout=60&certcheck=false"));
       try {
         EchoService remote = client.lookup(EchoService.class, "echo");
         assertEquals(remote.getName(), "interop");

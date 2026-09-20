@@ -85,8 +85,10 @@ public class QuicReconnectTest {
     server.accept();
     // wait for the server to start accepting connections, otherwise the client will fail to connect
     Thread.sleep(1000);
+    // this test is not about certificate checking, and the server's certificate is self-signed
     Transport client = TripFactory.getInstance().createTransport(URI.create(
-      QuicTripTransport.PROTOCOL + "://localhost:" + port + "?initial=1&increment=1&quicidle=" + QUIC_IDLE));
+      QuicTripTransport.PROTOCOL + "://localhost:" + port +
+      "?initial=1&increment=1&quicidle=" + QUIC_IDLE + "&certcheck=false"));
     try {
       Connection connection = client.getConnection();
       client.putConnection(connection);

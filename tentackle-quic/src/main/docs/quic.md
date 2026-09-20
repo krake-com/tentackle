@@ -165,11 +165,9 @@ bidirectional streams (`Integer.MAX_VALUE`), with the real cap enforced by the
 
 1. It opens a single `QuicClientConnection` to the URI's host and port, using the
    ALPN id (`alpnid`, default = scheme).
-2. By default, server-certificate checking is **disabled**
-   (`noServerCertificateCheck()`), matching TRIP's design assumption that the
-   transport runs on a trusted, non-public network. Set `certcheck=true` to
-   enforce certificate validation, against the truststore named by `tsfile`/`tspass`
-   (resolved the same way as the TCP/SSL transports, see
+2. By default, server-certificate checking is **enabled**, against the
+   truststore named by `tsfile`/`tspass` (resolved the same way as the TCP/SSL
+   transports, see
    [`SslParameters`](../../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration)),
    or the JVM's default cacerts if none is configured. A rejected certificate
    fails the connection with a `TripRuntimeException` whose cause is an
@@ -177,7 +175,10 @@ bidirectional streams (`Integer.MAX_VALUE`), with the real cap enforced by the
    exactly like the TCP/SSL transports report the same failure, so code
    reacting to it (such as the client auto-update's
    `LoginFailedWithUpdateHandler`) does not need to know which transport is
-   in use.
+   in use. Set `certcheck=false` to disable validation
+   (`noServerCertificateCheck()`) — for a client that runs on a trusted,
+   non-public network against a server presenting a self-signed certificate
+   without a matching truststore.
 3. Establishing that connection is bounded by `connecttimeout` (default 10
    seconds). Since QUIC runs over UDP, an unreachable or unresponsive server
    produces no answer at all, so the client waits for the full timeout before
@@ -296,7 +297,7 @@ also honors a `tentackle.ssl.<name>` system property and, as a fallback, the sta
 | `alpnid`         | both            | the URI scheme (`tripq` / `tripcq`)                                       | ALPN application-protocol identifier. Client and server must match.                               |
 | `maxstreams`     | server          | `128`                                                                     | Maximum concurrent peer-initiated bidirectional streams per connection.                           |
 | `streamwindow`   | both            | `250000`                                                                  | Flow control window per stream in bytes; must be >= 1500. See below.                              |
-| `certcheck`      | client          | `false`                                                                   | When `true`, the client validates the server certificate against `tsfile`. When `false`, validation is skipped. |
+| `certcheck`      | client          | `true`                                                                    | When `true`, the client validates the server certificate against `tsfile`. When `false`, validation is skipped. |
 | `connecttimeout` | client          | `10`                                                                      | Seconds to wait for the QUIC handshake before giving up. Must be > 0.                             |
 | `streamtimeout`  | client          | `10`                                                                      | Seconds to wait for the peer to grant the credits to open another stream. Must be > 0. See below. |
 | `quicidle`       | both            | `30`                                                                      | QUIC max idle timeout in **seconds**. See below.                                                  |

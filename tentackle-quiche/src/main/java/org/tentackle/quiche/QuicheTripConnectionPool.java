@@ -133,12 +133,12 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     QuicheConfig newConfig = transport.createConfig(alpnId);
     try {
       /*
-       * Unlike the TCP transports, a QUIC client does not check the server's certificate by default:
-       * a Tentackle server usually presents a self-signed one, and the TRIP handshake authenticates
-       * the peers anyway. Setting certcheck=true turns the check on, and then a truststore (tsfile)
-       * holding the server's CA is needed, because BoringSSL will not know it either.
+       * Like the TCP transports, a QUIC client checks the server's certificate by default, against a
+       * truststore (tsfile) holding the server's CA, because BoringSSL will not know it otherwise. A
+       * Tentackle server that presents a self-signed certificate and relies on the TRIP handshake to
+       * authenticate the peers instead can opt out with certcheck=false.
        */
-      if (Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
+      if (Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"))) {
         newConfig.verifyPeer(true);
         SslParameters sslParameters = new SslParameters(uri);
         KeyStore trustStore = sslParameters.getTrustStore();

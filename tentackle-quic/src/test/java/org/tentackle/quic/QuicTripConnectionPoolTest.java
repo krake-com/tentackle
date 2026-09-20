@@ -216,6 +216,82 @@ public class QuicTripConnectionPoolTest {
     }
   }
 
+  /**
+   * The counterpart of {@link #rejectsUntrustedCertificateWithCertcheck} proving that {@code certcheck}
+   * defaults to {@code true}: a client that does not set the parameter at all must still reject a server
+   * presenting a certificate it does not trust.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsUntrustedCertificateByDefault() throws Exception {
+    Reporter.log("rejectsUntrustedCertificateByDefault", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        // no certcheck and no tsfile configured -> the default (true) applies against the JVM's cacerts,
+        // which do not trust this self-signed cert
+        QuicTripTransport client = new QuicTripTransport(URI.create("tripq://localhost:" + port));
+        try {
+          TripRuntimeException exception =
+            expectThrows(TripRuntimeException.class, () -> new QuicTripConnectionPool(client, dictionary()));
+          SSLHandshakeException sslException = assertHandshakeException(exception);
+          assertTrue(sslException.getCause() instanceof CertificateException,
+                     "expected an SSLHandshakeException wrapping a CertificateException, got " +
+                     sslException.getCause());
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * The escape hatch for {@link #rejectsUntrustedCertificateByDefault}: {@code certcheck=false} must still
+   * let a client connect to a server whose certificate it does not trust.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsUntrustedCertificateWithCertcheckDisabled() throws Exception {
+    Reporter.log("acceptsUntrustedCertificateWithCertcheckDisabled", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      int port = QuicTestSupport.freeUdpPort();
+      QuicTripTransport server = new QuicTripTransport(URI.create(
+        "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicTripTransport client = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?certcheck=false"));
+        try {
+          QuicTripConnectionPool pool = new QuicTripConnectionPool(client, dictionary());
+          pool.shutdown();
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
   private static SSLHandshakeException assertHandshakeException(TripRuntimeException exception) {
     Throwable cause = exception.getCause();
     assertTrue(cause instanceof SSLHandshakeException,

@@ -151,16 +151,17 @@ still releases its readers and writers immediately.
 
 1. One QUIC connection per transport, established eagerly by the pool, with every pooled TRIP connection
    a stream multiplexed over it.
-2. The server's certificate is **not** verified by default, as for `tripq`: a Tentackle server usually
-   presents a self-signed certificate and TRIP authenticates the peers itself. `certcheck=true` turns
-   verification on, and then `tsfile` has to name a truststore holding the server's CA — BoringSSL will
-   not know it either. A rejected certificate fails the connection with a `TripRuntimeException` whose
-   cause is an `SSLHandshakeException` — exactly like the TCP/SSL transports and `tripq`/`tripcq` report
-   the same failure, so code reacting to it (such as the client auto-update's
-   `LoginFailedWithUpdateHandler`) does not need to know which transport is in use. This relies on
-   `quiche_conn_local_error`, which reports the QUIC transport error a rejected certificate is encoded as
-   (a TLS alert, per [RFC 9001 §4.8](https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8)) — any other
-   handshake failure is deliberately left without that cause, to avoid mistaking it for one.
+2. The server's certificate **is** verified by default, as for `tripq`: `tsfile` has to name a truststore
+   holding the server's CA — BoringSSL will not know it otherwise. A rejected certificate fails the
+   connection with a `TripRuntimeException` whose cause is an `SSLHandshakeException` — exactly like the
+   TCP/SSL transports and `tripq`/`tripcq` report the same failure, so code reacting to it (such as the
+   client auto-update's `LoginFailedWithUpdateHandler`) does not need to know which transport is in use.
+   This relies on `quiche_conn_local_error`, which reports the QUIC transport error a rejected certificate
+   is encoded as (a TLS alert, per [RFC 9001 §4.8](https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8))
+   — any other handshake failure is deliberately left without that cause, to avoid mistaking it for one.
+   `certcheck=false` turns verification off — for a client that runs on a trusted, non-public network
+   against a server presenting a self-signed certificate and relying on TRIP to authenticate the peers
+   itself.
 3. `connecttimeout` bounds the handshake.
 4. The connection is kept alive with ack-eliciting packets, see below.
 
@@ -203,7 +204,7 @@ tripj://host:port/service?parameter=value&...
 | `alpnid`         | both   | the URI scheme | ALPN protocol name; both ends must agree                                  |
 | `maxstreams`     | both   | 128            | concurrent bidirectional streams granted to the peer                      |
 | `streamwindow`   | both   | 250000         | flow control window per stream in bytes                                   |
-| `certcheck`      | client | `false`        | verify the server's certificate                                           |
+| `certcheck`      | client | `true`         | verify the server's certificate                                           |
 | `connecttimeout` | client | 10             | seconds to wait for the QUIC handshake                                    |
 | `quicidle`       | both   | 30             | QUIC max idle timeout in **seconds**                                      |
 | `keepalive`      | client | -1             | keep-alive interval in seconds; -1 derives it from `quicidle`, 0 disables |

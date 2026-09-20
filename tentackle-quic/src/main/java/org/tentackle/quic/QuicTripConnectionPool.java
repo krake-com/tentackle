@@ -100,7 +100,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   /**
    * The certificate exception the trust manager installed by {@link #createCertificateCheckingTrustManager}
    * saw during the handshake started by the current or most recent {@link #connect()}, null if there was
-   * none (or {@code certcheck} is not enabled). KWIK discards the original exception once it converts it
+   * none (or {@code certcheck} is disabled). KWIK discards the original exception once it converts it
    * into its own {@code BadCertificateAlert}, so this is the only way to recover it for
    * {@link #wrapCertificateFailure}.
    */
@@ -151,7 +151,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
                                             // the window the server may use for its responses, configured
                                             // explicitly so that both directions are symmetric
                                             .defaultStreamReceiveBufferSize((long) transport.getStreamWindow());
-    if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
+    if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"))) {
       connectionBuilder.noServerCertificateCheck();
     }
     else {

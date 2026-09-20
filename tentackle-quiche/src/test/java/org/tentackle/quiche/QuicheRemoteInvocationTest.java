@@ -223,7 +223,8 @@ public class QuicheRemoteInvocationTest {
   public void rejectsClientWithMismatchingAlpnId() throws Exception {
     Reporter.log("rejectsClientWithMismatchingAlpnId", true);
     try (Endpoints endpoints = startEndpoints(QuicheTripTransport.PROTOCOL, new EchoServiceImpl("echo"), "")) {
-      URI uri = URI.create(QuicheTripTransport.PROTOCOL + "://localhost:" + endpoints.port() + "?alpnid=nosuchprotocol");
+      URI uri = URI.create(QuicheTripTransport.PROTOCOL + "://localhost:" + endpoints.port() +
+                           "?alpnid=nosuchprotocol&certcheck=false");
       Transport client = TripFactory.getInstance().createTransport(uri);
       try {
         expectThrows(RuntimeException.class, client::getConnection);
@@ -268,8 +269,9 @@ public class QuicheRemoteInvocationTest {
     assertTrue(server.isAccepting());
     server.getRegistry().register(service, "echo");
 
+    // these tests are not about certificate checking, and the server's certificate is self-signed
     Transport client = TripFactory.getInstance().createTransport(URI.create(
-      scheme + "://localhost:" + port + "?idle=1" + clientParameters));
+      scheme + "://localhost:" + port + "?idle=1&certcheck=false" + clientParameters));
     return new Endpoints(server, client, port);
   }
 

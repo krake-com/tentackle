@@ -127,6 +127,81 @@ public class QuicheTripConnectionPoolTest {
     }
   }
 
+  /**
+   * The counterpart of {@link #rejectsUntrustedCertificateWithCertcheck} proving that {@code certcheck}
+   * defaults to {@code true}: a client that does not set the parameter at all must still reject a server
+   * presenting a certificate it does not trust.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsUntrustedCertificateByDefault() throws Exception {
+    Reporter.log("rejectsUntrustedCertificateByDefault", true);
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      int port = QuicheTestSupport.freeUdpPort();
+      QuicheTripTransport server = new QuicheTripTransport(URI.create(
+        "tripj://localhost:" + port + "?" + QuicheTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        // no certcheck and no tsfile configured -> the default (true) applies against the JVM's cacerts,
+        // which do not trust this self-signed cert
+        QuicheTripTransport client = new QuicheTripTransport(URI.create("tripj://localhost:" + port));
+        try {
+          TripRuntimeException exception =
+            expectThrows(TripRuntimeException.class, () -> new QuicheTripConnectionPool(client, dictionary()));
+          Throwable cause = exception.getCause();
+          assertTrue(cause instanceof SSLHandshakeException,
+                     "expected the cause to be an SSLHandshakeException, got " + cause);
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * The escape hatch for {@link #rejectsUntrustedCertificateByDefault}: {@code certcheck=false} must still
+   * let a client connect to a server whose certificate it does not trust.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsUntrustedCertificateWithCertcheckDisabled() throws Exception {
+    Reporter.log("acceptsUntrustedCertificateWithCertcheckDisabled", true);
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      int port = QuicheTestSupport.freeUdpPort();
+      QuicheTripTransport server = new QuicheTripTransport(URI.create(
+        "tripj://localhost:" + port + "?" + QuicheTestSupport.keyStoreParameters(serverKeyStore)));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        QuicheTripTransport client = new QuicheTripTransport(URI.create(
+          "tripj://localhost:" + port + "?certcheck=false"));
+        try {
+          QuicheTripConnectionPool pool = new QuicheTripConnectionPool(client, dictionary());
+          pool.shutdown();
+        }
+        finally {
+          client.close();
+        }
+      }
+      finally {
+        server.close();
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
   private static Dictionary dictionary() {
     return TripFactory.getInstance().createDictionary(UUID.randomUUID(), false);
   }

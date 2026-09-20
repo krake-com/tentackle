@@ -156,7 +156,7 @@ public class QuicStreamLimitTest {
     // there would be no stream left for the connections that follow
     FailingTransport client = new FailingTransport(
       URI.create(QuicTripTransport.PROTOCOL + "://localhost:" + port +
-                 "?initial=1&increment=1&streamtimeout=30"), MAX_STREAMS);
+                 "?initial=1&increment=1&streamtimeout=30&certcheck=false"), MAX_STREAMS);
     try {
       for (int i = 0; i < MAX_STREAMS; i++) {
         TripRuntimeException exception = expectThrows(TripRuntimeException.class, client::getConnection);
@@ -239,8 +239,10 @@ public class QuicStreamLimitTest {
     // wait for the server to start accepting connections, otherwise the client will fail to connect
     Thread.sleep(1000);
 
+    // this test is not about certificate checking, and the server's certificate is self-signed
     Transport client = TripFactory.getInstance().createTransport(URI.create(
-      QuicTripTransport.PROTOCOL + "://localhost:" + port + "?initial=1&increment=1" + clientParameters));
+      QuicTripTransport.PROTOCOL + "://localhost:" + port +
+      "?initial=1&increment=1&certcheck=false" + clientParameters));
     return new Endpoints(server, client);
   }
 
