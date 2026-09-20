@@ -40,7 +40,8 @@ import static org.testng.Assert.assertTrue;
  * "composite structure", "references" and "composite membership" sections all at once.
  * <p>
  * All tests configure {@code backendNames = "h2"} (H2 is already a reactor test dependency), so pages
- * are read back from {@code htmlDir/h2/...}, mirroring {@code create}'s per-backend output layout.
+ * are read back from {@code htmlDir/H2/...} ({@link org.tentackle.sql.backends.H2#getName()}),
+ * mirroring {@code create}'s per-backend output layout.
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
 public class DocumentSqlMojoTest {
@@ -113,7 +114,7 @@ public class DocumentSqlMojoTest {
   }
 
   /**
-   * The SQL type is backend-specific, which is why pages live under {@code htmlDir/h2/...} in the
+   * The SQL type is backend-specific, which is why pages live under {@code htmlDir/H2/...} in the
    * first place - a {@code String(128)} attribute must render as an H2 {@code VARCHAR} column.
    */
   @Test
@@ -317,11 +318,11 @@ public class DocumentSqlMojoTest {
   }
 
   private String html(String pageName) {
-    return SqlTestSupport.readFile(new File(new File(htmlDir, "h2"), pageName + ".html"));
+    return SqlTestSupport.readFile(new File(new File(htmlDir, "H2"), pageName + ".html"));
   }
 
   private String css(String fileName) {
-    return SqlTestSupport.readFile(new File(new File(htmlDir, "h2"), fileName + ".css"));
+    return SqlTestSupport.readFile(new File(new File(htmlDir, "H2"), fileName + ".css"));
   }
 
 }
