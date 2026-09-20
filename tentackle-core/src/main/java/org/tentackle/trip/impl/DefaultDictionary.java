@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.impl;
 
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Dictionary;
@@ -201,7 +200,9 @@ public class DefaultDictionary implements Dictionary {
           entry = entriesByOrdinal.get(ordinal);
         }
         catch (InterruptedException e) {
-          throw new InterruptedRuntimeException(e);
+          // Don't throw! Just remember that the thread was interrupted
+          LOGGER.fine("interrupted while waiting for entry with ordinal {0} -> keep waiting", ordinal);
+          Thread.currentThread().interrupt();
         }
       }
     }
