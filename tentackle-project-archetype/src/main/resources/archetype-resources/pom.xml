@@ -47,12 +47,13 @@
 
     <postgres.version>${postgresql.version}</postgres.version>
     <h2.version>${h2.version}</h2.version>
-    <dbUrl>jdbc:postgresql://localhost/\${artifactId}</dbUrl>
+    <serverHost>localhost</serverHost>
+    <dbUrl>jdbc:postgresql://\${serverHost}/\${artifactId}</dbUrl>
     <dbUser>\${artifactId}</dbUser>
     <dbPasswd>\${artifactId}</dbPasswd>
-    <dbService>trip://localhost:8888/\${application}Server</dbService>
-    <updateService>trip://localhost:8890/\${application}Update</updateService>
-    <updateURL>http://localhost/\${artifactId}/downloads</updateURL>
+    <dbService>trip://\${serverHost}:8888/\${application}Server</dbService>
+    <updateService>trip://\${serverHost}:8890/\${application}Update</updateService>
+    <updateURL>http://\${serverHost}/\${artifactId}/downloads</updateURL>
 
   </properties>
 

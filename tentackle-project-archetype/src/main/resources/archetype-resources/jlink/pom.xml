@@ -29,13 +29,13 @@
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
-    <cert.dname>cn=${application}Server, ou=${application}, o=Example, c=US</cert.dname>
+    <cert.dname>cn=${symbol_dollar}{serverHost}, ou=${application}, o=Example, c=US</cert.dname>
     <cert.password>didoedeldu</cert.password>
     <cert.dir>${symbol_dollar}{project.build.directory}/pkcs12</cert.dir>
     <cert.file>${symbol_dollar}{project.parent.basedir}/server/target/server.cer</cert.file>
     <cert.alias>server</cert.alias>
-    <dbService>trips://localhost:8888/${application}Server</dbService>
-    <updateService>tripe://localhost:8890/${application}Update</updateService>
+    <dbService>trips://${symbol_dollar}{serverHost}:8888/${application}Server</dbService>
+    <updateService>tripe://${symbol_dollar}{serverHost}:8890/${application}Update</updateService>
     <daemon.password>daemon</daemon.password>
   </properties>
 
