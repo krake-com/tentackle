@@ -129,6 +129,120 @@ public class DocumentSqlMojoTest {
   }
 
   /**
+   * A non-nullable attribute (here: the primitive {@code long bundleId} of {@code BundleKey}) must
+   * be suffixed with {@code NOT NULL} in the SQL type column, while a nullable one (the
+   * {@code String name} of {@code Bundle}) must not be.
+   */
+  @Test
+  public void attributesTableSuffixesNotNullableColumnsWithNotNull() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configure("attributesTableSuffixesNotNullableColumnsWithNotNull");
+    run(mojo);
+
+    String keyHtml = html("BundleKey");
+    assertTrue(keyHtml.contains("BIGINT NOT NULL"), keyHtml);
+
+    String bundleHtml = html("Bundle");
+    assertTrue(bundleHtml.contains("VARCHAR(128)</td>"), bundleHtml);
+    assertFalse(bundleHtml.contains("VARCHAR(128) NOT NULL"), bundleHtml);
+  }
+
+  /**
+   * An entity without an {@code ## indexes} section must render an empty "Indexes" section, not
+   * omit it - a reader must be able to tell "no indexes" from "the section was forgotten".
+   */
+  @Test
+  public void indexesSectionIsEmptyWhenEntityDeclaresNoIndexes() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configure("indexesSectionIsEmptyWhenEntityDeclaresNoIndexes");
+    run(mojo);
+
+    String bundleHtml = html("Bundle");
+    assertTrue(bundleHtml.contains("<h2>Indexes</h2>\n<p>No additional indexes.</p>"), bundleHtml);
+  }
+
+  /**
+   * An {@code index} line in the model's {@code ## indexes} section must render as the actual
+   * backend-specific {@code CREATE INDEX} statement, mirroring what {@code create} emits for the
+   * same model.
+   */
+  @Test
+  public void indexesSectionShowsCreateIndexStatement() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := item\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            the item's name\n" +
+        "\n" +
+        "## indexes\n" +
+        "unique index itemname := name\n");
+
+    DocumentSqlMojo mojo = configure("indexesSectionShowsCreateIndexStatement");
+    run(mojo);
+
+    String itemHtml = html("Item");
+    assertTrue(itemHtml.contains("<h2>Indexes</h2>\n<pre>"), itemHtml);
+    assertTrue(itemHtml.toUpperCase().contains("CREATE UNIQUE INDEX") && itemHtml.contains("itemname")
+               && itemHtml.contains("ON item") && itemHtml.contains("(name)"), itemHtml);
+  }
+
+  /**
+   * The meta table's "Table" row must show the table name relative to its schema, not the raw,
+   * schema-qualified name - the schema is already shown in the separate "Schema" row below it.
+   */
+  @Test
+  public void metaTableShowsTableNameWithoutSchema() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := myschema.item\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            the item's name\n");
+
+    DocumentSqlMojo mojo = configure("metaTableShowsTableNameWithoutSchema");
+    run(mojo);
+
+    String itemHtml = html("Item");
+    assertTrue(itemHtml.contains("<td>Table</td><td>item</td>"), itemHtml);
+    assertTrue(itemHtml.contains("<td>Schema</td><td>myschema</td>"), itemHtml);
+  }
+
+  /**
+   * With {@code mapSchemas}, the meta table's "Table" row must show the effective, flattened table
+   * name actually used at runtime, and the "Schema" row must be omitted since a mapped entity no
+   * longer has a separate schema.
+   */
+  @Test
+  public void mapSchemasShowsTheEffectiveFlattenedTableName() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := myschema.item\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            the item's name\n");
+
+    DocumentSqlMojo mojo = configure("mapSchemasShowsTheEffectiveFlattenedTableName");
+    SqlTestSupport.setField(mojo, "mapSchemas", true);
+    run(mojo);
+
+    String itemHtml = html("Item");
+    assertTrue(itemHtml.contains("<td>Table</td><td>myschema_item</td>"), itemHtml);
+    assertFalse(itemHtml.contains("<td>Schema</td>"), itemHtml);
+  }
+
+  /**
    * {@code id}/{@code serial} are added implicitly by the framework on every entity - they must show
    * up in the separate "Framework Attributes" section, not in the regular, user-declared one.
    */

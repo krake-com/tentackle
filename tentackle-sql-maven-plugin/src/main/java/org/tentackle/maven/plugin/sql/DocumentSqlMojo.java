@@ -93,6 +93,15 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
   private boolean loadModelFromClassPath;
 
   /**
+   * Map schema names to flat table names.<br>
+   * Must match the {@code mapSchema} wurblet property that configures the runtime side, so the
+   * documented table names are the ones actually used by the application - see
+   * {@code table-names.md}.
+   */
+  @Parameter(property = "tentackle.mapSchemas")
+  private boolean mapSchemas;
+
+  /**
    * Directory to create the HTML pages in.
    */
   @Parameter(defaultValue = "${project.build.directory}/model-doc",
@@ -168,6 +177,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
     try {
       model.setModelDefaults(getModelDefaults());
       model.setEntityAliases(getEntityAliases());
+      model.setSchemaNameMapped(mapSchemas);
 
       if (filesets != null && !filesets.isEmpty()) {
         for (FileSet fileSet : filesets) {
@@ -218,7 +228,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
       }
 
       try {
-        new ModelHtmlGenerator(entities, backendHtmlDir, pageTitle, cssFile, backend).generate();
+        new ModelHtmlGenerator(entities, backendHtmlDir, pageTitle, cssFile, backend, mapSchemas).generate();
       }
       catch (IOException iox) {
         throw new MojoExecutionException("writing the HTML pages for backend " + backend.getName() + " failed", iox);

@@ -21,6 +21,7 @@ package org.tentackle.maven.plugin.sql;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Index;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
@@ -59,6 +60,7 @@ class ModelHtmlGenerator {
   private final String title;
   private final File cssFile;
   private final Backend backend;
+  private final boolean mapSchemas;
 
 
   /**
@@ -70,13 +72,20 @@ class ModelHtmlGenerator {
    * @param cssFile an optional project-specific stylesheet, copied verbatim to {@code style.css};
    *                if null, a default theme is generated instead
    * @param backend the backend the attribute tables' SQL types are rendered for
+   * @param mapSchemas whether schema-qualified table names were folded into flat table names; if
+   *                   true, the "Table" row already shows the effective, flattened table name and
+   *                   the "Schema" row is omitted, since {@link Entity#getSchemaName()} still
+   *                   reflects the original, no longer relevant schema in that case (same caveat
+   *                   {@code CreateSqlMojo} and the model's migrators work around)
    */
-  ModelHtmlGenerator(Collection<Entity> entities, File outputDir, String title, File cssFile, Backend backend) {
+  ModelHtmlGenerator(Collection<Entity> entities, File outputDir, String title, File cssFile, Backend backend,
+                      boolean mapSchemas) {
     this.entities = entities;
     this.outputDir = outputDir;
     this.title = title;
     this.cssFile = cssFile;
     this.backend = backend;
+    this.mapSchemas = mapSchemas;
   }
 
 
@@ -118,6 +127,7 @@ class ModelHtmlGenerator {
     appendPageHeader(html, entity.getName());
     appendEntityMeta(html, entity);
     appendAttributesTable(html, entity);
+    appendIndexesTable(html, entity);
 
     html.append("<h2>Relationships</h2>\n");
 
@@ -236,8 +246,8 @@ class ModelHtmlGenerator {
       html.append("<p class=\"comment\">").append(escape(comment)).append("</p>\n");
     }
     html.append("<table class=\"meta\">\n");
-    appendMetaRow(html, "Table", entity.getTableName());
-    appendMetaRow(html, "Schema", entity.getSchemaName());
+    appendMetaRow(html, "Table", entity.getTableNameWithoutSchema());
+    appendMetaRow(html, "Schema", mapSchemas ? null : entity.getSchemaName());
     if (entity.getClassId() != 0) {
       appendMetaRow(html, "Class ID", String.valueOf(entity.getClassId()));
     }
@@ -305,7 +315,24 @@ class ModelHtmlGenerator {
       int scale = dataType.getScale(backend, i, attribute.getScale());
       buf.append(backend.columnTypeToString(dataType.getSqlType(backend, i), size, scale));
     }
+    if (!attribute.isNullable()) {
+      buf.append(" NOT NULL");
+    }
     return buf.toString();
+  }
+
+  private void appendIndexesTable(StringBuilder html, Entity entity) {
+    List<Index> indexes = entity.getTableIndexes();
+    html.append("<h2>Indexes</h2>\n");
+    if (indexes.isEmpty()) {
+      html.append("<p>No additional indexes.</p>\n");
+      return;
+    }
+    html.append("<pre>");
+    for (Index index : indexes) {
+      html.append(escape(index.sqlCreateIndex(backend, entity)));
+    }
+    html.append("</pre>\n");
   }
 
 
@@ -673,6 +700,12 @@ class ModelHtmlGenerator {
         "table:not(.meta) th {\n" +
         "  background-color: var(--tentackle-doc-table-header-background-color, transparent);\n" +
         "  color: var(--tentackle-doc-table-header-text-color, inherit);\n" +
+        "}\n" +
+        "pre {\n" +
+        "  border: 1px solid var(--tentackle-doc-border-color, #ccc);\n" +
+        "  padding: 8px;\n" +
+        "  margin: 0.5em 0 1.5em;\n" +
+        "  overflow-x: auto;\n" +
         "}\n" +
         "h1 { color: var(--tentackle-doc-heading-color, #333); }\n" +
         "h2, h3 {\n" +

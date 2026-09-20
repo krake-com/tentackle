@@ -62,7 +62,7 @@ On top of that, `AbstractSqlMojo` adds the parameters shared by `create`, `migra
 `migrate`/`validate`/`run`'s connectable-backend machinery (`backendProperties`, `backends`) — but it
 still renders a backend-specific SQL type per attribute, so it has its own, name-only `backendNames`
 parameter (see its own section below). It also exposes the same model-selection parameter names and
-defaults (`modelDir`, `filesets`, `modelName`, `modelDefaults`, `entityAliases`,
+defaults (`modelDir`, `filesets`, `modelName`, `modelDefaults`, `entityAliases`, `mapSchemas`,
 `loadModelFromClassPath`), so those aren't repeated in its own section below.
 
 #### Model selection
@@ -334,7 +334,19 @@ entity, plus `classId`, `tableSerial`, `rootId`/`rootClassId` and the tokenlock/
 where the corresponding entity option is set (see
 [Root Columns](../../../../tentackle-pdo/src/main/docs/root-columns.md) and
 [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) for what each one is for). Both
-tables list each attribute's name, column, Java type, **SQL type** (e.g. `VARCHAR(128)`) and comment.
+tables list each attribute's name, column, Java type, **SQL type** (e.g. `VARCHAR(128)`, suffixed with
+`NOT NULL` for non-nullable columns) and comment.
+
+Below the attribute tables, an **Indexes** section lists the entity's additional, model-declared
+indexes (an entity's `## indexes` section — not the implicit primary key) as the actual,
+backend-specific `CREATE INDEX`/`CREATE UNIQUE INDEX` statements, the same statements `create` would
+emit for the same model.
+
+The entity page's meta table shows the **Table** name relative to its schema (the schema itself, if
+any, is shown in the separate **Schema** row right below, so it isn't repeated). If `mapSchemas` is set,
+the table name shown is the effective, flattened name actually used at runtime (see `mapSchemas` under
+[Model selection](#model-selection) above) — and since a mapped entity no longer has a separate schema,
+the **Schema** row is omitted for it.
 
 ```bash
 mvn tentackle-sql:document -Dtentackle.backendNames=h2
