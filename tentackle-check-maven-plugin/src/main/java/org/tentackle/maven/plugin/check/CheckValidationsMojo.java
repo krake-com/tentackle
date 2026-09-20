@@ -52,7 +52,8 @@ import java.util.MissingResourceException;
  */
 @Mojo(name = "validations",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class CheckValidationsMojo extends AbstractCheckMojo {
 
   private final CheckValidationsProcessor processor;

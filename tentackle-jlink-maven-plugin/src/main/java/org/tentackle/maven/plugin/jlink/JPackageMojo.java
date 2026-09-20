@@ -125,7 +125,8 @@ import java.util.Map;
  */
 @Mojo(name = "jpackage",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
-      defaultPhase = LifecyclePhase.PACKAGE)
+      defaultPhase = LifecyclePhase.PACKAGE,
+      threadSafe = true)
 
 public class JPackageMojo extends AbstractJLinkMojo {
 

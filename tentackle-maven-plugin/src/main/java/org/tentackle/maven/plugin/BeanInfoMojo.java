@@ -44,7 +44,8 @@ import java.util.List;
  */
 @Mojo(name = "beaninfo",
       defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class BeanInfoMojo extends AbstractTentackleMojo {
 
   private static final String MANIFEST_FILENAME = "MANIFEST.MF";    // generated filename

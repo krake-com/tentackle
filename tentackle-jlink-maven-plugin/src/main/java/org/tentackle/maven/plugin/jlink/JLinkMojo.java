@@ -106,7 +106,8 @@ import org.tentackle.common.StringHelper;
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
-      defaultPhase = LifecyclePhase.PACKAGE)
+      defaultPhase = LifecyclePhase.PACKAGE,
+      threadSafe = true)
 
 public class JLinkMojo extends AbstractJLinkMojo {
 

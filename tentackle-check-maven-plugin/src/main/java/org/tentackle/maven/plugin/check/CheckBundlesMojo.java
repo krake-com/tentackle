@@ -62,7 +62,8 @@ import java.util.Set;
  */
 @Mojo(name = "bundles",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class CheckBundlesMojo extends AbstractCheckMojo {
 
   private final CheckBundlesScanner bundleScanner;

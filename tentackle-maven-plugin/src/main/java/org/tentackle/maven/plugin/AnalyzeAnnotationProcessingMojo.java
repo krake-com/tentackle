@@ -41,7 +41,8 @@ import java.util.List;
  */
 @Mojo(name = "analyze",
       defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**

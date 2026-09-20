@@ -42,7 +42,8 @@ import java.util.List;
  */
 @Mojo(name = "test-analyze",
       defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
-      requiresDependencyResolution = ResolutionScope.TEST)
+      requiresDependencyResolution = ResolutionScope.TEST,
+      threadSafe = true)
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**

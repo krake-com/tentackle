@@ -41,7 +41,8 @@ import java.util.Properties;
  * If the database contents differ from the resource bundle property files, the property files will be updated.
  */
 @Mojo(name = "pull",
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class PullMojo extends AbstractI18nMojo {
 
   private Map<String, PackageInfo> packageMap;

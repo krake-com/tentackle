@@ -62,7 +62,8 @@ import java.util.function.Function;
  */
 @Mojo(name = "properties",
       defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class PropertiesMojo extends AbstractTentackleMojo {
 
   @Parameter

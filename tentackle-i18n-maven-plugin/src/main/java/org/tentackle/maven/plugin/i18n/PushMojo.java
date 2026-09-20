@@ -34,7 +34,8 @@ import java.util.Properties;
  * Existing translations are left unchanged.
  */
 @Mojo(name = "push",
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class PushMojo extends AbstractI18nMojo {
 
   /**
