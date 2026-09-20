@@ -399,12 +399,22 @@ public class QuicheConnection implements AutoCloseable {
         rejectionMessage = e.getMessage();
       }
       // quiche does not always throw for a packet that makes it close the connection: rejecting the
-      // peer's certificate, in particular, is reported as a successful recv() that consumed the packet,
-      // with the rejection visible only through is_closed()/local_error() afterward. Checking here,
-      // regardless of whether recv() threw, is the only way to catch that case too.
-      if (!conn.isFreed() && conn.isClosed()) {
-        captureLocalError();
-        fail(rejectionMessage != null ? rejectionMessage : "the connection was closed");
+      // peer's certificate, in particular, is reported as a successful recv() that consumed the packet.
+      // Checking here, regardless of whether recv() threw, is the only way to catch that case too.
+      if (!conn.isFreed()) {
+        if (!conn.isEstablished()) {
+          // quiche_conn_local_error() is already populated as soon as a fatal handshake error - a
+          // rejected certificate, in particular - makes quiche decide to close the connection, well
+          // before is_closed() turns true: that one only flips once the closing/draining period has run
+          // its course, which can noticeably outlast this call. Capturing eagerly here, instead of
+          // waiting for is_closed() below, is what closes the race with a connect() thread parked in
+          // awaitEstablished(): otherwise it can wake up - via the unconditional signal() below - and
+          // see the connection neither established nor yet closed, without ever learning why.
+          captureLocalError();
+        }
+        if (localError != null || conn.isClosed()) {
+          fail(rejectionMessage != null ? rejectionMessage : "the connection was closed");
+        }
       }
     }
     finally {
