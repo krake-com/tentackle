@@ -65,6 +65,12 @@ import java.util.regex.Pattern;
 public class ManagedConnection {
 
   /**
+   * Minimum statement history size to feed through the compressor.
+   */
+  private static final int MIN_STATEMENT_HISTORY_COMPRESSION = 256;
+
+
+  /**
    * Minimum milliseconds a connection remains attached before being logged.<br>
    * 0 to disable, -1 to log every detach().
    * <p>
@@ -937,11 +943,11 @@ public class ManagedConnection {
       if (!statementHistory.isEmpty() || currentStatement != null) {
         buf.append("\n\n    Statements:");
         try {
-          buf.append(logStatementHistory(statementHistory));
+          buf.append(logStatementHistory(statementHistory, false));
         }
         catch (ConcurrentModificationException cmx) {
           buf.append(" (history may be incomplete because connection is still in use by other threads)");
-          buf.append(logStatementHistory(new ArrayList<>(statementHistory)));   // try on copy
+          buf.append(logStatementHistory(new ArrayList<>(statementHistory), true));   // try on copy
         }
         StatementHistory stmt = currentStatement;
         if (stmt != null) {
@@ -1632,17 +1638,22 @@ public class ManagedConnection {
   }
 
   /**
-   * Creates a StringBuilder from the statement history.
+   * Creates a StringBuilder from the statement history, compressing immediately repeating runs.
    *
    * @param statementHistory the history
+   * @param isCopy true if the history is already a copy
    * @return the builder
    */
-  private StringBuilder logStatementHistory(Collection<StatementHistory> statementHistory) {
-    StringBuilder buf = new StringBuilder();
-    for (StatementHistory stmt : statementHistory) {
-      buf.append("\n    ").append(stmt);
+  private StringBuilder logStatementHistory(List<StatementHistory> statementHistory, boolean isCopy) {
+    if (statementHistory.size() < MIN_STATEMENT_HISTORY_COMPRESSION) {
+      StringBuilder buf = new StringBuilder();
+      for (StatementHistory stmt : statementHistory) {
+        buf.append("\n    ").append(stmt);
+      }
+      return buf;
     }
-    return buf;
+    // large statement history, check for loops and compress
+    return StatementHistoryCompressor.compress(isCopy ? statementHistory : new ArrayList<>(statementHistory));
   }
 
   /**

@@ -85,6 +85,26 @@ public class StatementHistory {
     }
   }
 
+  /**
+   * Creates a statement execution history.
+   *
+   * @param txName the transaction name, null if none
+   * @param executionStart the execution start time
+   * @param executionDuration the execution duration
+   * @param sql the SQL string
+   * @param parameters the parameters
+   * @param batchParameters the batch parameters
+   */
+  public StatementHistory(String txName, long executionStart, TimeKeeper executionDuration, String sql,
+                          Map<Integer, Object> parameters, List<Map<Integer, Object>> batchParameters) {
+    this.txName = txName;
+    this.executionStart = executionStart;
+    this.executionDuration = executionDuration;
+    this.sql = sql;
+    this.parameters = parameters;
+    this.batchParameters = batchParameters;
+  }
+
 
   /**
    * Sets the execution end.
