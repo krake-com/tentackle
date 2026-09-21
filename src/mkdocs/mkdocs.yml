@@ -123,6 +123,7 @@ nav:
       - Tentackle Core: core.md
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
+      - Isolated Module Layers: layers.md
       - Cryptor and EncryptedProperties: cryptor.md
       - Naming Rules: naming-rules.md
       - Annotation Processors: annotation-processors.md

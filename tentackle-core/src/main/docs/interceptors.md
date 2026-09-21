@@ -61,7 +61,7 @@ visible in the implementing code.
   *through* the proxy. A few methods — `getDomainDelegate()`/`getPersistenceDelegate()`
   themselves — are invoked directly by the framework's own invocation handler and
   therefore never reach the proxy's interceptor chain at all; see
-  [`@NotInterceptable`](#notinterceptable--sealing-a-method-against-interception).
+  [`@NotInterceptable`](#notinterceptable-sealing-a-method-against-interception).
 
 ---
 
@@ -487,7 +487,7 @@ a matching processor enforces correct usage:
   to sit on an **implementing method** (`type = HIDDEN`).
 
 All three also verify that the annotated method — or any method it overrides —
-is not marked [`@NotInterceptable`](#notinterceptable--sealing-a-method-against-interception).
+is not marked [`@NotInterceptable`](#notinterceptable-sealing-a-method-against-interception).
 
 Misplacing an interceptor annotation — e.g., putting a `PUBLIC` interceptor on a
 class method, any interceptor on a method outside an `Interceptable`, or any
