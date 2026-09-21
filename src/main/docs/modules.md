@@ -28,7 +28,9 @@ This is not a limitation of the programming model: the
 `META-INF` data written at build time, so Tentackle applications run on the module path, the class
 path, or a mix of both — and the
 [jlink/jpackage plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
-derives the right packaging category for each artifact by itself.
+derives the right packaging category for each artifact by itself. An application that needs two,
+otherwise conflicting versions of the same dependency at once can additionally declare
+[isolated `ModuleLayer`s](../../../tentackle-common/src/main/docs/layers.md) via that same plugin.
 
 All artifacts are on [Maven Central](https://search.maven.org/search?q=tentackle).
 A [BOM](../../../tentackle-bom/src/main/docs/bom.md), a [project archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md)

@@ -86,7 +86,8 @@ public class PluginDescriptorTest {
     return new Object[][] {
       { "jlink", JLinkMojo.class, "package", "false", "runtime" },
       { "jpackage", JPackageMojo.class, "package", "false", "runtime" },
-      { "init", InitMojo.class, null, "true", null }
+      { "init", InitMojo.class, null, "true", null },
+      { "layers", LayersMojo.class, "process-classes", "false", "runtime" }
     };
   }
 

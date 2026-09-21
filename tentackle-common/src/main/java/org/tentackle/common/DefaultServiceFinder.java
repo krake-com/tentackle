@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -49,6 +50,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
 
   private final ClassLoader loader;                         // the default classloader, never null
+  private final ModuleLayer layer;                          // optional module layer, null if not layer-based
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
@@ -61,8 +63,28 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
    */
   public DefaultServiceFinder(ClassLoader loader, String servicePath) {
+    this(loader, null, servicePath);
+  }
+
+
+  /**
+   * Creates a service finder looking up services within a module layer.<br>
+   * The layer must have been built with exactly one classloader for all its modules
+   * (see {@link ModuleLayerBuilder}), since that single loader is what {@link #getClassLoader()}
+   * returns and what resource lookups are performed against.
+   *
+   * @param layer the module layer
+   * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
+   */
+  public DefaultServiceFinder(ModuleLayer layer, String servicePath) {
+    this(resolveLayerLoader(layer), layer, servicePath);
+  }
+
+
+  private DefaultServiceFinder(ClassLoader loader, ModuleLayer layer, String servicePath) {
 
     this.loader = loader == null ? ClassLoader.getSystemClassLoader() : loader;
+    this.layer = layer;
 
     if (this.loader == null) {
       throw new TentackleRuntimeException("cannot determine classloader");
@@ -120,6 +142,14 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ModuleLayer getModuleLayer() {
+    return layer;
+  }
+
+  /**
    * Gets the service path the finder is responsible for.
    *
    * @return the service path
@@ -127,6 +157,33 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public String getServicePath() {
     return servicePath;
+  }
+
+
+  /**
+   * Resolves the single classloader of a one-loader-per-layer module layer.
+   *
+   * @param layer the module layer
+   * @return the layer's classloader
+   */
+  static ClassLoader resolveLayerLoader(ModuleLayer layer) {
+    Objects.requireNonNull(layer, "layer");
+    return layer.modules().stream()
+            .findFirst()
+            .map(Module::getClassLoader)
+            .orElseThrow(() -> new TentackleRuntimeException("module layer has no modules"));
+  }
+
+
+  /**
+   * Resolves the module sorter to use for this finder's service lookups.<br>
+   * Layer-based finders use a sorter scoped to their own layer, so module ordinals
+   * reflect that layer's own module graph rather than the boot layer's.
+   *
+   * @return the module sorter
+   */
+  private ModuleSorter resolveModuleSorter() {
+    return layer == null ? ModuleSorter.INSTANCE : ModuleSorter.forLayer(layer);
   }
 
 
@@ -140,7 +197,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   public Collection<URL> findServiceURLs(String serviceName) {
     try {
       Enumeration<URL> resources = getClassLoader(serviceName).getResources(servicePath + serviceName);
-      return ModuleSorter.INSTANCE.sort(resources, serviceName);
+      return resolveModuleSorter().sort(resources, serviceName);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);

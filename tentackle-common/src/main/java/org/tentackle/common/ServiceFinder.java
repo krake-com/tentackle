@@ -47,6 +47,18 @@ public interface ServiceFinder {
   ClassLoader getClassLoader();
 
   /**
+   * Gets the module layer this finder looks up services in, if any.<br>
+   * A non-null layer means {@link #getClassLoader()} is the layer's own classloader
+   * (see {@link ModuleLayerBuilder}), and module ordering for this finder's service lookups
+   * should be based on that layer's own module graph rather than the boot layer's.
+   *
+   * @return the module layer, null if this finder is not layer-based
+   */
+  default ModuleLayer getModuleLayer() {
+    return null;
+  }
+
+  /**
    * Gets the finder's service path it is responsible for.
    *
    * @return the service path

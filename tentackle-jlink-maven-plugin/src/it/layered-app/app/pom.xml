@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle.it</groupId>
+    <artifactId>layered-app-it</artifactId>
+    <version>1.0</version>
+  </parent>
+
+  <artifactId>app</artifactId>
+  <packaging>jlink</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.tentackle.it</groupId>
+      <artifactId>app-lib</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-jlink-maven-plugin</artifactId>
+        <version>${tentackle.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <mainModule>it.app</mainModule>
+          <mainClass>it.app.Main</mainClass>
+          <leafLayer>app</leafLayer>
+          <layers>
+            <layer>
+              <name>lib-v1</name>
+              <dependencies>
+                <dependency>
+                  <groupId>org.tentackle.it</groupId>
+                  <artifactId>it-lib</artifactId>
+                  <version>1.0.0-it</version>
+                </dependency>
+              </dependencies>
+            </layer>
+            <layer>
+              <name>lib-v2</name>
+              <dependencies>
+                <dependency>
+                  <groupId>org.tentackle.it</groupId>
+                  <artifactId>it-lib</artifactId>
+                  <version>2.0.0-it</version>
+                </dependency>
+              </dependencies>
+            </layer>
+          </layers>
+        </configuration>
+      </plugin>
+
+      <!--
+        Runs the generated launcher and fails the build unless it proves that BOTH sibling
+        versions of "it.lib" were loaded correctly - this IS the actual end-to-end assertion;
+        the invoker plugin itself only needs to see whether this whole multi-module build
+        succeeded or failed.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>run-and-verify-layered-launcher</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <property name="run.script" value="${project.build.directory}/jlink/bin/run.sh"/>
+                <chmod file="${run.script}" perm="+x"/>
+                <exec executable="${run.script}" outputproperty="run.output" errorproperty="run.error"
+                      failonerror="true" resolveexecutable="true"/>
+                <echo message="launcher stdout: ${run.output}"/>
+                <echo message="launcher stderr: ${run.error}"/>
+                <condition property="layers.isolated.correctly">
+                  <and>
+                    <contains string="${run.output}" substring="LIB_V1=v1"/>
+                    <contains string="${run.output}" substring="LIB_V2=v2"/>
+                  </and>
+                </condition>
+                <fail unless="layers.isolated.correctly">
+                  layered launcher did not prove version isolation; stdout was:
+                  ${run.output}
+                </fail>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

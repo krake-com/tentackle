@@ -237,6 +237,87 @@ public class AbstractJLinkMojoTest {
   }
 
   /**
+   * A layered application without a main module has nothing for a {@code ModuleLayer} to hold.
+   */
+  @Test
+  public void layeredApplicationRequiresAMainModule() {
+    JLinkTestSupport.setField(mojo, "jdepsTool", new File("jdeps"));
+    JLinkTestSupport.setField(mojo, "jlinkTool", new File("jlink"));
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer("lib")));
+    JLinkTestSupport.setField(mojo, "leafLayer", "app");
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> JLinkTestSupport.callValidate(mojo));
+
+    assertEquals(ex.getMessage(), "layered applications must be modular: mainModule missing");
+  }
+
+  /**
+   * The leaf layer name is what {@code layers.properties} keys the application's own module under.
+   */
+  @Test
+  public void layeredApplicationRequiresALeafLayerName() {
+    JLinkTestSupport.setField(mojo, "jdepsTool", new File("jdeps"));
+    JLinkTestSupport.setField(mojo, "jlinkTool", new File("jlink"));
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer("lib")));
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> JLinkTestSupport.callValidate(mojo));
+
+    assertEquals(ex.getMessage(), "leafLayer missing: required if layers are configured");
+  }
+
+  /**
+   * The leaf layer's name is generated as {@code layer.<leafLayer>.*} in layers.properties, so it
+   * must not collide with one of the declared layers.
+   */
+  @Test
+  public void leafLayerNameMustNotCollideWithADeclaredLayer() {
+    JLinkTestSupport.setField(mojo, "jdepsTool", new File("jdeps"));
+    JLinkTestSupport.setField(mojo, "jlinkTool", new File("jlink"));
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer("app")));
+    JLinkTestSupport.setField(mojo, "leafLayer", "app");
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> JLinkTestSupport.callValidate(mojo));
+
+    assertEquals(ex.getMessage(), "layer name 'app' collides with leafLayer");
+  }
+
+  /**
+   * Every declared layer needs its own, independently resolvable dependencies - it has no other
+   * source of content.
+   */
+  @Test
+  public void layerWithoutDependenciesFailsTheBuild() {
+    JLinkTestSupport.setField(mojo, "jdepsTool", new File("jdeps"));
+    JLinkTestSupport.setField(mojo, "jlinkTool", new File("jlink"));
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+    JLinkTestSupport.setField(mojo, "leafLayer", "app");
+    Layer empty = new Layer();
+    empty.setName("lib");
+    JLinkTestSupport.setField(mojo, "layers", List.of(empty));
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> JLinkTestSupport.callValidate(mojo));
+
+    assertEquals(ex.getMessage(), "layer 'lib' has no dependencies");
+  }
+
+  /**
+   * A valid layered configuration passes validation and enables {@link AbstractJLinkMojo#isLayered()}.
+   */
+  @Test
+  public void validLayeredConfigurationPassesValidation() throws Exception {
+    JLinkTestSupport.setField(mojo, "jdepsTool", new File("jdeps"));
+    JLinkTestSupport.setField(mojo, "jlinkTool", new File("jlink"));
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+    JLinkTestSupport.setField(mojo, "leafLayer", "app");
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer("lib")));
+
+    assertTrue(JLinkTestSupport.callValidate(mojo));
+    assertTrue(mojo.isLayered());
+  }
+
+  /**
    * The artifacts jlink did not link are copied to the image's {@code mp} and {@code cp} folders.
    */
   @Test
@@ -319,6 +400,17 @@ public class AbstractJLinkMojoTest {
     dependency.setArtifactId(artifactId);
     dependency.setClassifier(classifier);
     return dependency;
+  }
+
+  private Layer layer(String name) {
+    Layer layer = new Layer();
+    layer.setName(name);
+    org.apache.maven.model.Dependency dependency = new org.apache.maven.model.Dependency();
+    dependency.setGroupId("org.example");
+    dependency.setArtifactId("some-lib");
+    dependency.setVersion("1.0");
+    layer.setDependencies(List.of(dependency));
+    return layer;
   }
 
   /**

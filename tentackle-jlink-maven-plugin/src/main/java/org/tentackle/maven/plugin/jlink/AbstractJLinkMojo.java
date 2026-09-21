@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -26,6 +27,7 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
+import org.eclipse.aether.RepositorySystem;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -40,9 +42,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 
 /**
@@ -92,6 +96,29 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter
   private List<ClasspathDependency> classpathDependencies;
+
+  /**
+   * Named, isolated {@code ModuleLayer}s for dependencies that must run isolated from each other -
+   * typically because two of them need different, otherwise conflicting versions of the same module.
+   * <p>
+   * If empty (the default), the application is built exactly as without this feature at all: a single,
+   * unlayered boot {@code ModuleLayer}. If not empty, {@link #mainClass} is launched by
+   * {@code org.tentackle.common.LayerBootstrap} instead of directly, which builds the configured
+   * {@code ModuleLayer} graph at startup and then hands off to the real main class. See the
+   * {@code layers.md} documentation.
+   *
+   * @see #leafLayer
+   */
+  @Parameter
+  private List<Layer> layers;
+
+  /**
+   * The name of the layer holding the application's own {@link #mainModule}, used as the {@code leaf}
+   * entry of the generated {@code layers.properties}. Required if {@link #layers} is not empty, and must
+   * not collide with any of their names.
+   */
+  @Parameter
+  private String leafLayer;
 
   /**
    * Controls the behavior if an automatic module is required.
@@ -358,6 +385,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   @Named(ZIP_EXTENSION)
   private ZipArchiver zipArchiver;
 
+  /**
+   * Resolves {@link #layers}' own, independent dependencies.
+   */
+  @Inject
+  private RepositorySystem repositorySystem;
+
 
 
   /**
@@ -423,7 +456,39 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @return true if forced to mp folder
    */
   public boolean isModulePathOnly(String moduleName) {
+    if (isLayered() && moduleName.equals(getMainModule())) {
+      // a layered application's own main module can never be linked into the jimage: ModuleLayerBuilder
+      // needs to find it later as a loose file on disk, not baked into the runtime image
+      return true;
+    }
     return modulePathOnly != null && modulePathOnly.contains(moduleName);
+  }
+
+  /**
+   * Gets the configured isolated module layers.
+   *
+   * @return the layers, never null
+   */
+  public List<Layer> getLayers() {
+    return layers == null ? Collections.emptyList() : layers;
+  }
+
+  /**
+   * Returns whether this application uses isolated module layers.
+   *
+   * @return true if {@link #getLayers()} is not empty
+   */
+  public boolean isLayered() {
+    return !getLayers().isEmpty();
+  }
+
+  /**
+   * Gets the name of the layer holding the application's own main module.
+   *
+   * @return the leaf layer name, null if not {@link #isLayered()}
+   */
+  public String getLeafLayer() {
+    return leafLayer;
   }
 
   /**
@@ -487,6 +552,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   public MavenProjectHelper getProjectHelper() {
     return projectHelper;
+  }
+
+  /**
+   * Gets the repository system, used to resolve {@link #getLayers()}' own dependencies independently.
+   *
+   * @return the repository system
+   */
+  public RepositorySystem getRepositorySystem() {
+    return repositorySystem;
   }
 
   /**
@@ -713,6 +787,14 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
     // extra directories, if any
     copyExtraDirectories();
+
+    // isolated module layers, if any
+    if (isLayered()) {
+      LayerResolver layerResolver = new LayerResolver(this);
+      layerResolver.copyLeafModulePath(getImageDirectory(), result);
+      layerResolver.resolveAndCopyLayers(new File(getImageDirectory(), DEST_MODULEPATH));
+      layerResolver.writeLayersProperties(new File(getImageDirectory(), DEST_RESOURCES));
+    }
   }
 
   /**
@@ -868,9 +950,51 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("mainClass missing");
       }
 
+      validateLayers();
+
       return true;
     }
     return false;
+  }
+
+  /**
+   * Validates the {@link #layers}/{@link #leafLayer} configuration, if any.
+   *
+   * @throws MojoExecutionException if invalid
+   */
+  private void validateLayers() throws MojoExecutionException {
+    if (!isLayered()) {
+      return;
+    }
+    if (StringHelper.isAllWhitespace(getMainModule())) {
+      throw new MojoExecutionException("layered applications must be modular: mainModule missing");
+    }
+    if (StringHelper.isAllWhitespace(leafLayer)) {
+      throw new MojoExecutionException("leafLayer missing: required if layers are configured");
+    }
+    Set<String> names = new HashSet<>();
+    for (Layer layer : getLayers()) {
+      if (StringHelper.isAllWhitespace(layer.getName())) {
+        throw new MojoExecutionException("a layer without a name");
+      }
+      if (layer.getName().equals(leafLayer)) {
+        throw new MojoExecutionException("layer name '" + layer.getName() + "' collides with leafLayer");
+      }
+      if (!names.add(layer.getName())) {
+        throw new MojoExecutionException("duplicate layer name '" + layer.getName() + "'");
+      }
+      if (layer.getDependencies() == null || layer.getDependencies().isEmpty()) {
+        throw new MojoExecutionException("layer '" + layer.getName() + "' has no dependencies");
+      }
+      for (Dependency dependency : layer.getDependencies()) {
+        if (StringHelper.isAllWhitespace(dependency.getGroupId()) ||
+            StringHelper.isAllWhitespace(dependency.getArtifactId()) ||
+            StringHelper.isAllWhitespace(dependency.getVersion())) {
+          throw new MojoExecutionException("layer '" + layer.getName() +
+                                           "' has a dependency without groupId, artifactId or version: " + dependency);
+        }
+      }
+    }
   }
 
   /**

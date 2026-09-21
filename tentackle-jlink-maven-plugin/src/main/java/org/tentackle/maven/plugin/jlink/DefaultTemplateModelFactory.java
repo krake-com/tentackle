@@ -81,6 +81,16 @@ public class DefaultTemplateModelFactory implements TemplateModelFactory {
     model.putValue("modulePath", result.generateModulePath());
     model.putValue("classPath", result.generateClassPath());
 
+    model.putValue("layered", mojo.isLayered());
+    if (mojo.isLayered()) {
+      // the launcher runs this instead of mainModule/mainClass directly: it builds the configured
+      // ModuleLayer graph at startup, then reflectively hands off to the real main class - see
+      // org.tentackle.common.LayerBootstrap and the layers.md documentation
+      model.putValue("bootstrapModule", "org.tentackle.common");
+      model.putValue("bootstrapClass", "org.tentackle.common.LayerBootstrap");
+      model.putValue("layersConfigPath", AbstractJLinkMojo.DEST_RESOURCES + "/" + LayerResolver.LAYERS_PROPERTIES);
+    }
+
     return model;
   }
 }

@@ -392,6 +392,17 @@ That listing is the precedence order from the previous section, printed. If a se
 overridden the way you expect, read it bottom-up.
 
 
+## ModuleLayers
+
+`ServiceFinder`/`ServiceFactory`/`ModuleSorter` also work against an explicit `java.lang.ModuleLayer`
+instead of a plain `ClassLoader`, which is what lets an application isolate two conflicting versions
+of the same dependency in sibling module layers — `ServiceFactory.getServiceFinder(ModuleLayer,
+String)`, `DefaultServiceFinder(ModuleLayer, String)` and `ModuleSorter.forLayer(ModuleLayer)` are the
+new entry points, all purely additive. This is new, separate ground built on top of everything above;
+see [layers.md](layers.md) for the full runtime story, the `tentackle-jlink-maven-plugin` integration,
+and a worked example.
+
+
 ## What Is Built On This
 
 The service API is easy to mistake for an implementation detail. It is closer to the opposite: it is
@@ -491,6 +502,7 @@ There is no public P2 repository yet, though that may change.
 ## Related Documentation
 
 - [Tentackle Common](common.md) — the module these classes belong to.
+- [Isolated Module Layers](layers.md) — the `ModuleLayer`-aware extension of this API.
 - [Tentackle Build Support](../../../../tentackle-build-support/src/main/docs/build-support.md) — the analyze phase, the processor, and the full handler roster.
 - [Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) — the `analyze` goal that writes the `META-INF` configurations, and the `properties` goal's `@`-converters.
 - [Tentackle Modules](../../../../src/main/docs/modules.md) — the interface/implementation split this API makes possible.

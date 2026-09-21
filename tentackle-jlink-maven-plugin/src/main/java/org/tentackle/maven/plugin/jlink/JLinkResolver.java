@@ -24,6 +24,7 @@ import org.apache.maven.toolchain.Toolchain;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 
+import org.tentackle.common.LayerBootstrap;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
 
@@ -51,6 +52,17 @@ public class JLinkResolver {
    */
   private static final Map<Artifact, List<String>> JDEPS_MAP = new ConcurrentHashMap<>();
 
+  /**
+   * Name of the module hosting {@link LayerBootstrap}.<br>
+   * Never diverted to the leaf layer's own module-path (see {@link #addToModuleOrClasspath}), since it
+   * is exactly what boots the leaf layer's {@code ModuleLayer} in the first place.
+   * <p>
+   * Deliberately a literal, not {@code LayerBootstrap.class.getModule().getName()}: this plugin itself
+   * runs inside Maven's own (non-modular) plugin classloader, where that reflective lookup would not
+   * reliably reflect tentackle-common's real module name.
+   */
+  private static final String BOOTSTRAP_MODULE_NAME = "org.tentackle.common";
+
 
   /**
    * Holds the resolver results.
@@ -60,6 +72,7 @@ public class JLinkResolver {
     private final List<ModularArtifact> jlinkModules;
     private final List<String> runtimeModuleNames;
     private final Set<ModularArtifact> modulePath;
+    private final Set<ModularArtifact> leafModulePath;
     private final Set<Artifact> classPath;
     private final Set<String> extraClassPathElements;
     private boolean modular;
@@ -70,6 +83,7 @@ public class JLinkResolver {
       jlinkModules = new ArrayList<>();
       runtimeModuleNames = new ArrayList<>();
       modulePath = new LinkedHashSet<>();
+      leafModulePath = new LinkedHashSet<>();
       classPath = new LinkedHashSet<>();
       extraClassPathElements = new LinkedHashSet<>();
     }
@@ -116,6 +130,18 @@ public class JLinkResolver {
       return new ArrayList<>(classPath);
     }
 
+    /**
+     * Gets the modules that must not be part of the boot layer's own module-path, because a layered
+     * application's leaf layer (see {@link AbstractJLinkMojo#isLayered()}) needs to resolve them itself,
+     * independently, inside a child {@code ModuleLayer} it may share with sibling layers holding a
+     * different version of the same module. Always empty for an unlayered application.
+     *
+     * @return the leaf layer's own module-path, never shared with {@link #getModulePath()}
+     */
+    public List<ModularArtifact> getLeafModulePath() {
+      return new ArrayList<>(leafModulePath);
+    }
+
     private void addJlinkModules(Collection<ModularArtifact> modules) {
       jlinkModules.addAll(modules);
     }
@@ -126,6 +152,10 @@ public class JLinkResolver {
 
     private void addToModulePath(ModularArtifact module) {
       modulePath.add(module);
+    }
+
+    private void addToLeafModulePath(ModularArtifact module) {
+      leafModulePath.add(module);
     }
 
     private void addToClassPath(Artifact artifact) {
@@ -453,6 +483,17 @@ public class JLinkResolver {
       else if (mojo.isModulePathOnly(moduleName)) {
         mojo.getLog().info("full-blown module " + moduleName + " moved to the module-path");
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
+        if (mojo.isLayered() && moduleName.equals(mojo.getMainModule())) {
+          // the main module is deferred off the jlink path (see AbstractJLinkMojo#isModulePathOnly),
+          // but its own requirements still need to be part of the closure - just not itself, so that
+          // its deferral alone does not force the rest of an otherwise plain-modular app into mixed mode
+          for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
+            if (requires.modifiers() == null || !requires.modifiers().contains(JavaModuleDescriptor.JavaRequires.JavaModifier.STATIC)) {
+              addRequired(requires.name());
+              mojo.getLog().debug(moduleName + " requires " + requires.name());
+            }
+          }
+        }
       }
       else {
         mojo.getLog().debug(moduleName + " is a full-blown module");
@@ -521,7 +562,13 @@ public class JLinkResolver {
                 mojo.getLog().info(msg);
               }
             }
-            result.addToModulePath(unresolvedModule);   // must go to the module path!
+            if (mojo.isLayered()) {
+              // must not share the boot layer's module-path with the leaf layer's own ModuleLayer, see addToModuleOrClasspath
+              result.addToLeafModulePath(unresolvedModule);
+            }
+            else {
+              result.addToModulePath(unresolvedModule);   // must go to the module path!
+            }
           }
         }
         if (failDueToAutomaticRequired) {
@@ -540,6 +587,19 @@ public class JLinkResolver {
       for (Artifact artifact: artifacts) {
         result.addToClassPath(artifact);
       }
+    }
+
+    if (mojo.isLayered()) {
+      // the main module was deliberately forced into automaticModules (see AbstractJLinkMojo#isModulePathOnly)
+      // so it never gets linked into the jimage; neither branch above adds it (isPlainModular only jlinks
+      // modules.values(), and the mixed-mode branch only iterates modules.values() as well), and the
+      // "not referenced by anyone" loop below explicitly excludes the main module too - so it is added
+      // here, exactly once, routed to the leaf layer's own module-path by addToModuleOrClasspath.
+      ModularArtifact leafModule = automaticModules.get(mojo.getMainModule());
+      if (leafModule == null) {
+        throw new MojoExecutionException("layered application: main module '" + mojo.getMainModule() + "' not found");
+      }
+      addToModuleOrClasspath(leafModule, result);
     }
 
     // add modules not referenced by anyone
@@ -657,6 +717,11 @@ public class JLinkResolver {
       if (modules.get(mojo.getMainModule()) != null) {
         return true;
       }
+      if (mojo.isLayered() && automaticModules.get(mojo.getMainModule()) != null) {
+        // deliberately forced off the plain-modular jlink path (see AbstractJLinkMojo#isModulePathOnly),
+        // so ModuleLayerBuilder can find it later as a loose file, not baked into the jimage
+        return true;
+      }
       throw new MojoExecutionException("no such main module: " + mojo.getMainModule());
     }
     return false;
@@ -725,6 +790,13 @@ public class JLinkResolver {
     else if (mojo.isClasspathDependency(artifact.getArtifact())) {
       mojo.getLog().info("artifact " + artifact + " moved to the class-path");
       result.addToClassPath(artifact.getArtifact());
+    }
+    else if (mojo.isLayered() && !BOOTSTRAP_MODULE_NAME.equals(artifact.getModuleName())) {
+      // never share the boot layer's own module-path with the leaf layer's ModuleLayer (see ModuleLayerBuilder):
+      // everything except the bootstrap module itself must be resolved independently by the leaf layer,
+      // so that a sibling layer holding a different version of the same module stays possible
+      mojo.getLog().debug("artifact " + artifact + " moved to the leaf layer's own module-path");
+      result.addToLeafModulePath(artifact);
     }
     else {
       result.addToModulePath(artifact);

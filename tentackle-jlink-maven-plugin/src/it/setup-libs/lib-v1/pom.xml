@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle.it</groupId>
+    <artifactId>setup-libs-it</artifactId>
+    <version>1.0</version>
+  </parent>
+
+  <!-- same groupId:artifactId as lib-v2, deliberately different version: this is exactly the
+       situation Maven itself can never resolve within one project's own dependency graph -->
+  <groupId>org.tentackle.it</groupId>
+  <artifactId>it-lib</artifactId>
+  <version>1.0.0-it</version>
+  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.16.0</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

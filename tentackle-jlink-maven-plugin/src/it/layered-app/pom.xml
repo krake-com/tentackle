@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven-invoker end-to-end fixture proving that two versions of the same module ("it.lib") can run
+  side by side, isolated in sibling ModuleLayers, inside one jlink-built application.
+
+  Requires the sibling "setup-libs" IT project to have already installed org.tentackle.it:it-lib in
+  versions 1.0.0-it and 2.0.0-it - see tentackle-jlink-maven-plugin's invoker-it profile, which runs
+  setup-libs first via <setupIncludes>, since that resolution is independent Aether resolution (see
+  LayerResolver), not reactor-aware, so ordinary reactor build order does not apply here.
+
+  Layout:
+    app-lib - the real application: module "it.app", requiring only org.tentackle.common, never
+              "it.lib" directly (see layers.md "Reaching an isolated layer").
+    app     - the jlink packaging module: <layers> independently resolves it-lib 1.0.0-it and
+              2.0.0-it into their own directories; app-lib's Main looks both up at runtime via
+              LayerBootstrap.getLayer(...) and prints each version, proving both loaded correctly.
+              A bound maven-antrun-plugin execution then runs the generated launcher and fails the
+              build unless its output proves so - see app/pom.xml.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.tentackle.it</groupId>
+  <artifactId>layered-app-it</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>25</maven.compiler.release>
+    <tentackle.version>@project.version@</tentackle.version>
+  </properties>
+
+  <modules>
+    <module>app-lib</module>
+    <module>app</module>
+  </modules>
+
+</project>

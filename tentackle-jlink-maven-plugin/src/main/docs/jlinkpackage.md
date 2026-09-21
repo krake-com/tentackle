@@ -158,6 +158,10 @@ So the image alone never tells the whole story. The dependency analysis produces
 - `modulePath` — whatever had to stay outside the image, in `mp/`
 - `classPath` — whatever runs unnamed, in `cp/`, plus `conf`
 
+(this stops being literally true the moment `<layers>` are configured — see
+[Isolated Module Layers](#isolated-module-layers) below, where module-path and class-path become
+per-layer and the start script launches a bootstrap instead of the real main class)
+
 and the start script is *where those four values become an executable command line*. The script isn't
 documentation of the analysis; it **is** the analysis, materialized. That is also why those same four values are the
 core variables of the [Freemarker template model](#adding-the-plugin-to-your-maven-project): the template is the
@@ -601,6 +605,103 @@ Likewise, the template model itself is pluggable via a
 [TemplateModelFactory](https://tentackle.org/tentackle/tentackle-jlink-maven-plugin/apidocs/org/tentackle/maven/plugin/jlink/TemplateModelFactory.html)
 if the built-in variables aren't enough for your scripts.
 
+### Isolated Module Layers
+
+Sometimes two parts of the same application genuinely need different, otherwise conflicting versions
+of the same dependency. JPMS resolves one flat `Configuration` per boot, so there is no command-line
+way to put two modules of the same name on one module path — but a `java.lang.ModuleLayer` can hold
+its own, independently-resolved graph, parented on another layer, so a sibling layer can define a
+module of the same name without colliding. See
+[layers.md](../../../../tentackle-common/src/main/docs/layers.md) for the full runtime story
+(`ModuleLayerBuilder`, `LayerBootstrap`, reaching an isolated layer via `ServiceFinder`); this section
+covers only the plugin configuration and packaging layout.
+
+Configure one `<layer>` per isolated dependency group. Each layer's dependencies are resolved
+**independently** of the project's own dependency graph (Maven only ever resolves one version per
+`groupId:artifactId` within a single project, so two versions could never both appear in the
+project's own `<dependencies>` in the first place):
+
+```xml
+<configuration>
+  <mainModule>com.example.app</mainModule>
+  <mainClass>com.example.app.Main</mainClass>
+  <leafLayer>app</leafLayer>
+  <layers>
+    <layer>
+      <name>lib-v1</name>
+      <dependencies>
+        <dependency>
+          <groupId>org.example</groupId>
+          <artifactId>some-lib</artifactId>
+          <version>1.0</version>
+        </dependency>
+      </dependencies>
+    </layer>
+    <layer>
+      <name>lib-v2</name>
+      <leafParent>true</leafParent>
+      <dependencies>
+        <dependency>
+          <groupId>org.example</groupId>
+          <artifactId>some-lib</artifactId>
+          <version>2.0</version>
+        </dependency>
+      </dependencies>
+    </layer>
+  </layers>
+</configuration>
+```
+
+`leafLayer` names the layer holding the application's own main module — required as soon as any
+`<layer>` is configured, and `mainModule` becomes required too (a classpath application has nothing
+for a `ModuleLayer` to hold). A layer marked `<leafParent>true</leafParent>` becomes one of the leaf's
+own parents, i.e. the leaf module may directly `requires` one of its modules; layers not marked this
+way are still built and usable (typically as another layer's own `<parent>`), just not directly
+visible to the leaf. Since a single module cannot `requires` two modules of the same name, two
+sibling layers pinning conflicting versions should not both be `leafParent` — instead, give each its
+own dedicated consumer layer and have the leaf reach them via
+`ServiceFactory.getServiceFinder(ModuleLayer, ...)` (see the worked example in `layers.md`).
+
+Packaging layout, once `<layers>` are configured:
+
+- The application's own main module is never linked into the jimage, even if the rest of the
+  application would otherwise qualify as plain-modular: it must remain a loose file so
+  `ModuleLayerBuilder` can find it later, and it must never share a directory with whatever boots
+  `LayerBootstrap`. It goes to its own, dedicated `mp-leaf/` folder instead of the regular `mp/`.
+- Each declared `<layer>` gets its own `mp/<name>/` folder, populated from its independent Aether
+  resolution.
+- A generated `conf/layers.properties` describes the whole graph for `LayerBootstrap` to read at
+  startup.
+- The generated launcher (`run.ftl`, or the patched jpackage `.cfg`) runs
+  `org.tentackle.common.LayerBootstrap` instead of the real main class, with
+  `-Dtentackle.layers=conf/layers.properties`. `modulePath`/`classPath` (the regular, shared bucket)
+  are otherwise unaffected — they still only ever contain whatever is needed to boot
+  `LayerBootstrap` itself (`org.tentackle.common` and any dependency unrelated to layering), never
+  a `<layer>`'s own jars.
+
+For local development and IDE run/debug configurations, the full `jlink`/`jpackage` goals are too
+slow to run on every edit-compile-run cycle, and IDEs don't invoke Maven plugin goals to build their
+auto-generated run configurations anyway. The lightweight `layers` goal (bind it to `process-classes`
+in projects using `<layers>`) materializes the same information into `target/tentackle-layers/`
+instead, with the leaf entry pointing directly at `target/classes` rather than a copy of it:
+
+```xml
+<execution>
+  <goals><goal>layers</goal></goals>
+</execution>
+```
+
+Then create a plain "Application" run/debug configuration by hand (IDEs won't auto-generate this
+one) with main class `org.tentackle.common.LayerBootstrap`, the project's normal module path
+(unaffected by `<layers>`, since their jars were never part of the project's own dependency graph),
+VM option `-Dtentackle.layers=target/tentackle-layers/layers.properties`, and working directory set
+to the project's base directory. Debugging needs no special support beyond that: `LayerBootstrap` and
+the real application run in one JVM, so breakpoints and stepping work normally across every layer's
+classes, exactly as they already do with the framework's other multi-classloader mechanisms (OSGi
+bundles) — the only visible difference is that the process's top-level main class is the bootstrap,
+not the application's own, the same as e.g. a repackaged Spring Boot launcher.
+
+
 ### Auto Update Feature
 
 Since [Java Webstart](https://en.wikipedia.org/wiki/Java_Web_Start) was removed from the JDK with Java 11, 
@@ -651,6 +752,9 @@ Again, for a working example, please see this [Quickstart](../../../../src/main/
 
 [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md) — the SPI that makes
 "unrequired" dependencies work.
+
+[Isolated Module Layers](../../../../tentackle-common/src/main/docs/layers.md) — running two versions of
+the same dependency in parallel, via `<layers>` and `org.tentackle.common.LayerBootstrap`.
 
 [Java Platform Module System](https://en.wikipedia.org/wiki/Java_Platform_Module_System)
 

@@ -369,16 +369,20 @@ public class JPackageMojo extends AbstractJLinkMojo {
                   .arg("-d").arg(packageDirectory)
                   .arg("--runtime-image").arg(getImageDirectory());
     if (result.isModular()) {
-      ModularArtifact mainArtifact = result.getModuleArtifact(getMainModule());   // just check before
+      // a layered application is launched via the bootstrap instead of its own main module/class,
+      // exactly like the jlink goal's run.ftl - see org.tentackle.common.LayerBootstrap
+      String effectiveMainModule = isLayered() ? "org.tentackle.common" : getMainModule();
+      String effectiveMainClass = isLayered() ? "org.tentackle.common.LayerBootstrap" : getMainClass();
+      ModularArtifact mainArtifact = result.getModuleArtifact(effectiveMainModule);   // just check before
       if (mainArtifact == null) {
-        throw new MojoExecutionException("no such main module: " + getMainModule());
+        throw new MojoExecutionException("no such main module: " + effectiveMainModule);
       }
       if (result.isModulePathRequired() && jpackageMajorRuntimeVersion >= 15) {
         // jpackage >= 15 needs a module path if built from with --runtime-image
         // we will remove the artifacts copied to the app directory below...
         jpackageRunner.arg("-p").arg(getImageDirectory() + "/" + DEST_MODULEPATH);
       }
-      jpackageRunner.arg("-m").arg(getMainModule() + "/" + getMainClass());
+      jpackageRunner.arg("-m").arg(effectiveMainModule + "/" + effectiveMainClass);
     }
     else {
       mainJarName = StringHelper.isAllWhitespace(mainJar) ? determineMainJar(result) : mainJar;
@@ -389,8 +393,12 @@ public class JPackageMojo extends AbstractJLinkMojo {
     }
     jpackageRunner.arg("--java-options").arg("-DROOTDIR=$ROOTDIR")
                   .arg("--java-options").arg("-DAPPDIR=$APPDIR")
-                  .arg("--java-options").arg("-DRUNTIMEDIR=" + getImagePathPrefix())
-                  .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
+                  .arg("--java-options").arg("-DRUNTIMEDIR=" + getImagePathPrefix());
+    if (isLayered()) {
+      jpackageRunner.arg("--java-options").arg("-Dtentackle.layers=" +
+              getImagePathPrefix() + "/" + DEST_RESOURCES + "/" + LayerResolver.LAYERS_PROPERTIES);
+    }
+    jpackageRunner.arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
     }

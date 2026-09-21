@@ -226,6 +226,24 @@ public class ServiceFactory {
 
 
   /**
+   * Gets a service finder looking up services within a module layer.<br>
+   * If the finder does not exist yet, it will be created.
+   * <p>
+   * Unlike {@link #getServiceFinder(ClassLoader, String)}, this always creates a
+   * {@link DefaultServiceFinder}, bypassing the pluggable {@link Service}-replaced finder class:
+   * a custom {@link ServiceFinder} implementation only gets layer-aware module ordering if it
+   * also provides a matching {@code (ModuleLayer, String)} constructor itself.
+   *
+   * @param layer the module layer
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  public static ServiceFinder getServiceFinder(ModuleLayer layer, String servicePath) {
+    return getInstance().getServiceFinderImpl(layer, servicePath);
+  }
+
+
+  /**
    * Gets a service finder for a given service path.<br>
    * If the finder does not exist yet, it will be created.
    * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
@@ -682,6 +700,19 @@ public class ServiceFactory {
       }
     }
     return finder;
+  }
+
+  /**
+   * Gets a service finder looking up services within a module layer.<br>
+   * If the finder does not exist yet, it will be created.
+   *
+   * @param layer the module layer
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  protected ServiceFinder getServiceFinderImpl(ModuleLayer layer, String servicePath) {
+    ServiceFinderKey key = new ServiceFinderKey(DefaultServiceFinder.resolveLayerLoader(layer), servicePath);
+    return getFinderMap().computeIfAbsent(key, k -> new DefaultServiceFinder(layer, servicePath));
   }
 
   /**

@@ -472,6 +472,52 @@ public class JLinkResolverTest {
   }
 
 
+  /**
+   * A layered application's own main module is never linked into the jimage, even if it would
+   * otherwise qualify as plain modular: it must remain a loose file so {@code ModuleLayerBuilder}
+   * can find it later, and it must never share a directory with whatever boots {@code LayerBootstrap}
+   * (see the {@code JLinkResolver#BOOTSTRAP_MODULE_NAME} exclusion), so it goes to its own,
+   * dedicated leaf module-path instead of the regular (shared, boot-visible) one.
+   */
+  @Test
+  public void layeredMainModuleGoesToTheLeafModulePathNotTheImage() throws Exception {
+    module("app", "com.example.app", "org.example.lib");
+    module("lib", "org.example.lib");
+    mainModule("com.example.app");
+    layered("app");
+
+    JLinkResolver.Result result = resolve();
+
+    assertTrue(result.isModular());
+    assertTrue(result.isPlainModular(), "the rest of the app is still plain modular");
+    assertEquals(moduleNames(result.getJlinkModules()), List.of("org.example.lib"));
+    assertTrue(result.getModulePath().isEmpty());
+    assertEquals(moduleNames(result.getLeafModulePath()), List.of("com.example.app"));
+  }
+
+  /**
+   * In mixed mode (some dependency is automatic), everything that would normally share the boot
+   * layer's module-path is diverted to the leaf's own module-path instead - except the bootstrap
+   * module itself, which is what boots the leaf layer's {@code ModuleLayer} in the first place and
+   * must therefore stay visible to the boot layer.
+   */
+  @Test
+  public void layeredMixedModeDivertsEverythingExceptTheBootstrapModule() throws Exception {
+    module("app", "com.example.app", "org.example.legacy", "org.tentackle.common");
+    automatic("legacy", "org.example.legacy");
+    module("common", "org.tentackle.common");
+    mainModule("com.example.app");
+    layered("app");
+
+    JLinkResolver.Result result = resolve();
+
+    assertTrue(result.isModular());
+    assertFalse(result.isPlainModular());
+    assertEquals(Set.copyOf(moduleNames(result.getLeafModulePath())),
+                Set.of("com.example.app", "org.example.legacy"));
+    assertEquals(moduleNames(result.getModulePath()), List.of("org.tentackle.common"));
+  }
+
   // ---------------- fixture ----------------
 
   private JLinkResolver.Result resolve() throws MojoExecutionException {
@@ -480,6 +526,26 @@ public class JLinkResolverTest {
 
   private void mainModule(String moduleName) {
     JLinkTestSupport.setField(mojo, "mainModule", moduleName);
+  }
+
+  /**
+   * Configures the mojo as layered, with a single dummy library layer (its contents are irrelevant
+   * to {@link JLinkResolver}, which never looks at {@link AbstractJLinkMojo#getLayers()} itself -
+   * only {@link AbstractJLinkMojo#isLayered()}/{@link AbstractJLinkMojo#isModulePathOnly(String)}
+   * matter to the resolver; the layers' own dependency resolution is {@link LayerResolver}'s job).
+   *
+   * @param leafLayerName the leaf layer name
+   */
+  private void layered(String leafLayerName) {
+    Layer layer = new Layer();
+    layer.setName("lib-layer");
+    org.apache.maven.model.Dependency dependency = new org.apache.maven.model.Dependency();
+    dependency.setGroupId("org.example");
+    dependency.setArtifactId("some-lib");
+    dependency.setVersion("1.0");
+    layer.setDependencies(List.of(dependency));
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer));
+    JLinkTestSupport.setField(mojo, "leafLayer", leafLayerName);
   }
 
   private Artifact module(String artifactId, String moduleName, String... requires) {

@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -45,9 +46,14 @@ import java.util.stream.Collectors;
 public final class ModuleSorter {
 
   /**
-   * The singleton.
+   * The singleton for the boot layer.
    */
   public static final ModuleSorter INSTANCE = new ModuleSorter();
+
+  /**
+   * Cache of per-layer sorters, see {@link #forLayer(ModuleLayer)}.
+   */
+  private static final Map<ModuleLayer, ModuleSorter> LAYER_SORTERS = new ConcurrentHashMap<>();
 
 
   private final Map<String, ModuleInfo> nameToModules;  // name:info
@@ -56,15 +62,29 @@ public final class ModuleSorter {
   private final Set<String> classpathFirstServices;     // services to override from classpath
 
   /**
-   * Creates a module sorter and loads the module hierarchy.
+   * Creates a module sorter and loads the module hierarchy of the boot layer.
    * <p>
    * Finds all named modules providing a {@link ModuleHook} via module-info and sorts them
    * according to their dependencies.
    */
   public ModuleSorter() {
+    this(null);
+  }
+
+  /**
+   * Creates a module sorter and loads the module hierarchy of a given layer.
+   * <p>
+   * Finds all named modules reachable from the given layer (i.e. its own modules plus all
+   * ancestor layers) providing a {@link ModuleHook} via module-info and sorts them according
+   * to their dependencies.
+   *
+   * @param layer the module layer, null for the boot layer
+   */
+  public ModuleSorter(ModuleLayer layer) {
     nameToModules = new HashMap<>();
     urlToModules = new HashMap<>();
-    ServiceLoader.load(ModuleHook.class).stream().map(ServiceLoader.Provider::get).forEach(hook -> {
+    (layer == null ? ServiceLoader.load(ModuleHook.class) : ServiceLoader.load(layer, ModuleHook.class))
+            .stream().map(ServiceLoader.Provider::get).forEach(hook -> {
       ModuleInfo info = new ModuleInfo(hook);
       nameToModules.put(info.getModule().getName(), info);
       urlToModules.put(info.getUrlPath(), info);
@@ -117,6 +137,17 @@ public final class ModuleSorter {
    */
   public List<ModuleInfo> getModuleInfos() {
     return sortedModules;
+  }
+
+  /**
+   * Gets (and caches) the module sorter for a given module layer.
+   *
+   * @param layer the module layer, never null
+   * @return the sorter for that layer
+   */
+  public static ModuleSorter forLayer(ModuleLayer layer) {
+    Objects.requireNonNull(layer, "layer");
+    return LAYER_SORTERS.computeIfAbsent(layer, ModuleSorter::new);
   }
 
   /**
