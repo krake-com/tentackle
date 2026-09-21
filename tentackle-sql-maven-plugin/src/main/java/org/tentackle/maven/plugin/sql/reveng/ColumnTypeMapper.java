@@ -31,7 +31,7 @@ import org.tentackle.sql.metadata.ColumnMetaData;
  * Where the SQL type has a matching Java primitive (int, long, boolean, ...), that primitive is chosen
  * for a {@code NOT NULL} column and the wrapper type for a nullable one, since the Tentackle model has
  * no other way to express column nullability. Types without a primitive equivalent (String, dates,
- * BigDecimal, ...) are always declared nullable; {@link #isNullabilityRepresentable()} tells the caller
+ * BigDecimal, ...) are always declared nullable; {@link ColumnType#nullabilityRepresentable()} tells the caller
  * whether the mapped type could reflect the column's actual {@code NOT NULL} constraint.
  *
  * @author harald
