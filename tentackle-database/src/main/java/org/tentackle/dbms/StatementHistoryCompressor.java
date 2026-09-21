@@ -66,7 +66,7 @@ final class StatementHistoryCompressor {
         }
       }
       if (period > 0) {
-        buf.append("\n>>>>>> ").append(count).append(" times:");
+        buf.append("\n>>>>>> statement loop: ").append(count).append(" times");
         for (int k = 0; k < period; k++) {
           buf.append("\n    ").append(history.get(i + k));
         }
