@@ -57,8 +57,8 @@ public class StatementHistoryCompressorTest {
       history.add(historyOf(null, "SELECT * FROM foo WHERE id=?", Map.of(1, "42")));
     }
     String result = StatementHistoryCompressor.compress(history).toString();
-    assertTrue(result.contains(">>>>>> 10 times:"), result);
-    assertTrue(result.contains("<<<<<<"), result);
+    assertTrue(result.contains(">>>>>> statement loop: 10 times"), result);
+    assertTrue(result.contains("<<<<<<\n"), result);
     // the statement must appear exactly once within the compressed block
     assertEquals(countOccurrences(result, "SELECT * FROM foo"), 1, result);
   }
@@ -76,12 +76,12 @@ public class StatementHistoryCompressorTest {
 
     String result = StatementHistoryCompressor.compress(history).toString();
 
-    assertTrue(result.contains(">>>>>> 5 times:"), result);
-    assertTrue(result.contains("<<<<<<"), result);
+    assertTrue(result.contains(">>>>>> statement loop: 5 times"), result);
+    assertTrue(result.contains("<<<<<<\n"), result);
     assertTrue(result.contains("calloff"), result);
     assertTrue(result.contains("trailing"), result);
-    // calloff + 3 block statements (shown once) + trailing = 5 statement lines, not 1 + 15 + 1
-    assertEquals(statementLineCount(result), 5, result);
+    // calloff + 3 block statements (shown once) + trailing = 6 statement lines, not 1 + 15 + 1
+    assertEquals(statementLineCount(result), 6, result);
   }
 
   @Test
@@ -126,8 +126,8 @@ public class StatementHistoryCompressorTest {
       history.add(historyOf(i % 2 == 0 ? "tx1" : "tx2", "SELECT * FROM foo WHERE id=?", Map.of(1, "42")));
     }
     String result = StatementHistoryCompressor.compress(history).toString();
-    assertTrue(result.contains(">>>>>> 5 times:"), result);
-    assertEquals(statementLineCount(result), 2, result);
+    assertTrue(result.contains(">>>>>> statement loop: 5 times"), result);
+    assertEquals(statementLineCount(result), 3, result);
   }
 
   private static StatementHistory historyOf(String txName, String sql, Map<Integer,Object> parameters) {
@@ -149,7 +149,7 @@ public class StatementHistoryCompressorTest {
    */
   private static long statementLineCount(String result) {
     return java.util.Arrays.stream(result.split("\n"))
-        .filter(line -> !line.isBlank() && !line.startsWith(">>>>>>") && !line.startsWith("<<<<<<"))
+        .filter(line -> !line.isBlank() && !line.startsWith(">>>>>>") && !line.startsWith("<<<<<<\n"))
         .count();
   }
 

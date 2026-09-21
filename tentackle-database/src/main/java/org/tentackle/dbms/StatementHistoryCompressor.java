@@ -70,7 +70,7 @@ final class StatementHistoryCompressor {
         for (int k = 0; k < period; k++) {
           buf.append("\n    ").append(history.get(i + k));
         }
-        buf.append("\n<<<<<<");
+        buf.append("\n<<<<<<\n");
         i += period * count;
       }
       else {
