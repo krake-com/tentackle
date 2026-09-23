@@ -287,6 +287,46 @@ of it, and the editor in `ExpandedTextPopup`. Styling hooks:
 | `.tt-expanded-text`      | style class | the popup                                     |
 | `.tt-expanded-text-pane` | style class | the popup's `StackPane`                       |
 
+### Input alerts
+
+Some input is rejected silently: text typed or pasted beyond `maxColumns` is cut
+off by the delegate's `TextFormatter` filter, and `BACKSPACE` at the beginning of
+the text has nothing to delete. `InputAlert` gives the user feedback in both
+cases, acoustically and/or visually. `java.awt.Toolkit.beep()` is no option,
+since it beeps the system speaker instead of the sound system, and JavaFX has no
+API to access the system alerts.
+
+- The **visual alert** briefly (150 ms) sets the CSS pseudo-class `:tt-alert` on
+  the control. The stylesheets map it to the color variable `-tt-alert-color`,
+  which overrides the mandatory and error colors for the duration of the flash.
+- The **acoustic alert** plays a short, soft bump (the bundled
+  `org/tentackle/fx/input-alert.wav`) via `javax.sound.sampled`, i.e. through the
+  sound system. An alert is not played again while the previous
+  one is still running, so holding down a key does not stack tones. If no audio
+  device is available, a warning is logged once and the alert stays silent.
+
+The alerts are triggered by all text components (`FxTextField`, `FxTextArea`,
+`FxPasswordField`, the editors of `FxComboBox` and `FxDatePicker`, and the
+expanded text popup). Truncation while the view is updated from the model does
+not alert, since the user did not type anything.
+
+By default, only the visual alert is enabled. Both can be changed at runtime,
+e.g. from a settings dialog, since they are JavaFX properties:
+
+```java
+InputAlert alert = InputAlert.getInstance();
+alert.setSoundEnabled(true);
+alert.setVisualEnabled(false);
+alert.setSound(MyApp.class.getResource("bump.wav"));   // wav, aiff or au; null = default sound
+soundCheckBox.selectedProperty().bindBidirectional(alert.soundEnabledProperty());
+```
+
+A single control opts out with
+`control.getProperties().put(InputAlert.DISABLED, Boolean.TRUE)`. To change the
+behavior altogether, e.g. to alert on other occasions via `InputAlert.Reason`,
+replace `DefaultInputAlert` with an implementation annotated
+`@Service(InputAlert.class)`.
+
 ### Binding integration
 
 `tentackle-fx` is the JavaFX implementation of the toolkit-neutral binding

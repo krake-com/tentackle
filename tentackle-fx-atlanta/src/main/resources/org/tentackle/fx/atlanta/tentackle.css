@@ -15,6 +15,11 @@
   -tt-error-color: -color-danger-0;
 
   /**
+   * briefly flashing components indicate rejected input (see InputAlert).
+   */
+  -tt-alert-color: -color-danger-2;
+
+  /**
    * light green components indicate an info/hint.
    */
   -tt-info-color: -color-success-0;
@@ -42,6 +47,13 @@
   -fx-control-inner-background: -tt-error-color;
   -fx-base: -tt-error-color;
   -color-bg-default: -tt-error-color;
+}
+
+/* visual input alert, overrides mandatory and error for the duration of the flash */
+:tt-alert {
+  -fx-control-inner-background: -tt-alert-color;
+  -fx-base: -tt-alert-color;
+  -color-bg-default: -tt-alert-color;
 }
 
 .tt-i18n {

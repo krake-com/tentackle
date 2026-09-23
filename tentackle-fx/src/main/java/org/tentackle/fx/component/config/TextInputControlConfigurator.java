@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.InputAlert;
 
 import javafx.scene.TraversalDirection;
 import javafx.scene.control.TextInputControl;
@@ -59,6 +60,13 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
           control.clear();
         }
         event.consume();
+      }
+    });
+
+    // alert if backspace has nothing to delete
+    control.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (InputAlert.isBackspaceAtBegin(event, control)) {
+        InputAlert.getInstance().alert(control, InputAlert.Reason.BEGIN_OF_TEXT);
       }
     });
   }

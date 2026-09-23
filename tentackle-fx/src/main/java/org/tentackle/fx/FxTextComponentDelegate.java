@@ -314,6 +314,9 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
         String newText = t.getControlNewText();
         int tooMuch = newText.length() - maxColumns;
         if (tooMuch > 0) {
+          if (!isUpdatingView()) {
+            InputAlert.getInstance().alert(getNode(), InputAlert.Reason.TOO_LONG);
+          }
           // cut in length
           int length = text.length() - tooMuch;
           if (length < 0) {

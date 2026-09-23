@@ -23,6 +23,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.InputAlert;
 import org.tentackle.fx.component.FxComboBox;
 
 /**
@@ -56,6 +57,13 @@ public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseCon
     if (control instanceof FxComboBox<?> comboBox) {
       comboBox.addEventFilter(KeyEvent.KEY_PRESSED, comboBox::filterKeyPressed);
     }
+
+    // alert if backspace has nothing to delete
+    control.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (control.isEditable() && InputAlert.isBackspaceAtBegin(event, control.getEditor())) {
+        InputAlert.getInstance().alert(control, InputAlert.Reason.BEGIN_OF_TEXT);
+      }
+    });
   }
 
 }

@@ -102,6 +102,7 @@ topic-grouped listing of every document, see the
 - **I/O streams (compression, encryption, packet framing)** — [I/O and Networking](../../../tentackle-core/src/main/docs/io.md)
 - **Indexes (database)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md) (GIN indexes on JSONB, unmodeled index methods), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) (filtered indexes on Oracle), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md) (index key limits), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md) (sort order per index)
 - **Inheritance mapping** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Input alerts (sound / visual feedback on rejected input)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#input-alerts)
 - **Integrity modes** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
 - **Interceptors** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)

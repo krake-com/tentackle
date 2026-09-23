@@ -25,6 +25,7 @@ import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.InputAlert;
 
 /**
  * Configures a {@link DatePicker}.
@@ -58,6 +59,13 @@ public class DatePickerConfigurator<T extends DatePicker> extends ComponentConfi
           control.getEditor().clear();
         }
         event.consume();
+      }
+    });
+
+    // alert if backspace has nothing to delete
+    control.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (InputAlert.isBackspaceAtBegin(event, control.getEditor())) {
+        InputAlert.getInstance().alert(control, InputAlert.Reason.BEGIN_OF_TEXT);
       }
     });
   }
