@@ -64,7 +64,7 @@ public class LayersMojo extends AbstractJLinkMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     if (!isLayered()) {
-      getLog().debug("no layers configured -> nothing to do");
+      getLogger().debug("no layers configured -> nothing to do");
       return;
     }
 
@@ -76,10 +76,9 @@ public class LayersMojo extends AbstractJLinkMojo {
     layerResolver.writeLayersProperties(layersDirectory, moduleDir.getPath(),
             getMavenProject().getBuild().getOutputDirectory());
 
-    getLog().info("layers materialized in " + layersDirectory +
-                  " - point your IDE run/debug configuration's main class at " +
-                  "org.tentackle.common.LayerBootstrap with -Dtentackle.layers=" +
-                  new File(layersDirectory, LayerResolver.LAYERS_PROPERTIES));
+    getLogger().info("layers materialized in {} - point your IDE run/debug configuration's main class at " +
+                     "org.tentackle.common.LayerBootstrap with -Dtentackle.layers={}",
+                     layersDirectory, new File(layersDirectory, LayerResolver.LAYERS_PROPERTIES));
   }
 
 

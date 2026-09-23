@@ -179,7 +179,7 @@ public class RevengMojo extends AbstractTentackleMojo {
           metaData.getConnection().close();
         }
         catch (SQLException sqx) {
-          getLog().warn("could not close connection", sqx);
+          getLogger().warn("could not close connection", sqx);
         }
       }
     }
@@ -225,12 +225,13 @@ public class RevengMojo extends AbstractTentackleMojo {
             backend, table, entityName, classId++, integrity, combinedOptions, batchEntityNames);
 
         for (String warning : result.warnings()) {
-          getLog().warn(warning);
+          getLogger().warn(warning);
         }
 
         File outputFile = new File(outputDir, entityName + ".map");
         if (outputFile.exists() && !overwrite) {
-          getLog().warn("file " + outputFile + " already exists -> skipped (use -Dtentackle.reveng.overwrite=true to replace)");
+          getLogger().warn("file {} already exists -> skipped (use -Dtentackle.reveng.overwrite=true to replace)",
+                           outputFile);
           continue;
         }
 
@@ -241,10 +242,10 @@ public class RevengMojo extends AbstractTentackleMojo {
           throw new MojoExecutionException("could not write " + outputFile, iox);
         }
 
-        getLog().info("reverse-engineered " + table.getFullTableName() + " -> " + outputFile);
+        getLogger().info("reverse-engineered {} -> {}", table.getFullTableName(), outputFile);
       }
 
-      getLog().info("done. Next step: mvn tentackle-wizard:pdo -DbatchDir=" + outputDir);
+      getLogger().info("done. Next step: mvn tentackle-wizard:pdo -DbatchDir={}", outputDir);
     }
     catch (RuntimeException ex) {
       throw new MojoExecutionException("reverse engineering failed", ex);

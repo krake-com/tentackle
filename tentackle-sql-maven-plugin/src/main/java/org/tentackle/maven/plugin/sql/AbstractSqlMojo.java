@@ -465,7 +465,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               File propertiesFile = new File(new File(propertiesDirName), filename);
               EncryptedProperties props = new EncryptedProperties();
               try (InputStream is = new FileInputStream(propertiesFile)) {
-                getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
+                getLogger().debug("loading property file {}", propertiesFile.getAbsolutePath());
                 props.load(is);
                 BackendInfo backendInfo = BackendInfoFactory.getInstance().create(props);
                 // props infos will replace those loaded by name only
@@ -529,7 +529,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     totalErrors = 0;
 
     for (BackendInfo backendInfo : getBackendInfosToExecute()) {
-      getLog().debug("processing " + backendInfo);
+      getLogger().debug("processing {}", backendInfo);
       openResources(backendInfo);
       try {
         // process files
@@ -548,7 +548,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             processFileSet(backendInfo, fs);
           }
           else {
-            getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+            getLogger().warn("{} {}", modelDir.exists() ? "empty modelDir" : "no modelDir", modelDir.getAbsolutePath());
           }
         }
       }
@@ -674,7 +674,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               writer.write(dumpedName + "\n");
             }
           }
-          getLog().info("model index created in " + getPathRelativeToBasedir(dumpModelIndex.getAbsolutePath()));
+          getLogger().info("model index created in {}", getPathRelativeToBasedir(dumpModelIndex.getAbsolutePath()));
         }
 
         File file = new File(dumpDir, "_aliases_.txt");
@@ -715,7 +715,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             writer.newLine();
           }
         }
-        getLog().info("model dump created in " + getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
+        getLogger().info("model dump created in {}", getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
       }
       catch (IOException | ModelException | MojoExecutionException ex) {
         throw new MojoFailureException("creating model dump failed", ex);
@@ -750,7 +750,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             }
           }
         }
-        getLog().info("bundle property files created in " + getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
+        getLogger().info("bundle property files created in {}", getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
       }
       catch (IOException | ModelException ex) {
         throw new MojoFailureException("creating bundle dump failed", ex);
@@ -777,7 +777,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
 
       if (!aliasBuf.isEmpty()) {
-        getLog().warn("consider specifying explicit table aliases for: " + aliasBuf);
+        getLogger().warn("consider specifying explicit table aliases for: {}", aliasBuf);
       }
     }
     catch (ModelException ex) {
@@ -872,11 +872,11 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
       String msg = "table '" + plainTableName + "' of entity " + entity + " is reserved by the Tentackle framework";
       if (entity.getSchemaName() == null) {
-        getLog().error(msg);
+        getLogger().error(msg);
         return true;
       }
       else {
-        getLog().warn(msg + " -> consider renaming");
+        getLogger().warn("{} -> consider renaming", msg);
       }
     }
     return false;
@@ -894,15 +894,17 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   protected void warnIfDeferredNotSupported(Backend backend, Collection<Entity> entities, Collection<ForeignKey> foreignKeys) {
     if (!backend.isSetConstraintsDeferredSupported()) {
-      boolean deferredUsed = foreignKeys != null && foreignKeys.stream()
-          .anyMatch(foreignKey -> foreignKey.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+      boolean deferredUsed = foreignKeys != null &&
+                             foreignKeys.stream()
+                                        .anyMatch(foreignKey -> foreignKey.getDeferrability() != Deferrability.NOT_DEFERRABLE);
       if (!deferredUsed && entities != null) {
         deferredUsed = entities.stream().flatMap(entity -> entity.getIndexes().stream())
-            .anyMatch(index -> index.getDeferrability() != Deferrability.NOT_DEFERRABLE);
+                               .anyMatch(index -> index.getDeferrability() != Deferrability.NOT_DEFERRABLE);
       }
       if (deferredUsed) {
-        getLog().warn("backend " + backend + " does not support deferred constraints -> " +
-                       "deferred/deferrable indexes and foreign keys will be created as NOT DEFERRABLE");
+        getLogger().warn("backend {} does not support deferred constraints -> " +
+                         "deferred/deferrable indexes and foreign keys will be created as NOT DEFERRABLE",
+                         backend);
       }
     }
   }

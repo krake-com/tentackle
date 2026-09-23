@@ -23,7 +23,7 @@ guided tour of the generated result, see the
 
 ## Prerequisites
 * Java (JDK) >= 25
-* Maven >= 3.9.10
+* Maven >= 3.9.10 (Maven 4 works as well)
 * PostgreSQL >= 9
 
 Verify with:

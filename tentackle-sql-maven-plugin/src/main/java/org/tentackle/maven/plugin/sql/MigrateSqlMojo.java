@@ -311,12 +311,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         throw new MojoExecutionException("could not retrieve metadata from " + backendInfo, sqx);
       }
 
-      getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
+      getLogger().info("migration hint filter: {}", VersionFileFilter.getInstance().getName());
 
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
       if (backendMigrationHints != null) {
         if (backendMigrationHints.getHintFileNames().isEmpty()) {
-          getLog().info("no migration hints applied");
+          getLogger().info("no migration hints applied");
         }
         else {
           StringBuilder buf = new StringBuilder();
@@ -331,13 +331,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             }
             buf.append(hintFileName);
             if (buf.length() > 80) {
-              getLog().info(buf);
+              getLogger().info(buf.toString());
               buf.setLength(0);
               needComma = false;
             }
           }
           if (needComma) {
-            getLog().info(buf);
+            getLogger().info(buf.toString());
           }
         }
       }
@@ -346,12 +346,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         Backend backend = backendInfo.getBackend();
         backend.setDropIfExistsEnabled(true);
         if (!backend.isDropIfExistsEnabled()) {
-          getLog().warn("backend " + backend + " does not support DROP IF EXISTS");
+          getLogger().warn("backend {} does not support DROP IF EXISTS", backend);
         }
       }
     }
     else  {
-      getLog().debug("no connection parameters available for " + backendInfo + " -> skipped");
+      getLogger().debug("no connection parameters available for {} -> skipped", backendInfo);
     }
   }
 
@@ -456,7 +456,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           }
         }
         catch (SQLException sqx) {
-          getLog().warn("could not close connection " + con, sqx);
+          getLogger().warn("could not close connection {}", con, sqx);
         }
       }
     }
@@ -469,10 +469,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       if (validate) {
         throw new MojoFailureException(STR_CHANGES_DETECTED);
       }
-      getLog().warn(STR_CHANGES_DETECTED);
+      getLogger().warn(STR_CHANGES_DETECTED);
     }
     else {
-      getLog().info(STR_NO_CHANGES_DETECTED);
+      getLogger().info(STR_NO_CHANGES_DETECTED);
     }
 
     if (failOnUnexpectedTables && !otherTablesMap.isEmpty()) {
@@ -495,8 +495,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
     MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), getResourceDirs(false));
     migrationHints.put(backendInfo.getUrl(), hints);
-    getLog().info("backend: " + backendInfo);
-    getLog().info("version: " + backendParameter.minVersion);
+    getLogger().info("backend: {}", backendInfo);
+    getLogger().info("version: {}", backendParameter.minVersion);
   }
 
   @Override
@@ -528,7 +528,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       File modelDir = new File(fileSet.getDirectory());
       String modelDirName = getCanonicalPath(modelDir);
       if (verbosityLevel.isDebug()) {
-        getLog().info("processing files in " + modelDirName);
+        getLogger().info("processing files in {}", modelDirName);
       }
 
       writeModelIntroComment(backendInfo, modelDirName);
@@ -566,7 +566,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         for (Map.Entry<String, String> entry: renamedTables.entrySet()) {
           String dup = revRenamedTables.put(entry.getValue(), entry.getKey());
           if (dup != null) {
-            getLog().error("rename of '" + entry.getValue() + "' not unique! Found '" + entry.getKey() + "' and '" + dup + "'");
+            getLogger().error("rename of '{}' not unique! Found '{}' and '{}'", entry.getValue(), entry.getKey(), dup);
             errorCount++;
           }
         }
@@ -586,14 +586,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         try {
           for (Entity entity : getModel().getAllEntities()) {
             if (verbosityLevel.isDebug()) {
-              getLog().info("processing " + entity + " from classpath");
+              getLogger().info("processing {} from classpath", entity);
             }
             errorCount += migrateEntity(entity, backendInfo, hints, commentLead, renamedTables, revRenamedTables,
                                         foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
           }
         }
         catch (ModelException | RuntimeException ex) {
-          getLog().error("parsing model from classpath failed", ex);
+          getLogger().error("parsing model from classpath failed", ex);
           errorCount++;
         }
       }
@@ -605,12 +605,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             // check if file exists
             File modelFile = new File(modelDirName, filename);
             if (!modelFile.exists()) {
-              getLog().error("no such model file: " + filename);
+              getLogger().error("no such model file: {}", filename);
               errorCount++;
             }
             else {
               if (verbosityLevel.isDebug()) {
-                getLog().info("processing " + modelFile);
+                getLogger().info("processing {}", modelFile);
               }
               try {
                 URL url = modelFile.toURI().toURL();
@@ -623,7 +623,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                                             foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
               }
               catch (IOException | ModelException | RuntimeException ex) {
-                getLog().error("parsing model failed for " + filename, ex);
+                getLogger().error("parsing model failed for {}", filename, ex);
                 errorCount++;
               }
             }
@@ -638,7 +638,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         String pendingTablename = entry.getKey();
         if (isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
           String msg = "dependency loop detected for " + pendingTablename + "! migration order may be not as expected!";
-          getLog().error(msg);
+          getLogger().error(msg);
           depErrors.append(commentLead).append(' ');
           depErrors.append(msg);
           depErrors.append('\n');
@@ -671,13 +671,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (!migrationValidation.isEmpty()) {
-        getLog().error(migrationValidation);
+        getLogger().error(migrationValidation.toString());
       }
 
-      getLog().info(getModelLocation(modelDirName) + ": " +
-                    processedEntities + " entities processed, " +
-                    errorCount + " errors, " +
-                    getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFileName + " created");
+      getLogger().info("{}: {} entities processed, {} errors, {}{}{} created",
+                       getModelLocation(modelDirName), processedEntities, errorCount,
+                       getPathRelativeToBasedir(sqlDirName), File.separator, sqlFileName);
 
       totalErrors += errorCount;
     }
@@ -711,7 +710,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
       if (!add) {
-        getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
+        getLogger().debug("{} skipped because of wrong schema {}", entity, entity.getSchemaName());
         skippedEntities++;
         return 0;
       }
@@ -750,7 +749,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               schemaBuf.append(tableHeader.getSchema());
             }
             else {
-              getLog().error("table " + entity.getTableName() + " of entity " + entity + " conflicts with " + tableHeader);
+              getLogger().error("table {} of entity {} conflicts with {}", entity.getTableName(), entity, tableHeader);
               errorCount++;
               conflicts = true;
             }
@@ -759,18 +758,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             return errorCount;
           }
           if (schemaCount > 1) {
-            getLog().warn("table " + entity.getTableNameWithoutSchema() + " of entity " + entity +
-                          " exists in different schemas: " + schemaBuf);
+            getLogger().warn("table {} of entity {} exists in different schemas: {}",
+                             entity.getTableNameWithoutSchema(), entity, schemaBuf);
           }
         }
         else {
-          getLog().warn("table found in wrong schema: " + table.getFullTableName());
+          getLogger().warn("table found in wrong schema: {}", table.getFullTableName());
           errorCount++;
           return errorCount;
         }
       }
       catch (SQLException sqx) {
-        getLog().warn("could not retrieve table header info for table " + tableName, sqx);
+        getLogger().warn("could not retrieve table header info for table {}", tableName, sqx);
       }
 
       if (isAlienTable(plainTableName)) {
@@ -780,7 +779,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
           buf.append(": ").append(header.getComment());
         }
-        getLog().error(buf);
+        getLogger().error(buf.toString());
         errorCount++;
         return errorCount;
       }
@@ -1041,7 +1040,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     catch (IOException e) {
       throw new MojoExecutionException("writing to " + file + " failed", e);
     }
-    getLog().debug(file + " created");
+    getLogger().debug("{} created", file);
 
     if (asTemplate) {
       new MigrateGenerator(this, file, backendInfo, migratedEntitiesMap).generate(fileName);

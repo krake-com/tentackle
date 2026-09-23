@@ -155,13 +155,13 @@ public class PdoMojo extends AbstractWizardMojo {
 
     if (batchFilesets != null) {
       Model batchModel = ModelManager.getInstance().getModel("batch");
-      getLog().info("batch mode: " + batchFilesets.size() + " filesets to process");
+      getLogger().info("batch mode: {} filesets to process", batchFilesets.size());
       for (FileSet fileSet: batchFilesets) {
         if (fileSet.getDirectory() == null) {
           // relative to basedir if not given
-          fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
+          fileSet.setDirectory(getBaseDir().getAbsolutePath());
         }
-        getLog().info("loading model from " + fileSet.getDirectory());
+        getLogger().info("loading model from {}", fileSet.getDirectory());
         try {
           batchModel.loadFromDirectory(fileSet.getDirectory(), true);
         }
@@ -201,7 +201,7 @@ public class PdoMojo extends AbstractWizardMojo {
         for (Entity entity : batchModel.getAllEntities()) {
           Entity existingEntity = getModel().getByEntityName(entity.getName());
           if (existingEntity != null) {
-            getLog().warn("entity " + entity + " already exists in model -> skipped");
+            getLogger().warn("entity {} already exists in model -> skipped", entity);
           }
           else {
             PdoProfile pdoProfile = null;
@@ -213,7 +213,7 @@ public class PdoMojo extends AbstractWizardMojo {
               }
             }
             if (pdoProfile == null) {
-              getLog().error("no profile for entity " + entity + " -> skipped");
+              getLogger().error("no profile for entity {} -> skipped", entity);
             }
             else {
               generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print(), projectModelDefaults);
@@ -244,7 +244,7 @@ public class PdoMojo extends AbstractWizardMojo {
           Fx.show(stage);
         }
         catch (Throwable t) {
-          getLog().error(t);
+          getLogger().error(t.getMessage(), t);
           latch.countDown();
         }
       });
@@ -284,7 +284,12 @@ public class PdoMojo extends AbstractWizardMojo {
    * @param projectModelDefaults the model defaults of the project (not the batch model defaults)
    */
   private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource, ModelDefaults projectModelDefaults) {
-    getLog().info("generating code for entity " + entity + (pdoProfile == null ? "" : " using profile " + pdoProfile));
+    if (pdoProfile == null) {
+      getLogger().info("generating code for entity {}", entity);
+    }
+    else {
+      getLogger().info("generating code for entity {} using profile {}", entity, pdoProfile);
+    }
     PdoGenerator gen = new PdoGenerator(getModel());
     gen.setProfile(pdoProfile);
     gen.setTemplateDirectory(new File(getTemplateDir(), Constants.CATEGORY_PDO));
@@ -302,11 +307,11 @@ public class PdoMojo extends AbstractWizardMojo {
     try {
       List<ValidationResult> results = gen.generate();
       if (!results.isEmpty()) {
-        getLog().error(ValidationUtilities.getInstance().resultsToMessage(results));
+        getLogger().error(ValidationUtilities.getInstance().resultsToMessage(results));
       }
     }
     catch (IOException | TemplateException ex) {
-      getLog().error("code generation failed for entity " + entity, ex);
+      getLogger().error("code generation failed for entity {}", entity, ex);
     }
   }
 
@@ -380,11 +385,11 @@ public class PdoMojo extends AbstractWizardMojo {
       }
       profile.setMinClassId(classId);
       if (classId > profile.getMaxClassId()) {
-        getLog().warn("no more free class-IDs for " + profile);
+        getLogger().warn("no more free class-IDs for {}", profile);
       }
       else {
-        getLog().info("next free class-ID for " + profile +
-                      " is " + profile.getMinClassId() + ", max. " + profile.getMaxClassId());
+        getLogger().info("next free class-ID for {} is {}, max. {}",
+                         profile, profile.getMinClassId(), profile.getMaxClassId());
       }
     }
   }

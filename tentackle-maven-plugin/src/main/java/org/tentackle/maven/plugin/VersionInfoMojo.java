@@ -18,28 +18,25 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
-import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
-import org.apache.maven.shared.dependency.graph.DependencyNode;
-
-import javax.inject.Inject;
-import javax.inject.Named;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.graph.DependencyNode;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.maven.ProjectDependencies;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -99,21 +96,14 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
   private String scope;
 
   /**
-   * The default dependency builder.
+   * Coordinates (groupId:artifactId:version) of the reactor modules to exclude.
    */
-  @Inject
-  @Named("default")
-  private DependencyGraphBuilder dependencyGraphBuilder;
+  private Set<String> modules;
 
   /**
-   * Collected module artifacts to exclude.
+   * Collected artifacts, by coordinates.
    */
-  private Set<Artifact> modules;
-
-  /**
-   * Collected artifacts.
-   */
-  private final Set<Artifact> artifacts = new HashSet<>();
+  private final Map<String, Artifact> artifacts = new LinkedHashMap<>();
 
 
   @Override
@@ -121,22 +111,20 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
     if (getMavenSession().getTopLevelProject().equals(getMavenProject())) {
 
-      ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(getMavenSession().getProjectBuildingRequest());
-
       List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
       if (allProjects.isEmpty()) {
         allProjects.add(getMavenProject());
       }
 
-      modules = allProjects.stream().map(MavenProject::getArtifact).collect(Collectors.toSet());
+      modules = allProjects.stream()
+                           .map(project -> project.getGroupId() + ":" + project.getArtifactId() + ":" + project.getVersion())
+                           .collect(Collectors.toSet());
 
       for (MavenProject subProject : allProjects) {
-        buildingRequest.setProject(subProject);
-
         try {
-          scanNode(dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null));
+          scanNode(ProjectDependencies.collect(getRepositorySystem(), getMavenSession().getRepositorySession(), subProject));
         }
-        catch (DependencyGraphBuilderException e) {
+        catch (DependencyCollectionException e) {
           throw new MojoExecutionException("scanning for dependencies failed", e);
         }
       }
@@ -146,10 +134,10 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         comment += " for scope '" + scope + "'";
       }
 
-      generateVersionProperties(comment, artifacts);
+      generateVersionProperties(comment, new HashSet<>(artifacts.values()));
     }
     else {
-      getLog().info("skipped");
+      getLogger().info("skipped");
     }
   }
 
@@ -172,17 +160,21 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
    * @param node the next node in the dependency tree
    */
   private void scanNode(DependencyNode node) {
-    Artifact artifact = node.getArtifact();
-    String artifactScope = artifact.getScope();
-    if (artifactScope == null) {
+    // the root node is the project itself and has no dependency
+    String artifactScope = node.getDependency() == null ? null : node.getDependency().getScope();
+    if (artifactScope == null || artifactScope.isEmpty()) {
       artifactScope = scope;
     }
     else {
       artifactScope = artifactScope.toLowerCase(Locale.ROOT);
     }
     if (scope == null || Objects.equals(artifactScope, scope)) {
-      if (!modules.contains(artifact)) {
-        artifacts.add(artifact);
+      Artifact artifact = node.getArtifact();
+      if (node.getDependency() != null) {
+        String coordinates = ProjectDependencies.toCoordinates(artifact);
+        if (!modules.contains(coordinates)) {
+          artifacts.putIfAbsent(coordinates, artifact);
+        }
       }
       node.getChildren().forEach(this::scanNode);
     }

@@ -18,7 +18,6 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -27,7 +26,8 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
-import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.resolution.DependencyResolutionException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -36,6 +36,7 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.maven.ProjectDependencies;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -385,13 +387,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   @Named(ZIP_EXTENSION)
   private ZipArchiver zipArchiver;
 
-  /**
-   * Resolves {@link #layers}' own, independent dependencies.
-   */
-  @Inject
-  private RepositorySystem repositorySystem;
-
-
 
   /**
    * The java runtime version used by the application.
@@ -555,15 +550,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Gets the repository system, used to resolve {@link #getLayers()}' own dependencies independently.
-   *
-   * @return the repository system
-   */
-  public RepositorySystem getRepositorySystem() {
-    return repositorySystem;
-  }
-
-  /**
    * Gets the jdeps tool.
    *
    * @return the file, never null
@@ -668,7 +654,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
-    JLinkResolver.Result result = new JLinkResolver(this, getMavenProject().getArtifacts()).resolve();
+    Set<Artifact> artifacts;
+    try {
+      artifacts = new LinkedHashSet<>(ProjectDependencies.resolve(getRepositorySystem(), getMavenSession().getRepositorySession(),
+                                                                  getMavenProject(), ProjectDependencies.RUNTIME_SCOPES));
+    }
+    catch (DependencyResolutionException ex) {
+      throw new MojoExecutionException("resolving the runtime dependencies of " + getMavenProject().getId() + " failed", ex);
+    }
+    JLinkResolver.Result result = new JLinkResolver(this, artifacts).resolve();
     // generate image
     createImage(result);
     // and the shell scripts
@@ -732,7 +726,8 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       for (ClasspathDependency classpathDependency: classpathDependencies) {
         if (Objects.equals(classpathDependency.getGroupId(), artifact.getGroupId()) &&
             Objects.equals(classpathDependency.getArtifactId(), artifact.getArtifactId()) &&
-            Objects.equals(classpathDependency.getClassifier(), artifact.getClassifier())) {
+            // the resolver's artifact has an empty classifier if none, but the configuration may be null
+            Objects.equals(Objects.toString(classpathDependency.getClassifier(), ""), artifact.getClassifier())) {
           return true;
         }
       }
@@ -805,10 +800,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @throws MojoFailureException if jlink returned an error code
    */
   protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
-    getLog().info("creating jlink image for a " +
-                  (result.isPlainModular() ? "plain " : "") +
-                  (result.isModular() ? "modular" : "classpath") + " application with Java " + javaRuntimeVersion);
-    getLog().debug(result.toString());
+    getLogger().info("creating jlink image for a {}{} application with Java {}",
+                     result.isPlainModular() ? "plain " : "", result.isModular() ? "modular" : "classpath", javaRuntimeVersion);
+    getLogger().debug(result.toString());
 
     ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
     if (saveOpts != null) {
@@ -836,7 +830,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     result.generateJlinkModulePath(jlinkRunner);
     result.generateJlinkModules(jlinkRunner);
 
-    getLog().debug(jlinkRunner.toString());
+    getLogger().debug(jlinkRunner.toString());
 
     int errCode = jlinkRunner.run().getErrCode();
     if (errCode != 0) {
@@ -861,7 +855,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
           mpDir.mkdir();
           for (ModularArtifact artifact : modulePath) {
             File dest = new File(mpDir, artifact.getFileName());
-            getLog().debug("copying " + artifact.getPath() + " to " + mpDir);
+            getLogger().debug("copying {} to {}", artifact.getPath(), mpDir);
             FileHelper.copy(artifact.getFile(), dest);
           }
         }
@@ -872,9 +866,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
         File cpDir = new File(getImageDirectory(), DEST_CLASSPATH);
         cpDir.mkdir();
         for (Artifact artifact : classPath) {
-          File dest = new File(cpDir, artifact.getFile().getName());
-          getLog().debug("copying " + artifact.getFile() + " to " + cpDir);
-          FileHelper.copy(artifact.getFile(), dest);
+          File dest = new File(cpDir, ProjectDependencies.getFile(artifact).getName());
+          getLogger().debug("copying {} to {}", ProjectDependencies.getFile(artifact), cpDir);
+          FileHelper.copy(ProjectDependencies.getFile(artifact), dest);
         }
       }
     }
@@ -925,7 +919,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       if (jdepsTool == null) {
         throw new MojoExecutionException("jdeps tool not found");
       }
-      getLog().debug("using " + jdepsTool);
+      getLogger().debug("using {}", jdepsTool);
 
       javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
       javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
@@ -933,7 +927,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       if (jlinkTool == null) {
         throw new MojoExecutionException("jlink tool not found");
       }
-      getLog().debug("using " + jlinkTool);
+      getLogger().debug("using {}", jlinkTool);
 
       if (templateDir.exists()) {
         if (!templateDir.isDirectory()) {
@@ -941,7 +935,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
         }
       }
       else {
-        getLog().info("template directory created: " + templateDir.getPath());
+        getLogger().info("template directory created: {}", templateDir.getPath());
       }
       validateTemplates();        // the names must be valid before they are used as filenames
       installTemplates(false);    // install any missing template
@@ -1013,7 +1007,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       String text = loadResourceFileIntoString(path);
       try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
         ps.print(text);
-        getLog().info("installed template " + projectTemplate);
+        getLogger().info("installed template {}", projectTemplate);
       }
       catch (IOException e) {
         throw new MojoExecutionException("cannot install template " + path, e);
@@ -1029,7 +1023,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   protected void logToolOutput(ToolRunner runner) {
     String out = runner.getOutputAsString();
     if (!out.isEmpty()) {
-      getLog().info(out);
+      getLogger().info(out);
     }
   }
 

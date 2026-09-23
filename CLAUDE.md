@@ -71,7 +71,7 @@ mvn -pl :tentackle-core -am clean install
 mvn -Ppostgres test
 ```
 
-**Requirements:** Java JDK >= 25, Maven >= 3.9.10.
+**Requirements:** Java JDK >= 25, Maven >= 3.9.10 (Maven 3 and Maven 4 are both supported).
 (Older LTS lines live on the `java21`, `java17`, `java11` and `java8` branches.)
 
 The build needs **no database**: the tests run against H2 (see [Testing](#testing)).

@@ -18,8 +18,8 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
+import org.eclipse.aether.artifact.Artifact;
 import org.testng.annotations.Test;
 
 import java.io.File;

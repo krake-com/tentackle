@@ -110,7 +110,7 @@ public class ScriptEditor extends AbstractFxController {
     else if (harness != null) {
       this.harness = harness;
     }
-    fragmentFile = new ScriptFragmentFile(mojo.getPreferences(), mojo.getMavenProject().getBasedir());
+    fragmentFile = new ScriptFragmentFile(mojo.getPreferences(), mojo.getBaseDir());
     File lastFile = fragmentFile.getLastFile();
     if (lastFile != null) {
       // pick up where the last session left off

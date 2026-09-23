@@ -19,8 +19,11 @@
 package org.tentackle.maven;
 
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.project.MavenProject;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.helpers.LegacyAbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -34,6 +37,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -89,12 +93,54 @@ public class AnnotationProcessingMojoTest {
   /**
    * Records what the mojo logged as an error.
    */
-  private static class RecordingLog extends SystemStreamLog {
+  private static class RecordingLog extends LegacyAbstractLogger {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private final List<String> errors = new ArrayList<>();
 
     @Override
-    public void error(CharSequence content) {
-      errors.add(content.toString());
+    public boolean isTraceEnabled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+      return false;
+    }
+
+    @Override
+    public boolean isInfoEnabled() {
+      return false;
+    }
+
+    @Override
+    public boolean isWarnEnabled() {
+      return false;
+    }
+
+    @Override
+    public boolean isErrorEnabled() {
+      return true;
+    }
+
+    @Override
+    public String getName() {
+      return "recording";
+    }
+
+    @Override
+    protected String getFullyQualifiedCallerName() {
+      return null;
+    }
+
+    @Override
+    protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern,
+                                               Object[] arguments, Throwable throwable) {
+      if (level == Level.ERROR) {
+        errors.add(MessageFormatter.arrayFormat(messagePattern, arguments, throwable).getMessage());
+      }
     }
   }
 
@@ -115,7 +161,7 @@ public class AnnotationProcessingMojoTest {
 
     log = new RecordingLog();
     mojo = new AbstractTentackleAnnotationProcessingMojo() { };
-    mojo.setLog(log);
+    mojo.setLogger(log);
     mojo.encoding = "UTF-8";
     mojo.verbosityLevel = Verbosity.DEFAULT;
     setField(AbstractTentackleMojo.class, mojo, "mavenProject", project);

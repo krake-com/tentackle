@@ -18,12 +18,8 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.toolchain.Toolchain;
@@ -31,9 +27,16 @@ import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsResult;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.helpers.LegacyAbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -192,17 +195,14 @@ public final class JLinkTestSupport {
    * @param groupId the group id
    * @param artifactId the artifact id
    * @param version the version
-   * @param type the artifact type
+   * @param type the artifact type, i.e. the file extension
    * @param classifier the classifier, may be null
    * @param file the artifact's file, which need not exist
    * @return the artifact
    */
   public static Artifact createArtifact(String groupId, String artifactId, String version,
                                         String type, String classifier, File file) {
-    Artifact artifact = new DefaultArtifact(groupId, artifactId, version, "compile", type, classifier,
-                                            new DefaultArtifactHandler(type));
-    artifact.setFile(file);
-    return artifact;
+    return new DefaultArtifact(groupId, artifactId, classifier, type, version, null, file);
   }
 
   /**
@@ -506,7 +506,10 @@ public final class JLinkTestSupport {
    * The resolver reports most of its decisions via the log only, so this is the only way to
    * assert them.
    */
-  public static class RecordingLog implements Log {
+  public static class RecordingLog extends LegacyAbstractLogger {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final List<String> debugMessages = new ArrayList<>();
     private final List<String> infoMessages = new ArrayList<>();
@@ -516,7 +519,9 @@ public final class JLinkTestSupport {
     private boolean debugEnabled;
 
     /**
-     * Turns on maven's global debug flag.
+     * Turns on maven's global debug flag.<br>
+     * Without an explicit {@code verbosity} parameter this makes the mojos run with
+     * {@code Verbosity.DEBUG}.
      *
      * @param debugEnabled true if debug enabled
      */
@@ -561,7 +566,7 @@ public final class JLinkTestSupport {
     }
 
     /**
-     * Checks whether any of the given messages contains a text.
+     * Checks whether any message of the given list contains a text.
      *
      * @param messages the messages
      * @param text the text to look for
@@ -572,23 +577,13 @@ public final class JLinkTestSupport {
     }
 
     @Override
+    public boolean isTraceEnabled() {
+      return false;
+    }
+
+    @Override
     public boolean isDebugEnabled() {
       return debugEnabled;
-    }
-
-    @Override
-    public void debug(CharSequence content) {
-      debugMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void debug(CharSequence content, Throwable error) {
-      debug(content);
-    }
-
-    @Override
-    public void debug(Throwable error) {
-      debug(error.getMessage());
     }
 
     @Override
@@ -597,38 +592,8 @@ public final class JLinkTestSupport {
     }
 
     @Override
-    public void info(CharSequence content) {
-      infoMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void info(CharSequence content, Throwable error) {
-      info(content);
-    }
-
-    @Override
-    public void info(Throwable error) {
-      info(error.getMessage());
-    }
-
-    @Override
     public boolean isWarnEnabled() {
       return true;
-    }
-
-    @Override
-    public void warn(CharSequence content) {
-      warnMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void warn(CharSequence content, Throwable error) {
-      warn(content);
-    }
-
-    @Override
-    public void warn(Throwable error) {
-      warn(error.getMessage());
     }
 
     @Override
@@ -637,18 +602,54 @@ public final class JLinkTestSupport {
     }
 
     @Override
-    public void error(CharSequence content) {
-      errorMessages.add(String.valueOf(content));
+    public String getName() {
+      return "recording";
+    }
+
+    /**
+     * Records debug messages regardless of {@link #isDebugEnabled()}, which only reflects maven's global debug flag.
+     */
+    @Override
+    public void debug(String msg) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(CharSequence content, Throwable error) {
-      error(content);
+    public void debug(String msg, Throwable t) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(Throwable error) {
-      error(error.getMessage());
+    public void debug(String format, Object arg) {
+      debugMessages.add(MessageFormatter.format(format, arg).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object arg1, Object arg2) {
+      debugMessages.add(MessageFormatter.format(format, arg1, arg2).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object... arguments) {
+      debugMessages.add(MessageFormatter.arrayFormat(format, arguments).getMessage());
+    }
+
+    @Override
+    protected String getFullyQualifiedCallerName() {
+      return null;
+    }
+
+    @Override
+    protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern,
+                                               Object[] arguments, Throwable throwable) {
+      String message = MessageFormatter.arrayFormat(messagePattern, arguments, throwable).getMessage();
+      switch (level) {
+        case DEBUG -> debugMessages.add(message);
+        case INFO -> infoMessages.add(message);
+        case WARN -> warnMessages.add(message);
+        case ERROR -> errorMessages.add(message);
+        default -> { }
+      }
     }
   }
 

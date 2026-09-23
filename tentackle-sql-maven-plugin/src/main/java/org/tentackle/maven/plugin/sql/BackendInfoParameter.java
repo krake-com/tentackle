@@ -135,7 +135,7 @@ public class BackendInfoParameter {
       Server server = mojo.getSettings().getServer(serverId);
       if (server != null) {
         if (user != null || password != null) {
-          mojo.getLog().warn("replacing user/password from pom.xml by settings.xml for server id '" + serverId + "'");
+          mojo.getLogger().warn("replacing user/password from pom.xml by settings.xml for server id '{}'", serverId);
         }
         user = server.getUsername();
         SettingsDecryptionResult result = mojo.getSettingsDecrypter().decrypt(new DefaultSettingsDecryptionRequest(server));
@@ -152,7 +152,7 @@ public class BackendInfoParameter {
             throw new MojoExecutionException("unable to decrypt password: " + msg);
           }
           else {
-            mojo.getLog().warn(msg.toString());
+            mojo.getLogger().warn(msg.toString());
           }
         }
         password = result.getServer().getPassword();
@@ -218,10 +218,10 @@ public class BackendInfoParameter {
     }
 
     if (minVersion != null) {
-      mojo.getLog().debug("applying filter '" + minVersion + "'");
+      mojo.getLogger().debug("applying filter '{}'", minVersion);
     }
     else {
-      mojo.getLog().debug("no version filter");
+      mojo.getLogger().debug("no version filter");
     }
 
     hints.load(mojo, verbose, migrationHints, minVersion, resourceDirs);

@@ -203,7 +203,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
         filteredNames.add(fileName);
       }
       else if (verbosityLevel.isDebug()) {
-        getLog().info("skipped unchanged " + sourceFilePath);
+        getLogger().info("skipped unchanged {}", sourceFilePath);
       }
     }
 

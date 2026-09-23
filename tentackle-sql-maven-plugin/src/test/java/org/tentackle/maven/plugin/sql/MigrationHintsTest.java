@@ -42,7 +42,7 @@ import static org.testng.Assert.expectThrows;
  * Tests the migration hint file parser.
  * <p>
  * {@link MigrationHints#load} only needs {@code mojo.createFileSetManager()} and
- * {@code mojo.getLog()}, both inherited from {@code AbstractTentackleMojo}, so a plain
+ * {@code mojo.getLogger()}, both inherited from {@code AbstractTentackleMojo}, so a plain
  * {@code new CreateSqlMojo()} is enough - no {@code validate()}/{@code execute()} lifecycle
  * required.
  */
@@ -251,7 +251,7 @@ public class MigrationHintsTest {
     fileset.setDirectory(hintsRoot.getPath());
     MigrationHints hints = new MigrationHints();
     CreateSqlMojo mojo = new CreateSqlMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     hints.load(mojo, false, List.of(fileset), "1.0.0", null);
 
     assertFalse(hints.getDropTables().contains("obsolete"), "0.9 hint already applied at version 1.0.0");
@@ -264,7 +264,7 @@ public class MigrationHintsTest {
     fileset.setDirectory(dir.getPath());
     MigrationHints hints = new MigrationHints();
     CreateSqlMojo mojo = new CreateSqlMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     hints.load(mojo, false, List.of(fileset), version, null);
     return hints;
   }

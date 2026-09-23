@@ -159,7 +159,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     File modelDir = new File(fileSet.getDirectory());
     String modelDirName = getCanonicalPath(modelDir);
     if (verbosityLevel.isDebug()) {
-      getLog().info("processing files in " + modelDirName);
+      getLogger().info("processing files in {}", modelDirName);
     }
 
     writeModelIntroComment(backendInfo, modelDirName);
@@ -176,7 +176,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       warnIfDeferredNotSupported(backend, model.getAllEntities(), foreignKeys);
     }
     catch (ModelException mex) {
-      getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());
+      getLogger().error("parsing model failed in directory {}:\n{}", modelDirName, mex.getMessage());
       errorCount++;
     }
 
@@ -187,12 +187,12 @@ public class CreateSqlMojo extends AbstractSqlMojo {
         // check if file exists
         File modelFile = new File(modelDirName, filename);
         if (!modelFile.exists()) {
-          getLog().error("no such model file: " + filename);
+          getLogger().error("no such model file: {}", filename);
           errorCount++;
         }
         else  {
           if (verbosityLevel.isDebug()) {
-            getLog().info("processing " + modelFile);
+            getLogger().info("processing {}", modelFile);
           }
           try {
             URL url = modelFile.toURI().toURL();
@@ -205,7 +205,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
               String plainTableName = entity.getTableNameWithoutSchema();
               if (isAlienTable(plainTableName)) {
                 // let the goal fail, but generate SQL despite the error (to see what it would look like)
-                getLog().error("table '" + entity.getTableName() + "' is reserved for other uses");
+                getLogger().error("table '{}' is reserved for other uses", entity.getTableName());
                 errorCount++;
               }
               if (checkReservedTables && checkAndLogReservedTable(entity)) {
@@ -213,7 +213,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
               }
 
               if (entity.getSchemaName() != null && backend.isReservedSchemaName(entity.getSchemaName())) {
-                getLog().error("schema '" + entity.getSchemaName() + "' is a reserved word for backend " + backend);
+                getLogger().error("schema '{}' is a reserved word for backend {}", entity.getSchemaName(), backend);
                 errorCount++;
               }
 
@@ -225,7 +225,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             throw new MojoExecutionException("cannot write table definitions to sql file " + sqlFile.getAbsolutePath(), iox);
           }
           catch (ModelException wex) {
-            getLog().error("parsing model failed for " + filename, wex);
+            getLogger().error("parsing model failed for {}", filename, wex);
             errorCount++;
           }
         }
@@ -252,10 +252,9 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       }
     }
 
-    getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
-                  fileNames.length + " files processed, " +
-                  errorCount + " errors, " +
-                  getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFile.getName() + " created");
+    getLogger().info("{}: {} files processed, {} errors, {}{}{} created",
+                     getPathRelativeToBasedir(modelDirName), fileNames.length, errorCount,
+                     getPathRelativeToBasedir(sqlDirName), File.separator, sqlFile.getName());
 
     totalErrors += errorCount;
   }
@@ -271,7 +270,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       for (FileSet fileSet: fileSets) {
         if (fileSet.getDirectory() == null) {
           // relative to basedir if not given
-          fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
+          fileSet.setDirectory(getBaseDir().getAbsolutePath());
         }
         for (String filename : getIncludedFiles(fileSet)) {
           String fullName = fileSet.getDirectory() + File.separator + filename;
@@ -352,7 +351,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       throw new MojoExecutionException("cannot write classpath model's table definitions to sql file " + sqlFile.getAbsolutePath(), iox);
     }
     catch (ModelException mex) {
-      getLog().error("parsing model from classpath failed:\n" + mex.getMessage());
+      getLogger().error("parsing model from classpath failed:\n{}", mex.getMessage());
       failed = true;
     }
     return failed;

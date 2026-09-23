@@ -51,10 +51,12 @@ public class CleanupMojo extends AbstractVerifyMojo {
     errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList().size();
 
     if (errors > 0) {
-      getLog().error(errors + " error" + (errors > 1 ? "s" : "") + " found -> please run tentackle-i18n:verify and fix the errors");
+      getLogger().error("{} error{} found -> please run tentackle-i18n:verify and fix the errors",
+                        errors, errors > 1 ? "s" : "");
     }
     else if (warnings > 0) {
-      getLog().warn(warnings + " warning" + (warnings > 1 ? "s" : "") + " found -> please run tentackle-i18n:verify and fix the warnings");
+      getLogger().warn("{} warning{} found -> please run tentackle-i18n:verify and fix the warnings",
+                       warnings, warnings > 1 ? "s" : "");
     }
     else {
       updates += session.transaction(() -> {
@@ -82,7 +84,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
         count += obsoleteBundles.size();
 
         if (count > 0) {
-          getLog().warn(count + " objects removed from " + url + ":" + buf);
+          getLogger().warn("{} objects removed from {}:{}", count, url, buf);
         }
         return count;
       });

@@ -129,7 +129,7 @@ public class PropertiesMojo extends AbstractTentackleMojo {
         getMavenProject().getProperties().setProperty(property, value);
 
         if (verbosityLevel.isInfo()) {
-          getLog().info("created property: " + property + " = " + value);
+          getLogger().info("created property: {} = {}", property, value);
         }
       }
     }

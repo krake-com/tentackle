@@ -18,9 +18,9 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
+import org.eclipse.aether.artifact.Artifact;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -59,7 +59,7 @@ public class AbstractJLinkMojoTest {
     log = new RecordingLog();
 
     mojo = new TestJLinkMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");
     JLinkTestSupport.setField(mojo, "templateDir", templateDir);

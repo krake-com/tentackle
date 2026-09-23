@@ -58,7 +58,7 @@ public class DefaultTemplateModelFactoryTest {
     project = JLinkTestSupport.createProject(tempDir);
 
     mojo = new TestJLinkMojo();
-    mojo.setLog(new RecordingLog());
+    mojo.setLogger(new RecordingLog());
     JLinkTestSupport.setField(mojo, "mavenProject", project);
     JLinkTestSupport.setField(mojo, "mojoExecution", JLinkTestSupport.createMojoExecution("jlink", "default-jlink", "package"));
     JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");

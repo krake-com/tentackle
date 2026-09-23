@@ -18,10 +18,17 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.util.version.GenericVersionScheme;
+import org.eclipse.aether.version.InvalidVersionSpecificationException;
+import org.eclipse.aether.version.VersionScheme;
+
+import org.tentackle.maven.ProjectDependencies;
 
 import java.io.File;
+import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Artifact with module information.
@@ -34,7 +41,7 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
   /**
    * Creates a modular artifact.
    *
-   * @param artifact the maven artifact
+   * @param artifact the resolved artifact
    * @param moduleDescriptor the JPMS module descriptor
    */
   public ModularArtifact(Artifact artifact, JavaModuleDescriptor moduleDescriptor) {
@@ -43,7 +50,7 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
   }
 
   /**
-   * Gets the maven artifact.
+   * Gets the resolved artifact.
    *
    * @return the artifact
    */
@@ -80,7 +87,7 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
    * @return the file
    */
   public File getFile() {
-    return artifact.getFile();
+    return ProjectDependencies.getFile(artifact);
   }
 
   /**
@@ -106,17 +113,40 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    return artifact.compareTo(((ModularArtifact) o).artifact) == 0;
+    return compareTo((ModularArtifact) o) == 0;
   }
 
   @Override
   public int hashCode() {
-    return artifact.hashCode();
+    return Objects.hash(artifact.getGroupId(), artifact.getArtifactId(), artifact.getExtension(),
+                        artifact.getClassifier(), artifact.getVersion());
   }
 
   @Override
   public int compareTo(ModularArtifact o) {
-    return artifact.compareTo(o.artifact);
+    return COMPARATOR.compare(artifact, o.artifact);
+  }
+
+
+  private static final VersionScheme VERSION_SCHEME = new GenericVersionScheme();
+
+  /**
+   * Orders artifacts by groupId, artifactId, extension, classifier and version.
+   */
+  private static final Comparator<Artifact> COMPARATOR =
+      Comparator.comparing(Artifact::getGroupId)
+                .thenComparing(Artifact::getArtifactId)
+                .thenComparing(Artifact::getExtension)
+                .thenComparing(Artifact::getClassifier)
+                .thenComparing(ModularArtifact::compareVersions);
+
+  private static int compareVersions(Artifact a1, Artifact a2) {
+    try {
+      return VERSION_SCHEME.parseVersion(a1.getVersion()).compareTo(VERSION_SCHEME.parseVersion(a2.getVersion()));
+    }
+    catch (InvalidVersionSpecificationException ex) {
+      return a1.getVersion().compareTo(a2.getVersion());    // should not happen: the generic scheme accepts anything
+    }
   }
 
 }

@@ -28,6 +28,10 @@
       <artifactId>maven-plugin-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-i18n</artifactId>
       <version>${project.version}</version>

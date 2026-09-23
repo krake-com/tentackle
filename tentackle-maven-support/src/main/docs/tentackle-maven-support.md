@@ -24,18 +24,23 @@ by, the running application — its `package-info` simply reads *"Support for Te
 ### What it provides
 
 - A **common mojo lifecycle** (`AbstractTentackleMojo`) with a fixed `prepare → validate → execute → finish`
-  template, uniform skip handling, verbosity and encoding setup, and `java.util.logging`→Maven log bridging.
+  template, uniform skip handling, verbosity and encoding setup, SLF4J logging (`getLogger()`) and
+  `java.util.logging`→Maven log bridging.
 - A **JDK-toolchain–aware tool locator** (`JavaToolFinder`, plus the toolchain accessors on the base mojo) so
   external tools like `java`, `jdeps`, `jlink` and `jpackage` are found reliably across environments.
 - An **annotation-processing harness** (`AbstractTentackleAnnotationProcessingMojo`) that runs the build-support
   [analyze processors](../../../../tentackle-build-support/src/main/docs/build-support.md) over a project's
   sources via the in-process Java compiler.
+- **Resolver-based dependency handling** (`ProjectDependencies`, `LayerDependencyResolver`) that collects and resolves
+  the dependencies of a project, or of a plain list of coordinates, via the Maven Resolver API only — the
+  same code runs on Maven 3 and Maven 4 (see [Maven 3 and Maven 4](#maven-3-and-maven-4)).
 - **JPMS-oriented project introspection** — a package scanner that builds a package→`PackageInfo` map and
   detects split packages, which are illegal under the module system.
 
 ### Dependencies
 
-It depends on `maven-core`, `maven-plugin-annotations` and the Maven Shared `file-management` (filesets), on
+It depends on `maven-core`, the Maven Resolver API (`maven-resolver-api`), `maven-plugin-annotations` and the
+Maven Shared `file-management` (filesets), on
 [Wurbelizer](https://www.wurbelizer.org/) (for `Verbosity`/`Constants`/`Settings`) and on
 [`tentackle-build-support`](../../../../tentackle-build-support/src/main/docs/build-support.md) (which transitively
 pulls in [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md) for `Settings`, `ToolRunner`
@@ -149,6 +154,28 @@ Configuration entry points for subclasses:
 
 ---
 
+## Maven 3 and Maven 4
+
+All Tentackle Maven plugins are compiled against the Maven 3.9 plugin API and run unchanged on Maven 3.9 and Maven 4.
+The rules that make this work:
+
+- Dependencies are collected and resolved only via the **Maven Resolver API** (`ProjectDependencies`).
+  `maven-compat`, `maven-artifact-transfer` and `maven-dependency-tree` are not used.
+- Logging goes through **SLF4J** (`getLogger()`), which both Maven versions provide, instead of the deprecated
+  `AbstractMojo.getLog()`. Messages use SLF4J's `{}` placeholders instead of string concatenation, so nothing is
+  built for suppressed levels. Tests replace the logger by `setLogger(...)` to capture the output.
+- Injection uses `javax.inject`, which both Maven versions honor.
+- The project's base directory is derived from the pom file (`getBaseDir()`), the toolchain's java home from
+  `Toolchain.findTool("java")`.
+
+A few APIs are marked deprecated by Maven 4 but their replacements exist only in the Maven 4 API, which is not
+available on Maven 3. They are still fully supported by Maven 4 and are therefore kept, in one place each:
+`Toolchain`/`ToolchainManager`, `SettingsDecrypter` (and its request/result types), `MavenProject.getCompileSourceRoots()`
+(wrapped by `AbstractTentackleMojo`) and `Artifact.getFile()` of Resolver 2.0 (wrapped by `ProjectDependencies.getFile`).
+The analyze mojos also still use the `${project.compileClasspathElements}` parameter expression, which Maven resolves itself.
+
+---
+
 ## Supporting classes
 
 ### `JavaToolFinder`
@@ -163,10 +190,23 @@ elsewhere). This is what lets the jlink plugin reliably find `jlink`, `jpackage`
 ### `MavenLogHandler`
 
 [`MavenLogHandler`](../java/org/tentackle/maven/MavenLogHandler.java) is a `java.util.logging.Handler` that
-forwards records at or above a minimum level to Maven's `Log`, mapping `SEVERE→error`, `WARNING→warn`,
+forwards records at or above a minimum level to the mojo's SLF4J logger, mapping `SEVERE→error`, `WARNING→warn`,
 `INFO→info` and everything else to `debug`. Because Tentackle's own code logs through `java.util.logging` by
 default, this bridge keeps build-time framework logging visible in the Maven output without flooding it (default
 threshold `WARNING`).
+
+### `ProjectDependencies` and `LayerDependencyResolver`
+
+[`ProjectDependencies`](../java/org/tentackle/maven/ProjectDependencies.java) is the single place where Tentackle
+plugins talk to the Maven Resolver (`org.eclipse.aether`). It converts POM dependencies to resolver dependencies
+(`toAetherDependency`, honoring type, classifier, scope, exclusions and `system` paths), collects the dependency
+graph of a `MavenProject` (`collect`, including `dependencyManagement` and the project's repositories), resolves it
+(`resolve`, `getClasspathElements`) and offers scope filters (`RUNTIME_SCOPES`, `COMPILE_SCOPES`). It replaces
+`MavenProject.getArtifacts()`, `maven-artifact-transfer` and `maven-dependency-tree`.
+[`LayerDependencyResolver`](../java/org/tentackle/maven/LayerDependencyResolver.java) resolves a plain list of
+coordinates independently of any project, for example the dependencies of a layer of a layered application.
+The `RepositorySystem` is injected once into `AbstractTentackleMojo` (`getRepositorySystem()`); the session is
+`getMavenSession().getRepositorySession()`.
 
 ### `ProjectClassLoader`
 

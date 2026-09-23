@@ -60,11 +60,11 @@ public class RunSqlMojo extends AbstractSqlMojo {
     Path scriptPath = script.toPath();
 
     for (BackendInfo backendInfo : getBackendInfosToExecute()) {
-      getLog().info("connecting to " + backendInfo);
+      getLogger().info("connecting to {}", backendInfo);
       try (Connection connection = backendInfo.connect()) {
         for (ScriptRunnerResult result : backendInfo.getBackend().createScriptRunner(connection)
                                                     .run(Files.readString(scriptPath, Settings.getEncodingCharset()))) {
-          getLog().info(result.toString());
+          getLogger().info(result.toString());
         }
       }
       catch (SQLException | IOException | BackendException ex) {

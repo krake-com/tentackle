@@ -18,8 +18,8 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.eclipse.aether.artifact.Artifact;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -88,7 +88,7 @@ public class JPackageMojoTest {
     log = new RecordingLog();
 
     mojo = new TestJPackageMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");
     JLinkTestSupport.setField(mojo, "templateDir", templateDir);
@@ -183,7 +183,7 @@ public class JPackageMojoTest {
         return javaTool.getName().startsWith("jpackage") ? "21" : "25";
       }
     };
-    olderJPackage.setLog(log);
+    olderJPackage.setLogger(log);
     JLinkTestSupport.setField(olderJPackage, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(olderJPackage, "mainClass", "com.example.Main");
     JLinkTestSupport.setField(olderJPackage, "templateDir", templateDir);

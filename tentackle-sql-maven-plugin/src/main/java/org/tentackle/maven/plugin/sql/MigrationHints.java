@@ -468,7 +468,7 @@ public class MigrationHints {
           for (String filename : fileNames) {
             File hintFile = new File(new File(hintDirName), filename);
             if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
-              mojo.getLog().debug("loading migration hints from " + hintFile);
+              mojo.getLogger().debug("loading migration hints from {}", hintFile);
               hintFileNames.add(hintFile.getParentFile().getName() + "/" + hintFile.getName());
               StringBuilder buf = new StringBuilder();
               try (BufferedReader reader = new BufferedReader(
@@ -523,7 +523,7 @@ public class MigrationHints {
               }
             }
             else {
-              mojo.getLog().debug(hintFile + " skipped");
+              mojo.getLogger().debug("{} skipped", hintFile);
             }
           }
         }

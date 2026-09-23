@@ -52,7 +52,7 @@ public class JLinkMojoTest {
     templateDir = new File(tempDir, "templates");
 
     mojo = new TestJLinkMojo();
-    mojo.setLog(new RecordingLog());
+    mojo.setLogger(new RecordingLog());
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");
     JLinkTestSupport.setField(mojo, "templateDir", templateDir);

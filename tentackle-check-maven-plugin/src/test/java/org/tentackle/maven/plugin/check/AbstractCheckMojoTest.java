@@ -60,7 +60,7 @@ public class AbstractCheckMojoTest {
     log = new RecordingLog();
 
     mojo = new TestCheckMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     CheckTestSupport.setField(mojo, "mavenProject", CheckTestSupport.createProject(basedir));
     CheckTestSupport.setField(mojo, "sourceDir", sourceDir);
     CheckTestSupport.setField(mojo, "classpathElements", CheckTestSupport.classpathElements());

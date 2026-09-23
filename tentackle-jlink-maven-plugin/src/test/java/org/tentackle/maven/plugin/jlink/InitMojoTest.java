@@ -59,7 +59,7 @@ public class InitMojoTest {
     log = new RecordingLog();
 
     mojo = new TestInitMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "templateDir", templateDir);
     JLinkTestSupport.setField(mojo, "copyAll", true);

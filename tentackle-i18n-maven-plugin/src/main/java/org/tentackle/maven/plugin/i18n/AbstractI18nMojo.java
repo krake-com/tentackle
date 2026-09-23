@@ -18,10 +18,10 @@
 
 package org.tentackle.maven.plugin.i18n;
 
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.resolution.DependencyResolutionException;
 
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
@@ -30,6 +30,7 @@ import org.tentackle.common.Settings;
 import org.tentackle.i18n.StoredBundleFactory;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;
+import org.tentackle.maven.ProjectDependencies;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -178,14 +179,28 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       throw new MojoExecutionException("cannot connect to the backend", ex);
     }
 
-    getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
-                  warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
-                  errors + " error" + (errors == 1 ? "" : "s") + ", " +
-                  updates + " update" + (updates == 1 ? "" : "s"));
+    getLogger().info("{} bundle{} processed, {} warning{}, {} error{}, {} update{}",
+                     bundleCount, bundleCount == 1 ? "" : "s",
+                     warnings, warnings == 1 ? "" : "s",
+                     errors, errors == 1 ? "" : "s",
+                     updates, updates == 1 ? "" : "s");
 
     if (errors > 0) {
       throw new MojoExecutionException("pushing to the database failed");
     }
+  }
+
+  /**
+   * Gets the compile classpath of a project.<br>
+   * The project's output directory followed by its resolved compile dependencies.
+   *
+   * @param project the project
+   * @return the classpath elements
+   * @throws DependencyResolutionException if the dependencies cannot be resolved
+   */
+  protected List<String> getCompileClasspathElements(MavenProject project) throws DependencyResolutionException {
+    return ProjectDependencies.getClasspathElements(getRepositorySystem(), getMavenSession().getRepositorySession(),
+                                                    project, ProjectDependencies.COMPILE_SCOPES);
   }
 
   /**
@@ -198,7 +213,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     try {
       for (MavenProject project : projects) {
-        List<String> classpathElements = project.getCompileClasspathElements();
+        List<String> classpathElements = getCompileClasspathElements(project);
         ClassLoader classLoader = createProjectClassLoader(classpathElements);
 
         session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
@@ -214,7 +229,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
               }
               resourceName = resourceName.replace('.', '/') + Constants.PROPS_EXTENSION;
               if (verbosityLevel.isDebug()) {
-                getLog().debug("processing " + resourceName);
+                getLogger().debug("processing {}", resourceName);
               }
               processBundle(classLoader, bundleName, suffix, resourceName);
               if (iter.hasNext()) {
@@ -229,11 +244,11 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
         });
       }
     }
-    catch (DependencyResolutionRequiredException dx) {
+    catch (DependencyResolutionException dx) {
       throw new MojoExecutionException("cannot determine classpath elements", dx);
     }
     catch (MalformedURLException mx) {
-      getLog().error("cannot create project classloader", mx);
+      getLogger().error("cannot create project classloader", mx);
     }
     catch (RuntimeException rex) {
       throw new MojoExecutionException("processing the bundles failed", rex);

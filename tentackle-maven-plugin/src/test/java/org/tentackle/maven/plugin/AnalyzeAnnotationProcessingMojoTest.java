@@ -76,7 +76,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
     servicesDir = new File(basedir, "target" + File.separator + "services");
     log = new RecordingLog();
     mojo = new AnalyzeAnnotationProcessingMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
     setParameters(sourceDir, analyzeDir, servicesDir);
   }

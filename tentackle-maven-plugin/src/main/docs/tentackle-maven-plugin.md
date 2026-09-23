@@ -16,7 +16,7 @@ All goals share the prefix `tentackle`, so they can be invoked directly from the
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.10). It is platform independent.
+(JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). It is platform independent.
 
 ### Overview of Goals
 

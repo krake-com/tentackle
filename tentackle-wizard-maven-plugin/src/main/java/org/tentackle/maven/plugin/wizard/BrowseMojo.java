@@ -191,7 +191,7 @@ public class BrowseMojo extends AbstractWizardMojo {
               stage.setOnHidden(_ -> latch.countDown());
             }
             catch (Throwable t) {
-              getLog().error(t);
+              getLogger().error(t.getMessage(), t);
               latch.countDown();
             }
           });

@@ -122,7 +122,7 @@ public abstract class AbstractSqlDbMojoTest {
    * @return the mojo
    */
   protected <T extends AbstractSqlMojo> T configure(T mojo, String modelName) {
-    mojo.setLog(log);
+    mojo.setLogger(log);
     SqlTestSupport.setField(mojo, "mavenProject", SqlTestSupport.createProject(basedir));
     SqlTestSupport.setField(mojo, "modelDir", modelDir);
     SqlTestSupport.setField(mojo, "sqlDir", sqlDir);

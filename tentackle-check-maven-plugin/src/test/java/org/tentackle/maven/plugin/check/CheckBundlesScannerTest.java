@@ -55,7 +55,7 @@ public class CheckBundlesScannerTest {
     sourceDir = CheckTestSupport.createDir(basedir, "src/main/java");
 
     mojo = new TestBundlesMojo();
-    mojo.setLog(new RecordingLog());
+    mojo.setLogger(new RecordingLog());
     CheckTestSupport.setField(mojo, "mavenProject", CheckTestSupport.createProject(basedir));
     CheckTestSupport.setField(mojo, "sourceDir", sourceDir);
     CheckTestSupport.setField(mojo, "classpathElements", CheckTestSupport.classpathElements());

@@ -63,7 +63,7 @@ public class CheckValidationsMojoTest {
     log = new RecordingLog();
 
     mojo = new TestValidationsMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     CheckTestSupport.setField(mojo, "mavenProject", CheckTestSupport.createProject(basedir));
     CheckTestSupport.setField(mojo, "sourceDir", sourceDir);
     CheckTestSupport.setField(mojo, "classpathElements", CheckTestSupport.classpathElements(classesDir));

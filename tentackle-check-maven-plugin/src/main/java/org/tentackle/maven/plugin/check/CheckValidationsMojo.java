@@ -110,11 +110,11 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
 
     if (errors > 0) {
       msg += errors + " errors";
-      getLog().error(msg);
+      getLogger().error(msg);
       throw new MojoExecutionException(msg);
     }
     else {
-      getLog().info(msg + "no errors");
+      getLogger().info(msg + "no errors");
     }
   }
 
@@ -146,11 +146,11 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
         // no stacktrace for missing resource: just print the missing translation
         ValidationRuntimeException vx = ExceptionHelper.extractException(ValidationRuntimeException.class, true, ex);
         if (vx != null) {
-          getLog().error(vx.getMessage() + " for " + validatorEntry);
+          getLogger().error("{} for {}", vx.getMessage(), validatorEntry);
           return;
         }
       }
-      getLog().error("validation message check failed for validator " + validatorEntry, ex);
+      getLogger().error("validation message check failed for validator {}", validatorEntry, ex);
     }
   }
 
@@ -174,7 +174,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       }
     }
     catch (RuntimeException ex) {
-      getLog().error("validation condition check failed for validator " + validatorEntry, ex);
+      getLogger().error("validation condition check failed for validator {}", validatorEntry, ex);
       errors++;
     }
   }
@@ -198,7 +198,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       }
     }
     catch (RuntimeException ex) {
-      getLog().error("validation value check failed for validator " + validatorEntry, ex);
+      getLogger().error("validation value check failed for validator {}", validatorEntry, ex);
       errors++;
     }
   }

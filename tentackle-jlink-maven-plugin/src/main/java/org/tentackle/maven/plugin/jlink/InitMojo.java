@@ -63,7 +63,7 @@ public class InitMojo extends AbstractJLinkMojo {
     if (copyAll) {
       for (String name : TEMPLATES_ALL) {
         installTemplate(name, name, true);
-        getLog().info("template '" + name + "' copied to " + templateDir);
+        getLogger().info("template '{}' copied to {}", name, templateDir);
       }
     }
     else {
@@ -74,10 +74,10 @@ public class InitMojo extends AbstractJLinkMojo {
           if (template.isFile()) {
             try {
               installTemplate(name, name,true);
-              getLog().info("template '" + name + "' restored to its default");
+              getLogger().info("template '{}' restored to its default", name);
             }
             catch (MojoExecutionException mx) {
-              getLog().warn("no default template for '" + name + "' -> skipped");
+              getLogger().warn("no default template for '{}' -> skipped", name);
             }
           }
         }

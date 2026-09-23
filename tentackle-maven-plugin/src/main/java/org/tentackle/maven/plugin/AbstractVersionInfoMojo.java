@@ -18,9 +18,9 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.aether.artifact.Artifact;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
@@ -160,10 +160,10 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
     }
 
     if (versionsMap.isEmpty()) {
-      getLog().warn("no artifacts found");
+      getLogger().warn("no artifacts found");
     }
     else {
-      getLog().info("\n" + xml);
+      getLogger().info("\n{}", xml);
     }
   }
 

@@ -76,12 +76,12 @@ public class ServeMojo extends AbstractMcpMojo {
     }
 
     for (String warning : session.getWarnings()) {
-      getLog().warn(warning);
+      getLogger().warn(warning);
     }
 
     try {
-      getLog().info(session.getModel().getAllEntities().size() + " entities loaded from " +
-                    String.join(", ", session.getConfiguration().modelDirs()));
+      getLogger().info("{} entities loaded from {}",
+                       session.getModel().getAllEntities().size(), String.join(", ", session.getConfiguration().modelDirs()));
     }
     catch (ModelException mex) {
       throw new MojoFailureException("cannot determine entities: " + mex.getMessage(), mex);
@@ -99,9 +99,9 @@ public class ServeMojo extends AbstractMcpMojo {
         .start();
 
     String url = "http://" + host + ':' + server.port() + path;
-    getLog().info("MCP endpoint: " + url);
-    getLog().info("claude mcp add --transport http " + serverName + ' ' + url);
-    getLog().info("stop with Ctrl-C");
+    getLogger().info("MCP endpoint: {}", url);
+    getLogger().info("claude mcp add --transport http {} {}", serverName, url);
+    getLogger().info("stop with Ctrl-C");
 
     awaitShutdown();
     server.stop();

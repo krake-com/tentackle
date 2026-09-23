@@ -219,7 +219,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     else {
       // all from source dir with default java-extension
       if (sourceDir == null) {
-        getLog().warn("no sourceDir configured");
+        getLogger().warn("no sourceDir configured");
       }
       else {
         String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
@@ -230,7 +230,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           processFileSet(fs);
         }
         else {
-          getLog().info((sourceDir.exists() ? "empty" : "missing") + " source directory " + sourceDir.getAbsolutePath());
+          getLogger().info("{} source directory {}",
+                           sourceDir.exists() ? "empty" : "missing", sourceDir.getAbsolutePath());
         }
       }
     }
@@ -241,7 +242,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           processor.cleanup();
         }
         catch (IOException ex) {
-          getLog().error("annotation processor cleanup failed", ex);
+          getLogger().error("annotation processor cleanup failed", ex);
           totalErrors++;
         }
       }
@@ -377,7 +378,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     String dirName = getCanonicalPath(dir);
 
     if (verbosityLevel.isDebug()) {
-      getLog().info("analyzing files in " + dirName);
+      getLogger().info("analyzing files in {}", dirName);
     }
 
     int errorCount = 0;           // analyze errors, i.e., reported by the annotation processors
@@ -391,7 +392,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       for (int i=0; i < fileNames.length; i++) {
         fileNames[i] = dirName + "/" + fileNames[i];
         if (verbosityLevel.isDebug()) {
-          getLog().info("analyzing " + fileNames[i]);
+          getLogger().info("analyzing {}", fileNames[i]);
         }
       }
 
@@ -449,7 +450,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         task.setProcessors(processors);
       }
       else  {
-        getLog().warn("no annotation processors defined");
+        getLogger().warn("no annotation processors defined");
       }
 
       task.call();
@@ -461,10 +462,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           String msg = formatDiagnostic(diag);
           if (analyzeError) {
             // always report it: the build is going to fail because of it
-            getLog().error(msg);
+            getLogger().error(msg);
           }
           else {
-            getLog().info(msg);
+            getLogger().info(msg);
           }
           compileErrorLog.append(msg).append('\n');
         }
@@ -481,13 +482,13 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
     cleanupProcessors(dir);
 
-    getLog().info(getPathRelativeToBasedir(dirName) + ": " +
-                  fileNames.length + " files analyzed, " +
-                  errorCount + " errors");
+    getLogger().info("{}: {} files analyzed, {} errors",
+                     getPathRelativeToBasedir(dirName), fileNames.length, errorCount);
 
     if (compileErrorCount > 0) {
-      getLog().warn(compileErrorCount +
-                    " Java compilation errors! Some annotations may have been processed improperly or not processed at all");
+      getLogger().warn("{} Java compilation errors! " +
+                       "Some annotations may have been processed improperly or not processed at all",
+                       compileErrorCount);
     }
 
     totalCompileErrors += compileErrorCount;

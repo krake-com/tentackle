@@ -71,7 +71,7 @@ public class PropertiesMojoTest {
     project = createProject(basedir);
     log = new RecordingLog();
     mojo = new PropertiesMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", project);
     UpperCaseConverter.instanceCount = 0;
   }

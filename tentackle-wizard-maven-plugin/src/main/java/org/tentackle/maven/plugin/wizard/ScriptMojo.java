@@ -184,7 +184,7 @@ public class ScriptMojo extends AbstractWizardMojo {
               stage.setOnHidden(_ -> latch.countDown());
             }
             catch (Throwable t) {
-              getLog().error(t);
+              getLogger().error(t.getMessage(), t);
               latch.countDown();
             }
           });
@@ -251,7 +251,7 @@ public class ScriptMojo extends AbstractWizardMojo {
     catch (IOException | TemplateException e) {
       throw new MojoFailureException("weaving harness '" + scriptHarness.getName() + "' failed", e);
     }
-    getLog().debug("generated script:\n" + source);
+    getLogger().debug("generated script:\n{}", source);
     try {
       Script compiled = scriptHarness.getLanguage().createScript(source, false, false, null);
       compiled.execute();
@@ -328,7 +328,7 @@ public class ScriptMojo extends AbstractWizardMojo {
     Map<String, ScriptHarness> map = new TreeMap<>();   // sorted by name
     for (FileSet fileSet : harnesses) {
       if (fileSet.getDirectory() == null) {
-        fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
+        fileSet.setDirectory(getBaseDir().getAbsolutePath());
       }
       File dir = new File(fileSet.getDirectory());
       for (String fileName : getIncludedFiles(fileSet)) {
@@ -349,7 +349,7 @@ public class ScriptMojo extends AbstractWizardMojo {
     if (map.isEmpty()) {
       throw new MojoFailureException("no harnesses found");
     }
-    getLog().info(map.size() + " harness(es) loaded");
+    getLogger().info("{} harness(es) loaded", map.size());
     return map;
   }
 

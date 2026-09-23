@@ -62,7 +62,7 @@ answers *how is this mapped*, the script goal *what does the application do with
 
 ## Prerequisites
 
-- JDK >= 25 and Maven >= 3.9.10, like the rest of the framework.
+- JDK >= 25 and Maven >= 3.9.10 (Maven 4 is supported as well), like the rest of the framework.
 - **The model must have been generated at least once.** Everything below reads the `.map` files that
   the Wurbelizer produces:
 

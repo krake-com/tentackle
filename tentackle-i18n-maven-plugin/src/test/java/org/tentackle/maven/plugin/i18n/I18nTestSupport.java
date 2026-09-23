@@ -19,13 +19,17 @@
 package org.tentackle.maven.plugin.i18n;
 
 import org.apache.maven.model.Resource;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
+import org.slf4j.helpers.LegacyAbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 
 import org.tentackle.maven.ProjectClassLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -271,6 +275,11 @@ public final class I18nTestSupport {
     }
 
     @Override
+    protected List<String> getCompileClasspathElements(MavenProject project) {
+      return List.of(project.getBuild().getOutputDirectory());    // no dependencies, no repository system
+    }
+
+    @Override
     protected boolean isExecutionRecursive() {
       return true;
     }
@@ -285,6 +294,11 @@ public final class I18nTestSupport {
     @Override
     protected ClassLoader createProjectClassLoader(List<String> classpathElements) throws MalformedURLException {
       return I18nTestSupport.createProjectClassLoader(classpathElements);
+    }
+
+    @Override
+    protected List<String> getCompileClasspathElements(MavenProject project) {
+      return List.of(project.getBuild().getOutputDirectory());    // no dependencies, no repository system
     }
 
     @Override
@@ -305,6 +319,11 @@ public final class I18nTestSupport {
     }
 
     @Override
+    protected List<String> getCompileClasspathElements(MavenProject project) {
+      return List.of(project.getBuild().getOutputDirectory());    // no dependencies, no repository system
+    }
+
+    @Override
     protected boolean isExecutionRecursive() {
       return true;
     }
@@ -322,6 +341,11 @@ public final class I18nTestSupport {
     }
 
     @Override
+    protected List<String> getCompileClasspathElements(MavenProject project) {
+      return List.of(project.getBuild().getOutputDirectory());    // no dependencies, no repository system
+    }
+
+    @Override
     protected boolean isExecutionRecursive() {
       return true;
     }
@@ -333,7 +357,10 @@ public final class I18nTestSupport {
    * The mojos report each finding via the log and only the totals via the exception, so this is
    * the only way to assert what exactly they complained about.
    */
-  public static class RecordingLog implements Log {
+  public static class RecordingLog extends LegacyAbstractLogger {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final List<String> debugMessages = new ArrayList<>();
     private final List<String> infoMessages = new ArrayList<>();
@@ -390,7 +417,7 @@ public final class I18nTestSupport {
     }
 
     /**
-     * Checks whether any of the given messages contains a text.
+     * Checks whether any message of the given list contains a text.
      *
      * @param messages the messages
      * @param text the text to look for
@@ -401,23 +428,13 @@ public final class I18nTestSupport {
     }
 
     @Override
+    public boolean isTraceEnabled() {
+      return false;
+    }
+
+    @Override
     public boolean isDebugEnabled() {
       return debugEnabled;
-    }
-
-    @Override
-    public void debug(CharSequence content) {
-      debugMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void debug(CharSequence content, Throwable error) {
-      debug(content);
-    }
-
-    @Override
-    public void debug(Throwable error) {
-      debug(error.getMessage());
     }
 
     @Override
@@ -426,38 +443,8 @@ public final class I18nTestSupport {
     }
 
     @Override
-    public void info(CharSequence content) {
-      infoMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void info(CharSequence content, Throwable error) {
-      info(content);
-    }
-
-    @Override
-    public void info(Throwable error) {
-      info(error.getMessage());
-    }
-
-    @Override
     public boolean isWarnEnabled() {
       return true;
-    }
-
-    @Override
-    public void warn(CharSequence content) {
-      warnMessages.add(String.valueOf(content));
-    }
-
-    @Override
-    public void warn(CharSequence content, Throwable error) {
-      warn(content);
-    }
-
-    @Override
-    public void warn(Throwable error) {
-      warn(error.getMessage());
     }
 
     @Override
@@ -466,18 +453,54 @@ public final class I18nTestSupport {
     }
 
     @Override
-    public void error(CharSequence content) {
-      errorMessages.add(String.valueOf(content));
+    public String getName() {
+      return "recording";
+    }
+
+    /**
+     * Records debug messages regardless of {@link #isDebugEnabled()}, which only reflects maven's global debug flag.
+     */
+    @Override
+    public void debug(String msg) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(CharSequence content, Throwable error) {
-      error(content);
+    public void debug(String msg, Throwable t) {
+      debugMessages.add(msg);
     }
 
     @Override
-    public void error(Throwable error) {
-      error(error.getMessage());
+    public void debug(String format, Object arg) {
+      debugMessages.add(MessageFormatter.format(format, arg).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object arg1, Object arg2) {
+      debugMessages.add(MessageFormatter.format(format, arg1, arg2).getMessage());
+    }
+
+    @Override
+    public void debug(String format, Object... arguments) {
+      debugMessages.add(MessageFormatter.arrayFormat(format, arguments).getMessage());
+    }
+
+    @Override
+    protected String getFullyQualifiedCallerName() {
+      return null;
+    }
+
+    @Override
+    protected void handleNormalizedLoggingCall(Level level, Marker marker, String messagePattern,
+                                               Object[] arguments, Throwable throwable) {
+      String message = MessageFormatter.arrayFormat(messagePattern, arguments, throwable).getMessage();
+      switch (level) {
+        case DEBUG -> debugMessages.add(message);
+        case INFO -> infoMessages.add(message);
+        case WARN -> warnMessages.add(message);
+        case ERROR -> errorMessages.add(message);
+        default -> { }
+      }
     }
   }
 

@@ -414,7 +414,7 @@ public class DocumentSqlMojoTest {
    */
   private DocumentSqlMojo configure(String modelName) {
     DocumentSqlMojo mojo = new DocumentSqlMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     SqlTestSupport.setField(mojo, "mavenProject", SqlTestSupport.createProject(basedir));
     SqlTestSupport.setField(mojo, "modelDir", modelDir);
     SqlTestSupport.setField(mojo, "htmlDir", htmlDir);

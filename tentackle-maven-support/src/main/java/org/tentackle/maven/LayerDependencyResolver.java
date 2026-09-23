@@ -21,7 +21,7 @@ package org.tentackle.maven;
 import org.apache.maven.model.Dependency;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.artifact.ArtifactTypeRegistry;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResult;
@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
  */
 public final class LayerDependencyResolver {
 
+  private static final String RUNTIME_SCOPE = "runtime";
+
   private LayerDependencyResolver() {
   }
 
@@ -65,9 +67,11 @@ public final class LayerDependencyResolver {
                                     List<RemoteRepository> repositories, List<Dependency> dependencies)
           throws DependencyResolutionException {
 
+    ArtifactTypeRegistry registry = session.getArtifactTypeRegistry();
     CollectRequest collectRequest = new CollectRequest();
     collectRequest.setDependencies(dependencies.stream()
-            .map(LayerDependencyResolver::toAetherDependency).collect(Collectors.toList()));
+            .map(dependency -> ProjectDependencies.toAetherDependency(dependency, RUNTIME_SCOPE, registry))
+            .collect(Collectors.toList()));
     collectRequest.setRepositories(repositories);
 
     DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
@@ -76,17 +80,9 @@ public final class LayerDependencyResolver {
 
     List<File> files = new ArrayList<>();
     for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
-      files.add(artifactResult.getArtifact().getFile());
+      files.add(ProjectDependencies.getFile(artifactResult.getArtifact()));
     }
     return files;
-  }
-
-  private static org.eclipse.aether.graph.Dependency toAetherDependency(Dependency dependency) {
-    String type = dependency.getType() == null || dependency.getType().isBlank() ? "jar" : dependency.getType();
-    String classifier = dependency.getClassifier() == null ? "" : dependency.getClassifier();
-    DefaultArtifact artifact = new DefaultArtifact(
-            dependency.getGroupId(), dependency.getArtifactId(), classifier, type, dependency.getVersion());
-    return new org.eclipse.aether.graph.Dependency(artifact, "runtime");
   }
 
 }

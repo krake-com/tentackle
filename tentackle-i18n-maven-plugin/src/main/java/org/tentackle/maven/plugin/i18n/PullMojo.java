@@ -65,7 +65,7 @@ public class PullMojo extends AbstractI18nMojo {
       bundleCount++;
       if (bundle == null) {
         // never pushed, or not translated for that locale: there is nothing to pull
-        getLog().warn("missing stored bundle: " + resourceName);
+        getLogger().warn("missing stored bundle: {}", resourceName);
         warnings++;
         return;
       }
@@ -77,7 +77,7 @@ public class PullMojo extends AbstractI18nMojo {
       try {
         properties = loadProperties(file);
         if (properties == null) {
-          getLog().warn("created resource: " + resourceName);
+          getLogger().warn("created resource: {}", resourceName);
           warnings++;
           properties = new OrderedProperties();
         }
@@ -85,14 +85,14 @@ public class PullMojo extends AbstractI18nMojo {
           String propValue = properties.getProperty(bundleKey.getKey());
           if (!bundleKey.getValue().equals(propValue)) {
             properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
-            getLog().info(resourceName + ": '" + bundleKey.getKey() + "' " + (propValue == null ? "added" : "updated"));
+            getLogger().info("{}: '{}' {}", resourceName, bundleKey.getKey(), propValue == null ? "added" : "updated");
             updates++;
             differs = true;
           }
         }
       }
       catch (IOException iox) {
-        getLog().error("cannot load resource bundle properties file " + file.getAbsolutePath(), iox);
+        getLogger().error("cannot load resource bundle properties file {}", file.getAbsolutePath(), iox);
         errors++;
         return;
       }
@@ -103,7 +103,7 @@ public class PullMojo extends AbstractI18nMojo {
           properties.store(writer, comment);
         }
         catch (IOException iox) {
-          getLog().error("cannot update resource bundle properties file " + file.getAbsolutePath(), iox);
+          getLogger().error("cannot update resource bundle properties file {}", file.getAbsolutePath(), iox);
           errors++;
         }
       }

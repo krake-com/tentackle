@@ -196,7 +196,7 @@ public class OperationMojo extends AbstractWizardMojo {
             Fx.show(stage);
           }
           catch (Throwable t) {
-            getLog().error(t);
+            getLogger().error(t.getMessage(), t);
             latch.countDown();
           }
         });
@@ -240,7 +240,7 @@ public class OperationMojo extends AbstractWizardMojo {
       throw new MojoExecutionException("operationName must not be empty");
     }
     OperationProfile profile = selectProfile(operationProfiles, profileName);
-    getLog().info("generating code for operation " + name + " using profile " + profile);
+    getLogger().info("generating code for operation {} using profile {}", name, profile);
 
     OperationGenerator gen = new OperationGenerator(getModel());
     gen.setProfile(profile);
@@ -270,10 +270,10 @@ public class OperationMojo extends AbstractWizardMojo {
     }
 
     if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null) {
-      getLog().warn("no domain implementation will be generated for " + name);
+      getLogger().warn("no domain implementation will be generated for {}", name);
     }
     if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null) {
-      getLog().warn("no persistence implementation will be generated for " + name);
+      getLogger().warn("no persistence implementation will be generated for {}", name);
     }
 
     if (!overwrite) {
@@ -300,7 +300,7 @@ public class OperationMojo extends AbstractWizardMojo {
     }
 
     for (File file: gen.getTargetFiles()) {
-      getLog().info("generated " + file.getAbsolutePath());
+      getLogger().info("generated {}", file.getAbsolutePath());
     }
   }
 

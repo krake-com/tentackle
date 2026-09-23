@@ -96,7 +96,7 @@ public class RevengMojoTest {
 
   private RevengMojo createMojo(String tables) {
     RevengMojo mojo = new RevengMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
     setField(mojo, "url", URL);
     setField(mojo, "user", "sa");
@@ -158,7 +158,7 @@ public class RevengMojoTest {
 
     RecordingLog secondLog = new RecordingLog();
     RevengMojo mojo = createMojo("customer");
-    mojo.setLog(secondLog);
+    mojo.setLogger(secondLog);
     setField(mojo, "startClassId", 999); // different id -> would prove a rewrite happened
     run(mojo);
 

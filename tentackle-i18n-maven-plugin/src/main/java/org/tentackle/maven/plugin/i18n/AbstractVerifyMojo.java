@@ -144,12 +144,12 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
           bundle = verify(bundleName, locale, props);
         }
         else {
-          getLog().warn("no such properties file: " + resName);
+          getLogger().warn("no such properties file: {}", resName);
           warnings++;
         }
       }
       catch (IOException ex) {
-        getLog().error("could not load " + resName, ex);
+        getLogger().error("could not load {}", resName, ex);
         errors++;
       }
       if (bundle == null) {

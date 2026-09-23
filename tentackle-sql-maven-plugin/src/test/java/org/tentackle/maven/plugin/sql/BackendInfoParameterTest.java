@@ -76,7 +76,7 @@ public class BackendInfoParameterTest {
   public void setUp() {
     log = new RecordingLog();
     mojo = new CreateSqlMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
   }
 
   @AfterMethod

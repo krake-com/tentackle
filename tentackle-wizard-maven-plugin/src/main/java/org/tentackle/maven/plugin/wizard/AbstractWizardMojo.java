@@ -22,7 +22,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.eclipse.aether.RepositorySystem;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.ThemeUtilities;
@@ -36,7 +35,6 @@ import org.tentackle.model.ModelManager;
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.stage.Stage;
-import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -141,12 +139,6 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   private String leafLayer;
 
   /**
-   * Resolves {@link #layers}' own, independent dependencies.
-   */
-  @Inject
-  private RepositorySystem repositorySystem;
-
-  /**
    * Enables dark mode.<br>
    * If missing, the mode is determined from the desktop settings.
    */
@@ -248,15 +240,6 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Gets the repository system, used to resolve {@link #getLayers()}' own dependencies independently.
-   *
-   * @return the repository system
-   */
-  public RepositorySystem getRepositorySystem() {
-    return repositorySystem;
-  }
-
-  /**
    * Opens a scope installing {@link #getLeafLayer()}'s classloader as the thread's context
    * classloader for the duration of a goal, if {@link #isLayered()}.<br>
    * A no-op if {@link #layers} is not configured, guaranteeing the goal behaves exactly as before
@@ -274,7 +257,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     ClassLoader leafLoader = resolver.getLeafClassLoader(builtLayers);
     ClassLoader previous = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(leafLoader);
-    getLog().debug("installed leaf layer '" + leafLayer + "' as the thread's context classloader");
+    getLogger().debug("installed leaf layer '{}' as the thread's context classloader", leafLayer);
     return new LayerScope(previous);
   }
 
@@ -378,7 +361,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
         errors += processFileSet(fs);
       }
       else {
-        getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+        getLogger().warn("{} {}", modelDir.exists() ? "empty modelDir" : "no modelDir", modelDir.getAbsolutePath());
       }
     }
 
@@ -387,7 +370,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     }
 
     try {
-      getLog().info(getModel().getAllEntities().size() + " entities loaded");
+      getLogger().info("{} entities loaded", getModel().getAllEntities().size());
     }
     catch (ModelException e) {
       throw new MojoExecutionException("cannot determine entities", e);
@@ -419,7 +402,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
       getModel().loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
-      getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());
+      getLogger().error("parsing model failed in directory {}:\n{}", modelDirName, mex.getMessage());
       errors++;
     }
 
@@ -437,7 +420,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
       }
       else {
         templateDir.mkdirs();
-        getLog().info("template directory created: " + templateDir.getPath());
+        getLogger().info("template directory created: {}", templateDir.getPath());
         installTemplates();
       }
       new LayerGraphResolver(this).validateLayers();
@@ -481,7 +464,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     String text = loadResourceFileIntoString(path);
     try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
       ps.print(text);
-      getLog().info("installed " + category + "-template " + template);
+      getLogger().info("installed {}-template {}", category, template);
     }
     catch (IOException e) {
       throw new MojoExecutionException("cannot install template " + path, e);
@@ -519,7 +502,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (_, e) -> {
-      getLog().error("unhandled exception detected", e);
+      getLogger().error("unhandled exception detected", e);
       Stage stage = getStage();
       if (stage != null) {
         Platform.runLater(() -> Fx.error(stage, e.getMessage(), e));

@@ -120,7 +120,8 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
             processFileSet(fs, ps);
           }
           else {
-            getLog().info((sourceDir.exists() ? "empty" : "missing") + " source directory " + sourceDir.getAbsolutePath());
+            getLogger().info("{} source directory {}",
+                             sourceDir.exists() ? "empty" : "missing", sourceDir.getAbsolutePath());
           }
         }
       }
@@ -153,7 +154,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
     String dirName = getCanonicalPath(dir);
 
     if (verbosityLevel.isDebug()) {
-      getLog().info("processing files in " + dirName);
+      getLogger().info("processing files in {}", dirName);
     }
 
     int errorCount = 0;
@@ -163,7 +164,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
     for (String fileName : fileNames) {
       int ndx = fileName.lastIndexOf(BEANINFO_TRAILER); // convention
       if (ndx < 0) {
-        getLog().error("file " + fileName + " does not end with " + BEANINFO_TRAILER);
+        getLogger().error("file {} does not end with {}", fileName, BEANINFO_TRAILER);
         errorCount++;
         continue;
       }
@@ -171,7 +172,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
       // check if file exists
       File beanFile = new File(dir, beanInfoName + Constants.JAVA_SOURCE_EXTENSION);
       if (!beanFile.exists()) {
-        getLog().error("no matching java-file for " + fileName);
+        getLogger().error("no matching java-file for {}", fileName);
         errorCount++;
         continue;
       }
@@ -184,9 +185,8 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
       }
     }
 
-    getLog().info(getPathRelativeToBasedir(dirName) + ": " +
-                  fileNames.length + " files processed, " +
-                  errorCount + " errors");
+    getLogger().info("{}: {} files processed, {} errors",
+                     getPathRelativeToBasedir(dirName), fileNames.length, errorCount);
 
     totalErrors += errorCount;
   }

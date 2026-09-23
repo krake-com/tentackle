@@ -18,7 +18,6 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -26,6 +25,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.toolchain.Toolchain;
+import org.eclipse.aether.artifact.Artifact;
 
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.Settings;
@@ -33,6 +33,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.JavaToolFinder;
+import org.tentackle.maven.ProjectDependencies;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -345,7 +346,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
   @Override
   protected void createImage(JLinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
     if (getImageDirectory().exists()) {
-      getLog().info("using already existing jlink image in " + getImageDirectory().getPath());
+      getLogger().info("using already existing jlink image in {}", getImageDirectory().getPath());
       copyResources(result);    // to add the "conf" directory to the classpath, if resources found
     }
     else {
@@ -405,8 +406,8 @@ public class JPackageMojo extends AbstractJLinkMojo {
     if (jpackageOptions != null) {
       jpackageOptions.forEach(jpackageRunner::arg);
     }
-    getLog().debug(jpackageRunner.toString());
-    getLog().info("creating application image");
+    getLogger().debug(jpackageRunner.toString());
+    getLogger().info("creating application image");
     int errCode = jpackageRunner.run().getErrCode();
     if (errCode != 0) {
       throw new MojoExecutionException("creating application image with jpackage failed: " + errCode + "\n" + jpackageRunner.getErrorsAsString() +
@@ -420,7 +421,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     }
     String applicationName = imageDirNames[0];
     File appImageDir = new File(getPackageDirectory(), applicationName);
-    getLog().debug("application image found in " + appImageDir.getPath());
+    getLogger().debug("application image found in {}", appImageDir.getPath());
 
     ArtifactCreator.getInstance().processApplicationImage(this, appImageDir);
 
@@ -454,7 +455,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
         File modsDir = new File(configDir, MODS_DIR);
         if (modsDir.isDirectory()) {
           try {
-            getLog().debug("removing " + modsDir);
+            getLogger().debug("removing {}", modsDir);
             FileHelper.removeDirectory(modsDir.getPath());
           }
           catch (IOException e) {
@@ -492,8 +493,8 @@ public class JPackageMojo extends AbstractJLinkMojo {
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
     }
-    getLog().debug(jpackageRunner.toString());
-    getLog().info("creating installer");
+    getLogger().debug(jpackageRunner.toString());
+    getLogger().info("creating installer");
     errCode = jpackageRunner.run().getErrCode();
     if (errCode != 0) {
       throw new MojoExecutionException("creating installer with jpackage failed: " + errCode + "\n" + jpackageRunner.getErrorsAsString() +
@@ -502,7 +503,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     logToolOutput(jpackageRunner);
 
     if (isWithUpdater()) {
-      getLog().info("creating updater");
+      getLogger().info("creating updater");
       generator.generateUpdateScript(appImageDir);
       ArtifactCreator.getInstance().createAndAttachArtifact(this, appImageDir);
     }
@@ -514,11 +515,12 @@ public class JPackageMojo extends AbstractJLinkMojo {
       if (jpackageTool == null) {
         throw new MojoExecutionException("jpackageTool tool not found");
       }
-      getLog().debug("using " + jpackageTool);
+      getLogger().debug("using {}", jpackageTool);
       jpackageMajorRuntimeVersion = getMajorVersion(determineJavaToolVersion(jpackageTool));
-      getLog().debug("major version of jpackage is " + jpackageMajorRuntimeVersion);
+      getLogger().debug("major version of jpackage is {}", jpackageMajorRuntimeVersion);
       if (jpackageMajorRuntimeVersion != getJavaMajorRuntimeVersion()) {
-        getLog().warn("jpackage tool's major version " + jpackageMajorRuntimeVersion + " differs from jlink/jdeps version " + getJavaMajorRuntimeVersion());
+        getLogger().warn("jpackage tool's major version {} differs from jlink/jdeps version {}",
+                         jpackageMajorRuntimeVersion, getJavaMajorRuntimeVersion());
       }
       return true;
     }
@@ -571,7 +573,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     final boolean patchMainJar = !result.isModular();
     boolean mainJarPatched = false;
 
-    getLog().debug("patching configfile " + configFile);
+    getLogger().debug("patching configfile {}", configFile);
     StringBuilder buf = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(configFile), Settings.getEncodingCharset()))) {
       String line;
@@ -580,12 +582,12 @@ public class JPackageMojo extends AbstractJLinkMojo {
         if (patchClassPath && line.startsWith(APP_CLASSPATH)) {
           if (classPathPatched && jpackageMajorRuntimeVersion >= 15) {
             // starting with Java 15 app.classpath is used once per artifact: just ignore succeeding lines
-            getLog().debug("removed line: " + line);
+            getLogger().debug("removed line: {}", line);
             buf.setLength(buf.length() - line.length());
             continue;
           }
           // replace the classpath
-          getLog().debug("old classpath = " + line.substring(APP_CLASSPATH.length()));
+          getLogger().debug("old classpath = {}", line.substring(APP_CLASSPATH.length()));
           buf.setLength(buf.length() - line.length() + APP_CLASSPATH.length());
           buf.append(result.generateClassPath());
           classPathPatched = true;
@@ -595,7 +597,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
             throw new MojoExecutionException("more than one '" + APP_MAINJAR + "' found in " + configFile);
           }
           // replace mainjar
-          getLog().debug("old mainjar = " + line.substring(APP_MAINJAR.length()));
+          getLogger().debug("old mainjar = {}", line.substring(APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + APP_MAINJAR.length());
           buf.append(getImagePathPrefix()).append('/').append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
@@ -723,12 +725,12 @@ public class JPackageMojo extends AbstractJLinkMojo {
   private String determineMainJar(JLinkResolver.Result result) throws MojoExecutionException {
     String jarName = null;
     if (mainJar == null) {
-      jarName = result.getClassPath().getFirst().getFile().getName();
+      jarName = ProjectDependencies.getFile(result.getClassPath().getFirst()).getName();
     }
     else {
       for (Artifact artifact : result.getClassPath()) {
-        if (artifact.getFile().getName().contains(mainJar)) {
-          jarName = artifact.getFile().getName();
+        if (ProjectDependencies.getFile(artifact).getName().contains(mainJar)) {
+          jarName = ProjectDependencies.getFile(artifact).getName();
           break;
         }
       }

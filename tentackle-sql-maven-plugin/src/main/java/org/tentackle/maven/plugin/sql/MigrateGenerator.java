@@ -67,7 +67,7 @@ public class MigrateGenerator extends AbstractGenerator {
       File sqlFile = new File(getTemplateDirectory(), fileName);
       GeneratedFile generatedFile = new GeneratedFile(cfg, model, templateFile.getName(), sqlFile);
       generatedFile.generate();
-      mojo.getLog().debug("processed as template " + templateFile + " into " + sqlFile);
+      mojo.getLogger().debug("processed as template {} into {}", templateFile, sqlFile);
       templateFile.delete();
     }
     catch (IOException | TemplateException e) {

@@ -63,7 +63,7 @@ public class ScriptGenerationTest {
     targetDir = JLinkTestSupport.createDir(tempDir, "target");
 
     mojo = new TestJLinkMojo();
-    mojo.setLog(new RecordingLog());
+    mojo.setLogger(new RecordingLog());
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "mojoExecution", JLinkTestSupport.createMojoExecution("jlink", "default-jlink", "package"));
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");
@@ -207,7 +207,7 @@ public class ScriptGenerationTest {
 
   private TestJPackageMojo jpackageMojo() throws Exception {
     TestJPackageMojo jpackageMojo = new TestJPackageMojo();
-    jpackageMojo.setLog(new RecordingLog());
+    jpackageMojo.setLogger(new RecordingLog());
     JLinkTestSupport.setField(jpackageMojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(jpackageMojo, "mojoExecution",
                               JLinkTestSupport.createMojoExecution("jpackage", "default-jpackage", "package"));

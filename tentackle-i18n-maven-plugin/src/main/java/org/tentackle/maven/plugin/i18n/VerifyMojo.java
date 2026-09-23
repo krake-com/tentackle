@@ -58,7 +58,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       updates += differingTranslations.size();
-      getLog().info(buf);
+      getLogger().info(buf.toString());
     }
 
 
@@ -69,7 +69,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append('\n').append(bundle);
       }
       warnings += obsoleteBundles.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     if (!obsoleteKeys.isEmpty()) {
@@ -85,7 +85,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(bundleKey.getKey()).append("'");
       }
       warnings += obsoleteKeys.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList();
@@ -96,7 +96,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(' ').append(resourceName);
       }
       warnings += resourceNames.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     List<Translation> missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList();
@@ -113,7 +113,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       warnings += missingTrans.size();
-      getLog().warn(buf);
+      getLogger().warn(buf.toString());
     }
 
     missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList();
@@ -130,7 +130,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
         buf.append(" '").append(translation.key).append("'");
       }
       errors += missingTrans.size();
-      getLog().error(buf);
+      getLogger().error(buf.toString());
     }
   }
 

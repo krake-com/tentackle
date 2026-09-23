@@ -18,8 +18,8 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.eclipse.aether.artifact.Artifact;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -71,7 +71,7 @@ public class JLinkResolverTest {
     artifacts = new LinkedHashSet<>();
 
     mojo = new TestJLinkMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "locationManager", locationManager);
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");

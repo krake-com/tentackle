@@ -18,7 +18,7 @@
 
 package org.tentackle.maven;
 
-import org.apache.maven.plugin.logging.Log;
+import org.slf4j.Logger;
 
 import java.util.Objects;
 import java.util.logging.Handler;
@@ -27,21 +27,21 @@ import java.util.logging.LogRecord;
 
 /**
  * Log handler that redirects java.util logging to the maven logger.<br>
- * By default, all tentackle logging goes to the java util logger and the logs below WARN level
+ * By default, all tentackle logging goes to the java util logger, and the logs below WARN level
  * are not of big interest during the build.
  */
 public class MavenLogHandler extends Handler {
 
-  private final Log log;
+  private final Logger log;
   private final Level minLevel;
 
   /**
    * Creates a maven log handler.
    *
-   * @param log the maven logger
+   * @param log the logger
    * @param minLevel the minimum logging level
    */
-  public MavenLogHandler(Log log, Level minLevel) {
+  public MavenLogHandler(Logger log, Level minLevel) {
     this.log = Objects.requireNonNull(log);
     this.minLevel = Objects.requireNonNull(minLevel);
   }

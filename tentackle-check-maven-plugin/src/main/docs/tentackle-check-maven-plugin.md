@@ -30,7 +30,7 @@ from the file set rather than annotated.
 ### Prerequisites
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
-(JDK >= 25, Maven >= 3.9.10). It is platform independent. As the checks load classes and resources
+(JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). It is platform independent. As the checks load classes and resources
 from the project, they need the compile classpath resolved, which Maven does automatically for the
 `process-classes` binding.
 

@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import static org.testng.Assert.assertTrue;
 
@@ -195,10 +194,9 @@ public abstract class AbstractI18nMojoTest {
    * @return the mojo
    */
   protected <T extends AbstractI18nMojo> T configure(T mojo) {
-    mojo.setLog(log);
+    mojo.setLogger(log);
     MavenProject project = I18nTestSupport.createProject(basedir, resourceDir);
     project.getBuild().setOutputDirectory(classesDir.getPath());
-    project.setArtifacts(Set.of());    // the classpath is the project's output directory only
     I18nTestSupport.setField(mojo, "mavenProject", project);
     I18nTestSupport.setField(mojo, "url", URL);
     I18nTestSupport.setField(mojo, "user", USER);

@@ -18,18 +18,16 @@
 
 package org.tentackle.maven.plugin;
 
-import org.apache.maven.artifact.Artifact;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.ProjectBuildingRequest;
-import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
-import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolverException;
-
-import javax.inject.Inject;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.resolution.VersionRequest;
+import org.eclipse.aether.resolution.VersionResolutionException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -67,19 +65,10 @@ import java.util.Set;
       defaultPhase = LifecyclePhase.VALIDATE)
 public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
 
-  /**
-   * The artifact resolver.
-   */
-  @Inject
-  private ArtifactResolver artifactResolver;
-
-
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
     if (getMavenSession().getTopLevelProject().equals(getMavenProject())) {
-
-      ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(getMavenSession().getProjectBuildingRequest());
 
       List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
       if (allProjects.isEmpty()) {
@@ -89,23 +78,41 @@ public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
       Set<Artifact> pluginArtifacts = new HashSet<>();
 
       for (MavenProject subProject : allProjects) {
-        buildingRequest.setProject(subProject);
-
-        for (Artifact pluginArtifact : subProject.getPluginArtifacts()) {
-          try {
-            pluginArtifacts.add(artifactResolver.resolveArtifact(buildingRequest, pluginArtifact).getArtifact());
-          }
-          catch (ArtifactResolverException e) {
-            throw new MojoExecutionException("cannot resolve plugin artifact", e);
-          }
+        for (Plugin plugin : subProject.getBuildPlugins()) {
+          pluginArtifacts.add(new DefaultArtifact(plugin.getGroupId(), plugin.getArtifactId(), "jar", resolveVersion(subProject, plugin)));
         }
       }
 
       generateVersionProperties("plugins of project '" + getMavenProject().getName() + "'", pluginArtifacts);
     }
     else {
-      getLog().info("skipped");
+      getLogger().info("skipped");
     }
+  }
+
+  /**
+   * Determines the version of a plugin.<br>
+   * Usually given by the effective model, but may be missing or a meta version such as RELEASE or LATEST.
+   *
+   * @param project the project
+   * @param plugin the plugin
+   * @return the version
+   * @throws MojoExecutionException if the version cannot be resolved
+   */
+  private String resolveVersion(MavenProject project, Plugin plugin) throws MojoExecutionException {
+    String version = plugin.getVersion();
+    if (version == null || version.isBlank() || "RELEASE".equals(version) || "LATEST".equals(version)) {
+      try {
+        version = getRepositorySystem().resolveVersion(getMavenSession().getRepositorySession(),
+                new VersionRequest(new DefaultArtifact(plugin.getGroupId(), plugin.getArtifactId(), "jar",
+                                                       version == null || version.isBlank() ? "RELEASE" : version),
+                                   project.getRemotePluginRepositories(), "plugin")).getVersion();
+      }
+      catch (VersionResolutionException e) {
+        throw new MojoExecutionException("cannot resolve version of plugin " + plugin.getKey(), e);
+      }
+    }
+    return version;
   }
 
 }

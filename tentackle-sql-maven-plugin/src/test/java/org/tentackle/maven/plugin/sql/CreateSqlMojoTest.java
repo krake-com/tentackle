@@ -308,7 +308,7 @@ public class CreateSqlMojoTest {
    */
   private CreateSqlMojo configure(String modelName) {
     CreateSqlMojo mojo = new CreateSqlMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     SqlTestSupport.setField(mojo, "mavenProject", SqlTestSupport.createProject(basedir));
     SqlTestSupport.setField(mojo, "modelDir", modelDir);
     SqlTestSupport.setField(mojo, "sqlDir", sqlDir);

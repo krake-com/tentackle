@@ -18,15 +18,16 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.toolchain.Toolchain;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
+import org.eclipse.aether.artifact.Artifact;
 
 import org.tentackle.common.LayerBootstrap;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
+import org.tentackle.maven.ProjectDependencies;
 
 import java.io.File;
 import java.io.IOException;
@@ -248,7 +249,7 @@ public class JLinkResolver {
           else {
             needComma = true;
           }
-          buf.append(artifact.getFile().getName());
+          buf.append(ProjectDependencies.getFile(artifact).getName());
         }
       }
       return buf.toString();
@@ -421,7 +422,8 @@ public class JLinkResolver {
         else {
           needSep = true;
         }
-        buf.append(prefix).append(AbstractJLinkMojo.DEST_CLASSPATH).append('/').append(artifact.getFile().getName());
+        buf.append(prefix).append(AbstractJLinkMojo.DEST_CLASSPATH).append('/')
+           .append(ProjectDependencies.getFile(artifact).getName());
       }
       return buf.toString();
     }
@@ -429,7 +431,7 @@ public class JLinkResolver {
 
 
 
-  private final Set<Artifact> artifacts;                            // project's dependencies (maven artifacts)
+  private final Set<Artifact> artifacts;                            // project's dependencies (resolved artifacts)
   private final AbstractJLinkMojo mojo;                             // the jlink mojo
 
   private final Map<String, ModularArtifact> automaticModules;      // <module-name>:<artifact>
@@ -441,7 +443,7 @@ public class JLinkResolver {
    * Creates a resolver.
    *
    * @param mojo the base mojo
-   * @param artifacts the maven artifacts
+   * @param artifacts the resolved artifacts
    */
   public JLinkResolver(AbstractJLinkMojo mojo, Set<Artifact> artifacts) {
     this.artifacts = filterArtifacts(artifacts);
@@ -454,7 +456,7 @@ public class JLinkResolver {
   }
 
   /**
-   * Resolves the maven artifacts for passing to jlink.
+   * Resolves the artifacts for passing to jlink.
    *
    * @return the resolver result
    * @throws MojoExecutionException if loading artifacts failed
@@ -469,19 +471,19 @@ public class JLinkResolver {
       String moduleName = moduleDescriptor.name();
 
       if (isEmptyFxDummyArtifact(moduleDescriptor)) {
-        mojo.getLog().debug(moduleName + " is an automatic dummy javafx module -> skipped");
+        mojo.getLogger().debug("{} is an automatic dummy javafx module -> skipped", moduleName);
       }
       else if (moduleDescriptor.isAutomatic()) {
-        mojo.getLog().debug(moduleName + " is an automatic module");
+        mojo.getLogger().debug("{} is an automatic module", moduleName);
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
       else if (mojo.isClasspathDependency(artifact)) {
-        mojo.getLog().debug("full-blown module " + moduleName + " treated as an automatic module");
+        mojo.getLogger().debug("full-blown module {} treated as an automatic module", moduleName);
         // will be logged again in addToModuleOrClasspath below
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
       else if (mojo.isModulePathOnly(moduleName)) {
-        mojo.getLog().info("full-blown module " + moduleName + " moved to the module-path");
+        mojo.getLogger().info("full-blown module {} moved to the module-path", moduleName);
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
         if (mojo.isLayered() && moduleName.equals(mojo.getMainModule())) {
           // the main module is deferred off the jlink path (see AbstractJLinkMojo#isModulePathOnly),
@@ -490,19 +492,19 @@ public class JLinkResolver {
           for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
             if (requires.modifiers() == null || !requires.modifiers().contains(JavaModuleDescriptor.JavaRequires.JavaModifier.STATIC)) {
               addRequired(requires.name());
-              mojo.getLog().debug(moduleName + " requires " + requires.name());
+              mojo.getLogger().debug("{} requires {}", moduleName, requires.name());
             }
           }
         }
       }
       else {
-        mojo.getLog().debug(moduleName + " is a full-blown module");
+        mojo.getLogger().debug("{} is a full-blown module", moduleName);
         modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
         addRequired(moduleName);
         for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
           if (requires.modifiers() == null || !requires.modifiers().contains(JavaModuleDescriptor.JavaRequires.JavaModifier.STATIC)) {
             addRequired(requires.name());
-            mojo.getLog().debug(moduleName + " requires " + requires.name());
+            mojo.getLogger().debug("{} requires {}", moduleName, requires.name());
           }
         }
       }
@@ -521,7 +523,7 @@ public class JLinkResolver {
     result.setModular(isModularApplication());
 
     if (result.isModular()) {
-      mojo.getLog().debug("building a modular application");
+      mojo.getLogger().debug("building a modular application");
       // check if real modules meet all requirements.
       // this is the only way to use jlink for application modules.
       Set<ModularArtifact> unresolvedModules = new LinkedHashSet<>();
@@ -536,7 +538,7 @@ public class JLinkResolver {
       }
 
       if (unresolvedModules.isEmpty() && !mojo.isModulePathOnly()) {
-        mojo.getLog().debug("YEAH! can build a full-blown modular application!");
+        mojo.getLogger().debug("YEAH! can build a full-blown modular application!");
         result.addJlinkModules(modules.values());
         result.setPlainModular(true);
       }
@@ -552,14 +554,14 @@ public class JLinkResolver {
             String msg = "required " + unresolvedModule + " is not a full-blown module";
             if (Boolean.TRUE.equals(failOnAutomaticRequired)) {
               failDueToAutomaticRequired = true;
-              mojo.getLog().error(msg);
+              mojo.getLogger().error(msg);
             }
             else {
               if (failOnAutomaticRequired == null) {
-                mojo.getLog().warn(msg);
+                mojo.getLogger().warn(msg);
               }
               else {
-                mojo.getLog().info(msg);
+                mojo.getLogger().info(msg);
               }
             }
             if (mojo.isLayered()) {
@@ -574,7 +576,7 @@ public class JLinkResolver {
         if (failDueToAutomaticRequired) {
           throw new MojoExecutionException("required automatic modules found");
         }
-        mojo.getLog().warn("linking runtime modules only: project dependencies moved to the module-path");
+        mojo.getLogger().warn("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
         for (ModularArtifact artifact: modules.values()) {
           addToModuleOrClasspath(artifact, result);
@@ -582,7 +584,7 @@ public class JLinkResolver {
       }
     }
     else {
-      mojo.getLog().debug("building a classpath application");
+      mojo.getLogger().debug("building a classpath application");
       result.addRuntimeModuleNames(runtimeModules);
       for (Artifact artifact: artifacts) {
         result.addToClassPath(artifact);
@@ -630,7 +632,7 @@ public class JLinkResolver {
   private Set<Artifact> filterArtifacts(Set<Artifact> artifacts) {
     Set<Artifact> filteredArtifacts = new LinkedHashSet<>();    // keep order
     for (Artifact artifact : artifacts) {
-      if (!"pom".equals(artifact.getType())) {
+      if (!"pom".equals(artifact.getExtension())) {
         // skip BOM/POM files (their deps are included in the artifact list)
         filteredArtifacts.add(artifact);
       }
@@ -642,7 +644,7 @@ public class JLinkResolver {
     // build file to the artifact map
     Map<File, Artifact> artifactMap = new LinkedHashMap<>();  // keep order
     for (Artifact artifact: artifacts) {
-      File artifactFile = artifact.getFile();
+      File artifactFile = ProjectDependencies.getFile(artifact);
       artifactMap.put(artifactFile, artifact);
     }
 
@@ -657,7 +659,7 @@ public class JLinkResolver {
     }
     catch (MojoExecutionException mx) {
       // don't abort, just continue with the current JDK and hope for the best
-      mojo.getLog().warn(mx.getMessage());
+      mojo.getLogger().warn(mx.getMessage());
     }
 
     Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();    // keep order
@@ -669,7 +671,7 @@ public class JLinkResolver {
         if (descriptor == null) {
           // there are cases that the descriptor is null for old artifacts with Java > 11.0.2
           String name = mojo.toDescriptorName(file);
-          mojo.getLog().warn("missing descriptor for " + file + " -> creating default descriptor '" + name + "'");
+          mojo.getLogger().warn("missing descriptor for {} -> creating default descriptor '{}'", file, name);
           descriptor = JavaModuleDescriptor.newAutomaticModule(name).build();
         }
         if (descriptor.name() != null && descriptor.name().length() > maxNameLength) {
@@ -691,20 +693,20 @@ public class JLinkResolver {
       JavaModuleDescriptor moduleDescriptor = artifactJavaModuleDescriptorMap.get(artifact);
       if (moduleDescriptor != null) {
         if (isEmptyFxDummyArtifact(moduleDescriptor)) {
-          mojo.getLog().debug("empty dummy FX artifact " + moduleDescriptor.name() + " skipped");
+          mojo.getLogger().debug("empty dummy FX artifact {} skipped", moduleDescriptor.name());
         }
         else {
           if (moduleDescriptor.isAutomatic()) {
-            mojo.getLog().info(String.format("automatic module   %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
+            mojo.getLogger().info(String.format("automatic module   %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
             runJdeps(artifact);
           }
           else {
-            mojo.getLog().info(String.format("full-blown module  %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
+            mojo.getLogger().info(String.format("full-blown module  %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
           }
         }
       }
       else {
-        mojo.getLog().info(String.format("artifact           %-" + maxNameLength + "s  %s", "", artifact));
+        mojo.getLogger().info(String.format("artifact           %-" + maxNameLength + "s  %s", "", artifact));
         runJdeps(artifact);
       }
     }
@@ -732,13 +734,13 @@ public class JLinkResolver {
 
     if (lines == null) {
       ToolRunner runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
-                                                             .arg(artifact.getFile()).run();
+                                                             .arg(ProjectDependencies.getFile(artifact)).run();
       int errCode = runner.getErrCode();
       if (errCode != 0) {
         if (runner.getOutputAsString().contains("multi-release")) {
           runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
                                                       .arg("--multi-release").arg(mojo.getJavaMajorRuntimeVersion())
-                                                      .arg(artifact.getFile()).run();
+                                                      .arg(ProjectDependencies.getFile(artifact)).run();
           errCode = runner.getErrCode();
         }
         if (errCode != 0) {
@@ -755,7 +757,7 @@ public class JLinkResolver {
     for (String line : lines) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
-        mojo.getLog().debug(artifact + " (non-module): " + line);
+        mojo.getLogger().debug("{} (non-module): {}", artifact, line);
         addRequired(line);
       }
     }
@@ -769,7 +771,7 @@ public class JLinkResolver {
     }
 
     if (mojo.getExcludeModules().contains(moduleName)) {
-      mojo.getLog().debug("module " + moduleName + " excluded");
+      mojo.getLogger().debug("module {} excluded", moduleName);
     }
     else {
       if (moduleName.startsWith("java.") || moduleName.startsWith("jdk.")) {
@@ -788,14 +790,14 @@ public class JLinkResolver {
       result.addToClassPath(artifact.getArtifact());
     }
     else if (mojo.isClasspathDependency(artifact.getArtifact())) {
-      mojo.getLog().info("artifact " + artifact + " moved to the class-path");
+      mojo.getLogger().info("artifact {} moved to the class-path", artifact);
       result.addToClassPath(artifact.getArtifact());
     }
     else if (mojo.isLayered() && !BOOTSTRAP_MODULE_NAME.equals(artifact.getModuleName())) {
       // never share the boot layer's own module-path with the leaf layer's ModuleLayer (see ModuleLayerBuilder):
       // everything except the bootstrap module itself must be resolved independently by the leaf layer,
       // so that a sibling layer holding a different version of the same module stays possible
-      mojo.getLog().debug("artifact " + artifact + " moved to the leaf layer's own module-path");
+      mojo.getLogger().debug("artifact {} moved to the leaf layer's own module-path", artifact);
       result.addToLeafModulePath(artifact);
     }
     else {

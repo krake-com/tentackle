@@ -69,7 +69,7 @@ public class BeanInfoMojoTest {
     manifestDir = new File(basedir, "target" + File.separator + "manifest");
     log = new RecordingLog();
     mojo = new BeanInfoMojo();
-    mojo.setLog(log);
+    mojo.setLogger(log);
     setField(mojo, "mavenProject", createProject(basedir));
     setField(mojo, "sourceDir", sourceDir);
     setField(mojo, "manifestDirectory", manifestDir.getPath());

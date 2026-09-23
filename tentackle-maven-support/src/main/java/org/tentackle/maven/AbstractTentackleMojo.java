@@ -31,22 +31,20 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.apache.maven.toolchain.java.JavaToolchainImpl;
+import org.eclipse.aether.RepositorySystem;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wurbelizer.misc.Verbosity;
-
-import javax.inject.Inject;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.ToolRunner;
 
+import javax.inject.Inject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
@@ -131,6 +129,13 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Inject
   private ToolchainManager toolchainManager;
 
+  /**
+   * The Maven Resolver's repository system.<br>
+   * Used to collect and resolve dependencies via the {@code org.eclipse.aether} API.
+   */
+  @Inject
+  private RepositorySystem repositorySystem;
+
 
   /**
    * The verbosity.<br>
@@ -180,13 +185,43 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   private JavaToolFinder toolFinder;
 
+  /**
+   * The logger.
+   */
+  private Logger logger;
+
+
+  /**
+   * Gets the logger.<br>
+   * Plugins use SLF4J, which is provided by Maven 3 and Maven 4, instead of the deprecated
+   * {@code AbstractMojo.getLog()}.
+   *
+   * @return the logger, never null
+   */
+  public Logger getLogger() {
+    if (logger == null) {
+      logger = LoggerFactory.getLogger(getClass());
+    }
+    return logger;
+  }
+
+  /**
+   * Sets the logger.<br>
+   * Only needed to capture the log output, for example in tests.
+   *
+   * @param logger the logger, null to use the default logger
+   */
+  public void setLogger(Logger logger) {
+    this.logger = logger;
+  }
 
   /**
    * Installs a java.util log handler that redirects to the maven logger.
    */
   public void installJavaLoggingHandler() {
     LogManager.getLogManager().reset();
-    LogManager.getLogManager().getLogger("").addHandler(new MavenLogHandler(getLog(), Level.parse(minLogLevel)));
+    LogManager.getLogManager().getLogger("")
+              .addHandler(new MavenLogHandler(getLogger(), Level.parse(minLogLevel)));
   }
 
   /**
@@ -235,6 +270,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
+   * Gets the repository system of the Maven Resolver.
+   *
+   * @return the repository system, never null
+   */
+  public RepositorySystem getRepositorySystem() {
+    return repositorySystem;
+  }
+
+  /**
    * Gets the toolchain manager.
    *
    * @return the manager, never null
@@ -262,15 +306,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @throws MojoExecutionException if loading the toolchain failed
    */
   public Toolchain getToolchain(String type, Map<String, String> selector) throws MojoExecutionException {
-    try {
-      Method method = toolchainManager.getClass().getMethod("getToolchains", MavenSession.class, String.class, Map.class);
-      @SuppressWarnings("unchecked")
-      List<Toolchain> toolchains = (List<Toolchain>) method.invoke(toolchainManager, mavenSession, type, selector);
-      return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
-    }
-    catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      throw new MojoExecutionException("loading toolchain failed for type=" + type + ", selector=" + selector, e);
-    }
+    List<Toolchain> toolchains = toolchainManager.getToolchains(mavenSession, type, selector);
+    return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
   }
 
   /**
@@ -298,7 +335,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       toolchain = toolchainManager.getToolchainFromBuildContext(type, mavenSession);
     }
 
-    if (getLog().isDebugEnabled()) {
+    if (getLogger().isDebugEnabled()) {
       StringBuilder buf = new StringBuilder();
       buf.append("using ");
       if (toolchain == null) {
@@ -308,7 +345,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       if (toolchain != null) {
         buf.append(": ").append(toolchain);
       }
-      getLog().debug(buf);
+      getLogger().debug(buf.toString());
     }
 
     return toolchain;
@@ -317,24 +354,20 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Gets the java home directory from a toolchain.
    *
-   * @param toolchain the toolchain
-   * @return the java home directory, null if not a {@link JavaToolchainImpl} or undefined by the toolchain
-   * @throws MojoExecutionException if the given directory does not exist or is not a directory
+   * @param toolchain the toolchain; may be null
+   * @return the java home directory, null if no toolchain or not a {@value #JDK_TOOLCHAIN} toolchain
+   * @throws MojoExecutionException if the toolchain is a {@value #JDK_TOOLCHAIN} toolchain, but its java home
+   *         does not exist or is not a directory
    */
   public File getJavaHome(Toolchain toolchain) throws MojoExecutionException {
-    if (toolchain instanceof JavaToolchainImpl javaToolchain) {
-      String javaHome = javaToolchain.getJavaHome();
-      if (javaHome != null && !javaHome.isBlank()) {
-        File javaHomeDir = new File(javaHome);
-        if (javaHomeDir.isDirectory()) {
-          return javaHomeDir;
-        }
-        else {
-          throw new MojoExecutionException("JAVA_HOME=" + javaHomeDir.getAbsolutePath() +
-                                           " given by toolchain " + toolchain.getType() +
-                                           " does not exist or is not a directory");
-        }
+    if (toolchain != null && JDK_TOOLCHAIN.equals(toolchain.getType())) {
+      String javaTool = toolchain.findTool("java");
+      File javaHomeDir = javaTool == null ? null : new File(javaTool).getAbsoluteFile().getParentFile().getParentFile();
+      if (javaHomeDir == null || !javaHomeDir.isDirectory()) {
+        throw new MojoExecutionException("JAVA_HOME given by toolchain " + toolchain +
+                                         " does not exist or is not a directory");
       }
+      return javaHomeDir;
     }
     return null;
   }
@@ -425,8 +458,19 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     }
     else  {
       // use maven's global setting
-      verbosityLevel = getLog().isDebugEnabled() ? Verbosity.DEBUG : Verbosity.DEFAULT;
+      verbosityLevel = getLogger().isDebugEnabled() ? Verbosity.DEBUG : Verbosity.DEFAULT;
     }
+  }
+
+  /**
+   * Gets the base directory of the project.<br>
+   * This is the directory containing the pom.xml.
+   *
+   * @return the base directory, null if the project has no pom file
+   */
+  public File getBaseDir() {
+    File pomFile = mavenProject.getFile();
+    return pomFile == null ? null : pomFile.getAbsoluteFile().getParentFile();
   }
 
   /**
@@ -437,7 +481,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @return the shortened path
    */
   public String getPathRelativeToBasedir(String path) {
-    String basePath = mavenProject.getBasedir().getAbsolutePath();
+    String basePath = getBaseDir().getAbsolutePath();
     while (!basePath.isEmpty()) {
       if (path.startsWith(basePath)) {
         int len = basePath.lastIndexOf(File.separatorChar);
@@ -475,7 +519,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
         if (resource != null) {
           String name = resource.getDirectory();
           if (name != null) {
-            getLog().debug("found resource directory " + name);
+            getLogger().debug("found resource directory {}", name);
             dirs.add(name);
           }
         }
@@ -678,14 +722,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   protected boolean validate() throws MojoExecutionException {
     determineEncoding();
     determineVerbosity();
-    if (mavenProject.getBasedir() == null) {
+    if (getBaseDir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
     }
     if (skip == null && isSkippedByDefault()) {
       skip = true;    // nothing to do here
     }
     if (Boolean.TRUE.equals(skip)) {
-      getLog().info("skipped");
+      getLogger().info("skipped");
       return false;
     }
     return true;
@@ -712,10 +756,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     for (MavenProject project : projects) {
       List<String> paths;
       if (resourceRoots) {
-        paths = project.getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
+        paths = project.getBuild().getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
       }
       else {
-        paths = project.getCompileSourceRoots();
+        paths = getCompileSourceRoots(project);
       }
       for (String path : paths) {
         for (PackageInfo info : getPackages(project, path)) {
@@ -759,6 +803,20 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return map;
   }
 
+
+  /**
+   * Gets the compile source roots of a project.<br>
+   * Maven 4 deprecates {@link MavenProject#getCompileSourceRoots()} in favor of a source-root API that
+   * doesn't exist in Maven 3. As long as Maven 3 is supported, this is the only way to get all roots,
+   * including the ones added by other plugins (generated sources).
+   *
+   * @param project the project
+   * @return the source root paths
+   */
+  @SuppressWarnings("deprecation")
+  private List<String> getCompileSourceRoots(MavenProject project) {
+    return project.getCompileSourceRoots();
+  }
 
   private List<PackageInfo> getPackages(MavenProject project, String dirName) {
     List<PackageInfo> packages = new ArrayList<>();

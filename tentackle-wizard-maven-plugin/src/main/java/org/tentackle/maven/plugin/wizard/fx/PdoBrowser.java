@@ -181,7 +181,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           Platform.runLater(() -> browser.setupForPdo(new PdoWrapper(dataObj.getPdo())));
         }
         catch (MojoExecutionException mx) {
-          mojo.getLog().error(mx);
+          mojo.getLogger().error(mx.getMessage(), mx);
         }
       }
     });
@@ -692,7 +692,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
     }
     catch (MojoExecutionException mx) {
-      mojo.getLog().error(mx);
+      mojo.getLogger().error(mx.getMessage(), mx);
     }
   }
 

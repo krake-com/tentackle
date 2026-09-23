@@ -100,13 +100,13 @@ public class AbstractCheckMojo extends AbstractTentackleAnnotationProcessingMojo
             bundleLocales.add(bundleLocale);
           }
           else {
-            getLog().warn("no such locale: " + localeName);
+            getLogger().warn("no such locale: {}", localeName);
           }
         }
       }
       if (bundleLocales.isEmpty()) {
         Locale bundleLocale = Locale.getDefault();
-        getLog().warn("fallback to default locale " + bundleLocale);
+        getLogger().warn("fallback to default locale {}", bundleLocale);
         bundleLocales.add(bundleLocale);
       }
 
@@ -121,7 +121,7 @@ public class AbstractCheckMojo extends AbstractTentackleAnnotationProcessingMojo
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (skipTests) {
-      getLog().info("tests are skipped");
+      getLogger().info("tests are skipped");
       return false;
     }
     return super.validate();

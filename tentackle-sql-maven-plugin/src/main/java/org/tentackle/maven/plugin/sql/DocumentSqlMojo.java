@@ -191,11 +191,11 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
           loadDirectory(model, modelDir.getPath());
         }
         else {
-          getLog().warn("empty modelDir " + modelDir.getAbsolutePath());
+          getLogger().warn("empty modelDir {}", modelDir.getAbsolutePath());
         }
       }
       else {
-        getLog().warn("no modelDir " + modelDir.getAbsolutePath());
+        getLogger().warn("no modelDir {}", modelDir.getAbsolutePath());
       }
 
       if (loadModelFromClassPath) {
@@ -215,7 +215,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
     }
 
     if (backends.isEmpty()) {
-      getLog().warn("no backends configured (see tentackle.backendNames) - nothing to document");
+      getLogger().warn("no backends configured (see tentackle.backendNames) - nothing to document");
       return;
     }
 
@@ -234,7 +234,8 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("writing the HTML pages for backend " + backend.getName() + " failed", iox);
       }
 
-      getLog().info(entities.size() + " entity page(s) created in " + getPathRelativeToBasedir(backendHtmlDir.getAbsolutePath()));
+      getLogger().info("{} entity page(s) created in {}",
+                       entities.size(), getPathRelativeToBasedir(backendHtmlDir.getAbsolutePath()));
     }
   }
 
@@ -242,7 +243,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
   private void loadDirectory(Model model, String dirName) throws MojoExecutionException, ModelException {
     String canonicalDirName = getCanonicalPath(new File(dirName));
     if (verbosityLevel.isDebug()) {
-      getLog().info("processing files in " + canonicalDirName);
+      getLogger().info("processing files in {}", canonicalDirName);
     }
     model.loadFromDirectory(canonicalDirName, true);
   }

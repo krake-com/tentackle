@@ -86,7 +86,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     for (BundleKey key: bundleScanner.getBundleKeys()) {
       String bundleName = ReflectionHelper.getOutermostClassName(key.getBundleName());
       if (usedBundleNames.add(bundleName) && verbosityLevel.isDebug()) {
-        getLog().info("bundle " + bundleName + " is referenced");
+        getLogger().info("bundle {} is referenced", bundleName);
       }
     }
 
@@ -109,13 +109,13 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
           try {
             ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
             if (verbosityLevel.isDebug()) {
-              getLog().info("loaded bundle " + bundleName + ", locale " + bundleLocale +
-                            ", annotated in class " + bundleSupport.getClassName());
+              getLogger().info("loaded bundle {}, locale {}, annotated in class {}",
+                      bundleName, bundleLocale, bundleSupport.getClassName());
             }
             bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
           }
           catch (RuntimeException rex) {
-            getLog().error("could not load bundle " + bundleName + ": " + rex.getMessage());
+            getLogger().error("could not load bundle {}: {}", bundleName, rex.getMessage());
           }
         }
       }
@@ -131,7 +131,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       for (Locale bundleLocale: bundleLocales) {
         ResourceBundle bundle = bundleMap.get(new NameKey(bundleLocale, bundleName));
         if (bundle == null) {
-          getLog().error("bundle " + bundleName + " not registered by annotation");
+          getLogger().error("bundle {} not registered by annotation", bundleName);
           errors++;
         }
         else {
@@ -139,7 +139,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
             bundle.getString(key.getKey());
           }
           catch (MissingResourceException mx) {
-            getLog().error("missing resource " + key + " for " + bundleLocale);
+            getLogger().error("missing resource {} for {}", key, bundleLocale);
             errors++;
           }
         }
@@ -156,7 +156,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
         NameKey nameKey = new NameKey(bundleLocale, bundleName);
         ResourceBundle bundle = bundleMap.get(nameKey);
         if (bundle == null) {
-          getLog().error("no bundle " + bundleName + " for " + bundleLocale);
+          getLogger().error("no bundle {} for {}", bundleName, bundleLocale);
           errors++;
         }
         else {
@@ -167,13 +167,13 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
             Set<String> bundleKeys = bundle.keySet();
             for (String key: keys) {
               if (!bundleKeys.contains(key)) {
-                getLog().error("key '" + key + "' missing in " + nameKey);
+                getLogger().error("key '{}' missing in {}", key, nameKey);
                 errors++;
               }
             }
             for (String key: bundle.keySet()) {
               if (!keys.contains(key)) {
-                getLog().error("key '" + key + "' for " + bundleLocale + " not defined in all locales of " + bundleName);
+                getLogger().error("key '{}' for {} not defined in all locales of {}", key, bundleLocale, bundleName);
                 errors++;
               }
             }
@@ -196,11 +196,11 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
 
     if (errors > 0) {
       msg += errors + " errors";
-      getLog().error(msg);
+      getLogger().error(msg);
       throw new MojoExecutionException(msg);
     }
     else {
-      getLog().info(msg + "no errors");
+      getLogger().info(msg + "no errors");
     }
   }
 

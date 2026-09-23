@@ -18,24 +18,17 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
-import org.eclipse.aether.resolution.DependencyResult;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.maven.LayerDependencyResolver;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Resolves the independent dependency sets of {@link AbstractJLinkMojo#getLayers()} and writes both
@@ -93,7 +86,7 @@ public class LayerResolver {
           throw new MojoExecutionException("copying " + file + " to " + layerDir + " failed", ex);
         }
       }
-      mojo.getLog().info("layer '" + layer.getName() + "' resolved into " + layerDir);
+      mojo.getLogger().info("layer '{}' resolved into {}", layer.getName(), layerDir);
     }
   }
 
@@ -187,35 +180,13 @@ public class LayerResolver {
    * @throws MojoExecutionException if resolution failed
    */
   private List<File> resolveLayerArtifacts(Layer layer) throws MojoExecutionException {
-    CollectRequest collectRequest = new CollectRequest();
-    collectRequest.setDependencies(layer.getDependencies().stream()
-            .map(LayerResolver::toAetherDependency).collect(Collectors.toList()));
-    collectRequest.setRepositories(mojo.getMavenProject().getRemoteProjectRepositories());
-
-    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, null);
-
-    DependencyResult dependencyResult;
     try {
-      dependencyResult = mojo.getRepositorySystem().resolveDependencies(
-              mojo.getMavenSession().getRepositorySession(), dependencyRequest);
+      return LayerDependencyResolver.resolve(mojo.getRepositorySystem(), mojo.getMavenSession().getRepositorySession(),
+                                             mojo.getMavenProject().getRemoteProjectRepositories(), layer.getDependencies());
     }
     catch (DependencyResolutionException ex) {
       throw new MojoExecutionException("resolving layer '" + layer.getName() + "' failed", ex);
     }
-
-    List<File> files = new ArrayList<>();
-    for (ArtifactResult artifactResult : dependencyResult.getArtifactResults()) {
-      files.add(artifactResult.getArtifact().getFile());
-    }
-    return files;
-  }
-
-  private static org.eclipse.aether.graph.Dependency toAetherDependency(Dependency dependency) {
-    String type = dependency.getType() == null || dependency.getType().isBlank() ? "jar" : dependency.getType();
-    String classifier = dependency.getClassifier() == null ? "" : dependency.getClassifier();
-    DefaultArtifact artifact = new DefaultArtifact(
-            dependency.getGroupId(), dependency.getArtifactId(), classifier, type, dependency.getVersion());
-    return new org.eclipse.aether.graph.Dependency(artifact, "runtime");
   }
 
 }

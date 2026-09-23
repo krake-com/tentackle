@@ -54,12 +54,12 @@ public class PushMojo extends AbstractI18nMojo {
         push(bundleName, locale, props);
       }
       else {
-        getLog().warn("no such resource: " + resourceName);
+        getLogger().warn("no such resource: {}", resourceName);
         warnings++;
       }
     }
     catch (IOException ex) {
-      getLog().error("could not load " + resourceName, ex);
+      getLogger().error("could not load {}", resourceName, ex);
       errors++;
     }
   }

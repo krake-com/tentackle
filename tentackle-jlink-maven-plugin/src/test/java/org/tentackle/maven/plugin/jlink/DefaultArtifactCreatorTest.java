@@ -209,7 +209,7 @@ public class DefaultArtifactCreatorTest {
   }
 
   private void prepare(AbstractJLinkMojo mojo) {
-    mojo.setLog(new RecordingLog());
+    mojo.setLogger(new RecordingLog());
     JLinkTestSupport.setField(mojo, "mavenProject", JLinkTestSupport.createProject(tempDir));
     JLinkTestSupport.setField(mojo, "mainClass", "com.example.Main");
     JLinkTestSupport.setField(mojo, "finalName", "app-1.2.3-SNAPSHOT");
