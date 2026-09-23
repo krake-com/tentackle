@@ -44,8 +44,12 @@ public class GroovyLanguage extends AbstractScriptingLanguage {
   /** the single groovy classloader. */
   private final GroovyClassLoader groovyClassLoader;
 
+  /**
+   * Creates the groovy language.
+   */
   public GroovyLanguage() {
-    groovyClassLoader = new GroovyClassLoader(getClass().getClassLoader());
+    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+    groovyClassLoader = new GroovyClassLoader(contextClassLoader != null ? contextClassLoader : getClass().getClassLoader());
   }
 
   @Override

@@ -126,7 +126,14 @@ public class BrowseMojo extends AbstractWizardMojo {
 
 
   @Override
+  @SuppressWarnings("try")
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    try (LayerScope ignored = openLayerScope()) {
+      executeLayered();
+    }
+  }
+
+  private void executeLayered() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
     AbstractDataType.maxLinesInLiteral = maxLinesInStringLiteral;
     EncryptedProperties props = PropertiesUtilities.getInstance().create();

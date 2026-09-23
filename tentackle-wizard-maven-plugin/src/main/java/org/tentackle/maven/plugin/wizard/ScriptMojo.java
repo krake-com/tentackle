@@ -135,7 +135,14 @@ public class ScriptMojo extends AbstractWizardMojo {
 
 
   @Override
+  @SuppressWarnings("try")
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    try (LayerScope ignored = openLayerScope()) {
+      executeLayered();
+    }
+  }
+
+  private void executeLayered() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
     EncryptedProperties props = PropertiesUtilities.getInstance().create();
     props.setProperty(Constants.BACKEND_URL, url);
@@ -221,7 +228,7 @@ public class ScriptMojo extends AbstractWizardMojo {
    * The preferences are per user and project, since they refer to files
    * belonging to the project the goal runs in.
    *
-   * @return the preferences node
+   * @return the preference node
    */
   public Preferences getPreferences() {
     return Preferences.userNodeForPackage(ScriptMojo.class).node(getMavenProject().getArtifactId());

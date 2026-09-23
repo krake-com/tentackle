@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
+import org.eclipse.aether.RepositorySystem;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.ThemeUtilities;
@@ -35,12 +36,15 @@ import org.tentackle.model.ModelManager;
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.stage.Stage;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base wizard mojo.
@@ -108,6 +112,39 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "true")
   private boolean loadModelFromDependencies;
+
+  /**
+   * Named, isolated {@code ModuleLayer}s for dependencies that must run isolated from each other -
+   * typically because two of them need different, otherwise conflicting versions of the same module,
+   * or because the application itself is built with module layers.
+   * <p>
+   * If empty (the default), the goal runs exactly as without this feature at all: against the plain
+   * plugin classpath (populated the usual way, by declaring the application's dependencies as
+   * {@code <dependency>} elements of this plugin). If not empty, this plugin builds the configured
+   * {@code ModuleLayer} graph at goal-execution time and installs the {@link #leafLayer}'s classloader
+   * as the thread's context classloader for the duration of the goal - which is what every existing,
+   * layer-unaware {@code ServiceFactory.getServiceFinder()}/{@code Model.loadFromResources()} call
+   * (and, for {@code browse}/{@code script}, the application's own domain/PDO/persistence classes)
+   * transparently resolves from. See the {@code layers.md} documentation.
+   *
+   * @see #leafLayer
+   */
+  @Parameter
+  private List<Layer> layers;
+
+  /**
+   * The name of the layer holding the application's own PDO/domain/persistence classes, i.e. the
+   * layer whose classloader is installed as the thread's context classloader while the goal runs.
+   * Required if {@link #layers} is not empty and must match the {@code name} of one of them.
+   */
+  @Parameter
+  private String leafLayer;
+
+  /**
+   * Resolves {@link #layers}' own, independent dependencies.
+   */
+  @Inject
+  private RepositorySystem repositorySystem;
 
   /**
    * Enables dark mode.<br>
@@ -181,6 +218,86 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    */
   public File getStatusDir() {
     return statusDir;
+  }
+
+  /**
+   * Gets the configured isolated module layers.
+   *
+   * @return the layers, never null
+   */
+  public List<Layer> getLayers() {
+    return layers == null ? Collections.emptyList() : layers;
+  }
+
+  /**
+   * Returns whether this goal runs against an isolated module layer graph.
+   *
+   * @return true if {@link #getLayers()} is not empty
+   */
+  public boolean isLayered() {
+    return !getLayers().isEmpty();
+  }
+
+  /**
+   * Gets the name of the layer holding the application's own PDO/domain/persistence classes.
+   *
+   * @return the leaf layer name, null if not {@link #isLayered()}
+   */
+  public String getLeafLayer() {
+    return leafLayer;
+  }
+
+  /**
+   * Gets the repository system, used to resolve {@link #getLayers()}' own dependencies independently.
+   *
+   * @return the repository system
+   */
+  public RepositorySystem getRepositorySystem() {
+    return repositorySystem;
+  }
+
+  /**
+   * Opens a scope installing {@link #getLeafLayer()}'s classloader as the thread's context
+   * classloader for the duration of a goal, if {@link #isLayered()}.<br>
+   * A no-op if {@link #layers} is not configured, guaranteeing the goal behaves exactly as before
+   * this feature existed: no layer graph is built and the thread's context classloader is left alone.
+   *
+   * @return the scope, to be closed (e.g. via try-with-resources) once the goal has finished
+   * @throws MojoExecutionException if the layer graph could not be built
+   */
+  protected LayerScope openLayerScope() throws MojoExecutionException {
+    if (!isLayered()) {
+      return LayerScope.NOOP;
+    }
+    LayerGraphResolver resolver = new LayerGraphResolver(this);
+    Map<String, ModuleLayer> builtLayers = resolver.build();
+    ClassLoader leafLoader = resolver.getLeafClassLoader(builtLayers);
+    ClassLoader previous = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(leafLoader);
+    getLog().debug("installed leaf layer '" + leafLayer + "' as the thread's context classloader");
+    return new LayerScope(previous);
+  }
+
+  /**
+   * Restores the thread's context classloader that was active before {@link #openLayerScope()}.
+   */
+  protected static final class LayerScope implements AutoCloseable {
+
+    private static final LayerScope NOOP = new LayerScope(null);
+
+    private final ClassLoader previous;
+
+    private LayerScope(ClassLoader previous) {
+      this.previous = previous;
+    }
+
+    @Override
+    public void close() {
+      if (previous != null) {
+        Thread.currentThread().setContextClassLoader(previous);
+      }
+    }
+
   }
 
   @Override
@@ -323,6 +440,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
         getLog().info("template directory created: " + templateDir.getPath());
         installTemplates();
       }
+      new LayerGraphResolver(this).validateLayers();
       return true;
     }
     return false;

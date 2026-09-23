@@ -11,9 +11,13 @@ one of them has to lose, or the whole dependency has to be shaded/relocated.
 module graph, parented on another layer (usually the boot layer), so a *sibling* layer can define a
 module of the same name without the two ever colliding — as long as nothing needs to read both at
 once. Tentackle wraps this in a small, declarative API (`LayerSpec`, `LayerGraphSpec`,
-`ModuleLayerBuilder`, `LayerBootstrap`) plus [`tentackle-jlink-maven-plugin`](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
-support, so that isolating a dependency is a matter of Maven configuration rather than hand-written
-`ModuleLayer` plumbing.
+`ModuleLayerBuilder`, `LayerBootstrap`) so that isolating a dependency is a matter of Maven
+configuration rather than hand-written `ModuleLayer` plumbing. Two plugins build on it, in two
+different ways: [`tentackle-jlink-maven-plugin`](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+resolves and launches a layer graph for a *packaged* application, in a separate process, via
+`LayerBootstrap`; [`tentackle-wizard-maven-plugin`](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
+builds the same kind of graph *in-process*, at goal-execution time, for goals that run application
+code directly inside the Maven build itself (see "Running In-Process" below).
 
 This is new, additive ground: an application with no `<layers>` configured behaves exactly as
 before — the classes described here are simply never touched.
@@ -172,6 +176,35 @@ leaf.mainClass=com.example.app.Main
 service providers via their respective `ModuleLayer`s, each of which independently reads its own
 version of `some.lib` from its own parent. Neither sibling ever sees the other's version.
 
+## Running In-Process — the Wizard Plugin
+
+`LayerBootstrap` is the right shape for a *packaged* application: something has to build the layer
+graph before `java -p <modulepath> -m module/Main` even starts, and a separate bootstrap process is
+the only way to do that ahead of the real main class. But not every consumer of `<layers>` launches a
+separate process at all. `tentackle-wizard-maven-plugin`'s `browse` and `script` goals run application
+code — `Pdo.createSession(...)`, then real domain/PDO/persistence classes — directly inside the Maven
+build's own JVM, and its other goals load the model the same, TCCL-driven way `LayerBootstrap`
+does. For these, building the layer graph and handing off to a separate `LayerBootstrap` process would
+be pure overhead: the mojo already *is* the process the leaf layer needs to run in.
+
+So instead of writing a `layers.properties` file and launching `LayerBootstrap`, the wizard plugin:
+
+1. resolves each configured layer's dependencies via Aether, the same way at build time as
+   `tentackle-jlink-maven-plugin`'s `LayerResolver` does, but skips the "copy into a distributable
+   image's module-path directories" step entirely — `ModuleFinder.of(Path...)` accepts individual
+   modular jar files just as well as directories, so the resolved local-repository jars are handed to
+   `LayerSpec` directly;
+2. calls `ModuleLayerBuilder.build(spec, ModuleLayer.boot(), parentLoader)` itself, in the same JVM,
+   right before the goal's own logic runs;
+3. installs the leaf layer's classloader as the thread's context classloader for the duration of the
+   goal — the exact same trick `LayerBootstrap` uses — and restores the previous one afterward.
+
+No `LayerBootstrap`, no `layers.properties` file, and no separate process are involved; the "leaf
+layer" here is simply whichever classloader the goal's own logic runs under while the context
+classloader is swapped. See the wizard plugin's own
+[*Isolated Module Layers*](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
+section for its `<layers>`/`<leafLayer>` configuration.
+
 ## Running From an IDE — Without the Maven Plugin
 
 `tentackle-jlink-maven-plugin` is only needed for the *last* step: turning a finished application
@@ -246,3 +279,5 @@ real, distributable artifact — it is never needed just to develop or debug aga
 - [Tentackle Modules](../../../src/main/docs/modules.md) — the module system this API builds on.
 - [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — the
   `<layers>`/`<layer>` configuration, packaging layout, and the `layers` goal for local development.
+- [tentackle-wizard-maven-plugin.md](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers) —
+  the in-process consumer, running application code inside the Maven build itself.

@@ -60,6 +60,12 @@ common base, are:
   model defaults and entity aliases to apply while loading, in the same syntax as in the model source.
 - `loadModelFromDependencies`: also load the model from the resources of the plugin's dependencies
   (default `true`).
+- `layers` / `leafLayer`: an alternative to declaring the application's PDO/domain/persistence
+  dependencies as plain `<dependency>` elements of the plugin, for applications that are themselves
+  built with isolated [module layers](../../../../tentackle-common/src/main/docs/layers.md) — for
+  example, when two dependencies need different, otherwise conflicting versions of the same module.
+  When configured, the goal builds the layer graph and runs against the `leafLayer`'s classloader
+  instead of the plain plugin classpath; see *Isolated Module Layers* below.
 
 **Profiles.** A `profile` tells the wizard the target packages and naming for a *class* of objects.
 Almost every Tentackle application groups its entities (e.g., master data vs. transactional data), and
@@ -463,7 +469,9 @@ harness, a FreeMarker template that owns the boilerplate: it implements a
 inserted into. Harnesses are supplied by the developer. The **first
 line of a harness is a she-bang** selecting the scripting language (`#!groovy`, `#!gv`, `#!ruby`, …);
 it is stripped and does not land in the generated script. The scripting language provider (e.g.
-`tentackle-script-groovy`) must be on the plugin classpath, added as a `<dependency>` of the plugin.
+`tentackle-script-groovy`) must be on the plugin classpath, added as a `<dependency>` of the plugin
+(this is unaffected by `layers` below — only the *application's own* dependencies typically need
+isolating, not the scripting language provider itself).
 
 Since the fragment lands inside the `run()` method, it cannot contain import statements itself.
 Instead, the fragment marks import lines with a leading `^`-sign:
@@ -525,6 +533,47 @@ session from within the IDE** lets you debug any code in the application's code 
 let the script run into it, and inspect or evaluate whatever you need — for example, evaluate a
 `Permission` with the [`SecurityManager`](../../../../tentackle-pdo/src/main/docs/security.md) right
 in the debugger.
+
+### Isolated Module Layers
+
+All goals normally run against the plain plugin classpath, populated the usual way: the application's
+PDO, domain, and persistence artifacts (and, for `script`, the scripting language provider) declared
+as `<dependency>` elements of the plugin itself. This is enough as long as nothing on that combined
+classpath conflicts — but if the application is itself built with isolated
+[module layers](../../../../tentackle-common/src/main/docs/layers.md) (see
+`tentackle-jlink-maven-plugin`'s `layers`/`leafLayer` configuration), or two of its dependencies need
+different, otherwise conflicting versions of the same module, a single flat classpath cannot represent
+that: Maven itself only ever resolves one version per `groupId:artifactId`.
+
+Configuring `layers` and `leafLayer` on this plugin builds the same kind of `ModuleLayer` graph
+in-process, at goal-execution time, and installs the `leafLayer`'s classloader as the thread's context
+classloader for the duration of the goal — the same mechanism `LayerBootstrap` uses for a packaged
+application, just without a separate process. Every existing, layer-unaware resource- and
+service-lookup already used by the model loading and by `browse`/`script`'s `Pdo.createSession(...)`
+call transparently resolves from within that leaf layer.
+
+```xml
+<layers>
+  <layer>
+    <name>app-model</name>
+    <dependencies>
+      <dependency>
+        <groupId>com.example</groupId>
+        <artifactId>app-model</artifactId>
+        <version>2.0</version>
+      </dependency>
+    </dependencies>
+  </layer>
+</layers>
+<leafLayer>app-model</leafLayer>
+```
+
+Each `<layer>` has a `name` (unique among all configured layers), an optional comma-separated `parent`
+(other layer names it is built on top of; empty means parented directly on the boot layer), and
+`dependencies` — plain Maven coordinates, resolved independently of the plugin's own dependency graph,
+exactly as if the layer were its own tiny project. `leafLayer` must name one of the configured layers;
+if `layers` is empty (the default), this feature is inactive and every goal behaves exactly as before
+it existed.
 
 ### The `init` Goal
 
@@ -593,6 +642,22 @@ If a profile runs out of free class IDs, the goal warns; reserved IDs below 100 
         <tablePrefix>md_</tablePrefix>
       </profile>
     </profiles>
+    <!-- only needed if the application's dependencies must be isolated, see "Isolated Module Layers" -->
+    <!--
+    <layers>
+      <layer>
+        <name>app-model</name>
+        <dependencies>
+          <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>app-model</artifactId>
+            <version>2.0</version>
+          </dependency>
+        </dependencies>
+      </layer>
+    </layers>
+    <leafLayer>app-model</leafLayer>
+    -->
   </configuration>
 </plugin>
 ```
@@ -681,6 +746,7 @@ The wizard is a one-shot authoring tool, not part of the regular build lifecycle
 - [PDO — Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md)
 - [Operation — Behavior Without an Entity](../../../../tentackle-pdo/src/main/docs/operation.md)
 - [Tentackle Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md)
+- [ModuleLayer](../../../../tentackle-common/src/main/docs/layers.md) — isolated dependency sets via `layers`/`leafLayer`
 - [The Tentackle Maven Plugin](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)
 - [Validation](../../../../tentackle-core/src/main/docs/validation.md)
 - [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-wizard-maven-plugin/plugin-info.html)

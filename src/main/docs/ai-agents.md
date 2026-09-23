@@ -416,6 +416,11 @@ FreeMarker exposes four variables to the harness: `content` (the fragment), `imp
 - **The scripting-language provider must be on the plugin classpath** — add `tentackle-script-groovy`
   (or `-script-ruby`, or `-script-jsr`) as a `<dependency>` of the wizard plugin. The archetype does not
   add one by default.
+- **If the application's own dependencies need version isolation** (two of them require different,
+  otherwise conflicting versions of the same module, or the application itself is built with module
+  layers), configure `layers`/`leafLayer` on the wizard plugin instead of plain `<dependency>` elements
+  — see [ModuleLayer](../../../tentackle-common/src/main/docs/layers.md) and the wizard plugin's own
+  *Isolated Module Layers* section. Plain `<dependency>` elements remain the right default otherwise.
 - **This is the one capability that can change data.** The script runs with the credentials configured
   for the plugin and does whatever it says. Treat a write script the way you would treat a migration:
   read it, know the target backend, and prefer a development database.

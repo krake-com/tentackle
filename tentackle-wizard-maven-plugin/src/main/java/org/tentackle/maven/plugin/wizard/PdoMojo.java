@@ -69,7 +69,7 @@ public class PdoMojo extends AbstractWizardMojo {
    * Filesets to read a secondary model from.<br>
    * If set, the PDO wizard works in batch mode, and for each input file (i.e., entity)
    * the corresponding Java code is generated.<br>
-   * The files must be in model-format, i.e., same as here-docs read by the wurbelizer or if dumped
+   * The files must be in model-format, i.e., similar to the here-docs read by the wurbelizer or if dumped
    * by the tentackle-sql plugin with {@code dumpAsComment} and {@code dumpVariables} both set to {@code false}.
    * <p>
    * If there is more than one {@link PdoProfile}, the name of the profile must be given
@@ -133,7 +133,14 @@ public class PdoMojo extends AbstractWizardMojo {
   }
 
   @Override
+  @SuppressWarnings("try")
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    try (LayerScope ignored = openLayerScope()) {
+      executeLayered();
+    }
+  }
+
+  private void executeLayered() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
     updateClassIDs();
 

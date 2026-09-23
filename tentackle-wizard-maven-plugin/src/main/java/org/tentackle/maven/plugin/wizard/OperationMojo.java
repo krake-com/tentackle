@@ -37,7 +37,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -46,7 +45,7 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * Wizard to create operation files.<br>
- * Brings up an FX UI to create the operation related Java files.
+ * Brings up an FX UI to create the operation-related Java files.
  * <p>
  * If {@code operationName} is set, the wizard works in batch mode and generates the files
  * for that single operation without opening the UI. Since operations are not part of the model,
@@ -170,41 +169,44 @@ public class OperationMojo extends AbstractWizardMojo {
   }
 
   @Override
+  @SuppressWarnings("try")
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
-    super.executeImpl();
+    try (LayerScope ignored = openLayerScope()) {
+      super.executeImpl();
 
-    if (operationName != null) {
-      generateFromParameters();
-    }
-    else {
-      // interactive mode
-      CountDownLatch latch = new CountDownLatch(1);
-
-      Platform.startup(() -> {
-        try {
-          configureFx();
-          registerUncaughtExceptionHandler();
-          OperationWizard wizard = Fx.load(OperationWizard.class);
-          wizard.applyMojo(this);
-          stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
-          Scene scene = Fx.createScene(wizard.getView());
-          stage.setScene(scene);
-          stage.setTitle("Operation Wizard");
-          wizard.getContainer().updateView();
-          stage.setOnHidden(event -> latch.countDown());
-          Fx.show(stage);
-        }
-        catch (Throwable t) {
-          getLog().error(t);
-          latch.countDown();
-        }
-      });
-
-      try {
-        latch.await();
+      if (operationName != null) {
+        generateFromParameters();
       }
-      catch (InterruptedException e) {
-        throw new InterruptedRuntimeException(e);
+      else {
+        // interactive mode
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Platform.startup(() -> {
+          try {
+            configureFx();
+            registerUncaughtExceptionHandler();
+            OperationWizard wizard = Fx.load(OperationWizard.class);
+            wizard.applyMojo(this);
+            stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
+            Scene scene = Fx.createScene(wizard.getView());
+            stage.setScene(scene);
+            stage.setTitle("Operation Wizard");
+            wizard.getContainer().updateView();
+            stage.setOnHidden(event -> latch.countDown());
+            Fx.show(stage);
+          }
+          catch (Throwable t) {
+            getLog().error(t);
+            latch.countDown();
+          }
+        });
+
+        try {
+          latch.await();
+        }
+        catch (InterruptedException e) {
+          throw new InterruptedRuntimeException(e);
+        }
       }
     }
   }
