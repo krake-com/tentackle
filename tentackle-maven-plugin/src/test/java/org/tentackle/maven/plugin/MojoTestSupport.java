@@ -291,9 +291,13 @@ public final class MojoTestSupport {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final List<String> debugMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> infoMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> warnMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> errorMessages = new ArrayList<>();
 
     private boolean debugEnabled;

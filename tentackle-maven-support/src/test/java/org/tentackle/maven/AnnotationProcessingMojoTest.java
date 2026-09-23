@@ -98,6 +98,7 @@ public class AnnotationProcessingMojoTest {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final List<String> errors = new ArrayList<>();
 
     @Override

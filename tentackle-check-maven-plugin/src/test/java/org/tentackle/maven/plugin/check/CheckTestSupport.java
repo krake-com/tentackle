@@ -28,6 +28,11 @@ import org.slf4j.helpers.MessageFormatter;
 import org.tentackle.maven.AbstractTentackleAnnotationProcessingMojo;
 import org.tentackle.maven.ProjectClassLoader;
 
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serial;
@@ -38,11 +43,6 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -432,9 +432,13 @@ public final class CheckTestSupport {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @SuppressWarnings("serial")
     private final List<String> debugMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> infoMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> warnMessages = new ArrayList<>();
+    @SuppressWarnings("serial")
     private final List<String> errorMessages = new ArrayList<>();
 
     private boolean debugEnabled;
