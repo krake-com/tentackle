@@ -88,7 +88,7 @@ public class PdoComponentTripFilterTest extends AbstractPdoTest {
     assertEquals(copy.getNumberRangeList().size(), 2);
 
     // with filter: the components are skipped
-    copy = transfer(numberPool, PdoComponentTripFilter.INSTANCE);
+    copy = transfer(numberPool, PdoComponentTripFilter.getInstance());
     assertNotSame(copy, numberPool);
     assertEquals(copy.getId(), numberPool.getId());
     assertEquals(copy.getSerial(), numberPool.getSerial());

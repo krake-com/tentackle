@@ -722,7 +722,7 @@ the relations whose getter is annotated with `@Persistent(component = true)`, to
 `...Loaded` flags:
 
 ```java
-stream.setFilter(PdoComponentTripFilter.INSTANCE);
+stream.setFilter(PdoComponentTripFilter.getInstance());
 ```
 
 The receiver gets the PDO with its composite relations not loaded. Accessing one loads it

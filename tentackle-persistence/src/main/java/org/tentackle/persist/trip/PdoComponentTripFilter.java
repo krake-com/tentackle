@@ -18,6 +18,8 @@
 
 package org.tentackle.persist.trip;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.persist.AbstractPersistentObject;
@@ -32,6 +34,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+
+interface PdoComponentTripFilterHolder {
+  PdoComponentTripFilter INSTANCE = ServiceFactory.createService(PdoComponentTripFilter.class, PdoComponentTripFilter.class);
+}
+
+
 /**
  * A {@link TripFilter} to serialize PDOs without their components.
  * <p>
@@ -42,7 +50,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Example:
  * <pre>
- *   stream.setFilter(PdoComponentTripFilter.INSTANCE);
+ *   stream.setFilter(PdoComponentTripFilter.getInstance());
  *   try {
  *     ...
  *   }
@@ -53,12 +61,17 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @see TripStream#setFilter(TripFilter)
  */
+@Service(PdoComponentTripFilter.class)    // defaults to self
 public class PdoComponentTripFilter implements TripFilter {
 
   /**
-   * The shared filter instance.
+   * The singleton.
+   *
+   * @return the singleton
    */
-  public static final PdoComponentTripFilter INSTANCE = new PdoComponentTripFilter();
+  public static PdoComponentTripFilter getInstance() {
+    return PdoComponentTripFilterHolder.INSTANCE;
+  }
 
 
   /** the names of the skipped components mapped by the persistence implementation class. */
@@ -66,7 +79,7 @@ public class PdoComponentTripFilter implements TripFilter {
 
   /**
    * Creates the filter.<br>
-   * Usually, {@link #INSTANCE} is used.
+   * Usually, the singleton {@link #getInstance()} is used.
    */
   public PdoComponentTripFilter() {
     // see -Xlint:missing-explicit-ctor since Java 16
