@@ -25,6 +25,7 @@ import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripFilter;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
@@ -434,10 +435,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
    */
   protected void writeComponents(T value, TripStream stream) {
     int lastOrdinal = -1;
+    TripFilter filter = stream.getFilter();
     for (TripComponent<T, ?> component : getComponents()) {
       // the component writes its ordinal and value, or nothing if it holds its default value.
       // Delegating lets a primitive component keep its value unboxed, see PrimitiveFieldTripComponent.
-      lastOrdinal = component.write(value, stream, lastOrdinal);
+      // A component rejected by the filter is skipped just like one holding its default value.
+      if (filter == null || filter.accept(value, component)) {
+        lastOrdinal = component.write(value, stream, lastOrdinal);
+      }
     }
     sendEnd(stream);
   }

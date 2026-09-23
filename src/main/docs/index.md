@@ -236,6 +236,7 @@ topic-grouped listing of every document, see the
 - **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md), [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
 - **Two-phase commit (XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
+- **TripFilter (skipping components, PDOs without components)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 
 ## U

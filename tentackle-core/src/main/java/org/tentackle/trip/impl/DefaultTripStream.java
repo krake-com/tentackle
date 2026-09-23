@@ -32,6 +32,7 @@ import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripFilter;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
@@ -101,6 +102,8 @@ public class DefaultTripStream implements TripStream {
    * would allocate a new function object on every {@link #getType} call.
    */
   private final Function<Class<?>, TripType<?>> typeResolver;
+
+  private TripFilter filter;
 
 
   /**
@@ -294,6 +297,16 @@ public class DefaultTripStream implements TripStream {
       references[reference.getReferenceId()] = reference;
       reference.markReceived();
     });
+  }
+
+  @Override
+  public void setFilter(TripFilter filter) {
+    this.filter = filter;
+  }
+
+  @Override
+  public TripFilter getFilter() {
+    return filter;
   }
 
   @Override

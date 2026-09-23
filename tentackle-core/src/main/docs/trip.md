@@ -238,6 +238,8 @@ The `TripStream` (`org.tentackle.trip.TripStream`) is the high-level I/O context
 
 It manages object identity tracking (reference maps), dictionary management, and opcode dispatch. Applications typically interact with `TripStream` only when writing custom transports or custom `TripType` implementations.
 
+The stream also carries an optional `TripFilter` that decides which components of an object are written, see [Filtering components with TripFilter](#filtering-components-with-tripfilter).
+
 ### TripType, TripComponent, and Dictionary
 
 #### TripType
@@ -686,6 +688,46 @@ public class ThrowableComponentProvider<T extends Throwable>
   }
 }
 ```
+
+#### Filtering components with TripFilter
+
+The annotations above decide statically, per class, what is serialized. A `TripFilter`
+(`org.tentackle.trip.TripFilter`) decides at runtime: set on the sending `TripStream`, it is
+asked for each component (field or getter) of an object whether the component is written.
+
+```java
+stream.setFilter((parent, component) -> !"payload".equals(component.getName()));
+try {
+  type.write(object, stream);
+}
+finally {
+  stream.setFilter(null);
+}
+```
+
+- A rejected component is handled like one holding its default value: it is simply not
+  written. The receiver leaves the field at the value the object was created with (`null`,
+  `0`, `false`). The wire format does not change and the receiver needs no filter.
+- The filter applies to the components of regular objects, including the extra fields of
+  collection or map subclasses. It is not consulted for record components, collection elements,
+  or map entries.
+- It gets the parent object and the `TripComponent`, but not the value, so a getter-backed
+  component is not invoked twice. If needed, `component.getValue(parent)` provides it.
+- `TripStream.clear()` does not reset the filter. Since a connection's stream is shared across
+  messages, remove the filter again in a `finally` block.
+
+The typical use is sending a PDO without its components. `PdoComponentTripFilter`
+(`org.tentackle.persist.trip`, in `tentackle-persistence`) skips all composite relations, i.e.,
+the relations whose getter is annotated with `@Persistent(component = true)`, together with their
+`...Loaded` flags:
+
+```java
+stream.setFilter(PdoComponentTripFilter.INSTANCE);
+```
+
+The receiver gets the PDO with its composite relations not loaded. Accessing one loads it
+lazily, just as for a PDO freshly selected from the database. Non-composite relations and the
+parent relation of a component are not affected.
 
 #### Custom TripType
 

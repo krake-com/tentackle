@@ -136,6 +136,23 @@ public interface TripStream {
   void clearModifiable();
 
   /**
+   * Sets the filter deciding which components of an object are serialized.<br>
+   * The filter applies to writing only and is not reset by {@link #clear()}.
+   * Since the stream is usually shared, a filter set for a single object or message
+   * should be removed afterward, preferably in a {@code finally} block.
+   *
+   * @param filter the filter, null to serialize all components (default)
+   */
+  void setFilter(TripFilter filter);
+
+  /**
+   * Gets the filter deciding which components of an object are serialized.
+   *
+   * @return the filter, null if all components are serialized
+   */
+  TripFilter getFilter();
+
+  /**
    * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write
