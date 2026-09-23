@@ -85,6 +85,51 @@ Use XA when you need real atomicity across several databases, or when the contai
    jta=join
    ```
 
+### Server applications
+
+`AbstractServerApplication.createConnectionManager()` creates the connection manager for the
+server's session pool. It always returns an `MpxConnectionManager`, even if `jta` is configured in
+the backend properties. To use XA connections, override it:
+
+```java
+@Override
+protected ConnectionManager createConnectionManager() {
+  return new XaMpxConnectionManager(getSession().getBackendInfo(),
+                                    getSession().getConnectionManager().getSessionIdOffset() +
+                                    getSession().getConnectionManager().getMaxSessions());
+}
+```
+
+The server application does not make this switch automatically, for the following reasons:
+
+- **The module dependencies.** `tentackle-jta` is optional, and `tentackle-persistence` does not
+  depend on it. The server application cannot create an `XaMpxConnectionManager` without either
+  making every server depend on the JTA API, or looking the manager up via a service, which would hide
+  a choice that has a noticeable cost.
+- **`jta` selects a transaction mode, not a connection type.** The property says how a session
+  takes part in global transactions. Which connections a session gets is decided by whoever creates
+  its connection manager, and the pool's manager is only one of them. The server's main session is
+  opened before the pool exists, with the default connection manager. If only the pool switched
+  automatically, some sessions would get XA connections and others would not, and nothing in the
+  configuration would show which.
+- **XA connections cost more.** Every connection of the pool becomes an XA connection. It holds a
+  transaction branch in the database, and it stays attached to its session until the transaction
+  manager completes the global transaction. For a `jndi:` URL, the bound data source must also
+  implement `XADataSource`. This is a deployment decision, and it should be visible in the code.
+- **Usually only a few transactions need XA.** In most applications, only certain units of work
+  must commit atomically across several resources, such as the transfer to an archive database.
+  All the others are local, and they gain nothing from XA. If the whole pool were switched, `required`
+  would turn every transaction into a global one with a two-phase commit, and even with `join` all
+  sessions would hold XA connections. It is often better to keep the pool local and to open dedicated
+  sessions with an XA connection manager and their own backend properties (`jta=required` or
+  `join`) just for the transactions that need them.
+
+A mismatch does not go unnoticed. If a session configured with `join` or `required` has no XA
+connection, its first global transaction fails with a `PersistenceException` that names both XA
+connection managers. Keep in mind that `jta` applies to every session opened with these backend
+properties, including the server's main session. If a session keeps a non-XA connection manager,
+switch it to local transactions via `setGlobalTransactionMode(GlobalTransactionMode.NONE)`.
+
 ## The Two Modes
 
 The property `jta` selects the
