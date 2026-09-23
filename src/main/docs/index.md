@@ -88,6 +88,7 @@ topic-grouped listing of every document, see the
 
 ## G
 
+- **Global transactions (JTA/XA, two-phase commit)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md), [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md#global-transactions)
 - **Google sign-in / OAuth client** — [Single Sign-On with Google](./google-sso.md)
 - **GraphicProvider (icons/images by symbolic name, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **GuiProvider (per-entity GUI services, default editor/finder)** — [GuiProvider](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
@@ -111,6 +112,7 @@ topic-grouped listing of every document, see the
 - **JPMS / Jigsaw (modules, automatic modules)** — [Tentackle Modules](./modules.md#named-modules-and-automatic-modules), [Quickstart](./quickstart.md)
 - **JPMS: exporting new packages (wizard profiles, first operation)** — [Quickstart](./quickstart.md#the-first-operation-jpms-does-not-come-for-free), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#how-the-wizard-places-files-the-model-and-profiles)
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
+- **JTA / XA (`jta` backend property, `XaConnectionManager`, `XaMpxConnectionManager`)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **JWT / ID token verification** — [Single Sign-On with Google](./google-sso.md)
 - **JSON / JSONB (model type ↔ database column type)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md#json-and-jsonb), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md#json), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 
@@ -230,8 +232,10 @@ topic-grouped listing of every document, see the
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)
 - **Token locks** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
 - **Tokens (bearer, refresh, expiry)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
-- **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
+- **Transactional outbox (instead of XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md#when-not-to-use-xa), [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md)
+- **Transactions (`@Transaction`, isolation, retry)** — [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md), [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **Transports (pluggable)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md)
+- **Two-phase commit (XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
 
 ## U

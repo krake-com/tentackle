@@ -73,6 +73,11 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "com.microsoft.sqlserver.jdbc.SQLServerXADataSource";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     try (Statement stmt = connection.createStatement()) {
       ResultSet rs = stmt.executeQuery("SELECT @@SPID");

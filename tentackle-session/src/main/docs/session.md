@@ -69,6 +69,10 @@ correct nesting trivial: every method may `begin()`/`commit()` defensively, and 
 commits. The `transaction(...)` convenience methods wrap a lambda in this protocol and are the recommended
 alternative to the `@Transaction` interceptor when the holder is not an `Interceptable`.
 
+A local session can also take part in a global (JTA/XA) transaction coordinated by a transaction
+manager; the voucher protocol stays the same. See
+[Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md).
+
 [`TransactionIsolation`](../java/org/tentackle/session/TransactionIsolation.java) and
 [`TransactionWritability`](../java/org/tentackle/session/TransactionWritability.java) are type-safe enums over the
 `java.sql.Connection` isolation constants and read-only/read-write mode, used when a transaction needs something

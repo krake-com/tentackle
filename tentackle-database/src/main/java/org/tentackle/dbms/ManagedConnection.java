@@ -1610,6 +1610,14 @@ public class ManagedConnection {
 
 
   /**
+   * Cleans up after a rollback not initiated via {@link #rollback(boolean)}.<br>
+   * Used when a global transaction is rolled back by the transaction manager.
+   */
+  void rolledBackExternally() {
+    unmarkPreparedStatements();
+  }
+
+  /**
    * Unmark all prepared statements that are marked ready.
    */
   private void unmarkPreparedStatements() {

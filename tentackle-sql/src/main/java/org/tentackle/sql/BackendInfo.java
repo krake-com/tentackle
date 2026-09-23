@@ -26,6 +26,8 @@ import org.tentackle.common.StringHelper;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import javax.sql.XAConnection;
+import javax.sql.XADataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -328,6 +330,32 @@ public class BackendInfo {
       throw sqx;
     }
     return connection;
+  }
+
+  /**
+   * Creates an XA connection.<br>
+   * XA connections take part in global transactions coordinated by a transaction manager.
+   * <p>
+   * For JNDI urls, the bound data source must implement {@link XADataSource}.
+   * Otherwise, the data source is created by the backend (see {@link Backend#createXADataSource}).
+   *
+   * @return the XA connection
+   * @throws SQLException if the connection could not be created or XA is not supported
+   */
+  public XAConnection connectXA() throws SQLException {
+    XADataSource xaDataSource;
+    if (jndiDataSource != null) {
+      if (jndiDataSource instanceof XADataSource xds) {
+        xaDataSource = xds;
+      }
+      else {
+        throw new SQLException("JNDI data source " + url + " is not an XADataSource");
+      }
+    }
+    else {
+      xaDataSource = backend.createXADataSource(url, user, password);
+    }
+    return xaDataSource.getXAConnection();
   }
 
 

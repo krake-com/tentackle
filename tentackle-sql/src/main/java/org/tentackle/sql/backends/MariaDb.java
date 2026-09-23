@@ -65,6 +65,11 @@ public class MariaDb extends MySql {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "org.mariadb.jdbc.MariaDbDataSource";
+  }
+
+  @Override
   public void validateVersion(BackendVersionInfo versionInfo) {
     if (versionInfo.majorVersion() < MIN_MAJOR_VERSION ||
         versionInfo.majorVersion() == MIN_MAJOR_VERSION && versionInfo.minorVersion() < MIN_MINOR_VERSION) {

@@ -98,6 +98,9 @@ it for a transaction/one-shot, then *detaches* it — letting the manager broker
 - [`MpxConnectionManager`](../java/org/tentackle/dbms/MpxConnectionManager.java) — **multiplexing** manager that
   maps N sessions onto M < N connections, transparently to the application; the typical choice for application
   servers with many clients. (Note: this is *not* session pooling — multiplexing is invisible to the app.)
+- `XaConnectionManager` and `XaMpxConnectionManager` (module `tentackle-jta`) — the default and the
+  multiplexing manager with connections that can be enlisted in
+  [global transactions](../../../../tentackle-jta/src/main/docs/jta.md).
 - [`ManagedConnection`](../java/org/tentackle/dbms/ManagedConnection.java) — a JDBC connection wrapped with a
   prepared-statement cache and `SQLException` → `PersistenceException` translation; also exposes the backend's
   database version via `getBackendVersionInfo()`.

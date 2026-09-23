@@ -629,7 +629,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     BackendVersionInfo versionInfo;
 
     try {
-      con = backendInfo.connect();
+      con = connect(backendInfo);
     }
     catch (SQLException sx) {
       throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", sx);
@@ -648,19 +648,14 @@ public class DefaultConnectionManager implements ConnectionManager {
 
       Backend backend = backendInfo.getBackend();
       backend.validateVersion(versionInfo);
-      mc = new ManagedConnection(this, backend, versionInfo, con);
+      mc = createManagedConnection(backend, versionInfo, con);
       if (backendInfo.getBackendTimeout() > 0) {
         mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
         mc.setConnectionKeepAliveEnabled(backendInfo.isBackendKeepAliveEnabled());
       }
     }
     catch (RuntimeException rx) {
-      try {
-        con.close();
-      }
-      catch (SQLException sx) {
-        LOGGER.severe("closing connection failed -> ignored", sx);
-      }
+      closeUnmanagedConnection(con);
       throw rx;
     }
 
@@ -682,6 +677,45 @@ public class DefaultConnectionManager implements ConnectionManager {
                                            TransactionWritability.valueOf(!mc.isReadOnly()),
                                            FormatHelper.formatTimestamp(new Date(mc.getExpireAt()))));
     return mc;
+  }
+
+
+  /**
+   * Creates the low-level JDBC connection.
+   *
+   * @param backendInfo the backend info
+   * @return the connection in autocommit mode
+   * @throws SQLException if the connection could not be established
+   */
+  protected Connection connect(BackendInfo backendInfo) throws SQLException {
+    return backendInfo.connect();
+  }
+
+  /**
+   * Wraps a low-level JDBC connection created by {@link #connect(BackendInfo)} into a managed connection.
+   *
+   * @param backend the backend
+   * @param versionInfo the backend's database version
+   * @param connection the low-level connection
+   * @return the managed connection
+   */
+  protected ManagedConnection createManagedConnection(Backend backend, BackendVersionInfo versionInfo, Connection connection) {
+    return new ManagedConnection(this, backend, versionInfo, connection);
+  }
+
+  /**
+   * Closes a low-level JDBC connection created by {@link #connect(BackendInfo)}
+   * that could not be turned into a managed connection.
+   *
+   * @param connection the low-level connection
+   */
+  protected void closeUnmanagedConnection(Connection connection) {
+    try {
+      connection.close();
+    }
+    catch (SQLException sx) {
+      LOGGER.severe("closing connection failed -> ignored", sx);
+    }
   }
 
 

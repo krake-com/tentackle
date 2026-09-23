@@ -21,6 +21,7 @@ package org.tentackle.dbms;
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.trip.DbRemoteDelegate;
 import org.tentackle.dbms.trip.PreloadRemoteDelegate;
@@ -202,6 +203,14 @@ import java.util.function.Consumer;
  *  If the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
  *  See {@link DbBatch}.
  *  </li>
+ *  <li>
+ *  Taking part in global (JTA/XA) transactions:
+ *  <pre>
+ *  jta=none|join|required
+ *  </pre>
+ *  See {@link GlobalTransactionMode}. Requires a {@link GlobalTransactionSupport} service, such as provided
+ *  by the module {@code tentackle-jta}, and a connection manager providing XA connections.
+ *  </li>
  * </ul>
  * <p>
  * For local sessions via JDBC or JNDI:
@@ -236,6 +245,13 @@ public class Db implements Session, Cloneable {
    * Property key to enable batching for this session.
    */
   public static final String BATCHSIZE = "batchsize";
+
+  /**
+   * Property key for the global transaction mode.
+   *
+   * @see GlobalTransactionMode
+   */
+  public static final String JTA = "jta";
 
 
   private static final Logger LOGGER = Logger.get(Db.class);
@@ -365,6 +381,9 @@ public class Db implements Session, Cloneable {
   private static volatile Class<?>[] remoteClasses = new Class<?>[0];   // the classes the delegates provide service for
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
+
+  private static final Object GLOBAL_TX_SUPPORT_LOCK = new Object();
+  private static volatile GlobalTransactionSupport globalTransactionSupport;   // loaded on demand
 
   // crashed remote sessions are closed from a separate thread to avoid blocking (TCP stack, whatever)
   private static final AtomicInteger REMOTE_CLOSING_COUNTER = new AtomicInteger();
@@ -615,6 +634,7 @@ public class Db implements Session, Cloneable {
   private RemoteDbDelegate[] delegates;                       // the delegates per session (TRIP only)
   private Map<String, RemoteDbDelegate> preloadedDelegates;   // preloaded delegates by classname, null if not preloaded
   private boolean preloadRequested;                           // true if the application requested preloading
+  private GlobalTransactionMode globalTransactionMode = GlobalTransactionMode.NONE;   // participation in global transactions
 
 
   /**
@@ -694,6 +714,7 @@ public class Db implements Session, Cloneable {
         if (val != null) {
           batchSize = Integer.parseInt(val);
         }
+        globalTransactionMode = GlobalTransactionMode.parse(backendProperties.getPropertyIgnoreCase(JTA));
       }
 
       String val = sessionProperties.getPropertyIgnoreCase(IDSOURCE);
@@ -981,6 +1002,52 @@ public class Db implements Session, Cloneable {
    */
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
+  }
+
+  /**
+   * Gets the mode this session takes part in global transactions.
+   *
+   * @return the mode, never null
+   */
+  public GlobalTransactionMode getGlobalTransactionMode() {
+    return globalTransactionMode;
+  }
+
+  /**
+   * Sets the mode this session takes part in global transactions.<br>
+   * Defaults to the backend property {@value #JTA}.
+   *
+   * @param globalTransactionMode the mode, null for {@link GlobalTransactionMode#NONE}
+   */
+  public void setGlobalTransactionMode(GlobalTransactionMode globalTransactionMode) {
+    this.globalTransactionMode = globalTransactionMode == null ? GlobalTransactionMode.NONE : globalTransactionMode;
+  }
+
+  /**
+   * Gets the bridge to the global transaction manager.<br>
+   * The implementation is loaded on first use.
+   *
+   * @return the global transaction support, never null
+   * @throws PersistenceException if no {@link GlobalTransactionSupport} service is available
+   */
+  public static GlobalTransactionSupport getGlobalTransactionSupport() {
+    GlobalTransactionSupport support = globalTransactionSupport;
+    if (support == null) {
+      synchronized (GLOBAL_TX_SUPPORT_LOCK) {
+        support = globalTransactionSupport;
+        if (support == null) {
+          try {
+            support = ServiceFactory.createService(GlobalTransactionSupport.class);
+          }
+          catch (RuntimeException ex) {
+            throw new PersistenceException("no " + GlobalTransactionSupport.class.getSimpleName() +
+                                           " service found (module tentackle-jta missing?)", ex);
+          }
+          globalTransactionSupport = support;
+        }
+      }
+    }
+    return support;
   }
 
 
@@ -1597,6 +1664,15 @@ public class Db implements Session, Cloneable {
 
       alive = true;
 
+      if (autoCommit && !fromRemote && globalTransactionMode != GlobalTransactionMode.NONE) {
+        // client-initiated transactions span several remote calls and are always local
+        GlobalTransactionSupport support = getGlobalTransactionSupport();
+        boolean globalActive = support.isGlobalTransactionActive();
+        if (globalActive || globalTransactionMode == GlobalTransactionMode.REQUIRED) {
+          return beginGlobal(support, !globalActive, txName, transactionIsolation, transactionWritability);
+        }
+      }
+
       if (setAutoCommit(c -> {
         // new transaction
         assertNoTxRunning();
@@ -1639,6 +1715,208 @@ public class Db implements Session, Cloneable {
     }
 
     return txVoucher;
+  }
+
+
+  /**
+   * Starts or joins a global transaction.
+   * <p>
+   * The session is attached until the global transaction completes, see {@link GlobalCompletion}.
+   * If the session joins, level 1 of the transaction belongs to the owner of the global transaction,
+   * and the session continues at level 2, as if nested. Hence, no voucher is returned and the session
+   * never commits or rolls back the global transaction on its own.
+   *
+   * @param support the global transaction support
+   * @param start true to start a new global transaction, false to join the global transaction of the current thread
+   * @param txName is the optional transaction name, null for none
+   * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
+   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   * @return the transaction voucher if started, 0 if joined
+   */
+  private long beginGlobal(GlobalTransactionSupport support, boolean start, String txName,
+                           TransactionIsolation transactionIsolation, TransactionWritability transactionWritability) {
+
+    if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT ||
+        transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+      throw new PersistenceException(this, "isolation and writability of global transactions cannot be changed");
+    }
+
+    if (start) {
+      support.begin(this, txName);
+    }
+
+    boolean attached = false;
+    DbTransaction tx = null;
+    try {
+      attach();
+      attached = true;
+      tx = createTransaction(txName, false);
+      tx.setGlobal(start);
+      support.enlist(this, new GlobalCompletion(tx));
+    }
+    catch (RuntimeException rex) {
+      if (tx != null) {
+        tx.rollback();    // finish the orphaned transaction
+      }
+      if (attached) {
+        detachSafely();
+      }
+      if (start) {
+        try {
+          support.rollback(this);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("rolling back the global transaction failed", rx);
+        }
+      }
+      throw rex;
+    }
+
+    immediatelyRolledBack = 0;
+    modificationLogList = null;
+    transactionProperties = null;
+    transaction = tx;
+    autoCommit = false;
+
+    if (start) {
+      LOGGER.fine("{0}: begin global transaction, voucher {1}", this, tx.getTxVoucher());
+      return tx.getTxVoucher();
+    }
+
+    tx.incrementTxLevel(txName);
+    LOGGER.fine("{0}: joined global transaction", this);
+    return 0;
+  }
+
+
+  /**
+   * Commits the global transaction started by this session.<br>
+   * The work of all enlisted sessions is done by their {@link GlobalCompletion}s.
+   *
+   * @param txVoucher the transaction voucher
+   */
+  private void commitGlobal(long txVoucher) {
+    LOGGER.fine("{0}: commit global transaction, voucher {1}", this, txVoucher);
+    transaction.assertValidTxVoucher(txVoucher);
+    if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
+      LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
+    }
+    getGlobalTransactionSupport().commit(this);
+  }
+
+
+  /**
+   * Rolls back a global transaction.<br>
+   * The global transaction is rolled back if this session started it.
+   * Otherwise, it is marked rollback-only when the outermost joined level is rolled back.
+   *
+   * @param txVoucher the transaction voucher, 0 if nested or joined
+   * @return true if rolled back
+   */
+  private boolean rollbackGlobal(long txVoucher) {
+    GlobalTransactionSupport support = getGlobalTransactionSupport();
+    if (txVoucher != 0) {
+      LOGGER.fine("{0}: rollback global transaction, voucher {1}", this, txVoucher);
+      transaction.assertValidTxVoucher(txVoucher);
+      DbTransaction tx = transaction;
+      try {
+        support.rollback(this);
+      }
+      finally {
+        if (transaction == tx) {
+          // the transaction manager did not complete it, e.g., because the global transaction was already gone
+          new GlobalCompletion(tx).afterCompletion(false);
+        }
+      }
+      return true;
+    }
+    LOGGER.fine("{0}: nested rollback", this);
+    transaction.decrementTxLevel();
+    if (!transaction.isGlobalOwner() && transaction.getTxLevel() == 1) {
+      // the unit of work of this session failed: the global transaction must not commit
+      support.setRollbackOnly(this);
+    }
+    return false;
+  }
+
+
+  /**
+   * Completes the session's part of a global transaction.<br>
+   * Replaces the commit and rollback logic of local transactions.
+   */
+  private class GlobalCompletion implements GlobalTransactionListener {
+
+    private final DbTransaction tx;   // the transaction to complete
+
+    private GlobalCompletion(DbTransaction tx) {
+      this.tx = tx;
+    }
+
+    @Override
+    public void beforeCompletion() {
+      if (transaction == tx) {
+        runPreCommits();
+        tx.executeBatch();
+        logCommitTx();
+      }
+      // else: already completed
+    }
+
+    @Override
+    public void afterCompletion(boolean committed) {
+      if (transaction != tx) {
+        return;   // already completed
+      }
+      long txNo = tx.getTxNumber();
+      ManagedConnection c = resources.con;
+      transaction = null;
+      autoCommit = true;
+      logModificationDeferred = false;
+      constraintsDeferred = false;
+      modificationLogList = null;
+      if (committed) {
+        tx.finishCommit();
+      }
+      else {
+        tx.rollback();
+        logModificationTxId = 0;
+        postCommits = null;
+        preCommits = null;
+        if (c != null) {
+          c.rolledBackExternally();
+        }
+      }
+      if (c != null) {
+        // the branch is completed: back to local mode, as expected from a detached connection.
+        // Most drivers restore the autocommit mode by themselves, but the JDBC spec does not require it.
+        try {
+          if (!c.getAutoCommit()) {
+            c.setAutoCommit(true);
+          }
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("restoring autocommit of " + c + " after global transaction failed", rx);
+          c.setDead(true);    // don't use this connection anymore
+        }
+      }
+      if (c != null && resources.sessionId > 0) {
+        // not detach(), since this may be invoked from a thread other than the owner, e.g., a timeout
+        try {
+          resources.conMgr.detach(Db.this);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("detaching " + Db.this + " after global transaction failed", rx);
+        }
+      }
+      LOGGER.fine("{0}: global transaction {1}", Db.this, committed ? "committed" : "rolled back");
+      if (committed) {
+        DbUtilities.getInstance().notifyCommit(Db.this, txNo);
+        runPostCommits();
+      }
+      else {
+        DbUtilities.getInstance().notifyRollback(Db.this, txNo);
+      }
+    }
   }
 
 
@@ -1963,7 +2241,11 @@ public class Db implements Session, Cloneable {
       alive = true;
       assertTxRunning();
 
-      if (txVoucher != 0) {
+      if (txVoucher != 0 && transaction != null && transaction.isGlobal()) {
+        commitGlobal(txVoucher);
+        committed = true;
+      }
+      else if (txVoucher != 0) {
 
         if (!autoCommit) {
           // within a transaction: commit!
@@ -2059,6 +2341,10 @@ public class Db implements Session, Cloneable {
         rolledBack = txVoucher != 0;
       }
 
+      else if (transaction.isGlobal()) {
+        rolledBack = rollbackGlobal(txVoucher);
+      }
+
       else {
         if (txVoucher != 0) {
           // matching begin() started a new tx
@@ -2126,6 +2412,26 @@ public class Db implements Session, Cloneable {
       ManagedConnection c = resources.con;
       if (c != null) {
         c.cancelRunningStatements();
+      }
+
+      if (transaction != null && transaction.isGlobal()) {
+        // the connection remains enlisted until the transaction manager completes the global transaction
+        LOGGER.warning("*** immediate rollback for {0} ***", this);
+        DbTransaction tx = transaction;
+        int currentTxLevel = tx.getTxLevel();
+        tx.invalidateTxLevel();    // avoid misleading warnings
+        GlobalTransactionSupport support = getGlobalTransactionSupport();
+        if (tx.isGlobalOwner()) {
+          rollbackGlobal(tx.getTxVoucher());
+          immediatelyRolledBack = currentTxLevel;
+        }
+        else if (support.isGlobalTransactionActive()) {
+          support.setRollbackOnly(this);    // completed by the transaction manager
+        }
+        else {
+          new GlobalCompletion(tx).afterCompletion(false);    // orphaned: the global transaction is gone
+        }
+        return;
       }
 
       if (transaction != null) {

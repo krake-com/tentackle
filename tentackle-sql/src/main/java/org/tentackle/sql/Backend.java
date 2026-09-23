@@ -32,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import javax.sql.XADataSource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -321,6 +322,26 @@ public interface Backend {
    * @throws SQLException if the connection could not be established
    */
   Connection createConnection(String url, String username, char[] password) throws SQLException;
+
+  /**
+   * Gets the name of the JDBC driver's {@link XADataSource} class.<br>
+   * Required for connections taking part in global (XA) transactions.
+   *
+   * @return the class name, null if the backend does not support XA
+   */
+  String getXADataSourceClassName();
+
+  /**
+   * Creates a data source for XA connections.<br>
+   * The data source is configured with the given jdbc url and credentials.
+   *
+   * @param url the jdbc url
+   * @param username the username, null if none
+   * @param password the password, null if none
+   * @return the XA data source
+   * @throws SQLException if the backend does not support XA or the data source could not be created
+   */
+  XADataSource createXADataSource(String url, String username, char[] password) throws SQLException;
 
   /**
    * Gets the metadata from the backend.

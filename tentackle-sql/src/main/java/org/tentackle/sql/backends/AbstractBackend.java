@@ -37,6 +37,7 @@ import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
+import java.lang.reflect.Method;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -44,6 +45,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTransactionRollbackException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import javax.sql.XADataSource;
 
 /**
  * Abstract parent class for backends.
@@ -169,6 +172,57 @@ public abstract class AbstractBackend implements Backend {
     }
 
     return DriverManager.getConnection(url, username, createPassword(password));
+  }
+
+  @Override
+  public String getXADataSourceClassName() {
+    return null;    // XA not supported by default
+  }
+
+  @Override
+  public XADataSource createXADataSource(String url, String username, char[] password) throws SQLException {
+    String className = getXADataSourceClassName();
+    if (className == null) {
+      throw new SQLFeatureNotSupportedException("backend " + getName() + " does not support XA");
+    }
+    try {
+      Object dataSource = Class.forName(className).getDeclaredConstructor().newInstance();
+      setDataSourceProperty(dataSource, url, "setURL", "setUrl");
+      if (username != null) {
+        setDataSourceProperty(dataSource, username, "setUser");
+      }
+      setDataSourceProperty(dataSource, createPassword(password), "setPassword");
+      return (XADataSource) dataSource;
+    }
+    catch (ReflectiveOperationException | ClassCastException ex) {
+      throw new SQLException("cannot create XA data source " + className + " for backend " + getName(), ex);
+    }
+  }
+
+  /**
+   * Sets a string property of a data source via reflection.<br>
+   * The setter's name is not standardized among the JDBC drivers (e.g. {@code setURL} vs. {@code setUrl}),
+   * hence the first matching setter is used.
+   *
+   * @param dataSource the data source
+   * @param value the property value
+   * @param setterNames the candidate setter names
+   * @throws ReflectiveOperationException if no such setter or invocation failed
+   */
+  protected void setDataSourceProperty(Object dataSource, String value, String... setterNames)
+      throws ReflectiveOperationException {
+    for (String setterName : setterNames) {
+      Method setter;
+      try {
+        setter = dataSource.getClass().getMethod(setterName, String.class);
+      }
+      catch (NoSuchMethodException nx) {
+        continue;
+      }
+      setter.invoke(dataSource, value);
+      return;
+    }
+    throw new NoSuchMethodException("none of " + String.join(", ", setterNames) + " found in " + dataSource.getClass().getName());
   }
 
   @Override

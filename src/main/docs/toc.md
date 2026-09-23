@@ -63,6 +63,7 @@ the [Index](./index.md).
 - [Tentackle Database](../../../tentackle-database/src/main/docs/database.md) — the low-level persistence engine.
 - [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md) — building projection queries from typed expressions instead of SQL strings.
 - [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md) — collecting inserts, updates and deletes into JDBC batches.
+- [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md) — joining or coordinating distributed transactions across databases and other XA resources.
 - [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md) — the database backend abstraction layer.
 - [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md) — the reference backend: type mapping, the `JSON`/`JSONB` choice, deferrable constraints.
 - [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md) — Oracle's peculiarities: emulated filtered indexes, virtual index columns, empty strings.

@@ -84,6 +84,11 @@ public class CockroachDb extends Postgres {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return null;    // no two-phase commit (PREPARE TRANSACTION)
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     try (Statement stmt = connection.createStatement();
          ResultSet rs = stmt.executeQuery("SHOW session_id")) {

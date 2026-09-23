@@ -128,6 +128,16 @@ When the session is remote and the implementation is a
 round trips for begin and commit, and keeping the transaction (including any
 [retry](#transparent-retry)) close to the database, where it belongs.
 
+### Global transactions
+
+With the optional module `tentackle-jta`, a session can take part in a global (JTA/XA) transaction
+that spans several databases or other XA resources. `@Transaction` works unchanged: a session
+configured to *join* enlists in the global transaction of the current thread and behaves like a
+nested transaction, while a session configured as *required* starts the global transaction in its
+outermost `@Transaction` method and completes it via two-phase commit — including the retry.
+Isolation and writability cannot be changed within a global transaction. See
+[Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md).
+
 ## Transparent Retry
 
 ### Why retry belongs to the framework
@@ -229,6 +239,8 @@ back with the transaction. Two things to watch:
 
 ## Related Documentation
 
+- [Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md) — transactions
+  spanning several databases or other XA resources.
 - [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) — the optimistic `serial`
   check whose temporary `NotFoundException` powers the retry, and token locks for long
   interactions.

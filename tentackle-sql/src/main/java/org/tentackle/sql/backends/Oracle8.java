@@ -200,6 +200,11 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "oracle.jdbc.xa.client.OracleXADataSource";
+  }
+
+  @Override
   public Connection createConnection(String url, String username, char[] password) throws SQLException {
     Properties props = new Properties();
     props.put("user", username);

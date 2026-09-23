@@ -152,6 +152,11 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "com.mysql.cj.jdbc.MysqlXADataSource";
+  }
+
+  @Override
   public void validateVersion(BackendVersionInfo versionInfo) {
     if (versionInfo.majorVersion() < MIN_MAJOR_VERSION) {
       throw new BackendException(this + " needs at least MySQL " + MIN_MAJOR_VERSION + ".0.13" +

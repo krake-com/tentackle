@@ -45,6 +45,8 @@ public class DbTransaction extends AbstractTransaction {
   private transient final TimeKeeper timeKeeper;  // to measure the exact duration
   private transient int handleCount;              // the last handle number
   private transient volatile boolean alive;       // the alive-flag to detect idle transactions
+  private transient boolean global;               // true if part of a global transaction
+  private transient boolean globalOwner;          // true if this transaction started the global transaction
 
   private transient Map<DbTransactionHandle, PersistenceVisitor> visitors;  // the visitors
   private transient Map<SavepointHandle, Savepoint> savepoints;             // the savepoints
@@ -207,9 +209,25 @@ public class DbTransaction extends AbstractTransaction {
    * Executes all commit runnables and removes them.<br>
    */
   public void commit() {
+    executeBatch();
+    finishCommit();
+  }
+
+  /**
+   * Executes any pending batched statements.
+   */
+  public void executeBatch() {
     if (batch != null) {
       batch.execute(true);
     }
+  }
+
+  /**
+   * Finishes a committed transaction.<br>
+   * Same as {@link #commit()} without executing the batched statements.
+   * Used for global transactions, which flush the batch before the two-phase commit.
+   */
+  public void finishCommit() {
     DbTransactionFactory.getInstance().finish(this, false);
   }
 
@@ -258,6 +276,42 @@ public class DbTransaction extends AbstractTransaction {
    */
   public boolean isAlive() {
     return alive;
+  }
+
+
+  /**
+   * Marks this transaction as part of a global transaction.
+   *
+   * @param globalOwner true if this transaction started the global transaction, false if joined
+   */
+  public void setGlobal(boolean globalOwner) {
+    this.global = true;
+    this.globalOwner = globalOwner;
+  }
+
+  /**
+   * Returns whether this transaction is part of a global transaction.
+   *
+   * @return true if global, false if local
+   * @see GlobalTransactionSupport
+   */
+  public boolean isGlobal() {
+    return global;
+  }
+
+  /**
+   * Returns whether this transaction started the global transaction.<br>
+   * Only the owner commits or rolls back the global transaction.
+   *
+   * @return true if owner, false if joined or local
+   */
+  public boolean isGlobalOwner() {
+    return globalOwner;
+  }
+
+  @Override
+  public String toString() {
+    return global ? (globalOwner ? "XA:" : "XA+") + super.toString() : super.toString();
   }
 
 

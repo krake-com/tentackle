@@ -56,6 +56,7 @@ opens.
 | `jdbcKeepAlive`   | Boolean, default `false`. Only meaningful with `jdbcIdleTimeout`: `true` sends the dummy `SELECT` *periodically* on idle connections; `false` sends it only when an idle connection is re-used.                         |
 | `batchsize`       | Enables [JDBC statement batching](../../../../tentackle-database/src/main/docs/batching.md); off by default.                                                                                                            |
 | `idsource`        | Selects a non-default [id source](../../../../tentackle-database/src/main/docs/database.md#id-sources) configuration.                                                                                                   |
+| `jta`             | `none` (default), `join` or `required`: how the session takes part in [global (JTA/XA) transactions](../../../../tentackle-jta/src/main/docs/jta.md#the-two-modes). Requires the module `tentackle-jta`.               |
 | `backend`         | Redirects the *technical* connection settings to another source — see [Redirecting the Backend](#redirecting-the-backend-user-system-and-named-files) below.                                                            |
 | `application`     | Overrides the application name (normally derived from the main class). Needed in tests that resolve `@user`/`@system` backend configurations, which are stored per application name.                                    |
 

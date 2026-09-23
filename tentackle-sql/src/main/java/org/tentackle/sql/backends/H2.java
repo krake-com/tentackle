@@ -122,6 +122,11 @@ public class H2 extends AbstractSql92Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "org.h2.jdbcx.JdbcDataSource";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     try (Statement stmt = connection.createStatement()) {
       ResultSet rs = stmt.executeQuery("select SESSION_ID()");

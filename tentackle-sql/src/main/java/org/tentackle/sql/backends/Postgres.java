@@ -136,6 +136,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public String getXADataSourceClassName() {
+    return "org.postgresql.xa.PGXADataSource";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     try (Statement stmt = connection.createStatement()) {
       ResultSet rs = stmt.executeQuery("select pg_backend_pid()");
