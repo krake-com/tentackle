@@ -109,8 +109,9 @@ public interface TripComponent<P, T> {
    * default value.
    * <p>
    * The component's ordinal precedes the value, unless it simply follows the one written before
-   * (see {@link TripStream#writeNextComponentOrdinal}). A component without a default value is
-   * always written, which is what records rely on.
+   * (see {@link TripStream#writeNextComponentOrdinal}), or it is the first component written and
+   * its value is null. A component without a default value is always written, which is what records
+   * and classes with a canonical constructor rely on.
    * <p>
    * The value is read from the parent exactly once, which is why the default check lives here
    * rather than in a predicate of its own: for a component backed by a getter, reading it twice
@@ -126,7 +127,16 @@ public interface TripComponent<P, T> {
     if (hasDefaultValue() && Objects.equals(value, getDefaultValue())) {
       return lastOrdinal;
     }
-    int ordinal = stream.writeNextComponentOrdinal(lastOrdinal, this);
+    int ordinal;
+    if (value == null && lastOrdinal < 0) {
+      // A null code right after the parent's header would be taken for a null parent,
+      // hence the first component's ordinal must be written explicitly.
+      ordinal = getOrdinal();
+      stream.writeComponentOrdinal(ordinal);
+    }
+    else {
+      ordinal = stream.writeNextComponentOrdinal(lastOrdinal, this);
+    }
     writeValue(value, stream);
     return ordinal;
   }

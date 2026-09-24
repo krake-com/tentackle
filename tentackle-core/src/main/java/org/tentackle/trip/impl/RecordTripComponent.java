@@ -19,7 +19,6 @@
 package org.tentackle.trip.impl;
 
 import org.tentackle.log.Logger;
-import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
@@ -60,7 +59,7 @@ public class RecordTripComponent<P extends Record, T> implements TripComponent<P
   /**
    * The accessor, bound to {@code (Object)<component type>}, null if it could not be bound.
    * <p>
-   * A method handle instead of {@link java.lang.reflect.Method#invoke}, which is what the accessor
+   * A method handle instead of {@code java.lang.reflect.Method#invoke}, which is what the accessor
    * of a record component is: records carry the remote call and its response, so this runs on every
    * remote invocation. For a primitive component the handle's return type stays primitive, so
    * reading it does not box either.

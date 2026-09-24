@@ -47,7 +47,9 @@ import org.tentackle.trip.impl.Employees;
 import org.tentackle.trip.impl.EmployeesArray;
 import org.tentackle.trip.impl.TestBodyEnum;
 import org.tentackle.trip.impl.NoNoArgsInstantiatable;
+import org.tentackle.trip.impl.NotReferencableCanonicalDto;
 import org.tentackle.trip.impl.NotReferencableClass;
+import org.tentackle.trip.impl.NotReferencableRecord;
 import org.tentackle.trip.impl.PartialCanonicalTripType;
 import org.tentackle.trip.impl.PreparedSerializableClass;
 import org.tentackle.trip.impl.TripError;
@@ -531,6 +533,34 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertNotNull(empty);
     assertNull(empty.getName());
     assertEquals(empty.getAge(), 0);
+  }
+
+  /**
+   * A null first component of a non-referencable object must not be taken for a null object:
+   * without a reference, its null code would directly follow the object's header.
+   * This applies to all components without a default value, such as those of a canonical
+   * constructor or a record, and to those whose default value is not null.
+   */
+  @Test
+  void testNullFirstComponentOfNotReferencable() {
+    TripType<NotReferencableCanonicalDto> canonicalType =
+        TripFactory.getInstance().getType(NotReferencableCanonicalDto.class);
+    tunnel(new NotReferencableCanonicalDto(null, 42), canonicalType);
+    tunnel(new NotReferencableCanonicalDto(null, 0), canonicalType);
+
+    TripType<NotReferencableRecord> recordType = TripFactory.getInstance().getType(NotReferencableRecord.class);
+    tunnel(new NotReferencableRecord(null, 42), recordType);
+    tunnel(new NotReferencableRecord(null, 0), recordType);
+
+    TripType<NotReferencableClass> classType = TripFactory.getInstance().getType(NotReferencableClass.class);
+    NotReferencableClass obj = new NotReferencableClass();
+    obj.name = null;    // not the default value
+    tunnel(obj, classType);
+
+    // as a component of another object, too
+    TestRecord parent = new TestRecord("kathrin", 59, false, null, null,
+                                       new NotReferencableCanonicalDto(null, 7));
+    tunnel(parent, TripFactory.getInstance().getType(TestRecord.class));
   }
 
   @Test

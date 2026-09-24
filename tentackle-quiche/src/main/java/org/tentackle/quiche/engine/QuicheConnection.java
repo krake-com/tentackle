@@ -436,7 +436,7 @@ public class QuicheConnection implements AutoCloseable {
    * sometimes closes the connection without {@code conn.recv()} ever throwing (rejecting the peer's
    * certificate is reported this way), and the closure only becomes externally visible - {@code is_closed()}
    * turning true - some time later, by which point nothing may ever call {@link #receive} again to see
-   * it. {@link QuicheEndpoint#reap()} is the backstop for that case, which is why this is package-visible
+   * it. {@code QuicheEndpoint#reap()} is the backstop for that case, which is why this is package-visible
    * rather than private to {@link #receive}.
    */
   void captureLocalError() {

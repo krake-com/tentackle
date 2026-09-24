@@ -18,12 +18,15 @@
 
 package org.tentackle.session.auth;
 
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
 import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -37,17 +40,34 @@ public class DefaultAuthentication implements Authentication {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private String name;                          // the principal's name
-  private Credentials credentials;              // the verified credentials
+  private final String name;                    // the principal's name
+  private final Credentials credentials;        // the verified credentials
   @SuppressWarnings("serial")
-  private Map<String, Object> attributes;       // the principal's attributes
+  private final Map<String, Object> attributes; // the principal's attributes
   @SuppressWarnings("serial")
-  private Set<String> roles;                    // the external roles
+  private final Set<String> roles;              // the external roles
+
   private String providerName;                  // the authenticating provider
   private long expiresAt;                       // expiry in epochal millis, 0 if none
   private long userId;                          // the user's object id
   private int userClassId;                      // the user's class id
 
+  /**
+   * Creates an authentication.
+   *
+   * @param name the principal's name, null if unknown
+   * @param credentials the verified credentials
+   * @param attributes the principal's attributes
+   * @param roles the external roles
+   */
+  @CanonicalConstructor
+  public DefaultAuthentication(String name, Credentials credentials,
+                               Map<String, Object> attributes, Set<String> roles) {
+    this.name = name;
+    this.credentials = Objects.requireNonNull(credentials, "missing credentials");
+    this.attributes = Objects.requireNonNull(attributes, "missing attributes");
+    this.roles = Objects.requireNonNull(roles, "missing roles");
+  }
 
   /**
    * Creates an authentication.
@@ -56,29 +76,32 @@ public class DefaultAuthentication implements Authentication {
    * @param credentials the verified credentials
    */
   public DefaultAuthentication(String name, Credentials credentials) {
-    this.name = name;
-    this.credentials = credentials;
-    this.attributes = new LinkedHashMap<>();
-    this.roles = new LinkedHashSet<>();
-  }
-
-  /**
-   * Creates an empty authentication.<br>
-   * Required by TRIP, should an application send an authentication to a client.
-   */
-  public DefaultAuthentication() {
-    this(null, null);
+    this(name, credentials, new LinkedHashMap<>(), new LinkedHashSet<>());
   }
 
 
   @Override
+  @CanonicalGetter(ordinal = 0)
   public String getName() {
     return name;
   }
 
   @Override
+  @CanonicalGetter(ordinal = 1)
   public Credentials getCredentials() {
     return credentials;
+  }
+
+  @Override
+  @CanonicalGetter(ordinal = 2)
+  public Map<String, Object> getAttributes() {
+    return attributes;
+  }
+
+  @Override
+  @CanonicalGetter(ordinal = 3)
+  public Set<String> getRoles() {
+    return roles;
   }
 
   @Override
@@ -93,16 +116,6 @@ public class DefaultAuthentication implements Authentication {
    */
   public void setProviderName(String providerName) {
     this.providerName = providerName;
-  }
-
-  @Override
-  public Map<String, Object> getAttributes() {
-    return attributes;
-  }
-
-  @Override
-  public Set<String> getRoles() {
-    return roles;
   }
 
   @Override
