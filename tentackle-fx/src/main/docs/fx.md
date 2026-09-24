@@ -298,7 +298,12 @@ API to access the system alerts.
 
 - The **visual alert** briefly (150 ms) sets the CSS pseudo-class `:tt-alert` on
   the control. The stylesheets map it to the color variable `-tt-alert-color`,
-  which overrides the mandatory and error colors for the duration of the flash.
+  which overrides the mandatory, error and info colors for the duration of the flash.
+  Since JavaFX weighs a style class higher than any number of pseudo-classes
+  (unlike the W3C rules), the stylesheets combine each state class with the
+  pseudo-class (`.tt-mandatory:tt-alert` etc.). Application stylesheets that
+  color controls by their own style classes must do the same, e.g.
+  `.my-state:tt-alert`, or the flash will not show on those controls.
 - The **acoustic alert** plays a short, soft bump (the bundled
   `org/tentackle/fx/input-alert.wav`) via `javax.sound.sampled`, i.e. through the
   sound system. An alert is not played again while the previous

@@ -49,8 +49,15 @@
   -fx-base: -tt-error-color;
 }
 
-/* visual input alert, overrides mandatory and error for the duration of the flash */
-:tt-alert {
+/*
+ * visual input alert, overrides mandatory, error and info for the duration of the flash.
+ * JavaFX weighs a style class higher than any number of pseudo-classes,
+ * hence the state classes must be repeated here.
+ */
+:tt-alert,
+.tt-mandatory:tt-alert,
+.tt-error:tt-alert,
+.tt-info:tt-alert {
   -fx-control-inner-background: -tt-alert-color;
   -fx-base: -tt-alert-color;
 }
