@@ -51,7 +51,7 @@ module org.tentackle.fx {
   requires transitive org.kordamp.ikonli.javafx;
   requires transitive org.kordamp.ikonli.materialdesign2;
 
-  requires java.desktop;
+  requires transitive java.desktop;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.service.Hook;
 

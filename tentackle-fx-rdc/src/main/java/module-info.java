@@ -47,8 +47,6 @@ module org.tentackle.fx.rdc {
   requires transitive org.tentackle.fx;
   requires transitive org.tentackle.pdo;
 
-  requires transitive java.desktop;
-
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
 
 }
