@@ -41,12 +41,13 @@ interface PdoComponentTripFilterHolder {
 
 
 /**
- * A {@link TripFilter} to serialize PDOs without their components.
+ * A {@link TripFilter} to serialize PDOs without their related objects.
  * <p>
- * Skips the composite relations of a PDO, i.e., the relations annotated with
- * {@link Persistent#component()} {@code = true}, together with their load flags.
- * The receiver gets the PDO with the composite relations not loaded, so they are loaded
+ * Skips all relations of a PDO, together with their load flags, except the embedded PDOs,
+ * i.e., the relations annotated with {@link Persistent#embedded()} {@code = true}.
+ * The receiver gets the PDO with the relations not loaded, so they are loaded
  * lazily on first access, just as for a PDO freshly selected from the database.
+ * Embedded PDOs are always sent, since they have no table of their own to be loaded from.
  * <p>
  * Example:
  * <pre>
@@ -97,7 +98,7 @@ public class PdoComponentTripFilter implements TripFilter {
   /**
    * Determines the names of the components to skip for the given persistent object.
    * <p>
-   * The field holding a composite relation is named like the relation's getter and
+   * The field holding a relation is named like the relation's getter and
    * accompanied by boolean flags indicating whether the relation is loaded. All of them are
    * skipped, since the receiver would otherwise take a relation for loaded that isn't.
    *

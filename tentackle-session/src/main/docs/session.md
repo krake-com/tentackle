@@ -242,8 +242,10 @@ It is rarely used in a client-server application.
 These annotations let the persistence layer examine the generated model by reflection:
 
 - [`@Persistent`](../java/org/tentackle/session/Persistent.java) — marks persistent fields, methods or types,
-  carrying `comment`, `component`, `parent` and an `ordinal`. The ordinal encodes the field/method order from the
-  model definition.
+  carrying `comment`, `component`, `parent`, `embedded` and an `ordinal`. The ordinal encodes the field/method
+  order from the model definition. `embedded` marks the getter of a relation to an
+  [embedded entity](../../../../src/main/docs/embedded-vs-datatype.md#embedded-entities), whose columns live in the
+  owner's table.
 - [`@ClassId`](../java/org/tentackle/session/ClassId.java) — the numeric class id of a persistent object
   (a `MappedService`).
 - [`@TableName`](../java/org/tentackle/session/TableName.java) — the database table name for a PDO, with

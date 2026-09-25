@@ -716,18 +716,20 @@ finally {
 - `TripStream.clear()` does not reset the filter. Since a connection's stream is shared across
   messages, remove the filter again in a `finally` block.
 
-The typical use is sending a PDO without its components. `PdoComponentTripFilter`
-(`org.tentackle.persist.trip`, in `tentackle-persistence`) skips all composite relations, i.e.,
-the relations whose getter is annotated with `@Persistent(component = true)`, together with their
-`...Loaded` flags:
+The typical use is sending a PDO without its related objects. `PdoComponentTripFilter`
+(`org.tentackle.persist.trip`, in `tentackle-persistence`) skips all relations of a PDO —
+composite, non-composite and the parent relation of a component — together with their
+`...Loaded` and `...BluntLoaded` flags:
 
 ```java
 stream.setFilter(PdoComponentTripFilter.getInstance());
 ```
 
-The receiver gets the PDO with its composite relations not loaded. Accessing one loads it
-lazily, just as for a PDO freshly selected from the database. Non-composite relations and the
-parent relation of a component are not affected.
+The receiver gets the PDO with its relations not loaded. Accessing one loads it lazily, just as
+for a PDO freshly selected from the database. The only exception is an
+[embedded entity](../../../../src/main/docs/embedded-vs-datatype.md#embedded-entities), whose
+getter is annotated with `@Persistent(embedded = true)`: it has no table of its own, since its
+columns are part of the owner's row, so it could not be loaded later and is always sent along.
 
 #### Custom TripType
 
