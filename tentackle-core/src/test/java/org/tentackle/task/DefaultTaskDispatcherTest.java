@@ -544,6 +544,7 @@ public class DefaultTaskDispatcherTest {
 
     CountDownLatch started = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
+    CountDownLatch notified = new CountDownLatch(1);
     AtomicBoolean interruptedAfterwards = new AtomicBoolean();
 
     AbstractTask task = new AbstractTask() {
@@ -577,6 +578,7 @@ public class DefaultTaskDispatcherTest {
       @Override
       public void completed(Task completedTask) {
         interruptedAfterwards.set(Thread.currentThread().isInterrupted());
+        notified.countDown();
       }
     });
 
@@ -592,7 +594,14 @@ public class DefaultTaskDispatcherTest {
     dispatcher.interrupt();     // withheld while the non-interruptable task is running
     release.countDown();
 
-    await(() -> task.getCompleted() != 0);
+    // not task.getCompleted(): the completion timestamp is set before the dispatcher listeners are notified
+    try {
+      assertTrue(notified.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "completion listener not notified");
+    }
+    catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      fail("interrupted while waiting for the completion notification");
+    }
     assertTrue(interruptedAfterwards.get(), "the withheld interrupt was never delivered");
   }
 
