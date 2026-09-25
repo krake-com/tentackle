@@ -70,7 +70,7 @@ implementation at runtime — so the API stays agnostic of its backend.
 | UI          | tentackle-fx-rdc-poi · [tentackle-fx-rdc-update](../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md)                                            | Pluggable Apache POI export and the client UI for `tentackle-update`.                                                                     |
 
 **Pluggable providers** (selected via the SPI): logging — [tentackle-log-slf4j](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md),
-[tentackle-log-log4j2v](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md), tentackle-log-log4j;
+[tentackle-log-log4j2v](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md);
 scripting — [tentackle-script-groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md),
 [tentackle-script-ruby](../../../tentackle-script-ruby/src/main/docs/ruby.md),
 [tentackle-script-jsr](../../../tentackle-script-jsr/src/main/docs/jsr.md) (JSR-223 / GraalVM).
@@ -102,6 +102,7 @@ Not part of the layered diagram, but each ships its own docs:
 - [tentackle-project-archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — project scaffolding ([walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)).
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support.
 - [tentackle-pdo-mock](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md) — mock PDO/operation delegates for database-less unit tests, usable by the domain- and persistence layer themselves.
+- [tentackle-osgi](../../../tentackle-osgi/src/main/docs/osgi.md) — not a reactor module, but a separate build wrapping the runtime modules into OSGi bundles with activators.
 
 Full per-module API documentation is published under the
 [Tentackle site docs](https://tentackle.org/tentackle/).

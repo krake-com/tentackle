@@ -163,7 +163,7 @@ topic-grouped listing of every document, see the
 - **Oracle (backend peculiarities)** — [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **OAuth2 / OIDC login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md), [Single Sign-On with Google](./google-sso.md)
-- **OSGi bundles** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
+- **OSGi bundles (building, activators, `RESOURCE-INDEX.LIST`)** — [OSGi Bundles](../../../tentackle-osgi/src/main/docs/osgi.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
 
 ## P
 

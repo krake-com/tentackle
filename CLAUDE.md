@@ -100,6 +100,9 @@ Aggregation/scaffold:   tentackle-bom, tentackle-project-archetype
 Test support:           tentackle-pdo-mock, tentackle-test-pdo, tentackle-test-fx-rdc
 ```
 
+`tentackle-osgi/` is **not** part of the reactor: it is a separate build (run after `mvn install`) that wraps the
+runtime modules into OSGi bundles with activators. See [`osgi.md`](tentackle-osgi/src/main/docs/osgi.md).
+
 Note the interface/implementation split: interface modules are implemented by separate runtime modules that are injected via the SPI (see below), so the API stays agnostic of the implementation.
 
 - `tentackle-session` (interfaces) is implemented by `tentackle-database`.

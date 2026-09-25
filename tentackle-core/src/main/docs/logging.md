@@ -241,8 +241,9 @@ module org.tentackle.log.slf4j {           module org.tentackle.log.log4j2v {
 }                                            }
 ```
 
-For **OSGi**, dedicated activator bundles exist under `tentackle-osgi/tentackle-osgi-activators/` for the
-SLF4J, Log4J 2 and Log4J providers.
+For **OSGi**, both providers are available as bundles (`tentackle.log.slf4j.osgi` and
+`tentackle.log.log4j2v.osgi`), each with its own activator. See
+[OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md).
 
 ### Choosing a backend
 
@@ -276,4 +277,4 @@ Implement [`Logger`](../java/org/tentackle/log/Logger.java) (extending nothing i
 | `MethodStatistics`, `MethodStatisticsKey`, `StatisticsResult`                                                | `tentackle-core` · `org.tentackle.log`                |
 | SLF4J provider                                                                                               | `tentackle-log-slf4j` · `org.tentackle.log.slf4j`     |
 | Log4J 2 provider                                                                                             | `tentackle-log-log4j2v` · `org.tentackle.log.log4j2v` |
-| OSGi activators                                                                                              | `tentackle-osgi/tentackle-osgi-activators/`           |
+| OSGi bundles and activators ([OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md))               | `tentackle-osgi/` (separate build)                    |

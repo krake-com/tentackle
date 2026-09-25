@@ -473,7 +473,8 @@ publishes, which is the useful test of whether one is real.
 The artifacts on Maven Central are not OSGi bundles, but you can build them: clone the
 [tentackle repo](https://bitbucket.org/krake-oss/tentackle/src/master/), build it, then run a second
 build in the `tentackle-osgi` subfolder. That produces the bundles with their activators and sources
-(the latter are handy in the Eclipse IDE).
+(the latter are handy in the Eclipse IDE). See [OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md)
+for the build, the bundle list and how to prepare your own bundles.
 
 OSGi is the reason `ServiceFactory` supports **per-service classloaders**. Each service (path + name)
 keeps a stack of explicit loaders: setting one pushes, removing pops — so deactivating a bundle
@@ -501,6 +502,7 @@ There is no public P2 repository yet, though that may change.
 
 ## Related Documentation
 
+- [OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md) — building the bundles, and the activators driving the per-service classloaders.
 - [Tentackle Common](common.md) — the module these classes belong to.
 - [Isolated Module Layers](layers.md) — the `ModuleLayer`-aware extension of this API.
 - [Tentackle Build Support](../../../../tentackle-build-support/src/main/docs/build-support.md) — the analyze phase, the processor, and the full handler roster.

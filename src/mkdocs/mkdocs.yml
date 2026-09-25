@@ -125,6 +125,7 @@ nav:
       - Tentackle Common: common.md
       - Service and Configuration API: services.md
       - Isolated Module Layers: layers.md
+      - OSGi Bundles: osgi.md
       - Cryptor and EncryptedProperties: cryptor.md
       - Keyring — Secrets on the Client: keyring.md
       - OS Credential Stores: platform-keyring.md
