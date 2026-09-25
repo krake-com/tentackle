@@ -126,7 +126,7 @@ Verifying the credentials is a concern of its own, described in full in
   the application's user entity, yielding the `userId`/`userClassId` that are written back onto the `SessionInfo`
   and drive `DomainContext` and the `SecurityManager`.
 
-Confidential values are held in a [`Secret`](../java/org/tentackle/session/auth/Secret.java), which keeps them
+Confidential values are held in a [`Secret`](../../../../tentackle-core/src/main/java/org/tentackle/misc/Secret.java), which keeps them
 encrypted in memory — and hence also on the wire — whenever a
 [`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md) is configured.
 

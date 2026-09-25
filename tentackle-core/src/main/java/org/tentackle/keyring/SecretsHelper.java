@@ -31,7 +31,7 @@ import java.util.Arrays;
  * Strings are immutable and cannot be wiped, so a secret turned into one stays in the heap until it
  * happens to be overwritten. All intermediate buffers created here are wiped before they are released.
  */
-public final class Secrets {
+public final class SecretsHelper {
 
   /**
    * Encodes a secret to UTF-8.
@@ -106,7 +106,7 @@ public final class Secrets {
   }
 
 
-  private Secrets() {
+  private SecretsHelper() {
   }
 
 }

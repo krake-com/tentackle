@@ -55,7 +55,7 @@ public class MemoryKeyring extends AbstractKeyring {
 
   @Override
   protected void doStore(SecretId id, String label, char[] secret) {
-    Secrets.wipe(secrets.put(id, secret.clone()));
+    SecretsHelper.wipe(secrets.put(id, secret.clone()));
   }
 
   @Override
@@ -67,7 +67,7 @@ public class MemoryKeyring extends AbstractKeyring {
   @Override
   protected boolean doRemove(SecretId id) {
     char[] secret = secrets.remove(id);
-    Secrets.wipe(secret);
+    SecretsHelper.wipe(secret);
     return secret != null;
   }
 

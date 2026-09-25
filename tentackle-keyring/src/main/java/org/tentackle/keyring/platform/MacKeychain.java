@@ -21,7 +21,7 @@ package org.tentackle.keyring.platform;
 import org.tentackle.keyring.AbstractKeyring;
 import org.tentackle.keyring.KeyringException;
 import org.tentackle.keyring.SecretId;
-import org.tentackle.keyring.Secrets;
+import org.tentackle.keyring.SecretsHelper;
 import org.tentackle.keyring.platform.ffm.MacSecurity;
 import org.tentackle.log.Logger;
 
@@ -79,7 +79,7 @@ public class MacKeychain extends AbstractKeyring {
 
   @Override
   protected void doStore(SecretId id, String label, char[] secret) {
-    byte[] bytes = Secrets.encode(secret);
+    byte[] bytes = SecretsHelper.encode(secret);
     try {
       // try update first: in the common case of renewing a token, the item exists
       if (security.update(id.service(), id.account(), label, bytes) == MacSecurity.ERR_SEC_ITEM_NOT_FOUND &&
@@ -89,7 +89,7 @@ public class MacKeychain extends AbstractKeyring {
       }
     }
     finally {
-      Secrets.wipe(bytes);
+      SecretsHelper.wipe(bytes);
     }
   }
 
@@ -97,10 +97,10 @@ public class MacKeychain extends AbstractKeyring {
   protected char[] doLoad(SecretId id) {
     byte[] bytes = security.copy(id.service(), id.account());
     try {
-      return bytes == null ? null : Secrets.decode(bytes);
+      return bytes == null ? null : SecretsHelper.decode(bytes);
     }
     finally {
-      Secrets.wipe(bytes);
+      SecretsHelper.wipe(bytes);
     }
   }
 

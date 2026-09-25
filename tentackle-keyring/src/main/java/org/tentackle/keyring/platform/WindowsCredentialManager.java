@@ -21,7 +21,7 @@ package org.tentackle.keyring.platform;
 import org.tentackle.keyring.AbstractKeyring;
 import org.tentackle.keyring.KeyringException;
 import org.tentackle.keyring.SecretId;
-import org.tentackle.keyring.Secrets;
+import org.tentackle.keyring.SecretsHelper;
 import org.tentackle.keyring.platform.ffm.Advapi32;
 import org.tentackle.log.Logger;
 
@@ -165,7 +165,7 @@ public class WindowsCredentialManager extends AbstractKeyring {
   protected void doStore(SecretId id, String label, char[] secret) {
     String target = getTargetName(id);
     int oldChunks = getChunkCount(target);
-    byte[] bytes = Secrets.encode(secret);
+    byte[] bytes = SecretsHelper.encode(secret);
     byte[] blob = null;
     int newChunks = 0;
     try {
@@ -183,7 +183,7 @@ public class WindowsCredentialManager extends AbstractKeyring {
                            label + " (part " + (i + 1) + " of " + newChunks + ")", chunk);
           }
           finally {
-            Secrets.wipe(chunk);
+            SecretsHelper.wipe(chunk);
           }
         }
         blob = ByteBuffer.allocate(5).put(FORMAT_CHUNKED).putInt(newChunks).array();
@@ -191,8 +191,8 @@ public class WindowsCredentialManager extends AbstractKeyring {
       advapi32.write(target, id.account(), label, blob);
     }
     finally {
-      Secrets.wipe(bytes);
-      Secrets.wipe(blob);
+      SecretsHelper.wipe(bytes);
+      SecretsHelper.wipe(blob);
     }
     removeChunks(target, newChunks + 1, oldChunks);
   }
@@ -230,15 +230,15 @@ public class WindowsCredentialManager extends AbstractKeyring {
         }
         finally {
           for (byte[] part : parts) {
-            Secrets.wipe(part);
+            SecretsHelper.wipe(part);
           }
         }
       }
-      return Secrets.decode(bytes);
+      return SecretsHelper.decode(bytes);
     }
     finally {
-      Secrets.wipe(blob);
-      Secrets.wipe(bytes);
+      SecretsHelper.wipe(blob);
+      SecretsHelper.wipe(bytes);
     }
   }
 
@@ -286,7 +286,7 @@ public class WindowsCredentialManager extends AbstractKeyring {
       return 0;   // replaced or removed anyway
     }
     finally {
-      Secrets.wipe(blob);
+      SecretsHelper.wipe(blob);
     }
   }
 

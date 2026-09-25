@@ -26,38 +26,38 @@ import java.nio.charset.StandardCharsets;
 import static org.testng.Assert.assertEquals;
 
 /**
- * Tests the {@link Secrets} codec.
+ * Tests the {@link SecretsHelper} codec.
  */
-public class SecretsTest {
+public class SecretsHelperTest {
 
   @Test
   public void testRoundTrip() {
     Reporter.log("secrets are encoded to UTF-8 and back without loss", true);
     String text = "pässwörd-€-🔑";    // incl. a surrogate pair
-    byte[] bytes = Secrets.encode(text.toCharArray());
+    byte[] bytes = SecretsHelper.encode(text.toCharArray());
     assertEquals(bytes, text.getBytes(StandardCharsets.UTF_8));
-    assertEquals(new String(Secrets.decode(bytes)), text);
+    assertEquals(new String(SecretsHelper.decode(bytes)), text);
   }
 
   @Test(expectedExceptions = KeyringException.class)
   public void testLoneSurrogate() {
     Reporter.log("a lone surrogate is no valid secret", true);
-    Secrets.encode(new char[] { 'a', '\uD83D' });
+    SecretsHelper.encode(new char[] {'a', '\uD83D' });
   }
 
   @Test(expectedExceptions = KeyringException.class)
   public void testMalformedUtf8() {
     Reporter.log("a stored secret that is not UTF-8 is reported", true);
-    Secrets.decode(new byte[] { (byte) 0xC3, (byte) 0x28 });
+    SecretsHelper.decode(new byte[] {(byte) 0xC3, (byte) 0x28 });
   }
 
   @Test
   public void testWipe() {
     char[] chars = "secret".toCharArray();
     byte[] bytes = "secret".getBytes(StandardCharsets.UTF_8);
-    Secrets.wipe(chars);
-    Secrets.wipe(bytes);
-    Secrets.wipe((char[]) null);
+    SecretsHelper.wipe(chars);
+    SecretsHelper.wipe(bytes);
+    SecretsHelper.wipe((char[]) null);
     assertEquals(chars, new char[6]);
     assertEquals(bytes, new byte[6]);
   }

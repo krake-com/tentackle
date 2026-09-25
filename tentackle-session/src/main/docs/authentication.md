@@ -50,7 +50,6 @@ Everything lives in `org.tentackle.session.auth`, so both the client (`Db.open`)
 | [`Credentials`](../java/org/tentackle/session/auth/Credentials.java)                | What the client presents. Travels on the `SessionInfo` via TRIP.                 |
 | [`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java)| Username and password — the default.                                             |
 | [`TokenCredentials`](../java/org/tentackle/session/auth/TokenCredentials.java)      | A bearer token, plus optional refresh token, issuer and expiry.                  |
-| [`Secret`](../java/org/tentackle/session/auth/Secret.java)                          | A confidential value, encrypted in memory when a `Cryptor` is configured.        |
 | [`AuthenticationProvider`](../java/org/tentackle/session/auth/AuthenticationProvider.java) | **The server-side SPI**: verifies credentials.                             |
 | [`AuthenticationManager`](../java/org/tentackle/session/auth/AuthenticationManager.java)   | Drives the provider chain. Deny by default.                               |
 | [`Authentication`](../java/org/tentackle/session/auth/Authentication.java)          | The proven identity: name, claims, roles, and the application's user.            |
@@ -75,7 +74,7 @@ sessionInfo.setCredentials(new TokenCredentials(accessToken));
 sessionInfo.getPassword();        // null - there is no password anymore
 ```
 
-Confidential parts are held in a [`Secret`](../java/org/tentackle/session/auth/Secret.java), which
+Confidential parts are held in a [`Secret`](../../../../tentackle-core/src/main/java/org/tentackle/misc/Secret.java), which
 encrypts them in memory — and therefore also on the wire — whenever the application provides a
 [`Cryptor`](../../../../tentackle-common/src/main/docs/cryptor.md). `clear()` overwrites the arrays,
 `clone()` copies them physically, and `toString()` never reveals them. Custom credential types must
