@@ -37,6 +37,7 @@
     <module>tentackle.sql.osgi</module>
     <module>tentackle.session.osgi</module>
     <module>tentackle.database.osgi</module>
+    <module>tentackle.jta.osgi</module>
     <module>tentackle.model.osgi</module>
     <module>tentackle.pdo.osgi</module>
     <module>tentackle.domain.osgi</module>

@@ -24,6 +24,7 @@
     <module>tentackle-sql-osgi-activator</module>
     <module>tentackle-session-osgi-activator</module>
     <module>tentackle-database-osgi-activator</module>
+    <module>tentackle-jta-osgi-activator</module>
     <module>tentackle-model-osgi-activator</module>
     <module>tentackle-pdo-osgi-activator</module>
     <module>tentackle-domain-osgi-activator</module>
