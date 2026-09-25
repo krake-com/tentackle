@@ -596,7 +596,7 @@ public class PdoUtilities {
           else continue;    // not a getter
         }
         Persistent anno = method.getAnnotation(Persistent.class);
-        if (anno != null) {   // getter annotated with @Persistent
+        if (anno != null && anno.component() && !anno.parent()) {   // getter annotated with @Persistent
           Method setter = null;
           try {
             setter = cls.getMethod("set" + StringHelper.firstToUpper(name), method.getReturnType());
