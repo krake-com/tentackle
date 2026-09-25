@@ -61,6 +61,13 @@ public @interface Persistent {
   boolean parent() default false;
 
   /**
+   * Returns whether this is an embedded PDO.
+   *
+   * @return true if this is an embedded PDO
+   */
+  boolean embedded() default false;
+
+  /**
    * Gets the ordinal according to the model.<br>
    * Used to order the attributes and relations when analyzed via reflection.
    *

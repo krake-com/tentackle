@@ -71,9 +71,16 @@ For more options, see {\@link ModelWurblet}.
   \@Bindable
 @[
           if (rel.isComposite()) {
+            if (rel.isEmbedding()) {
+]@
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(rel)))@, embedded=true)
+@[
+            }
+            else {
 ]@
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(rel)))@)
 @[
+            }
           }
           else {
             if (oppRel != null && oppRel.isComposite()) {

@@ -607,7 +607,8 @@ public class PdoUtilities {
           PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
                                 PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
                                 PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
-          members.add(new PdoMember(type, name, method, setter, anno.component(), anno.parent(),
+          members.add(new PdoMember(type, name, method, setter,
+                                    anno.component(), anno.parent(), anno.embedded(),
                                     method.getAnnotation(DomainKey.class) != null,
                                     anno.comment(), anno.ordinal()));
         }
@@ -647,7 +648,8 @@ public class PdoUtilities {
             if (withRelations && !relation.isComponent() && !relation.isParent()) {
               // non-component object relation instead of the object id
               member = new PdoMember(relation.getType(), relation.getName(), relation.getGetter(), relation.getSetter(),
-                                     false, false, member.isDomainKey(), relation.getComment(), member.getOrdinal());
+                                     false, false, false,
+                                     member.isDomainKey(), relation.getComment(), member.getOrdinal());
             }
             else {
               continue;   // skip component or parent relations

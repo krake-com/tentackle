@@ -23,7 +23,8 @@ import java.util.Objects;
 
 /**
  * A member of a PDO.<br>
- * Members can be either attributes or relations. Their getters are annotated with {@link org.tentackle.session.Persistent}.
+ * Members can be either attributes or relations.
+ * Their getters are annotated with {@link org.tentackle.session.Persistent}.
  */
 public class PdoMember {
 
@@ -60,6 +61,7 @@ public class PdoMember {
   private final Method setter;
   private final boolean component;
   private final boolean parent;
+  private final boolean embedded;
   private final boolean domainKey;
   private final String comment;
   private final int ordinal;
@@ -71,20 +73,22 @@ public class PdoMember {
    * @param name the member's name
    * @param getter the getter method
    * @param setter the optional setter method
-   * @param component true if member is a component
-   * @param parent true if member is a parent relation
-   * @param domainKey true if member is domain key
+   * @param component true if the member is a component
+   * @param parent true if the member is a parent relation
+   * @param embedded true if the member is an embedded PDO
+   * @param domainKey true if the member is domain key
    * @param comment the comment
    * @param ordinal the model ordinal
    */
   public PdoMember(Type type, String name, Method getter, Method setter,
-                   boolean component, boolean parent, boolean domainKey, String comment, int ordinal) {
+                   boolean component, boolean parent, boolean embedded, boolean domainKey, String comment, int ordinal) {
     this.type = type;
     this.name = name;
     this.getter = getter;
     this.setter = setter;
     this.component = component;
     this.parent = parent;
+    this.embedded = embedded;
     this.domainKey = domainKey;
     this.comment = comment;
     this.ordinal = ordinal;
@@ -143,6 +147,15 @@ public class PdoMember {
    */
   public boolean isParent() {
     return parent;
+  }
+
+  /**
+   * Returns whether this is an embedded PDO.
+   *
+   * @return true if embedded PDO
+   */
+  public boolean isEmbedded() {
+    return embedded;
   }
 
   /**

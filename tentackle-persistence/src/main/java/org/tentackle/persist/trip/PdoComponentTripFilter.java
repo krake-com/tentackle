@@ -109,7 +109,8 @@ public class PdoComponentTripFilter implements TripFilter {
     Set<String> names = new HashSet<>();
     List<PdoMember> members = PdoUtilities.getInstance().getMembers((Class) po.getClassVariables().pdoClass);
     for (PdoMember member : members) {
-      if (member.getType() == PdoMember.Type.RELATION && member.isComponent()) {
+      if (member.getType() == PdoMember.Type.RELATION && !member.isEmbedded()) {
+        // skip all relations, except embedded PDOs
         String name = member.getName();
         names.add(name);
         names.add(name + "Loaded");
