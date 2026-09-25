@@ -527,7 +527,7 @@ Index lines appear in the `## indexes` section.
 Not every backend can do all of this. If a backend supports neither the requested filter nor a function, the
 index is skipped when declared `optional` and rejected at build time otherwise. Oracle has no partial indexes at
 all and emulates them with a `CASE` expression — the conditional uniqueness is enforced, but the index is not
-used for reads. See [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md).
+used for reads. See [The Oracle Backend](../../../../tentackle-sql/src/main/docs/oracle.md).
 
 ### Deferred constraint checking
 

@@ -1,7 +1,7 @@
 ## The Tentackle MCP Maven Plugin
 
 `tentackle-mcp-maven-plugin` runs an [MCP](https://modelcontextprotocol.io/) server that exposes the
-[Tentackle model](../../../tentackle-model/src/main/docs/tentackle-model.md) — entities, attributes, relations,
+[Tentackle model](../../../../tentackle-model/src/main/docs/tentackle-model.md) — entities, attributes, relations,
 indexes, inheritance and aggregate structure — to coding agents, in exactly the shape the code generators see it.
 
 It exists because everything an agent needs in order to reason about an application's data model is present, and
@@ -66,8 +66,8 @@ server runs once, at the root, and is started explicitly.
 ```
 
 Model parameters — identical in name, default and user property to the
-[SQL](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) and
-[wizard](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) plugins, so a
+[SQL](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) and
+[wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) plugins, so a
 project that configures those needs nothing new here:
 
 - `modelName` (`tentackle.modelName`): the model name. Defaults to `default`.
@@ -217,7 +217,7 @@ duplicate entity id 9001 for Note, already assigned to Customer
 
 | Resource                                     | Content                                                                                                          |
 |----------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `tentackle-model://grammar/model-definition` | [Model Definition Syntax](../../../tentackle-model/src/main/docs/model-definition.md), packaged with the plugin, so an agent never has to guess the DSL. |
+| `tentackle-model://grammar/model-definition` | [Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md), packaged with the plugin, so an agent never has to guess the DSL. |
 | `tentackle-model://index`                    | All entities with class id, table and super entity.                                                              |
 | `tentackle-model://entity/{name}`            | One entity's model source.                                                                                        |
 
@@ -255,10 +255,10 @@ cp path/to/tentackle-mcp-maven-plugin/src/skills/tentackle-model/SKILL.md .claud
 Agents that do not support skills can be pointed at the same file as plain instructions — in `AGENTS.md`, in a
 Codex prompt, or in whatever the tool calls its project context.
 
-The [wizard plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-skills)
+The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-skills)
 ships three more, one per headless goal: `tentackle-pdo-wizard`, `tentackle-pdo-browser` and
 `tentackle-script-runner`, and the
-[SQL plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-skills)
+[SQL plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-skills)
 two further ones, `tentackle-sql-migrator` and `tentackle-sql-runner`. Together with this one they cover
 the whole loop — inspect the model, scaffold the entity, migrate the database, run code against a
 backend, build fixtures, drop down to SQL.
@@ -267,11 +267,11 @@ backend, build fixtures, drop down to SQL.
 
 - [AI Agent Tooling Support](../../../../src/main/docs/ai-agents.md) — how this server and the headless
   wizard goals fit into one agent workflow.
-- [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md) — the API the server exposes.
-- [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md) — the DSL an agent writes back.
-- [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — the same
+- [Tentackle Model](../../../../tentackle-model/src/main/docs/tentackle-model.md) — the API the server exposes.
+- [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — the DSL an agent writes back.
+- [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) — the same
   model, turned into DDL that actually runs.
-- [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) —
+- [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) —
   the interactive counterpart for humans.
 - [Model Context Protocol](https://modelcontextprotocol.io/) — the protocol specification.
 - [Plugin reference (generated)](https://tentackle.org/tentackle/tentackle-mcp-maven-plugin/plugin-info.html)

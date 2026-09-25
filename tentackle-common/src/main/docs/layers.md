@@ -13,9 +13,9 @@ module of the same name without the two ever colliding — as long as nothing ne
 once. Tentackle wraps this in a small, declarative API (`LayerSpec`, `LayerGraphSpec`,
 `ModuleLayerBuilder`, `LayerBootstrap`) so that isolating a dependency is a matter of Maven
 configuration rather than hand-written `ModuleLayer` plumbing. Two plugins build on it, in two
-different ways: [`tentackle-jlink-maven-plugin`](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
+different ways: [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
 resolves and launches a layer graph for a *packaged* application, in a separate process, via
-`LayerBootstrap`; [`tentackle-wizard-maven-plugin`](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
+`LayerBootstrap`; [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
 builds the same kind of graph *in-process*, at goal-execution time, for goals that run application
 code directly inside the Maven build itself (see "Running In-Process" below).
 
@@ -113,7 +113,7 @@ layer-unaware `ServiceFactory.getServiceFinder()` call resolves via
 needs **no new API** to transparently pick up services from within its own layer. The
 `tentackle-jlink-maven-plugin` generates the config and points the launcher at `LayerBootstrap`
 instead of the real main class whenever `<layers>` are configured — see
-[jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers).
+[jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers).
 
 ## Reaching an isolated layer
 
@@ -202,7 +202,7 @@ So instead of writing a `layers.properties` file and launching `LayerBootstrap`,
 No `LayerBootstrap`, no `layers.properties` file, and no separate process are involved; the "leaf
 layer" here is simply whichever classloader the goal's own logic runs under while the context
 classloader is swapped. See the wizard plugin's own
-[*Isolated Module Layers*](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
+[*Isolated Module Layers*](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers)
 section for its `<layers>`/`<leafLayer>` configuration.
 
 ## Running From an IDE — Without the Maven Plugin
@@ -268,7 +268,7 @@ Once this works, moving it into the build is a mechanical step, not a redesign: 
 `copy-dependencies` invocations and the hand-written `layers.properties` with the plugin's own
 `<layers>` config plus its `layers` goal (bound to `process-classes`), which resolves the same
 dependencies via Aether and (re)generates the same file into `target/tentackle-layers/` on every
-`mvn compile` — see [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers).
+`mvn compile` — see [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers).
 Building an actual jlink or jpackage image only comes after that, as the final step for producing a
 real, distributable artifact — it is never needed just to develop or debug against isolated layers.
 
@@ -276,8 +276,8 @@ real, distributable artifact — it is never needed just to develop or debug aga
 
 - [Service and Configuration API](services.md) — `ServiceFinder`/`ServiceFactory`/`ModuleSorter`,
   which this document extends.
-- [Tentackle Modules](../../../src/main/docs/modules.md) — the module system this API builds on.
-- [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — the
+- [Tentackle Modules](../../../../src/main/docs/modules.md) — the module system this API builds on.
+- [jlinkpackage.md](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) — the
   `<layers>`/`<layer>` configuration, packaging layout, and the `layers` goal for local development.
-- [tentackle-wizard-maven-plugin.md](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers) —
+- [tentackle-wizard-maven-plugin.md](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#isolated-module-layers) —
   the in-process consumer, running application code inside the Maven build itself.

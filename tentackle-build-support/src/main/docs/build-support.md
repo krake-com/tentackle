@@ -137,7 +137,7 @@ small record into an info file that a wurblet deserializes in a later build step
 - [`RecordDTOInfo`](../java/org/tentackle/buildsupport/RecordDTOInfo.java) (with
   [`RecordDTOInfoParameter`](../java/org/tentackle/buildsupport/RecordDTOInfoParameter.java)) — captures a record
   DTO's components into a `record.info` file used for DTO generation. See
-  [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
+  [The DTO Wurblet and `@RecordDTO`](../../../../tentackle-wurblets/src/main/docs/dto-wurblet.md#what-recorddto-actually-does)
   for how the wurblet consumes it.
 
 Each info type defines its own `INFO_FILE_VERSION`, writes itself through a `PrintWriter` and reads itself back

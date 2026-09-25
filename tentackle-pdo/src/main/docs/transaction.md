@@ -117,7 +117,7 @@ the transaction around the violation.
 calls `Session.setConstraintsDeferred(true)` right after the transaction actually starts (not when
 joining an already-running one), for the rest of that transaction. It only has an effect on
 constraints declared `deferred` or `deferrable` in the model — see
-[Index Lines](../../../tentackle-model/src/main/docs/model-definition.md#7-index-lines).
+[Index Lines](../../../../tentackle-model/src/main/docs/model-definition.md#7-index-lines).
 
 ### Remote sessions
 

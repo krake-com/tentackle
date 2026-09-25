@@ -385,7 +385,7 @@ which must not silently leak into a unit of work that expects consistent reads.
 
 Domain contexts form a parent chain and can be **named**. `@WithinContext`
 requires that each name given in its `value` matches the name of the current
-[`DomainContext`](domain-context-provider.md) or one of its parents;
+[`DomainContext`](../../../../tentackle-pdo/src/main/docs/domain-context-provider.md) or one of its parents;
 `@NotWithinContext` requires the opposite. A violated assertion throws a
 `DomainException`. This turns workflow assumptions into checked contracts: a
 method that only makes sense inside, say, a named migration- or import context —
