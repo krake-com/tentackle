@@ -80,6 +80,7 @@ topic-grouped listing of every document, see the
 
 ## F
 
+- **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Formatting (localized patterns)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
@@ -115,7 +116,13 @@ topic-grouped listing of every document, see the
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
 - **JTA / XA (`jta` backend property, `XaConnectionManager`, `XaMpxConnectionManager`)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **JWT / ID token verification** — [Single Sign-On with Google](./google-sso.md)
+- **JWT / tokens on the client (storage)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [Single Sign-On with Google](./google-sso.md)
 - **JSON / JSONB (model type ↔ database column type)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md#json-and-jsonb), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md#json), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
+
+## K
+
+- **Keychain (macOS), Credential Manager (Windows), Secret Service (Linux)** — [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
+- **Keyring (secrets on the client)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md), [Single Sign-On with Google](./google-sso.md)
 
 ## L
 
@@ -202,6 +209,7 @@ topic-grouped listing of every document, see the
 - **SAP HANA (backend peculiarities)** — [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md)
 - **Scripting** — [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Groovy](../../../tentackle-script-groovy/src/main/docs/groovy.md), [JRuby](../../../tentackle-script-ruby/src/main/docs/ruby.md), [JSR-223](../../../tentackle-script-jsr/src/main/docs/jsr.md)
 - **Secrets in configuration (`~`-encrypted properties)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
+- **Secrets on the client (SSO tokens, passwords)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md)
 - **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Schema migration (`tentackle-sql:migrate`, migration hints)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-migrate-goal), [AI Agent Tooling Support](./ai-agents.md#following-the-model-tentackle-sqlmigrate)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)

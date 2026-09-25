@@ -26,6 +26,7 @@ module org.tentackle.core {
   exports org.tentackle.bind;
   exports org.tentackle.daemon;
   exports org.tentackle.io;
+  exports org.tentackle.keyring;
   exports org.tentackle.log;
   exports org.tentackle.misc;
   exports org.tentackle.misc.time;

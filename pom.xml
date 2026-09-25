@@ -49,6 +49,7 @@
     <module>tentackle-core</module>
     <module>tentackle-quic</module>
     <module>tentackle-quiche</module>
+    <module>tentackle-keyring</module>
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>

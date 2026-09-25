@@ -86,6 +86,8 @@ the [Index](./index.md).
 - [Service and Configuration API — Locating Implementations Without Scanning](../../../tentackle-common/src/main/docs/services.md) — the `@Service`/`@MappedService` annotations, the ServiceFinder SPI, build-time registration, module ordering and the ModuleHook.
 - [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md) — running two versions of the same dependency in parallel, via `ModuleLayer` and `LayerBootstrap`.
 - [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md) — application-specific secret handling: encrypted passwords in configuration, memory, and on the wire.
+- [Keyring — Secrets on the Client](../../../tentackle-core/src/main/docs/keyring.md) — keeping client-side secrets such as SSO tokens; the API and the default keyrings.
+- [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md) — the opt-in tentackle-keyring module: the macOS keychain, the Windows Credential Manager and the Secret Service.
 - [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md) — how the domain, persistence and remote-delegate class names are derived, and how to replace the conventions application-wide.
 - [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md) — compile-time validation of the framework's annotations.
 - [Binding — Connecting Models to Views](../../../tentackle-core/src/main/docs/binding.md) — the binding API.

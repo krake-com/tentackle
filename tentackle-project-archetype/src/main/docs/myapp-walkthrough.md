@@ -530,7 +530,8 @@ out class by class in [Single Sign-On with Google](../../../../src/main/docs/goo
    returns `TokenCredentials`, selected with `authentication=oidc` in `backend.properties` (§12). The RDC
    [login view](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login) then replaces the
    username and password fields of `MyAppLoginApplication` by a single sign-in button, and retries once on a
-   `CredentialsExpiredException`.
+   `CredentialsExpiredException`. To skip the browser on the next start, the provider keeps the tokens in the
+   [keyring](../../../../tentackle-core/src/main/docs/keyring.md), which [tentackle-keyring](../../../../tentackle-keyring/src/main/docs/platform-keyring.md) backs with the credential store of the OS.
 
 Nothing in `MyAppSessionInfo`, `MyAppRemoteDbSessionImpl` or the security layer changes: the `userId`/`userClassId`
 pair `verifySessionInfo` copies onto the session info is the same either way, so `DomainContext`, the

@@ -81,14 +81,14 @@ Tests run with locale forced to US English (`-Duser.language=en -Duser.region=US
 
 ## Module Architecture
 
-This is a 41-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
+This is a 42-module Maven reactor. Per [`modules.md`](src/main/docs/modules.md), modules fall into three kinds, organized in layers:
 
 ```
 UI Layer (runtime):     tentackle-fx, tentackle-fx-atlanta, tentackle-fx-rdc,
                         tentackle-fx-rdc-poi, tentackle-fx-rdc-update, tentackle-web
 Application (runtime):  tentackle-pdo, tentackle-domain, tentackle-persistence, tentackle-update
 Database (runtime):     tentackle-database, tentackle-session, tentackle-jta (optional JTA/XA)
-Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic, tentackle-quiche,
+Core (runtime):         tentackle-core, tentackle-i18n, tentackle-quic, tentackle-quiche, tentackle-keyring,
                         log/script providers (log-slf4j, log-log4j2v, script-groovy/ruby/jsr)
 Common (build+runtime): tentackle-common, tentackle-sql
 Build tooling:          tentackle-maven-plugin, tentackle-maven-support, tentackle-build-support,

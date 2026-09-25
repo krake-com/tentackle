@@ -34,6 +34,7 @@
     <module>tentackle.core.osgi</module>
     <module>tentackle.quic.osgi</module>
     <module>tentackle.quiche.osgi</module>
+    <module>tentackle.keyring.osgi</module>
     <module>tentackle.sql.osgi</module>
     <module>tentackle.session.osgi</module>
     <module>tentackle.database.osgi</module>

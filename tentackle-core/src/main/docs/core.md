@@ -165,6 +165,15 @@ Package `org.tentackle.prefs`.
 [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md)), with
 [`CompositePreferences`](../java/org/tentackle/prefs/CompositePreferences.java) combining user and system nodes.
 
+### Keyring
+
+Package `org.tentackle.keyring`.
+
+[`Keyring`](../java/org/tentackle/keyring/Keyring.java) keeps secrets on the local machine, such as the
+tokens of a single sign-on. Core keeps them encrypted in the Java preferences, or only in memory. The opt-in
+module [`tentackle-keyring`](../../../../tentackle-keyring/src/main/docs/platform-keyring.md) replaces
+that with the credential store of the OS. See [keyring.md](keyring.md).
+
 ### Daemon supervision
 
 Package `org.tentackle.daemon`.
@@ -232,6 +241,7 @@ tentackle-pdo, tentackle-session, tentackle-fx and tentackle-fx-rdc.
 | `org.tentackle.script`                                                                             | Scripting abstraction                                                | [scripting.md](scripting.md)       |
 | `org.tentackle.io`                                                                                 | Streams, sockets, reconnection (TRIP transport building blocks)      | [io.md](io.md)                     |
 | `org.tentackle.prefs`                                                                              | Pluggable persisted preferences                                      | [preferences.md](preferences.md)   |
+| `org.tentackle.keyring`                                                                            | Secrets on the client (tokens, passwords)                            | [keyring.md](keyring.md)           |
 | `org.tentackle.daemon`                                                                             | Background-thread supervision                                        | [tasks-daemon.md](tasks-daemon.md) |
 | `org.tentackle.misc` (+ `misc.time`)                                                               | General-purpose utilities, pooling, smart date/time parsing          | [misc.md](misc.md)                 |
 | `org.tentackle.apt` (+ `apt.visitor`)                                                              | Build-time annotation processors                                     | [annotation-processors.md](annotation-processors.md) |

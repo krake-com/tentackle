@@ -263,6 +263,12 @@ If the server answers with a `CredentialsExpiredException`, `LoginFailedHandler`
 `refresh(...)` the credentials and retries once, without consuming one of the three login attempts
 and without bothering the user.
 
+A provider that wants to spare the user the browser on the next start remembers the tokens. The
+[keyring](../../../../tentackle-core/src/main/docs/keyring.md) of tentackle-core is the place for them. Add
+[tentackle-keyring](../../../../tentackle-keyring/src/main/docs/platform-keyring.md) to the client, and they go to the credential store of the operating
+system, on macOS, Windows and Linux alike. Don't write them to a preferences or properties file yourself:
+the refresh token is a key to the user's account.
+
 ---
 
 ## Known Gaps
@@ -280,6 +286,7 @@ and without bothering the user.
 ## See Also
 
 - [Single Sign-On with Google](../../../../src/main/docs/google-sso.md) — the OIDC sketches above worked out end to end: the browser flow with PKCE, offline ID token verification, and the resolver.
+- [Keyring](../../../../tentackle-core/src/main/docs/keyring.md) — where a client keeps the tokens between two starts.
 - [Tentackle Session](session.md) — the session the login creates, and `SessionInfo` itself.
 - [Backend Properties](backend-properties.md) — the `authentication` key and the other connection settings.
 - [Security — Permissions, Rules, and Grantees](../../../../tentackle-pdo/src/main/docs/security.md) — authorization, i.e. what the authenticated user may do.

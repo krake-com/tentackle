@@ -8,10 +8,10 @@ Tentackle is a modular Maven reactor. Every module falls into one of three kinds
 
 ### Named modules and automatic modules
 
-Twenty artifacts — every module an application ships with, plus `tentackle-model` — are real
+Twenty-three artifacts — every module an application ships with, plus `tentackle-model` — are real
 [JPMS](https://openjdk.org/projects/jigsaw/) modules with an explicit `module-info.java`:
-`tentackle-common`, `-core`, `-sql`, `-model`, `-session`, `-database`, `-pdo`, `-persistence`,
-`-domain`, `-i18n`, `-quic`, `-quiche`, `-update`, `-web`, `-fx`, `-fx-rdc`, `-fx-atlanta`, `-fx-rdc-update`,
+`tentackle-common`, `-core`, `-sql`, `-model`, `-session`, `-database`, `-jta`, `-pdo`, `-persistence`,
+`-domain`, `-i18n`, `-quic`, `-quiche`, `-keyring`, `-update`, `-web`, `-fx`, `-fx-rdc`, `-fx-atlanta`, `-fx-rdc-update`,
 `-log-slf4j`, `-log-log4j2v` and `-script-jsr`.
 
 The remaining artifacts declare an `Automatic-Module-Name` in their JAR manifest instead. Those are
@@ -97,6 +97,7 @@ Not part of the layered diagram, but each ships its own docs:
 - [tentackle-web](../../../tentackle-web/src/main/docs/web.md) — web tier support.
 - [tentackle-quic](../../../tentackle-quic/src/main/docs/quic.md) — QUIC ([TRIP](../../../tentackle-core/src/main/docs/trip.md)) transport, on the pure-Java KWIK stack.
 - [tentackle-quiche](../../../tentackle-quiche/src/main/docs/quiche.md) — the same transport on Cloudflare quiche, bound via the FFM API.
+- [tentackle-keyring](../../../tentackle-keyring/src/main/docs/platform-keyring.md) — opt-in: puts the credential store of the OS behind the keyring API of tentackle-core, bound via the FFM API.
 - [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the Atlanta JavaFX theme.
 - [tentackle-project-archetype](../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) — project scaffolding ([walkthrough](../../../tentackle-project-archetype/src/main/docs/myapp-walkthrough.md)).
 - [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) — TestNG support.

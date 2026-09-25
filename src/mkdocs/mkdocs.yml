@@ -126,6 +126,8 @@ nav:
       - Service and Configuration API: services.md
       - Isolated Module Layers: layers.md
       - Cryptor and EncryptedProperties: cryptor.md
+      - Keyring — Secrets on the Client: keyring.md
+      - OS Credential Stores: platform-keyring.md
       - Naming Rules: naming-rules.md
       - Annotation Processors: annotation-processors.md
       - Binding — Connecting Models to Views: binding.md
