@@ -26,6 +26,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Tests the {@link MemoryKeyring}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class MemoryKeyringTest extends AbstractKeyringContractTest {
 
   @Override

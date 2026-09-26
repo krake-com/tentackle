@@ -18,13 +18,14 @@
 
 package org.tentackle.keyring.platform;
 
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
 import org.tentackle.keyring.AbstractKeyring;
 import org.tentackle.keyring.Keyring;
 import org.tentackle.keyring.KeyringException;
 import org.tentackle.keyring.SecretId;
 import org.tentackle.keyring.platform.ffm.Advapi32;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -37,6 +38,7 @@ import static org.testng.Assert.assertTrue;
  * <p>
  * The fake enforces the blob size limit, so the chunking can be tested on any platform.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class WindowsChunkingTest extends AbstractKeyringContractTest {
 
   private final Map<String, byte[]> credentials = new TreeMap<>();

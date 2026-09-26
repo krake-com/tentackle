@@ -18,13 +18,14 @@
 
 package org.tentackle.keyring.platform;
 
+import org.testng.Reporter;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
+
 import org.tentackle.keyring.Keyring;
 import org.tentackle.keyring.KeyringException;
 import org.tentackle.keyring.KeyringFactory;
 import org.tentackle.keyring.MemoryKeyring;
-import org.testng.Reporter;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ import static org.testng.Assert.assertThrows;
 /**
  * Tests the {@link PlatformKeyringFactory}.
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class PlatformKeyringFactoryTest {
 
   @AfterMethod(alwaysRun = true)

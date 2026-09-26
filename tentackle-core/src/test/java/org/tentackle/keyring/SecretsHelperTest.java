@@ -28,6 +28,7 @@ import static org.testng.Assert.assertEquals;
 /**
  * Tests the {@link SecretsHelper} codec.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class SecretsHelperTest {
 
   @Test

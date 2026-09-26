@@ -27,6 +27,7 @@ import static org.testng.Assert.assertNotEquals;
 /**
  * Tests the {@link SecretId}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class SecretIdTest {
 
   @Test

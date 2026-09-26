@@ -38,6 +38,7 @@ import static org.testng.Assert.assertTrue;
  * <p>
  * Each test uses its own ids and removes them afterward, so it can run against a real credential store.
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public abstract class AbstractKeyringContractTest {
 
   private final String service = "org.tentackle.keyring.test/" + UUID.randomUUID();

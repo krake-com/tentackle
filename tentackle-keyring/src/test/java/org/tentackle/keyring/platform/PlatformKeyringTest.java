@@ -18,11 +18,12 @@
 
 package org.tentackle.keyring.platform;
 
-import org.tentackle.keyring.AbstractKeyring;
-import org.tentackle.keyring.Keyring;
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.Test;
+
+import org.tentackle.keyring.AbstractKeyring;
+import org.tentackle.keyring.Keyring;
 
 import static org.testng.Assert.assertTrue;
 
@@ -32,6 +33,7 @@ import static org.testng.Assert.assertTrue;
  * Only run with {@code mvn -Pkeyring test}, since it needs an unlocked credential store, and entries
  * left behind by an aborted run show up in the user's keychain.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class PlatformKeyringTest extends AbstractKeyringContractTest {
 
   @Override

@@ -28,6 +28,7 @@ import static org.testng.Assert.assertSame;
 /**
  * Tests the {@link DefaultKeyringFactory}.
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class DefaultKeyringFactoryTest {
 
   @AfterMethod(alwaysRun = true)

@@ -18,9 +18,10 @@
 
 package org.tentackle.keyring;
 
-import org.tentackle.common.Cryptor;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
+
+import org.tentackle.common.Cryptor;
 
 import java.util.UUID;
 import java.util.prefs.BackingStoreException;
@@ -35,6 +36,7 @@ import static org.testng.Assert.assertTrue;
  * <p>
  * Uses a node of its own, removed afterward, and a cryptor of its own, since the module provides none.
  */
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class PreferencesKeyringTest extends AbstractKeyringContractTest {
 
   private final String node = PreferencesKeyring.NODE + "-test-" + UUID.randomUUID();   // not below NODE: removed completely
