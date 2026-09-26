@@ -53,7 +53,9 @@ There is one bundle per runtime module, named after the module's package prefix 
 
 Not bundled are the auto-update modules (`tentackle-update`, `tentackle-fx-rdc-update`), which target
 jlink-based applications, the JSR-223 scripting provider `tentackle-script-jsr`, and — naturally — the build-time
-and test-support modules.
+and test-support modules. The JSR-223 provider discovers its engines via the JDK's `ScriptEngineManager`, which
+bypasses the `ServiceFactory` and cannot see engines in other bundles; use `tentackle.script.groovy.osgi` or
+`tentackle.script.ruby.osgi` instead.
 
 A bundle embeds exactly its Tentackle module and the module's activator (`Embed-Transitive` is `false`); all other
 dependencies, including the third-party libraries, are expected as bundles of their own. Imports are declared

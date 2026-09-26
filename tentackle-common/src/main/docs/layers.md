@@ -29,6 +29,10 @@ application happily runs unmodified on the classpath (see [services.md](services
 but the moment it adopts `<layers>` it commits to running on the module path, launched through
 `LayerBootstrap`, for good.
 
+If an application must stay on the classpath *and* needs conflicting versions of the same
+dependency, layers are not an option — consider running it as OSGi bundles instead, where each
+bundle gets its own classloader (see [osgi.md](../../../../tentackle-osgi/src/main/docs/osgi.md)).
+
 ## The model
 
 A **layer** is a name, a set of parent layer names (empty means "parented on the boot layer"), and
