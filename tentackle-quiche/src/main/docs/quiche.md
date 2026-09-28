@@ -24,6 +24,7 @@ module's `QuicheKwikInteropTest` verifies on every build.
 | Implementation  | pure Java               | Rust, called through FFM                  |
 | Platforms       | anywhere a JVM runs     | linux/macOS/Windows on x86-64 and aarch64 |
 | Extra JVM flags | none                    | `--enable-native-access`                  |
+| Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](#connection-migration) |
 
 Start with `tentackle-quic`. Reach for `tentackle-quiche` when you want the reference implementation's
 congestion control and packet processing, or when you are already shipping native code anyway. Nothing
@@ -88,8 +89,8 @@ exported:
 | `QuicheTripConnection`          | a pooled TRIP connection on a QUIC stream                                    | client |
 | `QuicheProtocolConnection`      | dispatches each incoming stream to a connection handler                      | server |
 | `QuicheLogger`                  | bridges quiche's own log onto Tentackle's logging                            | both   |
-| `QuicheEndpoint`                | the UDP socket, the event loop, the connection table                         | both   |
-| `QuicheConnection`              | one QUIC connection, with its lock and its buffers                           | both   |
+| `QuicheEndpoint`                | the UDP sockets, the event loop, the connection table                        | both   |
+| `QuicheConnection`              | one QUIC connection, with its lock, its buffers and its migration            | both   |
 | `QuicheStream`                  | a stream as blocking `InputStream`/`OutputStream`                            | both   |
 | `QuicheServer`                  | version negotiation, address validation, accept                              | server |
 
@@ -164,6 +165,8 @@ still releases its readers and writers immediately.
    itself.
 3. `connecttimeout` bounds the handshake.
 4. The connection is kept alive with ack-eliciting packets, see below.
+5. A connection whose path stalls moves to a new source port, see [Connection migration](#connection-migration).
+   One that is lost anyway is re-established on a new endpoint, i.e., from a fresh source port too.
 
 ## Stream-to-TripStream bridging
 
@@ -208,6 +211,7 @@ tripj://host:port/service?parameter=value&...
 | `connecttimeout` | client | 10             | seconds to wait for the QUIC handshake                                    |
 | `quicidle`       | both   | 30             | QUIC max idle timeout in **seconds**                                      |
 | `keepalive`      | client | -1             | keep-alive interval in seconds; -1 derives it from `quicidle`, 0 disables |
+| `migrate`        | client | 2              | probe timeouts without any acknowledgment before migrating; 0 disables    |
 | `mincompress`    | both   | 1024           | smallest block to compress (`tripcj` only)                                |
 
 ## Idle timeout and keep-alive
@@ -226,6 +230,49 @@ timer, so an interval without a comfortable margin below `quicidle` will keep th
 the time and lose it occasionally.
 
 Note that `quicidle` (seconds, QUIC level) has nothing to do with `idle` (minutes, pool level).
+
+## Connection migration
+
+Routers and firewalls commonly spread traffic over parallel paths by hashing each flow's addresses and
+ports (ECMP, per-flow load balancing and policing). A flow that lands on a path that is congested,
+lossy or throttled stays there — for UDP and TCP alike — while a new source port puts it onto another
+one. On long-haul routes such as Europe–China this is a common cause of connections that stall for no
+visible reason and recover as soon as they are re-opened. QUIC can move a connection to a new address
+without disturbing its streams (RFC-9000, 9), because packets are routed by connection ID rather than by
+address. quiche implements the protocol side of this; deciding when to migrate, opening the socket and
+routing the packets is left to the application, and this module does it as follows.
+
+**Spare connection IDs.** Once the handshake is complete, each side hands the peer as many further
+connection IDs as the peer is willing to hold (`ACTIVE_CONNECTION_ID_LIMIT`, 8), and routes packets
+carrying any of them to the connection. When the peer retires one, the route is dropped and a new ID is
+issued. A new path needs an unused ID in each direction, so without these a client could not migrate at
+all.
+
+**Stall detection.** On the client, the endpoint checks after every timeout whether the probe timeout
+(PTO) fired `migrate` times in a row without a single byte being acknowledged in between. The PTO
+follows the measured round trip time and backs off exponentially, so the default of 2 amounts to roughly
+three times the first probe timeout — a few round trips, well below the idle timeout — on a slow path as
+well as on a fast one. The first PTO alone fires on any lost tail; the second one means that not even
+the probe got through. An idle connection sends its keep-alives, so a path that dies while nothing is
+going on is detected as well.
+
+**Migration.** The client opens a new UDP socket on the same local IP address and a port chosen by the
+system, and probes the path from it (PATH_CHALLENGE). Only once the server has answered does it switch:
+packets still in flight on the old path are considered lost and retransmitted on the new one, the
+connection ID of the old path is retired, and the old socket is closed. If the probe fails, the connection
+stays where it is and tries again after another `migrate` probe timeouts. The server needs no
+configuration: quiche validates the new path itself and follows the client, which shows up as
+`the peer migrated to ...` in the server's log.
+
+**Limits.** quiche keeps every path a connection has used, up to the connection ID limit, and only drops
+one that has no connection ID left — which a path abandoned by a migration never reaches. So a connection
+can migrate 7 times. After that it logs a warning, and if its path stalls again it stays there until the
+idle timeout ends it; the pool then re-establishes it from a fresh source port. A migration moves the
+client's source port only: it cannot help if the server's address, or the client's address as a whole,
+is what the network is penalizing. The client notices a stall in either direction by its own packets
+going unacknowledged; while it is only receiving — a large response, with nothing but acknowledgments
+going back — it is the next keep-alive that exposes a broken return path, so detection may take up to one
+keep-alive interval longer.
 
 ## Flow control
 

@@ -20,12 +20,14 @@ package org.tentackle.quiche.engine;
 
 import org.tentackle.log.Logger;
 import org.tentackle.quiche.ffm.ConnectionError;
+import org.tentackle.quiche.ffm.PathEvent;
 import org.tentackle.quiche.ffm.Quiche;
 import org.tentackle.quiche.ffm.QuicheConn;
 import org.tentackle.quiche.ffm.QuicheException;
 import org.tentackle.quiche.ffm.RecvInfo;
 import org.tentackle.quiche.ffm.SendInfo;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.InetSocketAddress;
@@ -55,6 +57,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * event loop signals after every packet and every timeout. There is one condition per connection rather
  * than one per stream: with the handful of streams a TRIP connection pool holds, waking all of them and
  * letting most go back to sleep costs less than the bookkeeping the finer granularity would need.
+ * <p>
+ * <strong>Connection migration:</strong> once established, each side keeps handing the peer spare
+ * connection IDs, as many as the peer accepts, and registers them with the endpoint. A client connection
+ * uses them to move to a new source port when its path stops delivering, which is what a router that
+ * hashes flows onto paths by their addresses and ports needs to put the connection on another path. A
+ * stall is detected by the probe timeout firing repeatedly with not a single byte acknowledged in between
+ * (see {@link #setMigrationProbeTimeouts(int)}), which scales with the round trip time by itself. The
+ * client then opens a new socket and probes the path from it; only once the server answered the probe
+ * does the connection switch over, retire the connection ID of the old path and close the old socket. A
+ * probe that fails leaves the connection where it was. The server follows a migration by itself.
  */
 public class QuicheConnection implements AutoCloseable {
 
@@ -79,6 +91,13 @@ public class QuicheConnection implements AutoCloseable {
    */
   public static final long STREAM_CLOSED_ERROR_CODE = 0;
 
+  /**
+   * The most connection IDs issued in one go.
+   * <p>
+   * Only a safeguard: quiche limits the number anyway, to what the peer is willing to hold.
+   */
+  private static final int MAX_ISSUED_IDS = 16;
+
   private static final Logger LOGGER = Logger.get(QuicheConnection.class);
 
 
@@ -92,6 +111,7 @@ public class QuicheConnection implements AutoCloseable {
   private final SendInfo sendInfo;
   private final byte[] connectionId;
   private final Map<Long, QuicheStream> streams;
+  private final boolean client;
   private volatile InetSocketAddress peer;
   private volatile boolean failed;                  // true once the connection is unusable
   private volatile String failure;                  // why it became unusable, null if it did not
@@ -100,6 +120,14 @@ public class QuicheConnection implements AutoCloseable {
   private volatile long keepAliveMillis;            // 0 to send no keep-alive packets
   private volatile long nextKeepAliveNanos;         // when the next one is due
   private long nextStreamId;                        // guarded by the lock
+  private volatile int migrationProbeTimeouts;      // 0 to never migrate
+  private volatile int migrationCount;              // how often the connection migrated
+  private volatile InetSocketAddress activeLocal;   // the local address of the active path
+  private long activeDcidSeq;                       // the peer's connection ID the active path uses, guarded by the lock
+  private InetSocketAddress probeLocal;             // the local address of the path being probed, guarded by the lock
+  private long lastAckedBytes;                      // the acknowledged bytes at the last stall check, guarded by the lock
+  private long ptoBaseline;                         // the probe timeouts at the last progress, guarded by the lock
+  private boolean migrationRefusedLogged;           // guarded by the lock
 
   /**
    * Creates a connection.
@@ -116,7 +144,10 @@ public class QuicheConnection implements AutoCloseable {
     this.conn = conn;
     this.connectionId = connectionId;
     this.peer = peer;
+    this.client = client;
 
+    activeLocal = endpoint.getLocalAddress();
+    lastAckedBytes = -1;    // take the first stall check as the baseline
     lock = new ReentrantLock();
     condition = lock.newCondition();
     arena = Arena.ofShared();
@@ -197,6 +228,49 @@ public class QuicheConnection implements AutoCloseable {
    */
   public void setPeer(InetSocketAddress peer) {
     this.peer = peer;
+  }
+
+  /**
+   * Gets the local address the connection currently sends from.
+   * <p>
+   * The endpoint's own address, unless the connection migrated.
+   *
+   * @return the local address
+   */
+  public InetSocketAddress getLocalAddress() {
+    return activeLocal;
+  }
+
+  /**
+   * Sets after how many consecutive probe timeouts without any acknowledgment a client connection
+   * migrates to a new source port.
+   * <p>
+   * The probe timeout adapts to the measured round trip time, so the same count means a longer wait on a
+   * slow path than on a fast one. Since it backs off exponentially, {@code n} timeouts take roughly
+   * {@code 2^n - 1} times the first one. Ignored on a server connection, which cannot migrate.
+   *
+   * @param probeTimeouts the number of probe timeouts, 0 to never migrate
+   */
+  public void setMigrationProbeTimeouts(int probeTimeouts) {
+    migrationProbeTimeouts = Math.max(probeTimeouts, 0);
+  }
+
+  /**
+   * Gets after how many consecutive probe timeouts a client connection migrates.
+   *
+   * @return the number of probe timeouts, 0 if the connection never migrates
+   */
+  public int getMigrationProbeTimeouts() {
+    return migrationProbeTimeouts;
+  }
+
+  /**
+   * Gets how often the connection migrated to a new source port.
+   *
+   * @return the number of migrations
+   */
+  public int getMigrationCount() {
+    return migrationCount;
   }
 
   /**
@@ -415,6 +489,7 @@ public class QuicheConnection implements AutoCloseable {
         if (localError != null || conn.isClosed()) {
           fail(rejectionMessage != null ? rejectionMessage : "the connection was closed");
         }
+        maintainPaths();
       }
     }
     finally {
@@ -459,6 +534,10 @@ public class QuicheConnection implements AutoCloseable {
       conn.onTimeout();
       if (conn.isTimedOut()) {
         fail("the connection timed out");
+      }
+      else {
+        maintainPaths();
+        detectStall();
       }
     }
     catch (QuicheException e) {
@@ -733,6 +812,184 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
+   * Keeps the peer supplied with spare connection IDs and handles what happened to the network paths.
+   * <p>
+   * Must be called while holding {@link #getLock()}, with {@code conn} not freed. Cheap when there is
+   * nothing to do, which is almost always: two counters are read.
+   */
+  private void maintainPaths() {
+    if (!conn.isEstablished() || conn.isClosed()) {
+      return;
+    }
+    try {
+      for (byte[] retired : conn.takeRetiredScids()) {
+        endpoint.removeRoute(retired);
+      }
+      for (int i = 0; i < MAX_ISSUED_IDS && conn.scidsLeft() > 0; i++) {
+        byte[] id = endpoint.newConnectionId();
+        // routed before quiche announces it, so that no packet carrying it can arrive unroutable
+        endpoint.addRoute(id, this);
+        try {
+          conn.newScid(id, endpoint.newResetToken());
+        }
+        catch (QuicheException e) {
+          endpoint.removeRoute(id);
+          throw e;
+        }
+      }
+      PathEvent event;
+      while ((event = conn.nextPathEvent()) != null) {
+        switch (event.type()) {
+          case VALIDATED -> pathValidated(event);
+          case FAILED_VALIDATION -> pathFailed(event);
+          case PEER_MIGRATED -> {
+            LOGGER.info("{0}: the peer migrated to {1}", this, event.peer());
+            peer = event.peer();
+          }
+          default -> LOGGER.fine("{0}: {1}", this, event);
+        }
+      }
+    }
+    catch (QuicheException e) {
+      // nothing here is essential for the connection as it is, only for a future migration
+      LOGGER.fine("{0}: cannot maintain the connection IDs and paths: {1}", this, e.getMessage());
+    }
+  }
+
+  /**
+   * Checks whether the active path stopped delivering and starts migrating away from it if so.
+   * <p>
+   * Invoked after every timeout, which is when a probe timeout fires. Must be called while holding
+   * {@link #getLock()}, with {@code conn} not freed.
+   */
+  private void detectStall() {
+    int threshold = migrationProbeTimeouts;
+    if (!client || threshold <= 0 || probeLocal != null ||
+        !conn.isEstablished() || conn.isClosed() || conn.isDraining()) {
+      return;
+    }
+    long ackedBytes;
+    long ptoCount;
+    try {
+      ackedBytes = conn.getAckedBytes();
+      ptoCount = conn.getActivePathPtoCount();
+    }
+    catch (QuicheException e) {
+      LOGGER.fine("{0}: cannot read the connection statistics: {1}", this, e.getMessage());
+      return;
+    }
+    // the counter is per path, so it starts over after a migration
+    if (ackedBytes != lastAckedBytes || ptoCount < ptoBaseline) {
+      lastAckedBytes = ackedBytes;
+      ptoBaseline = ptoCount;
+      return;
+    }
+    if (ptoCount - ptoBaseline >= threshold) {
+      ptoBaseline = ptoCount;   // another attempt only after as many further timeouts
+      if (conn.availableDcids() == 0) {
+        // quiche keeps every path a connection ever used, up to the connection ID limit, and the server
+        // has none left to spare: the connection stays where it is and, if the path does not recover,
+        // runs into its idle timeout
+        if (!migrationRefusedLogged) {
+          migrationRefusedLogged = true;
+          LOGGER.warning(this + ": the path is stalled, but the peer has no spare connection ID left to " +
+                         "migrate with after " + migrationCount + " migrations");
+        }
+        return;
+      }
+      LOGGER.info("{0}: nothing acknowledged for {1} probe timeouts, the path from local port {2} is stalled",
+                  this, threshold, Integer.toString(activeLocal.getPort()));
+      probeNewPath();
+    }
+  }
+
+  /**
+   * Opens a socket on a new source port and starts validating the path from it.
+   * <p>
+   * Must be called while holding {@link #getLock()}.
+   */
+  private void probeNewPath() {
+    InetSocketAddress newLocal;
+    try {
+      newLocal = endpoint.openChannel(this);
+    }
+    catch (IOException e) {
+      LOGGER.warning(this + ": cannot open a socket to migrate to", e);
+      return;
+    }
+    try {
+      conn.probePath(newLocal, peer);
+    }
+    catch (QuicheException e) {
+      endpoint.closeChannel(newLocal);
+      LOGGER.warning(this + ": cannot probe a path from local port " + newLocal.getPort(), e);
+      return;
+    }
+    probeLocal = newLocal;
+    LOGGER.info("{0}: probing a new path from local port {1}", this, Integer.toString(newLocal.getPort()));
+  }
+
+  /**
+   * Switches to a path that has been validated, if it is the one being probed.
+   * <p>
+   * Must be called while holding {@link #getLock()}.
+   *
+   * @param event the event
+   */
+  private void pathValidated(PathEvent event) {
+    InetSocketAddress newLocal = probeLocal;
+    if (!client || newLocal == null || event.local().getPort() != newLocal.getPort()) {
+      LOGGER.fine("{0}: {1}", this, event);
+      return;
+    }
+    probeLocal = null;
+    long newDcidSeq;
+    try {
+      newDcidSeq = conn.migrate(newLocal, event.peer());
+    }
+    catch (QuicheException e) {
+      endpoint.closeChannel(newLocal);
+      LOGGER.warning(this + ": cannot migrate to local port " + newLocal.getPort(), e);
+      return;
+    }
+    InetSocketAddress oldLocal = activeLocal;
+    long oldDcidSeq = activeDcidSeq;
+    activeLocal = newLocal;
+    activeDcidSeq = newDcidSeq;
+    migrationCount++;
+    lastAckedBytes = -1;
+    try {
+      // an old connection ID must not show up on the new path (RFC 9000, 9.5)
+      conn.retireDcid(oldDcidSeq);
+    }
+    catch (QuicheException e) {
+      LOGGER.fine("{0}: cannot retire the connection ID of the old path: {1}", this, e.getMessage());
+    }
+    endpoint.closeChannel(oldLocal);   // a no-op for the endpoint's own socket
+    LOGGER.info("{0}: migrated from local port {1} to {2}",
+                this, Integer.toString(oldLocal.getPort()), Integer.toString(newLocal.getPort()));
+  }
+
+  /**
+   * Gives up on a path that could not be validated, if it is the one being probed.
+   * <p>
+   * Must be called while holding {@link #getLock()}.
+   *
+   * @param event the event
+   */
+  private void pathFailed(PathEvent event) {
+    InetSocketAddress failedLocal = probeLocal;
+    if (!client || failedLocal == null || event.local().getPort() != failedLocal.getPort()) {
+      LOGGER.fine("{0}: {1}", this, event);
+      return;
+    }
+    probeLocal = null;
+    endpoint.closeChannel(failedLocal);
+    LOGGER.info("{0}: the path from local port {1} could not be validated, staying on port {2}",
+                this, Integer.toString(failedLocal.getPort()), Integer.toString(activeLocal.getPort()));
+  }
+
+  /**
    * Drains the connection's outgoing packets to the socket.
    * <p>
    * quiche's pacing time is deliberately ignored: sending earlier than it asks for is allowed and merely
@@ -745,7 +1002,7 @@ public class QuicheConnection implements AutoCloseable {
     try {
       long length;
       while ((length = conn.send(sendBuffer, SEND_BUFFER_SIZE, sendInfo)) > 0) {
-        endpoint.send(sendBuffer, length, sendInfo.getTo());
+        endpoint.send(sendBuffer, length, sendInfo.getFromPort(), sendInfo.getTo());
       }
     }
     catch (QuicheException e) {

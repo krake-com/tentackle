@@ -58,6 +58,11 @@ import java.util.Set;
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is in the
  * pool, the pool's maximum size defaults to {@link QuicheTripTransport#getMaxStreams()} instead of being
  * unlimited.
+ * <p>
+ * The QUIC connection migrates to a new source port when its path stalls (see
+ * {@link QuicheTripTransport#getMigrationProbeTimeouts()}). If it is lost anyway, it is re-established on
+ * a new endpoint, i.e., from a fresh source port as well: the one the lost connection used may well be
+ * what got it stuck.
  */
 public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
@@ -81,12 +86,13 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
 
   private final QuicheTripTransport transport;
-  private final QuicheEndpoint endpoint;
+  private QuicheEndpoint endpoint;          // replaced with every new QUIC connection
   private final QuicheConfig config;
   private final InetSocketAddress serverAddress;
   private final String serverName;
   private final int connectTimeoutSeconds;
   private final int keepAliveSeconds;
+  private final int migrationProbeTimeouts;
   private QuicheConnection connection;
 
   /**
@@ -122,6 +128,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    migrationProbeTimeouts = transport.getMigrationProbeTimeouts();
     serverName = uri.getHost();
     try {
       serverAddress = new InetSocketAddress(InetAddress.getByName(serverName), uri.getPort());
@@ -150,12 +157,10 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       else {
         newConfig.verifyPeer(false);
       }
-      endpoint = new QuicheEndpoint(new InetSocketAddress(0));
     }
-    catch (IOException | RuntimeException e) {
+    catch (RuntimeException e) {
       newConfig.close();
-      throw e instanceof RuntimeException re ?
-              re : new TripRuntimeException("cannot create the QUIC endpoint", e);
+      throw e;
     }
     config = newConfig;
 
@@ -164,7 +169,9 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     }
     catch (RuntimeException e) {
       // the endpoint and the configuration would leak otherwise: the pool is never handed out
-      endpoint.close();
+      if (endpoint != null) {
+        endpoint.close();
+      }
       config.close();
       throw e;
     }
@@ -186,7 +193,9 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
       synchronized (this) {
         // the QUIC connection must be released even if closing the pooled streams failed
         connection = null;
-        endpoint.close();
+        if (endpoint != null) {
+          endpoint.close();
+        }
         // the configuration must outlive the connections created from it, hence after the endpoint
         config.close();
       }
@@ -243,11 +252,24 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
   /**
    * Establishes the QUIC connection all pooled connections are multiplexed over.<br>
-   * A previously established connection is closed first.
+   * A previously established connection is closed first, together with its endpoint: the new connection
+   * gets an endpoint of its own, and with it a fresh source port.
    */
   protected void connect() {
     closeConnection();
     URI uri = getTransport().getUri();
+    QuicheEndpoint oldEndpoint = endpoint;
+    try {
+      endpoint = new QuicheEndpoint(new InetSocketAddress(0));
+    }
+    catch (IOException e) {
+      throw new TripRuntimeException("cannot create the QUIC endpoint for " + uri, e);
+    }
+    finally {
+      if (oldEndpoint != null) {
+        oldEndpoint.close();
+      }
+    }
     QuicheConnection quicConnection = endpoint.connect(serverAddress, serverName, config);
     try {
       if (!quicConnection.awaitEstablished(connectTimeoutSeconds * 1000L)) {
@@ -265,6 +287,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     if (keepAliveSeconds != 0) {
       quicConnection.setKeepAliveMillis(determineKeepAliveMillis());
     }
+    quicConnection.setMigrationProbeTimeouts(migrationProbeTimeouts);
     connection = quicConnection;
   }
 

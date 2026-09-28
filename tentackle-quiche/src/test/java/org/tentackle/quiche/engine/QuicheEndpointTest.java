@@ -301,6 +301,65 @@ public class QuicheEndpointTest {
 
 
   /**
+   * A path that stops delivering in the middle of a connection is left for a new source port, and the
+   * connection carries on as if nothing happened &mdash; several times in a row, which needs the connection
+   * IDs of the abandoned paths to be retired and new ones to be issued.
+   */
+  @Test(timeOut = 60000)
+  public void testMigratesAwayFromAStalledPath() throws Exception {
+    Reporter.log("a client whose path is black-holed migrates to a new source port and keeps going", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      int migrations = 3;
+      for (int i = 1; i <= migrations; i++) {
+        int stalledPort = connection.getLocalAddress().getPort();
+        relay.blackhole(stalledPort);
+        // blocks until the connection found a way around the black hole
+        assertEquals(roundTrip(connection, "after " + i), "after " + i);
+        assertEquals(connection.getMigrationCount(), i, "the connection did not migrate");
+        assertTrue(connection.getLocalAddress().getPort() != stalledPort, "still on the stalled port");
+      }
+
+      assertEquals(relay.getFlowCount(), migrations + 1, "every migration must use a new source port");
+      // the endpoint's own socket and the one of the active path: the abandoned ones are closed
+      assertEquals(clientEndpoint.getChannelCount(), 2, "sockets of abandoned paths were left open");
+      assertEquals(serverEndpoint.getConnectionCount(), 1, "the server must follow, not start over");
+      assertTrue(connection.isConnected());
+    }
+  }
+
+  @Test(timeOut = 60000)
+  public void testNoMigrationIfDisabled() throws Exception {
+    Reporter.log("a client that is not allowed to migrate stays on its stalled path", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      assertEquals(connection.getMigrationProbeTimeouts(), 0, "migration must be off unless enabled");
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      relay.blackhole(connection.getLocalAddress().getPort());
+      QuicheStream stream = connection.openStream();
+      try (OutputStream out = stream.getOutputStream()) {
+        out.write("lost".getBytes(StandardCharsets.UTF_8));
+      }
+      // far more probe timeouts than it takes to migrate on loopback
+      Thread.sleep(2000);
+      assertEquals(connection.getMigrationCount(), 0);
+      assertEquals(relay.getFlowCount(), 1);
+      assertEquals(clientEndpoint.getChannelCount(), 1);
+    }
+  }
+
+
+  /**
    * Starts the server endpoint.
    *
    * @param listener what to do with the streams the clients open
@@ -361,6 +420,22 @@ public class QuicheEndpointTest {
       }
     });
     handlers.add(thread);
+  }
+
+  /**
+   * Sends a message on a stream of its own and reads the echo.
+   *
+   * @param connection the connection
+   * @param message the message
+   * @return the echo
+   * @throws IOException if the stream failed
+   */
+  private static String roundTrip(QuicheConnection connection, String message) throws IOException {
+    QuicheStream stream = connection.openStream();
+    try (OutputStream out = stream.getOutputStream()) {
+      out.write(message.getBytes(StandardCharsets.UTF_8));
+    }
+    return readFully(stream.getInputStream());
   }
 
   /**

@@ -44,6 +44,7 @@ topic-grouped listing of every document, see the
 - **Code generation** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md), [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md)
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
 - **CompoundValue (constants, references, scripts in annotations)** — [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Validation](../../../tentackle-core/src/main/docs/validation.md), [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md)
+- **Connection migration (QUIC, stalled paths)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)

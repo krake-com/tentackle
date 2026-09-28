@@ -96,6 +96,26 @@ public class QuicheTripTransport extends AbstractTransport {
    */
   public static final int MIN_STREAM_WINDOW = 1500;
 
+  /**
+   * The default number of consecutive probe timeouts without any acknowledgment after which a client
+   * migrates its QUIC connection to a new source port, applied if the URI does not specify {@code migrate}.
+   * <p>
+   * Two are the least that tells a stalled path from a single burst of losses: the first probe timeout
+   * alone fires on an ordinary lost tail, the second one means that not even the probe got through. They
+   * take about three times the first probe timeout, i.e., a few round trip times.
+   */
+  public static final int DEFAULT_MIGRATION_PROBE_TIMEOUTS = 2;
+
+  /**
+   * The number of connection IDs each side is willing to hold for the peer.
+   * <p>
+   * quiche keeps up to this many network paths per connection and never drops one it has used, so it also
+   * bounds how often a connection can migrate: a few times less than this. A connection that cannot
+   * migrate any further stays where it is, and if its path does not recover, it runs into the idle timeout
+   * and the pool re-establishes it from a fresh source port.
+   */
+  public static final int ACTIVE_CONNECTION_ID_LIMIT = 8;
+
 
   private QuicheEndpoint endpoint;          // the endpoint accepting connections, null if not accepting
   private QuicheServer server;              // the accept policy of that endpoint
@@ -249,6 +269,24 @@ public class QuicheTripTransport extends AbstractTransport {
   }
 
   /**
+   * Gets after how many consecutive probe timeouts without any acknowledgment a client migrates its QUIC
+   * connection to a new source port.<br>
+   * Some networks hash each flow onto one of several paths by its addresses and ports, and a flow that
+   * lands on a path that stopped delivering stays stuck there, whereas a new source port puts it onto
+   * another one. QUIC can move a connection without disturbing its streams (RFC-9000, 9).
+   *
+   * @return the number of probe timeouts, 0 if the client never migrates
+   */
+  public int getMigrationProbeTimeouts() {
+    int probeTimeouts = getUriPars().getOrDefault("migrate", DEFAULT_MIGRATION_PROBE_TIMEOUTS);
+    if (probeTimeouts < 0) {
+      throw new TripRuntimeException(
+        "QUIC migrate must be >= 0, got " + probeTimeouts + " from URI " + getUri());
+    }
+    return probeTimeouts;
+  }
+
+  /**
    * Creates the QUIC configuration both ends of this transport share.
    * <p>
    * The client applies the same settings, so that the two directions are symmetric and the effective
@@ -267,7 +305,9 @@ public class QuicheTripTransport extends AbstractTransport {
       .setInitialMaxStreamDataBidiRemote(streamWindow)
       .setInitialMaxStreamsBidi(getMaxStreams())
       // TRIP uses bidirectional streams only
-      .setInitialMaxStreamsUni(0);
+      .setInitialMaxStreamsUni(0)
+      // spare connection IDs are what a client migrates to a new source port with
+      .setActiveConnectionIdLimit(ACTIVE_CONNECTION_ID_LIMIT);
   }
 
   /**

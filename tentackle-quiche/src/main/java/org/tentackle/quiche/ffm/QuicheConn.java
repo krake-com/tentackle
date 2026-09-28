@@ -20,11 +20,15 @@ package org.tentackle.quiche.ffm;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A {@code quiche_conn}, one QUIC connection.
@@ -146,6 +150,122 @@ public class QuicheConn implements AutoCloseable {
                                           ValueLayouts.POINTER,   // const uint8_t **reason
                                           ValueLayouts.POINTER)); // size_t *reason_len
 
+  private static final MethodHandle SCIDS_LEFT = counter("quiche_conn_scids_left");
+  private static final MethodHandle AVAILABLE_DCIDS = counter("quiche_conn_available_dcids");
+  private static final MethodHandle RETIRED_SCIDS = counter("quiche_conn_retired_scids");
+
+  private static final MethodHandle NEW_SCID =
+    Quiche.downcall("quiche_conn_new_scid",
+                    FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER,
+                                          ValueLayouts.POINTER, ValueLayouts.SIZE_T,     // scid
+                                          ValueLayouts.POINTER,                          // reset_token
+                                          ValueLayouts.BOOL,                             // retire_if_needed
+                                          ValueLayouts.POINTER));                        // uint64_t *scid_seq
+
+  private static final MethodHandle RETIRE_DCID =
+    Quiche.downcall("quiche_conn_retire_dcid",
+                    FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER, ValueLayouts.UINT64));
+
+  private static final MethodHandle RETIRED_SCID_ITER =
+    Quiche.downcall("quiche_conn_retired_scid_iter",
+                    FunctionDescriptor.of(ValueLayouts.POINTER, ValueLayouts.POINTER));
+
+  private static final MethodHandle CONNECTION_ID_ITER_NEXT =
+    Quiche.downcall("quiche_connection_id_iter_next",
+                    FunctionDescriptor.of(ValueLayouts.BOOL, ValueLayouts.POINTER,
+                                          ValueLayouts.POINTER, ValueLayouts.POINTER));
+
+  private static final MethodHandle CONNECTION_ID_ITER_FREE =
+    Quiche.downcall("quiche_connection_id_iter_free", FunctionDescriptor.ofVoid(ValueLayouts.POINTER));
+
+  private static final MethodHandle PROBE_PATH = pathSetter("quiche_conn_probe_path");
+  private static final MethodHandle MIGRATE = pathSetter("quiche_conn_migrate");
+
+  private static final MethodHandle PATH_EVENT_NEXT =
+    Quiche.downcall("quiche_conn_path_event_next",
+                    FunctionDescriptor.of(ValueLayouts.POINTER, ValueLayouts.POINTER));
+
+  private static final MethodHandle PATH_EVENT_TYPE =
+    Quiche.downcall("quiche_path_event_type",
+                    FunctionDescriptor.of(ValueLayouts.UINT32, ValueLayouts.POINTER));
+
+  private static final MethodHandle PATH_EVENT_FREE =
+    Quiche.downcall("quiche_path_event_free", FunctionDescriptor.ofVoid(ValueLayouts.POINTER));
+
+  private static final MethodHandle PATH_EVENT_NEW = pathEventAddresses("quiche_path_event_new");
+  private static final MethodHandle PATH_EVENT_VALIDATED = pathEventAddresses("quiche_path_event_validated");
+  private static final MethodHandle PATH_EVENT_FAILED_VALIDATION =
+    pathEventAddresses("quiche_path_event_failed_validation");
+  private static final MethodHandle PATH_EVENT_CLOSED = pathEventAddresses("quiche_path_event_closed");
+  private static final MethodHandle PATH_EVENT_PEER_MIGRATED =
+    pathEventAddresses("quiche_path_event_peer_migrated");
+
+  private static final MethodHandle CONN_STATS =
+    Quiche.downcall("quiche_conn_stats",
+                    FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.POINTER));
+
+  private static final MethodHandle PATH_STATS =
+    Quiche.downcall("quiche_conn_path_stats",
+                    FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER, ValueLayouts.SIZE_T,
+                                          ValueLayouts.POINTER));
+
+  /**
+   * The leading fields of {@code quiche_stats}, up to the last one read here.
+   */
+  private static final MemoryLayout STATS_PREFIX = MemoryLayout.structLayout(
+    ValueLayouts.SIZE_T.withName("recv"),
+    ValueLayouts.SIZE_T.withName("sent"),
+    ValueLayouts.SIZE_T.withName("lost"),
+    ValueLayouts.SIZE_T.withName("spurious_lost"),
+    ValueLayouts.SIZE_T.withName("retrans"),
+    ValueLayouts.UINT64.withName("sent_bytes"),
+    ValueLayouts.UINT64.withName("recv_bytes"),
+    ValueLayouts.UINT64.withName("acked_bytes"),
+    ValueLayouts.UINT64.withName("lost_bytes"),
+    ValueLayouts.UINT64.withName("stream_retrans_bytes"),
+    ValueLayouts.SIZE_T.withName("dgram_recv"),
+    ValueLayouts.SIZE_T.withName("dgram_sent"),
+    ValueLayouts.SIZE_T.withName("paths_count"));
+
+  /**
+   * The leading fields of {@code quiche_path_stats}, up to the last one read here.
+   */
+  private static final MemoryLayout PATH_STATS_PREFIX = MemoryLayout.structLayout(
+    SockAddr.STORAGE.withName("local_addr"),
+    ValueLayouts.SOCKLEN_T.withName("local_addr_len"),
+    MemoryLayout.paddingLayout(4),
+    SockAddr.STORAGE.withName("peer_addr"),
+    ValueLayouts.SOCKLEN_T.withName("peer_addr_len"),
+    MemoryLayout.paddingLayout(4),
+    ValueLayouts.SSIZE_T.withName("validation_state"),
+    ValueLayouts.BOOL.withName("active"),
+    MemoryLayout.paddingLayout(7),
+    ValueLayouts.SIZE_T.withName("recv"),
+    ValueLayouts.SIZE_T.withName("sent"),
+    ValueLayouts.SIZE_T.withName("lost"),
+    ValueLayouts.SIZE_T.withName("retrans"),
+    ValueLayouts.SIZE_T.withName("total_pto_count"));
+
+  private static final long ACKED_BYTES_OFFSET = STATS_PREFIX.byteOffset(PathElement.groupElement("acked_bytes"));
+  private static final long PATHS_COUNT_OFFSET = STATS_PREFIX.byteOffset(PathElement.groupElement("paths_count"));
+  private static final long ACTIVE_OFFSET = PATH_STATS_PREFIX.byteOffset(PathElement.groupElement("active"));
+  private static final long TOTAL_PTO_COUNT_OFFSET =
+    PATH_STATS_PREFIX.byteOffset(PathElement.groupElement("total_pto_count"));
+
+  /**
+   * The size of the buffers the statistics are written to.
+   * <p>
+   * quiche fills in the whole structure, not just the prefix read here, and a later quiche version may
+   * append fields. Too small a buffer would be a silent heap overflow, so it is sized well beyond both
+   * structures (208 and 448 bytes as of quiche 0.29).
+   */
+  private static final long STATS_BUFFER_SIZE = 1024;
+
+  /**
+   * The length of a stateless reset token.
+   */
+  private static final int RESET_TOKEN_LENGTH = 16;
+
   private static final MethodHandle IS_ESTABLISHED = predicate("quiche_conn_is_established");
   private static final MethodHandle IS_CLOSED = predicate("quiche_conn_is_closed");
   private static final MethodHandle IS_DRAINING = predicate("quiche_conn_is_draining");
@@ -163,6 +283,8 @@ public class QuicheConn implements AutoCloseable {
   private final MemorySegment errorOut;   // uint64_t*, the error code out-parameter of the stream calls and localError
   private final MemorySegment pointerOut; // const uint8_t**, the out-parameter of the accessors and localError
   private final MemorySegment lengthOut;  // size_t*, the length out-parameter of the accessors and localError
+  private final MemorySegment seqOut;     // uint64_t*, the sequence number out-parameter of the path and CID calls
+  private final MemorySegment statsOut;   // quiche_stats* and quiche_path_stats*, see STATS_BUFFER_SIZE
   private MemorySegment conn;             // the native connection, null once closed
 
   /**
@@ -177,6 +299,8 @@ public class QuicheConn implements AutoCloseable {
     errorOut = arena.allocate(ValueLayouts.UINT64);
     pointerOut = arena.allocate(ValueLayouts.POINTER);
     lengthOut = arena.allocate(ValueLayouts.SIZE_T);
+    seqOut = arena.allocate(ValueLayouts.UINT64);
+    statsOut = arena.allocate(STATS_BUFFER_SIZE, 8);
   }
 
 
@@ -495,6 +619,239 @@ public class QuicheConn implements AutoCloseable {
   }
 
   /**
+   * Gets the number of further connection IDs this side may issue to the peer.
+   *
+   * @return the number of connection IDs
+   */
+  public long scidsLeft() {
+    try {
+      return (long) SCIDS_LEFT.invokeExact(getSegment());
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_scids_left failed", t);
+    }
+  }
+
+  /**
+   * Gets the number of connection IDs the peer issued that are not in use yet.
+   * <p>
+   * A client needs one of those to probe or migrate to a new path.
+   *
+   * @return the number of spare connection IDs
+   */
+  public long availableDcids() {
+    try {
+      return (long) AVAILABLE_DCIDS.invokeExact(getSegment());
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_available_dcids failed", t);
+    }
+  }
+
+  /**
+   * Issues a further connection ID the peer can use to reach this side, which makes quiche send a
+   * NEW_CONNECTION_ID frame.
+   *
+   * @param scid the connection ID, at most {@link Quiche#MAX_CONN_ID_LEN} bytes
+   * @param resetToken the stateless reset token that goes with it, 16 bytes
+   * @return the sequence number quiche assigned
+   * @throws QuicheException if the peer's limit is reached ({@link Quiche#ERR_ID_LIMIT}) or the ID is invalid
+   */
+  public long newScid(byte[] scid, byte[] resetToken) {
+    if (resetToken.length != RESET_TOKEN_LENGTH) {
+      // quiche reads exactly 16 bytes, whatever the array holds
+      throw new IllegalArgumentException("a reset token must be " + RESET_TOKEN_LENGTH + " bytes");
+    }
+    int result;
+    try (Arena confined = Arena.ofConfined()) {
+      MemorySegment scidSegment = confined.allocateFrom(ValueLayouts.UINT8, scid);
+      MemorySegment tokenSegment = confined.allocateFrom(ValueLayouts.UINT8, resetToken);
+      result = (int) NEW_SCID.invokeExact(getSegment(), scidSegment, (long) scid.length,
+                                          tokenSegment, false, seqOut);
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_new_scid failed", t);
+    }
+    if (result < 0) {
+      throw new QuicheException("quiche_conn_new_scid failed", result);
+    }
+    return seqOut.get(ValueLayouts.UINT64, 0);
+  }
+
+  /**
+   * Retires a connection ID the peer issued, which makes quiche send a RETIRE_CONNECTION_ID frame.
+   * <p>
+   * A path that loses its connection ID this way and gets no spare one in exchange becomes unused, which
+   * is what allows quiche to drop it once it needs room for another path.
+   *
+   * @param dcidSeq the sequence number of the connection ID
+   * @throws QuicheException if the ID is unknown or is the last one the active path can use
+   */
+  public void retireDcid(long dcidSeq) {
+    int result;
+    try {
+      result = (int) RETIRE_DCID.invokeExact(getSegment(), dcidSeq);
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_retire_dcid failed", t);
+    }
+    if (result < 0) {
+      throw new QuicheException("quiche_conn_retire_dcid failed for sequence number " + dcidSeq, result);
+    }
+  }
+
+  /**
+   * Takes the connection IDs of this side the peer has retired.
+   * <p>
+   * Each one is reported once. The caller has to stop routing packets carrying it to this connection.
+   *
+   * @return the retired connection IDs, empty if there are none
+   */
+  @SuppressWarnings("restricted")   // reinterpret: quiche reports the length in the out-parameter
+  public List<byte[]> takeRetiredScids() {
+    List<byte[]> retired = new ArrayList<>();
+    try {
+      // the cheap check first: this is called for every received datagram, and the iterator is a heap
+      // allocation inside quiche
+      if ((long) RETIRED_SCIDS.invokeExact(getSegment()) == 0) {
+        return retired;
+      }
+      MemorySegment iterator = (MemorySegment) RETIRED_SCID_ITER.invokeExact(getSegment());
+      if (iterator.equals(MemorySegment.NULL)) {
+        return retired;
+      }
+      try {
+        while ((boolean) CONNECTION_ID_ITER_NEXT.invokeExact(iterator, pointerOut, lengthOut)) {
+          long length = lengthOut.get(ValueLayouts.SIZE_T, 0);
+          MemorySegment pointer = pointerOut.get(ValueLayouts.POINTER, 0);
+          retired.add(length <= 0 ? new byte[0] : pointer.reinterpret(length).toArray(ValueLayouts.UINT8));
+        }
+      }
+      finally {
+        CONNECTION_ID_ITER_FREE.invokeExact(iterator);
+      }
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_retired_scid_iter failed", t);
+    }
+    return retired;
+  }
+
+  /**
+   * Starts validating a network path, which makes quiche send a PATH_CHALLENGE on it.
+   * <p>
+   * A new path needs a spare connection ID on both sides. The outcome is reported as a
+   * {@link PathEvent.Type#VALIDATED} or {@link PathEvent.Type#FAILED_VALIDATION} event.
+   *
+   * @param local the local address of the path
+   * @param peer the peer address of the path
+   * @return the sequence number of the peer's connection ID the path uses
+   * @throws QuicheException if there are no spare connection IDs ({@link Quiche#ERR_OUT_OF_IDENTIFIERS})
+   */
+  public long probePath(InetSocketAddress local, InetSocketAddress peer) {
+    return path(PROBE_PATH, "quiche_conn_probe_path", local, peer);
+  }
+
+  /**
+   * Makes a path the active one, i.e., the one all further packets are sent on. Client side only.
+   * <p>
+   * Packets still in flight on the previous path are considered lost and retransmitted on the new one.
+   *
+   * @param local the local address of the path
+   * @param peer the peer address of the path
+   * @return the sequence number of the peer's connection ID the path uses
+   * @throws QuicheException if there are no spare connection IDs or this is a server connection
+   */
+  public long migrate(InetSocketAddress local, InetSocketAddress peer) {
+    return path(MIGRATE, "quiche_conn_migrate", local, peer);
+  }
+
+  /**
+   * Takes the next event about the connection's network paths.
+   *
+   * @return the event, null if there is none
+   */
+  public PathEvent nextPathEvent() {
+    try {
+      MemorySegment event = (MemorySegment) PATH_EVENT_NEXT.invokeExact(getSegment());
+      if (event.equals(MemorySegment.NULL)) {
+        return null;
+      }
+      try {
+        PathEvent.Type type = PathEvent.Type.of((int) PATH_EVENT_TYPE.invokeExact(event));
+        // each accessor is only valid for its own type: quiche aborts the process on a mismatch
+        MethodHandle accessor = switch (type) {
+          case NEW -> PATH_EVENT_NEW;
+          case VALIDATED -> PATH_EVENT_VALIDATED;
+          case FAILED_VALIDATION -> PATH_EVENT_FAILED_VALIDATION;
+          case CLOSED -> PATH_EVENT_CLOSED;
+          case PEER_MIGRATED -> PATH_EVENT_PEER_MIGRATED;
+          case REUSED_SOURCE_CONNECTION_ID -> null;
+        };
+        if (accessor == null) {
+          return new PathEvent(type, null, null);
+        }
+        try (Arena confined = Arena.ofConfined()) {
+          MemorySegment local = confined.allocate(SockAddr.STORAGE);
+          MemorySegment localLength = confined.allocate(ValueLayouts.SOCKLEN_T);
+          MemorySegment peer = confined.allocate(SockAddr.STORAGE);
+          MemorySegment peerLength = confined.allocate(ValueLayouts.SOCKLEN_T);
+          accessor.invokeExact(event, local, localLength, peer, peerLength);
+          return new PathEvent(type, SockAddr.decode(local), SockAddr.decode(peer));
+        }
+      }
+      finally {
+        PATH_EVENT_FREE.invokeExact(event);
+      }
+    }
+    catch (Throwable t) {
+      throw t instanceof RuntimeException e ? e : new QuicheException("quiche_conn_path_event_next failed", t);
+    }
+  }
+
+  /**
+   * Gets the number of bytes the peer has acknowledged so far, on all paths.
+   *
+   * @return the number of bytes
+   */
+  public long getAckedBytes() {
+    try {
+      CONN_STATS.invokeExact(getSegment(), statsOut);
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_stats failed", t);
+    }
+    return statsOut.get(ValueLayouts.UINT64, ACKED_BYTES_OFFSET);
+  }
+
+  /**
+   * Gets how often the probe timeout fired on the active path so far.
+   * <p>
+   * A probe timeout fires when ack-eliciting packets are outstanding and nothing acknowledges them for
+   * longer than the round trip time allows. Consecutive ones without any acknowledgment in between are
+   * the sign of a path that stopped delivering.
+   *
+   * @return the count, -1 if there is no active path
+   */
+  public long getActivePathPtoCount() {
+    long paths;
+    try {
+      CONN_STATS.invokeExact(getSegment(), statsOut);
+      paths = statsOut.get(ValueLayouts.SIZE_T, PATHS_COUNT_OFFSET);
+      for (long index = 0; index < paths; index++) {
+        int result = (int) PATH_STATS.invokeExact(getSegment(), index, statsOut);
+        if (result == 0 && statsOut.get(ValueLayouts.BOOL, ACTIVE_OFFSET)) {
+          return statsOut.get(ValueLayouts.SIZE_T, TOTAL_PTO_COUNT_OFFSET);
+        }
+      }
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_path_stats failed", t);
+    }
+    return -1;
+  }
+
+  /**
    * Tells whether the handshake is complete.
    *
    * @return true if established
@@ -740,6 +1097,68 @@ public class QuicheConn implements AutoCloseable {
     catch (Throwable t) {
       throw new QuicheException(name + " failed", t);
     }
+  }
+
+  /**
+   * Invokes {@code quiche_conn_probe_path} or {@code quiche_conn_migrate}.
+   *
+   * @param handle the method handle
+   * @param name the symbol name, for the error message
+   * @param local the local address of the path
+   * @param peer the peer address of the path
+   * @return the sequence number of the peer's connection ID the path uses
+   */
+  private long path(MethodHandle handle, String name, InetSocketAddress local, InetSocketAddress peer) {
+    int result;
+    try (Arena confined = Arena.ofConfined()) {
+      MemorySegment localSegment = confined.allocate(SockAddr.STORAGE);
+      MemorySegment peerSegment = confined.allocate(SockAddr.STORAGE);
+      int localLen = SockAddr.encode(localSegment, local);
+      int peerLen = SockAddr.encode(peerSegment, peer);
+      result = (int) handle.invokeExact(getSegment(), localSegment, localLen, peerSegment, peerLen, seqOut);
+    }
+    catch (Throwable t) {
+      throw new QuicheException(name + " failed", t);
+    }
+    if (result < 0) {
+      throw new QuicheException(name + " failed for " + local + " -> " + peer, result);
+    }
+    return seqOut.get(ValueLayouts.UINT64, 0);
+  }
+
+  /**
+   * Binds one of the {@code size_t f(quiche_conn *)} counters.
+   *
+   * @param name the symbol name
+   * @return the method handle
+   */
+  private static MethodHandle counter(String name) {
+    return Quiche.downcall(name, FunctionDescriptor.of(ValueLayouts.SIZE_T, ValueLayouts.POINTER));
+  }
+
+  /**
+   * Binds {@code quiche_conn_probe_path} or {@code quiche_conn_migrate}, which share their signature.
+   *
+   * @param name the symbol name
+   * @return the method handle
+   */
+  private static MethodHandle pathSetter(String name) {
+    return Quiche.downcall(name, FunctionDescriptor.of(ValueLayouts.INT, ValueLayouts.POINTER,
+                                                       ValueLayouts.POINTER, ValueLayouts.SOCKLEN_T,  // local
+                                                       ValueLayouts.POINTER, ValueLayouts.SOCKLEN_T,  // peer
+                                                       ValueLayouts.POINTER));                        // uint64_t *seq
+  }
+
+  /**
+   * Binds one of the {@code quiche_path_event_<type>} accessors that report a path's addresses.
+   *
+   * @param name the symbol name
+   * @return the method handle
+   */
+  private static MethodHandle pathEventAddresses(String name) {
+    return Quiche.downcall(name, FunctionDescriptor.ofVoid(ValueLayouts.POINTER,
+                                                           ValueLayouts.POINTER, ValueLayouts.POINTER,
+                                                           ValueLayouts.POINTER, ValueLayouts.POINTER));
   }
 
   /**

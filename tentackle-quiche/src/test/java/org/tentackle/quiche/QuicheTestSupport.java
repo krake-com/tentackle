@@ -264,7 +264,9 @@ public final class QuicheTestSupport {
       .setInitialMaxStreamDataBidiLocal(250_000)
       .setInitialMaxStreamDataBidiRemote(250_000)
       .setInitialMaxStreamsBidi(8)
-      .setInitialMaxStreamsUni(0);
+      .setInitialMaxStreamsUni(0)
+      // as QuicheTripTransport does, so that a client can migrate more than once
+      .setActiveConnectionIdLimit(8);
   }
 
 

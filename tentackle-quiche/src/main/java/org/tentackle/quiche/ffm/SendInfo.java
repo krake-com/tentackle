@@ -71,6 +71,21 @@ public final class SendInfo {
   }
 
   /**
+   * Gets the local port the packet is to be sent from, as quiche last filled it in.
+   * <p>
+   * A connection that migrated, or is probing a new path, sends from more than one local address, and
+   * each packet must leave through the socket bound to the address it names. The port alone tells which
+   * of an endpoint's sockets that is, and reading it allocates nothing, unlike decoding the address.
+   *
+   * @return the source port
+   */
+  public int getFromPort() {
+    // sin_port and sin6_port both sit at offset 2, in network byte order
+    return (Byte.toUnsignedInt(segment.get(ValueLayout.JAVA_BYTE, 2)) << 8)
+         | Byte.toUnsignedInt(segment.get(ValueLayout.JAVA_BYTE, 3));
+  }
+
+  /**
    * Gets the address the packet is to be sent to, as quiche last filled it in.
    *
    * @return the destination address

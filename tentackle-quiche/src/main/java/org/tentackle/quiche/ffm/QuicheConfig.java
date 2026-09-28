@@ -99,6 +99,9 @@ public class QuicheConfig implements AutoCloseable {
     Quiche.downcall("quiche_config_set_disable_active_migration",
                     FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.BOOL));
 
+  private static final MethodHandle SET_ACTIVE_CONNECTION_ID_LIMIT =
+    setter("quiche_config_set_active_connection_id_limit");
+
   private static final MethodHandle ENABLE_PACING =
     Quiche.downcall("quiche_config_enable_pacing",
                     FunctionDescriptor.ofVoid(ValueLayouts.POINTER, ValueLayouts.BOOL));
@@ -388,6 +391,21 @@ public class QuicheConfig implements AutoCloseable {
     catch (Throwable t) {
       throw new QuicheException("quiche_config_set_disable_active_migration failed", t);
     }
+    return this;
+  }
+
+  /**
+   * Sets how many connection IDs this side is willing to hold for the peer at the same time.
+   * <p>
+   * Every network path needs a connection ID of its own in each direction, so this bounds how many paths
+   * a connection can use &mdash; quiche keeps at most this many paths per connection &mdash; and thereby how
+   * often a client can migrate. Values below 2, the protocol's default, are ignored by quiche.
+   *
+   * @param limit the number of connection IDs
+   * @return this configuration
+   */
+  public QuicheConfig setActiveConnectionIdLimit(long limit) {
+    set(SET_ACTIVE_CONNECTION_ID_LIMIT, "quiche_config_set_active_connection_id_limit", limit);
     return this;
   }
 
