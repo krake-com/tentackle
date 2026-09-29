@@ -60,6 +60,14 @@ answers *how is this mapped*, the script goal *what does the application do with
 > generates the incremental script instead. An agent should reach for `create` only when explicitly
 > asked to produce a fresh-schema script.
 
+> **Neither is `tentackle-sql:document`.** It renders the model as cross-linked HTML or Markdown pages,
+> one per entity plus an index of the aggregates — documentation for *people* to browse. An agent gets
+> the same relations, attributes, SQL types and indexes from the MCP server, queryable and without
+> writing files. Reach for
+> [`document`](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-document-goal)
+> when asked to *produce* model documentation, e.g. `-Dtentackle.docFormat=markdown` to drop it into a
+> Markdown doc tree.
+
 ## Prerequisites
 
 - JDK >= 25 and Maven >= 3.9.10 (Maven 4 is supported as well), like the rest of the framework.

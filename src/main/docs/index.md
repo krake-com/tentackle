@@ -141,6 +141,7 @@ topic-grouped listing of every document, see the
 - **Mixins (multiple-inheritance emulation)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Mock delegates (database-less unit tests)** — [Tentackle PDO Mocks](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 - **Model definition (DSL)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md), [MCP Maven Plugin](../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
+- **Model documentation (browsable HTML/Markdown pages, `tentackle-sql:document`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-document-goal)
 - **Modification tracking** — [Modification Tracking](../../../tentackle-session/src/main/docs/modification-tracking.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **ModuleHook** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-modulehook), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
 - **ModuleLayer (isolated dependency versions)** — [Isolated Module Layers](../../../tentackle-common/src/main/docs/layers.md), [jlinkpackage.md](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#isolated-module-layers)
