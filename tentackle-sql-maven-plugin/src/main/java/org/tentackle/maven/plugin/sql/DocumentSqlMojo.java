@@ -38,17 +38,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * Renders the model as a set of cross-linked HTML pages, one per entity, plus an index page.<br>
+ * Renders the model as a set of cross-linked HTML or Markdown pages, one per entity, plus an index page.<br>
  * Unlike the {@code ModelComment} wurblet's Javadoc comment block, entity names mentioned on a page
  * are hyperlinks to that entity's own page, so the whole model can be browsed by following
- * references, composite trees and inheritance in a browser.
+ * references, composite trees, and inheritance in a browser or Markdown viewer.
  *
  * @author harald
  */
 @Mojo(name = "document", aggregator = true)
 public class DocumentSqlMojo extends AbstractTentackleMojo {
+
+  private static final String FORMAT_HTML = "html";
+  private static final String FORMAT_MARKDOWN = "markdown";
 
   /**
    * The model name.
@@ -102,11 +106,21 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
   private boolean mapSchemas;
 
   /**
-   * Directory to create the HTML pages in.
+   * The output format.<br>
+   * Either {@code html} (the default) or {@code markdown} (alias {@code md}), case-insensitive.
+   * Both formats provide the same content and the same navigation between the pages;
+   * Markdown pages are named {@code *.md} and use GitHub-flavored pipe tables and fenced code blocks.
+   */
+  @Parameter(defaultValue = FORMAT_HTML,
+             property = "tentackle.docFormat")
+  private String format;
+
+  /**
+   * Directory to create the pages in (HTML or Markdown).
    */
   @Parameter(defaultValue = "${project.build.directory}/model-doc",
-             property = "tentackle.htmlDir")
-  private File htmlDir;
+             property = "tentackle.docDir")
+  private File docDir;
 
   /**
    * The heading shown on the index page.<br>
@@ -117,19 +131,20 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
 
   /**
    * Optional project-specific stylesheet, copied verbatim to {@code style.css}.<br>
+   * Applies only to the {@code html} format.<br>
    * Overrides the default theme (colors, fonts) generated otherwise. The structural rules (tables,
    * lists, spacing) live in the separate, always-generated {@code base.css} and are not affected -
    * a custom stylesheet only needs to redefine the {@code --tentackle-doc-*} CSS variables it wants
-   * to change, or override selectors outright for full control.
+   * to change or override selectors outright for full control.
    */
   @Parameter(property = "tentackle.cssFile")
   private File cssFile;
 
   /**
    * Comma-separated list of backend names to render the SQL type of each attribute for.<br>
-   * One self-contained HTML page tree is generated per backend, nested under {@link #htmlDir} by
-   * backend name - same layout convention as {@code create}'s {@code sqlDir/<backend-name>/} -
-   * since the SQL type shown in the attributes table can differ between backends.
+   * One self-contained page tree is generated per backend, nested under {@link #docDir} by
+   * backend name - the same layout convention as {@code create}'s {@code sqlDir/<backend-name>/} -
+   * since the SQL type shown in the attributes-table can differ between backends.
    * <p>
    * The following special names are recognized:
    * <ul>
@@ -144,6 +159,7 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
 
   private Model model;
   private Collection<Backend> backends;
+  private boolean markdown;
 
 
   @Override
@@ -155,14 +171,26 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
       if (modelDir.getPath().contains("${")) {
         throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
       }
-      if (htmlDir == null) {
-        throw new MojoExecutionException("missing tentackle.htmlDir");
+      if (docDir == null) {
+        throw new MojoExecutionException("missing tentackle.docDir");
       }
-      if (htmlDir.getPath().contains("${")) {
-        throw new MojoExecutionException("undefined variable(s) in htmlDir: " + htmlDir.getPath());
+      if (docDir.getPath().contains("${")) {
+        throw new MojoExecutionException("undefined variable(s) in docDir: " + docDir.getPath());
       }
-      if (cssFile != null && !cssFile.isFile()) {
-        throw new MojoExecutionException("no such cssFile: " + cssFile.getAbsolutePath());
+      String fmt = format == null ? FORMAT_HTML : format.trim().toLowerCase(Locale.ROOT);
+      switch (fmt) {
+        case FORMAT_HTML -> markdown = false;
+        case FORMAT_MARKDOWN, "md" -> markdown = true;
+        default -> throw new MojoExecutionException("unsupported format '" + format + "' (must be " +
+                                                    FORMAT_HTML + " or " + FORMAT_MARKDOWN + ")");
+      }
+      if (cssFile != null) {
+        if (markdown) {
+          getLogger().warn("cssFile is ignored for format {}", FORMAT_MARKDOWN);
+        }
+        else if (!cssFile.isFile()) {
+          throw new MojoExecutionException("no such cssFile: " + cssFile.getAbsolutePath());
+        }
       }
       backends = BackendFactory.getInstance().getBackends(backendNames);
       return true;
@@ -222,20 +250,24 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
     String pageTitle = title != null ? title : getMavenProject().getName();
 
     for (Backend backend : backends) {
-      File backendHtmlDir = new File(htmlDir, backend.getName());
-      if (!backendHtmlDir.isDirectory() && !backendHtmlDir.mkdirs()) {
-        throw new MojoExecutionException("cannot create htmlDir " + backendHtmlDir.getAbsolutePath());
+      File backendDocDir = new File(docDir, backend.getName());
+      if (!backendDocDir.isDirectory() && !backendDocDir.mkdirs()) {
+        throw new MojoExecutionException("cannot create docDir " + backendDocDir.getAbsolutePath());
       }
 
+      AbstractModelDocGenerator generator = markdown ?
+          new ModelMarkdownGenerator(entities, backendDocDir, pageTitle, backend, mapSchemas) :
+          new ModelHtmlGenerator(entities, backendDocDir, pageTitle, cssFile, backend, mapSchemas);
       try {
-        new ModelHtmlGenerator(entities, backendHtmlDir, pageTitle, cssFile, backend, mapSchemas).generate();
+        generator.generate();
       }
       catch (IOException iox) {
-        throw new MojoExecutionException("writing the HTML pages for backend " + backend.getName() + " failed", iox);
+        throw new MojoExecutionException("writing the " + (markdown ? "Markdown" : "HTML") +
+                                         " pages for backend " + backend.getName() + " failed", iox);
       }
 
       getLogger().info("{} entity page(s) created in {}",
-                       entities.size(), getPathRelativeToBasedir(backendHtmlDir.getAbsolutePath()));
+                       entities.size(), getPathRelativeToBasedir(backendDocDir.getAbsolutePath()));
     }
   }
 

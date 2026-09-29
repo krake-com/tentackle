@@ -177,12 +177,12 @@ public class PluginDescriptorTest {
 
   /**
    * {@code document} shares {@code modelDir} with {@code create}/{@code migrate}, but writes to its
-   * own {@code htmlDir} rather than {@code sqlDir}.
+   * own {@code docDir} rather than {@code sqlDir}.
    */
   @Test
   public void documentDefaultsToModelDocDirectory() {
     assertEquals(defaultValue("document", "modelDir"), "${project.build.directory}/wurbel/model");
-    assertEquals(defaultValue("document", "htmlDir"), "${project.build.directory}/model-doc");
+    assertEquals(defaultValue("document", "docDir"), "${project.build.directory}/model-doc");
   }
 
   /**

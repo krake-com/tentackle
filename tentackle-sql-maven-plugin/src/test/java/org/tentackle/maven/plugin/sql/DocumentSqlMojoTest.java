@@ -24,10 +24,13 @@ import org.testng.annotations.Test;
 
 import org.tentackle.maven.plugin.sql.SqlTestSupport.RecordingLog;
 
+import org.apache.maven.plugin.MojoExecutionException;
+
 import java.io.File;
 
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests the {@code document} goal.
@@ -40,7 +43,7 @@ import static org.testng.Assert.assertTrue;
  * "composite structure", "references" and "composite membership" sections all at once.
  * <p>
  * All tests configure {@code backendNames = "h2"} (H2 is already a reactor test dependency), so pages
- * are read back from {@code htmlDir/H2/...} ({@link org.tentackle.sql.backends.H2#getName()}),
+ * are read back from {@code docDir/H2/...} ({@link org.tentackle.sql.backends.H2#getName()}),
  * mirroring {@code create}'s per-backend output layout.
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
@@ -48,7 +51,7 @@ public class DocumentSqlMojoTest {
 
   private File basedir;
   private File modelDir;
-  private File htmlDir;
+  private File docDir;
   private RecordingLog log;
 
 
@@ -56,7 +59,7 @@ public class DocumentSqlMojoTest {
   public void setUp() {
     basedir = SqlTestSupport.createTempDir("document-sql");
     modelDir = SqlTestSupport.createDir(basedir, "model");
-    htmlDir = SqlTestSupport.createDir(basedir, "html");
+    docDir = SqlTestSupport.createDir(basedir, "doc");
     log = new RecordingLog();
   }
 
@@ -114,7 +117,7 @@ public class DocumentSqlMojoTest {
   }
 
   /**
-   * The SQL type is backend-specific, which is why pages live under {@code htmlDir/H2/...} in the
+   * The SQL type is backend-specific, which is why pages live under {@code docDir/H2/...} in the
    * first place - a {@code String(128)} attribute must render as an H2 {@code VARCHAR} column.
    */
   @Test
@@ -358,6 +361,194 @@ public class DocumentSqlMojoTest {
   }
 
 
+  // ------------------------------------------------------------------------------------- markdown
+
+  /**
+   * The Markdown pages must be navigable just like the HTML ones: every entity mentioned links to the
+   * entity's own page, and each entity page links back to the index.
+   */
+  @Test
+  public void markdownPagesAreCrossLinked() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownPagesAreCrossLinked");
+    run(mojo);
+
+    String bundleMd = md("Bundle");
+    assertTrue(bundleMd.startsWith("[← Index](index.md)\n\n# Bundle\n"), bundleMd);
+    assertTrue(bundleMd.contains("[Locale](Locale.md)"), bundleMd);          // referenced by
+    assertTrue(bundleMd.contains("[BundleKey](BundleKey.md)"), bundleMd);    // composite structure
+    assertTrue(bundleMd.contains("**This is a root entity.**"), bundleMd);
+
+    String keyMd = md("BundleKey");
+    assertTrue(keyMd.contains("[← Index](index.md)"), keyMd);
+    assertTrue(keyMd.contains("Component of: [Bundle](Bundle.md)"), keyMd);
+    assertTrue(keyMd.contains("Belongs to the root entity: [Bundle](Bundle.md)"), keyMd);
+
+    String localeMd = md("Locale");
+    assertTrue(localeMd.contains("[← Index](index.md)"), localeMd);
+    assertTrue(localeMd.contains("### References\n\n- [Bundle](Bundle.md)"), localeMd);
+    assertTrue(localeMd.contains("Not extended."), localeMd);
+
+    for (String page : new String[] { "index", "Bundle", "BundleKey", "Locale" }) {
+      assertFalse(md(page).contains(".html"), page);
+    }
+  }
+
+  @Test
+  public void markdownIndexLinksToEveryEntityPage() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownIndexLinksToEveryEntityPage");
+    run(mojo);
+
+    String index = md("index");
+    assertTrue(index.startsWith("# Test Model\n"), index);
+    assertTrue(index.contains("## Aggregates\n\n- [Bundle](Bundle.md)\n    - [BundleKey](BundleKey.md)\n"), index);
+    assertTrue(index.contains("## All Entities\n"), index);
+    assertTrue(index.contains("- [Locale](Locale.md)\n"), index);
+    assertFalse(index.contains("[← Index]"), index);
+  }
+
+  /**
+   * Inheritance is navigable in both directions: the sub entity's meta table links the super entity,
+   * the super entity's "Inheritance" section links the sub entity.
+   */
+  @Test
+  public void markdownInheritanceIsCrossLinked() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Base.txt",
+        "name := Base\n" +
+        "table := base\n" +
+        "integrity := none\n" +
+        "inheritance := multi\n" +
+        "\n" +
+        "## attributes\n" +
+        "[]\n" +
+        "\n" +
+        "String(30)      code            code            the code\n");
+    SqlTestSupport.writeFile(modelDir, "Invoice.txt",
+        "name := Invoice\n" +
+        "id := 2\n" +
+        "table := invoice\n" +
+        "integrity := none\n" +
+        "extends := Base\n" +
+        "\n" +
+        "## attributes\n" +
+        "[]\n" +
+        "\n" +
+        "String(30)      number          number          the invoice number\n");
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownInheritanceIsCrossLinked");
+    run(mojo);
+
+    String invoiceMd = md("Invoice");
+    assertTrue(invoiceMd.contains("| Extends | [Base](Base.md) |"), invoiceMd);
+
+    String baseMd = md("Base");
+    assertTrue(baseMd.contains("Extended by:\n\n- ^ [Invoice](Invoice.md)"), baseMd);
+  }
+
+  @Test
+  public void markdownAttributesTableShowsSqlType() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownAttributesTableShowsSqlType");
+    run(mojo);
+
+    String bundleMd = md("Bundle");
+    assertTrue(bundleMd.contains("| Name | Column | Java Type | SQL Type | Comment |\n| --- | --- | --- | --- | --- |\n"), bundleMd);
+    assertTrue(bundleMd.contains("| name | bname | String | VARCHAR(128) | the bundle's name |"), bundleMd);
+    assertTrue(bundleMd.contains("| Table | bundle |"), bundleMd);
+
+    String keyMd = md("BundleKey");
+    assertTrue(keyMd.contains("BIGINT NOT NULL"), keyMd);
+  }
+
+  @Test
+  public void markdownIndexesSectionShowsSqlCodeBlock() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := item\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            the item's name\n" +
+        "\n" +
+        "## indexes\n" +
+        "unique index itemname := name\n");
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownIndexesSectionShowsSqlCodeBlock");
+    run(mojo);
+
+    String itemMd = md("Item");
+    assertTrue(itemMd.contains("## Indexes\n\n```sql\n"), itemMd);
+    assertTrue(itemMd.toUpperCase().contains("CREATE UNIQUE INDEX") && itemMd.contains("itemname"), itemMd);
+    assertTrue(itemMd.contains("\n```\n"), itemMd);
+  }
+
+  @Test
+  public void markdownCommentIsEscaped() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := item\n" +
+        "comment := a <b>bold</b> & *tricky* comment\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            a | pipe and a <i>tag</i>\n");
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownCommentIsEscaped");
+    run(mojo);
+
+    String itemMd = md("Item");
+    assertTrue(itemMd.contains("*a &lt;b&gt;bold&lt;/b&gt; &amp; \\*tricky\\* comment*"), itemMd);
+    assertTrue(itemMd.contains("a \\| pipe and a &lt;i&gt;tag&lt;/i&gt;"), itemMd);
+  }
+
+  /**
+   * Markdown needs no stylesheets, and no HTML pages must be left behind.
+   */
+  @Test
+  public void markdownWritesNoHtmlOrCss() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configureMarkdown("markdownWritesNoHtmlOrCss");
+    run(mojo);
+
+    String[] files = new File(docDir, "H2").list();
+    assertTrue(files != null && files.length == 4);
+    for (String file : files) {
+      assertTrue(file.endsWith(".md"), file);
+    }
+  }
+
+  @Test
+  public void formatIsCaseInsensitive() throws Exception {
+    writeBundleFixture();
+
+    DocumentSqlMojo mojo = configure("formatIsCaseInsensitive");
+    SqlTestSupport.setField(mojo, "format", "MarkDown");
+    run(mojo);
+
+    assertTrue(new File(new File(docDir, "H2"), "index.md").isFile());
+  }
+
+  @Test
+  public void unsupportedFormatIsRejected() {
+    DocumentSqlMojo mojo = configure("unsupportedFormatIsRejected");
+    SqlTestSupport.setField(mojo, "format", "pdf");
+    MojoExecutionException mex = expectThrows(MojoExecutionException.class, () -> {
+      mojo.prepareExecute();
+      SqlTestSupport.callValidate(mojo);
+    });
+    assertTrue(mex.getMessage().contains("pdf"), mex.getMessage());
+  }
+
+
   private void writeBundleFixture() {
     SqlTestSupport.writeFile(modelDir, "Bundle.txt",
         "name := Bundle\n" +
@@ -417,10 +608,17 @@ public class DocumentSqlMojoTest {
     mojo.setLogger(log);
     SqlTestSupport.setField(mojo, "mavenProject", SqlTestSupport.createProject(basedir));
     SqlTestSupport.setField(mojo, "modelDir", modelDir);
-    SqlTestSupport.setField(mojo, "htmlDir", htmlDir);
+    SqlTestSupport.setField(mojo, "docDir", docDir);
     SqlTestSupport.setField(mojo, "modelName", modelName);
     SqlTestSupport.setField(mojo, "title", "Test Model");
     SqlTestSupport.setField(mojo, "backendNames", "h2");
+    SqlTestSupport.setField(mojo, "format", "html");
+    return mojo;
+  }
+
+  private DocumentSqlMojo configureMarkdown(String modelName) {
+    DocumentSqlMojo mojo = configure(modelName);
+    SqlTestSupport.setField(mojo, "format", "markdown");
     return mojo;
   }
 
@@ -432,11 +630,15 @@ public class DocumentSqlMojoTest {
   }
 
   private String html(String pageName) {
-    return SqlTestSupport.readFile(new File(new File(htmlDir, "H2"), pageName + ".html"));
+    return SqlTestSupport.readFile(new File(new File(docDir, "H2"), pageName + ".html"));
+  }
+
+  private String md(String pageName) {
+    return SqlTestSupport.readFile(new File(new File(docDir, "H2"), pageName + ".md"));
   }
 
   private String css(String fileName) {
-    return SqlTestSupport.readFile(new File(new File(htmlDir, "H2"), fileName + ".css"));
+    return SqlTestSupport.readFile(new File(new File(docDir, "H2"), fileName + ".css"));
   }
 
 }
