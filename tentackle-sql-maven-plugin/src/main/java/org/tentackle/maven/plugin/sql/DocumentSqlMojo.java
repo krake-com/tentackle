@@ -163,15 +163,14 @@ public class DocumentSqlMojo extends AbstractSqlMojo {
       throw new MojoExecutionException("resolving the model failed", mex);
     }
 
-    if (backends.isEmpty()) {
+    if (backendInfos.isEmpty()) {
       getLogger().warn("no backends configured (see tentackle.backendNames) - nothing to document");
       return;
     }
 
     String pageTitle = title != null ? title : getMavenProject().getName();
 
-    for (BackendInfoParameter backendParameter : backends) {
-      BackendInfo backendInfo = backendParameter.createBackendInfo(this);
+    for (BackendInfo backendInfo : backendInfos.values()) {
       Backend backend = backendInfo.getBackend();
       File backendDocDir = new File(docDir, backend.getName());
       if (!backendDocDir.isDirectory() && !backendDocDir.mkdirs()) {
@@ -192,6 +191,11 @@ public class DocumentSqlMojo extends AbstractSqlMojo {
       getLogger().info("{} entity page(s) created in {}",
                        entities.size(), getPathRelativeToBasedir(backendDocDir.getAbsolutePath()));
     }
+  }
+
+  @Override
+  protected boolean isSqlDirRequired() {
+    return false;
   }
 
   @Override

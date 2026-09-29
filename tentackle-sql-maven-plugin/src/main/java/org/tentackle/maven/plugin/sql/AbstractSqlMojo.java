@@ -431,6 +431,15 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   }
 
   /**
+   * Returns whether this mojo writes SQL scripts and therefore requires the {@link #sqlDir}.
+   *
+   * @return true if sqlDir is required (default)
+   */
+  protected boolean isSqlDirRequired() {
+    return true;
+  }
+
+  /**
    * Process all files in a fileset.
    *
    * @param backendInfo the backend info
@@ -450,11 +459,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       if (modelDir.getPath().contains("${")) {
         throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
       }
-      if (sqlDir == null) {
-        throw new MojoExecutionException("missing tentackle.sqlDir");
-      }
-      if (sqlDir.getPath().contains("${")) {
-        throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
+      if (isSqlDirRequired()) {
+        if (sqlDir == null) {
+          throw new MojoExecutionException("missing tentackle.sqlDir");
+        }
+        if (sqlDir.getPath().contains("${")) {
+          throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
+        }
       }
 
       backendInfos = new HashMap<>();
