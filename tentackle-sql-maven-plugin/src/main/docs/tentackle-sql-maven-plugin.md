@@ -335,6 +335,10 @@ references, composite membership and inheritance — except that every entity na
 hyperlink to that entity's own page, so the whole model can be browsed by clicking through it instead of
 manually finding the next file.
 
+The index page has two sections: **Aggregates** lists each root entity that has components, with its
+component tree (root entities without components are not aggregates in any useful sense and are left
+out), and **All Entities** lists every entity with its comment.
+
 It also shows two attribute tables: **Attributes**, the entity's user-declared attributes, and
 **Framework Attributes**, the attributes added implicitly by the framework — `id`/`serial` on every
 entity, plus `classId`, `tableSerial`, `rootId`/`rootClassId` and the tokenlock/`normText` attributes

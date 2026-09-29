@@ -820,7 +820,7 @@ abstract class AbstractModelDocGenerator {
 
     List<Entity> roots = new ArrayList<>();
     for (Entity entity : sorted) {
-      if (entity.isRootEntity()) {
+      if (entity.isRootEntity() && !entity.getComponents().isEmpty()) {
         roots.add(entity);
       }
     }

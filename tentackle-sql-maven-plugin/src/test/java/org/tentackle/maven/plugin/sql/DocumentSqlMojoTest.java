@@ -404,10 +404,30 @@ public class DocumentSqlMojoTest {
 
     String index = md("index");
     assertTrue(index.startsWith("# Test Model\n"), index);
-    assertTrue(index.contains("## Aggregates\n\n- [Bundle](Bundle.md)\n    - [BundleKey](BundleKey.md)\n"), index);
-    assertTrue(index.contains("## All Entities\n"), index);
+    // Locale is a root entity too, but without components it is not listed as an aggregate
+    assertTrue(index.contains("## Aggregates\n\n- [Bundle](Bundle.md)\n    - [BundleKey](BundleKey.md)\n\n## All Entities\n"), index);
     assertTrue(index.contains("- [Locale](Locale.md)\n"), index);
     assertFalse(index.contains("[← Index]"), index);
+  }
+
+  @Test
+  public void indexOmitsAggregatesWithoutComponents() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Locale.txt",
+        "name := Locale\n" +
+        "id := 3\n" +
+        "table := locale\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(8)       code            code            the locale code\n");
+
+    DocumentSqlMojo mojo = configureMarkdown("indexOmitsAggregatesWithoutComponents");
+    run(mojo);
+
+    String index = md("index");
+    assertFalse(index.contains("Aggregates"), index);
+    assertTrue(index.contains("## All Entities\n\n- [Locale](Locale.md)"), index);
   }
 
   /**
