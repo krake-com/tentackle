@@ -348,7 +348,8 @@ where the corresponding entity option is set (see
 [Root Columns](../../../../tentackle-pdo/src/main/docs/root-columns.md) and
 [Locking](../../../../tentackle-persistence/src/main/docs/locking.md) for what each one is for). Both
 tables list each attribute's name, column, Java type, **SQL type** (e.g. `VARCHAR(128)`, suffixed with
-`NOT NULL` for non-nullable columns) and comment.
+`NOT NULL` for non-nullable columns and the `DEFAULT` clause if the attribute declares one, exactly as
+in the backend's DDL) and comment.
 
 Below the attribute tables, an **Indexes** section lists the entity's additional, model-declared
 indexes (an entity's `## indexes` section — not the implicit primary key) as the actual,

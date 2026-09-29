@@ -152,6 +152,34 @@ public class DocumentSqlMojoTest {
   }
 
   /**
+   * An attribute with a {@code [DEFAULT ...]} option must show the {@code DEFAULT} clause in the SQL
+   * type column, rendered as in the backend's DDL, while an attribute without one must not.
+   */
+  @Test
+  public void attributesTableShowsDefaultClause() throws Exception {
+    SqlTestSupport.writeFile(modelDir, "Item.txt",
+        "name := Item\n" +
+        "id := 1\n" +
+        "table := item\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "int             count           count           the count [DEFAULT 5]\n" +
+        "String(30)      code            code            the code [DEFAULT \"X\"]\n" +
+        "String(30)      name            name            the item's name\n");
+
+    DocumentSqlMojo mojo = configure("attributesTableShowsDefaultClause");
+    run(mojo);
+
+    String itemHtml = html("Item");
+    assertTrue(itemHtml.contains("INTEGER NOT NULL DEFAULT 5</td>"), itemHtml);
+    assertTrue(itemHtml.contains("VARCHAR(30) DEFAULT &#39;X&#39;</td>")
+               || itemHtml.contains("VARCHAR(30) DEFAULT 'X'</td>"), itemHtml);
+    assertTrue(itemHtml.contains("<td>VARCHAR(30)</td>"), itemHtml);
+  }
+
+  /**
    * An entity without an {@code ## indexes} section must render an empty "Indexes" section, not
    * omit it - a reader must be able to tell "no indexes" from "the section was forgotten".
    */

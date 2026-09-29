@@ -515,8 +515,9 @@ abstract class AbstractModelDocGenerator {
     endTable(buf);
   }
 
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   private String getSqlType(Attribute attribute) throws ModelException {
-    DataType<?> dataType = attribute.getEffectiveDataType();
+    DataType dataType = attribute.getEffectiveDataType();
     int columnCount = dataType.getColumnCount(backend);
     StringBuilder sqlType = new StringBuilder();
     for (int i = 0; i < columnCount; i++) {
@@ -525,10 +526,10 @@ abstract class AbstractModelDocGenerator {
       }
       int size = dataType.getSize(backend, i, attribute.getSize());
       int scale = dataType.getScale(backend, i, attribute.getScale());
-      sqlType.append(backend.columnTypeToString(dataType.getSqlType(backend, i), size, scale));
-    }
-    if (!attribute.isNullable()) {
-      sqlType.append(" NOT NULL");
+      // same declaration as in the generated DDL (see CodeFactory#createSqlTable)
+      Object defaultValue = dataType.getColumnValue(backend, i, attribute.getOptions().getDefaultValue());
+      sqlType.append(backend.columnTypeNullDefaultToString(attribute.getColumnName(backend, i),
+          dataType.getSqlType(backend, i), size, scale, attribute.isNullable(), defaultValue));
     }
     return sqlType.toString();
   }
