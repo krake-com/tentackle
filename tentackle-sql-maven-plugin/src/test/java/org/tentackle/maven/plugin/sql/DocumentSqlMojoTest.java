@@ -620,6 +620,89 @@ public class DocumentSqlMojoTest {
   }
 
   /**
+   * The aggregates tree shows the opposite side of an N:M relation, not just the link entity.
+   */
+  @Test
+  public void indexAggregatesShowNmRelations() throws Exception {
+    writeNmFixture();
+
+    DocumentSqlMojo mojo = configureMarkdown("indexAggregatesShowNmRelations");
+    run(mojo);
+
+    String index = md("index");
+    assertTrue(index.contains("## Aggregates\n\n" +
+                              "- [User](User.md)\n" +
+                              "    - [User2Group](User2Group.md) \\[N:M\\] to [UserGroup](UserGroup.md) as userGroups\n" +
+                              "- [UserGroup](UserGroup.md)\n" +
+                              "    - [User2Group](User2Group.md) \\[N:M\\] to [User](User.md) as users\n\n" +
+                              "## All Entities\n"), index);
+  }
+
+  /**
+   * The N:M shape of the project archetype: {@code User} and {@code UserGroup} both extend
+   * {@code OrgUnit} and each hold the link entity {@code User2Group} as a component, whose
+   * {@code nm} option names the object relation to the opposite side.
+   */
+  private void writeNmFixture() {
+    SqlTestSupport.writeFile(modelDir, "OrgUnit.txt",
+        "name := OrgUnit\n" +
+        "table := orgunit\n" +
+        "inheritance := multi\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(32)      name            name            short name\n");
+
+    SqlTestSupport.writeFile(modelDir, "User.txt",
+        "name := User\n" +
+        "id := 11\n" +
+        "table := users\n" +
+        "extends := OrgUnit\n" +
+        "\n" +
+        "## attributes\n" +
+        "\n" +
+        "boolean         loginAllowed    login_allowed   true if login is allowed\n" +
+        "\n" +
+        "## relations\n" +
+        "User2Group:\n" +
+        "    relation = component list,\n" +
+        "    name     = nmLinks,\n" +
+        "    method   = UserId,\n" +
+        "    nm       = UserGroup UserGroups\n");
+
+    SqlTestSupport.writeFile(modelDir, "UserGroup.txt",
+        "name := UserGroup\n" +
+        "id := 12\n" +
+        "table := usergroup\n" +
+        "extends := OrgUnit\n" +
+        "\n" +
+        "## relations\n" +
+        "User2Group:\n" +
+        "    relation = component list,\n" +
+        "    name     = nmLinks,\n" +
+        "    method   = UserGroupId,\n" +
+        "    nm       = User Users\n");
+
+    SqlTestSupport.writeFile(modelDir, "User2Group.txt",
+        "name := User2Group\n" +
+        "id := 13\n" +
+        "table := user2group\n" +
+        "\n" +
+        "## attributes\n" +
+        "\n" +
+        "long            userGroupId     group_id        user group ID\n" +
+        "long            userId          user_id         user ID\n" +
+        "\n" +
+        "## relations\n" +
+        "User:\n" +
+        "    select = cached\n" +
+        "\n" +
+        "UserGroup:\n" +
+        "    select = cached\n");
+  }
+
+  /**
    * The container never boots, so no {@code @Parameter(defaultValue = ...)} is ever applied -
    * every default the test relies on has to be set explicitly, matching the mojo's own defaults.
    */

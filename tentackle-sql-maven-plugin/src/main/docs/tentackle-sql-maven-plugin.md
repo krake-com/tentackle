@@ -337,7 +337,9 @@ manually finding the next file.
 
 The index page has two sections: **Aggregates** lists each root entity that has components, with its
 component tree (root entities without components are not aggregates in any useful sense and are left
-out), and **All Entities** lists every entity with its comment.
+out), and **All Entities** lists every entity with its comment. As in the `ModelComment` wurblet, an
+N:M link component is followed by the entity on the opposite side, e.g.
+`User2Group [N:M] to UserGroup as userGroups`.
 
 It also shows two attribute tables: **Attributes**, the entity's user-declared attributes, and
 **Framework Attributes**, the attributes added implicitly by the framework — `id`/`serial` on every

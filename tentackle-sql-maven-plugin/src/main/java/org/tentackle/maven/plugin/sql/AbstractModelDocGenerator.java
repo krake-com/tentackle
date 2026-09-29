@@ -679,13 +679,7 @@ abstract class AbstractModelDocGenerator {
       }
 
       if (relation.getNmRelation() != null) {
-        buf.append(escape(" [N:M] to "));
-        Entity nmEntity = relation.getNmRelation().getForeignEntity();
-        buf.append(link(nmEntity));
-        if (relation.getNmMethodName() != null &&
-            !relation.getNmMethodName().equalsIgnoreCase(nmEntity.getName())) {
-          buf.append(escape(" as ")).append(escape(StringHelper.firstToLower(relation.getNmMethodName())));
-        }
+        appendNmTarget(buf, relation);
       }
       else {
         buf.append(escape(relation.getRelationType() == RelationType.LIST ? " [1:N]" : " [1:1]"));
@@ -709,6 +703,19 @@ abstract class AbstractModelDocGenerator {
       endItem(buf);
     }
     endList(buf);
+  }
+
+  /**
+   * Appends the opposite side of an N:M composite relation, as {@code ModelCommentSupport.printComponents} does.
+   */
+  private void appendNmTarget(StringBuilder buf, Relation relation) {
+    buf.append(escape(" [N:M] to "));
+    Entity nmEntity = relation.getNmRelation().getForeignEntity();
+    buf.append(link(nmEntity));
+    if (relation.getNmMethodName() != null &&
+        !relation.getNmMethodName().equalsIgnoreCase(nmEntity.getName())) {
+      buf.append(escape(" as ")).append(escape(StringHelper.firstToLower(relation.getNmMethodName())));
+    }
   }
 
   /**
@@ -859,13 +866,23 @@ abstract class AbstractModelDocGenerator {
     if (!visited.add(entity)) {
       return;
     }
-    List<Entity> components = new ArrayList<>(entity.getComponents());
-    if (!components.isEmpty()) {
-      components.sort(Comparator.comparing(Entity::getName));
+    List<Relation> compositeRelations = new ArrayList<>();
+    for (Relation relation : entity.getRelations()) {
+      if (relation.isComposite()) {
+        compositeRelations.add(relation);
+      }
+    }
+    if (!compositeRelations.isEmpty()) {
+      compositeRelations.sort(Comparator.comparing((Relation r) -> r.getForeignEntity().getName())
+                                        .thenComparing(Relation::getName));
       beginList(buf);
-      for (Entity component : components) {
+      for (Relation relation : compositeRelations) {
+        Entity component = relation.getForeignEntity();
         beginItem(buf);
         buf.append(link(component));
+        if (relation.getNmRelation() != null) {
+          appendNmTarget(buf, relation);
+        }
         appendComponentTree(buf, component, visited);
         endItem(buf);
       }
