@@ -38,6 +38,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelManager;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 import org.tentackle.model.parse.Document;
 import org.tentackle.model.print.EntityPrinter;
@@ -117,6 +118,18 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(property = "tentackle.mapSchemas")
   protected boolean mapSchemas;
+
+  /**
+   * Uses the model found in the resources of the classpath.<br>
+   * Useful to migrate the database tables for dependencies, for example, the Tentackle-framework's model.<br>
+   * Requires that the plugin dependencies contain the model resources
+   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
+   * <p>
+   * Notice: when this flag is true, the model files in the filesets are ignored!
+   * If only the tentackle tables should be migrated, make sure to set checkReservedTables to false.
+   */
+  @Parameter
+  protected boolean loadModelFromClassPath;
 
   /**
    * Directory holding the SQL-generated scripts.
@@ -233,6 +246,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected boolean generateHeaderComment;
 
   /**
+   * Checks the names used in the model via the {@link org.tentackle.model.NameVerifier}.
+   * Turn this off if you want to skip the name checks (to load legacy models, for example).
+   */
+  @Parameter(defaultValue = "true")
+  private boolean checkModelNames;
+
+  /**
    * Check for reserved backend-specific names.<br>
    * Asserts that column-, schema-, table- and index-names don't
    * conflict with reserved words of the configured backends.
@@ -307,6 +327,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   protected Model getModel() {
     if (model == null) {
+      NameVerifier.getInstance().setEnabled(checkModelNames);
       model = ModelManager.getInstance().getModel(modelName);
     }
     return model;

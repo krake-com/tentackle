@@ -126,19 +126,6 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private boolean validate;
 
   /**
-   * Uses the model found in the resources of the classpath.<br>
-   * Useful to migrate the database tables for dependencies, for example, the Tentackle-framework's model.<br>
-   * Requires that the plugin dependencies contain the model resources
-   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
-   * <p>
-   * Notice: when this flag is true, the model files in the filesets are ignored!
-   * If only the tentackle tables should be migrated, make sure to set checkReservedTables to false.
-   */
-  @Parameter
-  private boolean loadModelFromClassPath;
-
-
-  /**
    * The database metadata retrieved from the backend.
    */
   private ModelMetaData modelMetaData;

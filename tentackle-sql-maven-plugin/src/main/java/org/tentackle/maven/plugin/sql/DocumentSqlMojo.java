@@ -24,15 +24,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
-import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.Entity;
-import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
-import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
-import org.tentackle.model.ModelManager;
 import org.tentackle.sql.Backend;
-import org.tentackle.sql.BackendFactory;
+import org.tentackle.sql.BackendInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,61 +45,11 @@ import java.util.Locale;
  * @author harald
  */
 @Mojo(name = "document", aggregator = true)
-public class DocumentSqlMojo extends AbstractTentackleMojo {
+public class DocumentSqlMojo extends AbstractSqlMojo {
 
   private static final String FORMAT_HTML = "html";
   private static final String FORMAT_MARKDOWN = "markdown";
 
-  /**
-   * The model name.
-   */
-  @Parameter(defaultValue = ModelManager.DEFAULT_MODEL_NAME,
-             property = "tentackle.modelName")
-  private String modelName;
-
-  /**
-   * Directory holding the model files to be processed.<br>
-   * Ignored if {@link #filesets} explicitly given.
-   */
-  @Parameter(defaultValue = "${project.build.directory}/wurbel/model",
-             property = "tentackle.modelDir")
-  private File modelDir;
-
-  /**
-   * Explicit filesets given instead of the model directory.<br>
-   * Only each fileset's {@code directory} is used to load the model from - include/exclude
-   * patterns are not applied, since this goal always documents the entire loaded model.
-   */
-  @Parameter
-  private List<FileSet> filesets;
-
-  /**
-   * The model defaults.
-   */
-  @Parameter(property = "tentackle.modelDefaults")
-  private String modelDefaults;
-
-  /**
-   * The entity aliases.
-   */
-  @Parameter(property = "tentackle.entityAliases")
-  private String entityAliases;
-
-  /**
-   * Also loads the model provided by the classpath (e.g. dependencies shipping their own model),
-   * so entities from dependencies that are referenced or embedded show up as well.
-   */
-  @Parameter(property = "tentackle.loadModelFromClassPath")
-  private boolean loadModelFromClassPath;
-
-  /**
-   * Map schema names to flat table names.<br>
-   * Must match the {@code mapSchema} wurblet property that configures the runtime side, so the
-   * documented table names are the ones actually used by the application - see
-   * {@code table-names.md}.
-   */
-  @Parameter(property = "tentackle.mapSchemas")
-  private boolean mapSchemas;
 
   /**
    * The output format.<br>
@@ -140,37 +86,13 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
   @Parameter(property = "tentackle.cssFile")
   private File cssFile;
 
-  /**
-   * Comma-separated list of backend names to render the SQL type of each attribute for.<br>
-   * One self-contained page tree is generated per backend, nested under {@link #docDir} by
-   * backend name - the same layout convention as {@code create}'s {@code sqlDir/<backend-name>/} -
-   * since the SQL type shown in the attributes-table can differ between backends.
-   * <p>
-   * The following special names are recognized:
-   * <ul>
-   *   <li>all: all non-deprecated backends</li>
-   *   <li>none: does not match any backend</li>
-   *   <li>deprecated: all deprecated backends</li>
-   * </ul>
-   */
-  @Parameter(property = "tentackle.backendNames")
-  private String backendNames;
 
-
-  private Model model;
-  private Collection<Backend> backends;
   private boolean markdown;
 
 
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
-      if (modelDir == null) {
-        throw new MojoExecutionException("missing tentackle.modelDir");
-      }
-      if (modelDir.getPath().contains("${")) {
-        throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
-      }
       if (docDir == null) {
         throw new MojoExecutionException("missing tentackle.docDir");
       }
@@ -192,7 +114,6 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
           throw new MojoExecutionException("no such cssFile: " + cssFile.getAbsolutePath());
         }
       }
-      backends = BackendFactory.getInstance().getBackends(backendNames);
       return true;
     }
     return false;
@@ -249,7 +170,9 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
 
     String pageTitle = title != null ? title : getMavenProject().getName();
 
-    for (Backend backend : backends) {
+    for (BackendInfoParameter backendParameter : backends) {
+      BackendInfo backendInfo = backendParameter.createBackendInfo(this);
+      Backend backend = backendInfo.getBackend();
       File backendDocDir = new File(docDir, backend.getName());
       if (!backendDocDir.isDirectory() && !backendDocDir.mkdirs()) {
         throw new MojoExecutionException("cannot create docDir " + backendDocDir.getAbsolutePath());
@@ -271,6 +194,21 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
     }
   }
 
+  @Override
+  protected String getSqlFileName() {
+    return "";
+  }
+
+  @Override
+  protected void processFileSet(BackendInfo backendInfo, FileSet fileSet) throws MojoExecutionException {
+
+  }
+
+  @Override
+  protected Collection<BackendInfo> getBackendInfosToExecute() {
+    return List.of();
+  }
+
 
   private void loadDirectory(Model model, String dirName) throws MojoExecutionException, ModelException {
     String canonicalDirName = getCanonicalPath(new File(dirName));
@@ -278,37 +216,6 @@ public class DocumentSqlMojo extends AbstractTentackleMojo {
       getLogger().info("processing files in {}", canonicalDirName);
     }
     model.loadFromDirectory(canonicalDirName, true);
-  }
-
-  private Model getModel() {
-    if (model == null) {
-      model = ModelManager.getInstance().getModel(modelName);
-    }
-    return model;
-  }
-
-  private ModelDefaults getModelDefaults() throws MojoExecutionException {
-    if (modelDefaults == null) {
-      return null;
-    }
-    try {
-      return new ModelDefaults(modelDefaults);
-    }
-    catch (ModelException mex) {
-      throw new MojoExecutionException(mex.getMessage(), mex);
-    }
-  }
-
-  private EntityAliases getEntityAliases() throws MojoExecutionException {
-    if (entityAliases == null) {
-      return null;
-    }
-    try {
-      return new EntityAliases(entityAliases);
-    }
-    catch (ModelException mex) {
-      throw new MojoExecutionException(mex.getMessage(), mex);
-    }
   }
 
 }

@@ -433,6 +433,9 @@ public class NameVerifierImpl implements NameVerifier {
     "WRITEALLOWED"
   );
 
+
+  private boolean enabled = true;
+
   /**
    * Creates the name verifier.
    */
@@ -441,59 +444,90 @@ public class NameVerifierImpl implements NameVerifier {
   }
 
   @Override
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  @Override
   public String verifyEntityName(Entity entity) {
-    String name = entity.getName();
-    return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
+    if (isEnabled()) {
+      String name = entity.getName();
+      return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
+    }
+    return null;
   }
 
   @Override
   public String verifyTableName(Entity entity) {
-    String name = entity.getTableName();
-    if (isNotQuotedOrProvided(name, entity)) {
-      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_NAME + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = entity.getTableName();
+      if (isNotQuotedOrProvided(name, entity)) {
+        return isAllUpperOrLowerCase(name, entity) ? null : TABLE_NAME + name + MIXED_UC_LC;
+      }
+      return TABLE_NAME + name + QUOTED;
     }
-    return TABLE_NAME + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyTableAlias(Entity entity) {
-    String name = entity.getTableAlias();
-    if (isNotQuotedOrProvided(name, entity)) {
-      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_ALIAS + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = entity.getTableAlias();
+      if (isNotQuotedOrProvided(name, entity)) {
+        return isAllUpperOrLowerCase(name, entity) ? null : TABLE_ALIAS + name + MIXED_UC_LC;
+      }
+      return TABLE_ALIAS + name + QUOTED;
     }
-    return TABLE_ALIAS + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyAttributeName(Attribute attribute) {
-    return attribute.isImplicit() ? null : validateJavaIdentifier(attribute.getName());
+    if (isEnabled()) {
+      return attribute.isImplicit() ? null : validateJavaIdentifier(attribute.getName());
+    }
+    return null;
   }
 
   @Override
   public String verifyRelationName(Relation relation) {
-    return validateJavaIdentifier(relation.getVariableName());
+    if (isEnabled()) {
+      return validateJavaIdentifier(relation.getVariableName());
+    }
+    return null;
   }
 
   @Override
   public String verifyColumnName(Attribute attribute) {
-    String name = attribute.getColumnName();
-    if (isNotQuotedOrProvided(name, attribute.getEntity())) {
-      return isAllUpperOrLowerCase(name, attribute.getEntity()) ? null : COLUMN_NAME + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = attribute.getColumnName();
+      if (isNotQuotedOrProvided(name, attribute.getEntity())) {
+        return isAllUpperOrLowerCase(name, attribute.getEntity()) ? null : COLUMN_NAME + name + MIXED_UC_LC;
+      }
+      return COLUMN_NAME + name + QUOTED;
     }
-    return COLUMN_NAME + name + QUOTED;
+    return null;
   }
 
   @Override
   public String verifyIndexName(Index index) {
-    String name = index.getName();  // index not allowed for [PROVIDED] entities
-    return isAllUpperOrLowerCase(name, index.getEntity()) ? null : "index name '" + name + MIXED_UC_LC;
+    if (isEnabled()) {
+      String name = index.getName();  // index is not allowed for [PROVIDED] entities
+      return isAllUpperOrLowerCase(name, index.getEntity()) ? null : "index name '" + name + MIXED_UC_LC;
+    }
+    return null;
   }
 
 
   /**
    * Checks whether the given name is all upper- or all lowercase.<br>
    * The backends are usually not case-sensitive (unless the SQL names are quoted),
-   * but it is good style to either use all upper- or all lowercase.
+   * but it is a good style to either use all upper- or all lowercase.
    * Mixing the case pretends that the case is important, but in fact it's not.
    * This is only allowed for provided entities.
    *

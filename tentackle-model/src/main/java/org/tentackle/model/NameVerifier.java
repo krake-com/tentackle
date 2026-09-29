@@ -40,6 +40,20 @@ public interface NameVerifier {
   }
 
   /**
+   * Sets the verifier enabled.
+   *
+   * @param enabled true if enabled (default)
+   */
+  void setEnabled(boolean enabled);
+
+  /**
+   * Returns whether the verifier is enabled.
+   *
+   * @return true if enabled (default)
+   */
+  boolean isEnabled();
+
+  /**
    * Verifies the Java name of an entity.
    *
    * @param entity the entity
