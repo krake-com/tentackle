@@ -39,7 +39,6 @@ For more options, see {\@link DbModelWurblet}.
     String pdoType     = isAbstract ? "T" : pdoName;
 
     boolean mutable    = false;
-    boolean delayed    = true;
     boolean genudk     = false;
 
     String strategy    = null;
@@ -50,9 +49,6 @@ For more options, see {\@link DbModelWurblet}.
     for (String arg: getOptionArgs())  {
       if (arg.equals("mutable")) {
         mutable = true;
-      }
-      else if (arg.equals("immediate")) {
-        delayed = false;
       }
       else if (arg.equals("udk")) {
         genudk = true;
