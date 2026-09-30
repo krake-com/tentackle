@@ -29,7 +29,7 @@ import java.io.File;
  * Initializes the templates.<br>
  * Copies the default templates to the project's template directory.
  */
-@Mojo(name = "init", aggregator = true)
+@Mojo(name = "init", aggregator = true, threadSafe = true)
 public class InitMojo extends AbstractJLinkMojo {
 
   private static final String[] TEMPLATES_ALL = {

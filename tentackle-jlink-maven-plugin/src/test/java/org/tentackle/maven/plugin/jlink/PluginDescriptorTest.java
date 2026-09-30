@@ -100,6 +100,7 @@ public class PluginDescriptorTest {
     assertEquals(text(mojo, "phase"), phase);
     assertEquals(text(mojo, "aggregator"), aggregator);
     assertEquals(text(mojo, "requiresDependencyResolution"), scope);
+    assertEquals(text(mojo, "threadSafe"), "true", "goal " + goal + " is not thread-safe");
   }
 
   /**

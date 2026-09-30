@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author harald
  */
-@Mojo(name = "serve", aggregator = true)
+@Mojo(name = "serve", aggregator = true, threadSafe = true)
 public class ServeMojo extends AbstractMcpMojo {
 
   /** The address to bind to. */

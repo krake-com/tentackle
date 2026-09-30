@@ -31,6 +31,8 @@ import org.tentackle.model.ModelManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Base mojo for the MCP server.
@@ -42,6 +44,19 @@ import java.util.List;
  * @author harald
  */
 public abstract class AbstractMcpMojo extends AbstractTentackleMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The model held by the {@code ModelManager} is a singleton of the plugin's class realm, which is shared
+   * by all projects of a build. Concurrent executions would load and reload the same model.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
 
   /** The model name. */
   @Parameter(defaultValue = ModelManager.DEFAULT_MODEL_NAME,

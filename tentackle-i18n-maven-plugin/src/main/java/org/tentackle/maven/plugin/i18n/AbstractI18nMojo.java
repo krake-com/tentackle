@@ -52,6 +52,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -60,6 +62,20 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements DomainContextProvider {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The {@code ModificationTracker} is a singleton of the plugin's class realm, which is shared by all projects
+   * of a build. Each execution binds it to its own database session, so concurrent executions would
+   * corrupt each other.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
 
   /**
    * The backend URL.

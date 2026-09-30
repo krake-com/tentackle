@@ -62,7 +62,7 @@ import java.util.concurrent.CountDownLatch;
  * <p>
  * Best invoked from within the directory of the maven parent of the project.
  */
-@Mojo(name = "pdo", aggregator = true)
+@Mojo(name = "pdo", aggregator = true, threadSafe = true)
 public class PdoMojo extends AbstractWizardMojo {
 
   /**

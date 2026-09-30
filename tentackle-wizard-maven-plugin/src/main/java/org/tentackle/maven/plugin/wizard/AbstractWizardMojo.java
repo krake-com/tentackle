@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Base wizard mojo.
@@ -50,6 +52,20 @@ import java.util.Map;
  * @author harald
  */
 public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The model held by the {@code ModelManager}, the static settings of the {@code JavaCodeFactory}, the
+   * JavaFX platform and the default uncaught exception handler are shared by all projects of a build.
+   * Concurrent executions would corrupt each other.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
 
   /**
    * The model name.

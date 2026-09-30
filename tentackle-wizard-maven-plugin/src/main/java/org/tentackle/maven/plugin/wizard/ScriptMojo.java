@@ -78,7 +78,7 @@ import java.util.prefs.Preferences;
  * {@code imports} (the import statements extracted from the fragment),
  * {@code language} (the language name) and {@code harness} (the harness filename).
  */
-@Mojo(name = "script", aggregator = true)
+@Mojo(name = "script", aggregator = true, threadSafe = true)
 public class ScriptMojo extends AbstractWizardMojo {
 
   /**

@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Base class for test mojos.
@@ -38,6 +40,20 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public class AbstractCheckMojo extends AbstractTentackleAnnotationProcessingMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The checks configure singletons of the plugin's class realm, which is shared by all projects of a build:
+   * the classloaders of the {@code BundleFactory} and {@code ValidationUtilities}, and the default language
+   * of the {@code ScriptFactory}. Concurrent executions would check against the wrong project's classpath.
+   */
+  private static final Lock EXECUTION_LOCK = new ReentrantLock();
+
+  @Override
+  protected Lock getExecutionLock() {
+    return EXECUTION_LOCK;
+  }
+
 
   /**
    * Directory holding the sources to be processed.<br>

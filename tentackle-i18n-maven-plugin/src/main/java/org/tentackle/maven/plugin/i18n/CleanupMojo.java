@@ -38,7 +38,7 @@ import java.util.Set;
  * by the <code>BundleMonkey</code> tool.
  * Consider running <code>verify</code> first to check for such warnings.
  */
-@Mojo(name = "cleanup", aggregator = true,
+@Mojo(name = "cleanup", aggregator = true, threadSafe = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class CleanupMojo extends AbstractVerifyMojo {
 

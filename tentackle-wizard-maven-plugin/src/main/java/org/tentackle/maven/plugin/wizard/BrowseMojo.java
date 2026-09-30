@@ -50,7 +50,7 @@ import java.util.concurrent.CountDownLatch;
  * Brings up an FX UI to analyze PDOs persisted in a database
  * and generate test code.
  */
-@Mojo(name = "browse", aggregator = true)
+@Mojo(name = "browse", aggregator = true, threadSafe = true)
 public class BrowseMojo extends AbstractWizardMojo {
 
   /**

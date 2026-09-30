@@ -28,7 +28,7 @@ import javafx.stage.Stage;
  * Copies the default templates to the configured templateDir.<br>
  * Needs to be executed only to restore the templates to their defaults.
  */
-@Mojo(name = "init", aggregator = true)
+@Mojo(name = "init", aggregator = true, threadSafe = true)
 public class InitMojo extends AbstractWizardMojo {
 
   @Override
