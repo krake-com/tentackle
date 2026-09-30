@@ -13,7 +13,7 @@ Only minimum configuration is required, since the maven project model already pr
 necessary information; platform-specific details are kept out of the poms and live in editable
 [Freemarker templates](#adding-the-plugin-to-your-maven-project) instead.
 
-The plugin provides 3 maven goals:
+The plugin provides 4 maven goals, all with the prefix `tentackle-jlink`:
 
 1. **jlink** — creates a ZIP archive containing a self-contained image of the application: the trimmed modular Java
    runtime, the application's own artifacts, its (optionally filtered) configuration resources, and a generated,
@@ -24,6 +24,8 @@ The plugin provides 3 maven goals:
    jlink to build the runtime first (see [How The Jpackage Goal Works](#how-the-jpackage-goal-works)).
 3. **init** — (re-)installs the defaults of the project-specific templates used to generate the scripts and
    tool-option files, so you can start from a known-good baseline and then customize.
+4. **layers** — materializes the [isolated module layers](#isolated-module-layers) of an application into
+   `target/tentackle-layers`, for running and debugging it from the IDE without building an image.
 
 For per-user installations an optional [auto-update feature](#auto-update-feature) is available that enables a running
 application to download a new image and update itself in place. This is especially useful for desktop applications,
@@ -41,10 +43,11 @@ understanding what the plugin actually does.
 
 ### Prerequisites
 
-Java 11 or newer and Maven 3.6.3 or newer is required. The application and its dependencies
+The plugin requires the same JDK and Maven versions as the rest of the framework
+(JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). The application and its dependencies
 may be compiled for older Java versions as long as they don't use deprecated features that were removed
-in the meantime. For jpackage you need at least Java 14. However, you can still create images for Java 11 LTS
-with jpackage by using maven toolchains (see below).
+in the meantime. The JDK the image is linked from can be selected independently of the JDK running the build
+by using maven toolchains (see [below](#using-the-maven-toolchain)).
 
 ### What Jlink Needs From The JPMS
 
@@ -223,7 +226,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>11.7.1.0</version>
+        <version>${tentackle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.myapp.Main</mainClass>
@@ -268,7 +271,7 @@ like so:
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
-        <version>11.7.1.0</version>
+        <version>${tentackle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <mainClass>com.example.Main</mainClass>
@@ -577,7 +580,7 @@ of the current maven build. The Tentackle maven plugin for jlink and jpackage ev
 to select two different toolchains:
 
 - `<jdkToolchain>`: selects the java version for the jlink, jdeps, and jpackage tools. For example, if
-  your maven build runs on Java 11 LTS, but you want to use the latest Java in production, add
+  your maven build runs on the current LTS release, but you want to use the latest Java in production, add
   the following lines (provided `toolchains.xml` is configured properly):
 ```xml
         <jdkToolchain>
@@ -585,12 +588,82 @@ to select two different toolchains:
         </jdkToolchain>
 ```
  
-- `<jpackageToolchain>`: selects the java version for the jpackage tool only. This allows using
-  the plugin's jpackage goal, for example, with Java 11 LTS, even though the jpackage tool was first released 
-  with Java 14. The generated runtime will still be based on Java 11 LTS in this case.
+- `<jpackageToolchain>`: selects the java version for the jpackage tool only, while the runtime is still
+  linked by the tools of `<jdkToolchain>`. This allows building installers for a runtime whose own jpackage
+  tool lacks a feature, or for an older Java runtime without a jpackage tool at all (it was introduced in
+  Java 14). An empty `<jpackageToolchain/>` deselects the toolchain configured by the maven-toolchain-plugin.
+
+If toolchains cannot be used, the tools can be given explicitly via `jdepsTool`, `jlinkTool` and `jpackageTool`
+(user properties of the same name).
 
 Keep in mind that the linked runtime is the JDK the *tools* come from, not the one maven runs on: the toolchain
 you select here is the Java version your users will actually be running.
+
+### Configuration Reference
+
+Besides the parameters explained above (`mainClass`, `mainModule`, `addModules`, `excludeModules`,
+`modulePathOnly`, `classpathDependencies`, `variables`, `withUpdater`, `layers`/`leafLayer`, `jdkToolchain` and
+`jpackageToolchain`), the goals accept the following. Like all Tentackle mojos, they also inherit `verbosity`,
+`skip`, `charset` and `minLogLevel` (see the
+[`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+
+**Image contents** (`jlink` and `jpackage`):
+
+| Parameter                | Default                             | Meaning                                                                                                 |
+|--------------------------|-------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `resourcesDirectory`     | `${project.build.directory}/classes` | Resources copied to the image's `conf` directory, such as logger configurations or backend properties. Set it to a non-existent directory (e.g. `none`) to copy nothing. |
+| `extraDirectories`       |                                     | Extra directories copied to the image.                                                                  |
+| `extraClasspathElements` |                                     | Extra classpath elements, relative to the image root.                                                   |
+| `failOnAutomaticRequired`| unset                               | What happens if a modular application requires an automatic module: unset logs a warning, `true` fails the build, `false` logs it as info. Ignored for classpath applications. |
+| `templateDir`            | `${project.basedir}/templates`      | The directory holding the templates.                                                                    |
+| `variablesPrecedence`    | `system, maven, variables`          | The order in which system properties, maven properties and the extra `variables` override each other (later wins). Also accepted: `sys`; `mvn`, `properties`, `props`, `pom`; `vars`, `var`, `extras`, `extra`, `template`. |
+
+**jlink options** (`jlink` and `jpackage`):
+
+| Parameter                  | Default | Meaning                                                               |
+|----------------------------|---------|-----------------------------------------------------------------------|
+| `stripDebug`               | `false` | jlink's `--strip-debug`.                                              |
+| `compress`                 |         | jlink's `--compress`.                                                 |
+| `noHeaderFiles`            | `false` | jlink's `--no-header-files`: omit the `include` directory.            |
+| `noManPages`               | `false` | jlink's `--no-man-pages`: omit the `man` directory.                   |
+| `ignoreSigningInformation` | `false` | jlink's `--ignore-signing-information`: allow signed modular jars.   |
+| `saveOpts`                 |         | jlink's `--save-opts`: the file to save the jlink options to.        |
+| `jlinkOptions`             |         | Further jlink options, e.g. platform-specific or hidden ones such as `--upgrade-files`. |
+
+**Output**:
+
+| Parameter         | Goal                | Default                              | Meaning                                              |
+|-------------------|---------------------|--------------------------------------|------------------------------------------------------|
+| `imageDirectory`  | `jlink`, `jpackage` | `${project.build.directory}/jlink`   | The directory jlink creates the image in.            |
+| `zipDirectory`    | `jlink`, `jpackage` | `${project.build.directory}`         | The directory for the ZIP files.                     |
+| `extraClassifier` | `jlink`, `jpackage` |                                      | An additional classifier for the deployed artifacts. |
+| `packageDirectory`| `jpackage`          | `${project.build.directory}/jpackage`| The directory the installers are created in.         |
+| `layersDirectory` | `layers`            | `${project.build.directory}/tentackle-layers` | The directory the layers are materialized into. |
+
+**Templates** — the file names of the templates in `templateDir`:
+
+| Parameter                  | Goal       | Default                 | Template for                                      |
+|----------------------------|------------|-------------------------|---------------------------------------------------|
+| `nameTemplate`             | `jlink`    | `name.ftl`              | the name of the start script, e.g. `run.sh`        |
+| `runTemplate`              | `jlink`    | `run.ftl`               | the start script                                   |
+| `updateTemplate`           | `jlink`    | `update.ftl`            | the update script, if `withUpdater` is set         |
+| `packageImageTemplate`     | `jpackage` | `package-image.ftl`     | the jpackage options creating the application image |
+| `packageInstallerTemplate` | `jpackage` | `package-installer.ftl` | the jpackage options creating the installer        |
+| `packageUpdateTemplate`    | `jpackage` | `package-update.ftl`    | the update script, if `withUpdater` is set         |
+
+**jpackage only**:
+
+- `jpackageOptions`: further jpackage options, e.g. platform-specific or hidden ones.
+- `mainJar`: the jar holding the main class. Only needed for classpath applications, and only if the top-level
+  artifact of the dependency tree is not the main jar. A unique substring is sufficient, e.g. `myapp-server`.
+
+**init only**:
+
+- `copyAll` (default `true`): copy all templates. If `false`, only the templates already present in
+  `templateDir` are overwritten, which restores the defaults of the customized templates without adding the
+  ones the project doesn't use.
+
+All goals are thread-safe and run concurrently in a parallel build (`mvn -T …`).
 
 ### Extending the Plugin
 

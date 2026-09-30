@@ -52,7 +52,7 @@ import java.util.StringTokenizer;
  * <p>
  * Examples:
  * <pre>
- * long             subsidiaryId    subsidiary_id     subsidiary ID [contextid]
+ * long             subsidiaryId    subsidiary_id     subsidiary ID [context]
  * String(10)       invoiceNo       invoice_no        the unique invoice number [uc]
  * Date             invoiceDate     invoice_date      the invoice's date
  * long             customerId      customer_id       object ID of the customer [uc]

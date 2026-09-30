@@ -65,10 +65,17 @@ server runs once, at the root, and is started explicitly.
 </plugin>
 ```
 
-Model parameters — identical in name, default and user property to the
+Model parameters — mostly the same as in the
 [SQL](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) and
 [wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) plugins, so a
-project that configures those needs nothing new here:
+project that configures those can reuse its settings. Three differ, though:
+
+- `backends` is a plain comma-separated string of backend names here. The SQL plugin's `backends` is a list of
+  connectable `<backend>` elements; its list of names is called `backendNames` (`tentackle.backendNames`).
+- `loadModelFromDependencies` defaults to `false` here, but to `true` in the wizard plugin.
+- `mapSchemas` is shared with the SQL plugin and the wizard's `browse` goal; the other wizard goals don't have it.
+
+The parameters in detail:
 
 - `modelName` (`tentackle.modelName`): the model name. Defaults to `default`.
 - `modelDir` (`tentackle.modelDir`): the directory holding the `.map` files. Defaults to
@@ -93,6 +100,11 @@ Server parameters:
 - `serverName`: the name reported to the client during initialization. Defaults to `tentackle-model`.
 - `stalenessCheckMillis`: minimum delay between two checks for changed model files. Defaults to `1000`.
 - `maxResults`: hard upper bound for the number of rows a tool may return. Defaults to `1000`.
+
+Like all Tentackle mojos, the goal also inherits `verbosity`, `skip`, `charset`, `jdkToolchain` and
+`minLogLevel` (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+It is thread-safe, but the loaded model is a JVM-wide singleton, so concurrent executions in a parallel build are
+serialized (see [Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds)).
 
 > **Always configure `modelDefaults`.** They come from the parent POM's property, not from the model sources.
 > Without them the model is loaded exactly as written, which differs from what the build sees and produces
@@ -164,7 +176,7 @@ Any client that cannot speak MCP can still use the server: it is plain JSON-RPC 
 `Entity` alone answers some eighty questions; projecting them one-to-one would produce a tool list costing more
 context than the model. Two collapses do most of the work:
 
-- The **own / inherited / sub-entity / all** quartets that the model API repeats for attributes, relations,
+- The **own / inherited / subentities / all** quartets that the model API repeats for attributes, relations,
   indexes and referencing relations become one `scope` argument.
 - The **facet** getters (inheritance, aggregate, embedding, deep references, DDL, unique domain key) become a
   `sections` argument on the same tool.
@@ -183,6 +195,20 @@ context than the model. Two collapses do most of the work:
 
 Every entity argument accepts the entity name, `table:<tableName>` or `id:<classId>` — all three appear in the
 sources an agent is reading, and none of them is reliably the one it has at hand.
+
+The arguments of the tools (a `limit` is always capped by `maxResults`, which is also its default):
+
+| Tool                    | Arguments                                                                                                                                                         |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model_overview`        | none                                                                                                                                                              |
+| `model_list_entities`   | `pattern` (substring, glob with `*`/`?`, or `regex:`), `filter` (array of facets, all must match), `limit`                                                         |
+| `model_find`            | `pattern` (required, same syntax), `kinds` (array of `entity`, `table`, `attribute`, `column`, `relation`, `index`; default all), `comments` (default `false`), `limit` |
+| `model_describe_entity` | `entity` (required), `scope` (`own`, `inherited`, `subentities` or `all`; default `inherited`), `sections` (array, see below)                                      |
+| `model_source`          | `entity` (required), `format` (`raw`, `canonical` or `compact`; default `canonical`), `asComment` (default `false`), `useVariables` (default `false`)              |
+| `model_paths`           | `from` (required), `to` (omit for the direct neighbors of `from`), `kind` (`relations`, `composite` or `embedding`; default `relations`), `direction` (`forward`, `reverse` or `both`; default `both`), `maxDepth` (default `4`), `limit` |
+| `model_ddl`             | `entity` (array; omit for the whole model), `backend` (default: the first configured backend), `parts` (array of `table`, `indexes`, `foreignkeys`; default all)   |
+| `model_validate`        | `source` (a candidate definition, without the `@>`/`@<` markers), `entity` (the entity the candidate replaces; omit for a new one)                                |
+| `model_reload`          | `full` (clear and reload instead of refreshing changed files; default `false`)                                                                                    |
 
 #### `model_describe_entity`
 
@@ -222,7 +248,9 @@ duplicate entity id 9001 for Note, already assigned to Customer
 | `tentackle-model://entity/{name}`            | One entity's model source.                                                                                        |
 
 One prompt, `new-entity`, walks an agent through adding an entity in the order that works: look at comparable
-entities, check the class id, validate the candidate, and only then write the file.
+entities, check the class id, validate the candidate, and only then write the file. Its arguments are `entity`
+(required, the name of the new entity), `purpose` (what the entity is for, in one sentence) and `root` (the
+aggregate root, if the entity is a component).
 
 ### How It Behaves
 
@@ -256,12 +284,12 @@ Agents that do not support skills can be pointed at the same file as plain instr
 Codex prompt, or in whatever the tool calls its project context.
 
 The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-skills)
-ships three more, one per headless goal: `tentackle-pdo-wizard`, `tentackle-pdo-browser` and
-`tentackle-script-runner`, and the
+ships four more, one per headless goal: `tentackle-pdo-wizard`, `tentackle-operation-wizard`,
+`tentackle-pdo-browser` and `tentackle-script-runner`, and the
 [SQL plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-skills)
-two further ones, `tentackle-sql-migrator` and `tentackle-sql-runner`. Together with this one they cover
-the whole loop — inspect the model, scaffold the entity, migrate the database, run code against a
-backend, build fixtures, drop down to SQL.
+three further ones, `tentackle-sql-migrator`, `tentackle-sql-runner` and `tentackle-sql-reveng`. Together with
+this one they cover the whole loop — reverse-engineer an existing schema, inspect the model, scaffold entities
+and operations, migrate the database, run code against a backend, build fixtures, drop down to SQL.
 
 ### Further Reading
 

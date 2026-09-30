@@ -42,9 +42,13 @@ or an OAuth client id. The optional **label** is what the OS tools show the user
 Credential Manager, Seahorse, KWalletManager.
 
 Secrets are `char[]`, never `String`, so they can be wiped. The keyring never keeps a reference to an
-array that is passed in, and it always hands out a fresh array, which the caller should wipe with
-`Arrays.fill(secret, '\0')` when done. Internally, all intermediate buffers are wiped before they are
-released. A secret must not be empty and must not contain NUL characters, because some of the native
+array that is passed in, and it always hands out a fresh array, which the caller should wipe when
+done. Internally, all intermediate buffers are wiped before they are released.
+
+[`SecretsHelper`](../java/org/tentackle/keyring/SecretsHelper.java) has the tools for this:
+`wipe(char[])` and `wipe(byte[])` clear an array (null-safe), and `encode(char[])` /
+`decode(byte[])` convert a secret to and from UTF-8 bytes without the detour through a `String`,
+which could not be wiped. The arrays they return are to be wiped by the caller as well. A secret must not be empty and must not contain NUL characters, because some of the native
 APIs take C strings.
 
 All keyrings are thread-safe.

@@ -503,6 +503,17 @@ compilation error.
    type = ...)`. Add attributes if the behavior is configurable.
 2. **Implement the interceptor.** Extend `AbstractInterceptor`, override
    `proceed(...)`, and call `method.invoke(proxy, args)` to continue the chain.
+   Interceptors for PDOs and operations that need the session extend one of the
+   two bases in `tentackle-pdo` instead:
+   - [`SessionProviderAwareInterceptor`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/SessionProviderAwareInterceptor.java)
+     adds `getSession(orgProxy)`, which returns the session of the intercepted
+     object, or throws a `PersistenceException` if it has none — the base of
+     `@PreCommit`, `@PostCommit` and `@LocalSessionOnly`;
+   - [`RemoteMethodAwareInterceptor`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/RemoteMethodAwareInterceptor.java)
+     adds `isRemoteMethod(orgMethod)`, which tells whether the method is a
+     `@RemoteMethod`. On a remote session, such a method runs on the server, where
+     the interceptor applies again, so the client side typically just proceeds —
+     the base of `@Transaction` and `@NoTransaction`.
 3. **Read configuration in `setAnnotation()`** and cache it in fields. Keep the
    interceptor otherwise **stateless**.
 4. **Apply the annotation** on a method of an `Interceptable` interface (PUBLIC)

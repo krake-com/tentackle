@@ -160,8 +160,14 @@ statement separators and comment syntax, then runs each one. It offers:
 - control over **escape processing**, **max rows**, **per-statement timeout**, **read-only** mode, and whether to
   wrap the whole script in a **transaction**;
 - `cancel()` / `isCanceled()` to abort a long-running script;
-- listeners for each statement *submitted* (`addExecutionListener`), each *result* (`addResultListener`) and each
-  *result set* (`addResultSetListener`).
+- listeners for each statement *submitted* (`addExecutionListener`, receives the SQL text), each *result*
+  (`addResultListener`) and each *result set* (`addResultSetListener`, receives the SQL text and the open
+  `ResultSet`).
+
+`run(script)` returns — and a result listener receives — a
+[`ScriptRunnerResult`](../java/org/tentackle/sql/ScriptRunnerResult.java) record per executed statement: the SQL text and its offset within the script, the execution time, the JDBC warnings (empty if
+none), and either the update count or the rows of the result set together with the column count, JDBC types and
+names. Its `toString()` renders the rows as an aligned table — that is what `tentackle-sql:run` logs.
 
 A `Backend` creates an appropriate runner via `createScriptRunner(connection)`. The default is
 [`DefaultScriptRunner`](../java/org/tentackle/sql/DefaultScriptRunner.java); PostgreSQL supplies a specialized
@@ -192,7 +198,7 @@ every possible JDBC driver.
 | `org.tentackle.sql`           | The core API: `Backend`, `BackendInfo`, `BackendFactory`, `DataType`, `DataTypeFactory`, `SqlType`, `SqlNameType`, `JoinType`, `MigrationStrategy`, `ScriptRunner`, `DynamicDriver`, the `Default*` implementations and the exceptions. |
 | `org.tentackle.sql.backends`  | The concrete `Backend` implementations and their abstract base classes (see below).                                                                                                                                                     |
 | `org.tentackle.sql.datatypes` | The ~36 predefined `DataType` implementations and the abstract bases `AbstractDataType`, `AbstractNumberType`, `AbstractDateTimeType`.                                                                                                  |
-| `org.tentackle.sql.metadata`  | Live-schema metadata model (`ModelMetaData`, `TableMetaData`, `ColumnMetaData`, `IndexMetaData`, `ForeignKeyMetaData` and backend-specific subclasses) used by the migrator and schema verifier.                                        |
+| `org.tentackle.sql.metadata`  | Live-schema metadata model (`ModelMetaData`, `TableMetaData`, `ColumnMetaData`, `IndexMetaData`, `ForeignKeyMetaData` and backend-specific subclasses) used by the migrator and schema verifier, plus `MetaDataUtilities`, a replaceable `@Service` that names JDBC types and knows the table names reserved by the framework (`isReservedTable`, checked by the SQL plugin). |
 | `org.tentackle.sql.service`   | The `ModuleHook` for resource-bundle/i18n integration.                                                                                                                                                                                  |
 
 ---

@@ -219,6 +219,39 @@ with the url and credentials from the backend properties.
 | CockroachDB         | —                                                             | No two-phase commit.                                                               |
 | others              | —                                                             | Override `getXADataSourceClassName()`, or bind an `XADataSource` via JNDI.       |
 
+## Architecture: the Global Transaction SPI
+
+The database module knows nothing about JTA. A session configured with `jta=join` or `jta=required`
+talks to a global transaction manager only through the SPI
+[`GlobalTransactionSupport`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/GlobalTransactionSupport.java),
+which it looks up via the [`ServiceFactory`](../../../../tentackle-common/src/main/docs/services.md)
+when it needs it for the first time. `tentackle-jta` provides the implementation,
+[`JtaTransactionSupport`](../java/org/tentackle/jta/JtaTransactionSupport.java), as a
+`@Service(GlobalTransactionSupport.class)`; without the module, a session configured for global
+transactions fails with `no GlobalTransactionSupport service found (module tentackle-jta missing?)`.
+
+| Method                               | Invoked                                                                       |
+|--------------------------------------|-------------------------------------------------------------------------------|
+| `isGlobalTransactionActive()`        | when a session begins a transaction, to decide whether it joins a global one  |
+| `begin(session, txName)`             | by a `required` session starting the global transaction                       |
+| `enlist(session, listener)`          | when a session's attached connection takes part in the global transaction     |
+| `commit(session)` / `rollback(session)` | by the session that started the global transaction                         |
+| `setRollbackOnly(session)`           | by any session that needs the global transaction to fail                      |
+
+The session registers a
+[`GlobalTransactionListener`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/GlobalTransactionListener.java)
+when it enlists, the counterpart of a JTA `Synchronization`: `beforeCompletion()` runs the
+pre-commits and flushes the statement batch, `afterCompletion(committed)` finishes the session's
+transaction — possibly from another thread, as described [above](#how-tentackles-features-behave).
+
+All methods are invoked from the thread the global transaction is associated with. An
+implementation reports failures as a `PersistenceException` and flags it *temporary* if the cause
+is transient, such as a deadlock; this is what makes [transparent retry](#how-tentackles-features-behave)
+work. To couple Tentackle's sessions with a coordinator other than JTA, implement the interface in
+your own module, annotated with `@Service(GlobalTransactionSupport.class)` — as with every service,
+a module's own provider [overrides](../../../../tentackle-common/src/main/docs/services.md) the ones of
+the modules it depends on.
+
 ## Recovery
 
 If the application or a database crashes between prepare and commit, the transaction manager

@@ -137,7 +137,23 @@ factory:
 
 A set of `final` static-method helpers and small utilities used throughout build and runtime:
 
-- [`StringHelper`](../java/org/tentackle/common/StringHelper.java) — string manipulation helpers.
+- [`StringHelper`](../java/org/tentackle/common/StringHelper.java) — string manipulation helpers. Among them,
+  `evaluate(String, Function)` replaces `@{name}` / `${name}` placeholders, with optional defaults
+  (`@{name?default}`, `@{name!default}`); the application bootstrap uses it to resolve system properties in
+  [backend properties](../../../../tentackle-session/src/main/docs/backend-properties.md).
+- [`NumericEvaluator`](../java/org/tentackle/common/NumericEvaluator.java) /
+  [`NumericVariable`](../java/org/tentackle/common/NumericVariable.java) — a small arithmetic expression
+  evaluator: numeric literals, named variables, `+ - * / %`, unary signs and parentheses. The type parameter
+  selects integer semantics (`Integer`, `Long`, `BigInteger`, …; `/` truncates) or floating-point semantics
+  (`Double`, `BigDecimal`, …):
+
+  ```java
+  Integer port = new NumericEvaluator<>("(base + 1000) / 2", new NumericVariable<>("base", 20000)).evaluate();
+  ```
+
+  Used for the `${port+1}` arithmetic in derived [service URIs](../../../../tentackle-session/src/main/docs/backend-properties.md#deriving-service-uris),
+  and — as a `Function<String,String>` — as a converter of the
+  [`properties` goal](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#the-properties-goal).
 - [`StringNormalizer`](../java/org/tentackle/common/StringNormalizer.java) /
   [`DefaultStringNormalizer`](../java/org/tentackle/common/DefaultStringNormalizer.java) — reduce strings to a
   restricted character set (e.g., for normtext search); works for most Western languages by default.

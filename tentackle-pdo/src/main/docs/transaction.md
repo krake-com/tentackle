@@ -138,6 +138,14 @@ outermost `@Transaction` method and completes it via two-phase commit — includ
 Isolation and writability cannot be changed within a global transaction. See
 [Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md).
 
+### Idle transactions
+
+A transaction must not stay open while the code waits for something outside the database: it holds
+a connection and its locks. The database layer watches for this. A local transaction that performs
+no database I/O for a minute (by default) is rolled back and its connection closed by the
+[idle transaction supervisor](../../../../tentackle-database/src/main/docs/database.md#idle-transaction-supervisor),
+configurable via the `txIdleTimeout` and `txIdleInterval` backend properties.
+
 ## Transparent Retry
 
 ### Why retry belongs to the framework

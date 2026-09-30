@@ -58,14 +58,40 @@ override `execute()` — they implement `executeImpl()` and may optionally hook 
 ```java
 @Override
 public final void execute() throws MojoExecutionException, MojoFailureException {
-  installJavaLoggingHandler();   // route java.util.logging → Maven log
-  prepareExecute();              // optional hook (no-op by default)
-  if (validate()) {              // shared checks; may decide to skip
-    executeImpl();               // the goal's actual work
-    finishExecute();             // optional hook (no-op by default)
+  installJavaLoggingHandler();          // route java.util.logging → Maven log (this thread)
+  try {
+    Lock lock = getExecutionLock();     // null: executions may run concurrently
+    if (lock == null) {
+      executeLifecycle();
+    }
+    else {
+      if (!lock.tryLock()) {
+        getLogger().info("waiting for concurrent execution to finish");
+        lock.lock();
+      }
+      try {
+        executeLifecycle();
+      }
+      finally {
+        lock.unlock();
+      }
+    }
+  }
+  finally {
+    MavenLogDispatcher.uninstall();     // unbind the log handler from this thread
+  }
+}
+
+private void executeLifecycle() throws MojoExecutionException, MojoFailureException {
+  prepareExecute();                     // optional hook (no-op by default)
+  if (validate()) {                     // shared checks; may decide to skip
+    executeImpl();                      // the goal's actual work
+    finishExecute();                    // optional hook (no-op by default)
   }
 }
 ```
+
+The execution lock is what makes the plugins safe for parallel builds, see [Parallel builds](#parallel-builds).
 
 ### Shared mojo parameters
 
@@ -109,7 +135,8 @@ A grab-bag of helpers the plugins rely on:
 - `toDescriptorName(File)` — derive a clean descriptor/module name from an artifact jar filename (stripping the
   extension, `-SNAPSHOT`, version and platform classifiers).
 - `getHostName()` — best-effort hostname (falls back to the loopback address).
-- `installJavaLoggingHandler()` — reset the JUL root logger and attach a [`MavenLogHandler`](#mavenloghandler).
+- `installJavaLoggingHandler()` — install the [`MavenLogDispatcher`](#mavenlogdispatcher) on the JUL root logger and
+  bind a [`MavenLogHandler`](#mavenloghandler) for this mojo to the current thread.
 
 ### Package scanning and split-package detection
 
@@ -128,7 +155,8 @@ non-empty occurrence can win.
 extends the base mojo to run Tentackle's
 [annotation analyze phase](../../../../tentackle-build-support/src/main/docs/build-support.md) — the pass that
 generates service descriptors and analyze-info files **before** wurbeling and the real compilation. It is the
-direct superclass of the analyze/SQL/i18n/check mojos.
+superclass of the analyze mojos of the `tentackle-maven-plugin` and of the check mojos. The SQL and i18n mojos
+extend `AbstractTentackleMojo` directly.
 
 It implements `executeImpl()` to drive the **in-process Java compiler** (`ToolProvider.getSystemJavaCompiler()`)
 purely for annotation processing:
@@ -151,6 +179,40 @@ Configuration entry points for subclasses:
 - Overridable hooks: `createMissingDirs()`, `initializeProcessor(...)`, `cleanupProcessors(...)` and
   `filterFileNames(...)` (to skip files / opt out of processing).
 - Mojo parameters: `showCompileOutput`, `encoding`, `compilerArgs`, `compilerArgument`, `filesets`.
+
+---
+
+## Parallel builds
+
+All Tentackle goals are declared `threadSafe`, so a reactor build with `mvn -T …` runs without Maven's
+"not thread-safe" warning. Maven loads each plugin into one class realm per build, however, so the static
+state of a plugin — singletons such as the `ModelManager`, the `BundleFactory` or the `ModificationTracker` —
+is shared by all projects built concurrently. Plugins that work on such state return a lock from
+`getExecutionLock()`, and `execute()` holds it for the whole mojo lifecycle. Concurrent executions of these
+goals wait for each other and log `waiting for concurrent execution to finish`.
+
+| Plugin                                                                                                        | Executions                                                               |
+|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| [`tentackle-maven-plugin`](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md)        | concurrent                                                               |
+| [`tentackle-sql-maven-plugin`](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) | serialized (model), except `reveng`, which runs concurrently         |
+| [`tentackle-i18n-maven-plugin`](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) | serialized (modification tracker bound to the goal's session)     |
+| [`tentackle-check-maven-plugin`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) | serialized (bundle, validation and script factories)           |
+| [`tentackle-jlink-maven-plugin`](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)       | concurrent                                                               |
+| [`tentackle-wizard-maven-plugin`](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) | serialized (model, code factory, JavaFX platform)           |
+| [`tentackle-mcp-maven-plugin`](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md) | serialized (model)                                                   |
+
+Two more JVM-wide settings are relevant for parallel builds:
+
+- **Encoding.** The `charset` of a goal is stored in static settings (`Settings.setEncodingCharset`). All
+  projects of a parallel build must therefore use the same encoding; otherwise the goal fails with
+  `conflicting encodings in parallel build: … requested, but … already in use`. Set
+  `project.build.sourceEncoding` once in the parent POM.
+- **Logging.** `java.util.logging` output is routed per thread by the
+  [`MavenLogDispatcher`](#mavenlogdispatcher), so each record shows up in the log of the project that
+  produced it.
+
+The wurblets run by the `wurbelizer-maven-plugin` are thread-safe as well, see
+[Wurblets](../../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds).
 
 ---
 
@@ -193,7 +255,19 @@ elsewhere). This is what lets the jlink plugin reliably find `jlink`, `jpackage`
 forwards records at or above a minimum level to the mojo's SLF4J logger, mapping `SEVERE→error`, `WARNING→warn`,
 `INFO→info` and everything else to `debug`. Because Tentackle's own code logs through `java.util.logging` by
 default, this bridge keeps build-time framework logging visible in the Maven output without flooding it (default
-threshold `WARNING`).
+threshold `WARNING`, configured by the `minLogLevel` parameter).
+
+### `MavenLogDispatcher`
+
+[`MavenLogDispatcher`](../java/org/tentackle/maven/MavenLogDispatcher.java) is the only handler attached to the
+JUL root logger. The root logger is a JVM-wide singleton, so in a parallel build the log records of several
+concurrently running mojos arrive at the same handler. The dispatcher therefore forwards each record to the
+`MavenLogHandler` bound to the *current thread* (an `InheritableThreadLocal`, so threads started by a mojo log
+to the same mojo), and the output ends up in the log of the project that produced it.
+
+`install(MavenLogHandler)` adds the dispatcher once — removing the default console handler, but keeping the
+dispatchers installed by other plugins' class realms — and binds the handler to the thread; `uninstall()`
+unbinds it. `AbstractTentackleMojo.execute()` does both, so plugins don't have to.
 
 ### `ProjectDependencies` and `LayerDependencyResolver`
 

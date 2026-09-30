@@ -137,6 +137,21 @@ session). Two implementations ship:
 goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigurator.java) /
 [`DefaultIdSourceConfigurator`](../java/org/tentackle/dbms/DefaultIdSourceConfigurator.java).
 
+The default id source is chosen from the backend: `sequence:object_sequence_id` if it supports
+sequences, `table:object_id` otherwise. The `idsource` [backend property](../../../../tentackle-session/src/main/docs/backend-properties.md)
+selects another one, in the syntax of the `DefaultIdSourceConfigurator`:
+
+| Value                                          | Id source                                                                                                  |
+|------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `table:<name>`                                 | An `ObjectId` counting in table `<name>`.                                                                  |
+| `sequence:<name>`                              | An `ObjectSequenceId` on sequence `<name>`, with the default multipliers `100` and `1`.                    |
+| `sequence:<name>:<sequenceMult>:<globalMult>`  | The same with explicit multipliers. The id is `(sequenceValue * sequenceMult + counter) * globalMult`, where the counter runs from `0` to `sequenceMult - 1` before the sequence is read again. A `globalMult` greater than 1 leaves room for application-specific offsets. |
+
+Different entities may use different id sources: if a resource named after the persistent class
+(`com/example/persist/InvoicePersistenceImpl.properties`) exists and holds an `idsource` line, it
+overrides the session's id source for that class. All users of the same sequence must configure the
+same multipliers, otherwise a `PersistenceException` is thrown.
+
 ### Statements, queries and result sets
 
 - [`StatementWrapper`](../java/org/tentackle/dbms/StatementWrapper.java) /
@@ -166,6 +181,31 @@ goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigu
 [`DbTransactionFactory`](../java/org/tentackle/dbms/DbTransactionFactory.java) creates them and
 [`DbTransactionHandle`](../java/org/tentackle/dbms/DbTransactionHandle.java) is the caller's handle.
 [`TransactionStatistics`](../java/org/tentackle/dbms/TransactionStatistics.java) collects per-transaction metrics.
+
+#### Idle transaction supervisor
+
+A transaction holds its connection — and the row locks it acquired — until it is committed or rolled
+back. A transaction that is never finished, for example because the thread running it blocks on
+something outside the database, would hold them forever. The `DbTransactionFactory` therefore starts
+a daemon thread, the *Transaction Supervisor*, as soon as the first transaction of a local session is
+created. Remote sessions never start it.
+
+Each time a session performs I/O, its transaction is marked alive. The supervisor wakes up every
+`txIdleInterval` milliseconds and clears the mark. A transaction that has not been alive for more than
+`txIdleTimeout` consecutive intervals is considered stuck: the supervisor logs a warning with the
+connection's diagnostic info (including its statement history), then rolls back and closes the JDBC
+connection at the lowest level — in a separate thread, so a hanging driver cannot block the
+supervisor. The thread stuck in the transaction gets an exception on its next database access.
+The supervisor also logs a transaction that is no longer referenced but was never finished (as
+`SEVERE`).
+
+The defaults are an interval of `1000` ms and a timeout of `60` intervals, i.e. one minute.
+Application servers configure both from the `txIdleInterval` and `txIdleTimeout`
+[backend properties](../../../../tentackle-session/src/main/docs/backend-properties.md#server-keys);
+other applications use `DbTransactionFactory.getInstance().setTxIdleInterval(…)` /
+`setTxIdleTimeout(…)`. A timeout of `0` or less turns the idle check off. Raise the timeout rather
+than turning it off if long-running batch transactions legitimately stay idle for a while, e.g. while
+waiting for an external system.
 
 ### Modification tracking and table serials
 
@@ -209,6 +249,34 @@ operation is allowed or should be **silently skipped** — e.g.
   [`StatementHistory`](../java/org/tentackle/dbms/StatementHistory.java) — collect and report statement usage.
 - [`DbDiagnosticUtilities`](../java/org/tentackle/dbms/DbDiagnosticUtilities.java)
   (`@Service(DiagnosticUtilities.class)`) — adds persistence info to thread stack dumps.
+
+The diagnostics are switched on by static setters, typically at application startup. The
+`statistics` [application property](../../../../tentackle-pdo/src/main/docs/application.md#well-known-properties)
+enables a sensible subset on servers: statement, TRIP-invocation and transaction statistics, a
+statistics log every 30 seconds, and logging nested selects at `INFO`.
+
+| Setter                                                          | Default  | Effect                                                                                                             |
+|-----------------------------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------|
+| `ManagedConnection.setCollectingStatistics(boolean)`            | off      | Count the executions and durations of each SQL statement.                                                          |
+| `ManagedConnection.setLogStatisticsMillis(long)`                | `0`      | Log and clear the statement statistics periodically.                                                               |
+| `StatementStatistics.setWithParameters(boolean)`                | off      | Separate the statistics per parameter values, not only per statement.                                              |
+| `ManagedConnection.setLogLevelForParallelOpenResultSets(Level)` | `null`   | Log *nested selects*: a select executed while a result set of the same connection is still open — typically a lazy relation loaded inside a loop over a result set. |
+| `ManagedConnection.setTraceParallelOpenResultSets(boolean)`     | off      | Also add such statements to the `StatementTracer`.                                                                 |
+| `ManagedConnection.setMaxStatementsPerTransaction(int)`         | `0`      | Fail a transaction that executes more statements than this — a guard against runaway loops exhausting memory or the backend. |
+| `ManagedConnection.setLogMinAttachMillis(long)`                 | `0`      | Log sessions that keep a connection attached longer than this; `-1` logs every detach.                             |
+| `ManagedConnection.setMdcFilter(Pattern)`                       | `null`   | Only collect statements for logging if the thread's mapped diagnostic context matches.                            |
+| `ManagedConnection.setCheckingStatementResultSetParameters(boolean)` | off | Verify that a reused prepared statement has the requested result set type and concurrency.                       |
+| `StatementHistory.setLogMinDurationMillis(long)`                | `0`      | Log statements running longer than this as a warning.                                                              |
+| `DbTransactionFactory.setCollectingStatistics(boolean)`         | off      | Collect transaction statistics (count, duration) per transaction name.                                             |
+| `RemoteDbDelegateInvocationHandler.setCollectingStatistics(boolean)` | off | Count and measure TRIP invocations per method on the server.                                                     |
+| `RemoteDbDelegateInvocationHandler.setLoggingInvocations(boolean)` / `setLoggingInvocationDetails(boolean)` | off | Log each TRIP invocation, optionally with arguments and return value.         |
+| `RemoteDbDelegateInvocationHandler.setLogMinDurationMillis(long)` / `setLogMinReturnedCollectionSize(int)` | `0` | Log only invocations that took at least this long, or returned at least this many elements. |
+| `RemoteDbDelegateInvocationHandler.setMdcFilter(Pattern)`       | `null`   | Only log TRIP invocations for matching mapped diagnostic contexts.                                                 |
+
+When a connection's diagnostic info is logged — for example by the idle transaction supervisor — it
+includes the statement history. Code stuck in a loop can execute the same statements many thousand
+times, so histories of 256 or more entries are compressed: a block of up to 64 statements that repeats
+immediately is printed once, followed by the number of repetitions.
 
 ### Utilities (SPI replacements)
 

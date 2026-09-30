@@ -27,7 +27,7 @@ PostgreSQL provides two distinct native types for the model's `JSON` attribute t
 the exact text that was written, and `jsonb`, a binary-optimized representation that is indexable, validates on
 write, and normalizes the document (insignificant whitespace is dropped, object keys are reordered and
 de-duplicated). `Postgres.sqlTypeToString()` always chooses `jsonb`
-(`tentackle-sql/src/main/java/org/tentackle/sql/backends/Postgres.java:340`):
+(in [`Postgres`](../java/org/tentackle/sql/backends/Postgres.java)):
 
 ```java
 case JSON -> TYPE_JSONB;   // jsonb is indexable and validates on write, unlike json
@@ -42,20 +42,19 @@ capability the model can select. On read-back, both `json` and `jsonb` columns a
 ### JSON/JSONB columns cannot be indexed through the model
 
 `JsonType.isComparable()` returns `false` — PostgreSQL provides no general-purpose comparator for a JSON document,
-so `EntityImpl` and `IndexImpl` reject any attempt to put a `JSON`-typed attribute into a model index
-(`tentackle-model/src/main/java/org/tentackle/model/impl/EntityImpl.java:1440`,
-`tentackle-model/src/main/java/org/tentackle/model/impl/IndexImpl.java:557`).
+so `IndexImpl.validate()` rejects any attempt to put a `JSON`-typed attribute into a model index, and
+`EntityImpl.validate()` likewise rejects it as a default sort attribute (both in
+[`tentackle-model`](../../../../tentackle-model/src/main/java/org/tentackle/model/impl/IndexImpl.java)).
 
 PostgreSQL, however, supports indexing a `jsonb` column with a **GIN index** (`CREATE INDEX ... USING gin (col)`),
 which is exactly the reason `jsonb` was chosen as the default mapping in the first place. Tentackle has no concept
 of an index method (`USING gin`/`btree`/...) in the model, so a GIN index cannot be declared there.
 
 **Workaround:** create the GIN index by hand, outside the model, and give it a name starting with an underscore.
-`Backend.isTemporaryName()` treats any such name as temporary
-(`tentackle-sql/src/main/java/org/tentackle/sql/Backend.java:346-350`,
-default implementation `AbstractBackend.isTemporaryName()`: `name.startsWith("_")`), and
-`TableMetaData.setupFromMetaData()` skips temporary index names entirely when it reads the live schema
-(`tentackle-sql/src/main/java/org/tentackle/sql/metadata/TableMetaData.java:147`). Such an index is therefore
+[`Backend.isTemporaryName()`](../java/org/tentackle/sql/Backend.java) treats any such name as temporary
+(default implementation `AbstractBackend.isTemporaryName()`: `name.startsWith("_")`), and
+[`TableMetaData.setupTableFromMetaData()`](../java/org/tentackle/sql/metadata/TableMetaData.java) skips
+temporary index names entirely when it reads the live schema. Such an index is therefore
 invisible to the migrator — it is never seen, never reported as an unmanaged extra index to drop, and never
 conflicts with the model:
 

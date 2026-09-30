@@ -171,8 +171,8 @@ describes a distinct part of the application — a module, task, or purpose — 
 two roles in domain logic:
 
 - **Method gating.** Methods annotated with
-  [`@WithinContext`](../java/org/tentackle/pdo/WithinContextInterceptor.java) /
-  `@NotWithinContext` are allowed or rejected by an interceptor that checks the live
+  [`@WithinContext`](../java/org/tentackle/pdo/WithinContext.java) /
+  [`@NotWithinContext`](../java/org/tentackle/pdo/NotWithinContext.java) are allowed or rejected by an interceptor that checks the live
   context name, so certain operations are only callable inside (or outside) a given
   task context.
 - **Lock isolation.** A PDO locked in one named context cannot be locked, persisted,

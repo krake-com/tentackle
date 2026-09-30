@@ -224,6 +224,20 @@ from `TableCellType.getText(...)` / `getGraphic(...)`, which render a value with
 the same methods the spreadsheet and XML exports use, so a date column exports as `31.12.2025`
 rather than `2025-12-31`.
 
+The filter UI can be styled with these style classes:
+
+| Style class               | Applies to                                                  |
+|---------------------------|-------------------------------------------------------------|
+| `tt-filter-column`        | every filterable column                                     |
+| `tt-filter-button`        | the filter button in a column header                        |
+| `tt-filter-button-active` | additionally, the filter button of a filtered column        |
+| `tt-filter-popup`         | the filter popup                                            |
+| `tt-filter-popup-pane`    | the popup's content pane                                    |
+| `tt-filter-search`        | the search field                                            |
+| `tt-filter-list`          | the checkbox list of the distinct values                    |
+| `tt-filter-condition`     | the condition editor                                        |
+| `tt-filter-hint`          | the hint shown if the value list was truncated              |
+
 ### Totals
 
 [`TotalsTableView`](../java/org/tentackle/fx/table/TotalsTableView.java) is a small companion table

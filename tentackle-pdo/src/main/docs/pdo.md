@@ -657,6 +657,22 @@ Validation rules declared in the model (`@NotNull`, `@NotZero`, the
 annotations are discovered by the binding layer to drive the UI; see
 [binding.md](../../../../tentackle-core/src/main/docs/binding.md).
 
+### Saving collections of PDOs
+
+Components of an aggregate are saved along with their root by the generated code. For lists of
+PDOs outside an aggregate — rows edited in a table, say —
+[`PdoUtilities`](../java/org/tentackle/pdo/PdoUtilities.java) provides the same logic, each within
+one transaction of the PDOs' session (all elements must share it):
+
+- `saveCollection(pdos, modifiedOnly)` saves every persistable PDO (or only the modified ones) and
+  deletes the elements that are no longer persistable but have been stored before;
+  `saveCollection(pdos, modifiedOnly, true)` uses `persist()` instead and replaces the elements by
+  the returned instances. A `TrackedList` is marked unmodified afterwards.
+- `deleteMissingInCollection(oldPdos, newPdos)` deletes the stored elements of the old collection
+  that are not contained in the new one — the usual way to remove the rows the user deleted.
+- `isCollectionModified(pdos)` tells whether any element is modified, or, for a `TrackedList`,
+  whether elements were added, removed or replaced.
+
 ---
 
 ## A Real-Life Walkthrough: `Ingot.move(...)`

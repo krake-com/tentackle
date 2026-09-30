@@ -215,6 +215,10 @@ cheaper (`isDeleteBetterThanRebuild`).
 
 `selectAny(context, ids)` returns a specific subset, refreshing expired entries.
 
+The desktop client relies on this: a combo or choice box bound to a PDO type loads its items with
+`selectAllCached()` if the entity has a preloading cache, and logs a warning recommending one
+otherwise — see [PDO-bound components](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components).
+
 ---
 
 ## Coherency: Expiration and Invalidation

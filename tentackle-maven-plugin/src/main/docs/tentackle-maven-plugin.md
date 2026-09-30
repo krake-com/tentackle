@@ -41,6 +41,11 @@ All goals inherit a small set of common parameters:
 - `charset`: the encoding used to read and write files. Defaults to `${project.build.sourceEncoding}`.
 - `jdkToolchain`: selects a specific `jdk` toolchain, overriding the one chosen by the
   maven-toolchain-plugin (only relevant for goals that run external tools).
+- `minLogLevel`: the minimum `java.util.logging` level of framework log records that are passed on
+  to the Maven log. Defaults to `WARNING`.
+
+All goals are thread-safe and run concurrently in a parallel build (`mvn -T …`); see
+[Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds).
 
 ### The `analyze` Goal
 
@@ -105,6 +110,11 @@ Important parameters:
   (e.g. `META-INF/RESOURCE-INDEX.LIST`). This index speeds up service discovery in modular runtimes.
 - `showCompileOutput` (`tentackle.showCompileOutput`): show the output of the internal compilation
   used during analysis.
+- `encoding`: the encoding of the source files passed to the internal compiler. Defaults to
+  `${project.build.sourceEncoding}`.
+- `compilerArgs` (list) and `compilerArgument` (single string): additional arguments for the internal
+  compiler, as in the `maven-compiler-plugin`. By default, the compiler runs with `-proc:only`; pass
+  a `-proc:…` argument to override it.
 
 The goal is incremental: sources whose analysis output is newer than the source file are skipped.
 If the analysis compiler reports errors, a marker file is written to the `analyze` directory so that
@@ -117,9 +127,15 @@ subsequent build phases know the metadata may be incomplete.
 ### The `test-analyze` Goal
 
 Identical to `analyze`, but bound to `generate-test-sources` and operating on the test sources and
-test classpath. It writes to `${project.build.directory}/test-analyze` and
-`${project.build.directory}/generated-test-resources/services`. Use it whenever your tests rely on
-Tentackle services that are defined in test sources.
+test classpath. Its parameters have their own user properties, so main and test analysis can be
+configured independently:
+
+- `sourceDir` (`wurbel.testSourceDir`), defaults to `${project.build.testSourceDirectory}`;
+- `analyzeDir` (`wurbel.testAnalyzeDir`), defaults to `${project.build.directory}/test-analyze`;
+- `servicesDir` (`tentackle.testServiceDir`), defaults to
+  `${project.build.directory}/generated-test-resources/services`.
+
+Use it whenever your tests rely on Tentackle services that are defined in test sources.
 
 ### The `properties` Goal
 

@@ -199,5 +199,3 @@ An application adding its own icons for its own domain objects:
 - [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md) — how `@GraphicProviderService` is discovered.
 - [tentackle-fx-atlanta](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — theming, including dark mode.
 - [Tables and Trees](tables.md) — cell types that render symbolic icons (`checked` / `unchecked`).
-</content>
-</invoke>

@@ -145,5 +145,3 @@ resolve controls differently, or build errors explicitly for problems that valid
 - [tentackle-fx](fx.md) — the component error/info popups and the `tt-error` / `tt-info` styles.
 - [tentackle-fx-atlanta](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — the `-tt-error-color` / `-tt-info-color` theme variables.
 - [tentackle-fx-rdc](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) — `PdoCrud` and the editor flow.
-</content>
-</invoke>

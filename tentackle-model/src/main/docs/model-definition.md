@@ -169,6 +169,11 @@ prefixed with `#`.
 | `#Name`       | Custom stereotype `Name`.                                                                                                            |
 
 Case doesn't matter for the options.
+The global options line also accepts the attribute options that are not bound to a single attribute —
+the [access and generation options](#access-and-generation-options) (`readonly`, `nomethod`, `mute`,
+the access scope keywords, …), the [string handling options](#string-handling-options) and the
+[binding options](#binding-options) such as `uc` or `lc`. They become the entity's defaults for all its
+attributes, which can override them individually.
 Most of these options are inherited from the project-level model defaults and need
 not be specified in the global options line. Typical model defaults are:
 
@@ -185,6 +190,13 @@ index and foreign key that doesn't specify its own keyword `DEFERRABLE INITIALLY
 transaction explicitly opts in via `@Transaction(deferred=true)`). `immediate` is a documented
 no-op, kept for symmetry with the index-line grammar. Backends that don't support deferred
 constraint checking silently fall back to plain, non-deferrable DDL (with a build-time warning).
+
+Besides the flags `tracked`, `attracked`, `fulltracked`, `untracked`, `root`, `rootid`, `rootclassid`, `bind`,
+`size`, `autoselect` and `remote`, the project-level model defaults accept `cascade` (synonyms:
+`cascaded`, `cascadeddelete`, `deletioncascaded`), which makes every component relation cascade its
+deletion as if it declared [`delete = cascade`](#delete). Unlike an entity's global options line, the
+model defaults turn an option off with a leading `!` only — `-` is not recognized there. That's why the
+defaults used by the wizard's batch mode read `!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED`.
 
 Whereas `root`, `rootid` and `rootclassid` are automatically determined by inspecting the
 model as a whole. The following rules apply:
@@ -206,9 +218,16 @@ After `|`, list attribute names to define the default sort order. Prefix with
 [tokenlock, tableserial | +name -id]
 ```
 
+As a shortcut, the `|` may be omitted if every sort attribute is prefixed with `+` or `-` and none of
+them is named like an option keyword (the parser tries the option first):
+
+```
+[tokenlock, tableserial, +name, -id]
+```
+
 ### Overriding model defaults
 
-The global project-wide model defaults can be disabled by prepending a `-` to the option or
+The global project-wide model defaults can be disabled by prepending a `-` (or `!`) to the option or
 overridden if mutually exclusive, e.g.:
 
 ```
@@ -311,7 +330,7 @@ initializer, and the two need not agree.
 | Option      | Description                                                                                                           |
 |-------------|-----------------------------------------------------------------------------------------------------------------------|
 | `key`       | Marks this attribute as part of the [unique domain key](../../../../tentackle-pdo/src/main/docs/domain-key.md) (UDK). |
-| `contextid` | This attribute holds the context entity's ID.                                                                         |
+| `context`   | This attribute holds the context entity's ID.                                                                         |
 | `utc`       | Timestamp only: set the UTC serialization flag.                                                                       |
 | `tz`        | date related types only: use with timezone (PDO must provide a `get<Attr>TimezoneConfig()` method).                   |
 | `normtext`  | Include this attribute's value in the entity's normtext column.                                                       |
@@ -347,14 +366,14 @@ and use neither option; reach for one of those types first if you can.
   be stored and reproduced in a specific, data-driven zone; use `utc` when you want a
   zone-independent absolute instant. They are different mechanisms and are not normally combined.
 
-##### `contextid`
+##### `context`
 
 Marks the attribute that holds the **id of the object spanning this object's
 [domain context](../../../../tentackle-pdo/src/main/docs/domain-context-provider.md)** — for
 example the tenant/mandator in a multi-tenant application. When a PDO is placed into a
 `DomainContext`, the generated `determineContextId()` copies `context.getContextId()` into this
 attribute, and the generated queries add a context condition so that objects belonging to one
-context are not visible from another. There may be at most one `contextid` attribute per entity,
+context are not visible from another. There may be at most one `context` attribute per entity,
 and it is not allowed on embedded attributes. Entities that live only in the default context do
 not need it.
 
@@ -380,7 +399,7 @@ rather than a plain setter.
 | `nodeclare`      | Do not emit the backing-field declaration. The column is still mapped (read/written); the value is held elsewhere (e.g. a derived or superclass field). |
 | `noconstant`     | Do not generate the name constants (the `AN_`/`CN_` attribute- and column-name constants and the size constant).                                        |
 | `super`          | Attribute is inherited from a super entity (if not in model of superclass)                                                                              |
-| `scope=<access>` | Visibility of generated methods: `public` (default), `protected`, `package`, `private`.                                                                 |
+| `<access>`       | Visibility of generated methods, given as the bare keyword: `public` (default), `protected`, `package`, `private`.                                     |
 
 ##### `super`
 
@@ -423,8 +442,12 @@ The binding options are added to the `@Bindable` annotation.
 | `size`        | Add maxcols binding option to `@Bindable` annotation, where applicable.      |
 | `autoselect`  | Add `autoselect` binding option to `@Bindable` annotation, where applicable. |
 
+The semantic option `utc` (see above) is added to the `@Bindable` annotation as well, so that the UI
+component interprets the timestamp as UTC.
+
 Options inherited from the entity's options can be overridden.
-To disable an option for an attribute, prepend a `-` to the option, for example, `-bind`.
+To disable an option for an attribute, prepend a `-` (or `!`) to the option, for example, `-bind`.
+A leading `+` forces an option on.
 
 #### Annotation options
 
@@ -580,6 +603,8 @@ ClassName:
 - `ClassName` is the simple name of the related entity.
 - Properties are `key = value` pairs or bare flags (value is empty string), separated by commas.
 - The block can span multiple lines (the same continuation rules as attribute option lines).
+- A bare `default` is accepted and ignored. It merely documents that the relation uses the default
+  settings, e.g. `Customer: default`.
 
 ### Relation properties
 
@@ -595,7 +620,9 @@ relation = <type> [modifiers...]
 |------------|--------------------------------------------------------------------|
 | `object`   | 1:1 association (default).                                         |
 | `list`     | 1:N association.                                                   |
-| `reversed` | Reversed 1:1 (non-component list that returns at most one object). |
+
+Since `object` is the default, `relation = reversed` is short for `relation = object reversed`
+(see the `reversed` modifier below).
 
 There is deliberately **no `set` relation type**: a hash- or tree-based set of PDOs is unsound,
 because a PDO's `hashCode`/`equals` are id-based and change when a new object is first persisted, and
@@ -622,6 +649,7 @@ when the aggregate is tracked). See
 | `immutable`   | Make the list and/or object(s) immutable when loaded from the database.           |
 | `normtext`    | Add `toString()` of related entity (or all in list) to normtext.                  |
 | `blunt`       | The generated `bluntXXX` method is added to the persistence interface.            |
+| `reversed`    | Reversed 1:1: a list relation with at most one element — the foreign entity points back to this one, but the relation is accessed as a single object. |
 
 #### `select`
 

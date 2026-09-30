@@ -281,6 +281,16 @@ credits. The connection window is `CONNECTION_WINDOW_FACTOR` (10) times that, so
 the binding one as long as fewer than ten streams transfer at full window simultaneously. Size
 `streamwindow` so that ordinary calls fit into it and no call ever has to stop and wait for credits.
 
+Every pooled connection holds one QUIC stream for as long as it sits in the pool, so the number of
+streams limits the pool, too. As with `tentackle-quic`, the pool's `maximum` therefore defaults to
+`maxstreams` rather than *unlimited*: a busy client gets a *temporary* `TripRuntimeException`
+("max. pool size … reached") the caller can retry, instead of opening one stream too many. Should the
+server nevertheless grant fewer streams than the client's `maxstreams` — the client cannot detect
+such a mismatch — the two transports differ: tentackle-quic waits up to `streamtimeout` for the peer
+to grant another stream, while quiche fails at once, also with a *temporary* `TripRuntimeException`
+(`no QUIC stream available …`). There is no `streamtimeout` parameter here. Configure the same
+`maxstreams` on both ends.
+
 ## Native library
 
 The binaries ship in `org.mortbay.jetty.quiche:jetty-quiche-native`, built by the Jetty project and

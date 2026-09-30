@@ -47,8 +47,11 @@ modules that contain bundles resp. validations.
 
 ### Common Configuration
 
-Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip` and `charset`
+Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip`, `charset`,
+`jdkToolchain` and `minLogLevel`
 (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+As annotation-processing mojos, they also accept the compiler parameters of the `analyze` goal:
+`showCompileOutput`, `encoding`, `compilerArgs` and `compilerArgument`.
 On top of that, `AbstractCheckMojo` adds the parameters shared by both check goals:
 
 - `sourceDir` (`tentackle.sourceDir`): directory holding the sources to process. Defaults to
@@ -57,7 +60,8 @@ On top of that, `AbstractCheckMojo` adds the parameters shared by both check goa
 - `locales`: a comma/semicolon/whitespace separated list of locales to check the bundles and
   validation messages against (e.g. `en, de`). Both the `en_US` and the `en-US` notation are
   accepted. **The fallback locale should come first.** If omitted, the build's default locale is
-  used (and a warning is logged).
+  used (and a warning is logged). The parameter has no user property, i.e. it can only be set in
+  the POM; `-Dlocales=…` on the command line has no effect.
 - `skipTests` (`${skipTests}`): skips the check, so the standard `-DskipTests` switch disables it
   together with the unit tests.
 - `scriptingLanguage`: sets the default scripting language used to evaluate validator scripts, for
@@ -113,7 +117,7 @@ reports keys that are present in one locale but missing in another — catching 
 throw a `MissingResourceException` at runtime.
 
 ```bash
-mvn tentackle-check:bundles -Dlocales=en,de
+mvn tentackle-check:bundles
 ```
 
 #### What is not covered
@@ -148,7 +152,7 @@ The goal reports the number of annotations and scripts checked per locale and fa
 validator fails to instantiate or any script fails to compile or resolve.
 
 ```bash
-mvn tentackle-check:validations -Dlocales=en,de
+mvn tentackle-check:validations
 ```
 
 Use `scriptingLanguage` if your validators use scripts without an explicit language prefix, and you
@@ -164,6 +168,11 @@ which keeps fast inner-loop builds fast while still guarding the full build and 
 A common arrangement is to enable the `bundles` goal in every module that carries UI- or
 message bundles, and the `validations` goal in the domain modules that define validators, listing the
 production locales (fallback first) in the shared plugin configuration.
+
+Both goals are thread-safe, but configure JVM-wide singletons (the classloaders of the bundle and
+validation factories and the default scripting language). In a parallel build (`mvn -T …`),
+concurrent executions are therefore serialized; see
+[Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds).
 
 ### Further Reading
 

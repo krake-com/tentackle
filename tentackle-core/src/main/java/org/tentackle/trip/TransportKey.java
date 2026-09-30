@@ -25,7 +25,7 @@ import java.net.URI;
 /**
  * The {@link Transport} key.
  * <p>
- * Transports are unique by scheme, host and port.
+ * Transports are unique by scheme, host, port and query parameters.
  *
  * @param scheme the transport scheme
  * @param host the transport host

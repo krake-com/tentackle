@@ -52,8 +52,8 @@ project.
 
 ### Common Configuration
 
-Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip`, `charset` and
-`jdkToolchain` (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip`, `charset`,
+`jdkToolchain` and `minLogLevel` (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
 On top of that, every i18n goal needs the database connection and may take a locale list:
 
 - `url` (required): the JDBC URL of the backend holding the stored bundles.
@@ -63,6 +63,10 @@ On top of that, every i18n goal needs the database connection and may take a loc
 - `locales`: a comma/space/semicolon-separated list of the additional locale suffixes to process
   besides the default one, e.g. `de, en_US, fr`. Underscores are accepted and normalized to hyphens
   (`en_US` → `en-US`). The default bundle (no suffix) is always processed.
+
+None of these parameters (nor `override` below) has a user property: they are configured in the POM,
+not with `-D…` on the command line. To keep the credentials out of the POM, reference properties
+defined in `settings.xml` or a profile, e.g. `<password>${i18n.password}</password>`.
 
 A minimal configuration looks like this:
 
@@ -89,6 +93,10 @@ A minimal configuration looks like this:
 
 Every goal prints a summary line at the end — number of bundles processed, warnings, errors and
 updates — and fails the build if any errors were counted.
+
+The goals are thread-safe, but bind the JVM-wide modification tracker to their database session, so
+concurrent executions in a parallel build (`mvn -T …`) are serialized; see
+[Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds).
 
 ### The `push` Goal
 

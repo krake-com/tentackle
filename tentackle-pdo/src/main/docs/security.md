@@ -140,7 +140,7 @@ public interface InvoiceDomain extends DomainObject<Invoice> {
   @Secured(EditPermission.class)                 // caller needs EDIT on this invoice
   @Transaction void approve();
 
-  @Secured({EditPermission.class, BookkeeperPermission.class}, ored = true)
+  @Secured(value = {EditPermission.class, BookkeeperPermission.class}, ored = true)
   @Transaction void postToLedger();              // EDIT *or* a custom Bookkeeper permission
 }
 ```
@@ -302,6 +302,21 @@ public final class BookkeeperPermissionImpl
   @Override public String getName() { return NAME; }
 }
 ```
+
+The base class decides what kind of object the permission applies to, through
+`Permission.appliesTo(Class)`:
+
+| Base class                                                                            | Applies to                                                                                       |
+|---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [`AbstractPdoPermission`](../java/org/tentackle/security/permissions/AbstractPdoPermission.java)       | PDO classes — like the built-in `READ`, `VIEW`, `WRITE` and `EDIT`                              |
+| [`AbstractNonPdoPermission`](../java/org/tentackle/security/permissions/AbstractNonPdoPermission.java) | everything else: operations, remote services, UI features — like the built-in `EXECUTE`        |
+| [`AbstractPermission`](../java/org/tentackle/security/permissions/AbstractPermission.java)             | implement `appliesTo` yourself; the built-in `ALL` applies to any class                         |
+
+`SecurityFactory.getPermissionInterfaces(clazz)` returns only the permissions applicable to a class,
+and the [security rules editor](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#security-and-administration)
+offers only those for the class whose rules are being edited. A `BookkeeperPermission` derived from
+`AbstractPdoPermission` thus shows up for PDOs, but not for an operation. A custom permission guarding
+a menu entry or an operation extends `AbstractNonPdoPermission` instead.
 
 The name (`"BOOKKEEPER"`) is what appears in a rule's comma-separated `permissions`
 column; `SecurityFactory.getPermissionInterface(name)` maps it back to the interface

@@ -138,7 +138,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    * Notice: when this flag is true, the model files in the filesets are ignored!
    * If only the tentackle tables should be migrated, make sure to set checkReservedTables to false.
    */
-  @Parameter
+  @Parameter(property = "tentackle.loadModelFromClassPath")
   protected boolean loadModelFromClassPath;
 
   /**
@@ -163,7 +163,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    *   <li>deprecated: all deprecated backends</li>
    * </ul>
    */
-  @Parameter
+  @Parameter(property = "tentackle.backendNames")
   protected String backendNames;
 
   /**

@@ -408,7 +408,9 @@ starts it, `cleanup()` terminates it. The request-scoped `getSession(key)` /
 - JavaFX closes the last window → `FxApplication.stop()` → `Application.stop(...)`;
 - the modification tracker terminates — cleanly (`stop(0, null)`) or unexpectedly,
   which logs `*** emergency shutdown ***` and exits with 2;
-- a server sends a [`LogoutEvent`](../java/org/tentackle/app/LogoutEvent.java), whose
+- a server sends a [`LogoutEvent`](../java/org/tentackle/app/LogoutEvent.java) — requested by an
+  administrator via the `AdminExtension`, see
+  [Session administration](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration) — whose
   default [`LogoutEventHandler`](../java/org/tentackle/app/LogoutEventHandler.java)
   terminates the modification tracker — and therefore, by the previous rule, the
   application. `LogoutEvent` is a `MasterSerialEvent` marked

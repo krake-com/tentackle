@@ -548,7 +548,12 @@ product number is shown in a form field, a table column, or a tree-table column.
 For text components, `@Bindable(options = "...")` (or options set on the
 component) tune input behavior. 
 See [model-definition.md](../../../../tentackle-model/src/main/docs/model-definition.md#binding-options)
-for details.
+for details, and [tentackle-fx](../../../../tentackle-fx/src/main/docs/fx.md#text-input-properties) for the
+component properties they are mapped to.
+
+For views without a model to bind to, the JavaFX controls also accept
+[low-level listeners](../../../../tentackle-fx/src/main/docs/fx.md#low-level-listeners) invoked on every
+transfer between view and model.
 
 ### Table binding
 

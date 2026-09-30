@@ -100,6 +100,37 @@ though the test will roll back; `setRollbackLogged(true)` logs the SQL even on s
 `runInOtherJVM(...)` and `waitForProcess(...)` spawn a test class in a **separate JVM** (used by the remote/RPC
 tests — see `testng.xml`'s `remote1`/`remote2` groups).
 
+#### Client-server tests across JVMs: `ServerProcessWrapper`
+
+A test that needs a real TRIP server runs it in a second JVM, started with `runClass(...)`. Timing that
+with fixed sleeps is fragile — the server may take longer to start, or the next step may race the previous
+one. [`ServerProcessWrapper`](../java/org/tentackle/pdo/testng/ServerProcessWrapper.java) replaces the
+sleeps by an explicit handshake over the server's standard streams:
+
+- **Startup.** The server prints `ServerProcessWrapper.READY_MARKER` (`@@TRIP-SERVER-READY@@`) on a line
+  of its own once it is listening; `awaitReady(timeoutMs)` blocks until then and fails if the server
+  does not come up in time.
+- **Stepping.** `sendCommand(line)` writes a command to the server's standard input, and
+  `awaitOutput(marker, timeoutMs)` waits for the server to acknowledge it with a line of its own.
+  Markers are matched by exact line equality and are one-shot, so each should be printed only once.
+- **Shutdown.** `stopAndWait()` (or `close()`) closes the server's standard input; the server treats
+  the EOF as its signal to shut down. The output of both streams is drained continuously and
+  forwarded to the TestNG `Reporter` log once the process has terminated.
+
+```java
+try (ServerProcessWrapper server = new ServerProcessWrapper(AbstractPdoTest.runClass(MyTestServer.class))) {
+  server.awaitReady(30_000);
+  // ... connect as a client and prepare ...
+  server.sendCommand("ADD");
+  server.awaitOutput("ADDED", 10_000);
+  // ... verify what the client sees ...
+}
+```
+
+On the server side, print the marker after the transport is bound, then read commands from `System.in`
+until `readLine()` returns `null`. `RemotePreferencesTest` with `AddAndRemovePrefsInServer` in this
+module's tests is a complete example.
+
 ### `TestApplication`
 
 The base class for tests that must run as a full

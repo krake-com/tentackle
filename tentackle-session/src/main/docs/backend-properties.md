@@ -14,7 +14,7 @@ so all keys below are **session properties**. Most of them configure the backend
 configure the server, and a few are interpreted by the application layer. This document is the
 reference for all of them.
 
-Three general rules:
+Four general rules:
 
 - **Keys are case-insensitive.** `jdbcIdleTimeout`, `jdbcidletimeout` and `JDBCIDLETIMEOUT` are the
   same key (camelCase is the convention).
@@ -25,6 +25,23 @@ Three general rules:
   property but *set as the system property* `foo` — used, for example, to point
   `javax.net.ssl.keyStore` at the image's keystore. See
   [Application Bootstrap](../../../../tentackle-pdo/src/main/docs/application.md#well-known-properties).
+- **Values may reference system properties.** Applications built on the
+  [`Application` hierarchy](../../../../tentackle-pdo/src/main/docs/application.md) run every value
+  through `StringHelper.evaluate`, which replaces placeholders by the value of the system property
+  of that name:
+
+  | Placeholder         | Replaced by                                                                                     |
+  |---------------------|-------------------------------------------------------------------------------------------------|
+  | `@{name}`           | the value of `name`; left empty if there is no such property                                    |
+  | `@{name?default}`   | the value of `name`, or `default` if the property is missing or blank                           |
+  | `@{name!default}`   | the value of `name`, or `default` only if the property is missing                               |
+  | `${name}`, `${name?default}`, `${name!default}` | the same, but placeholders within the value of `name` are replaced as well (recursively) |
+
+  A backslash quotes the next character, e.g. `\@{` for a literal `@{`. Prefer `@{…}` for file
+  paths: with `${…}`, backslashes in a Windows path would be taken as quotes. Installations built with the
+  [jpackage goal](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#how-the-jpackage-goal-works)
+  get the system property `RUNTIMEDIR` pointing at the runtime directory, while a plain jlink image is
+  started from its root directory; hence the `@{RUNTIMEDIR?.}` in the [examples](#examples) below.
 
 ## How the File Is Found
 
@@ -94,8 +111,9 @@ used as-is.
 
 ## Server Keys
 
-Read by [`TripServer`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/TripServer.java)
-when the tier is an application server (see [Multi-Tier Cascade](../../../../src/main/docs/tiers.md)).
+Read when the tier is an application server (see [Multi-Tier Cascade](../../../../src/main/docs/tiers.md)):
+the TRIP keys by [`TripServer`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/TripServer.java),
+the transaction keys by [`DbTransactionFactory`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/DbTransactionFactory.java).
 
 | Key                          | Value                                                                                                                                                                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -104,11 +122,14 @@ when the tier is an application server (see [Multi-Tier Cascade](../../../../src
 | `connectionclass`            | The fully qualified name of the `RemoteDbConnection` class to export; usually provided programmatically.                                                                                                                                                |
 | `timeout`                    | The session timeout for dead client connections, in polling intervals. Defaults to `30` (i.e. 30 seconds at the default interval).                                                                                                                      |
 | `timeoutinterval`            | The polling interval for dead sessions in milliseconds. Defaults to `1000`; `0` turns the cleanup thread off entirely (risky).                                                                                                                          |
-| `updateService`, `updateURL` | Publish the [self-update service](../../../../tentackle-update/src/main/docs/update.md) for jlink-based clients.                                                                                                                                        |
+| `txIdleInterval`             | The polling interval of the [transaction supervisor](../../../../tentackle-database/src/main/docs/database.md#idle-transaction-supervisor) in milliseconds. Defaults to `1000`.                                                                          |
+| `txIdleTimeout`              | The number of polling intervals after which an idle database transaction is forcibly rolled back and its connection closed. Defaults to `60` (i.e. one minute at the default interval); `0` or less disables the timeout. |
+| `updateService`, `updateURL` | Publish the [self-update service](../../../../tentackle-update/src/main/docs/update.md) for jlink-based clients. Not read by the framework itself, but by the server generated from the [archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md), and `updateService` also by the client's [update handler](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md). |
 
-> **Two different timeouts.** `timeout` is the *TRIP session* timeout — how long a server keeps a
+> **Three different timeouts.** `timeout` is the *TRIP session* timeout — how long a server keeps a
 > dead client session around. `jdbcIdleTimeout` is the *database connection* inactivity timeout on
-> the JDBC side. They are unrelated; a typical server sets both.
+> the JDBC side. `txIdleTimeout` limits how long a *transaction* may sit idle while holding its
+> connection and locks. They are unrelated; a typical server relies on all three.
 
 ### Deriving service URIs
 

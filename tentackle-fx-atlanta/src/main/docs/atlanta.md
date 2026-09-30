@@ -31,7 +31,9 @@ its own module means:
   masked/custom text fields, `Card`/`Tile`/`InputGroup` containers) become
   available as bindable Tentackle components without bloating `tentackle-fx`.
 - The theme is selected via the SPI (`@Service(ThemeUtilities.class)`), so simply
-  having the module on the path makes it the active theme.
+  having the module on the path makes it the active theme. The generic theme API — dark mode, theme
+  switching and the persisted user preference — is described in
+  [tentackle-fx](../../../../tentackle-fx/src/main/docs/fx.md#themes-and-dark-mode).
 
 ### Design principles
 

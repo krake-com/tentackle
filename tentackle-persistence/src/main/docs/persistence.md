@@ -178,7 +178,8 @@ Session-side remoting is provided by
 [`DefaultPersistenceDelegateLinker`](../java/org/tentackle/persist/DefaultPersistenceDelegateLinker.java)
 (`@Service(PersistenceDelegateLinker.class)`) wires a PDO proxy to its persistence delegate, and
 [`AdminExtensionAdapter`](../java/org/tentackle/persist/AdminExtensionAdapter.java)
-(`@Service(AdminExtension.class)`) adds administrative session services.
+(`@Service(AdminExtension.class)`) adds administrative session services: listing, logging out and
+killing client sessions (see [Session administration](../../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration)).
 
 ---
 

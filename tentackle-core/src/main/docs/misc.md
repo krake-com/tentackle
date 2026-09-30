@@ -233,7 +233,7 @@ and friends for the whole `java.time` family.
 | [`XUUID`](../java/org/tentackle/misc/XUUID.java)                                           | An id plus a `UUID` (`"id-uuid"`), so an external reference can be checked against brute-force guessing without changing the domain logic |
 | [`NamedCounter`](../java/org/tentackle/misc/NamedCounter.java) / [`NamedValue<T>`](../java/org/tentackle/misc/NamedValue.java) | Thread-safe counters/values by name — e.g. numbering threads          |
 | [`InheritableThreadLocalHashTable`](../java/org/tentackle/misc/InheritableThreadLocalHashTable.java) | A thread-local hashtable where each child thread gets its own copy             |
-| [`UserHomeJavaDir`](../java/org/tentackle/misc/UserHomeJavaDir.java)                       | The per-user cache directory                                                             |
+| [`UserHomeJavaDir`](../java/org/tentackle/misc/UserHomeJavaDir.java)                       | The per-user cache directory, `${user.home}/.java/tentackle`; the system property `tentackle.user.home.java.dir` replaces `${user.home}` |
 | [`IdSerialTuple`](../java/org/tentackle/misc/IdSerialTuple.java) / [`IdSerialNameTuple`](../java/org/tentackle/misc/IdSerialNameTuple.java) | Id + serial (+ name) tuples, mainly for compact serialization |
 
 ### Holders
@@ -254,6 +254,14 @@ the box only [`DefaultPropertiesResource`](../java/org/tentackle/misc/DefaultPro
 (file-based, priority 100) is present; an application can add loaders to override properties from
 environment variables, a YAML file, or anywhere else — see the
 [service API](../../../../tentackle-common/src/main/docs/services.md).
+
+For the common case of overriding keys from the environment — a container deployment passing the
+database URL, for instance — `applyEnvironment(properties, prefix)` does this without a custom
+loader: for every key starting with a letter, it looks up the environment variable derived by
+`toEnvironmentVariable(key)` (dots become underscores, other non-alphanumeric characters are dropped,
+the rest is upper-cased, e.g. `tentackle.url` → `TENTACKLE_URL`), optionally with a prefix such as
+`MYAPP_`, and replaces the value if the variable is set. Only existing keys are overridden; the
+framework does not call it by itself.
 
 [`ChainedProperties`](../java/org/tentackle/misc/ChainedProperties.java) is a `Properties` whose
 defaults survive [TRIP](trip.md). A plain `Properties` keeps its defaults in a `java.util` field,

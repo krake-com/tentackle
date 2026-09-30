@@ -72,7 +72,7 @@ For more options, see {\@link DbModelWurblet}.
       else if (arg.equals("immutable")) {
         immutable = true;
       }
-      else if (arg.equals("finallyimmutable")) {
+      else if (arg.equalsIgnoreCase("finallyImmutable")) {
         finallyImmutable = true;
       }
       else if (arg.equals("mutable")) {

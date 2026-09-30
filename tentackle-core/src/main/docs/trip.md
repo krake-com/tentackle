@@ -77,7 +77,7 @@ Transport serverTransport = TransportManager.getInstance().requestTransport(
 serverTransport.accept();
 ```
 
-`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host, and port returns the same `Transport` instance. Transports are reference-counted via a lease pattern — they close automatically when the last lease is released.
+`TransportManager` is a singleton that deduplicates transports: calling `requestTransport(URI)` with the same scheme, host, port and query string returns the same `Transport` instance. Transports are reference-counted via a lease pattern — they close automatically when the last lease is released.
 The server uses virtual threads to handle multiple connections concurrently.
 
 **Built-in transports:**
@@ -94,9 +94,30 @@ The server uses virtual threads to handle multiple connections concurrently.
 | `tripcq` | UDP QUIC protocol with compression                                             |
 | `tripj`  | UDP QUIC protocol on Cloudflare quiche (provided by `tentackle-quiche` module) |
 | `tripcj` | UDP QUIC protocol on Cloudflare quiche, with compression                       |
+| `loopback` | In-memory transport for tests: no socket, accepts a single connection, but runs the server side in separate threads like a real transport |
 
 The compressing and PSK-encrypting variants are built from the packet-framed streams in
 `org.tentackle.io` — see [io.md](io.md).
+
+**URI parameters of the TCP transports.** Transport options are passed in the query string of the
+URI, e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. The QUIC transports have their own set,
+see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
+[quiche](../../../../tentackle-quiche/src/main/docs/quiche.md).
+
+| Parameter     | Side   | Default | Meaning                                                                                                  |
+|---------------|--------|---------|----------------------------------------------------------------------------------------------------------|
+| `initial`     | client | `1`     | The initial number of pooled connections to the server.                                                  |
+| `increment`   | client | `1`     | The number of connections opened at once when all pooled connections are in use.                        |
+| `minimum`     | client | `1`     | The number of connections kept open even when idle.                                                      |
+| `maximum`     | client | `0`     | The maximum number of connections, `0` = unlimited.                                                      |
+| `idle`        | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                  |
+| `usage`       | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                           |
+| `idle`        | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                        |
+| `backlog`     | server | `50`    | The listen backlog of the server socket.                                                                 |
+| `mincompress` | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                 |
+
+Since the query string is part of the transport's identity, two URIs that differ only in their
+parameters get separate transports (and connection pools).
 
 ### SSL/TLS configuration
 
@@ -185,6 +206,13 @@ belonging to the tree are unregistered as well.
 The Tentackle's [Session API](../../../../tentackle-session/src/main/docs/session.md) makes use of this mechanism.
 When a session is closed, the remote session delegate is unregistered
 together with all other remote objects of the session.
+
+The root itself, however, is unregistered only when the registry is closed, i.e. when all
+connections of the client are gone. A root that should be released earlier — like the remote
+session when the client logs out — implements [`RemoteRoot`](../java/org/tentackle/trip/RemoteRoot.java).
+The registry then hands the object its coordinates via `setRegistryCoordinates(registry, id)` when it
+creates the delegate, and the object invokes `unregisterFromRegistry()` when it is no longer needed,
+which also unregisters the whole tree below it.
 
 #### Returning several remote objects at once
 
@@ -806,7 +834,7 @@ The remaining exposure is subtler: for a class deserialized via its **no-arg con
 component values are applied *afterwards*, through reflective field access or setters. The
 argument-validating constructors — where such a class typically enforces its invariants — never
 see those values. As long as the bytes come from a trusted peer over a secured channel (your own
-client or server, connected via the `tripe`/`tripce` SSL transports or
+client or server, connected via the `trips`/`tripcs` SSL transports, the `tripe`/`tripce` PSK-encrypted transports, or
 [QUIC](../../../../tentackle-quic/src/main/docs/quic.md)), that is fine: the sender validated the
 objects before serializing them.
 

@@ -50,6 +50,8 @@ topic-grouped listing of every document, see the
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
 - **Credentials (password, token, custom)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model)
 - **Cursors (streaming large result sets)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
+- **Combo / choice boxes (prefix selection, deselect, short/long text)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#combo-and-choice-boxes), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
+- **CRUD and search dialogs (`PdoCrud`, `PdoSearch`, `PdoEvent`, dialog caching)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#configuring-crud-and-search-dialogs)
 
 ## D
 
@@ -66,6 +68,8 @@ topic-grouped listing of every document, see the
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DSL (typed SQL projection queries)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md)
 - **DTO (Data Transfer Object) generation** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md)
+- **Dark mode / themes (`ThemeUtilities`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#themes-and-dark-mode), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
+- **Diagnostics (nested selects, statement and TRIP statistics, statement limits)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#diagnostics-and-statistics)
 
 ## E
 
@@ -78,6 +82,7 @@ topic-grouped listing of every document, see the
 - **Exceptions (hierarchy, `TentackleRuntimeException`, `PersistenceException`)** — [Exceptions and Error Handling](./exceptions.md)
 - **Exceptions across tiers (remoting a `Throwable`)** — [Exceptions and Error Handling](./exceptions.md#exceptions-across-tiers), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Expandable text areas (one-liner expanding to a multi-line editor)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#expandable-one-line-text-areas)
+- **Environment variables (overriding properties)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md#properties)
 
 ## F
 
@@ -109,6 +114,7 @@ topic-grouped listing of every document, see the
 - **InteractiveError (validation results → marked controls)** — [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md), [Validation](../../../tentackle-core/src/main/docs/validation.md)
 - **Interceptors** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)
 - **Interrupts (`InterruptedRuntimeException`)** — [Exceptions and Error Handling](./exceptions.md#interrupts)
+- **Idle transactions (transaction supervisor, `txIdleTimeout`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#idle-transaction-supervisor), [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#server-keys)
 
 ## J
 
@@ -124,6 +130,7 @@ topic-grouped listing of every document, see the
 
 - **Keychain (macOS), Credential Manager (Windows), Secret Service (Linux)** — [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Keyring (secrets on the client)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md), [Single Sign-On with Google](./google-sso.md)
+- **Keyboard handling (ENTER navigation, `Ctrl-Z`/`Ctrl-Y`, `F1`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#keyboard-handling), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components) (`F2`/`F3`)
 
 ## L
 
@@ -156,6 +163,7 @@ topic-grouped listing of every document, see the
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
 - **Number sources (unique business numbers)** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
+- **Notes and notifications (non-blocking dialogs, `NotificationBuilder`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#notes-and-notifications)
 
 ## O
 
@@ -166,12 +174,13 @@ topic-grouped listing of every document, see the
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **OAuth2 / OIDC login** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md), [Single Sign-On with Google](./google-sso.md)
 - **OSGi bundles (building, activators, `RESOURCE-INDEX.LIST`)** — [OSGi Bundles](../../../tentackle-osgi/src/main/docs/osgi.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#osgi-bundles)
+- **Online help (`F1`, help URLs)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#online-help)
 
 ## P
 
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser), [AI Agent Tooling Support](./ai-agents.md#java-code-from-the-database-tentackle-wizardbrowse-in-batch-mode)
-- **Parallel builds (`mvn -T`, thread-safe wurblets)** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
+- **Parallel builds (`mvn -T`, thread-safe plugins and wurblets)** — [Tentackle Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **PKCE (authorization code flow with proof key)** — [Single Sign-On with Google](./google-sso.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
@@ -185,6 +194,8 @@ topic-grouped listing of every document, see the
 - **Preloading PDO caches (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Preloading remote delegates (`@PreloadRemoteDelegate`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#preloading-remote-delegates), [TRIP](../../../tentackle-core/src/main/docs/trip.md#returning-several-remote-objects-at-once)
 - **Pre-/post-commit methods (`@PreCommit`, `@PostCommit`)** — [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md#precommit-and-postcommit--deferred-until-the-commit), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
+- **PDO-bound components (`F2`/`F3`, drag and drop, self-loading combo boxes)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components)
+- **Placeholders in property values (`@{name?default}`, `${…}`)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#overview-and-motivation), [Tentackle Common](../../../tentackle-common/src/main/docs/common.md#helper-utilities)
 
 ## Q
 
@@ -232,6 +243,7 @@ topic-grouped listing of every document, see the
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)
+- **Session administration (list, log out, kill client sessions)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration)
 
 ## T
 
@@ -250,6 +262,8 @@ topic-grouped listing of every document, see the
 - **Two-phase commit (XA)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
 - **TripFilter (skipping components, PDOs without components)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter)
 - **TRIP (remote invocation protocol)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md), [QUIC](../../../tentackle-quic/src/main/docs/quic.md), [QUIC on quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [Migrate from RMI to TRIP](./migrate_rmi_trip.md)
+- **TCP transport parameters (connection pool, backlog, compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#transport)
+- **Testing across JVMs (`ServerProcessWrapper`)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#client-server-tests-across-jvms-serverprocesswrapper)
 
 ## U
 
@@ -261,6 +275,7 @@ topic-grouped listing of every document, see the
 ## V
 
 - **Validation** — [Validation](../../../tentackle-core/src/main/docs/validation.md), [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Check Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md), [InteractiveError](../../../tentackle-fx/src/main/docs/interactive-error.md) (showing results in the UI)
+- **View-modified tracking (dirty forms, `Ctrl-Z`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#view-modified-tracking)
 
 ## W
 

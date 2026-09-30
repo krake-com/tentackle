@@ -209,7 +209,7 @@ member of such a type is filled from all of its columns.
 
 | Clause | Method |
 |---|---|
-| `SELECT` | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *` |
+| `SELECT` | `select(...)`, `selectDistinct(...)`, no arguments for `SELECT *`; `asterisk()` and `table.asterisk()` for `*` / `c.*` among other expressions |
 | `FROM` | `from(table...)`, `table(select, alias)` for a derived table |
 | `JOIN` | `join(t).on(c)`, `leftJoin`, `rightJoin`, `fullJoin`, `join(JoinType, t)` |
 | `WHERE` | `where(condition...)` |
@@ -257,6 +257,7 @@ Expression<Integer> length = function("length", Integer.class, NAME);
 
 ```java
 where(exists(select(ORDER_CUSTOMER_ID).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID))))
+where(notExists(select(ORDER_CUSTOMER_ID).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID))))
 where(ID.in(select(ORDER_CUSTOMER_ID).from(ORDER)))
 Expression<Long> orders = subSelect(select(count()).from(ORDER).where(ORDER_CUSTOMER_ID.eq(ID)), Long.class);
 Table recent = table(select(NAME, ORDERED).from(ORDER).where(ORDERED.ge(firstOfYear)), "r");

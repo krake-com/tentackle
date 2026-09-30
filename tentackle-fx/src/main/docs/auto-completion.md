@@ -240,10 +240,10 @@ A controller offering completion over a list of customers:
 
 ## Related Documentation
 
-- [tentackle-fx](fx.md) — the extended JavaFX layer this builds on.
+- [tentackle-fx](fx.md) — the extended JavaFX layer this builds on, including the
+  [prefix selection](fx.md#combo-and-choice-boxes) of non-editable combo and choice boxes, the
+  keyboard counterpart for choosing among a fixed set of items.
 - [Binding](../../../../tentackle-core/src/main/docs/binding.md) — what happens to the value once it lands in the field.
 - [Validation](../../../../tentackle-core/src/main/docs/validation.md) — completed values are validated like any other input.
 - [tentackle-fx-atlanta](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) — `FxCustomTextField` and `FxMaskTextField`.
 - [Tables and Trees](tables.md) — the other configuration-driven part of the FX layer.
-</content>
-</invoke>

@@ -100,8 +100,10 @@ singleton (default implementation
 username/password, from a properties name, or from an
 [`EncryptedProperties`](../../../../tentackle-common/src/main/docs/cryptor.md) object — honoring
 `Cryptor`-encrypted credentials. It also
-carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and `checkServerVersion`
-for client/server version validation (`VersionIncompatibleException`).
+carries flags such as `lockLingerEnabled` (whether token-locks survive a session close) and the client version,
+which the server checks against its own. The client in turn checks the server's version in
+`checkServerVersion(serverVersion)`, a hook that does nothing by default and throws a
+`VersionIncompatibleException` if the versions don't fit.
 
 ### Authentication
 

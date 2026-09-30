@@ -62,15 +62,19 @@ e.g. `target/sql/postgres/createmodel.sql`. `document` follows the same per-back
 
 ### Common Configuration
 
-Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip`, `charset` and
-`jdkToolchain` (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
-On top of that, `AbstractSqlMojo` adds the parameters shared by `create`, `migrate`, `validate` and
-`run` below. `document` never connects to a database, so it isn't an `AbstractSqlMojo` and doesn't have
-`migrate`/`validate`/`run`'s connectable-backend machinery (`backendProperties`, `backends`) — but it
-still renders a backend-specific SQL type per attribute, so it has its own, name-only `backendNames`
-parameter (see its own section below). It also exposes the same model-selection parameter names and
-defaults (`modelDir`, `filesets`, `modelName`, `modelDefaults`, `entityAliases`, `mapSchemas`,
-`loadModelFromClassPath`), so those aren't repeated in its own section below.
+Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `skip`, `charset`,
+`jdkToolchain` and `minLogLevel` (see the [`tentackle-maven-plugin` docs](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md#common-configuration)).
+On top of that, `AbstractSqlMojo` adds the parameters shared by all goals except `reveng`, which is
+configured separately (see [below](#the-reveng-goal)).
+
+- `sqlDir` (`tentackle.sqlDir`): the base directory of the generated scripts, one sub-directory per
+  backend. Defaults to `${project.build.directory}/sql`.
+- `generateHeaderComment` (default `true`): start each generated script with a comment naming the
+  model location, the creation time, the user and host, and the backend.
+
+All goals are thread-safe. The model, however, is held in a JVM-wide singleton, so in a parallel build
+(`mvn -T …`) concurrent executions are serialized, except for `reveng`; see
+[Parallel builds](../../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds).
 
 #### Model selection
 
@@ -92,17 +96,18 @@ defaults (`modelDir`, `filesets`, `modelName`, `modelDefaults`, `entityAliases`,
 The set of backends to generate SQL for can be specified in three ways, which may be combined. Later
 definitions override earlier ones for the same backend name:
 
-1. **By name** via `backendNames` — a comma-separated list of backend names. The special values
-   `all` (all non-deprecated backends), `none` and `deprecated` are recognized. This is the usual
-   choice for the `create` goal, which does not need a connection.
+1. **By name** via `backendNames` (`tentackle.backendNames`) — a comma-separated list of backend
+   names. The special values `all` (all non-deprecated backends), `none` and `deprecated` are
+   recognized. This is the usual choice for the `create` and `document` goals, which do not need a
+   connection.
 2. **From property files** via `backendProperties` — file sets of `EncryptedProperties` files that
    describe a backend including its JDBC URL and credentials. If no `<directory>` is given, the
    project's resource directories are scanned. These backends are *connectable*.
 3. **Inline in the pom** via `backends` — a list of `<backend>` elements (see below). Also
    connectable.
 
-A connectable backend is required for `migrate`, `validate` and `run`; `create` works with
-name-only backends because it never touches a database.
+A connectable backend is required for `migrate`, `validate` and `run`; `create` and `document` work
+with name-only backends because they never touch a database.
 
 ```xml
 <backends>
@@ -121,6 +126,11 @@ element is used for migration-hint version filtering (see below).
 
 #### Name checks
 
+- `checkModelNames` (default `true`): check the entity, attribute, relation and index names of the
+  model with the
+  [`NameVerifier`](../../../../tentackle-model/src/main/docs/tentackle-model.md) (application naming
+  conventions on top of the backend rules). Turn it off to load
+  legacy models whose names don't follow the rules.
 - `checkReservedTables` (default `true`): assert that no model table reuses a name reserved by the
   Tentackle framework.
 - `checkBackendSpecificNames` (default `true`): assert that column, schema, table, and index names do
@@ -135,8 +145,16 @@ These parameters help inspect what the plugin understood from the model — usef
 for packaging a model so downstream projects can build on it:
 
 - `dumpDir`: dump every parsed entity (plus `_aliases_.txt`, `_tables_.txt`, `_classid_.txt` index
-  files). `dumpCompact`, `dumpAsComment`, `dumpVariables`, `dumpColumnGap` and
-  `dumpAnnotationsAsOptions` control the formatting.
+  files). The formatting is controlled by:
+    - `dumpCompact` (default `false`): print only the configuration keywords that are actually
+      required, instead of all of them for proofreading;
+    - `dumpAsComment` (default `true`): dump the entities as comment blocks;
+    - `dumpVariables` (default `true`): include the model variables;
+    - `dumpColumnGap` (default `2`): the minimum number of spaces between the columns of the attribute
+      section;
+    - `dumpAnnotationsAsOptions`: comma-separated annotations to print as attribute options, e.g.
+      `@NotNull|, @NotZero`. A trailing `|` matches only annotations without parameters; `@*` matches
+      all annotations.
 - `dumpModelSource`: dump the original model source instead of the parsed entity.
 - `dumpModelIndex`: also write an index file listing the dumped files — combined with
   `dumpModelSource` this produces a `META-INF/MODEL-INDEX.LIST` so the model can be loaded from a jar
@@ -151,10 +169,10 @@ emits, in order: the `CREATE SCHEMA` (unless `mapSchemas` or `createSchemas=fals
 `CREATE TABLE`, its indexes, and finally the foreign-key constraints for the generated entities.
 
 ```bash
-mvn tentackle-sql:create -DbackendNames=postgres
+mvn tentackle-sql:create -Dtentackle.backendNames=postgres
 ```
 
-The default output file is `createmodel.sql` (`tentackle.createSqlFile`). Important parameters:
+The default output file is `createmodel.sql` (parameter `sqlFileName`, property `tentackle.createSqlFile`). Important parameters:
 
 - `createSchemas` (default `true`): emit `CREATE SCHEMA` statements for schema-qualified tables. If a
   backend does not support schemas, set `mapSchemas` instead.
@@ -205,13 +223,13 @@ repository** as a versioned migration, and let a migration tool such as
 `tentackle-sql:run` is for trying it out locally, not for rolling it out. Note also that a necessary
 migration is only a *warning* — the build stays green unless `validate` is set.
 
-The default output file is `migratemodel.sql` (`tentackle.migrateSqlFile`). Important parameters:
+The default output file is `migratemodel.sql` (parameter `sqlFileName`, property `tentackle.migrateSqlFile`). Important parameters:
 
 - `validate`: fail the build if any migration would be required (see the `validate` goal).
 - `failOnUnexpectedTables` (default `false`): fail if the database contains user tables that are
   neither in the model nor declared as `alienTables`. When `false`, such tables are only listed as a
   comment with the suggestion to add them to `<alienTables>` or remove them.
-- `loadModelFromClassPath`: migrate the model found on the classpath instead of the local model files
+- `loadModelFromClassPath` (`tentackle.loadModelFromClassPath`): migrate the model found on the classpath instead of the local model files
   (e.g., to migrate only the framework's tables). When set, the model files in the file sets are
   ignored; usually combined with `checkReservedTables=false`.
 - `useDropIfExists`: use `DROP ... IF EXISTS` for dropping indexes, constraints, and columns where the
@@ -368,14 +386,11 @@ mvn tentackle-sql:document -Dtentackle.backendNames=h2 -Dtentackle.docFormat=mar
 ```
 
 Never connects to a database — it only needs a `Backend` for its SQL-to-type mapping, not a connection —
-but because that mapping can differ between backends, at least one must be selected via `backendNames`,
-same as `create` (see [Backend selection](#backend-selection) above; `document` only supports the
-name-only form, not `backendProperties`/`backends`, since it never connects). Parameters (beyond the
-shared model-selection ones listed above):
-
-- `backendNames` (`tentackle.backendNames`): comma-separated list of backend names (or `all`/`none`/
-  `deprecated`) to render SQL types for. One self-contained page tree is generated per backend. No
-  default — like `create`, nothing is generated if it's left unset.
+but because that mapping can differ between backends, at least one must be selected, same as `create`
+(see [Backend selection](#backend-selection) above). Usually that is `backendNames`, but backends
+configured via `backendProperties` or `backends` for the other goals are documented as well. One
+self-contained page tree is generated per backend. There is no default — like `create`, nothing is
+generated if no backend is configured. Parameters (beyond the shared ones listed above):
 - `format` (`tentackle.docFormat`): the output format, `html` (default) or `markdown` (alias `md`),
   case-insensitive. See [Markdown output](#markdown-output) below.
 - `docDir` (`tentackle.docDir`): directory to create the pages in, for both formats. Defaults to
@@ -384,7 +399,7 @@ shared model-selection ones listed above):
   the maven project's name.
 - `loadModelFromClassPath` (`tentackle.loadModelFromClassPath`): also render entities from the model
   found on the classpath (e.g. a dependency's own model), so entities referenced from a dependency
-  aren't dead links.
+  aren't dead links. Unlike `migrate`, `document` loads the local model files as well.
 - `cssFile` (`tentackle.cssFile`): a project-specific stylesheet, copied verbatim to `style.css` in
   every backend's page tree. HTML only — ignored (with a warning) for `markdown`.
 

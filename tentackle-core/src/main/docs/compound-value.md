@@ -475,5 +475,3 @@ script when the condition earns it.
   `ValidatorCompoundValueFactory` are replaced.
 - [Model Definition](../../../../tentackle-model/src/main/docs/model-definition.md) — compound values in the model DSL.
 - [Check Maven Plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) — build-time validation of compound values.
-</content>
-</invoke>
