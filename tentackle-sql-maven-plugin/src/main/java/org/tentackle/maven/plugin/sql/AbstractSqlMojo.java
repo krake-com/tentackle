@@ -71,6 +71,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
@@ -79,6 +81,14 @@ import java.util.regex.Pattern;
  * @author harald
  */
 public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
+
+  /**
+   * Serializes the executions in parallel builds.<br>
+   * The model held by the {@link ModelManager} and the {@link NameVerifier} are singletons of the plugin's
+   * class realm, which is shared by all projects of a build. Each execution configures and loads the model
+   * (defaults, aliases, backends, clearing), so concurrent executions would corrupt each other.
+   */
+  private static final Lock MODEL_LOCK = new ReentrantLock();
 
   /**
    * Explicit filesets given instead of the model directory.
@@ -319,6 +329,11 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   protected Writer sqlWriter;
 
+
+  @Override
+  protected Lock getExecutionLock() {
+    return MODEL_LOCK;
+  }
 
   /**
    * Gets the entity model.

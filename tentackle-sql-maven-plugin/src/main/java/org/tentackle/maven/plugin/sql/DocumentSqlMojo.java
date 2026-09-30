@@ -44,7 +44,7 @@ import java.util.Locale;
  *
  * @author harald
  */
-@Mojo(name = "document", aggregator = true)
+@Mojo(name = "document", aggregator = true, threadSafe = true)
 public class DocumentSqlMojo extends AbstractSqlMojo {
 
   private static final String FORMAT_HTML = "html";

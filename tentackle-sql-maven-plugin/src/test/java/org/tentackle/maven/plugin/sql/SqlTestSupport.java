@@ -45,8 +45,8 @@ import java.util.List;
  * maven-plugin-testing-harness. They are driven through {@code prepareExecute()},
  * {@code validate()}, {@code executeImpl()} and {@code finishExecute()} rather than
  * {@code execute()}, because the latter also installs a global {@code java.util.logging} handler
- * (see {@code AbstractTentackleMojo#installJavaLoggingHandler}) which would reset the log
- * configuration of the whole test JVM.
+ * (see {@code AbstractTentackleMojo#installJavaLoggingHandler}) which would remove the root
+ * log handlers of the whole test JVM.
  */
 public final class SqlTestSupport {
 

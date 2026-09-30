@@ -60,7 +60,7 @@ import java.util.Map;
  * <p>
  * The mojos are never invoked through {@code execute()}, because that also installs a global
  * {@code java.util.logging} handler (see {@code AbstractTentackleMojo#installJavaLoggingHandler})
- * which would reset the log configuration of the whole test JVM.
+ * which would remove the root log handlers of the whole test JVM.
  * <p>
  * The two external tools are kept out of the tests altogether:
  * <ul>

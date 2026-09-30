@@ -34,10 +34,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 
 /**
  * Tests the plugin descriptor generated from the mojo annotations.
@@ -101,6 +103,22 @@ public class PluginDescriptorTest {
 
     assertEquals(text(mojo, "implementation"), mojoClass.getName());
     assertEquals(text(mojo, "aggregator"), "true");
+    assertEquals(text(mojo, "threadSafe"), "true", "goal " + goal + " is not thread-safe");
+  }
+
+  /**
+   * The goals working on the model share one lock, because the model is a singleton of the plugin's
+   * class realm. Hence, they are serialized in parallel builds.
+   */
+  @Test
+  public void modelGoalsShareExecutionLock() {
+    List<AbstractSqlMojo> mojos = List.of(new CreateSqlMojo(), new MigrateSqlMojo(), new ValidateSqlMojo(),
+                                          new RunSqlMojo(), new DocumentSqlMojo());
+    Lock lock = mojos.getFirst().getExecutionLock();
+    assertNotNull(lock);
+    for (AbstractSqlMojo mojo : mojos) {
+      assertSame(mojo.getExecutionLock(), lock, mojo.getClass().getName());
+    }
   }
 
   /**

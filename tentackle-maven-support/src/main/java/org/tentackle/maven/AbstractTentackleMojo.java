@@ -45,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
@@ -54,8 +55,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +68,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /** Name of the default JDK toolchain. */
   public static final String JDK_TOOLCHAIN = "jdk";
+
+  /** Guards the JVM-wide encoding settings. */
+  private static final Object ENCODING_LOCK = new Object();
+
+  /** The encoding charset set by {@link #determineEncoding()}. */
+  private static Charset encodingCharset;
+
+  /** The session that set {@link #encodingCharset}. Weak, because a daemon such as mvnd runs many sessions. */
+  private static WeakReference<MavenSession> encodingSessionRef;
 
 
   /**
@@ -216,12 +226,13 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Installs a java.util log handler that redirects to the maven logger.
+   * Installs a java.util log handler that redirects to the maven logger.<br>
+   * The handler is bound to the current thread until the execution finishes.
+   *
+   * @see MavenLogDispatcher
    */
   public void installJavaLoggingHandler() {
-    LogManager.getLogManager().reset();
-    LogManager.getLogManager().getLogger("")
-              .addHandler(new MavenLogHandler(getLogger(), Level.parse(minLogLevel)));
+    MavenLogDispatcher.install(new MavenLogHandler(getLogger(), Level.parse(minLogLevel)));
   }
 
   /**
@@ -393,6 +404,43 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     installJavaLoggingHandler();
+    try {
+      Lock lock = getExecutionLock();
+      if (lock == null) {
+        executeLifecycle();
+      }
+      else {
+        if (!lock.tryLock()) {
+          getLogger().info("waiting for concurrent execution to finish");
+          lock.lock();
+        }
+        try {
+          executeLifecycle();
+        }
+        finally {
+          lock.unlock();
+        }
+      }
+    }
+    finally {
+      MavenLogDispatcher.uninstall();
+    }
+  }
+
+  /**
+   * Gets the lock to serialize concurrent executions in parallel builds.<br>
+   * Mojos working on JVM-wide state that cannot be made thread-safe otherwise, such as singletons of
+   * the plugin's class realm, return a lock shared by all their instances. The lock is held while
+   * {@link #prepareExecute()}, {@link #validate()}, {@link #executeImpl()} and {@link #finishExecute()}
+   * are invoked.
+   *
+   * @return the lock, null if executions may run concurrently (default)
+   */
+  protected Lock getExecutionLock() {
+    return null;
+  }
+
+  private void executeLifecycle() throws MojoExecutionException, MojoFailureException {
     prepareExecute();
     if (validate()) {
       executeImpl();
@@ -434,13 +482,27 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Determines the encoding charset.
+   * Determines the encoding charset.<br>
+   * The charset is held in static settings, i.e. JVM-wide. Therefore, all projects
+   * of a parallel build must use the same charset.
+   *
+   * @throws MojoExecutionException if the charset conflicts with the one of a concurrent execution
    */
-  public void determineEncoding() {
+  public void determineEncoding() throws MojoExecutionException {
     if (charset != null) {
       Charset cs = Charset.forName(charset);
-      Settings.setEncodingCharset(cs);
-      org.wurbelizer.misc.Settings.setEncodingCharset(cs);
+      synchronized (ENCODING_LOCK) {
+        MavenSession encodingSession = encodingSessionRef == null ? null : encodingSessionRef.get();
+        if (encodingSession == mavenSession && mavenSession != null && mavenSession.isParallel() &&
+            encodingCharset != null && !encodingCharset.equals(cs)) {
+          throw new MojoExecutionException("conflicting encodings in parallel build: " + cs.name() +
+                                           " requested, but " + encodingCharset.name() + " already in use");
+        }
+        Settings.setEncodingCharset(cs);
+        org.wurbelizer.misc.Settings.setEncodingCharset(cs);
+        encodingCharset = cs;
+        encodingSessionRef = new WeakReference<>(mavenSession);
+      }
     }
   }
 

@@ -68,7 +68,7 @@ import java.util.TreeMap;
  *
  * @author harald
  */
-@Mojo(name = "migrate", aggregator = true)
+@Mojo(name = "migrate", aggregator = true, threadSafe = true)
 public class MigrateSqlMojo extends AbstractSqlMojo {
 
   private static final String DEFAULT_SCHEMA = "<default>";     // default schema name

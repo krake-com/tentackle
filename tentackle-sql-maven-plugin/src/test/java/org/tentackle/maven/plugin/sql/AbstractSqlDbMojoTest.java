@@ -139,8 +139,8 @@ public abstract class AbstractSqlDbMojoTest {
 
   /**
    * Runs a mojo the way {@code execute()} would, minus the global logging handler (see
-   * {@code AbstractTentackleMojo#installJavaLoggingHandler}, which would reset the whole test
-   * JVM's logging config).
+   * {@code AbstractTentackleMojo#installJavaLoggingHandler}, which would remove the root log
+   * handlers of the whole test JVM).
    *
    * @param mojo the mojo
    * @throws Exception whatever the goal threw

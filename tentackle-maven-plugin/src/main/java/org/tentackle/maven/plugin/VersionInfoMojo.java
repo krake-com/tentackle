@@ -32,6 +32,7 @@ import org.eclipse.aether.graph.DependencyNode;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.ProjectDependencies;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,7 +87,8 @@ import java.util.stream.Collectors;
 @Mojo(name = "versions",
       aggregator = true,
       defaultPhase = LifecyclePhase.VALIDATE,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.COMPILE,
+      threadSafe = true)
 public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
   /**
@@ -111,7 +113,8 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
     if (getMavenSession().getTopLevelProject().equals(getMavenProject())) {
 
-      List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
+      // copy: the collected projects are shared with other threads
+      List<MavenProject> allProjects = new ArrayList<>(getMavenProject().getCollectedProjects());
       if (allProjects.isEmpty()) {
         allProjects.add(getMavenProject());
       }

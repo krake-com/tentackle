@@ -43,7 +43,7 @@ import java.util.Collection;
  *   mvn tentackle-sql:run -Dscript=src/sql/myscript.sql
  * </pre>
  */
-@Mojo(name = "run", aggregator = true)
+@Mojo(name = "run", aggregator = true, threadSafe = true)
 public class RunSqlMojo extends AbstractSqlMojo {
   // extending AbstractSqlMojo to inherit the backend configuration which is usually the same as for the migrate-goal
 

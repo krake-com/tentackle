@@ -29,6 +29,7 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.resolution.VersionRequest;
 import org.eclipse.aether.resolution.VersionResolutionException;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,7 +63,8 @@ import java.util.Set;
  */
 @Mojo(name = "plugin-versions",
       aggregator = true,
-      defaultPhase = LifecyclePhase.VALIDATE)
+      defaultPhase = LifecyclePhase.VALIDATE,
+      threadSafe = true)
 public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
 
   @Override
@@ -70,7 +72,8 @@ public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
 
     if (getMavenSession().getTopLevelProject().equals(getMavenProject())) {
 
-      List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
+      // copy: the collected projects are shared with other threads
+      List<MavenProject> allProjects = new ArrayList<>(getMavenProject().getCollectedProjects());
       if (allProjects.isEmpty()) {
         allProjects.add(getMavenProject());
       }

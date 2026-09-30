@@ -51,7 +51,7 @@ import java.util.Set;
  *
  * @author harald
  */
-@Mojo(name = "create", aggregator = true)
+@Mojo(name = "create", aggregator = true, threadSafe = true)
 public class CreateSqlMojo extends AbstractSqlMojo {
 
   /**

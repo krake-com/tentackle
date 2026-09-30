@@ -68,7 +68,7 @@ import java.util.StringTokenizer;
  *
  * @author harald
  */
-@Mojo(name = "reveng", aggregator = true)
+@Mojo(name = "reveng", aggregator = true, threadSafe = true)
 public class RevengMojo extends AbstractTentackleMojo {
 
   /**
