@@ -106,7 +106,7 @@ public final class ModuleSorter {
       Enumeration<URL> urls = getClass().getClassLoader().getResources(Constants.META_SERVICE_PATH + ClasspathFirst.class.getName());
       while (urls.hasMoreElements()) {
         URL url = urls.nextElement();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), StandardCharsets.UTF_8))) {
           String line;
           while ((line = reader.readLine()) != null) {
             classpathFirstServices.add(line);

@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -218,6 +219,23 @@ public class FileHelper {
       }
       return outputStream.toByteArray();
     }
+  }
+
+  /**
+   * Opens an input stream for a URL without using the JVM-wide URL cache.<br>
+   * For {@code jar:} URLs, the JDK shares a cached {@link java.util.jar.JarFile} among all classloaders.
+   * If one of them is closed, for example, a Maven class realm disposed by a concurrent build thread,
+   * the cached file is closed as well, and streams opened via {@link URL#openStream()} by others fail.
+   * This is the same approach as in {@link java.util.ServiceLoader}.
+   *
+   * @param url the URL
+   * @return the input stream
+   * @throws IOException if failed
+   */
+  public static InputStream openStreamUncached(URL url) throws IOException {
+    URLConnection connection = url.openConnection();
+    connection.setUseCaches(false);
+    return connection.getInputStream();
   }
 
   /**

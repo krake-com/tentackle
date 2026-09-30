@@ -689,6 +689,24 @@ offending attribute, relation or datatype.
 
 ---
 
+## Thread Safety
+
+`ModelWurblet`, `DTOWurblet`, `IncludeWurblet` and the `Inject` wurblet override `Wurblet.isThreadSafe()` with
+`WurbletThreadSafety.isIsolated(getClass())`. It returns `true` only if the wurblet class was loaded by the
+wurblet classloader of the current wurbel run (`WurbelContext.current().getWurbletClassLoader()`). That is the
+case when the wurblets are declared as `<wurbletDependencies>` of the `wurbelizer-maven-plugin`, which creates a
+separate class realm for each execution. The realm holds its own copies of the realm-wide singletons that are
+not thread-safe: the `Model` of `Model.getInstance()`/`ModelManager`, the package cache of
+`determinePackageName`, `JoinPathFactory`, `BackendFactory`, `NamingRules` and Tentackle's `Settings`. If the
+wurblets are loaded by the plugin's classloader instead, those singletons are shared by all concurrent
+executions, and the wurblets run sequentially.
+
+Custom wurblets extending one of these base classes inherit this behavior. They must not keep mutable state
+outside their classloader, for example in system properties or in classes of the wurbelizer core. Otherwise,
+override `isThreadSafe()` to return `false`. See [Parallel builds](wurblets.md#parallel-builds).
+
+---
+
 ## Extending the Package
 
 - **A custom model wurblet.** Write a `.wrbl` that starts with `@{extends ModelWurblet}@` (or include

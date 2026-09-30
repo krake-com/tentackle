@@ -92,6 +92,26 @@ Some wurblets declare `@{phase 2}` (e.g. [`ModelComment`](#the-wurblets) and
 generation. This matters when a generated comment or nested type needs constants or members emitted earlier in the
 same file.
 
+### Parallel builds
+
+The `wurbelizer-maven-plugin` runs only wurblets that declare themselves thread-safe concurrently
+(`Wurblet.isThreadSafe()`). All other wurblets run one at a time within the JVM. The Tentackle wurblets
+keep their state in singletons, most notably the model, which is not thread-safe. They are safe to run
+concurrently anyway, as long as each wurbel run loads them in its own classloader:
+
+- If the wurblets are declared via `<wurbletDependencies>` (as in the
+  [archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) and all
+  Tentackle modules), the plugin creates a separate class realm for each execution. Each execution therefore
+  gets its own model, caches and factories. Because an execution processes its sources sequentially, no two
+  threads ever share them. The wurblets run concurrently in `mvn -T` builds.
+- If the wurblets are loaded by the plugin's own classloader instead (for example, declared as plugin
+  `<dependencies>`), all executions of the build share the singletons. The wurblets then fall back to
+  sequential execution.
+
+The check is implemented by `WurbletThreadSafety.isIsolated(Class)`, which the base classes `ModelWurblet`,
+`DTOWurblet` and `IncludeWurblet` use in `isThreadSafe()`. See the
+[Wurblet API](wurblet-api.md#thread-safety) for custom wurblets.
+
 ---
 
 ## The Wurblets

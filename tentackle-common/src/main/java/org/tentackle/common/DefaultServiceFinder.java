@@ -424,7 +424,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @param services the implementing services map
    */
   protected void parseURL(URL url, String serviceName, Map<String, URL> services) {
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = normalizeLine(line);

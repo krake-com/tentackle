@@ -26,6 +26,11 @@ Example:
 </pre>
 }@
 @[
+  @Override
+  public boolean isThreadSafe() {
+    return WurbletThreadSafety.isIsolated(getClass());
+  }
+
   private void wurbel() {
     StringBuilder text = new StringBuilder();
     boolean asString = false;

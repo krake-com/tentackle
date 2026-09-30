@@ -625,7 +625,7 @@ public class ServiceFactory {
       if (urls.hasMoreElements()) {
         // we take only the first
         URL url = urls.nextElement();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url)))) {
           String line;
           while ((line = reader.readLine()) != null) {
             if (!line.startsWith("#")) {

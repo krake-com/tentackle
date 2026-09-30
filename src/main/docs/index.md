@@ -171,6 +171,7 @@ topic-grouped listing of every document, see the
 
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser), [AI Agent Tooling Support](./ai-agents.md#java-code-from-the-database-tentackle-wizardbrowse-in-batch-mode)
+- **Parallel builds (`mvn -T`, thread-safe wurblets)** — [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **PKCE (authorization code flow with proof key)** — [Single Sign-On with Google](./google-sso.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)

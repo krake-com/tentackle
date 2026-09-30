@@ -265,6 +265,18 @@ public class DTOWurblet extends AbstractJavaWurblet {
     super();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Thread-safe if loaded by the wurblet classloader of the current wurbel run.
+   *
+   * @see WurbletThreadSafety#isIsolated(Class)
+   */
+  @Override
+  public boolean isThreadSafe() {
+    return WurbletThreadSafety.isIsolated(getClass());
+  }
+
   @Override
   public void run() throws WurbelException {
     super.run();

@@ -20,6 +20,7 @@ package org.tentackle.model.impl;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.FileHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.Settings;
@@ -1496,7 +1497,7 @@ public class ModelImpl implements Model {
    */
   protected Reader createReader(URL url) throws ModelException {
     try {
-      return new BufferedReader(new InputStreamReader(url.openStream(), Settings.getEncodingCharset()));
+      return new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), Settings.getEncodingCharset()));
     }
     catch (IOException ex) {
       throw new ModelException("cannot open reader for " + url, ex);

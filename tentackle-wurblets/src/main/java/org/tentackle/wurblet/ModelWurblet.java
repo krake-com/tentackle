@@ -672,6 +672,18 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /**
    * {@inheritDoc}
    * <p>
+   * Thread-safe if loaded by the wurblet classloader of the current wurbel run.
+   *
+   * @see WurbletThreadSafety#isIsolated(Class)
+   */
+  @Override
+  public boolean isThreadSafe() {
+    return WurbletThreadSafety.isIsolated(getClass());
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
    * Overridden to load the map file.
    *
    * @throws WurbelException if running the wurblet failed

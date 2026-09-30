@@ -92,6 +92,10 @@ follow relation paths) and `groupArgs` (the update wurblets accept a second grou
 Each of these methods — and the rest of `DbModelWurblet`'s API — is documented in
 [The Persistence Wurblet API](persistence-wurblet-api.md#dbmodelwurblet).
 
+Like all Tentackle wurblets, the persistence wurblets inherit `isThreadSafe()` from `ModelWurblet`. They run
+concurrently in parallel builds when declared as `<wurbletDependencies>`; see
+[Parallel builds](../../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds).
+
 ---
 
 ## The Wurblets
