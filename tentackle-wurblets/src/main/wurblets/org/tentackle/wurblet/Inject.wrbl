@@ -26,7 +26,7 @@ Example:
 </pre>
 }@
 @[
-  @Override
+  \@Override
   public boolean isThreadSafe() {
     return WurbletThreadSafety.isIsolated(getClass());
   }
