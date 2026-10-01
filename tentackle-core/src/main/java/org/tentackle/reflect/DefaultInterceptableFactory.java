@@ -25,7 +25,8 @@ import org.tentackle.common.Service;
 import org.tentackle.common.TentackleRuntimeException;
 
 /**
- * Default implementation of an InterceptableFactory.
+ * Default implementation of an {@link InterceptableFactory}.<br>
+ * Creates a dynamic proxy with an {@link InterceptableInvocationHandler}.
  *
  * @author harald
  */

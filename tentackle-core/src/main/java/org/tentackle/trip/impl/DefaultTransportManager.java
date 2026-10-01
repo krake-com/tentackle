@@ -29,7 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Default implementation of a {@link TransportManager}.
+ * Default implementation of a {@link TransportManager}.<br>
+ * Transports are leased: each request increments a lease counter, each release decrements it.
+ * The transport is closed when the last lease is released.
  */
 public class DefaultTransportManager implements TransportManager {
 

@@ -50,6 +50,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Base class for transport implementations.
+ * <p>
+ * A transport is either used in client mode (via {@link #getConnection()}) or in server mode
+ * (via {@link #accept()}), never both. In server mode, incoming connections are read in virtual threads,
+ * whereas the remote calls are executed in a pool of regular threads whose idle timeout is set by the URI
+ * query parameter {@code idle} in minutes (default 5).
  */
 public abstract class AbstractTransport implements Transport {
 
@@ -84,7 +89,7 @@ public abstract class AbstractTransport implements Transport {
    * If this was the only connection, the dictionary is removed from this map, and a
    * new dictionary is created when the session is re-established.<br>
    * If TRIP is used by other applications, some similar reconnection mechanism must be implemented as well.<br>
-   * See also {@code ConnectionHandler:239 → "no such dictionary … (stale client transport?)"}.
+   * See also the message "no such dictionary … (stale client transport?)" logged by the {@link ConnectionHandler}.
    */
   private WeakHashMap<UUID, WeakReference<Dictionary>> dictionariesById;
 
@@ -265,7 +270,8 @@ public abstract class AbstractTransport implements Transport {
   }
 
   /**
-   * Gets the URI query parameters.
+   * Gets the URI query parameters.<br>
+   * Only parameters with integer values are included.
    *
    * @return a map of key-value pairs
    */

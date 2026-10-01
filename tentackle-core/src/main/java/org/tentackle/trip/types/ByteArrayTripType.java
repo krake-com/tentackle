@@ -35,7 +35,7 @@ interface ByteTypeHolder {
 
 
 /**
- * Trip type for {@link Byte[]} array.
+ * Trip type for {@code Byte[]} array.
  */
 @TripTypeService(Byte[].class)
 public final class ByteArrayTripType extends AbstractPredefinedArrayTripType<Byte[]> {

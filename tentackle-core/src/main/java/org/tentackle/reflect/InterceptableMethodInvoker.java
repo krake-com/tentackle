@@ -30,6 +30,9 @@ import java.util.Collection;
  * Invoker for {@link InterceptableMethod}s.<br>
  * Optionally logs and counts method invocations.<br>
  * There is one invoker per interceptable type, e.g. PDO, Operation, etc...
+ * <p>
+ * Invocations exceeding the minimum duration or returning collections exceeding the minimum size
+ * are logged as warnings. If logging invocations is enabled, all other invocations are logged as info.
  */
 public class InterceptableMethodInvoker extends MethodStatistics {
 
@@ -150,7 +153,9 @@ public class InterceptableMethodInvoker extends MethodStatistics {
   }
 
   /**
-   * Sets whether args and return values will be logged as well.
+   * Sets whether args and return values will be logged as well.<br>
+   * Applies to invocations logged because of {@link #setLoggingInvocations(boolean)},
+   * {@link #setLogMinDurationMillis(long)} or {@link #setLogMinReturnedCollectionSize(int)}.
    *
    * @param logInvocationDetails true if log args and retval
    */
@@ -226,6 +231,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @param level the logging level
    * @param clear true if clear statistics after dump
+   * @see #setCollectingStatistics(boolean)
    */
   public void logStatistics(Logger.Level level, boolean clear) {
     logStatistics(toString(), level, "    >" + name + "-Stats: ", clear);
@@ -233,13 +239,13 @@ public class InterceptableMethodInvoker extends MethodStatistics {
 
 
   /**
-   * Logs the invocation.
+   * Logs the invocation and counts it for the statistics, if enabled.
    *
    * @param delegate the delegate to invoke the method on
    * @param method the method executed
    * @param args the method args
    * @param retval the method's return value
-   * @param timeKeeper the duration when execution was started
+   * @param timeKeeper the duration of the execution
    */
   protected void log(Object delegate, Method method, Object[] args, Object retval, TimeKeeper timeKeeper) {
 
@@ -264,7 +270,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
         return buf.toString();
       });
     }
-    else if (logInvocationDetails) {
+    else if (logInvocations) {
       LOGGER.info(() -> createInvocationLog(delegate, method, args, retval, timeKeeper, collectionSize).toString());
     }
   }

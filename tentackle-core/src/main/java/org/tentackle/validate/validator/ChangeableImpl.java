@@ -92,7 +92,7 @@ public final class ChangeableImpl extends AbstractValidator<Changeable> implemen
   /**
    * {@inheritDoc}
    * <p>
-   * If the annotation has a condition set, the mandatory property is dynamic.
+   * If the annotation has a condition set, the changeable property is dynamic.
    */
   @Override
   public boolean isChangeableDynamic() {
@@ -102,7 +102,10 @@ public final class ChangeableImpl extends AbstractValidator<Changeable> implemen
   /**
    * {@inheritDoc}
    * <p>
-   * @return true if no condition or condition is valid
+   * The element is changeable if the value is empty or evaluates to {@code true}, and the condition,
+   * if any, is met.
+   *
+   * @return true if changeable
    */
   @Override
   public boolean isChangeable(ValidationContext validationContext) {

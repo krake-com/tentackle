@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 
 /**
  * The annotated element must be null.
-
+ *
  * @author harald
  */
 @Target({ElementType.METHOD, ElementType.FIELD})
@@ -91,7 +91,7 @@ public @interface Null {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 

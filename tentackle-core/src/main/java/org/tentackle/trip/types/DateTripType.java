@@ -37,7 +37,7 @@ import static java.util.Calendar.YEAR;
 /**
  * Trip type for {@link Date}.
  * <p>
- * Dates are treated as value objects and thus not referencable.
+ * Dates are treated as value objects and thus not referenceable.
  * In Tentackle, org.tentackle.common.Dates are usually frozen, but java.util.Dates are
  * mutable and therefore technically no real value objects. However, since it is very bad practice to modify
  * such objects or share their references, we treat them as non-referenceable value objects.

@@ -24,7 +24,8 @@ import org.tentackle.validate.Validator;
 import java.io.Serial;
 
 /**
- * Simple informational result.
+ * Simple informational result.<br>
+ * Created by the {@link MinorSeverity}. Provides a message, but does not fail.
  *
  * @author harald
  */

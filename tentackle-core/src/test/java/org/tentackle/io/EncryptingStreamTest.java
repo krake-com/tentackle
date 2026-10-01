@@ -54,6 +54,16 @@ public class EncryptingStreamTest {
     }
   }
 
+  /**
+   * A full buffer of the maximum size grows beyond the maximum packet size when encrypted.
+   * This must fail instead of writing a corrupt packet header.
+   */
+  @Test
+  public void testEncryptedPacketTooLarge() {
+    byte[] data = new byte[65535];
+    assertThrows(IOException.class, () -> roundTrip(data, 65535));
+  }
+
   @Test
   public void testShortPayloadRoundTrip() throws IOException {
     byte[] data = "secret message".getBytes(StandardCharsets.US_ASCII);

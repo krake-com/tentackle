@@ -23,7 +23,7 @@ import org.tentackle.log.Logger.Level;
 
 /**
  * A logging runnable.<br>
- * Logs start and duration times.
+ * Wraps a runnable and logs its start and duration, if the level is loggable.
  *
  * @author harald
  */

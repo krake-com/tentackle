@@ -30,7 +30,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The default type builder factory.
+ * The default type builder factory.<br>
+ * Multidimensional arrays are built by the builder for {@code Object[]}, dynamic proxies by the one for
+ * {@link java.lang.reflect.Proxy}. If no builder is found, the {@link ObjectTypeBuilder} is used.
+ * The builders are cached per class.
  *
  * @author harald
  */

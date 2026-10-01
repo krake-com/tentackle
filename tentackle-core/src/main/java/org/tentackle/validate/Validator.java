@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * A validator.
  * <p>
- * IMPORTANT: validators are cached and created only once per class and annotation.
+ * IMPORTANT: validators are cached and created only once per annotated element and annotation.
  * Therefore, validators MUST NOT maintain any state beyond their initial configuration!
  * State values are passed via {@link ValidationContext}.
  *
@@ -63,7 +63,7 @@ public interface Validator {
    * The error code is used to identify the error by a unique
    * code instead of some message string.
    *
-   * @return the error code
+   * @return the error code, empty if none
    */
   String getErrorCode();
 
@@ -162,8 +162,8 @@ public interface Validator {
   /**
    * Validates the validator's configuration.<br>
    * Checks the references and parses the scripts, if any.
-   * <p>
-   * Throws a {@link ValidationRuntimeException}, if failed.
+   *
+   * @throws ValidationRuntimeException if the configuration is invalid
    */
   void validate();
 

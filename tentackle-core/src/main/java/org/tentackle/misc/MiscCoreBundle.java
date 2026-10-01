@@ -25,7 +25,7 @@ import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 
 /**
- * Bundle for misc-package in tentackle-core.
+ * Bundle for the misc package in tentackle-core.
  *
  * @author harald
  */
@@ -43,9 +43,10 @@ public class MiscCoreBundle {
   }
 
   /**
-   * Gets the bundle.
+   * Gets the bundle for the current locale.
    *
    * @return the resource bundle
+   * @see LocaleProvider
    */
   public static ResourceBundle getBundle() {
     return getBundle(LocaleProvider.getInstance().getLocale());
@@ -53,7 +54,7 @@ public class MiscCoreBundle {
 
 
   /**
-   * Gets a string for the given key.
+   * Gets a string for the given key and the current locale.
    *
    * @param key the key
    * @return the string from the bundle

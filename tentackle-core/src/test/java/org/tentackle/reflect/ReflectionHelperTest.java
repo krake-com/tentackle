@@ -41,6 +41,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 import static org.testng.Assert.fail;
 
 /**
@@ -206,6 +207,8 @@ public class ReflectionHelperTest {
     assertEquals(ReflectionHelper.makeDeclareString("[S"), "short[]");
     // non-array names are returned unchanged
     assertEquals(ReflectionHelper.makeDeclareString("java.lang.String"), "java.lang.String");
+    assertEquals(ReflectionHelper.makeDeclareString(String[].class.getName()), "java.lang.String[]");
+    assertEquals(ReflectionHelper.makeDeclareString(String[][].class.getName()), "java.lang.String[][]");
   }
 
 
@@ -640,6 +643,25 @@ public class ReflectionHelperTest {
   public void testGetStaticValueByPath() {
     // Bean.create() returns a Bean whose name is "created"
     assertEquals(ReflectionHelper.getStaticValueByPath(Bean.class, "create.name"), "created");
+  }
+
+  @SuppressWarnings("unused")
+  public static class StaticHolder {
+    public static final Bean BEAN = Bean.create();
+    private StaticHolder() {}
+  }
+
+  @Test
+  public void testGetStaticValueByPathField() {
+    assertSame(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN"), StaticHolder.BEAN);
+    assertEquals(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN.name"), "created");
+  }
+
+  @Test
+  public void testGetStaticValueByPathNoSuchMember() {
+    TentackleRuntimeException ex = expectThrows(TentackleRuntimeException.class,
+        () -> ReflectionHelper.getStaticValueByPath(Bean.class, "doesNotExist"));
+    assertTrue(ex.getMessage().contains("doesNotExist"), ex.getMessage());
   }
 
   @Test

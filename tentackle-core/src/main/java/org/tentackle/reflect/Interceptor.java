@@ -27,8 +27,11 @@ import java.lang.reflect.InvocationHandler;
  * Interceptors may be chained. Only one interceptor should invoke
  * the intercepted method.
  * <p>
- * IMPORTANT: interceptors are cached and created only once per class and annotation.
- * Therefore, interceptors MUST NOT maintain any state!<br>
+ * IMPORTANT: interceptors are cached and created only once per class and method.
+ * Therefore, interceptors MUST NOT maintain any state!
+ *
+ * @see Interception
+ * @see AbstractInterceptor
  */
 public interface Interceptor extends InvocationHandler {
 
@@ -47,7 +50,8 @@ public interface Interceptor extends InvocationHandler {
   Annotation getAnnotation();
 
   /**
-   * Sets the chained interceptor.
+   * Sets the chained interceptor.<br>
+   * The chained interceptor is invoked instead of the intercepted method.
    *
    * @param chainedInterceptor the chained interceptor
    */

@@ -36,12 +36,13 @@ co-exist independently and Tentackle stores its nodes **in the database**. Becau
 `PersistedPreferences` can also act as a drop-in `PreferencesFactory`, even third-party code that
 talks to the standard preferences API can be redirected onto the database store.
 
-Two implementations ship in the box:
+Tentackle core itself registers no factory: the implementation must come from the database module
+or from the application. Two implementations ship in the box:
 
 | Implementation | Backing store | Use when |
 |----------------|---------------|----------|
 | [`DbPreferences`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/prefs/DbPreferences.java) + [`DbPreferencesFactory`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/prefs/DbPreferencesFactory.java) (in [`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md)) | the application database (tables `prefnode` / `prefkey`) | the default — settings roam with the user across clients ([see below](#the-database-implementation-dbpreferences)) |
-| [`DefaultPreferences`](../java/org/tentackle/prefs/DefaultPreferences.java) + [`DefaultPreferencesFactory`](../java/org/tentackle/prefs/DefaultPreferencesFactory.java) | the JDK's `java.util.prefs` | you want the plain local store (registry / files) and *no* database persistence |
+| [`DefaultPreferences`](../java/org/tentackle/prefs/DefaultPreferences.java) + [`DefaultPreferencesFactory`](../java/org/tentackle/prefs/DefaultPreferencesFactory.java) | the JDK's `java.util.prefs` | you want the plain local store (registry / files) and *no* database persistence; auto-sync and read-only are just stored, not supported |
 
 To force the local JDK store, extend `DefaultPreferencesFactory` and register it as a service:
 
@@ -58,8 +59,9 @@ public class JavaUtilPreferencesFactory extends DefaultPreferencesFactory {
 
 [`CompositePreferences`](../java/org/tentackle/prefs/CompositePreferences.java) combines the system
 and user trees so that **user settings override system defaults** — the behavior most applications
-want. It also adds convenience for exporting and importing via file dialogs. It is `abstract`: an
-application extends it to obtain its own namespace (derived from the class name).
+want. It adds typed getters and setters (`getInteger`/`getInt`, `getALong`/`getLong`, …, byte arrays).
+It is `abstract`: an application extends it to obtain its own namespace — the nodes of the subclass's
+package (`userNodeForPackage`/`systemNodeForPackage`).
 
 The shadowing works in both directions:
 

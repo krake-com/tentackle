@@ -275,6 +275,50 @@ public class AbstractBindingTest {
   }
 
 
+  /**
+   * The binder's to-model listeners are fired regardless of its to-view listeners.
+   */
+  @Test
+  public void testBinderToModelVeto() {
+    Model model = new Model();
+    model.setName("model-value");
+    Binder binder = newBinder();
+    binder.addToModelListener(_ -> {
+      throw new BindingVetoException("binder says no");
+    });
+    TestBinding binding = new TestBinding(binder, null, nameMember(), model);
+    binding.setModelValue("view-value");
+    assertEquals(model.getName(), "model-value");           // vetoed by the binder
+  }
+
+  /**
+   * The binder's to-view listeners alone must not break the update of the model.
+   */
+  @Test
+  public void testBinderToViewListenerOnly() {
+    Model model = new Model();
+    Binder binder = newBinder();
+    binder.addToViewListener(_ -> { });
+    TestBinding binding = new TestBinding(binder, null, nameMember(), model);
+    binding.setModelValue("view-value");
+    assertEquals(model.getName(), "view-value");
+  }
+
+  @Test
+  public void testToViewVetoWithResyncUpdatesModel() {
+    Model model = new Model();
+    model.setName("model-value");
+    TestBinding binding = new TestBinding(newBinder(), null, nameMember(), model);
+    binding.updateView("view-value");       // the view shows something else
+    binding.addToViewListener(_ -> {
+      throw new BindingVetoException("resync", true);
+    });
+    binding.setViewValue("model-value");
+    assertEquals(binding.getViewValue(), "view-value");     // view unchanged
+    assertEquals(model.getName(), "view-value");            // model resynced from view
+  }
+
+
   // ---- from-method parent walk -------------------------------------------
 
   @Test

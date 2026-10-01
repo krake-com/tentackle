@@ -26,7 +26,8 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
 
 /**
- * Error handler to add a missing zone offset.
+ * Error handler to add a missing zone offset.<br>
+ * Appends the current default offset.
  */
 public class MissingOffsetHandler implements SmartDateTimeParser.ErrorHandler {
 

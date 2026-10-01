@@ -33,8 +33,9 @@ import java.lang.annotation.Target;
 /**
  * The annotated element must be 0 (zero).
  * <p>
- * Essentially the same as @Equal("0") but <code>null</code> elements are considered invalid.
-
+ * Supported are all {@link Number}s. The scale of decimal numbers does not matter.<br>
+ * <code>null</code> elements are considered valid, unless {@code ignoreNulls=false}.
+ *
  * @author harald
  */
 @Target({ElementType.METHOD, ElementType.FIELD})
@@ -93,14 +94,14 @@ public @interface Zero {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "zero"
+   * @return true if ignore nulls (default), false to treat nulls as invalid
    */
   boolean ignoreNulls() default true;
 

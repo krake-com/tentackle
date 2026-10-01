@@ -28,8 +28,9 @@ import java.lang.reflect.Method;
 /**
  * A reflective visitor to add application-specific functionality to existing objects.
  * <p>
- * The effective visit method for the concrete persistence class is determined by reflection.
+ * The effective visit method for the concrete class of the visited object is determined by reflection.
  * The most specific method will be used, which allows to use a method for a class hierarchy.
+ * The methods found are cached per visitor class and visited class.
  *
  * @author harald
  */
@@ -59,9 +60,11 @@ public abstract class ReflectiveVisitor {
    * Notice: do not <em>override</em> this method!
    *
    * @param visitedObject the visited object
-   * @param types optional parameters
-   * @param args optional arguments according to types
+   * @param types the parameter types of the visit method. The first element is a placeholder
+   *              for the visited object's class and will be replaced by its effective class.
+   * @param args the arguments of the visit method according to types, the first being the visited object
    * @throws NoSuchMethodException if no type specific implementation could be found
+   * @throws TentackleRuntimeException if the visit method threw a checked exception
    */
   public void visit(Object visitedObject, Class<?>[] types, Object... args) throws NoSuchMethodException {
 
@@ -93,30 +96,31 @@ public abstract class ReflectiveVisitor {
 
 
   /**
-   * Finds the most specific overloaded method for a given class and method arguments.
+   * Finds the most specific overloaded method for a given class and method arguments.<br>
+   * The visited class and its superclasses are tried until a matching visit method is found.
    *
    * @param visitedClass the class to visit
-   * @param types the method arguments
+   * @param types the parameter types of the visit method, the first element is replaced by the visited class
    * @return the method, null if no such method
    */
   protected Method findBestMethod(Class<?> visitedClass, Class<?>[] types) {
-    Method method = null;
-    Class<?> clazz = visitedClass;
-    while (clazz != null && isImplementedClass(clazz)) {
-      method = METHOD_CACHE.getMethod(getClass(), types);
-      if (method == null) {
+    types[0] = visitedClass;
+    Method method = METHOD_CACHE.getMethod(getClass(), types);
+    if (method == null) {
+      Class<?>[] searchTypes = types.clone();   // don't modify the caller's array while searching
+      Class<?> clazz = visitedClass;
+      while (clazz != null && isImplementedClass(clazz)) {
+        searchTypes[0] = clazz;
         try {
-          types[0] = clazz;
-          method = findVisitMethod(types);
-          types[0] = visitedClass;
-          METHOD_CACHE.addMethod(method, getClass(), types);
+          method = findVisitMethod(searchTypes);
+          // the key must not refer to the caller's array, which may be modified later
+          METHOD_CACHE.addMethod(method, getClass(), types.clone());
+          break;
         }
         catch (NoSuchMethodException nme) {
           clazz = clazz.getSuperclass();
-          continue;
         }
       }
-      break;
     }
     return method;
   }
@@ -135,7 +139,7 @@ public abstract class ReflectiveVisitor {
 
 
   /**
-   * Checks whether a class is potentially implemented by a visit-method.<br>
+   * Checks whether a class is potentially implemented by a visit method.<br>
    * The default implementation returns true.
    *
    * @param clazz the class to test
@@ -147,7 +151,9 @@ public abstract class ReflectiveVisitor {
 
 
   /**
-   * Handles the invocation exception.
+   * Handles the invocation exception.<br>
+   * Invoked for checked exceptions thrown by the visit method and for illegal access.
+   * Runtime exceptions thrown by the visit method are passed to the caller unchanged.
    * <p>
    * The default implementation throws a {@link TentackleRuntimeException}.
    *

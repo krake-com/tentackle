@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -41,11 +42,14 @@ public class UriHelper {
 
 
   /**
-   * Gets a map of key-value pairs from a URI's query string.
+   * Gets a map of key-value pairs from a URI's query string.<br>
+   * The values are not URL-decoded. Pairs not of the form {@code key=value} and values
+   * that cannot be converted are ignored.
    *
-   * @param query the query string
+   * @param <T> the value type
+   * @param query the query string, may be null
    * @param converter the converter from strings to values
-   * @return the map of query parameters
+   * @return the map of query parameters, never null
    */
   public static <T> Map<String, T> getQueryParameters(String query, Function<String, T> converter) {
     Map<String, T> map = new HashMap<>();
@@ -201,7 +205,7 @@ public class UriHelper {
    * @return the variable's value, never null
    */
   private static String resolve(String name, URI base, String value) {
-    String result = switch (name.toLowerCase()) {
+    String result = switch (name.toLowerCase(Locale.ROOT)) {
       case "scheme"    -> base.getScheme();
       case "userinfo"  -> base.getRawUserInfo();
       case "host"      -> base.getHost();

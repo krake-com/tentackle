@@ -18,5 +18,10 @@
 
 /**
  * Validation API.
+ * <p>
+ * Annotation-driven, scope- and severity-aware validation of plain objects.
+ * The entry point is the {@link org.tentackle.validate.ValidationUtilities}.
+ * Constraint annotations are linked to their {@link org.tentackle.validate.Validator}s via
+ * &#64;{@link org.tentackle.validate.Validation}.
  */
 package org.tentackle.validate;

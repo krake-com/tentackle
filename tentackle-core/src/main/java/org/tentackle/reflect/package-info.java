@@ -18,5 +18,10 @@
 
 /**
  * Reflection support.
+ * <p>
+ * Class mapping behind &#64;{@link org.tentackle.common.MappedService} ({@link org.tentackle.reflect.ClassMapper}),
+ * the mixins behind dynamic proxies ({@link org.tentackle.reflect.Mixin}), method interception
+ * ({@link org.tentackle.reflect.Interception}), canonical construction for TRIP
+ * ({@link org.tentackle.reflect.CanonicalConstructor}) and the {@link org.tentackle.reflect.ReflectionHelper}.
  */
 package org.tentackle.reflect;

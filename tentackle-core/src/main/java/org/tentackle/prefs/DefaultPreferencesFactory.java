@@ -24,7 +24,8 @@ import java.util.prefs.Preferences;
 /**
  * Factory for {@link Preferences} wrapped by {@link PersistedPreferences}.<br>
  * Use case is to map invocations of PersistedPreferences by the framework or applications back to the standard java util prefs.
- * The preferences will then no more be persisted in the database.<br>
+ * The preferences will then no longer be persisted in the database.<br>
+ * Auto-sync and read-only are not supported by java util prefs and are just stored.<br>
  * To activate, extend this class and annotate with <code>@Service(PersistedPreferencesFactory.class)</code>.<br>
  * You may also override the methods isSystemOnly, systemRoot, and systemNodeForPackage since system root is usually not writable by normal users.<br>
  * Furthermore, consider overriding userRoot/systemRoot as well to prepend a sub node for non-class preferences such as table settings.
@@ -62,9 +63,9 @@ import java.util.prefs.Preferences;
  */
 public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
 
-  private boolean autoSync;     // not supported by java.util.prefs
-  private boolean readOnly;     // not supported by java.util.prefs
-  private boolean systemOnly;   // not supported by java.util.prefs
+  private boolean autoSync;     // not supported by java.util.prefs, just stored
+  private boolean readOnly;     // not supported by java.util.prefs, just stored
+  private boolean systemOnly;   // the user root is the system root
 
   private DefaultPreferences systemRoot;
   private DefaultPreferences userRoot;
@@ -161,7 +162,7 @@ public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Returns the absolute path name of the node corresponding to the package of the specified object.
+   * Returns the absolute path name of the node corresponding to the package of the specified class.
    *
    * @param clazz the class
    * @return the path name

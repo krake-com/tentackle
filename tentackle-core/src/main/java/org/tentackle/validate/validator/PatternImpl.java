@@ -128,7 +128,7 @@ public final class PatternImpl extends AbstractValidator<Pattern> {
 
     java.util.regex.Pattern localRegex = regex;
     if (localRegex == null || localPar.getType() != CompoundValue.Type.CONSTANT) {
-      String pattern = (String) localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+      String pattern = (String) localPar.getValue(validationContext.getParentObject(), createScriptVariables(localPar, validationContext));
       localRegex = regex = java.util.regex.Pattern.compile(pattern, annotation.flag());
     }
     return localRegex;

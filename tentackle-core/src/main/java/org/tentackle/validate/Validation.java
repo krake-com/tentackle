@@ -39,7 +39,10 @@ import java.lang.annotation.Target;
 public @interface Validation {
 
   /**
-   * @return the validator implementing the annotation.
+   * The validator implementing the annotation.<br>
+   * The validator must provide a public no-args constructor.
+   *
+   * @return the validator class
    */
   Class<? extends Validator> value();
 

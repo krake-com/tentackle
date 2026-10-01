@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 
 /**
  * The annotated element must be true.
- * Supported types are <code>boolean</code> and <code>Boolean</code>
+ * Supported types are <code>boolean</code> and <code>Boolean</code>.
  * <p>
  * <code>null</code> elements are considered valid.
  * <p>
@@ -97,7 +97,7 @@ public @interface True {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 

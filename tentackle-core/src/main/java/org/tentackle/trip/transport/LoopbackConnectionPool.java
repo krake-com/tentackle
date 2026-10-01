@@ -121,7 +121,7 @@ public class LoopbackConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Gets the response from the server.
+   * Waits for the response from the server and passes it to the client's stream.
    */
   public void getResponse() {
     try {

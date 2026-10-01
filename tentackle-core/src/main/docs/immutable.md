@@ -124,6 +124,14 @@ public boolean add(E e) {
 }
 ```
 
+This includes the bulk operations of `ArrayList` that would otherwise bypass `remove(int)`
+and `set(int, E)` — `clear`, `removeAll`, `removeIf`, `removeLast`, `replaceAll` and
+`subList(…).clear()`. Operations that would not change the list pass even if it is immutable:
+replacing an element by the very same instance, removing elements that aren't there, or clearing
+an empty list. Sorting is not considered a modification. A `TrackedArrayList` additionally
+refuses to become immutable while it still holds removed objects, and rejects any mutation of
+a snapshot.
+
 > Despite the name, an `ImmutableArrayList` is **mutable by default** — the class
 > merely has the *ability* to become immutable. You must call `setImmutable(true)`.
 

@@ -31,11 +31,10 @@ public class LoopbackConnection extends AbstractConnection {
   private final LoopbackTransport transport;
 
   /**
-   * Creates a new TCP connection.
+   * Creates a new loopback connection.
    *
    * @param transport the transport associated with this connection
    * @param stream the stream associated with this connection
-   *
    */
   public LoopbackConnection(LoopbackTransport transport, TripStream stream) {
     super(transport, stream);

@@ -31,7 +31,7 @@ import java.io.Serializable;
 public interface Identifiable extends Serializable {
 
   /**
-   * Gets the identification number.<br>
+   * Gets the identification number.
    *
    * @return the ID, 0 if invalid
    */

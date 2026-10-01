@@ -32,15 +32,18 @@ interface ValidationSeverityFactoryHolder {
 /**
  * Factory for validation severity singletons.
  * <p>
- * The factory provides methods for the predefined severities necessary for the framework
+ * The factory provides the predefined severities necessary for the framework
  * but creates singletons for any other application-specific severities as well.
+ * Severity implementations are annotated with &#64;{@link ValidationSeverityService}.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
  *
  * @author harald
  */
 public interface ValidationSeverityFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -58,7 +61,7 @@ public interface ValidationSeverityFactory {
 
 
   /**
-   * Gets a request validation severity implementation singleton by its interface.
+   * Gets a validation severity implementation singleton by its interface.
    *
    * @param <T> the interface type
    * @param iFace the interface

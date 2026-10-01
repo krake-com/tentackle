@@ -35,7 +35,7 @@ interface ShortTypeHolder {
 
 
 /**
- * Trip type for {@link Short[]} array.
+ * Trip type for {@code Short[]} array.
  */
 @TripTypeService(Short[].class)
 public final class ShortArrayTripType extends AbstractPredefinedArrayTripType<Short[]> {

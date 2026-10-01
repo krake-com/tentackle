@@ -264,6 +264,35 @@ public class AbstractPoolTest {
   }
 
   /**
+   * {@link AbstractPool#getSlotCountPerThread()} counts lent slots only, not the ones sitting in the pool.
+   */
+  @Test
+  public void getSlotCountPerThreadIgnoresReturnedSlots() {
+    TestPool pool = new TestPool();
+    TestResource first = pool.get();
+    pool.get();
+    pool.put(first);
+
+    List<Map.Entry<String, Integer>> slotCounts = pool.getSlotCountPerThread();
+
+    assertEquals(slotCounts.size(), 1, "returned slots must not be counted");
+    assertNotNull(slotCounts.get(0).getKey());
+    assertEquals(slotCounts.get(0).getValue().intValue(), 1);
+  }
+
+  /**
+   * {@link AbstractPool#getSlotCountPerThread()} must not fail on a pool that is shut down.
+   */
+  @Test
+  public void getSlotCountPerThreadIsEmptyAfterShutdown() {
+    TestPool pool = new TestPool();
+    pool.get();
+    pool.shutdown();
+
+    assertTrue(pool.getSlotCountPerThread().isEmpty());
+  }
+
+  /**
    * Pool exhaustion is a resource leak candidate, so it must log which threads hold the slots.
    */
   @Test

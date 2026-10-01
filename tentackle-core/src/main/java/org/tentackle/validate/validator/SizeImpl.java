@@ -113,7 +113,7 @@ public final class SizeImpl extends AbstractValidator<Size> {
       else if (object instanceof Map) {
         size = ((Map<?,?>) object).size();
       }
-      else if (object instanceof Array) {
+      else if (object.getClass().isArray()) {
         size = Array.getLength(object);
       }
       else {

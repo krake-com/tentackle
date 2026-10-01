@@ -25,6 +25,9 @@ import java.util.List;
 
 /**
  * Error handler to add, expand or insert a missing time.
+ * <p>
+ * If only a date is given, midnight is appended. A partial time, such as {@code 9} or {@code 930},
+ * is expanded to the full time according to the pattern, for example {@code 09:30:00}.
  */
 public class MissingTimeHandler implements SmartDateTimeParser.ErrorHandler {
 

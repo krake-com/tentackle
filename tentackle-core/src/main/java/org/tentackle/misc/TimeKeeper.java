@@ -34,9 +34,9 @@ import java.text.DecimalFormat;
 public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
 
   /**
-   * Format for xxxxToString().
+   * Format for the {@code xxxToString()} methods.
    * <p>
-   * The default format prints 3 digits after the comma.
+   * The default format prints 3 fraction digits.
    */
   private static final ThreadLocal<DecimalFormat> DURATION_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("#0.000"));
 
@@ -55,7 +55,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    * Creates a duration.
    * <p>
    * The initial starting time is retrieved from {@link System#nanoTime()}.<br>
-   * The duration is invalid as long as {@link #end()} is invoked.
+   * The duration is invalid until {@link #end()} is invoked.
    *
    * @see #isValid()
    */
@@ -91,7 +91,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
 
   /**
    * Resets the duration.<br>
-   * The duration is invalid as long as {@link #end()} is invoked.
+   * Restarts the time measurement. The duration is invalid until {@link #end()} is invoked.
    *
    * @return the duration itself (for fluent style)
    */
@@ -125,7 +125,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
   }
 
   /**
-   * Invalidates a duration.
+   * Invalidates the duration.
    */
   public void invalidate() {
     durationValid = false;
@@ -175,8 +175,9 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
   /**
    * Adds another duration.
    *
-   * @param timeKeeper the nanos to add
+   * @param timeKeeper the duration to add
    * @return this duration
+   * @throws TentackleRuntimeException if one of the durations is not valid
    */
   public TimeKeeper add(TimeKeeper timeKeeper) {
     assertDurationValid();
@@ -187,8 +188,9 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
   /**
    * Subtracts another duration.
    *
-   * @param timeKeeper the nanos to subtract
+   * @param timeKeeper the duration to subtract
    * @return this duration
+   * @throws TentackleRuntimeException if one of the durations is not valid
    */
   public TimeKeeper subtract(TimeKeeper timeKeeper) {
     assertDurationValid();
@@ -201,6 +203,8 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    *
    * @param multiplier the multiplier (must be &ge; 0)
    * @return this duration
+   * @throws TentackleRuntimeException if the duration is not valid
+   * @throws IllegalArgumentException if the multiplier is negative
    */
   public TimeKeeper multiply(long multiplier) {
     assertDurationValid();
@@ -216,6 +220,8 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    *
    * @param divisor the divisor (must be &gt; 0)
    * @return this duration
+   * @throws TentackleRuntimeException if the duration is not valid
+   * @throws IllegalArgumentException if the divisor is not positive
    */
   public TimeKeeper divide(long divisor) {
     assertDurationValid();
@@ -226,6 +232,13 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
     return this;
   }
 
+  /**
+   * Compares the durations.<br>
+   * Invalid durations are treated as 0.
+   *
+   * @param o the other duration
+   * @return the comparison result
+   */
   @Override
   public int compareTo(TimeKeeper o) {
     // don't throw an exception if duration not valid. Assume duration 0 instead.
@@ -234,33 +247,38 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
     return Long.compare(span, otherSpan);
   }
 
+  /**
+   * Returns the duration in nanoseconds as a string.
+   *
+   * @return the nanoseconds, {@code "?"} if the duration is not valid
+   */
   @Override
   public String toString() {
     return isValid() ? Long.toString(nanos()) : INVALID_DURATION_TEXT;
   }
 
   /**
-   * Returns the microseconds as a String.
+   * Returns the microseconds as a string.
    *
-   * @return the microseconds with nanoseconds resolution
+   * @return the microseconds with nanoseconds resolution, {@code "?"} if the duration is not valid
    */
   public String microsToString() {
     return durationToString(micros());
   }
 
   /**
-   * Returns the milliseconds as a String.
+   * Returns the milliseconds as a string.
    *
-   * @return the milliseconds with microseconds resolution
+   * @return the milliseconds with microseconds resolution, {@code "?"} if the duration is not valid
    */
   public String millisToString() {
     return durationToString(millis());
   }
 
   /**
-   * Returns the seconds as a String.
+   * Returns the seconds as a string.
    *
-   * @return the seconds with milliseconds resolution
+   * @return the seconds with milliseconds resolution, {@code "?"} if the duration is not valid
    */
   public String secondsToString() {
     return durationToString(seconds());
@@ -282,9 +300,11 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
 
 
   /**
-   * Asserts that end ist valid.
+   * Asserts that the duration is valid.
    * <p>
-   * The end is valid if {@link #end()} has been invoked.
+   * The duration is valid if {@link #end()} has been invoked.
+   *
+   * @throws TentackleRuntimeException if the duration is not valid
    */
   protected void assertDurationValid() {
     if (!durationValid) {

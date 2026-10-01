@@ -22,10 +22,11 @@ package org.tentackle.validate;
 /**
  * A configurator for default scopes.
  * <p>
- * Classes implementing this interface specify the default scope that
- * should be applied to all annotations.
+ * Classes implementing this interface specify the default scopes that
+ * should be applied to all annotations that don't specify a scope (i.e. have the {@link DefaultScope}).
  * <p>
- * Objects not implementing {@link ScopeConfigurator} get the {@link DefaultScope}.
+ * Annotations of objects not implementing {@link ScopeConfigurator} keep the {@link DefaultScope},
+ * which is applied only if validating with the {@link org.tentackle.validate.scope.AllScope}.
  *
  * @author harald
  */

@@ -31,7 +31,7 @@ import java.util.List;
  * <p>
  * Important: snapshots cannot be used as copies of an object at a given time. They just
  * contain the information to revert to the object's state when the snapshot was taken!<br>
- * However, Snapshotables can be copied using the copy() method.
+ * However, {@code Snapshotable}s can be copied using the {@link #copy()} method.
  *
  * @param <T> the type
  * @author harald
@@ -81,7 +81,8 @@ public interface Snapshotable<T> {
   void discardSnapshot(T snapshot);
 
   /**
-   * Discards all snapshots.<br>
+   * Discards all snapshots.
+   *
    * @see #discardSnapshot(Object)
    */
   void discardSnapshots();

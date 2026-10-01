@@ -479,11 +479,10 @@ public enum DefaultOpCode implements OpCode {
 
   /**
    * Gets the OpCode from its byte value.
-   * <p>
-   * Throws {@link TripRuntimeException} if invalid code.
    *
    * @param code the op code
    * @return the OpCode, never null
+   * @throws TripRuntimeException if invalid code
    */
   public static DefaultOpCode valueOf(int code) {
     DefaultOpCode opCode = CODES[code];

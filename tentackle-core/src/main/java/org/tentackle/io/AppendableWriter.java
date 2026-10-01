@@ -31,7 +31,7 @@ import java.io.Writer;
  * or a StringBuilder.<br>
  * An AppendableWriter using a StringBuffer can be used as a direct replacement for StringWriter.
  * <p>
- * Notice that the AppendableWriter is not threadsafe if a StringBuilder is used.
+ * Notice that the AppendableWriter is not thread-safe if a StringBuilder is used.
  *
  * @author harald
  */
@@ -136,7 +136,7 @@ public class AppendableWriter extends Writer {
   }
 
   /**
-   * Return the appendables's current value as a string.
+   * Returns the appendable's current value as a string.
    *
    * @return the appendable's content
    */

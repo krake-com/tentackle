@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for short primitive.
+ * Trip type for the {@code short} primitive.
  */
 @TripTypeService(short.class)
 public final class ShortPrimitiveTripType extends ShortTripType {

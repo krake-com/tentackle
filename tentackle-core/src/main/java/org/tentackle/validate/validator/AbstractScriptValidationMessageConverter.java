@@ -26,6 +26,17 @@ import org.tentackle.validate.ValidationUtilities;
 
 /**
  * Converts a validator message script.
+ * <p>
+ * Translates the first occurrence of the shortcut {@code @(...)} to an invocation of
+ * {@link ValidationUtilities#format(Object, String, Object...)} for the {@code object} variable, for example
+ * <pre>
+ *   &#64;('{0}_is_wrong', value)
+ * </pre>
+ * becomes
+ * <pre>
+ *   org.tentackle.validate.ValidationUtilities.getInstance().format(object, '{0}_is_wrong', value)
+ * </pre>
+ * Concrete implementations are annotated with &#64;{@link MessageScriptConverter} for their scripting language.
  *
  * @author harald
  */
@@ -39,7 +50,7 @@ public abstract class AbstractScriptValidationMessageConverter implements Script
 
 
   /**
-   * Parent constructor.
+   * Creates a message script converter.
    */
   public AbstractScriptValidationMessageConverter() {
     // see -Xlint:missing-explicit-ctor since Java 16

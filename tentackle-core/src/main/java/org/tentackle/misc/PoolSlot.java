@@ -57,9 +57,9 @@ public interface PoolSlot<T extends Poolable<T>> {
   T getReferencedPoolable();
 
   /**
-   * Get epochal time of first use.
+   * Gets the epochal time of first use.
    *
-   * @return the epochal time
+   * @return the epochal time, 0 if never used
    */
   long getFirstUse();
 
@@ -88,12 +88,13 @@ public interface PoolSlot<T extends Poolable<T>> {
   /**
    * Gets the mapped diagnostic context string.
    *
-   * @return the MDC
+   * @return the MDC, null if in pool
    */
   String getMdcStr();
 
   /**
-   * Closes this slot and the managed poolable.
+   * Closes this slot and the managed poolable.<br>
+   * The poolable is closed in a separate thread.
    *
    * @param timeoutMillis the timeout in milliseconds to wait for the closing operation to complete,
    *                      &le; 0 for asynchronous non-blocking operation
@@ -101,14 +102,19 @@ public interface PoolSlot<T extends Poolable<T>> {
   void close(long timeoutMillis);
 
   /**
-   * Marks a poolable used.
+   * Marks the poolable used.
    *
    * @param usingThread the using thread
+   * @throws org.tentackle.common.TentackleRuntimeException if the slot does not hold the poolable
    */
   void use(Thread usingThread);
 
   /**
-   * Marks a poolable unused.
+   * Marks the poolable unused.
+   *
+   * @param poolable the returned poolable
+   * @throws org.tentackle.common.TentackleRuntimeException if the poolable does not belong to this slot
+   *         or is not referenced anymore
    */
   void unUse(T poolable);
 
@@ -120,7 +126,8 @@ public interface PoolSlot<T extends Poolable<T>> {
   boolean isUnreferenced();
 
   /**
-   * Returns whether the resource is obsolete and should be closed.
+   * Returns whether the resource is obsolete and should be closed.<br>
+   * Checked by {@link Pool#monitor()} for unused resources only.
    *
    * @return true if obsolete
    */
@@ -135,7 +142,7 @@ public interface PoolSlot<T extends Poolable<T>> {
   long getIdleMinutes(long currentTimeMillis);
 
   /**
-   * Returns the number of minutes the poolable has been used at all.
+   * Returns the number of minutes since the first use of the poolable.
    *
    * @param currentTimeMillis the current time to refer to in epochal milliseconds
    * @return the usage minutes, 0 if never used at all

@@ -37,7 +37,7 @@ public class LoopbackConnectionHandler extends ConnectionHandler {
   /**
    * Creates a new handler.
    *
-   * @param transport    the transport associated with this accept-loop
+   * @param transport    the transport associated with this handler
    * @param name         the name of the connection
    * @param inputStream  the input stream associated with this connection
    * @param outputStream the output stream associated with this connection

@@ -41,8 +41,11 @@ import java.lang.reflect.RecordComponent;
 import java.util.Objects;
 
 /**
- * A TripComponent implementation for record types.
+ * A TripComponent implementation for record types.<br>
+ * Record components have no default values and are never set individually: the record is created
+ * via its canonical constructor.
  *
+ * @param <P> the record type
  * @param <T> the component type
  */
 public class RecordTripComponent<P extends Record, T> implements TripComponent<P, T> {

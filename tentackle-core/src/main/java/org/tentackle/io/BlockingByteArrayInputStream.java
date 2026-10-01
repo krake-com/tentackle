@@ -24,7 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * An input stream waiting for data available in an {@link NotifyingByteArrayOutputStream}.
+ * An input stream waiting for data available in a {@link NotifyingByteArrayOutputStream}.<br>
+ * The data written so far is moved from the output stream into this input stream, i.e. the output stream is reset.
  *
  * @author harald
  */
@@ -53,6 +54,13 @@ public class BlockingByteArrayInputStream extends InputStream {
     return out;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Blocks until data is available. Never returns -1.
+   *
+   * @throws org.tentackle.common.InterruptedRuntimeException if interrupted while waiting
+   */
   @Override
   public int read() throws IOException {
     for(;;) {

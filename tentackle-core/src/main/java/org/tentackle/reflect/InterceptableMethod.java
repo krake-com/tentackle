@@ -77,13 +77,13 @@ public class InterceptableMethod {
   }
 
   /**
-   * Invokes a delegateMethod.<br>
-   * If intercepted the head of interceptors will be invoked, else the delegateMethod.
+   * Invokes the delegate method.<br>
+   * If intercepted, the head of the interceptors will be invoked, else the delegate method.
    *
-   * @param delegate the delegate to invoke the delegateMethod on, null if static
-   * @param args the delegateMethod arguments
-   * @return the delegateMethod's return value
-   * @throws Throwable if invocation failed
+   * @param delegate the delegate to invoke the delegate method on, null if static
+   * @param args the delegate method's arguments
+   * @return the delegate method's return value
+   * @throws Throwable if invocation failed, the cause of an {@link InvocationTargetException}
    */
   public Object invoke(Object delegate, Object[] args) throws Throwable {
     try {

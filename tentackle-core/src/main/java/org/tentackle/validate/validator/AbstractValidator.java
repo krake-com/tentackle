@@ -41,6 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An abstract validator.
+ * <p>
+ * Implements the evaluation of the {@code condition}, {@code value} and {@code message} parameters
+ * as {@link CompoundValue}s, which are created lazily and cached.
  *
  * @param <T> the validation annotation
  * @author harald
@@ -49,7 +52,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
   private AnnotatedElement element;           // the annotated element, if this is a fixed(annotated) validator
   private String validatedElementName;        // the validated element name
-  private int validationIndex = -1;           // the index if part of a ValidationList, -1 if single validator
+  private int validationIndex = -1;           // the invocation index, -1 if not set
 
   private volatile CompoundValue conditionParameter;                // the condition
   private volatile CompoundValue messageParameter;                  // the message
@@ -58,7 +61,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   /**
-   * Parent constructor.
+   * Creates a validator.
    */
   public AbstractValidator() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -122,13 +125,14 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * If no such condition given, it returns true.
    *
    * @return true if it applies
+   * @throws ValidationRuntimeException if the condition does not evaluate to a {@link Boolean}
    */
   @Override
   public boolean isConditionValid(ValidationContext validationContext) {
     boolean applies = true;
     CompoundValue condPar = getConditionParameter();
     if (condPar != null) {
-      Object value = condPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+      Object value = condPar.getValue(validationContext.getParentObject(), createScriptVariables(condPar, validationContext));
       if (value instanceof Boolean) {
         applies = ((Boolean) value);
       }
@@ -139,6 +143,11 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     return applies;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Creates the compound values of the condition, message and value parameters, which compiles their scripts, if any.
+   */
   @Override
   public void validate() {
     CompoundValue par = getConditionParameter();
@@ -184,6 +193,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @param clazz the type of the value, null to get from validation context
    * @param validationContext the validation context
    * @return the evaluated value
+   * @throws ValidationRuntimeException if the type cannot be determined
    */
   @SuppressWarnings("unchecked")
   protected <V> V getValue(Class<V> clazz, ValidationContext validationContext) {
@@ -198,11 +208,11 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
       }
     }
     CompoundValue localPar = getValueParameter(clazz);
-    return (V) localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+    return (V) localPar.getValue(validationContext.getParentObject(), createScriptVariables(localPar, validationContext));
   }
 
   /**
-   * Gets the value according to its type
+   * Gets the value according to the type of the validated element.
    *
    * @param validationContext the validation context
    * @return the evaluated value
@@ -212,7 +222,9 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   }
 
   /**
-   * Gets the compound value of the value parameter.
+   * Gets the compound value of the value parameter.<br>
+   * The compound value is created for the given type and cached.
+   * If invoked with different types, a compound value is cached per type.
    *
    * @param clazz the compound value's type (usually from the {@link ValidationContext})
    * @return the value parameter, never null
@@ -249,16 +261,17 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   /**
-   * Creates the message.
+   * Creates the message.<br>
+   * Evaluates the annotation's message parameter, if any.
    *
-   * @param message the default message if annotation's message parameter is empty
+   * @param message the default message if annotation's message parameter is empty or evaluates to null
    * @param validationContext the validation context
    * @return the evaluated message
    */
   protected String createMessage(String message, ValidationContext validationContext) {
     CompoundValue msgPar = getMessageParameter();
     if (msgPar != null) {
-      Object value = msgPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+      Object value = msgPar.getValue(validationContext.getParentObject(), createScriptVariables(msgPar, validationContext));
       if (value != null) {
         message = value.toString();
       }
@@ -286,7 +299,8 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   }
 
   /**
-   * Creates a list of a single validation result.
+   * Creates a list of a single validation result.<br>
+   * The result is created by the validator's severity.
    *
    * @param message the default fail message
    * @param validationContext the validation context
@@ -305,6 +319,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @param <C> the comparable type
    * @param obj the object
    * @return the object as a Comparable or null if obj is null
+   * @throws ValidationRuntimeException if the object is not a {@link Comparable}
    */
   @SuppressWarnings("unchecked")
   protected <C> Comparable<C> assertComparable(C obj) {
@@ -315,7 +330,22 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   }
 
   /**
-   * Creates the script variables from the validation context.
+   * Creates the script variables for a compound value.<br>
+   * Only scripts use variables. Thus, for all other types of compound values no variables are created,
+   * which also avoids retrieving a lazily supplied object from the validation context.
+   *
+   * @param compoundValue the compound value to evaluate
+   * @param validationContext the validation context
+   * @return the modifiable set of script variables, null if the compound value is not a script
+   * @see #createScriptVariables(ValidationContext)
+   */
+  protected Set<ScriptVariable> createScriptVariables(CompoundValue compoundValue, ValidationContext validationContext) {
+    return compoundValue.getType() == CompoundValue.Type.SCRIPT ? createScriptVariables(validationContext) : null;
+  }
+
+  /**
+   * Creates the script variables from the validation context.<br>
+   * See the {@code VAR_...} constants in {@link ValidationContext}.
    *
    * @param validationContext the validation context
    * @return the modifiable set of script variables

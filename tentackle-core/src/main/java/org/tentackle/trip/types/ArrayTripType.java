@@ -63,7 +63,7 @@ interface ArrayTypeHolder {
  *            <li>The array index.</li>
  *            <li>The element's serialization.</li>
  *          </ul>
- *          </li>The opcode {@link DefaultOpCode#END}</li>
+ *          followed by the opcode {@link DefaultOpCode#END}.
  *        </li>
  *     </ul>
  *   </li>

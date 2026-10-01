@@ -26,7 +26,10 @@ import java.util.Objects;
 
 /**
  * A mapper to translate validation paths to binding paths.
+ * <p>
+ * The leading validation path is replaced by the binding path. Mappers are sorted by validation path and binder.
  *
+ * @see ValidationUtilities#mapValidationPath(java.util.NavigableSet, Binder, String)
  * @author harald
  */
 public class ValidationMapper implements Comparable<ValidationMapper> {
@@ -42,7 +45,8 @@ public class ValidationMapper implements Comparable<ValidationMapper> {
    * @param validationPath the start of a validation path (not null)
    * @param binder the binder this validation path should be applied to, null if all
    * @param bindingPath the binding path to replace with, null if empty string (leading validation path is just removed)
-   * @param nextBinder the next binder to apply the binding path to
+   * @param nextBinder the next binder to apply the binding path to, null if none
+   * @throws NullPointerException if validationPath is null
    */
   public ValidationMapper(String validationPath, Binder binder, String bindingPath, Binder nextBinder) {
     this.validationPath = Objects.requireNonNull(validationPath, "validationPath must not be null");

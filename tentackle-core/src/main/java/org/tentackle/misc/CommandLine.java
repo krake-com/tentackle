@@ -30,9 +30,10 @@ import java.util.TreeMap;
  * Command line arguments and options.
  * <p>
  * Scans an array of argument strings and parses options.
- * Options start with two dashes, for example {@code --enabled}
+ * Options start with two dashes, for example {@code --enabled},
  * and can have a value like {@code --timeout=30}.
- * All other strings are considered as standard args.
+ * If an option is given more than once, the last one wins.
+ * All other strings are considered as standard args. Null strings are ignored.
  *
  * @author harald
  */
@@ -44,14 +45,14 @@ public class CommandLine {
   /** non-option args. */
   private final List<String> arguments = new ArrayList<>();
 
-  /** option args (--opt or --opt=val, each opt can be given only once, last one overrides). */
+  /** option args (--opt or --opt=val, if given more than once, the last one wins). */
   private final Map<String,String> options = new TreeMap<>();
 
 
   /**
    * Creates a command line from console args.
    *
-   * @param args the command line args (usually from main-method)
+   * @param args the command line args (usually from the main method), null if none
    */
   public CommandLine(String[] args) {
     setArgs(args);
@@ -65,9 +66,9 @@ public class CommandLine {
   }
 
   /**
-   * Gets the arguments.
+   * Gets the original arguments.
    *
-   * @return the value from setArgs
+   * @return the value from {@link #setArgs(String[])}
    */
   public String[] getArgs() {
     return args;
@@ -76,7 +77,7 @@ public class CommandLine {
   /**
    * Sets the arguments.
    *
-   * @param args the arguments (usually from commandline)
+   * @param args the arguments (usually from the command line), null if none
    */
   public void setArgs(String[] args) {
     this.args = args;
@@ -120,7 +121,7 @@ public class CommandLine {
    * Gets the value for an option.
    *
    * @param option the option name (without the leading --)
-   * @return the value or null if no such option or not a value option
+   * @return the value, null if no such option or not a value option
    */
   public String getOptionValue(String option) {
     return options.get(option);
@@ -128,9 +129,9 @@ public class CommandLine {
 
 
   /**
-   * Gets the list of non-option arguments
+   * Gets the list of non-option arguments.
    *
-   * @return the arguments. never null
+   * @return the arguments, never null
    */
   public List<String> getArguments() {
     return arguments;
@@ -140,7 +141,7 @@ public class CommandLine {
   /**
    * Gets the options.
    *
-   * @return the options map, never null
+   * @return the options map sorted by option name, never null. Options without a value map to null.
    */
   public Map<String,String> getOptions() {
     return options;
@@ -148,7 +149,8 @@ public class CommandLine {
 
 
   /**
-   * Gets the options as properties.
+   * Gets the options as properties.<br>
+   * Options without a value map to the empty string.
    *
    * @return the options, never null
    */

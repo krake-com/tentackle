@@ -27,7 +27,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleTypeVisitor8;
 
 /**
- * A type visitor that finds type matches in supertypes as well.
+ * A type visitor that finds type matches in supertypes as well.<br>
+ * The visitor parameter is the class to look for. Types of the {@code java.*} packages are neither
+ * matched nor searched, so the visitor is meant for the application's and Tentackle's own types.
+ * Returns {@code null} for types other than declared types.
  *
  * @author harald
  */

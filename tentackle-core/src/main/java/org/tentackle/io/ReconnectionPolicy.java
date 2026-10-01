@@ -37,14 +37,15 @@ public interface ReconnectionPolicy<T> {
 
   /**
    * Number of milliseconds to wait before the next connection attempt.<br>
-   * Reconnection terminates if the method returns 0 or throws some runtime exception.
+   * Reconnection terminates if the method returns a value &le; 0 or throws some runtime exception.
    *
-   * @return the millis, 0 if stop reconnection attempts
+   * @return the millis, &le; 0 to stop the reconnection attempts
    */
   long timeToReconnect();
 
   /**
-   * Reconnects the resource.
+   * Reconnects the resource.<br>
+   * Throwing a runtime exception means the attempt failed and will be retried.
    *
    * @param resource the resource to reconnect
    */

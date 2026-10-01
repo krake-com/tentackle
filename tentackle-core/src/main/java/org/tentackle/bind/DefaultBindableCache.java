@@ -31,7 +31,10 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Cache for bindable elements per class.<br>
+ * Default implementation of the cache for bindable elements per class.
+ * <p>
+ * Annotated getters, setters, "from"- or "with"-methods and fields of the same name are merged into a single element.
+ * For records, the "from"- or "with"-method of an annotated component is detected automatically.
  *
  * @author harald
  */
@@ -68,7 +71,7 @@ public class DefaultBindableCache implements BindableCache {
   /**
    * The cached list of bindables by key.
    * <p>
-   * The map is sorted by the camelcase name of the bindable element.
+   * The map is sorted by the ordinal and the camelcase name of the bindable element.
    */
   private final Map<ClassKey, SortedMap<ElementKey, BindableElement>> clazzMap = new ConcurrentHashMap<>();
 
@@ -89,6 +92,7 @@ public class DefaultBindableCache implements BindableCache {
    * @param clazz the class to retrieve the bindables for
    * @param declaredOnly true if only declared elements, else inherited as well
    * @return the elements
+   * @throws BindingException if more than one setter or "from"-method is annotated for the same element
    */
   @Override
   public Collection<BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly) {

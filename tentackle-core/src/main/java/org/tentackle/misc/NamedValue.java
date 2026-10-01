@@ -39,7 +39,7 @@ public class NamedValue<T> {
 
 
   /**
-   * Creates a named counter.
+   * Creates a named value.
    */
   public NamedValue() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -49,7 +49,7 @@ public class NamedValue<T> {
    * Gets the value for given name.
    *
    * @param name the value's name
-   * @return the value
+   * @return the value, null if not set
    */
   public T get(String name) {
     return getReference(name).get();
@@ -75,7 +75,8 @@ public class NamedValue<T> {
   }
 
   /**
-   * Gets the atomic reference.
+   * Gets the atomic reference.<br>
+   * Creates it if it does not exist yet.
    *
    * @param name the value's name
    * @return the atomic reference

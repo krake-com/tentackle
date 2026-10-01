@@ -25,7 +25,8 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
 
 /**
- * Error handler to add a missing timezone.
+ * Error handler to add a missing timezone.<br>
+ * Appends the default timezone.
  */
 public class MissingZoneIdHandler implements SmartDateTimeParser.ErrorHandler {
 

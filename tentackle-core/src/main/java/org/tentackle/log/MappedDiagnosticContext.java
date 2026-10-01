@@ -37,11 +37,10 @@ public interface MappedDiagnosticContext {
    * can be null only if the underlying implementation supports it.
    * <p>
    * This method delegates all work to the MDC of the underlying logging system.
-   * <p>
-   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
    * @param val the value
+   * @throws RuntimeException if the key is null, usually an {@link IllegalArgumentException} or {@link NullPointerException}
    */
   void put(String key, String val);
 
@@ -51,11 +50,10 @@ public interface MappedDiagnosticContext {
    * <code>key</code> parameter cannot be null.
    * <p>
    * This method delegates all work to the MDC of the underlying logging system.
-   * <p>
-   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
-   * @return the string value identified by the <code>key</code> parameter.
+   * @return the string value identified by the <code>key</code> parameter, null if none
+   * @throws RuntimeException if the key is null, usually an {@link IllegalArgumentException} or {@link NullPointerException}
    */
   String get(String key);
 
@@ -65,10 +63,9 @@ public interface MappedDiagnosticContext {
    * the underlying system's MDC implementation. The  <code>key</code> parameter
    * cannot be null. This method does nothing if there is no previous value
    * associated with <code>key</code>.
-   * <p>
-   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
+   * @throws RuntimeException if the key is null, usually an {@link IllegalArgumentException} or {@link NullPointerException}
    */
   void remove(String key);
 
@@ -87,7 +84,8 @@ public interface MappedDiagnosticContext {
   Set<String> getKeys();
 
   /**
-   * Checks whether this mapped diagnostic context matches a given pattern.
+   * Checks whether this mapped diagnostic context matches a given pattern.<br>
+   * The pattern is applied to the string representation of the context.
    *
    * @param pattern the pattern
    * @return true if matches

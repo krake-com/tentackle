@@ -32,13 +32,15 @@ interface ValidationContextFactoryHolder {
 
 /**
  * Factory for validation contexts.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
  *
  * @author harald
  */
 public interface ValidationContextFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -56,6 +58,7 @@ public interface ValidationContextFactory {
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
    * @param validationResults the current list of validation results
+   * @return the validation context
    */
   ValidationContext create(String validationPath,
                            Class<?> type,
@@ -66,9 +69,10 @@ public interface ValidationContextFactory {
 
   /**
    * Creates a validation context with a lazy object provider.<br>
-   * The object to validate is retrieved only if actually validated.
+   * The object to validate is retrieved only when requested by a validator.
    * Allows validators to avoid the invocation of the method to load the object
-   * if the pre-condition fails. Useful for lazy list relations, for example.
+   * if the pre-condition fails. Useful for lazy list relations, for example.<br>
+   * Notice that script conditions receive the object as a script variable and therefore retrieve it.
    *
    * @param validationPath the validation path
    * @param type the type of the object to validate, null if derive from object
@@ -76,6 +80,7 @@ public interface ValidationContextFactory {
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
    * @param validationResults the current list of validation results
+   * @return the validation context
    */
   ValidationContext create(String validationPath,
                            Class<?> type,

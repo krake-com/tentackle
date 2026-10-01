@@ -27,7 +27,8 @@ import java.util.EventObject;
 import java.util.List;
 
 /**
- * A validation event.
+ * A validation event.<br>
+ * Fired after a binding has been validated.
  *
  * @author harald
  */
@@ -41,7 +42,7 @@ public class ValidationEvent extends EventObject {
 
 
   /**
-   * A binding event.
+   * Creates a validation event.
    *
    * @param source the binding source
    * @param results the validation results

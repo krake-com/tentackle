@@ -30,7 +30,8 @@ import java.net.URI;
  * Uses a {@link org.tentackle.common.Cryptor} for symmetric encryption.
  * This kind of encryption is less secure than SSL since
  * the key is pre-shared between client and server.
- * However, it does not need a certificate.
+ * However, it does not need a certificate.<br>
+ * The data is compressed before being encrypted.
  */
 @TransportService(CompressedEncryptedTransport.PROTOCOL)
 public class CompressedEncryptedTransport extends EncryptedTransport {

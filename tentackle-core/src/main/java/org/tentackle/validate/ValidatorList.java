@@ -25,6 +25,9 @@ import java.util.List;
 /**
  * A list of validators.
  * <p>
+ * Notice that {@link ValidationUtilities} does not use this interface, but unwraps the
+ * &#64;{@link RepeatableValidation} containers itself.
+ * <p>
  * Lists of validators are defined as follows:
  * <pre>
  *    &lt;Annotation&gt;.List ({
@@ -38,7 +41,7 @@ import java.util.List;
 public interface ValidatorList {
 
   /**
-   * Sets the annotation of the validator list,
+   * Sets the annotation of the validator list.
    *
    * @param annotation the annotation
    */
@@ -46,7 +49,7 @@ public interface ValidatorList {
 
 
   /**
-   * Gets the annotation of this validator list
+   * Gets the annotation of this validator list.
    *
    * @return the annotation
    */

@@ -38,6 +38,9 @@ import java.net.URI;
 
 /**
  * Transport implementation for TCP.
+ * <p>
+ * The server binds to the host and port of the URI. Host {@code 0} binds to all interfaces.
+ * The URI query parameter {@code backlog} sets the server socket's backlog (default 50).
  */
 @TransportService(TcpTransport.PROTOCOL)
 public class TcpTransport extends AbstractTransport {
@@ -159,6 +162,7 @@ public class TcpTransport extends AbstractTransport {
    *
    * @return the server socket
    * @throws IOException if creating the socket fails
+   * @throws TripRuntimeException if the URI provides no host or an invalid port
    */
   protected ServerSocket createServerSocket() throws IOException {
     int backlog = getUriPars().getOrDefault("backlog", 50);

@@ -41,9 +41,10 @@ public class StatisticsResult {
   }
 
   /**
-   * Count invocations.
+   * Counts invocations sharing a total duration.<br>
+   * The minimum and maximum durations are updated with the average duration per invocation.
    *
-   * @param duration the duration
+   * @param duration the total duration of all invocations
    * @param count the number of invocations
    */
   public void count(TimeKeeper duration, int count) {
@@ -70,7 +71,7 @@ public class StatisticsResult {
   }
 
   /**
-   * Count an invocation.
+   * Counts an invocation.
    *
    * @param duration the duration
    */
@@ -94,7 +95,7 @@ public class StatisticsResult {
   /**
    * Gets the minimum duration.
    *
-   * @return the minimum duration.
+   * @return the minimum duration, null if nothing counted yet
    */
   public TimeKeeper getMinDuration() {
     return minDuration;
@@ -103,7 +104,7 @@ public class StatisticsResult {
   /**
    * Gets the maximum duration.
    *
-   * @return the maximum duration
+   * @return the maximum duration, null if nothing counted yet
    */
   public TimeKeeper getMaxDuration() {
     return maxDuration;
@@ -112,7 +113,7 @@ public class StatisticsResult {
   /**
    * Gets the total duration.
    *
-   * @return the total duration
+   * @return the total duration, null if nothing counted yet
    */
   public TimeKeeper getTotalDuration() {
     return totalDuration;
@@ -130,7 +131,7 @@ public class StatisticsResult {
   /**
    * Returns whether the result is valid.
    *
-   * @return true if valid result
+   * @return true if at least one invocation was counted
    */
   public boolean isValid() {
     return count > 0;

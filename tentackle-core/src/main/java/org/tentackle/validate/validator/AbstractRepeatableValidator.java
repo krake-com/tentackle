@@ -33,7 +33,7 @@ public abstract class AbstractRepeatableValidator<T extends Annotation> implemen
   protected T annotation;                       // the container annotation
 
   /**
-   * Parent constructor.
+   * Creates a repeatable validator.
    */
   public AbstractRepeatableValidator() {
     // see -Xlint:missing-explicit-ctor since Java 16

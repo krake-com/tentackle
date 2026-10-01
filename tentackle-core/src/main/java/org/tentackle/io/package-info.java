@@ -18,5 +18,8 @@
 
 /**
  * Network- and I/O-support.
+ * <p>
+ * Packet-framed compressing and encrypting streams, SSL/TLS-aware socket factories, the socket channel dispatcher,
+ * and the reconnection machinery.
  */
 package org.tentackle.io;

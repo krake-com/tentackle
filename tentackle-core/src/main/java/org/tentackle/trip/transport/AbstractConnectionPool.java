@@ -31,7 +31,17 @@ import java.util.Objects;
 
 /**
  * Base class for connection pools.<br>
- * The pooling parameters are optionally defined in the URI query string.
+ * The pooling parameters are optionally defined in the URI query string:
+ * <ul>
+ *   <li>{@code initial}: the initial pool size (default 1)</li>
+ *   <li>{@code increment}: the number of connections to add if all are in use (default 1)</li>
+ *   <li>{@code minimum}: the minimum pool size (default 1)</li>
+ *   <li>{@code maximum}: the maximum pool size (default 0, i.e. unlimited)</li>
+ *   <li>{@code idle}: the idle timeout in minutes (default 10)</li>
+ *   <li>{@code usage}: the maximum usage time in minutes (default 0, i.e. unlimited)</li>
+ * </ul>
+ *
+ * @see org.tentackle.misc.AbstractPool
  */
 public abstract class AbstractConnectionPool extends AbstractPool<Connection> {
 
@@ -39,7 +49,7 @@ public abstract class AbstractConnectionPool extends AbstractPool<Connection> {
   private final Dictionary dictionary;
 
   /**
-   * Creates a TCP connection pool.
+   * Creates a connection pool.
    *
    * @param transport     the transport associated with this pool
    * @param dictionary    the dictionary associated with this pool

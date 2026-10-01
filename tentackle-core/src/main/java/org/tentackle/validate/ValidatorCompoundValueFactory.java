@@ -31,11 +31,16 @@ interface ValidatorCompoundValueFactoryHolder {
 
 /**
  * Factory to create {@link CompoundValue}s for validators.
+ * <p>
+ * Creates the compound values for the {@code value}, {@code condition} and {@code message} parameters
+ * of the validation annotations.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
  */
 public interface ValidatorCompoundValueFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -57,18 +62,17 @@ public interface ValidatorCompoundValueFactory {
    * Creates the compound value for the condition parameter.
    *
    * @param condition the condition text from the annotation
-   * @return the created compound value
+   * @return the created compound value of type {@link Boolean}
    */
   CompoundValue createConditionParameter(String condition);
 
   /**
    * Creates the compound value for the message parameter.
-   * <p>
-   * Throws {@link ScriptRuntimeException} if message contains a script-based I18N translation
-   * and there is no message {@link org.tentackle.script.ScriptConverter} for the corresponding scripting language.
    *
    * @param message the message text from the annotation
    * @return the created compound value
+   * @throws ScriptRuntimeException if message contains a script-based I18N translation
+   *         and there is no message {@link org.tentackle.script.ScriptConverter} for the corresponding scripting language
    */
   CompoundValue createMessageParameter(String message);
 

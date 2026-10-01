@@ -22,11 +22,12 @@ import org.tentackle.common.InterruptedRuntimeException;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * A blocking holder.<br>
+ * A blocking holder.
  * <ul>
- *   <li>thread a waits on get() until...</li>
- *   <li>thread b invokes accept()</li>
+ *   <li>thread A waits in {@link #get()} until...</li>
+ *   <li>thread B invokes {@link #accept(Object)}</li>
  * </ul>
+ * The holder blocks only once: after the first {@code accept}, {@code get} never blocks again.
  *
  * @param <T> the object type
  */
@@ -34,6 +35,9 @@ public class BlockingHolder<T> extends Holder<T> {
 
   private final CountDownLatch latch;
 
+  /**
+   * Creates a blocking holder.
+   */
   public BlockingHolder() {
     latch = new CountDownLatch(1);
   }
@@ -44,6 +48,13 @@ public class BlockingHolder<T> extends Holder<T> {
     latch.countDown();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Blocks until a value has been set via {@link #accept(Object)}.
+   *
+   * @throws InterruptedRuntimeException if the thread was interrupted while waiting
+   */
   @Override
   public T get() {
     try {

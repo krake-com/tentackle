@@ -45,7 +45,7 @@ import java.util.List;
  *    List&lt;ValidationResult&gt; results = new ArrayList&lt;&gt;();
  *    try {
  *      // validate members and components
- *      results.addAll(ValidationUtilities().getInstance().validate(...);
+ *      results.addAll(ValidationUtilities.getInstance().validate(...));
  *      ...
  *    }
  *    catch (ValidationFailedException vfx) {
@@ -144,6 +144,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
    * Rethrows this exception with the given validation results prepended.
    *
    * @param resultsSoFar the results collected so far
+   * @throws ValidationFailedException always
    */
   public void reThrow(List<ValidationResult> resultsSoFar) {
     if (resultsSoFar != null && resultsSoFar != results && !resultsSoFar.isEmpty()) {

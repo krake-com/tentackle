@@ -50,7 +50,7 @@ public class MapTypeBuilder<T extends Map<?, ?>> implements TripTypeBuilder<T> {
   /** the JDK maps without usable constructors, mapped to their wrapper functions. */
   private static final Map<Class<?>, Function<LinkedHashMap<Object, Object>, Map<?, ?>>> WRAPPED_TYPES = createWrappedTypes();
 
-  /** dito, but for the sorted variants, which must retain their comparator. */
+  /** ditto, but for the sorted variants, which must retain their comparator. */
   private static final Map<Class<?>, Function<SortedMap<Object, Object>, Map<?, ?>>> WRAPPED_SORTED_TYPES =
       createWrappedSortedTypes();
 

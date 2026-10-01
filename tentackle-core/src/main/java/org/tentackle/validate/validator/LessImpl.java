@@ -98,8 +98,8 @@ public final class LessImpl extends AbstractValidator<Less> {
     Comparable<Object> value = assertComparable(getValue(validationContext));
 
     if (value == null) {
-      // both null isn't less, except if nulls should be ignored
-      failed = !annotation.ignoreNulls() && object == null;
+      // null is the smallest value: nothing is less than null, except if nulls should be ignored
+      failed = !annotation.ignoreNulls();
     }
     else {
       if (object == null) {

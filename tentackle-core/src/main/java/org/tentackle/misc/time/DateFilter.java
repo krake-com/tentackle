@@ -19,10 +19,12 @@
 package org.tentackle.misc.time;
 
 /**
- * Filter add a missing or to convert a 2-digit year into a 4-digit one if the format requires that.
+ * Filter to prepare dates with separators for the {@link NumberShortcut}.
  * <p>
- * Only for dates with separators, such as 05/30 or 05/30/21.
- * If the filter detects such a date, the delimiters will be removed and the {@link NumberShortcut} does the remaining part.
+ * Only for dates with separators, such as 5/30 or 05/30/21, whose length differs from the date pattern.
+ * If the filter detects such a date, each part is padded to an even number of digits and the separators are removed,
+ * for example {@code 5/30/21} becomes {@code 053021}. The {@link NumberShortcut} does the remaining part, such as
+ * adding a missing year or converting a 2-digit year into a 4-digit one.
  */
 public class DateFilter implements SmartDateTimeParser.TextFilter {
 

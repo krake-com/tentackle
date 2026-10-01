@@ -23,7 +23,9 @@ package org.tentackle.validate.scope;
 import org.tentackle.validate.ValidationScope;
 
 /**
- * Validation scope valid in all scopes.
+ * Validation scope that applies to all scopes.<br>
+ * Validators configured with this scope are applied in any effective scope, and an effective
+ * scope of this kind applies all validators.
  *
  * @author harald
  */

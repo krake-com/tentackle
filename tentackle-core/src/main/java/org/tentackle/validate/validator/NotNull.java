@@ -31,8 +31,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The annotated element must be not null.
-
+ * The annotated element must not be null.<br>
+ * Implies that the element is mandatory.
+ *
  * @author harald
  */
 @Target({ElementType.METHOD, ElementType.FIELD})
@@ -91,7 +92,7 @@ public @interface NotNull {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 

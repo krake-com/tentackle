@@ -20,6 +20,12 @@ package org.tentackle.trip;
 
 import java.util.UUID;
 
+/**
+ * Remote interface to look up named remote objects.<br>
+ * Implemented by the server's {@link Registry}, which is always available under {@link Registry#REGISTRY_ID}.
+ *
+ * @see Transport#lookup(Class, String)
+ */
 public interface RemoteLookup extends Remote {
 
   /**

@@ -39,7 +39,8 @@ Every credential store organizes its entries by **service** and **account**, and
 service says what the secret is for, typically the application plus a purpose
 (`"com.example.myapp/google"`). The account says whose it is within that service, for example the user
 or an OAuth client id. The optional **label** is what the OS tools show the user: Keychain Access,
-Credential Manager, Seahorse, KWalletManager.
+Credential Manager, Seahorse, KWalletManager. Without a label, it is derived from the id as
+`service (account)`.
 
 Secrets are `char[]`, never `String`, so they can be wiped. The keyring never keeps a reference to an
 array that is passed in, and it always hands out a fresh array, which the caller should wipe when
@@ -48,8 +49,8 @@ done. Internally, all intermediate buffers are wiped before they are released.
 [`SecretsHelper`](../java/org/tentackle/keyring/SecretsHelper.java) has the tools for this:
 `wipe(char[])` and `wipe(byte[])` clear an array (null-safe), and `encode(char[])` /
 `decode(byte[])` convert a secret to and from UTF-8 bytes without the detour through a `String`,
-which could not be wiped. The arrays they return are to be wiped by the caller as well. A secret must not be empty and must not contain NUL characters, because some of the native
-APIs take C strings.
+which could not be wiped. The arrays they return are to be wiped by the caller as well. A secret must
+not be empty and must not contain NUL characters, because some of the native APIs take C strings.
 
 All keyrings are thread-safe.
 

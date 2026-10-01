@@ -35,14 +35,16 @@ import java.util.stream.Stream;
  * A copy-on-write wrapper for collections.<br>
  * The first modifying operation creates a clone to leave the original collection untouched.
  * <p>
- * With iteratorModifying=false, all operations are supported except {@link Iterator#remove()},
+ * The wrapped collection must be {@link Cloneable} and provide a public {@code clone()} method.
+ * <p>
+ * With {@code iteratorModifying=false}, all operations are supported except {@link Iterator#remove()},
  * which will throw an {@link UnsupportedOperationException}.<br>
- * With iteratorModifying=true, iterator() will create a copy of the collection
+ * With {@code iteratorModifying=true}, {@code iterator()} will create a copy of the collection
  * to allow modifications by the iterator.
  * <p>
- * Not to be mixed up with the classes in {@code java.util.concurrent} which
- * are threadsafe and create a copy for each modification. {@link CopyOnWriteCollection}
- * is not threadsafe and creates a copy only once before the first modification
+ * Not to be mixed up with the classes in {@code java.util.concurrent}, which
+ * are thread-safe and create a copy for each modification. {@link CopyOnWriteCollection}
+ * is not thread-safe and creates a copy only once before the first modification
  * is performed.
  *
  * @author harald
@@ -83,6 +85,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
    *
    * @param collection the collection
    * @param iteratorModifying true if iterators will be modifying, else readonly (avoids copy)
+   * @throws IllegalArgumentException if the collection is not cloneable
    */
   public CopyOnWriteCollection(Collection<E> collection, boolean iteratorModifying) {
     if (!(collection instanceof Cloneable)) {
@@ -102,6 +105,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
    * Creates a wrapper for a collection with read-only iterators.
    *
    * @param collection the collection
+   * @throws IllegalArgumentException if the collection is not cloneable
    */
   public CopyOnWriteCollection(Collection<E> collection) {
     this(collection, false);
@@ -116,9 +120,11 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
 
 
   /**
-   * Gets the cloned collection.
+   * Gets the cloned collection.<br>
+   * Clones the collection, if not done yet.
    *
    * @return the cloned collection
+   * @throws TentackleRuntimeException if cloning failed
    */
   @SuppressWarnings("unchecked")
   protected Collection<E> clonedCollection() {
@@ -128,7 +134,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
         notCloned = false;
       }
       catch (InvocationTargetException | IllegalAccessException ex) {
-        throw new TentackleRuntimeException("cloning collection failed");
+        throw new TentackleRuntimeException("cloning collection failed", ex);
       }
     }
     return collection;
@@ -203,7 +209,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
 
   @Override
   public boolean containsAll(Collection<?> c) {
-    return clonedCollection().containsAll(c);
+    return collection.containsAll(c);
   }
 
   @Override
@@ -263,7 +269,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
 
 
   /**
-   * Wrapper for an iterator that forbids invocations of the remove()-method.
+   * Wrapper for an iterator that forbids invocations of the {@code remove()} method.
    *
    * @param <E> the element type
    */

@@ -24,14 +24,17 @@ import org.tentackle.reflect.Interception;
 
 /**
  * Processor for all interception annotations in the core package.<br>
- * Applies to interceptors applicable to interfaces extending {@code Interceptable} or
- * implementation classes of {@code Interceptable}.
+ * Applies to interceptors applicable to methods of interfaces extending {@code Interceptable} or
+ * of classes implementing {@code Interceptable}.
  *
  * @author harald
  */
 @AnnotationProcessor
 public class AllInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 
+  /**
+   * Creates the processor for {@link Interception.Type#ALL}.
+   */
   public AllInterceptorAnnotationProcessor() {
     super(Interception.Type.ALL);
   }

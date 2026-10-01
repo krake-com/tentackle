@@ -18,5 +18,8 @@
 
 /**
  * Predefined validators.
+ * <p>
+ * Each constraint consists of an annotation, its validator implementation ({@code ...Impl})
+ * and a container annotation for repeated constraints ({@code ...Container}).
  */
 package org.tentackle.validate.validator;

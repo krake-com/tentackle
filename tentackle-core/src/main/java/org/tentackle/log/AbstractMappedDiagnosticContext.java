@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractMappedDiagnosticContext implements MappedDiagnosticContext {
 
   /**
-   * Parent constructor.
+   * Creates a mapped diagnostic context.
    */
   public AbstractMappedDiagnosticContext() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -56,7 +56,8 @@ public abstract class AbstractMappedDiagnosticContext implements MappedDiagnosti
 
 
   /**
-   * Returns the entries as a string.
+   * Returns the entries as a string.<br>
+   * The format is that of a {@link ParameterString}, i.e. {@code key='value', ...}.
    *
    * @return the string representation
    * @see ParameterString

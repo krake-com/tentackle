@@ -70,9 +70,10 @@ public record TransportClientInfo(Transport transport, String connectionName, UU
   }
 
   /**
-   * Gets the client host address.
+   * Gets the client host address.<br>
+   * Derived from the connection name, which is usually of the form {@code /host:port}.
    *
-   * @return the address
+   * @return the address, null if no connection name
    */
   public String getHost() {
     if (connectionName != null) {

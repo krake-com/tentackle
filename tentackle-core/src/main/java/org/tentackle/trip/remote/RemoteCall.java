@@ -22,6 +22,9 @@ import java.util.UUID;
 
 /**
  * Interface for remote calls.
+ *
+ * @see InitialRemoteCall
+ * @see IdentifiedRemoteCall
  */
 public interface RemoteCall {
 

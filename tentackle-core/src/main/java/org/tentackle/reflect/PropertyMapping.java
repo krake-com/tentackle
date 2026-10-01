@@ -29,6 +29,8 @@ import java.util.Objects;
 /**
  * Describes the mapping of a property.<br>
  * Properties can be either is/set-pairs or get/set-pairs of methods or some other readonly method.
+ * <p>
+ * Equality refers to the property name only.
  *
  * @param <T> the type of the bean providing the property
  */
@@ -45,6 +47,7 @@ public class PropertyMapping<T> {
    * @param name the name of the property
    * @param getter the getter
    * @param setter the setter, null if readonly
+   * @throws NullPointerException if name or getter is null
    */
   public PropertyMapping(String name, Method getter, Method setter) {
     this.name = Objects.requireNonNull(name);
@@ -91,7 +94,8 @@ public class PropertyMapping<T> {
   }
 
   /**
-   * Gets the type of the value held by the property.
+   * Gets the type of the value held by the property.<br>
+   * This is the parameter type of the setter, if any, else the return type of the getter.
    *
    * @return the value type
    */
@@ -104,6 +108,7 @@ public class PropertyMapping<T> {
    *
    * @param object the object containing the property
    * @return the value
+   * @throws TentackleRuntimeException if invoking the getter failed
    */
   public Object get(T object) {
     try {
@@ -117,12 +122,13 @@ public class PropertyMapping<T> {
   /**
    * Sets the property value.<br>
    * The value will be converted to the type of the property, if necessary.
-   * <p>
-   * Throws a {@link ImmutableException} if property is readonly.<br>
-   * Throws a {@link IllegalArgumentException} if value cannot be converted to the type of the property.
    *
    * @param object the object containing the property
    * @param value the value
+   * @throws ImmutableException if the property is readonly
+   * @throws IllegalArgumentException if the value cannot be converted to the type of the property
+   * @throws TentackleRuntimeException if invoking the setter failed
+   * @see org.tentackle.misc.ObjectUtilities#convert(Class, Object)
    */
   public void set(T object, Object value) {
     if (isReadOnly()) {

@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * An output stream that writes packets with a header holding the packet size.
- * The header is written as 2 bytes. Thus, the maximum packet size is 64K - 1.
+ * An output stream that writes packets with a header holding the packet size.<br>
+ * The header is written as 2 bytes, low byte first. Thus, the maximum packet size is 64K - 1.
  *
  * @see PacketSizedInputStream
  */
@@ -33,7 +33,7 @@ public abstract class PacketSizedOutputStream extends FilterOutputStream {
   private boolean closed;                     // true if closed
 
   /**
-   * Creates a compressed output stream.
+   * Creates a packet-sized output stream.
    *
    * @param out the underlying output stream (e.g., from a socket)
    */
@@ -50,6 +50,8 @@ public abstract class PacketSizedOutputStream extends FilterOutputStream {
   }
 
   /**
+   * Returns the closed state.
+   *
    * @return true if closed
    */
   public boolean isClosed() {
@@ -61,6 +63,7 @@ public abstract class PacketSizedOutputStream extends FilterOutputStream {
    * Writes the header.
    *
    * @param size the logical packet size
+   * @throws IOException if writing failed
    */
   protected void writeHeader(int size) throws IOException {
     byte[] header = new byte[2];

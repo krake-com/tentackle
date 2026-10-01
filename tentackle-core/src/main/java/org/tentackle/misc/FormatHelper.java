@@ -49,6 +49,13 @@ import static java.util.Calendar.YEAR;
 
 /**
  * Formatting helper methods.
+ * <p>
+ * The localized patterns are taken from the {@link MiscCoreBundle} and can be replaced per locale via
+ * {@link #applyPatterns(Locale, Patterns)}. Methods without a locale parameter refer to the current locale
+ * of the {@link LocaleProvider}.
+ * <p>
+ * The {@code parseXXX} methods parse the exact format. For the smart parsers accepting shortcuts and incomplete
+ * input, see {@link DateTimeUtilities}.
  *
  * @author harald
  */
@@ -250,7 +257,8 @@ public class FormatHelper {
 
 
   /**
-   * Applies a set of patterns to a locale.
+   * Applies a set of patterns to a locale.<br>
+   * Replaces the patterns from the {@link MiscCoreBundle}.
    *
    * @param locale the locale
    * @param patterns the patterns
@@ -320,7 +328,7 @@ public class FormatHelper {
   }
 
   /**
-   * Gets the timestamp pattern with timezone
+   * Gets the timestamp pattern with timezone.
    *
    * @param locale the locale
    * @return the pattern
@@ -340,7 +348,7 @@ public class FormatHelper {
   }
 
   /**
-   * Gets the short timestamp pattern with zone offset
+   * Gets the short timestamp pattern with zone offset.
    *
    * @param locale the locale
    * @return the pattern
@@ -591,11 +599,10 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static Timestamp parseTimestamp(String str) {
     return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().localDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
@@ -603,11 +610,10 @@ public class FormatHelper {
 
   /**
    * Parses a short timestamp.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static Timestamp parseShortTimestamp(String str) {
     return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().shortLocalDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
@@ -615,11 +621,10 @@ public class FormatHelper {
 
   /**
    * Parses a date.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static org.tentackle.common.Date parseDate(String str) {
     return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().localDateFormat.parse(str, LocalDate::from)).getTime());
@@ -627,11 +632,10 @@ public class FormatHelper {
 
   /**
    * Parses a short date.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static org.tentackle.common.Date parseShortDate(String str) {
     return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().shortLocalDateFormat.parse(str, LocalDate::from)).getTime());
@@ -639,11 +643,10 @@ public class FormatHelper {
 
   /**
    * Parses a time.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static org.tentackle.common.Time parseTime(String str) {
     return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().localTimeFormat.parse(str, LocalTime::from)).getTime());
@@ -651,11 +654,10 @@ public class FormatHelper {
 
   /**
    * Parses a short time.
-   * <p>
-   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static org.tentackle.common.Time parseShortTime(String str) {
     return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().shortLocalTimeFormat.parse(str, LocalTime::from)).getTime());
@@ -663,11 +665,10 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDateTime parseLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().localDateTimeFormat);
@@ -675,11 +676,10 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp with zone offset.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetDateTime parseOffsetDateTime(String str) {
     return OffsetDateTime.parse(str, getFormatting().localDateTimeFormatWithOffset);
@@ -687,11 +687,10 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp with timezone.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static ZonedDateTime parseZonedDateTime(String str) {
     return ZonedDateTime.parse(str, getFormatting().localDateTimeFormatWithTimeZone);
@@ -699,11 +698,10 @@ public class FormatHelper {
 
   /**
    * Parses a short timestamp.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDateTime parseShortLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().shortLocalDateTimeFormat);
@@ -711,11 +709,10 @@ public class FormatHelper {
 
   /**
    * Parses a short timestamp with zone offset.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetDateTime parseShortOffsetDateTime(String str) {
     return OffsetDateTime.parse(str, getFormatting().shortLocalDateTimeFormatWithOffset);
@@ -723,11 +720,10 @@ public class FormatHelper {
 
   /**
    * Parses a short timestamp with timezone.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static ZonedDateTime parseShortZonedDateTime(String str) {
     return ZonedDateTime.parse(str, getFormatting().shortLocalDateTimeFormatWithTimeZone);
@@ -735,11 +731,10 @@ public class FormatHelper {
 
   /**
    * Parses a date.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDate parseLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().localDateFormat);
@@ -747,11 +742,10 @@ public class FormatHelper {
 
   /**
    * Parses a short date.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDate parseShortLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().shortLocalDateFormat);
@@ -759,11 +753,10 @@ public class FormatHelper {
 
   /**
    * Parses a time.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalTime parseLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().localTimeFormat);
@@ -771,11 +764,10 @@ public class FormatHelper {
 
   /**
    * Parses a time with zone offset.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetTime parseOffsetTime(String str) {
     return OffsetTime.parse(str, getFormatting().localTimeFormatWithOffset);
@@ -783,11 +775,10 @@ public class FormatHelper {
 
   /**
    * Parses a short time.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalTime parseShortLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().shortLocalTimeFormat);
@@ -795,11 +786,10 @@ public class FormatHelper {
 
   /**
    * Parses short a time with zone offset.
-   * <p>
-   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static OffsetTime parseShortOffsetTime(String str) {
     return OffsetTime.parse(str, getFormatting().shortLocalTimeFormatWithOffset);
@@ -1241,12 +1231,13 @@ public class FormatHelper {
 
 
   /**
-   * Determines the scale from a given numeric string.
+   * Determines the scale from a given numeric string.<br>
+   * The scale is the number of digits after the decimal separator of the current locale.
    * <p>
    * Does not work with scientific number strings.
    *
-   * @param value the numeric string
-   * @return the scale
+   * @param value the numeric string, may be null
+   * @return the scale, 0 if value is null or has no decimal separator
    */
   public static int determineScale(String value) {
     int scale = 0;
@@ -1264,7 +1255,7 @@ public class FormatHelper {
 
   /**
    * Changes the decimal format according to the given scale.<br>
-   * Leaves the part before the comma unchanged!
+   * Leaves the part before the decimal point unchanged!
    *
    * @param format the decimal format
    * @param scale the scale
@@ -1296,7 +1287,7 @@ public class FormatHelper {
     format.applyPattern(fmt);
 
     if (dotNdx <= 0 && groupingUsed)  {
-      // default has been set: restore grouping pars
+      // default has been set: restore grouping parameters
       format.setGroupingSize(groupingSize);
       format.setGroupingUsed(true);
     }
@@ -1310,7 +1301,7 @@ public class FormatHelper {
    *
    * @param money the amount of money
    * @param debit true if the amount is debit, else credit
-   * @return the formatted value
+   * @return the formatted value, the empty string if money is null
    */
   public static String debitCreditToString(BMoney money, boolean debit) {
     return getFormatting().debitCreditToString(money, debit);
@@ -1318,7 +1309,7 @@ public class FormatHelper {
 
 
   /**
-   * Checks whether format pattern contains formatting codes for time.
+   * Checks whether the format pattern contains formatting codes for time.
    *
    * @param pattern the format pattern
    * @return true if contains time-formatting
@@ -1335,7 +1326,7 @@ public class FormatHelper {
   }
 
   /**
-   * Checks whether format pattern contains formatting codes for date.
+   * Checks whether the format pattern contains formatting codes for date.
    *
    * @param pattern the format pattern
    * @return true if contains date-formatting
@@ -1354,7 +1345,7 @@ public class FormatHelper {
   }
 
   /**
-   * Checks whether format pattern contains formatting codes for the zone offset.
+   * Checks whether the format pattern contains formatting codes for the zone offset.
    *
    * @param pattern the format pattern
    * @return true if contains zone-offset formatting
@@ -1367,7 +1358,7 @@ public class FormatHelper {
   }
 
   /**
-   * Checks whether format pattern contains formatting codes for the timezone.
+   * Checks whether the format pattern contains formatting codes for the timezone.
    *
    * @param pattern the format pattern
    * @return true if contains timezone formatting
@@ -1382,7 +1373,7 @@ public class FormatHelper {
   /**
    * Translates a field of {@link java.util.Calendar} to a localized string.
    * <p>
-   * Example: {@link java.util.Calendar#DAY_OF_MONTH} will be translated to "month".
+   * Example: {@link java.util.Calendar#DAY_OF_MONTH} will be translated to "day".
    * <p>
    * Notice that only the following field types are supported:
    * <ul>

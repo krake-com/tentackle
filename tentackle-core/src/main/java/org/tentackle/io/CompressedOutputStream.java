@@ -28,16 +28,16 @@ import java.util.zip.Deflater;
  * Stream to write compressed data to the underlying output stream.
  * <p>
  * Replacement for GZIPOutputStream and ZipOutputStream of java.util.zip
- * capable for communication link streams like tcp-sockets.
+ * capable of communication link streams like TCP sockets.
  * The standard classes are only file-capable (relying on EOF-detection).
- * In comlinks, however, there are several packets instead of a single file.
- * Hence, the stream must be blocked, i.e., the (varying) blocksize must
+ * In communication links, however, there are several packets instead of a single file.
+ * Hence, the stream must be blocked, i.e., the (varying) block size must
  * become part of the protocol to allow the corresponding input stream
  * to detect the end of the packets.
  * Furthermore, we optimize to compress only packets larger than a certain size.
- * All smaller packets will be transferred uncompressed.
+ * All smaller packets, and those that don't get smaller by compression, will be transferred uncompressed.
  * For the packet size we use the first two bytes in the packet (short), while
- * MSBit signals whether the packet is compressed or not.
+ * the MSB signals whether the packet is compressed or not.
  * Because of this, the maximum buffer size is limited to 32K - 1.
  */
 public class CompressedOutputStream extends PacketSizedOutputStream {
@@ -73,6 +73,7 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
    * @param out the underlying output stream (e.g., from a socket)
    * @param bufSize the buffer size for compression (larger packets are split)
    * @param minCompressSize the minimum packet size to use compression (smaller packets will remain uncompressed)
+   * @throws IllegalArgumentException if bufSize is not greater than minCompressSize or exceeds 32K - 1
    */
   public CompressedOutputStream(OutputStream out, int bufSize, int minCompressSize) {
     super(out);
@@ -171,7 +172,7 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
   }
 
   /**
-   * Overridden to print stats only
+   * Overridden to release the deflater and log the statistics.
    */
   @Override
   public void close() throws IOException {
@@ -203,6 +204,7 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
    *
    * @param size the logical packet size
    * @param compressed is true if the packet is compressed, false if uncompressed
+   * @throws IOException if writing failed
    */
   protected void writeHeader(int size, boolean compressed) throws IOException {
     if (compressed) {

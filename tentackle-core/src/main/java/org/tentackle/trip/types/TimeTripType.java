@@ -37,7 +37,7 @@ import static java.util.Calendar.SECOND;
 /**
  * Trip type for {@link Time}.
  * <p>
- * Times are treated as value objects and thus not referencable.
+ * Times are treated as value objects and thus not referenceable.
  * In Tentackle, org.tentackle.common.Times are usually frozen, but java.sql.Times are
  * mutable and therefore technically no real value objects. However, since it is very bad practice to modify
  * such objects or share their references, we treat them as non-referenceable value objects.

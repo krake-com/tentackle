@@ -98,11 +98,13 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   /**
    * Creates a task dispatcher.<br>
+   * The dispatcher is a daemon thread. The wait interval is set to half the dead interval.
    *
-   * @param name the dispatcher's name
+   * @param name the dispatcher's name, an instance counter is appended
    * @param usingMutexLocking true use a mutex for locking, else just a counter
-   * @param sleepInterval keep alive in milliseconds
+   * @param sleepInterval the maximum time in milliseconds to sleep if there is nothing to do, must be &gt; 0
    * @param deadInterval interval in milliseconds to detect a dead dispatcher, 0 to disable detection
+   * @throws IllegalArgumentException if the intervals are out of range
    */
   public DefaultTaskDispatcher(String name, boolean usingMutexLocking, long sleepInterval, long deadInterval) {
     super(name + "(" + INSTANCE_COUNTER.next(name) + ")");
@@ -129,7 +131,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Creates a task dispatcher with counter-based locking, 1 s sleep, 30 s dead interval.
+   * Creates a task dispatcher with counter-based locking, 1 s sleep and 60 s dead interval.
    *
    * @param name the dispatcher's name
    */
@@ -522,8 +524,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
 
   /**
-   * Invoke {@link TaskListener#started(org.tentackle.task.Task)}
-   * for all listeners.
+   * Invokes {@link TaskListener#started(org.tentackle.task.Task)}
+   * for all listeners of the dispatcher.<br>
+   * Exceptions thrown by the listeners are logged.
+   *
    * @param task the task
    */
   protected void fireStarted(Task task) {
@@ -539,8 +543,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
 
   /**
-   * Invoke {@link TaskListener#completed(org.tentackle.task.Task)}
-   * for all listeners.
+   * Invokes {@link TaskListener#completed(org.tentackle.task.Task)}
+   * for all listeners of the dispatcher.<br>
+   * Exceptions thrown by the listeners are logged.
+   *
    * @param task the task
    */
   protected void fireCompleted(Task task) {
@@ -777,7 +783,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Does any necessary cleanup after the dispatcher thread has been terminated.<br>
+   * Does any necessary cleanup after the dispatcher thread has been terminated.
    */
   protected void cleanup() {
     terminationRequested = true;  // in case termination due to some exception
@@ -827,7 +833,9 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Asserts that the intervals are in range, if set
+   * Asserts that the intervals are in range, if set.
+   *
+   * @throws IllegalArgumentException if the dead interval is not greater than the sleep interval
    */
   protected void assertIntervalsInRange() {
     if (deadInterval > 0 && sleepInterval > 0 && deadInterval <= sleepInterval) {

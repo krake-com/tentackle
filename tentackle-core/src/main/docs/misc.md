@@ -2,13 +2,9 @@
 
 ## Overview and Motivation
 
-The package comment of `org.tentackle.misc` is disarmingly honest:
-
-> Miscellaneous stuff. Everything that doesn't fit elsewhere.
-
-That undersells it. The package is not a junk drawer of leftovers — it holds several of the
-**contracts the upper layers are built from**, plus the collections, pooling and formatting
-machinery those layers depend on. The clearest evidence is
+The name `org.tentackle.misc` suggests a junk drawer of leftovers, but that undersells it. The
+package holds several of the **contracts the upper layers are built from**, plus the collections,
+pooling and formatting machinery those layers depend on. The clearest evidence is
 [`PersistentObject`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PersistentObject.java),
 the persistence half of every [PDO](../../../../tentackle-pdo/src/main/docs/pdo.md), which extends
 five interfaces defined here:
@@ -92,7 +88,7 @@ PDOs make a hash- or tree-based `Set` unsound: their `hashCode`/`equals` are id-
 a transient object is first persisted, and cyclic graphs are deserialized through partially built
 placeholders whose ids are not yet set — either way a set's bucketing would be corrupted, while a
 list stores by position and never hashes its elements. See
-[Object identity — why relations are lists](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists).
+[Object identity — why relations are lists](../../../../tentackle-pdo/src/main/docs/pdo.md#object-identity-equals-hashcode-and-why-relations-are-lists).
 
 ### Copy-on-write wrappers
 
@@ -106,7 +102,11 @@ clone it lazily before the *first* modification, leaving the original untouched.
 > handing out a collection that the receiver may modify without disturbing the owner.
 
 With `iteratorModifying=false` every operation works except `Iterator.remove()`; set it to `true`
-and `iterator()` copies the collection so the iterator can modify it.
+and `iterator()` copies the collection so the iterator can modify it. `CopyOnWriteList` has the same
+switch for its list iterators (`listIteratorModifying`, on by default, since `List.sort` modifies
+through them). The views returned by `subList()` and `reversed()` may be written to as well, so they
+are backed by the copy and create it on demand. The wrapped collection must be `Cloneable` with a
+public `clone()` method.
 
 ### Identifiable maps and keys
 
@@ -114,9 +114,9 @@ and `iterator()` copies the collection so the iterator can modify it.
 [`Identifiable`](../java/org/tentackle/misc/Identifiable.java)s by a key composed of class **and**
 object id — necessary because ids are only unique per class, so a naive `Map<Long,?>` would
 collide across entity types. [`IdentifiableKey<T>`](../java/org/tentackle/misc/IdentifiableKey.java)
-is that composite key, usable for hashing or as a `Comparable`. The map starts as a hash map and
-switches itself to a tree map on the first call to `getAllSorted()`, trading a little speed for
-ordering only when ordering is actually asked for. It is not thread-safe: build and consume it
+is that composite key, usable for hashing or as a `Comparable` (sorted by class name, then id). The
+map starts as a hash map; the first call to `getAllSorted()` adds a tree map that is maintained
+alongside from then on, trading a little speed for ordering only when ordering is actually asked for. It is not thread-safe: build and consume it
 from a single thread (as `loadComponents()` does), or synchronize externally.
 
 ### Immutable collections
@@ -143,10 +143,23 @@ sessions and `AbstractConnectionPool` for [TRIP](trip.md) connections both build
 | [`PoolTimeoutThread`](../java/org/tentackle/misc/PoolTimeoutThread.java) | **One** thread for *all* pools, closing instances idle or in use too long |
 
 A poolable's `poolId` doubles as its state: 0 when idle in the pool, greater than 0 while lent out,
--1 once removed. The timeout thread exists for long-running servers: releasing resources and
+-1 once removed. Resources are created lazily on the first `get()`, which also registers the pool
+with the timeout thread. A resource that died while idle in the pool (closed by the peer, for
+example) is dropped and replaced instead of being handed out, and returning a closed resource
+removes it from the pool.
+
+While a resource is lent, its slot holds only a weak reference to it. A resource that was lent but
+never returned and has been garbage collected is thus detected by the monitor and removed from the
+pool with a warning naming the thread that took it. `AbstractPool.getSlotCountPerThread()` and
+`logSlotCountPerThread()` report which threads hold how many resources — logged automatically when
+the pool is exhausted, since that is often a sign of such a leak.
+
+The timeout thread exists for long-running servers: releasing resources and
 capping memory matters more, over days of uptime, than keeping a warm connection around forever.
-Both an idle timeout (`getIdleMinutes()`) and a maximum usage time (`getUsageMinutes()`) are
-supported — the latter recycles resources that have been alive too long regardless of activity.
+Both an idle timeout (`getIdleMinutes()`, honored only above the minimum size) and a maximum usage
+time (`getUsageMinutes()`, counted from the first use) are supported — the latter recycles resources
+that have been alive too long regardless of activity. A negative minimum size shuts the pool down
+once all of its resources have timed out.
 
 
 ## Formatting and Parsing
@@ -179,23 +192,24 @@ expressions. The often-quoted example says it best:
 
 Parsing runs in four steps:
 
-1. **Text filters** normalize the input — completing a two-digit year, expanding `+2:30` to
-   `+02:30`, resolving `berlin` to `Europe/Berlin`.
-2. **Shortcuts** modify the current value according to patterns found in the input, removing what
-   they consume.
-3. If no shortcut applied, whatever is left goes to a regular `DateTimeFormatter`.
-4. If that throws, **error handlers** get a chance to repair the input and retry.
+1. **Text filters** normalize the input — turning `5/30/21` into `053021` for the number shortcut,
+   expanding `+2:30` to `+02:30`, resolving `berlin` to `Europe/Berlin`.
+2. **Shortcuts** modify the current value according to patterns found in the first word of the
+   input, removing what they consume. If a shortcut applied, an optional second word sets the zone
+   offset or time zone — prefixed with `=`, it converts the value instead.
+3. If no shortcut applied, the input goes to a regular `DateTimeFormatter`.
+4. If that throws, **error handlers** get a chance to repair the input and retry, each at most once.
 
 The built-in vocabulary:
 
 | Element                                                                    | Effect                                                                 |
 |----------------------------------------------------------------------------|------------------------------------------------------------------------|
 | [`NowShortcut`](../java/org/tentackle/misc/time/NowShortcut.java)            | Input starting with `.`, `,` or `/` means *now*                       |
-| [`AddShortcut`](../java/org/tentackle/misc/time/AddShortcut.java)            | `+10h` adds ten hours; a bare `-10` defaults to days (or hours for time-only types) |
-| [`NumberShortcut`](../java/org/tentackle/misc/time/NumberShortcut.java)      | `5h` → 05:00:00.000; `7M` → July 1st, midnight. Sets lesser fields to their minimum |
+| [`AddShortcut`](../java/org/tentackle/misc/time/AddShortcut.java)            | `+10h` adds ten hours; units are `y`, `M`, `d`, `h`, `m`, `s`; a bare `-10` defaults to days (or hours for time-only types) |
+| [`NumberShortcut`](../java/org/tentackle/misc/time/NumberShortcut.java)      | `5h` → 05:00:00.000; `7M` → July 1st, midnight. Sets lesser fields to their minimum. Four and six digits are read as `ddMM`, `ddMMyy`, `HHmm`, `HHmmss` (in the order of the locale's pattern) |
 | [`ZoneShortcut`](../java/org/tentackle/misc/time/ZoneShortcut.java) / [`OffsetShortcut`](../java/org/tentackle/misc/time/OffsetShortcut.java) | A zone or offset; prefixed with `=` it *converts* the value, otherwise it just sets it |
 | [`DateFilter`](../java/org/tentackle/misc/time/DateFilter.java), [`ZoneFilter`](../java/org/tentackle/misc/time/ZoneFilter.java), [`OffsetFilter`](../java/org/tentackle/misc/time/OffsetFilter.java) | The normalizing filters |
-| [`MissingTimeHandler`](../java/org/tentackle/misc/time/MissingTimeHandler.java), [`MissingZoneIdHandler`](../java/org/tentackle/misc/time/MissingZoneIdHandler.java), [`MissingOffsetHandler`](../java/org/tentackle/misc/time/MissingOffsetHandler.java) | The error handlers that fill in what the input omitted |
+| [`MissingTimeHandler`](../java/org/tentackle/misc/time/MissingTimeHandler.java), [`MissingZoneIdHandler`](../java/org/tentackle/misc/time/MissingZoneIdHandler.java), [`MissingOffsetHandler`](../java/org/tentackle/misc/time/MissingOffsetHandler.java) | The error handlers that fill in what the input omitted: midnight or the rest of a partial time, the default zone, the current offset |
 
 `NumberShortcut`'s sliding window deserves a mention: `010120` becomes 2020-01-01 while `010199`
 becomes 1999-01-01, not 2099 — a `WindowProvider` decides where the century flips.
@@ -208,9 +222,10 @@ and friends for the whole `java.time` family.
 ### CSV and text
 
 - [`CsvConverter`](../java/org/tentackle/misc/CsvConverter.java) — a `@Service` converting values
-  to and from delimiter-separated strings, RFC 4180 compliant. It is what the RDC table export
-  writes when [tentackle-fx-rdc-poi](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) is
-  absent.
+  to and from delimiter-separated strings, RFC 4180 compliant. `toCsvLenient()` picks the first of
+  comma, semicolon, blank and tab that avoids quoting altogether. Each line is one record, so quoted
+  values must not span lines. It is what the RDC table export writes when
+  [tentackle-fx-rdc-poi](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) is absent.
 - [`SubString`](../java/org/tentackle/misc/SubString.java) — a string segment described by its
   indexes, materialized lazily, so index arithmetic costs no string allocations.
 - [`CompoundValue`](../java/org/tentackle/misc/CompoundValue.java) — builds objects from strings:
@@ -251,9 +266,13 @@ tiny handoff: one thread blocks in `get()` until another calls `accept()`.
 loaders registered with
 [`@PropertiesResourceService`](../java/org/tentackle/misc/PropertiesResourceService.java). Out of
 the box only [`DefaultPropertiesResource`](../java/org/tentackle/misc/DefaultPropertiesResource.java)
-(file-based, priority 100) is present; an application can add loaders to override properties from
-environment variables, a YAML file, or anywhere else — see the
-[service API](../../../../tentackle-common/src/main/docs/services.md).
+is present, which tries the name as a file first and as a classpath resource second. An application
+can add loaders to override properties from environment variables, a YAML file, or anywhere else —
+see the [service API](../../../../tentackle-common/src/main/docs/services.md). All loaders are
+applied in ascending `priority`, so a higher priority overrides a lower one; without an explicit
+priority, the loaders get 100, 200, … in reverse discovery order. A loader annotated with
+`stopIfNotFound = true` stops the chain once it *did* find the resource — the attribute's name
+notwithstanding.
 
 For the common case of overriding keys from the environment — a container deployment passing the
 database URL, for instance — `applyEnvironment(properties, prefix)` does this without a custom
@@ -273,8 +292,9 @@ consist of `ChainedProperties`, and must not be cyclic.
 [`PropertySupport`](../java/org/tentackle/misc/PropertySupport.java),
 [`PropertyEvent`](../java/org/tentackle/misc/PropertyEvent.java) and
 [`PropertyListener`](../java/org/tentackle/misc/PropertyListener.java) replace
-`java.beans.PropertyChangeSupport` and friends, which moved into the Swing desktop module in Java 9
-— a dependency a headless server has no business carrying.
+`java.beans.PropertyChangeSupport` and friends, which belong to the `java.desktop` module since Java 9
+— a dependency a headless server has no business carrying. Listeners are invoked *before* the
+property changes, so a listener can veto the change by throwing a `RuntimeException`.
 
 
 ## Package Layout

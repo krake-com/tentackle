@@ -32,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Mixin to implement dynamic proxies.
+ * <p>
+ * A mixin holds the delegate implementing one interface of a dynamic proxy.
+ * The implementation class is determined via a {@link ClassMapper}. A mixin without an
+ * implementation class (or whose implementation is a {@link DummyDelegate}) is a dummy mixin.
  *
  * @param <T> the type the mixin is mixed in
  * @param <M> the type of the mixin
@@ -101,6 +105,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    *                       or null to use the clazz as the declaring class
    *
    * @throws ClassNotFoundException if no implementation found
+   * @throws IllegalArgumentException if the implementation does not implement an extension of superInterface
    */
   @SuppressWarnings("unchecked")
   public Mixin(ClassMapper mapper, Class<T> clazz, Class<?> superInterface)
@@ -139,16 +144,15 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * Dummy mixins just map nothing at all.
    *
    * @param clazz          the declaring interface class
-   * @param superInterface the super interface class the implementation class must implement an extension of,
-   *                       or null to use the clazz as the declaring class
-   * @throws ClassNotFoundException if no implementation found
+   * @param superInterface the declaring class, or null to use the clazz as the declaring class
+   * @throws ClassNotFoundException never thrown for dummy mixins
    */
   public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {
     this(null, clazz, superInterface);
   }
 
   /**
-   * No-arys constructor provided for TRIP.
+   * No-args constructor provided for TRIP.
    */
   public Mixin() {
   }
@@ -166,8 +170,10 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
   /**
    * Creates the delegate instance for the implementation class.<br>
+   * The first public constructor whose parameter types are assignable to the given argument classes is used.
    * Since delegates may be found in superclasses, we need some expensive isAssignableFrom checking.
-   * However, the constructors found are cached by a map, which speeds up again.
+   * However, the constructors found are cached by a map, which speeds up again.<br>
+   * Does nothing for dummy mixins without an implementation class.
    *
    * @param constructorArgumentClasses the constructor argument classes
    * @param constructorArguments the constructor arguments
@@ -237,7 +243,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   /**
    * Gets the delegate object.
    *
-   * @return the instance of the declaring class
+   * @return the instance of the declaring class, null if not created yet or dummy mixin
    */
   public M getDelegate() {
     return delegate;

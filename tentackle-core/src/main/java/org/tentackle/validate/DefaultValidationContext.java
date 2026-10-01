@@ -28,7 +28,9 @@ import java.util.function.Supplier;
 /**
  * Default implementation of a validation context.
  * <p>
- * Notice: not a record, may be extended by application.
+ * Notice: not a record, may be extended by the application.
+ * <p>
+ * If created with an object supplier, the supplier is invoked by each invocation of {@link #getObject()}.
  *
  * @author harald
  */
@@ -74,7 +76,7 @@ public class DefaultValidationContext implements ValidationContext {
 
   /**
    * Creates a validation context with a lazy object provider.<br>
-   * The object to validate is retrieved only if actually validated.
+   * The object to validate is retrieved only when requested by a validator.
    * Allows validators to avoid the invocation of the method to load the object
    * if the pre-condition fails. Useful for lazy list relations, for example.
    *

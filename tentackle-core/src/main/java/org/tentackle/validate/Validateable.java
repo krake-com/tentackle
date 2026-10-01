@@ -33,7 +33,7 @@ import java.util.List;
  * but can be overridden to do something else.
  * <p>
  * Another use case of implementing this interface without overriding the validation method
- * is to hide the {@code ValidationUtilities.getInstances().validate()} call or to express
+ * is to hide the {@code ValidationUtilities.getInstance().validate()} call or to express
  * that this object must be validated or just to enhance readability.
  * <p>
  * Important: those objects must be validated by their own validation method and

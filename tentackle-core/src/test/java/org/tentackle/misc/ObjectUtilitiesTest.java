@@ -146,6 +146,7 @@ public class ObjectUtilitiesTest {
     assertTrue(ou.isZero(0.0f));
     assertTrue(ou.isZero(BigInteger.ZERO));
     assertTrue(ou.isZero(BigDecimal.ZERO));
+    assertTrue(ou.isZero(new BigDecimal("0.00")));    // scale must not matter
     assertTrue(ou.isZero(new BMoney(0.0d, 2)));
 
     assertFalse(ou.isZero(1));

@@ -92,14 +92,16 @@ public @interface Pattern {
   String condition() default "";
 
   /**
-   * The regexp flags from {@link java.util.regex.Pattern}
+   * The regexp flags from {@link java.util.regex.Pattern}.
    *
    * @return the flags, default is 0
    */
   int flag() default 0;
 
   /**
-   * @return value the regular expression
+   * The regular expression the element must match.
+   *
+   * @return the regular expression
    */
   String value();
 

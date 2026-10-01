@@ -25,7 +25,10 @@ interface TripTypeHolder {
 
 
 /**
- * A reference to a de-duplicatable object.
+ * A reference to an object within a stream.
+ * <p>
+ * An object is written only once per message. Later occurrences are sent as references only,
+ * which preserves shared objects and cycles and implements deduplication.
  *
  * @param <T> the type of the de-duplicatable object
  */
@@ -43,6 +46,7 @@ public final class Reference<T> {
    * @param referenceId the reference id, starting from 0
    * @param sent true if already sent, false if the object content follows in the stream
    * @param isSender true if this is a reference from the sender, false if from the receiver
+   * @throws IllegalArgumentException if referenceId is negative
    */
   public Reference(int referenceId, boolean sent, boolean isSender) {
     this.referenceId = referenceId;
@@ -146,6 +150,7 @@ public final class Reference<T> {
   /**
    * Reads a reference from the given stream.
    *
+   * @param <T> the type of the referenced object
    * @param stream the stream to read from
    * @param opCode the op code (already read from the stream)
    * @return the reference

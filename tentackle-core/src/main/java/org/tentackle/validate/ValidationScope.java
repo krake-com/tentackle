@@ -21,6 +21,10 @@ package org.tentackle.validate;
 
 /**
  * A validation scope.
+ * <p>
+ * Validators are configured with the scopes they apply to. The validation is run with an effective scope,
+ * and only the validators whose configured scopes match the effective scope are applied.
+ * Scopes are singletons implementing an interface extending {@code ValidationScope}.
  *
  * @author harald
  */

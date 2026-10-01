@@ -35,7 +35,7 @@ interface LongTypeHolder {
 
 
 /**
- * Trip type for {@link Long[]} array.
+ * Trip type for {@code Long[]} array.
  */
 @TripTypeService(Long[].class)
 public final class LongArrayTripType extends AbstractPredefinedArrayTripType<Long[]> {

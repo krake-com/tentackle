@@ -17,7 +17,11 @@
  */
 
 /**
- * Miscellaneous stuff.<br>
- * Everything that doesn't fit elsewhere.
+ * Miscellaneous low-level contracts and utilities.
+ * <p>
+ * Contains the contracts implemented by the upper layers, such as {@link org.tentackle.misc.Identifiable},
+ * {@link org.tentackle.misc.Immutable}, {@link org.tentackle.misc.Snapshotable} and {@link org.tentackle.misc.Modifiable},
+ * the {@link org.tentackle.misc.TrackedList}, pooling ({@link org.tentackle.misc.Pool}), the
+ * {@link org.tentackle.misc.CompoundValue}, formatting and conversion helpers, and everything else that doesn't fit elsewhere.
  */
 package org.tentackle.misc;

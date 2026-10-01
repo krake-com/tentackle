@@ -22,16 +22,14 @@ import java.util.Objects;
 import java.util.prefs.BackingStoreException;
 
 /**
- * User- and System-Preferences combined.<br>
- *
- * Implements Preferences in such a way that
- * user-space overwrites system space, which is the default
- * for most applications.
- * Furthermore, some helper methods allow exporting and importing
- * with file-dialogs, etc...
+ * User- and System-Preferences combined.
+ * <p>
+ * Implements preferences in such a way that
+ * user space overrides system space, which is the default
+ * for most applications. Setting a user value equal to the system value removes the user value.
  * <p>
  * This class is abstract because it should be extended by
- * the application to get its own namespace (by classname).
+ * the application to get its own namespace: the nodes are those of the subclass's package.
  *
  * @author harald
  */
@@ -114,8 +112,8 @@ public abstract class CompositePreferences {
 
 
   /**
-   * Gets the value for a key.
-   * Userspace overwrites system space.
+   * Gets the value for a key.<br>
+   * User space overrides system space.
    *
    * @param key the preference key
    * @return the value string or null if no such value
@@ -132,8 +130,8 @@ public abstract class CompositePreferences {
   }
 
   /**
-   * Gets the value for a key.
-   * Userspace overwrites system space.
+   * Gets the value for a key.<br>
+   * User space overrides system space.
    *
    * @param key the preference key
    * @param def the default value
@@ -177,6 +175,7 @@ public abstract class CompositePreferences {
    *
    * @param key the preference key
    * @return the integer or null if no such value
+   * @throws NumberFormatException if the value is not an integer
    */
   public Integer getInteger(String key) {
     String val = getString(key);
@@ -212,7 +211,7 @@ public abstract class CompositePreferences {
    * Gets a {@code Long}.
    *
    * @param key the preference key
-   * @return the integer or null if no such value
+   * @return the long or null if no such value
    */
   public Long getALong(String key) {
     String val = getString(key);
@@ -224,7 +223,7 @@ public abstract class CompositePreferences {
    *
    * @param key the preference key
    * @param def the default value
-   * @return the integer
+   * @return the long value
    */
   public long getLong(String key, long def) {
     Long val = getALong(key);
@@ -249,7 +248,7 @@ public abstract class CompositePreferences {
    * Gets a Float.
    *
    * @param key the preference key
-   * @return the integer or null if no such value
+   * @return the float or null if no such value
    */
   public Float getAFloat(String key) {
     String val = getString(key);
@@ -261,7 +260,7 @@ public abstract class CompositePreferences {
    *
    * @param key the preference key
    * @param def the default value
-   * @return the integer
+   * @return the float value
    */
   public float getFloat(String key, float def) {
     Float val = getAFloat(key);
@@ -286,7 +285,7 @@ public abstract class CompositePreferences {
    * Gets a Double.
    *
    * @param key the preference key
-   * @return the integer or null if no such value
+   * @return the double or null if no such value
    */
   public Double getADouble(String key) {
     String val = getString(key);
@@ -298,7 +297,7 @@ public abstract class CompositePreferences {
    *
    * @param key the preference key
    * @param def the default value
-   * @return the integer
+   * @return the double value
    */
   public double getDouble(String key, double def) {
     Double val = getADouble(key);
@@ -323,7 +322,7 @@ public abstract class CompositePreferences {
    * Gets a Boolean.
    *
    * @param key the preference key
-   * @return the integer or null if no such value
+   * @return the boolean or null if no such value
    */
   public Boolean getABoolean(String key) {
     String val = getString(key);
@@ -335,7 +334,7 @@ public abstract class CompositePreferences {
    *
    * @param key the preference key
    * @param def the default value
-   * @return the integer
+   * @return the boolean value
    */
   public boolean getBoolean(String key, boolean def) {
     Boolean val = getABoolean(key);
@@ -356,7 +355,7 @@ public abstract class CompositePreferences {
 
 
   /**
-   * Gets a bytearray from the preferences.
+   * Gets a byte array from the preferences.
    *
    * @param key the preference key
    * @return the byte array or null if no such value
@@ -373,7 +372,7 @@ public abstract class CompositePreferences {
   }
 
   /**
-   * Gets a bytearray from the preferences.
+   * Gets a byte array from the preferences.
    *
    * @param key the preference key
    * @param def the default values
@@ -386,7 +385,7 @@ public abstract class CompositePreferences {
 
 
   /**
-   * Sets a bytearray.<br>
+   * Sets a byte array.<br>
    * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *

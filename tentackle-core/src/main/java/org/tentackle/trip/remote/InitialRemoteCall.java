@@ -28,7 +28,7 @@ import java.util.UUID;
  * Used when the method is called the first time on the remote object.
  * <p>
  * Since this record is never sent back from the server to the client,
- * it's {@link org.tentackle.trip.DictionaryEntry} will remain {@code client-only}
+ * its {@link org.tentackle.trip.DictionaryEntry} will remain {@code client-only}
  * forever in both dictionaries.
  *
  * @param remoteId the ID of the remote object

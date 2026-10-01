@@ -30,7 +30,7 @@ import java.net.URI;
  * @param scheme the transport scheme
  * @param host the transport host
  * @param port the transport port
- * @param queryParameters the optional URI-query parameters
+ * @param queryParameters the optional URI-query parameters, null if none
  */
 public record TransportKey(String scheme, String host, int port, String queryParameters) {
 

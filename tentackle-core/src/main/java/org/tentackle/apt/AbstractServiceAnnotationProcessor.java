@@ -39,15 +39,20 @@ import javax.tools.Diagnostic;
 import java.util.Set;
 
 /**
- * Common implementation for service annotation processors.
+ * Common implementation for service annotation processors.<br>
+ * Provides helper methods to verify the annotated classes and reports abstract classes as errors.
  *
  * @author harald
  */
 public abstract class AbstractServiceAnnotationProcessor extends AbstractProcessor {
 
+  /** the type utilities, set by {@link #init(ProcessingEnvironment)}. */
   protected Types typeUtils;
+  /** the element utilities, set by {@link #init(ProcessingEnvironment)}. */
   protected Elements elementUtils;
+  /** visitor to check for a supertype or interface, set by {@link #init(ProcessingEnvironment)}. */
   protected SuperTypeVisitor typeVisitor;
+  /** visitor to check for a no-args constructor, set by {@link #init(ProcessingEnvironment)}. */
   protected NoArgsVisitor noArgsVisitor;
 
 
@@ -86,12 +91,12 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
 
 
   /**
-   * Invokes the accept method on given type mirror.<br>
-   * Resolves type variables to their upper bound.
+   * Checks whether the given type mirror is the given class or one of its subtypes.<br>
+   * Type variables are resolved to their upper bound.
    *
    * @param m the type mirror
-   * @param v the class
-   * @return true if accepted
+   * @param v the class to check for
+   * @return true if the type is or extends/implements the class
    */
   public boolean acceptTypeVisitor(TypeMirror m, Class<?> v) {
     if (m.getKind() == TypeKind.TYPEVAR) {
@@ -106,10 +111,11 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
   }
 
   /**
-   * Verify that annotated class implements a certain interface or extends a given class.
+   * Verifies that the annotated class implements a certain interface or extends a given class.<br>
+   * Reports an error if not.
    *
    * @param element the element to verify
-   * @param className the classname
+   * @param className the fully qualified name of the interface or class
    */
   public void verifyImplements(Element element, String className) {
     // get mirrors without generics
@@ -123,11 +129,11 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
   }
 
   /**
-   * Verifies that the element provides a certain constructor.
+   * Verifies that the element provides a certain public constructor.
    *
    * @param el the element
-   * @param visitor the type visitor
-   * @return true if such a constructor found
+   * @param visitor the type visitor that checks the constructor's signature
+   * @return true if such a constructor was found
    */
   public boolean verifyConstructor(Element el, TypeVisitor<Boolean, Void> visitor) {
     for (Element subelement : el.getEnclosedElements()) {
@@ -143,7 +149,9 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
   }
 
   /**
-   * Processes the annotated class.
+   * Processes the annotated class.<br>
+   * The default implementation reports an error if the class is abstract.
+   * Subclasses usually override this method to apply further checks.
    *
    * @param element the class
    */

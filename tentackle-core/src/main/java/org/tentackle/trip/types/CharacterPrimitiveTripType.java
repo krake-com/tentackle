@@ -21,7 +21,7 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.TripTypeService;
 
 /**
- * Trip type for character primitive.
+ * Trip type for the {@code char} primitive.
  */
 @TripTypeService(char.class)
 public final class CharacterPrimitiveTripType extends CharacterTripType {

@@ -18,5 +18,10 @@
 
 /**
  * The TRIP transport layer.
+ * <p>
+ * Transports are selected by the scheme of the URI: {@code trip} (TCP), {@code tripc} (compressed),
+ * {@code tripe} (encrypted with a pre-shared key), {@code tripce} (compressed and encrypted),
+ * {@code trips} (SSL), {@code tripcs} (compressed SSL), and {@code loopback} for tests.
+ * The QUIC transports are provided by the modules tentackle-quic and tentackle-quiche.
  */
 package org.tentackle.trip.transport;

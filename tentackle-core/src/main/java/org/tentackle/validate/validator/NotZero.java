@@ -31,11 +31,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The annotated element must be not 0 (zero).
+ * The annotated element must not be 0 (zero).
  * <p>
+ * Supported are all {@link Number}s. The scale of decimal numbers does not matter.<br>
  * Essentially the same as @NotEqual("0") but implies that the field is mandatory
- * as with @NotNull. Avoids extra @Mandatory.
-
+ * as with @NotNull. Avoids extra @Mandatory.<br>
+ * <code>null</code> elements are considered valid, unless {@code ignoreNulls=false}.
+ *
  * @author harald
  */
 @Target({ElementType.METHOD, ElementType.FIELD})
@@ -94,14 +96,14 @@ public @interface NotZero {
    * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
-   * @return value the value
+   * @return the value
    */
   String value() default "";
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "not zero"
+   * @return true if ignore nulls (default), false to treat nulls as invalid
    */
   boolean ignoreNulls() default true;
 

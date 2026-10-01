@@ -35,7 +35,7 @@ interface CharacterTypeHolder {
 
 
 /**
- * Trip type for {@link Character[]} array.
+ * Trip type for {@code Character[]} array.
  */
 @TripTypeService(Character[].class)
 public final class CharacterArrayTripType extends AbstractPredefinedArrayTripType<Character[]> {

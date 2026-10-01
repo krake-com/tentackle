@@ -97,9 +97,9 @@ public final class ValidateImpl extends AbstractValidator<Validate> {
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     List<? extends ValidationResult> results;
     Object object = validationContext.getObject();
-    if (object instanceof Validateable) {
-      results = ValidationUtilities.getInstance().validate((Validateable) object, validationContext.getValidationPath(),
-                                                           validationContext.getEffectiveScope());
+    if (object instanceof Validateable validateable) {
+      // redirect to the object in case the validate-method is overridden (see Validateable)
+      results = validateable.validate(validationContext.getValidationPath(), validationContext.getEffectiveScope());
     }
     else if (object instanceof Collection) {
       results = ValidationUtilities.getInstance().validateCollection((Collection) object, validationContext.getValidationPath(),

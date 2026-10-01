@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * <p>
  * By default, all classes are serializable and fields are serializable as long as they
  * are not marked {@code transient}. However, if instances of a class are
- * not meant to be serialized in general, this annotation can be used to disable serialization.<br>
+ * not meant to be serialized in general, this annotation can be used to disable serialization.
  * <p>
  * This annotation is inherited by subclasses.
  * <p>

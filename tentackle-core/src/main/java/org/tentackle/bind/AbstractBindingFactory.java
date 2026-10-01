@@ -28,7 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * Base implementation of a binding factory.
+ * Base implementation of a binding factory.<br>
+ * Creates {@link DefaultBindingMember}s and, unless configured otherwise via
+ * {@link #putBindableElementClass(Class, Class)}, {@link DefaultBindableElement}s.
  *
  * @author harald
  */
@@ -38,7 +40,7 @@ public class AbstractBindingFactory implements BindingFactory {
 
 
   /**
-   * Map of model classes to binding element classes
+   * Map of model classes to binding element classes.
    */
   private final Map<Class<?>, Class<? extends BindableElement>> elementClassMap = new ConcurrentHashMap<>();
 
@@ -116,7 +118,7 @@ public class AbstractBindingFactory implements BindingFactory {
       }
     }
     else {
-      // if all else fails: createBinding a default binding
+      // if all else fails: create a default element
       element = new DefaultBindableElement(camelName);
     }
     LOGGER.fine("created binding {0}", element);

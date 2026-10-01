@@ -41,7 +41,7 @@ public interface Poolable<T extends Poolable<T>> {
 
   /**
    * Sets the unique ID within the pool.<br>
-   * The ID is set when the poolable is retrieved from the pool.
+   * The ID is set by the pool when the poolable is lent, returned or removed.
    *
    * @param poolId the pool ID (0 if not lent, &gt; 0 if lent, -1 if removed from pool)
    */

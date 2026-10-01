@@ -112,7 +112,9 @@ public abstract class AbstractClassMapper<S> {
   }
 
   /**
-   * Maps with concurrent hashmap cache.
+   * Maps a class name.<br>
+   * If the class name is not fully qualified, the package names are tried first.
+   * The results are cached.
    *
    * @param className the name of the class to map
    * @param lenient true if try superclasses/interfaces

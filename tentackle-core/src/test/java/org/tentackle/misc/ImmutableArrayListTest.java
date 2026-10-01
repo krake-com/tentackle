@@ -81,6 +81,36 @@ public class ImmutableArrayListTest {
     assertEquals(list, List.of("a", "b", "c"));
   }
 
+  /**
+   * The bulk operations of {@link java.util.ArrayList} bypass {@code remove(int)} and {@code set(int, E)}.
+   */
+  @Test
+  public void testImmutableBlocksBulkOperations() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertThrows(ImmutableException.class, () -> list.removeLast());
+    assertThrows(ImmutableException.class, () -> list.removeAll(List.of("a")));
+    assertThrows(ImmutableException.class, () -> list.removeIf("b"::equals));
+    assertThrows(ImmutableException.class, list::clear);
+    assertThrows(ImmutableException.class, () -> list.subList(0, 2).clear());
+    assertThrows(ImmutableException.class, () -> list.replaceAll(String::toUpperCase));
+    // nothing changed
+    assertEquals(list, List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void testImmutableAllowsBulkOperationsWithoutEffect() {
+    ImmutableArrayList<String> list = sample();
+    list.setImmutable(true);
+    assertFalse(list.removeAll(List.of("x")));
+    assertFalse(list.removeIf("x"::equals));
+    list.replaceAll(s -> s);    // same instances
+    assertEquals(list, List.of("a", "b", "c"));
+    ImmutableArrayList<String> empty = new ImmutableArrayList<>();
+    empty.setImmutable(true);
+    empty.clear();
+  }
+
   @Test
   public void testSetSameInstanceAllowedWhenImmutable() {
     ImmutableArrayList<String> list = sample();

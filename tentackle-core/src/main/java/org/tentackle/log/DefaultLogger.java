@@ -32,9 +32,11 @@ import java.util.function.Supplier;
 import java.util.logging.LogRecord;
 
 /**
- * Pluggable logger using the standard java logging using <code>java.util.logging</code>.
+ * Pluggable logger using the standard java logging via <code>java.util.logging</code>.
  * <p>
- * No Service annotation! See UtilLogger.
+ * Deliberately not annotated as a service: the {@link DefaultLoggerFactory} falls back to this logger
+ * if no other logging backend is configured.<br>
+ * The optional {@link MappedDiagnosticContext} is prepended to each message.
  *
  * @author harald
  */
@@ -44,7 +46,7 @@ public class DefaultLogger implements Logger {
   private static final HashMap<String,DefaultLogger> LOGGERS = new HashMap<>();
 
   /**
-   * Gets the DefaultLogger for given name.
+   * Gets the DefaultLogger for given name.<br>
    * If a logger with that name already exists, it will be re-used.
    *
    * @param name the name of the logger

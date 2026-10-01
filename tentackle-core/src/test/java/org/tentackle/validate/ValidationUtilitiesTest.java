@@ -65,6 +65,30 @@ public class ValidationUtilitiesTest {
   }
 
   @Test
+  public void testValidateCollectionPaths() {
+    ValidationScope all = ValidationScopeFactory.getInstance().getAllScope();
+    List<Bean> beans = List.of(new Bean(), new Bean());
+    List<ValidationResult> results = utilities.validateCollection(beans, "beans", all);
+    assertEquals(results.size(), 2);
+    assertEquals(results.get(0).getValidationPath(), "beans[0].text");
+    assertEquals(results.get(1).getValidationPath(), "beans[1].text");
+    // null path: the default path of each element
+    results = utilities.validateCollection(beans, null, all);
+    assertEquals(results.get(0).getValidationPath(), "bean[0].text");
+  }
+
+  /**
+   * Annotations of objects that are not a {@link ScopeConfigurator} keep the {@link DefaultScope},
+   * which only the {@link org.tentackle.validate.scope.AllScope} applies.
+   */
+  @Test
+  public void testDefaultScopeAppliesToAllScopeOnly() {
+    ValidationScopeFactory factory = ValidationScopeFactory.getInstance();
+    assertEquals(utilities.validate(new Bean(), null, factory.getAllScope()).size(), 1);
+    assertTrue(utilities.validate(new Bean(), null, factory.getPersistenceScope()).isEmpty());
+  }
+
+  @Test
   public void testHasFailed() {
     assertFalse(utilities.hasFailed(new ArrayList<>()));
     List<ValidationResult> onlyInfo = List.of(result(false, "info"));

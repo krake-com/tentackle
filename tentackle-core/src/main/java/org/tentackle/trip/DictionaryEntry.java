@@ -26,7 +26,7 @@ package org.tentackle.trip;
  * For enums the components are the enum names.
  * For dynamic proxies the classname is always <code>java.lang.reflect.Proxy</code> and the
  * components are the names of the interfaces implemented by the invocation handler.
- * Otherwise, the components correspond to the declared {@link java.lang.reflect.Field}s.
+ * Otherwise, the components correspond to the declared {@link java.lang.reflect.Field}s
  * or {@link java.lang.reflect.RecordComponent}s.<br>
  * Components are referenced in the stream via their index.
  */
@@ -83,11 +83,10 @@ public interface DictionaryEntry {
 
   /**
    * Gets the entry's component for the given ordinal.
-   * <p>
-   * Throws a {@link TripRuntimeException} if the ordinal is invalid.
    *
    * @param ordinal the component ordinal
    * @return the component, never null
+   * @throws TripRuntimeException if the ordinal is invalid
    */
   DictionaryEntryComponent getComponent(int ordinal);
 

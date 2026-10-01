@@ -35,7 +35,7 @@ interface StringTypeHolder {
 
 
 /**
- * Trip type for {@link String[]} array.
+ * Trip type for {@code String[]} array.
  */
 @TripTypeService(String[].class)
 public final class StringArrayTripType extends AbstractPredefinedArrayTripType<String[]> {

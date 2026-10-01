@@ -18,5 +18,10 @@
 
 /**
  * The Tentackle Remote Invocation Protocol (TRIP).
+ * <p>
+ * The API for serialization ({@link org.tentackle.trip.TripType}, {@link org.tentackle.trip.TripStream},
+ * {@link org.tentackle.trip.Dictionary}) and remote invocation ({@link org.tentackle.trip.Remote},
+ * {@link org.tentackle.trip.Registry}, {@link org.tentackle.trip.Transport}).
+ * The default implementations live in the subpackages.
  */
 package org.tentackle.trip;

@@ -37,6 +37,8 @@ interface DefaultMappedDiagnosticContextHolder {
  * this implementation keeps a thread-local map of properties
  * so that there's no difference to the application concerning
  * the effective logging provider.
+ * <p>
+ * Child threads get a copy of the parent's context. Neither keys nor values may be null.
  *
  * @author harald
  */
@@ -44,7 +46,7 @@ interface DefaultMappedDiagnosticContextHolder {
 public class DefaultMappedDiagnosticContext extends AbstractMappedDiagnosticContext {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */

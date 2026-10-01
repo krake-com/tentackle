@@ -23,6 +23,10 @@ import org.tentackle.io.CompressedOutputStream;
 import java.io.OutputStream;
 import java.util.zip.Deflater;
 
+/**
+ * A compressed output stream using the fastest compression level.<br>
+ * Best suited for network traffic, where latency matters more than the compression ratio.
+ */
 public class FastCompressedOutputStream extends CompressedOutputStream {
 
   /**

@@ -23,8 +23,8 @@ import java.util.EventListener;
 /**
  * Listener to track property modifications.
  * <p>
- * Replacement for {@code java.beans.PropertyChangeListener} as this becomes part of the Swing desktop module
- * in Java 9.
+ * Replacement for {@code java.beans.PropertyChangeListener}, which belongs to the {@code java.desktop} module
+ * since Java 9.
  *
  * @author harald
  */
@@ -32,7 +32,7 @@ import java.util.EventListener;
 public interface PropertyListener extends EventListener {
 
   /**
-   * Property was changed.
+   * Invoked when a property is about to change.
    * <p>
    * The method gets invoked <em>before</em> the property is actually changed,
    * i.e. throwing a {@code RuntimeException} can be used as a veto.

@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * A scrollable resource.<br>
- * A ScrollableResource is a wrapper around a resource. It provides
+ * A {@code ScrollableResource} is a wrapper around a resource. It provides
  * the concept of a current row pointing to an object derived from the resource.
  * Row numbers start at 1.
  * It is open by default and must be closed to release the resource.
@@ -83,7 +83,7 @@ public interface ScrollableResource<T> extends AutoCloseable {
    * Moves the scrollable resource to the previous row.<br>
    * If we are already at the beginning, the scrollable resource remains unchanged.
    *
-   * @return true if advanced, false if already at the beginning
+   * @return true if moved, false if already at the beginning
    */
   boolean previous();
 
@@ -150,27 +150,27 @@ public interface ScrollableResource<T> extends AutoCloseable {
   boolean isClosed();
 
   /**
-   * Sets the fetchsize.<br>
+   * Sets the fetch size.<br>
    * This is the number of rows the cursor will fetch
    * from the server in one batch.
-   * A fetchsize of 0 means server default.
+   * A fetch size of 0 means server default.
    *
-   * @param rows the fetchsize
+   * @param rows the fetch size
    */
   void setFetchSize(int rows);
 
   /**
-   * Gets the fetchsize.
+   * Gets the fetch size.
    *
-   * @return the fetchsize
+   * @return the fetch size
    */
   int getFetchSize();
 
   /**
-   * Fetches the next objects up to the fetchsize.<br>
+   * Fetches the next objects up to the fetch size.<br>
    * This method is provided to minimize the number of
-   * roundtrips especially for remote cursors.
-   * The cursor is closed at the end of the cursor.
+   * roundtrips, especially for remote cursors.
+   * The cursor is closed when its end is reached.
    *
    * @return the list of objects, null if no more objects found
    */

@@ -48,7 +48,7 @@ Packages `org.tentackle.trip`, `trip.builder`, `trip.creators`, `trip.impl`, `tr
 `trip.transport`, `trip.types`.
 
 [TRIP](trip.md) (Tentackle Remote Invocation Protocol) is the framework's own serialization and RPC stack — by far
-the largest subsystem in the module (~190 files). It replaces RMI/JOS with a protocol designed for the PDO model:
+the largest subsystem in the module (~200 files). It replaces RMI/JOS with a protocol designed for the PDO model:
 objects and proxies are serialized via a pluggable type system, and methods can be invoked across JVMs (client↔
 server and server↔server). The subdivision is:
 
@@ -59,7 +59,7 @@ server and server↔server). The subdivision is:
 - `trip.impl` / `trip.provider` — default implementations and component providers (including the default
   `ObjectSerializer` that `TBinary` uses).
 - `trip.remote` — the remote-invocation protocol layer (transport-independent RPC).
-- `trip.transport` — the concrete transports (e.g., SSL sockets) that carry the protocol.
+- `trip.transport` — the concrete transports (TCP, SSL, PSK-encrypted, compressed, loopback) that carry the protocol.
 
 See **[trip.md](trip.md)** for the full treatment.
 
@@ -102,9 +102,10 @@ listener wiring. It is the foundation the FX modules build their auto-binding on
 
 Packages `org.tentackle.validate`, `validate.scope`, `validate.validator`, `validate.severity`.
 
-An annotation-driven, **scope-aware** validation framework: validators (`validate.validator` ships ~65 predefined
-ones) are attached to model fields/methods and run within a [`ValidationScope`](../java/org/tentackle/validate)
-(e.g., mandatory vs. save vs. delete), producing results at graded severities. See **[validation.md](validation.md)**.
+An annotation-driven, **scope-aware** validation framework: validators (`validate.validator` ships 19 predefined
+annotations, such as `@NotNull`, `@Size`, `@Pattern` or `@Validate`) are attached to model fields/methods and run
+within a [`ValidationScope`](../java/org/tentackle/validate/ValidationScope.java) (e.g., the default, mandatory,
+changeable, interactive or persistence scope), producing results at graded severities. See **[validation.md](validation.md)**.
 
 ### Logging
 
@@ -190,7 +191,7 @@ Packages `org.tentackle.misc` and `org.tentackle.misc.time`. See [misc.md](misc.
 picture — including the contracts (`Modifiable`, `SerialNumbered`, `Snapshotable`, …) that
 `PersistentObject` implements.
 
-The framework's general-purpose toolkit (~70 files). Highlights:
+The framework's general-purpose toolkit (~70 files, including `misc.time`). Highlights:
 
 - **Pooling** — [`AbstractPool`](../java/org/tentackle/misc/AbstractPool.java) / `Poolable` / `AbstractPoolSlot`,
   the base for the session pools.
@@ -278,13 +279,13 @@ service API from `tentackle-common`.
 ## Module Dependencies
 
 - It **requires transitive** only [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md) from
-  Tentackle, plus `java.prefs`, `java.management` and `java.logging` from the JDK.
+  Tentackle, plus `java.prefs` and `java.management` from the JDK. `java.logging` is required, but not transitively.
 - It **uses** `org.tentackle.log.Logger` and `org.tentackle.script.ScriptingLanguage` so that non-modular
   providers remain visible even in jlink'd images.
-- It **opens** `org.tentackle.common` (via `tentackle-common`) and its own serialized packages to TRIP, and
-  **provides** a `ModuleHook` (`org.tentackle.service.Hook`).
-- Every Tentackle module above this one — session, sql, database, pdo, domain, persistence, the FX stack — depends
-  on it transitively.
+- It declares no `opens`: modules whose classes TRIP serializes open their packages *to* `org.tentackle.core`
+  (as `tentackle-sql` does). Core itself **provides** a `ModuleHook` (`org.tentackle.service.Hook`).
+- Every Tentackle runtime module above this one — session, database, pdo, domain, persistence, the FX stack —
+  depends on it. `tentackle-sql` sits beside it on top of `tentackle-common`.
 
 ## Related Documentation
 

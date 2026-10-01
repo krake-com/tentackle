@@ -24,22 +24,39 @@ package org.tentackle.trip;
  */
 public enum PredefinedArrayType {
 
+  /** {@code Boolean[]}. */
   BOOLEAN('O', Boolean[].class),
+  /** {@code boolean[]}. */
   BOOLEAN_PRIMITIVE('o', boolean[].class),
+  /** {@code Byte[]}. */
   BYTE('B', Byte[].class),
+  /** {@code byte[]}. */
   BYTE_PRIMITIVE('b', byte[].class),
+  /** {@code Short[]}. */
   SHORT('S', Short[].class),
+  /** {@code short[]}. */
   SHORT_PRIMITIVE('s', short[].class),
+  /** {@code Integer[]}. */
   INT('I', Integer[].class),
+  /** {@code int[]}. */
   INT_PRIMITIVE('i', int[].class),
+  /** {@code Long[]}. */
   LONG('L', Long[].class),
+  /** {@code long[]}. */
   LONG_PRIMITIVE('l', long[].class),
+  /** {@code Float[]}. */
   FLOAT('F', Float[].class),
+  /** {@code float[]}. */
   FLOAT_PRIMITIVE('f', float[].class),
+  /** {@code Double[]}. */
   DOUBLE('D', Double[].class),
+  /** {@code double[]}. */
   DOUBLE_PRIMITIVE('d', double[].class),
+  /** {@code Character[]}. */
   CHAR('C', Character[].class),
+  /** {@code char[]}. */
   CHAR_PRIMITIVE('c', char[].class),
+  /** {@code String[]}. */
   STRING('T', String[].class);
 
   private final char code;
@@ -58,6 +75,7 @@ public enum PredefinedArrayType {
 
   /**
    * Gets the code.
+   *
    * @return the code
    */
   public char getCode() {
@@ -108,6 +126,7 @@ public enum PredefinedArrayType {
    *
    * @param code the type code
    * @param clazz the expected class
+   * @throws IllegalArgumentException if the code is unknown or denotes another class
    */
   public static void assertType(char code, Class<?> clazz) {
     PredefinedArrayType type = valueOf(code);

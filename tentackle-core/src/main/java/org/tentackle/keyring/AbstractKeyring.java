@@ -45,7 +45,7 @@ public abstract class AbstractKeyring implements Keyring {
   private final ReentrantLock lock = new ReentrantLock();
 
   /**
-   * Parent constructor.
+   * Creates a keyring.
    */
   public AbstractKeyring() {
     // see -Xlint:missing-explicit-ctor

@@ -62,7 +62,7 @@ public class CollectionTypeBuilder<T extends Collection<?>> implements TripTypeB
   /** the JDK collections without usable constructors, mapped to their wrapper functions. */
   private static final Map<Class<?>, Function<ArrayList<Object>, Collection<?>>> WRAPPED_TYPES = createWrappedTypes();
 
-  /** dito, but for the sorted variants, which must retain their comparator. */
+  /** ditto, but for the sorted variants, which must retain their comparator. */
   private static final Map<Class<?>, Function<SortedSet<Object>, Collection<?>>> WRAPPED_SORTED_TYPES =
       createWrappedSortedTypes();
 

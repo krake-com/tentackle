@@ -39,8 +39,9 @@ public class Canonicalizer<T> {
   /**
    * Creates a {@code Canonicalizer}.
    *
-   * @param threadSafe true if we need a threadsafe {@code Canonicalizer}
-   * @param limit the maximum size of the internal map, 0 if unlimited
+   * @param threadSafe true if we need a thread-safe {@code Canonicalizer}
+   * @param limit the maximum size of the internal map, 0 if unlimited.
+   *              If the limit is exceeded, the map is cleared and starts over.
    */
   public Canonicalizer(boolean threadSafe, int limit) {
     this.limit = limit;
@@ -48,7 +49,7 @@ public class Canonicalizer<T> {
   }
 
   /**
-   * Creates a non-threadsafe unlimited {@code Canonicalizer}.
+   * Creates a non-thread-safe unlimited {@code Canonicalizer}.
    */
   public Canonicalizer() {
     this(false, 0);
@@ -56,6 +57,8 @@ public class Canonicalizer<T> {
 
   /**
    * Gets the canonicalized form of an object.<br>
+   * If an equal object was canonicalized before, that object is returned.
+   * Otherwise, the given object becomes the canonical one.
    *
    * @param obj the object
    * @return the canonical object, null if obj is null
@@ -74,7 +77,7 @@ public class Canonicalizer<T> {
   /**
    * Gets the canonicalized objects so far.
    *
-   * @return the canonicalized objects
+   * @return the canonicalized objects (a live view of the internal map)
    */
   public Collection<T> getObjects() {
     return objectMap.values();

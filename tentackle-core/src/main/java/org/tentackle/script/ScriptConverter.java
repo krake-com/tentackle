@@ -19,7 +19,8 @@
 package org.tentackle.script;
 
 /**
- * Converts a script according to a given language.
+ * Converts a script according to a given language.<br>
+ * Used to translate application-specific shortcuts before the script is compiled.
  *
  * @author harald
  */

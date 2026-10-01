@@ -32,6 +32,9 @@ import java.util.function.Function;
 
 /**
  * Default implementation of a script factory.
+ * <p>
+ * The scripting languages are loaded lazily via {@link ServiceFactory}. If more than one language
+ * claims the same abbreviation, the first one found wins.
  *
  * @author harald
  */
@@ -60,7 +63,7 @@ public class DefaultScriptFactory implements ScriptFactory {
   }
 
   @Override
-  public void setDefaultLanguage(ScriptingLanguage language) {
+  public synchronized void setDefaultLanguage(ScriptingLanguage language) {
     defaultLanguage = language;
     LOGGER.info("default scripting language is {0}", defaultLanguage);
   }
@@ -128,9 +131,9 @@ public class DefaultScriptFactory implements ScriptFactory {
 
   /**
    * Gets the languages map.<br>
-   * Maps the abbreviation to the language.<br>
+   * Maps the lowercase abbreviation to the language.<br>
    * Loads the languages if not yet done.<br>
-   * Invoked from with a synchronized block.
+   * Invoked from within a synchronized block.
    *
    * @return the language map, never null
    */
@@ -144,7 +147,9 @@ public class DefaultScriptFactory implements ScriptFactory {
 
   /**
    * Loads the languages.<br>
-   * Invoked from with a synchronized block.
+   * Invoked from within a synchronized block.
+   *
+   * @throws ScriptRuntimeException if a language could not be instantiated
    */
   protected void loadLanguages() {
     // load all languages via @Service

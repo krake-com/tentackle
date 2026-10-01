@@ -38,6 +38,7 @@ public final class SecretsHelper {
    *
    * @param secret the secret
    * @return the UTF-8 bytes, to be wiped by the caller
+   * @throws KeyringException if the secret is not valid unicode
    */
   public static byte[] encode(char[] secret) {
     try {
@@ -63,6 +64,7 @@ public final class SecretsHelper {
    *
    * @param bytes the UTF-8 bytes
    * @return the secret, to be wiped by the caller
+   * @throws KeyringException if the bytes are not valid UTF-8
    */
   public static char[] decode(byte[] bytes) {
     try {

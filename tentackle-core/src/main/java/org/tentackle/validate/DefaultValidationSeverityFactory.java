@@ -39,7 +39,10 @@ public class DefaultValidationSeverityFactory implements ValidationSeverityFacto
   private DefaultSeverity defaultSeverity;                                                           // to speed up and assert
 
   /**
-   * Creates the factory.
+   * Creates the factory.<br>
+   * Instantiates all severities annotated with &#64;{@link ValidationSeverityService}.
+   *
+   * @throws ValidationRuntimeException if a severity could not be instantiated or the {@link DefaultSeverity} is missing
    */
   public DefaultValidationSeverityFactory() {
     severitiesByIface = new HashMap<>();

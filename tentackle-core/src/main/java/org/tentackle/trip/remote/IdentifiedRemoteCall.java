@@ -25,10 +25,11 @@ import java.util.UUID;
 
 /**
  * The indexed remote call.<br>
- * Used when the method's index is known.
+ * Used when the method's index is known, i.e. after the first invocation of the method
+ * (see {@link InitialRemoteResponse#methodIndex()}).
  * <p>
  * Since this record is never sent back from the server to the client,
- * it's {@link org.tentackle.trip.DictionaryEntry} will remain {@code client-only}
+ * its {@link org.tentackle.trip.DictionaryEntry} will remain {@code client-only}
  * forever in both dictionaries.
  *
  * @param remoteId the ID of the remote object

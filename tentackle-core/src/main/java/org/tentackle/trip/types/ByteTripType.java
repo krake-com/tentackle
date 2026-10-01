@@ -39,6 +39,11 @@ public sealed class ByteTripType extends AbstractTripType<Byte> permits BytePrim
     this(Byte.class);
   }
 
+  /**
+   * Creates the type for a subclass.
+   *
+   * @param clazz the object class, {@code Byte.class} or {@code byte.class}
+   */
   protected ByteTripType(Class<Byte> clazz) {
     super(clazz);
   }

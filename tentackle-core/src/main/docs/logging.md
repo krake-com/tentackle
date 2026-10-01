@@ -41,7 +41,8 @@ private static final Logger LOGGER = Logger.get();
 
 [`Logger.get(...)`](../java/org/tentackle/log/Logger.java) delegates to
 [`LoggerFactory.getInstance().getLogger(name, null)`](../java/org/tentackle/log/LoggerFactory.java). Loggers are
-named (by class name) and cached per name, so repeated lookups return the same instance.
+named (by class name) and cached per name by the implementations' static `getLogger(String)` methods, so repeated
+lookups return the same instance.
 
 ---
 
@@ -78,7 +79,8 @@ LOGGER.severe(throwable, () -> "context: " + ctx);          // cause + lazy supp
 ```
 
 The same matrix exists on the generic `log(Level, …)` methods. Parameter *suppliers*
-(`finer(String, Supplier<?>...)`) defer even the argument computation.
+(`finer(String, Supplier<?>...)`) defer even the argument computation. Parameters are formatted with
+`java.text.MessageFormat`, so mind its quoting rules: a single quote must be doubled (`''`).
 
 ### Stacktraces and backend access
 
@@ -112,7 +114,9 @@ finally {
 Crucially, the abstraction is **uniform even where the backend lacks MDC**. SLF4J and Log4J 2 delegate to their
 native MDC; for `java.util.logging` (which has none),
 [`DefaultMappedDiagnosticContext`](../java/org/tentackle/log/DefaultMappedDiagnosticContext.java) keeps its own
-`InheritableThreadLocal` map — so application behavior does not depend on the chosen provider.
+`InheritableThreadLocal` map, which child threads receive a copy of, and `DefaultLogger` prepends its
+entries to each message — so application behavior does not depend on the chosen provider. Neither keys nor values
+may be `null` there.
 [`AbstractMappedDiagnosticContext`](../java/org/tentackle/log/AbstractMappedDiagnosticContext.java) supplies the
 shared logic (key set, `toString()` rendering, pattern matching).
 
@@ -142,8 +146,11 @@ when the level is enabled) and logs `"<method> took <n>ms"`. This is a concrete 
 
 [`MethodStatistics`](../java/org/tentackle/log/MethodStatistics.java) /
 [`StatisticsResult`](../java/org/tentackle/log/StatisticsResult.java) collect per-method **invocation counts and
-min/max/total durations** — used, for instance, to profile remote-delegate calls. Keyed by
+min/max/total durations** — used, for instance, to profile remote-delegate calls and, via the
+`InterceptableMethodInvoker`, PDO and operation invocations. Keyed by
 [`MethodStatisticsKey`](../java/org/tentackle/log/MethodStatisticsKey.java) (method + serviced class).
+`logStatistics(...)` logs one line per method: minimum, maximum and total duration in milliseconds, and the
+invocation count.
 
 ### Helpers
 
@@ -191,7 +198,7 @@ All providers translate the Tentackle `Level` onto the backend scale identically
 
 | Tentackle | `java.util.logging` | SLF4J   | Log4J 2 |
 |-----------|---------------------|---------|---------|
-| `FINER`   | `FINER`/`FINE`      | `TRACE` | `TRACE` |
+| `FINER`   | `FINER`             | `TRACE` | `TRACE` |
 | `FINE`    | `FINE`              | `DEBUG` | `DEBUG` |
 | `INFO`    | `INFO`              | `INFO`  | `INFO`  |
 | `WARNING` | `WARNING`           | `WARN`  | `WARN`  |

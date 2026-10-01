@@ -48,7 +48,7 @@ public interface KeyringFactory {
 
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */

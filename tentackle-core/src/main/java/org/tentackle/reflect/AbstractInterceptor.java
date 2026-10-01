@@ -26,6 +26,10 @@ import java.lang.reflect.Method;
 
 /**
  * An abstract interceptor.
+ * <p>
+ * Concrete interceptors implement {@link #proceed}. If the interceptor is chained, {@code proceed} receives
+ * the {@code invoke} method of the next interceptor in the chain. Otherwise, it receives the intercepted method itself.
+ * In both cases, the interceptor continues by invoking {@code method.invoke(proxy, args)}.
  *
  * @author harald
  */
@@ -37,7 +41,7 @@ public abstract class AbstractInterceptor implements Interceptor {
 
 
   /**
-   * Parent constructor.
+   * Creates an interceptor.
    */
   public AbstractInterceptor() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -53,6 +57,11 @@ public abstract class AbstractInterceptor implements Interceptor {
     return annotation;
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * @throws TentackleRuntimeException if the {@code invoke} method of the chained interceptor cannot be determined
+   */
   @Override
   public void setChainedInterceptor(Interceptor chainedInterceptor) {
     this.chainedInterceptor = chainedInterceptor;
@@ -85,9 +94,9 @@ public abstract class AbstractInterceptor implements Interceptor {
   /**
    * The interceptor implementation.
    *
-   * @param proxy the object to invoke the method on, null if static
-   * @param method the method to invoke
-   * @param args the method's arguments
+   * @param proxy the object to invoke the method on, the chained interceptor if chained, null if static
+   * @param method the method to invoke, the chained interceptor's {@code invoke} method if chained
+   * @param args the method's arguments, the original {@code proxy}, {@code method} and {@code args} if chained
    * @param orgProxy the original proxy object, same as proxy if not chained
    * @param orgMethod the original method, same as method if not chained
    * @param orgArgs the original arguments, same as args if not chained

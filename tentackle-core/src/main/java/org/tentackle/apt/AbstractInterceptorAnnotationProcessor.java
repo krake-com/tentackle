@@ -52,6 +52,13 @@ import java.util.Set;
 /**
  * Processor for annotations annotated with {@code @Interception}.<br>
  * Provides annotation checking during compilation and IDE editing.
+ * <p>
+ * The processed annotation types are not discovered via {@code @SupportedAnnotationTypes} but loaded from
+ * {@code META-INF/services/<processor class name>}, one annotation class name per line. The annotations of
+ * the {@link Type} handled by the concrete processor must only be applied to methods of an {@code Interceptable}
+ * interface ({@link Type#PUBLIC}), of a class implementing {@code Interceptable} ({@link Type#HIDDEN}), or of
+ * either ({@link Type#ALL}). In addition, no interception annotation may be applied to a method that overrides
+ * a method marked {@link NotInterceptable}.
  *
  * @author harald
  */
@@ -65,9 +72,11 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
 
 
   /**
-   * Creates an interception annotation processor.
+   * Creates an interception annotation processor.<br>
+   * Loads the supported annotation types from the {@code META-INF/services} resource named after the processor class.
    *
    * @param type the interceptor type
+   * @throws TentackleRuntimeException if loading the annotation types failed
    */
   public AbstractInterceptorAnnotationProcessor(Type type) {
     this.type = type;

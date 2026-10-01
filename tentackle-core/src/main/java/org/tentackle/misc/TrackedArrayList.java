@@ -37,7 +37,9 @@ import java.util.function.UnaryOperator;
 
 
 /**
- * Implementation of a {@link TrackedList}.
+ * Implementation of a {@link TrackedList} based on an {@link ArrayList}.
+ * <p>
+ * Notice that the views returned by {@link #subList(int, int)} are tracked as well.
  *
  * @param <E> the element type
  * @author harald
@@ -51,8 +53,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 
-  // CAUTION: any changes to the serializable fields must be reflected in
-  // org.tentackle.trip.providers.TrackedArrayListComponentProvider!
+  // CAUTION: the non-transient fields are transferred by TRIP via reflection
+  // (see org.tentackle.trip.types.CollectionTripType), the transient ones are not!
   private boolean noNulls;                          // true if adding null-values throws an NPE
   private boolean modified;                         // initial modification parameter or from setModified(true)
   private boolean removed;                          // some object has been removed
@@ -71,8 +73,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a tracked ArrayList.
    *
-   * @param initialCapacity is the initial size of the list
-   * @param modified is true if the list is marked modified initially
+   * @param initialCapacity the initial capacity of the list
+   * @param modified true if the list is marked modified initially
    */
   public TrackedArrayList(int initialCapacity, boolean modified) {
     super(initialCapacity);
@@ -83,7 +85,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Creates a tracked ArrayList.<br>
    * Notice that the list is initially marked 'modified'!
    *
-   * @param initialCapacity is the initial size of the list
+   * @param initialCapacity the initial capacity of the list
    */
   public TrackedArrayList(int initialCapacity) {
     this(initialCapacity, true);
@@ -92,7 +94,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a tracked ArrayList.
    *
-   * @param modified is true if the list is marked modified initially
+   * @param modified true if the list is marked modified initially
    */
   public TrackedArrayList(boolean modified) {
     super();
@@ -102,7 +104,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a tracked ArrayList.<br>
    * Notice that the list is initially marked 'modified'!
-   * Thus replacing a list with an empty one will still be treated as a modification.
+   * Thus, replacing a list with an empty one will still be treated as a modification.
    */
   public TrackedArrayList() {
     this(true);
@@ -110,7 +112,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Creates a list from a collection.<br>
-   * The list is NOT marked modified.
+   * The list is <em>not</em> marked modified.
    *
    * @param collection the collection
    */
@@ -363,12 +365,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
 
-  /**
-   * Sets the modified state.
-   *
-   * @param modified is true to set modified to true,
-   *        false to clear all other flags, including the list of removed Objects.
-   */
   @Override
   public void setModified(boolean modified) {
     this.modified = modified;
@@ -382,13 +378,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
 
-  /**
-   * Gets the modification state.<br>
-   * Returns whether objects have been added, removed or replaced or
-   * setModified(true) was invoked.
-   *
-   * @return true if modified.
-   */
   @Override
   public boolean isModified() {
     return modified || isSomeAdded() || isSomeRemoved();
@@ -457,11 +446,11 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Adds an object to the list of removed objects.<br>
-   * Only objects of type &lt;E&gt; are added.
    * The method is invoked whenever an object is removed
-   * from the list.
+   * from the list. Null values are ignored.
    *
-   * @param object the object to be added.
+   * @param object the removed object
+   * @throws ImmutableException if the list is immutable or a snapshot
    */
   protected void addRemovedObject(E object) {
     if (object != null) {
@@ -476,12 +465,12 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Adds a list of objects to the list of removed objects.<br>
-   * Only objects of type &lt;E&gt; are added.
-   * The method is invoked whenever an object is removed
+   * Adds a collection of objects to the list of removed objects.<br>
+   * The method is invoked whenever objects are removed
    * from the list.
    *
-   * @param objects the list of objects
+   * @param objects the removed objects
+   * @throws ImmutableException if the list is immutable or a snapshot
    */
   protected void addRemovedObjects(Collection<? extends E> objects) {
     for (E o: objects) {
@@ -492,11 +481,10 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes an object from the list of removed objects.<br>
-   * Only objects of type &lt;E&gt; are added.
-   * The method is invoked whenever an object is removed
-   * from the list.
+   * The method is invoked whenever an object is added
+   * to the list.
    *
-   * @param object the object to be added.
+   * @param object the added object
    */
   protected void removeRemovedObject(E object) {
     if (removedObjects != null && object != null) {
@@ -506,12 +494,11 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Removes a list of objects to the list of removed objects.<br>
-   * Only objects of type &lt;E&gt; are added.
-   * The method is invoked whenever an object is removed
-   * from the list.
+   * Removes a collection of objects from the list of removed objects.<br>
+   * The method is invoked whenever objects are added
+   * to the list.
    *
-   * @param objects the list of objects
+   * @param objects the added objects
    */
   protected void removeRemovedObjects(Collection<? extends E> objects) {
     for (E obj: objects) {
@@ -522,6 +509,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Asserts that the object is mutable and not a snapshot.
+   *
+   * @throws ImmutableException if the list is immutable or a snapshot
    */
   @Override
   protected void assertMutable() {
@@ -533,9 +522,10 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Asserts whether null-values are allowed.
+   * Asserts that the element is not null, if null-values are not allowed.
    *
    * @param element the element to add
+   * @throws NullPointerException if the element is null and null-values are not allowed
    */
   protected void assertNullAllowed(E element) {
     if (noNulls && element == null) {
@@ -544,9 +534,10 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
   /**
-   * Asserts whether null-values are allowed.
+   * Asserts that the collection contains no nulls, if null-values are not allowed.
    *
    * @param collection the collection containing elements to be added to this list
+   * @throws NullPointerException if the collection contains a null and null-values are not allowed
    */
   protected void assertNullAllowed(Collection<? extends E> collection) {
     if (noNulls) {
@@ -1024,7 +1015,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Wrapper class necessary since some methods of {@link ArrayList#subList(int, int)} manipulate the
-   * underlying element array directly, which would bypass the tracking capabilities of the TAL.
+   * underlying element array directly, which would bypass the tracking capabilities of the {@code TrackedArrayList}.
    */
   private class SubListWrapper implements List<E> {
 

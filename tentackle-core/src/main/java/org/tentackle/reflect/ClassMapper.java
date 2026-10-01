@@ -63,10 +63,9 @@ public interface ClassMapper {
 
   /**
    * Maps a class or interface to another class or interface.<br>
-   * If there is no mapping for {@code clazz} its superclasses are tried.
-   * If {@code clazz} is an interface, all its super interfaces are tried.
-   * <p>
-   * Notice: for classes their interfaces will be ignored.
+   * If there is no mapping for {@code clazz}, its superclasses are tried.
+   * If none of them is mapped, the interfaces of {@code clazz} and its superclasses
+   * (including their super interfaces) are tried.
    *
    * @param clazz the class to map
    * @return the mapped class, never null
@@ -76,7 +75,8 @@ public interface ClassMapper {
 
 
   /**
-   * Maps a name to a class.
+   * Maps a name to a class.<br>
+   * Same as {@link #mapLenient(Class)}, but for a class name.
    *
    * @param name the name to map
    * @return the mapped class, never null
@@ -85,7 +85,8 @@ public interface ClassMapper {
   Class<?> mapLenient(String name) throws ClassNotFoundException;
 
   /**
-   * Gets the default class.
+   * Gets the default class.<br>
+   * Returned if there is no mapping.
    *
    * @return the class, null if no default
    */
@@ -102,7 +103,7 @@ public interface ClassMapper {
   /**
    * Gets a copy of the names map.
    *
-   * @return the unmodifiable map of names
+   * @return the unmodifiable map of names to mapped names
    */
   Map<String, String> getMap();
 

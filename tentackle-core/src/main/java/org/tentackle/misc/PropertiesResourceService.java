@@ -40,16 +40,18 @@ public @interface PropertiesResourceService {
    * {@link PropertiesResource}s with lower priorities are executed first,
    * so that higher priority resources override the lower ones.<br>
    * A value of 0 (default) assigns a priority in steps of 100 according
-   * to the discovery by the {@link org.tentackle.common.ServiceFactory}.
+   * to the discovery order of the {@link org.tentackle.common.ServiceFactory}.
    * For example, if 3 were found, the first gets the priority 300,
-   * the next 200 and the last 100.
+   * the next 200 and the last 100. Resources with the same priority are
+   * executed in the order of their class names.
    *
-   * @return the ordinal, default is 0
+   * @return the priority, default is 0
    */
   int priority() default 0;
 
   /**
-   * Don't execute higher priority loaders if this loader found a resource.
+   * Stops the execution of higher priority loaders if this loader found a resource.<br>
+   * Notice that, despite its name, loading stops if the resource <em>was found</em>.
    *
    * @return true to stop loading, false is default
    */

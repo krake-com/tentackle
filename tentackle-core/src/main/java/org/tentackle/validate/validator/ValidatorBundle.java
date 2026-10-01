@@ -44,7 +44,7 @@ public class ValidatorBundle {
   }
 
   /**
-   * Gets the bundle.
+   * Gets the bundle for the current locale.
    *
    * @return the resource bundle
    */

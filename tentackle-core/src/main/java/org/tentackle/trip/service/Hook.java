@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the trip module.
+ * Module hook for the TRIP packages.
  *
  * @author harald
  */

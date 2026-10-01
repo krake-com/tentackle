@@ -95,7 +95,7 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
   protected final Method referencableMethod;
 
   /**
-   * Whether objects are explicitly not referencable according to {@link TripReferencable}.<br>
+   * Whether objects are explicitly not referenceable according to {@link TripReferencable}.<br>
    * Null if no annotation present.
    */
   protected final Boolean referencable;

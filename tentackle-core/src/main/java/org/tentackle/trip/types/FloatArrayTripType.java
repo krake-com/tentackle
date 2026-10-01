@@ -35,7 +35,7 @@ interface FloatTypeHolder {
 
 
 /**
- * Trip type for {@link Float[]} array.
+ * Trip type for {@code Float[]} array.
  */
 @TripTypeService(Float[].class)
 public final class FloatArrayTripType extends AbstractPredefinedArrayTripType<Float[]> {

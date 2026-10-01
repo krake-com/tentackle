@@ -42,11 +42,10 @@ public interface Immutable {
    * Sets the immutable property.
    * <p>
    * Any attempt to modify an immutable object
-   * results in an {@link ImmutableException}, if logging level is null.
-   * <p>
-   * Throws {@link ImmutableException} if argument is false and object is finally immutable.
+   * results in an {@link ImmutableException}, unless an immutable logging level is set.
    *
    * @param immutable true if object is immutable
+   * @throws ImmutableException if argument is false and the object is finally immutable
    */
   void setImmutable(boolean immutable);
 
@@ -57,7 +56,7 @@ public interface Immutable {
   void setFinallyImmutable();
 
   /**
-   * Returns whether object is immutable.
+   * Returns whether the object is immutable.
    * <p>
    * By default, objects are mutable.
    *
@@ -66,7 +65,7 @@ public interface Immutable {
   boolean isImmutable();
 
   /**
-   * Returns whether object is finally immutable.
+   * Returns whether the object is finally immutable.
    *
    * @return true if finally immutable
    */

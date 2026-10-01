@@ -31,7 +31,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * The annotated element must be not equal to another value.
+ * The annotated element must not be equal to another value.
  *
  * @author harald
  */
@@ -90,14 +90,14 @@ public @interface NotEqual {
   /**
    * The <code>String</code> representation of the value.
    *
-   * @return value the value
+   * @return the value
    */
   String value();
 
   /**
    * If either the object or the value to compare with is null, the result is valid.
    *
-   * @return true if ignore nulls (default), false to treat nulls as "logically zero"
+   * @return true if ignore nulls (default), false to compare nulls as well (null equals only null)
    */
   boolean ignoreNulls() default true;
 

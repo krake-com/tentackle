@@ -49,7 +49,6 @@ import java.util.function.Consumer;
  *        <li>The null code if the proxy is null.</li>
  *        <li>The classname of the invocation handler followed by
  *            the serialization of the handler object.</li>
- *        </li>
  *     </ul>
  *   </li>
  * </ul>

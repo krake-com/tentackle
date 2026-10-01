@@ -54,6 +54,8 @@ public class DecryptingInputStream extends PacketSizedInputStream {
    * The buffer size adapts dynamically to the packet size.
    *
    * @param in the underlying input stream
+   * @param cryptor the cryptor to decrypt the data
+   * @throws NullPointerException if cryptor is null
    */
   public DecryptingInputStream(InputStream in, Cryptor cryptor) {
     super(in);

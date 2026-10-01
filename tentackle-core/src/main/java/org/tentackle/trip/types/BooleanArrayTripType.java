@@ -35,7 +35,7 @@ interface BooleanTypeHolder {
 
 
 /**
- * Trip type for {@link Boolean[]} array.
+ * Trip type for {@code Boolean[]} array.
  */
 @TripTypeService(Boolean[].class)
 public final class BooleanArrayTripType extends AbstractPredefinedArrayTripType<Boolean[]> {

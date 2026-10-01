@@ -82,7 +82,7 @@ public class NamedCounter {
    * Gets the value for given named counter.
    *
    * @param name the counter's name
-   * @return the counter's value
+   * @return the counter's value, 0 if not used so far
    */
   public long get(String name) {
     return getCounter(name).get();
@@ -121,7 +121,8 @@ public class NamedCounter {
 
 
   /**
-   * Gets the atomic value.
+   * Gets the atomic value.<br>
+   * Creates it if it does not exist yet.
    *
    * @param name the counter's name
    * @return the atomic value

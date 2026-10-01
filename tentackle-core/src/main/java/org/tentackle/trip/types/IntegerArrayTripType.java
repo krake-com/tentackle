@@ -35,7 +35,7 @@ interface IntegerTypeHolder {
 
 
 /**
- * Trip type for {@link Integer[]} array.
+ * Trip type for {@code Integer[]} array.
  */
 @TripTypeService(Integer[].class)
 public final class IntegerArrayTripType extends AbstractPredefinedArrayTripType<Integer[]> {

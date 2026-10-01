@@ -21,7 +21,7 @@ package org.tentackle.trip;
 import java.io.InputStream;
 
 /**
- * Low-level deserializer for primitive values and Strings.
+ * Low-level deserializer for primitive values and raw bytes.
  */
 public interface Deserializer {
 

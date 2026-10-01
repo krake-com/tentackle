@@ -24,13 +24,16 @@ import org.tentackle.reflect.Interception;
 
 /**
  * Processor for the hidden interception annotations in the core package.<br>
- * Applies to interceptors applicable to implementation classes extending {@code Interceptable} only.
+ * Applies to interceptors applicable to methods of classes implementing {@code Interceptable} only.
  *
  * @author harald
  */
 @AnnotationProcessor
 public class HiddenInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 
+  /**
+   * Creates the processor for {@link Interception.Type#HIDDEN}.
+   */
   public HiddenInterceptorAnnotationProcessor() {
     super(Interception.Type.HIDDEN);
   }

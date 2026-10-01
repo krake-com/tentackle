@@ -27,9 +27,10 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Default properties resource based on {@link org.tentackle.common.FileHelper}.
+ * Default properties resource based on {@link org.tentackle.common.FileHelper}.<br>
+ * The name is first tried as a file and, if there is no such file, as a classpath resource.
  */
-@PropertiesResourceService    // defaults to priority 100
+@PropertiesResourceService    // default priority (100, if this is the only resource)
 public class DefaultPropertiesResource implements PropertiesResource {
 
   private static final Logger LOGGER = Logger.get(DefaultPropertiesResource.class);

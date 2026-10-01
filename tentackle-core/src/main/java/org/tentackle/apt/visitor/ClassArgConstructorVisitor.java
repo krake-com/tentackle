@@ -26,7 +26,7 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 
 /**
- * A visitor for constructors with a single argument of a given class.
+ * A visitor for constructors with a single argument of a given class or one of its subtypes.
  *
  * @author harald
  */
@@ -35,6 +35,12 @@ public class ClassArgConstructorVisitor extends SimpleTypeVisitor8<Boolean, Void
   private final AbstractServiceAnnotationProcessor annotationProcessor;
   private final Class<?> clazz;
 
+  /**
+   * Creates the visitor.
+   *
+   * @param annotationProcessor the annotation processor to check the argument type with
+   * @param clazz the class the argument must be assignable to
+   */
   public ClassArgConstructorVisitor(AbstractServiceAnnotationProcessor annotationProcessor, Class<?> clazz) {
     this.annotationProcessor = annotationProcessor;
     this.clazz = clazz;

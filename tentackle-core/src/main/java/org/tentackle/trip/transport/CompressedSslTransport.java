@@ -32,7 +32,8 @@ import java.net.Socket;
 import java.net.URI;
 
 /**
- * Transport implementation for compressed SSL over TCP.
+ * Transport implementation for compressed SSL over TCP.<br>
+ * Packets smaller than the URI query parameter {@code mincompress} (default 1024) are not compressed.
  */
 @TransportService(CompressedSslTransport.PROTOCOL)
 public class CompressedSslTransport extends SslTransport {

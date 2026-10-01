@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * Method caching makes sense if a method lookup involves algorithms to find
  * a "best match", for example as in {@link ReflectiveVisitor}.
- * The cache is thread safe.
+ * The cache is thread-safe.
  *
  * @author harald
  */

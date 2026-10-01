@@ -38,9 +38,13 @@ import java.lang.annotation.Target;
  *   <li>by service name ({@code implementedByService=...}):
  *   the implementing class must be annotated with &#64;{@link org.tentackle.common.ServiceName} and
  *   both names must match. Again, this may be prone to typos, but avoids dependency.</li>
- *   <li>by service class: same as option 3, but the implementation must be annotated with &#64;{@link org.tentackle.common.Service},
- *   referencing the interception annotation.</li>
+ *   <li>by service class: if none of the above is given, the implementation must be annotated with
+ *   &#64;{@link org.tentackle.common.Service} referencing the interception annotation.</li>
  * </ol>
+ * The options are tried in the order above.
+ * <p>
+ * Interceptors declared in an interface (public) are invoked before those declared in the implementation (hidden).
+ * Within each group, the order follows the order of the annotations.
  *
  * <p>
  * The optional {@code type} parameter defines the visibility of the interception:
@@ -98,7 +102,7 @@ public @interface Interception {
   String implementedByName() default "";
 
   /**
-   * Defines the interceptor implementation by a servicename.<br>
+   * Defines the interceptor implementation by a service name.<br>
    * Avoids the concrete dependency.
    *
    * @return the interceptor implementing the interception.

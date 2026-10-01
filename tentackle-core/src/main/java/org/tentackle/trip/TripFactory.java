@@ -39,11 +39,14 @@ interface TripFactoryHolder {
 
 /**
  * Factory for creating various TRIP objects.
+ * <p>
+ * Replaceable via &#64;{@link org.tentackle.common.Service}. The default implementation is
+ * {@link org.tentackle.trip.impl.DefaultTripFactory}.
  */
 public interface TripFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -149,11 +152,10 @@ public interface TripFactory {
 
   /**
    * Gets the OpCode for the given numeric code.
-   * <p>
-   * Throws {@link TripRuntimeException} if no matching OpCode could be found.
    *
    * @param code the numeric code
    * @return the OpCode
+   * @throws TripRuntimeException if no matching OpCode could be found
    */
   OpCode getOpCode(int code);
 
@@ -168,12 +170,11 @@ public interface TripFactory {
    * Gets the TripType for the given FQCN.<br>
    * If there is a predefined or application-specific TripType, that is returned.
    * Otherwise, the type will be created dynamically by the best matching TripTypeBuilder.
-   * <p>
-   * Throws {@link TripRuntimeException} if no matching TripType could be found.
    *
    * @param className the FQCN of the data type
    * @return the trip type, never null
    * @see org.tentackle.reflect.ReflectionHelper#getSerializableClassName(Class)
+   * @throws TripRuntimeException if no matching TripType could be found
    */
   TripType<?> getType(String className);
 
@@ -181,12 +182,11 @@ public interface TripFactory {
    * Gets the TripType for the given class.<br>
    * If there is a predefined or application-specific TripType, that is returned.
    * Otherwise, the type will be created dynamically by the best matching TripTypeBuilder.
-   * <p>
-   * Throws {@link TripRuntimeException} if no matching TripType could be found.
    *
    * @param clazz the class of the data type
    * @return the trip type, never null
    * @param <T> the data type
+   * @throws TripRuntimeException if no matching TripType could be found
    */
   <T> TripType<T> getType(Class<? extends T> clazz);
 
@@ -220,12 +220,11 @@ public interface TripFactory {
   /**
    * Finds the class implementing the given remote interface.<br>
    * The implementing class must be annotated with {@link RemoteService}.
-   * <p>
-   * Throws {@link TripRuntimeException} if no matching implementation could be found.
    *
    * @param clazz the remote interface to find the implementation for
    * @return the implementation class
    * @param <T> the remote interface type
+   * @throws TripRuntimeException if no matching implementation could be found
    */
   <T extends Remote> Class<T> findRemoteImplementation(Class<T> clazz);
 

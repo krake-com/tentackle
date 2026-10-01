@@ -247,6 +247,7 @@ The `Registry` (`org.tentackle.trip.Registry`) is the server-side name/address l
 |-------------------------|-----------------------------------------------|
 | `UUID → RemoteDelegate` | Fast lookup by remote object identity         |
 | `String → UUID`         | Named registration for human-readable lookup  |
+| `UUID → String`         | Reverse lookup of the registered name         |
 | `Remote object → UUID`  | Reverse lookup for already-registered objects |
 
 The registry has a fixed identity (`REGISTRY_ID = new UUID(0, 0)`) and registers itself. Clients access it through a `RemoteLookup` proxy:
@@ -306,8 +307,18 @@ Component implementations:
 |--------------------------|--------------------------------|--------------------------------------------------|
 | Fields                   | `FieldTripComponent`           | `VarHandle` (fast) or `Field.set` (final fields) |
 | Fields of primitive type | `PrimitiveFieldTripComponent`  | `VarHandle`, invoked with a primitive signature  |
-| Getters/setters          | `MethodTripComponent`          | Reflection methods                               |
+| Getters/setters          | `MethodTripComponent`          | Reflective `Method.invoke`                       |
 | Record components        | `RecordTripComponent`          | `MethodHandle` bound to the accessor             |
+
+Two further implementations serve internal purposes: `EnumTripComponent` represents a single enum
+constant, and `ClassTripComponent` represents an interface of a dynamic proxy or the component
+type of an array (its value is the class itself).
+
+`MethodTripComponent` is not created by the default field scan. It is used for a `@CanonicalGetter`
+whose value is not covered by a serializable field (see
+[JDK collections and maps](#jdk-collections-and-maps)) — without a setter, since the value is
+passed to the canonical constructor — and by component providers such as the one for `Throwable`
+(see [`@TripComponentProvider`](#tripcomponentprovider)).
 
 #### Dictionary
 
@@ -350,7 +361,10 @@ dictionary. Applications that reconnect must therefore build a new `Transport` r
 the rejected one.
 
 Because the preamble is part of the wire format, a peer built against a different handshake version
-fails immediately with an *"invalid magic"* error instead of misreading the header.
+fails immediately with an *"invalid magic"* error instead of misreading the header. The one exception
+is a client of the directly preceding version (whose preamble lacks the dictionary byte, see
+`TripConstants.MAGIC_1`): the server accepts it with a warning and treats its dictionary as empty,
+so that an auto-updating client can still reach the update endpoint and fetch the current version.
 
 #### OpCode
 
@@ -404,7 +418,8 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
 2. **Predefined mapper**: If no cached type exists, the factory checks `@TripTypeService` annotations to find a user-provided `TripType` for the class.
 3. **Builder fallback**: If no predefined type is found, a `TripTypeBuilder` generates one at runtime:
     - Classes annotated with `@TripViaJOS` → serialized via Java's built-in serialization
-    - Classes containing lambda fields (without `@TripSerializeLambda`) → error
+    - Lambdas → `LambdaTripType`, which fails at serialization time unless the capturing class
+      is annotated with `@TripSerializeLambda`
     - Regular classes → `ObjectTripType`
     - Records → `RecordTripType`
     - Enums → `EnumTripType` (constants with class bodies are mapped to their enum class)
@@ -415,7 +430,8 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
 
 4. **Component construction**: For `ObjectTripType`, the builder scans the class for serializable fields:
     - Skips `transient`, `static`, and fields annotated with `@TripIgnore`
-    - Uses either direct field access (`FieldTripComponent`) or getter/setter pairs (`MethodTripComponent`)
+    - Uses direct field access (`FieldTripComponent`, or `PrimitiveFieldTripComponent` for primitives);
+      a `@CanonicalGetter` without a serializable field gets a `MethodTripComponent`
 
 5. **Serialization (write)**:
    ```
@@ -452,7 +468,7 @@ The serialization flow is driven by `TripFactory.getType(Class)`:
    create instance (canonical constructor or no-arg constructor)
    for each component (in dictionary order):
        read component value (recursively)
-   invoke validate() method if TripSerializable.validate() is set
+   invoke the method named by @TripSerializable(validate = ...), if any
    return instance
    ```
 
@@ -581,7 +597,7 @@ public class CustomerOrders implements DomainContextProvider {
 
 #### `@TripDeduplicatable`
 
-Opts a type into value-based deduplication (only Strings and records are
+Opts a type into value-based deduplication (only records and Strings longer than 5 characters are
 deduplicated by default). The type **must** honor the `equals`/`hashCode`
 contract! The value is a method name or `TripDeduplicatable.NEVER` /
 `TripDeduplicatable.ALWAYS` (default method: `isDeduplicatable`).
@@ -635,7 +651,7 @@ public class Point {
 public class SharedConfig {
     private final boolean shared;
   
-    public void isShared() {
+    public boolean isShared() {
         return shared;
     }
 }
@@ -649,7 +665,7 @@ back to its own object — see
 
 #### `@TripSerializeLambda`
 
-By default, TRIP rejects to serialize lambdas, because serializing them would drag in the entire
+By default, TRIP refuses to serialize lambdas, because serializing them would drag in the entire
 enclosing instance and all its referenced objects, which is usually not what the developer expects.
 This annotation enables capturing and recreating lambdas:
 
@@ -766,12 +782,16 @@ should not be covered by the dictionary mechanism), create a custom `TripType`:
 
 ```java
 @TripTypeService(Point2D.class)
-public class MoneyTripType extends AbstractTripType<Point2D> {
+public class Point2DTripType extends AbstractTripType<Point2D> {
+
+  public Point2DTripType() {
+    super(Point2D.class);
+  }
 
   @Override
-  public void write(TripStream stream, Point2D value) {
+  public void write(Point2D value, TripStream stream) {
     if (value == null) {
-      serializer.serializeOpCode(DefaultOpCode.NULL);
+      sendNull(stream);
     }
     else {
       Serializer serializer = stream.getSerializer();
@@ -782,15 +802,13 @@ public class MoneyTripType extends AbstractTripType<Point2D> {
   }
 
   @Override
-  public Point2D read(TripStream stream) {
-    Deserializer deserializer = stream.getDeserializer();
+  public Point2D read(TripStream stream, OpCode opCode) {
     if (opCode == MyOpCode.POINT2D) {
-      return new Point2D(deserializer.deserializeInt(), 
+      Deserializer deserializer = stream.getDeserializer();
+      return new Point2D(deserializer.deserializeInt(),
                          deserializer.deserializeInt());
     }
-    else {
-      return super.read(stream, opCode);
-    }
+    return super.read(stream, opCode);   // handles NULL, throws for any other opcode
   }
 }
 ```
@@ -942,7 +960,7 @@ The `Transport` interface defines the core contract:
 | `accept()`                                                       | Server-side: start listening for incoming connections          |
 | `isAccepting()` / `isClosed()` / `close()`                       | Lifecycle state                                                |
 | `getClientDictionary()`                                          | The client's dictionary                                        |
-| `getServerDictionary(UUID)`                                      | Per-client dictionaries                                        |
+| `getServerDictionary(UUID, boolean)`                             | Per-client dictionaries                                        |
 | `getRegistry()` / `getRemoteLookup()`                            | Access to the server's registry and client's lookup proxy      |
 | `lookup(Class, String)`                                          | Look up a named remote object                                  |
 | `createConnectionHandler(String, InputStream, OutputStream)`     | Create a handler for an incoming connection                    |
@@ -958,7 +976,7 @@ Three base classes handle different levels of boilerplate:
 |----------------------------------------------|----------------------------------------------------------------------|-------------------------------------------------|
 | `AbstractTransport`                          | UUID generation, thread pools, dictionary management, lease tracking | New protocol from scratch (e.g., QUIC)          |
 | `TcpTransport`                               | Socket-based client connections and server listening                 | Adding a layer on top of TCP (SSL, compression) |
-| `EncryptedTransport` / `CompressedTransport` | Decorators extending `TcpTransport`                                  | Adding encryption or compression to TCP         |
+| `SslTransport` / `EncryptedTransport` / `CompressedTransport` | Subclasses of `TcpTransport`                        | Adding SSL, PSK encryption or compression to TCP |
 
 The only abstract method in `AbstractTransport` is:
 
@@ -968,10 +986,10 @@ protected abstract Pool<Connection> createClientConnectionPool();
 
 ### Transport discovery
 
-Transports are discovered via the `@TransportService` annotation. During compilation, the `MappedServiceAnalyzeHandler` annotation processor writes an entry to `META-INF/mapped-services/org.tentackle.trip.Transport`:
+Transports are discovered via the `@TransportService` annotation. During the build, the `MappedServiceAnalyzeHandler` (run by the `tentackle-maven-plugin`'s analyze step, see [services](../../../../tentackle-common/src/main/docs/services.md)) writes an entry to `META-INF/mapped-services/org.tentackle.trip.Transport`:
 
 ```
-org.tentackle.quic.QuicTripTransport = tripq
+org.tentackle.quic.QuicTripTransport = "tripq"
 ```
 
 At runtime, `DefaultTripFactory` reads these entries and builds a map from protocol scheme to transport class. When you create a transport via `TransportManager.requestTransport(URI)`, the factory looks up `uri.getScheme()` in this map and instantiates the corresponding class via its `getDeclaredConstructor(URI.class).newInstance(uri)` constructor.
@@ -1024,8 +1042,8 @@ public class MyTripConnectionPool extends AbstractConnectionPool {
     @Override
     protected PoolSlot<Connection> createSlot(int slotNumber) {
         // Open a connection to the remote endpoint
-        MyConnection myConnection = new MyConnection(this, slotNumber);
-        return new AbstractPoolSlot<>(myConnection);
+        return new ConnectionPoolSlot(this, slotNumber,
+                                      new MyTripConnection(getTransport(), getDictionary()));
     }
 }
 ```
@@ -1037,8 +1055,8 @@ The pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usag
 ```java
 public class MyTripConnection extends AbstractConnection {
     
-    public MyTripConnection(MyTripConnectionPool pool, int slotNumber) {
-        super(pool, createTripStream(pool.transport, pool.dictionary, slotNumber));
+    public MyTripConnection(Transport transport, Dictionary dictionary) {
+        super(transport, createTripStream(dictionary));   // also writes the connection preamble
     }
     
     @Override
@@ -1051,9 +1069,7 @@ public class MyTripConnection extends AbstractConnection {
         // Close your connection
     }
     
-    private static TripStream createTripStream(MyTripTransport transport, 
-                                                Dictionary dictionary, 
-                                                int slotNumber) {
+    private static TripStream createTripStream(Dictionary dictionary) {
         TripFactory factory = TripFactory.getInstance();
         return factory.createStream(dictionary,
             factory.createSerializer(/* your output stream */),
@@ -1079,7 +1095,7 @@ For each call within a connection, the connection handler delegates to `createCa
 
 ### QUIC transport example
 
-The [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) module (`/tentackle-quic/src/main/java/org/tentackle/quic/`) provides a complete reference implementation using the KWIC library. Here is how it maps to the steps above:
+The [`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) module (`/tentackle-quic/src/main/java/org/tentackle/quic/`) provides a complete reference implementation using the Kwik library. Here is how it maps to the steps above:
 
 #### Transport class
 
@@ -1098,7 +1114,7 @@ public class QuicTripTransport extends AbstractTransport {
     public synchronized void accept() {
         super.accept();  // sets up thread pools, registry
         
-        // Configure and start the KWIC QUIC server connector
+        // Configure and start the Kwik QUIC server connector
         ServerConnector serverConnector = ServerConnector.builder()
             .withConfiguration(...)
             .withKeyStore(keyStore, alias, password)
@@ -1122,16 +1138,10 @@ public class QuicTripTransport extends AbstractTransport {
 
 Key details:
 
-- **Keystore configuration**: The QUIC transport reads keystore parameters from the URI query string:
-    - `kspass` — keystore password
-    - `ksfile` — keystore file path
-    - `ksalias` — certificate alias
-    - `kstype` — keystore type (defaults to JDK default)
-    - `alpnid` — ALPN protocol identifier (defaults to the URI scheme)
-    - `maxstreams` — maximum concurrent bidirectional streams (default: 128)
-    - `connecttimeout` — seconds to wait for the QUIC handshake before giving up. Must be > 0.
-    - `quicidle` — QUIC max idle timeout in seconds (default: 30)
-    - `keepalive` — seconds to keep the QUIC connection alive, `0` disables it (default: unlimited)
+- **Configuration**: like the SSL transports, the QUIC transport takes its keystore and
+  truststore from the [SSL parameters](#ssltls-configuration) (`ksfile`, `kspass`, `ksalias`, …).
+  QUIC-specific options such as `alpnid`, `maxstreams`, `connecttimeout`, `quicidle` and
+  `keepalive` are listed in [QUIC](../../../../tentackle-quic/src/main/docs/quic.md).
 
 - **`createStream()`** method wraps a QUIC stream's I/O in a TRIP `TripStream`:
   ```java

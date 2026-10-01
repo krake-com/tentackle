@@ -39,6 +39,7 @@ public record SecretId(String service, String account) {
    * @param service the service, never blank
    * @param account the account, never blank
    * @throws IllegalArgumentException if the service or account is blank or contains a NUL character
+   * @throws NullPointerException if the service or account is null
    */
   public SecretId {
     check("service", service);

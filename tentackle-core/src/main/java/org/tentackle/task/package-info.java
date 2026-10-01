@@ -18,5 +18,8 @@
 
 /**
  * Tasks and dispatchers.
+ * <p>
+ * A {@link org.tentackle.task.TaskDispatcher} executes {@link org.tentackle.task.Task}s one after another
+ * in a thread of its own, optionally scheduled or repeated.
  */
 package org.tentackle.task;

@@ -20,7 +20,7 @@
 package org.tentackle.bind;
 
 /**
- * A listener invoked after the binding has updated the model with the view's value.
+ * A listener invoked before the binding updates the model with the view's value.
  *
  * @author harald
  */
@@ -28,7 +28,7 @@ package org.tentackle.bind;
 public interface ToModelListener {
 
   /**
-   * The model will be updated by the view
+   * The model will be updated by the view.
    *
    * @param e the binding event
    * @throws BindingVetoException if the model should not be updated

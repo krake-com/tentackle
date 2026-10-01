@@ -21,6 +21,8 @@ package org.tentackle.reflect;
 /**
  * Marker interface for dummy delegates.<br>
  * Allows {@link Mixin}s with a valid delegate class to be treated as dummy mixins.
+ *
+ * @see Mixin#isDummy()
  */
 public interface DummyDelegate {
 

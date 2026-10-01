@@ -35,7 +35,7 @@ import java.util.Arrays;
  * <p>
  * A secret never reveals its value in {@link #toString()}.
  * <p>
- * Secrets are threadsafe. They have to be, since a session info is shared between threads and
+ * Secrets are thread-safe. They have to be, since a session info is shared between threads and
  * {@link #clear()} may run while another thread reads the value. Each method is atomic in itself:
  * a reader either gets the whole value or none of it, never a partially wiped one. Compound
  * operations are not, so a {@link #get()} following an {@link #isSet()} may still return null.
@@ -119,7 +119,8 @@ public class Secret implements Serializable, Cloneable {
   }
 
   /**
-   * Returns whether the value has been cleared.
+   * Returns whether the value has been cleared.<br>
+   * Setting a new value resets the cleared state.
    *
    * @return true if cleared
    */

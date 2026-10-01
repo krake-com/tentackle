@@ -56,7 +56,11 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
 
 
   /**
-   * Creates the factory.
+   * Creates the factory.<br>
+   * Instantiates all scopes annotated with &#64;{@link ValidationScopeService}.
+   *
+   * @throws ValidationRuntimeException if a scope could not be instantiated, its name is invalid or not unique,
+   *         or one of the predefined scopes is missing
    */
   public DefaultValidationScopeFactory() {
     scopesByName = new HashMap<>();

@@ -28,6 +28,10 @@ import java.util.Objects;
 
 /**
  * A TripComponent implementation for a class component type.<br>
+ * Used for the interfaces of dynamic proxies and the component type of arrays.
+ * The component's value is the class itself.
+ *
+ * @param <P> the parent type
  */
 public class ClassTripComponent<P> implements TripComponent<P, Class<?>> {
 

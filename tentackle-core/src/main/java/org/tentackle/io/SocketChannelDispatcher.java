@@ -39,6 +39,12 @@ import java.util.function.Supplier;
 
 /**
  * A simple implementation of a dispatcher accepting incoming socket channels from client connections.
+ * <p>
+ * Each accepted channel is passed to a new handler created by the handler factory and processed in a thread
+ * of a cached thread pool. The accept loop runs in that pool as well.
+ * Supports TCP (IPv4 and IPv6) and Unix domain sockets.<br>
+ * The dispatcher should be shut down explicitly. If it becomes unreachable without, it is closed automatically
+ * (with a warning).
  */
 public class SocketChannelDispatcher {
 
@@ -171,6 +177,7 @@ public class SocketChannelDispatcher {
    * @param name the dispatcher's name
    * @param socketAddress the socket address to listen on
    * @param handlerFactory the socket channel handler factory
+   * @throws TentackleRuntimeException if the address type is not supported or the server channel cannot be bound
    */
   public SocketChannelDispatcher(String name, SocketAddress socketAddress, Supplier<Consumer<SocketChannel>> handlerFactory) {
     StandardProtocolFamily protocolFamily;
@@ -198,7 +205,9 @@ public class SocketChannelDispatcher {
   }
 
   /**
-   * Shutdown the dispatcher.
+   * Shuts down the dispatcher.<br>
+   * Closes the server channel and shuts down the thread pool.
+   * Connections already accepted are not closed.
    */
   public void shutdown() {
     resources.shutdownRequested = true;   // programmatic close, not a GC cleanup

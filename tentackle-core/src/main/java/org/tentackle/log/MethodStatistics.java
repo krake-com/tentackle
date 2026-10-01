@@ -28,7 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Method statistics collector.
+ * Method statistics collector.<br>
+ * Counts the invocations and durations per method and serviced class. Thread-safe.
  *
  * @author harald
  */
@@ -53,7 +54,7 @@ public class MethodStatistics {
    * Counts the invocation of a delegate method.
    *
    * @param method the method invoked
-   * @param servicedClass the serviced class, null if method#getDeclatingClass
+   * @param servicedClass the serviced class, null if {@code method.getDeclaringClass()}
    * @param timeKeeper execution duration
    */
   public synchronized void countMethodInvocation(Method method, Class<?> servicedClass, TimeKeeper timeKeeper) {
@@ -73,7 +74,8 @@ public class MethodStatistics {
   }
 
   /**
-   * Logs the statistics.
+   * Logs the statistics.<br>
+   * Each line shows the minimum, maximum and total duration in milliseconds and the number of invocations.
    *
    * @param title the title, null if default
    * @param level the logging level

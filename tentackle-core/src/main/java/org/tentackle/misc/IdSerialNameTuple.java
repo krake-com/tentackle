@@ -38,11 +38,12 @@ public class IdSerialNameTuple extends IdSerialTuple {
   private final String name;
 
   /**
-   * Creates an immutable id, serial tuple.
+   * Creates an immutable id, serial, name tuple.
    *
    * @param id     the object id
    * @param serial the serial number
    * @param name   the name associated with the ID
+   * @throws NullPointerException if name is null
    */
   @CanonicalConstructor
   public IdSerialNameTuple(long id, long serial, String name) {

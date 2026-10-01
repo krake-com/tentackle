@@ -17,6 +17,6 @@
  */
 
 /**
- * Annotation processors.
+ * Annotation processors checking the correct use of Tentackle's annotations at compile time.
  */
 package org.tentackle.apt;

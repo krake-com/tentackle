@@ -49,7 +49,7 @@ visible in the implementing code.
 ### Design principles
 
 - **Interceptors are stateless and cached.** An `Interceptor` is created **once
-  per class and annotation occurrence** and reused for every invocation.
+  per intercepted method and annotation** and reused for every invocation.
   Therefore, an interceptor **MUST NOT hold per-invocation state** — all runtime
   context is passed in through the `invoke`/`proceed` parameters.
 - **Annotation and implementation are separated.** The annotation (e.g.
@@ -210,7 +210,7 @@ This `@Offset(5)` example also shows that an interceptor may freely **transform
 the return value** (and likewise the `args` before proceeding).
 
 > **Statelessness is mandatory.** Because the framework caches one interceptor
-> instance per class + annotation, fields holding *per-call* state would leak
+> instance per intercepted method + annotation, fields holding *per-call* state would leak
 > across concurrent invocations. Only configuration derived from the annotation
 > (which is constant) may be stored in fields.
 
@@ -271,9 +271,10 @@ proxy machinery — but understanding the flow helps when debugging.
 3. Building an `InterceptableMethod` calls
    `InterceptionUtilities.createInterceptableMethod()`, which:
    - resolves the **implementing method** on the delegate class;
-   - scans the **interface method** for `PUBLIC`/`ALL` interceptor annotations;
-   - scans the **implementing method** for `HIDDEN`/`ALL` interceptor
-     annotations;
+   - scans the **interface method** for interceptor annotations (the build
+     ensures only `PUBLIC`/`ALL` ones can be there);
+   - scans the **implementing method** for interceptor annotations
+     (`HIDDEN`/`ALL`);
    - instantiates each interceptor (via `implementedBy` / name / service),
      calls `setAnnotation()`, and chains them.
 4. On invocation, `InterceptableMethod.invoke()` calls the head interceptor if

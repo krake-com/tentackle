@@ -22,7 +22,7 @@ package org.tentackle.bind;
 import java.util.Collection;
 
 /**
- * Cache for bindable elements per class.<br>
+ * Cache for bindable elements per class.
  *
  * @author harald
  */

@@ -24,6 +24,9 @@ import java.io.Serial;
 import java.util.EventObject;
 
 /**
+ * A binding event.<br>
+ * Fired to the {@link ToViewListener}s and {@link ToModelListener}s before the value is transferred
+ * between model and view.
  *
  * @author harald
  */
@@ -32,6 +35,9 @@ public class BindingEvent extends EventObject {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * The kind of transfer.
+   */
   public enum Type {
 
     /**
@@ -68,7 +74,7 @@ public class BindingEvent extends EventObject {
 
 
   /**
-   * A binding event.
+   * Creates a binding event.
    *
    * @param source the binding source
    * @param type the action type
@@ -89,7 +95,8 @@ public class BindingEvent extends EventObject {
   }
 
   /**
-   * Gets the event type
+   * Gets the event type.
+   *
    * @return the type
    */
   public Type getType() {
@@ -97,7 +104,7 @@ public class BindingEvent extends EventObject {
   }
 
   /**
-   * Gets the parent object containing the value
+   * Gets the parent object containing the value.
    *
    * @return the parent object
    */
@@ -106,7 +113,7 @@ public class BindingEvent extends EventObject {
   }
 
   /**
-   * Gets the value to be set.
+   * Gets the value to be transferred.
    *
    * @return the value
    */

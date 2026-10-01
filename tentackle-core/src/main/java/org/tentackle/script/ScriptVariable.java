@@ -24,7 +24,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Script variable.
+ * Script variable.<br>
+ * Variables are identified by their name, i.e. equality refers to the name only.
  *
  * @author harald
  */
@@ -38,6 +39,7 @@ public class ScriptVariable {
    *
    * @param name the variable's name
    * @param value its value
+   * @throws NullPointerException if name is null
    */
   public ScriptVariable(String name, Object value) {
     this.name = Objects.requireNonNull(name);

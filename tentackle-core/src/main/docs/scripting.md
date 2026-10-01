@@ -97,8 +97,12 @@ non-throwing probe.
 
 **How languages are loaded** (`DefaultScriptFactory.loadLanguages`): the factory asks `ServiceFinder` for every
 `ScriptingLanguage` provider, instantiates each one, and registers it under each of its (lower-cased)
-abbreviations using `putIfAbsent`. Because the first registration wins, the meaning of an abbreviation — and the
-default language — is stable and can be deliberately overridden by load order rather than accidentally clobbered.
+abbreviations using `putIfAbsent`. Because the first registration wins, the meaning of an abbreviation is stable
+and can be deliberately overridden by load order rather than accidentally clobbered.
+
+There is **no built-in default language**. It is set explicitly via `setDefaultLanguage(...)`; a Tentackle
+application does so from its `scripting` property, or picks the only language available if there is exactly one.
+Without a default, the `{ … }` shorthand and the empty tag `#!{ … }` fail with a `ScriptRuntimeException`.
 
 ### `Script` — a compiled-on-demand expression
 
@@ -130,8 +134,8 @@ public interface Script {
 ### `ScriptVariable` — named inputs
 
 A [`ScriptVariable`](../java/org/tentackle/script/ScriptVariable.java) is a simple `(name, value)` pair. Its
-identity is the **name only** (`equals`/`hashCode`), which is why `execute(Set<ScriptVariable>)` naturally rejects
-collisions and why variables can be collected in a `Set`.
+identity is the **name only** (`equals`/`hashCode`), so a `Set<ScriptVariable>` can never hold two variables of the
+same name, and the varargs `execute(ScriptVariable...)` rejects duplicates.
 
 ### `ScriptConverter` — pre-compilation rewriting
 
@@ -145,7 +149,7 @@ The canonical use is in validation. [`AbstractScriptValidationMessageConverter`]
 rewrites the message i18n shortcut `@('key', args…)` into
 `ValidationUtilities.getInstance().format(object, 'key', args…)`, expressing `object` through the language's own
 `createLocalVariableReference` so the generated call is syntactically correct in every language. The per-language
-converters are themselves located as services: Groovy and Ruby register `@MessageScriptConverter` implementations
+converters are themselves located as services: the Groovy, Ruby and JSR-223 modules register `@MessageScriptConverter` implementations
 ([`GroovyValidationMessageConverter`](../../../../tentackle-script-groovy/src/main/java/org/tentackle/script/groovy/GroovyValidationMessageConverter.java),
 [`RubyValidationMessageConverter`](../../../../tentackle-script-ruby/src/main/java/org/tentackle/script/ruby/RubyValidationMessageConverter.java),
 and [`ECMAScriptValidationMessageConverter`](../../../../tentackle-script-jsr/src/main/java/org/tentackle/script/jsr/ECMAScriptValidationMessageConverter.java)).
@@ -269,8 +273,9 @@ keeps the providers usable both on the module path and the plain classpath:
 - **`tentackle-script-jsr`** is fully modularized (`module org.tentackle.script.jsr`, `requires transitive
   java.scripting`) and additionally provides a `ModuleHook` for resource-bundle access.
 
-To add scripting to an application, declare the desired implementation module(s) as dependencies and, optionally,
-set a default language at startup:
+To add scripting to an application, declare the desired implementation module(s) as dependencies and, unless
+exactly one language is present, set the default language — via the application's `scripting` property or at
+startup:
 
 ```java
 ScriptFactory.getInstance().setDefaultLanguage("gv");   // Groovy as default

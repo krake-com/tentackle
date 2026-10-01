@@ -24,7 +24,7 @@ import java.io.Serial;
 /**
  * Exception thrown to indicate that the validation could not be applied.
  * <p>
- * This is thrown usually due to an illegal validator for the annotated element.
+ * This is usually thrown due to an illegal validator for the annotated element.
  *
  * @author harald
  */

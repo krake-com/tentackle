@@ -28,6 +28,8 @@ import java.util.UUID;
  * The external representation is {@code "id-uuid"}, i.e. the ID prepended to the UUID separated by a dash.
  * With {@code XUUID}s, the internal logic (domain/persistence) does not need to be changed, but an additional check for the UUID
  * can be applied to prevent brute force attacks.
+ * <p>
+ * Equality refers to the ID and the UUID only, not to the optional {@link Identifiable}.
  */
 public class XUUID implements Identifiable {
 
@@ -44,6 +46,7 @@ public class XUUID implements Identifiable {
    *
    * @param str the XUUID string
    * @return the XUUID
+   * @throws IllegalArgumentException if the string is not a valid XUUID
    */
   public static XUUID valueOf(String str) {
     XUUID xuuid;
@@ -80,6 +83,7 @@ public class XUUID implements Identifiable {
    *
    * @param id the ID
    * @param uuid the UUID
+   * @throws NullPointerException if uuid is null
    */
   public XUUID(long id, UUID uuid) {
     this.id = id;
@@ -90,8 +94,9 @@ public class XUUID implements Identifiable {
   /**
    * Creates an extended UUID from an {@link Identifiable}.
    *
-   * @param identifiable the identifiable
+   * @param identifiable the identifiable providing the ID
    * @param uuid the UUID
+   * @throws NullPointerException if identifiable or uuid is null
    */
   public XUUID(Identifiable identifiable, UUID uuid) {
     this.identifiable = Objects.requireNonNull(identifiable, "identifiable");

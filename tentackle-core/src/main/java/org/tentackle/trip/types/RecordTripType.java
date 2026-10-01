@@ -60,7 +60,7 @@ import java.util.Collection;
  *            <li>The component's ordinal, according to the dictionary, if not simply the next.</li>
  *            <li>The component's serialization according to its type.</li>
  *          </ul>
- *          </li>The opcode {@link DefaultOpCode#END}</li>
+ *          followed by the opcode {@link DefaultOpCode#END}.
  *        </li>
  *     </ul>
  *   </li>

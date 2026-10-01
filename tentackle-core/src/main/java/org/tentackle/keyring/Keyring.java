@@ -39,7 +39,7 @@ package org.tentackle.keyring;
  * as soon as they are no longer needed. The keyring never keeps a reference to an array passed in and
  * always hands out a new array, which the caller should wipe after use.
  * <p>
- * Implementations are threadsafe.
+ * Implementations are thread-safe.
  *
  * @author harald
  */
@@ -92,9 +92,10 @@ public interface Keyring {
    *
    * @param id the secret's id
    * @param label the label shown to the user by the OS tools, such as Keychain Access or Seahorse,
-   *              null to derive it from the id
+   *              null or blank to derive it from the id
    * @param secret the secret; must not be empty or contain NUL characters
    * @throws KeyringException if the secret could not be stored
+   * @throws IllegalArgumentException if the secret is empty or contains NUL characters
    */
   void store(SecretId id, String label, char[] secret);
 

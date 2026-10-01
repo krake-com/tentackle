@@ -35,7 +35,7 @@ interface DoubleTypeHolder {
 
 
 /**
- * Trip type for {@link Double[]} array.
+ * Trip type for {@code Double[]} array.
  */
 @TripTypeService(Double[].class)
 public final class DoubleArrayTripType extends AbstractPredefinedArrayTripType<Double[]> {

@@ -71,7 +71,8 @@ public class IndexedMethodCache {
   }
 
   /**
-   * Adds a method to the cache, if not already present.
+   * Adds a method to the cache, if not already present.<br>
+   * Indexes start at 0 and are never reused, even if a method is removed.
    *
    * @param method the method to add
    * @return the index of the method

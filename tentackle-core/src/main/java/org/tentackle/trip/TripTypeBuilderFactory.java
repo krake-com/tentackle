@@ -28,13 +28,17 @@ interface TripTypeBuilderFactoryHolder {
 
 /**
  * A factory for {@link TripTypeBuilder}s.
+ * <p>
+ * Picks the builder annotated with &#64;{@link TripTypeBuilderService} for the requested class, its superclasses
+ * or interfaces (see {@link org.tentackle.reflect.ClassMapper#mapLenient(Class)}).
+ * Replaceable via &#64;{@link org.tentackle.common.Service}.
  *
  * @author harald
  */
 public interface TripTypeBuilderFactory {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -45,6 +49,7 @@ public interface TripTypeBuilderFactory {
   /**
    * Gets a type builder for the requested data type.
    *
+   * @param <T> the data type
    * @param clazz the application's data class
    * @return the type builder
    */

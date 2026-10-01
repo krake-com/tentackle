@@ -21,9 +21,12 @@ package org.tentackle.bind;
 import java.io.Serial;
 
 /**
- * BindingListeners may throw a BindingVetoException to
+ * {@link ToViewListener}s and {@link ToModelListener}s may throw a {@code BindingVetoException} to
  * inhibit the transfer of data between the view and the model,
  * respectively vice versa.
+ * <p>
+ * Optionally, the other side can be resynchronized (i.e. the view is updated from the model
+ * or the model from the view), or the veto is rethrown as a {@link BindingException}.
  *
  * @author harald
  */
@@ -63,7 +66,7 @@ public class BindingVetoException extends Exception {
    * Constructs a <code>BindingVetoException</code> with optional rethrowEnabled as a binding runtime exception.
    *
    * @param message a descriptive message
-   * @param rethrowEnabled true to rethrowEnabled as Binding(Runtime)Exception, false to process silently
+   * @param rethrowEnabled true to rethrow as a {@link BindingException}, false to process silently
    */
   public BindingVetoException(boolean rethrowEnabled, String message) {
     super(message);

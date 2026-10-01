@@ -30,8 +30,10 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
- * A TripComponent implementation for methods.<br>
- * This is only provided for application-specific needs.
+ * A TripComponent implementation for getter/setter pairs.<br>
+ * Used for getters annotated with {@link org.tentackle.reflect.CanonicalGetter} that are not backed
+ * by a serializable field, and by {@link org.tentackle.trip.TripComponentProvider}s such as the
+ * {@link org.tentackle.trip.provider.ThrowableComponentProvider}.
  *
  * @param <P> the parent type
  * @param <T> the component type
@@ -57,6 +59,7 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
    * @param setter the setter method, null if not applicable
    * @param hasDefaultValue true if the component has a default value, false otherwise
    * @param defaultValue the default value
+   * @throws TripRuntimeException if the getter is not a getter or the setter is not a setter
    */
   @SuppressWarnings("unchecked")
   public MethodTripComponent(TripType<P> parentType, int ordinal, Method getter, Method setter, boolean hasDefaultValue, T defaultValue) {

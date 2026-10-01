@@ -24,6 +24,10 @@ import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.TripRuntimeException;
 
+/**
+ * A pool slot holding a TRIP client {@link Connection}.<br>
+ * An unused connection that has been closed is obsolete and will be removed from the pool.
+ */
 public class ConnectionPoolSlot extends AbstractPoolSlot<Connection> {
 
   /**

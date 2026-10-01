@@ -67,7 +67,7 @@ public class ConnectionHandler implements Runnable {
   /**
    * Creates a new handler.
    *
-   * @param transport the transport associated with this accept-loop
+   * @param transport the transport associated with this handler
    * @param connectionName the name of the connection
    * @param inputStream the input stream associated with this connection
    * @param outputStream the output stream associated with this connection
@@ -117,9 +117,9 @@ public class ConnectionHandler implements Runnable {
 
   /**
    * Handles the new connection.
-   * <p>
    * <ul>
-   *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport</li>
+   *   <li>reads the connection request: the TRIP magic followed by the UUID of the client's transport
+   *   and whether the client's dictionary is still empty</li>
    *   <li>the UUID is used to determine the dictionary and a TRIP stream is created</li>
    *   <li>reads the remote calls from the stream and dispatches them to the call handler thread pool.</li>
    * </ul>

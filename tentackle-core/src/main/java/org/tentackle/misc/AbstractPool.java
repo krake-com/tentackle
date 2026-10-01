@@ -31,7 +31,12 @@ import java.util.Objects;
 
 /**
  * Base implementation of a pool managing {@link Poolable} resources.<br>
- * It allows min/max sizes, fixed increments, and timeouts for unused instances.
+ * It allows min/max sizes, fixed increments, and timeouts for unused and long-used instances.
+ * <p>
+ * The resources are created lazily on the first {@link #get()}, which also registers the pool
+ * with the {@link PoolTimeoutThread}.
+ *
+ * @param <T> the type of poolable resources
  */
 public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
@@ -67,6 +72,8 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * @param maximumSize the maximum number of resource instances, 0 = unlimited
    * @param idleMinutes the idle timeout in minutes to close unused resource instances, 0 = unlimited
    * @param usageMinutes the max. used time in minutes, 0 = unlimited
+   * @throws IllegalArgumentException if the size parameters are inconsistent
+   * @throws NullPointerException if name is null
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public AbstractPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize, long idleMinutes, long usageMinutes) {
@@ -123,6 +130,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Sets the minimum increment to enlarge the pool.
    *
    * @param incrementSize the minimum increment (at least 1)
+   * @throws IllegalArgumentException if incrementSize &lt; 1
    */
   public synchronized void setIncrementSize(int incrementSize) {
     if (incrementSize < 1) {
@@ -156,6 +164,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Sets the maximum size.
    *
    * @param maximumSize the maximum size, 0 = unlimited
+   * @throws IllegalArgumentException if maximumSize is lower than the minimum size
    */
   public synchronized void setMaximumSize(int maximumSize) {
     if (maximumSize > 0 && maximumSize < minimumSize) {
@@ -186,7 +195,8 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
   /**
    * Sets the maximum usage minutes.<br>
-   * Resources are closed if used since the given timeout.
+   * Resources are closed when the given time has elapsed since their first use,
+   * regardless of whether they were idle or not.
    *
    * @param usageMinutes the usage timeout, 0 if unlimited
    */
@@ -194,6 +204,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     this.usageMinutes = usageMinutes;
   }
 
+  @Override
   public long getShutdownTimeout() {
     return shutdownTimeout;
   }
@@ -341,7 +352,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Logs a summary of the used slots per thread.<br>
    * Provided primarily for debugging purposes and in case of resource leaks.
    *
-   * @param level the log level to use, defaults to {@link Logger.Level#INFO}
+   * @param level the log level to use
    */
   public void logSlotCountPerThread(Logger.Level level) {
     StringBuilder buf = new StringBuilder();
@@ -356,19 +367,18 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * Gets the number of used slots per thread.<br>
    * Provided primarily for debugging purposes and in case of resource leaks.
    *
-   * @return the sorted list of the number of used slots per thread, highest slot count first
+   * @return the sorted list of the number of used slots per thread, highest slot count first,
+   *         empty if no slot is in use or the pool is shut down
    */
   public List<Map.Entry<String, Integer>> getSlotCountPerThread() {
     Map<String, Integer> slotCounts = new HashMap<>();  // slots used per thread
     synchronized (this) {
-      for (PoolSlot<T> slot : slots) {
-        if (slot != null) {
-          String threadName = slot.getUsingThreadStr();
-          Integer count = slotCounts.get(threadName);
-          if (count == null) {
-            count = 0;
+      if (slots != null) {    // null if shut down
+        for (PoolSlot<T> slot : slots) {
+          String threadName = slot == null ? null : slot.getUsingThreadStr();
+          if (threadName != null) {   // null if in pool
+            slotCounts.merge(threadName, 1, Integer::sum);
           }
-          slotCounts.put(threadName, count + 1);
         }
       }
     }
@@ -392,11 +402,12 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
   /**
    * Creates new slots of resources.<br>
-   * The number of created slots is at least 1.
-   * <p>
-   * Throws a {@link TentackleRuntimeException} if the pool is exhausted and maximum pool size reached.
+   * The number of created slots is at least 1, but may be less than requested if the maximum
+   * pool size is reached.
    *
    * @param num the number of slots to add to the pool
+   * @return the number of slots created
+   * @throws TentackleRuntimeException if the pool is exhausted and the maximum pool size is reached
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected int createSlots(int num) {
@@ -449,8 +460,9 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
    * there is no guarantee that the resource is really closed.
    * But more importantly, this does not block the caller.
    *
-   * @param poolable the poolable to remove
+   * @param poolable the poolable to remove, null to remove whatever the slot holds
    * @param slotIndex the slot index
+   * @throws TentackleRuntimeException if the poolable does not match the one in the slot
    */
   protected void removePoolable(T poolable, int slotIndex) {
     PoolSlot<T> slot = slots[slotIndex];
@@ -604,11 +616,11 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
 
   /**
-   * Asserts that this pool wasn't shutdown.
+   * Asserts that this pool wasn't shut down.
    */
   private void assertNotShutdown() {
     if (isShutdown()) {
-      throw createException("pool '" + this + "' already shutdown");
+      throw createException("pool '" + this + "' already shut down");
     }
   }
 
