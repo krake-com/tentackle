@@ -35,6 +35,7 @@ import static org.testng.Assert.assertEquals;
 /**
  * Tests for {@link FileHelper}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class FileHelperTest {
 
   @Test
