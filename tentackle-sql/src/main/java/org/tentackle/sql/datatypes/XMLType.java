@@ -104,6 +104,18 @@ public final class XMLType extends StringType {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Not sortable, since not comparable.
+   *
+   * @return null
+   */
+  @Override
+  public int[] getSortableColumns() {
+    return null;
+  }
+
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, String object, boolean mapNull, Integer size) throws SQLException {
     if (backend.isSqlxmlSupported()) {

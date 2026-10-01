@@ -45,7 +45,7 @@ import java.util.Optional;
  *   <li>the timestamp normalized to GMT (hence sortable)</li>
  *   <li>the zone offset in seconds</li>
  * </ol>
- * The MAPNULL option maps to {@code 1970-01-01 00:00:00+00:00}.<br>
+ * The MAPNULL option maps to {@link org.tentackle.common.DateHelper#MIN_TIMESTAMP} with offset 0.<br>
  * This type is sortable by the first column.
  */
 @Service(DataType.class)

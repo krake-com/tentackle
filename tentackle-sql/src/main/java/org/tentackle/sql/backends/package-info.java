@@ -17,6 +17,15 @@
  */
 
 /**
- * Backend implementations.
+ * The {@link org.tentackle.sql.Backend} implementations.
+ * <p>
+ * The backends are organized by the level of the SQL standard they implement:
+ * {@link org.tentackle.sql.backends.AbstractBackend} is extended by
+ * {@link org.tentackle.sql.backends.AbstractSql92Backend}, which is extended by
+ * {@link org.tentackle.sql.backends.AbstractSql2003Backend} and
+ * {@link org.tentackle.sql.backends.AbstractSql2008Backend}.
+ * Each concrete backend extends the closest level and overrides only its peculiarities.
+ * The backends are registered as {@code @Service(Backend.class)} and located via the
+ * {@link org.tentackle.sql.BackendFactory}.
  */
 package org.tentackle.sql.backends;

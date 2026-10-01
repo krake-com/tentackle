@@ -29,7 +29,8 @@ interface BackendFactoryHolder {
 
 
 /**
- * The backend factory.
+ * The backend factory.<br>
+ * Provides the backend singletons, one per backend type, discovered as {@link Backend} services.
  *
  * @author harald
  */
@@ -46,7 +47,8 @@ public interface BackendFactory {
 
 
   /**
-   * Creates a backend by jdbc url.
+   * Gets a backend by jdbc url.<br>
+   * If more than one backend matches the URL, the first in the order of the backend names wins.
    *
    * @param url the connection url
    * @return the backend, never null
@@ -56,7 +58,7 @@ public interface BackendFactory {
 
 
   /**
-   * Creates a backend by name.
+   * Gets a backend by name.
    *
    * @param name the backend name
    * @return the backend, never null
@@ -66,17 +68,17 @@ public interface BackendFactory {
 
 
   /**
-   * Creates a collection of all backends.<br>
+   * Gets all backends.<br>
    * Skips backends marked as deprecated.
    *
-   * @return the collection of all backends
+   * @return the collection of all backends, sorted by name
    * @throws BackendException if retrieving all configured backends failed
    * @see Backend#isDeprecated()
    */
   Collection<Backend> getAllBackends();
 
   /**
-   * Creates a collection of backends via a comma-separated list of backend names.<br>
+   * Gets a collection of backends via a comma-separated list of backend names.<br>
    * There are some special names as well:
    * <ul>
    *   <li>all: all non-deprecated backends</li>
@@ -86,8 +88,8 @@ public interface BackendFactory {
    * The returned list contains each backend only once.
    *
    * @param backendNames the backend names, null or empty if none
-   * @return the backends found, empty if none
-   * @throws BackendException if retrieving backends failed
+   * @return the backends found, sorted by name, empty if none
+   * @throws BackendException if a backend name is unknown
    */
   Collection<Backend> getBackends(String backendNames);
 

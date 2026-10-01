@@ -47,10 +47,10 @@ public class ModelMetaData {
 
 
   /**
-   * Creates a database meta instance.
+   * Creates the model metadata.
    *
    * @param backend the backend
-   * @param metaData the connections metadata
+   * @param metaData the connections' metadata
    * @param schemas optional schemas, null if no schema check
    */
   public ModelMetaData(Backend backend, DatabaseMetaData[] metaData, String[] schemas) {
@@ -66,7 +66,7 @@ public class ModelMetaData {
    * Gets the header info of all tables in the database.
    *
    * @return the table headers
-   * @throws SQLException if cannot retrieve meta data from database
+   * @throws SQLException if the metadata cannot be retrieved
    */
   public List<DatabaseMetaDataTableHeader> getAllTablesInDatabase() throws SQLException {
     getMetaDataTableHeaderMap();
@@ -74,12 +74,12 @@ public class ModelMetaData {
   }
 
   /**
-   * Gets the header infos for given tablename.<br>
-   * May return more than one entry if the same tablename is used in more than one schema.
+   * Gets the header info for the given table name.<br>
+   * May return more than one entry if the same table name is used in more than one schema.
    *
-   * @param tableName the tablename
+   * @param tableName the table name
    * @return the non-empty list of header infos, null if no such table in database
-   * @throws SQLException if cannot retrieve meta data from database
+   * @throws SQLException if the metadata cannot be retrieved
    */
   public List<DatabaseMetaDataTableHeader> getTableInDatabase(String tableName) throws SQLException {
     return getMetaDataTableHeaderMap().get(tableName.toLowerCase(Locale.ROOT));
@@ -141,9 +141,9 @@ public class ModelMetaData {
 
   /**
    * Gets the JDBC-connection's metadata.<br>
-   * May be more than one if different schemas and schema-option was given in {@link BackendInfo}.
+   * May be more than one if different schemas and the schema option were given in {@link BackendInfo}.
    *
-   * @return the meta data
+   * @return the metadata
    */
   public DatabaseMetaData[] getMetaData() {
     return metaData;

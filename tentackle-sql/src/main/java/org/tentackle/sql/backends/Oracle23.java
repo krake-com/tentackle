@@ -23,6 +23,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendVersionInfo;
 import org.tentackle.sql.SqlType;
+import org.tentackle.sql.metadata.ColumnMetaData;
 
 /**
  * Backend for Oracle versions 23c or newer.<br>
@@ -72,6 +73,15 @@ public class Oracle23 extends Oracle21 {
       return booleanValue ? "TRUE" : "FALSE";
     }
     return super.valueToLiteral(sqlType, value);
+  }
+
+  @Override
+  public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
+    if (sqlType == SqlType.BIT && defaultValue instanceof Boolean) {
+      // stored as the source text TRUE/FALSE, see valueToLiteral, and not as 1/0 like in Oracle8
+      return normalizeDefault(valueToLiteral(sqlType, defaultValue)).equals(normalizeDefault(column.getDefaultValue()));
+    }
+    return super.isDefaultEqual(column, sqlType, defaultValue);
   }
 
   @Override

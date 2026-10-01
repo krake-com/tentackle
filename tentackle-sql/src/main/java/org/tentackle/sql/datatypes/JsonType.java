@@ -37,11 +37,11 @@ import java.sql.SQLException;
  * validates it.
  * <p>
  * Unlike the {@link XMLType}, there is no JDBC binding for JSON at all, so how a string reaches
- * the column differs per backend — Postgres takes it as an object of type {@code OTHER}, H2 only
- * accepts the UTF-8 bytes, and mysql is happy with a plain string. The backend knows, the datatype
+ * the column differs per backend — PostgreSQL takes it as an object of type {@code OTHER}, H2 only
+ * accepts the UTF-8 bytes, and MySQL is happy with a plain string. The backend knows, the datatype
  * does not, hence {@link Backend#setJson} and {@link Backend#getJson}.
  * <p>
- * Notice that a backend with a native type may <em>normalize</em> the document: postgres' {@code jsonb}
+ * Notice that a backend with a native type may <em>normalize</em> the document: PostgreSQL's {@code jsonb}
  * and H2's {@code JSON} both drop insignificant whitespace, and {@code jsonb} additionally reorders
  * and de-duplicates the keys. The string read back is therefore semantically, but not necessarily
  * textually, the one that was written.
@@ -110,6 +110,18 @@ public final class JsonType extends StringType {
   @Override
   public boolean isComparable() {
     return false;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Not sortable, since not comparable.
+   *
+   * @return null
+   */
+  @Override
+  public int[] getSortableColumns() {
+    return null;
   }
 
   @Override

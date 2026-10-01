@@ -122,7 +122,13 @@ public class DateType extends AbstractDateTimeType<Date> {
     return org.tentackle.common.Date.createFrozen(date.getTime());    // upgrade to org.tentackle.common.Date
   }
 
-
+  /**
+   * Parses a string in the format {@code yyyy-MM-dd}.
+   *
+   * @param str the string, optionally enclosed in double quotes
+   * @return the date
+   * @throws BackendException if parsing failed
+   */
   protected Date parse(String str) throws BackendException {
     try {
       return Date.valueOf(DATE_FORMAT.parse(StringHelper.parseString(str), LocalDate::from));
@@ -132,6 +138,12 @@ public class DateType extends AbstractDateTimeType<Date> {
     }
   }
 
+  /**
+   * Formats a date as {@code yyyy-MM-dd}.
+   *
+   * @param date the date
+   * @return the formatted string
+   */
   protected String format(Date date) {
     return DATE_FORMAT.format(date.toLocalDate());
   }

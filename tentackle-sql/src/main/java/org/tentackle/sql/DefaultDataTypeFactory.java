@@ -80,7 +80,11 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
 
 
   /**
-   * Creates the datatype factory.
+   * Creates the datatype factory.<br>
+   * If more than one datatype is registered for the same type and variant, the first one found wins,
+   * which allows the application to override the predefined types.
+   *
+   * @throws BackendException if the datatypes could not be loaded
    */
   @SuppressWarnings("rawtypes")
   public DefaultDataTypeFactory() {

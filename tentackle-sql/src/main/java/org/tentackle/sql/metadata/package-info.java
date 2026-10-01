@@ -17,6 +17,13 @@
  */
 
 /**
- * SQL metadata support.
+ * The metadata of a live database schema.
+ * <p>
+ * A {@link org.tentackle.sql.metadata.ModelMetaData} holds the {@link org.tentackle.sql.metadata.TableMetaData}
+ * of the tables in the model, each with its {@link org.tentackle.sql.metadata.ColumnMetaData},
+ * {@link org.tentackle.sql.metadata.IndexMetaData} and {@link org.tentackle.sql.metadata.ForeignKeyMetaData}.
+ * Backend-specific subclasses compensate for the peculiarities of the JDBC drivers.
+ * The metadata is used by the migrator and the schema verifier of the SQL Maven plugin.
+ * {@link org.tentackle.sql.metadata.MetaDataUtilities} provides some replaceable helper methods.
  */
 package org.tentackle.sql.metadata;

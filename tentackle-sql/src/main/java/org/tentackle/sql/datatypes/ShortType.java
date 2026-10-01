@@ -38,7 +38,7 @@ import java.util.Optional;
 public sealed class ShortType extends AbstractNumberType<Short> permits ShortPrimitiveType {
 
   /**
-   * Creates the dDatatype for {@link Short}.
+   * Creates the datatype for {@link Short}.
    */
   public ShortType() {
     // see -Xlint:missing-explicit-ctor since Java 16

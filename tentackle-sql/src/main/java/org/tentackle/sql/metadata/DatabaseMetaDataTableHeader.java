@@ -55,7 +55,7 @@ public class DatabaseMetaDataTableHeader {
   /**
    * Returns whether this is a user-defined table.
    *
-   * @return true if standard table
+   * @return true if standard table (type TABLE, BASE TABLE, null or empty)
    */
   public boolean isUserTable() {
     // some drivers (e.g. H2 >= 2.x) report the ANSI term "BASE TABLE" instead of "TABLE"
@@ -98,14 +98,19 @@ public class DatabaseMetaDataTableHeader {
     return schema;
   }
 
+  /**
+   * Gets the table's name.
+   *
+   * @return the table name, never null
+   */
   public String getName() {
     return name;
   }
 
   /**
-   * The table's name.
+   * Gets the table type.
    *
-   * @return the tablename, never null
+   * @return the type in uppercase, such as TABLE or VIEW, null if unknown
    */
   public String getType() {
     return type;

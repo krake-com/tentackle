@@ -42,10 +42,10 @@ import java.util.Optional;
  * <p>
  * Stored as 2 columns:
  * <ol>
- *   <li>the timestamp</li>
- *   <li>the zone id string</li>
+ *   <li>the local date and time within the zone (not normalized)</li>
+ *   <li>the zone id as a {@code VARCHAR(32)}</li>
  * </ol>
- * The MAPNULL option maps to {@code 1970-01-01 00:00:00 GMT}.<br>
+ * The MAPNULL option maps to {@link org.tentackle.common.DateHelper#MIN_TIMESTAMP} in zone GMT.<br>
  * This type is not generally sortable by the database in a meaningful manner.
  * It is sortable only within the same timezone.
  */
@@ -66,7 +66,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   /**
-   * Derives the timestamp from an ZonedDateTime value.
+   * Derives the timestamp from a ZonedDateTime value.
    *
    * @param value the ZonedDateTime value
    * @return the timestamp
@@ -76,7 +76,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   /**
-   * Derives the timezone name from an ZonedDateTime value.
+   * Derives the timezone name from a ZonedDateTime value.
    *
    * @param value the ZonedDateTime value
    * @return the zone name

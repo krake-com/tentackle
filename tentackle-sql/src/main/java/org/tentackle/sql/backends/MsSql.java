@@ -31,7 +31,7 @@ import java.sql.Statement;
 import java.sql.Types;
 
 /**
- * Backend for MicrosoftSQL.
+ * Backend for Microsoft SQL Server.
  *
  * @author harald
  */
@@ -41,7 +41,7 @@ public class MsSql extends AbstractSql2003Backend {
   /** TOP string. */
   public static final String SQL_TOP = "TOP ";
 
-  /** TOP string. */
+  /** TOP ? string. */
   public static final String SQL_TOP_PAR = SQL_TOP + "? ";
 
 
@@ -91,15 +91,17 @@ public class MsSql extends AbstractSql2003Backend {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A limit without an offset is implemented via {@code TOP}, which ignores the write lock.
+   */
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (limit > 0 && offset <= 0) {
       // MSSQL supports TOP
-      boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
-      sqlBuilder.insert(0, SQL_TOP_PAR);
-      if (insertSelect) {
-        sqlBuilder.insert(0, SQL_SELECT);
-      }
+      removeLeadingSelect(sqlBuilder);
+      sqlBuilder.insert(0, SQL_TOP_PAR).insert(0, SQL_SELECT);
     }
     else  {
       super.buildSelectSql(sqlBuilder, writeLock, limit, offset);
@@ -181,25 +183,10 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    int ndx = sql.indexOf(SQL_TOP);
-    if (ndx >= 0) {
-      throw new BackendException("backend does not support merging selects with TOP");
-    }
-    return super.extractWhereClause(sql, whereOffset);
-  }
-
-  @Override
   protected boolean isDropIfExistsSupported() {
     return true;
   }
 
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Needs at least {@code sqljdbc4.jar} on the classpath.
-   * Does not work with {@code sqljdbc3.jar}!
-   */
   @Override
   public boolean isSqlxmlSupported() {
     return true;

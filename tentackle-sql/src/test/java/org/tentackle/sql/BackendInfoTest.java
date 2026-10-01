@@ -188,7 +188,13 @@ public class BackendInfoTest {
   @Test
   public void testCopyWithOtherCredentials() {
     BackendInfo original = new BackendInfo(H2_URL, "sa", "secret".toCharArray(), new String[] { "public" });
+    original.setBackendTimeout(5);
+    original.setBackendKeepAliveEnabled(true);
     BackendInfo copy = new BackendInfo(original, "other", "otherpwd".toCharArray());
+
+    // the keep-alive settings must survive, since the connection manager copies the info at login
+    assertEquals(copy.getBackendTimeout(), 5);
+    assertTrue(copy.isBackendKeepAliveEnabled());
 
     assertSame(copy.getBackend(), original.getBackend());
     assertEquals(copy.getUrl(), original.getUrl());

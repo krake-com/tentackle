@@ -42,7 +42,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   /**
    * Creates a foreign key column.
    *
-   * @param foreignKeyMetaData the foreign key column belongs to
+   * @param foreignKeyMetaData the foreign key this column belongs to
    */
   public ForeignKeyColumnMetaData(ForeignKeyMetaData foreignKeyMetaData) {
     this.foreignKeyMetaData = foreignKeyMetaData;
@@ -58,7 +58,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   }
 
   /**
-   * Gets the ordinal position within the index.
+   * Gets the ordinal position within the foreign key.
    *
    * @return the position
    */
@@ -67,7 +67,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   }
 
   /**
-   * Sets the ordinal position within the index.
+   * Sets the ordinal position within the foreign key.
    *
    * @param position the position
    */
@@ -86,6 +86,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
 
   /**
    * Sets the referencing column.
+   *
    * @param foreignKeyColumn the column name
    */
   public void setForeignKeyColumn(String foreignKeyColumn) {
@@ -103,6 +104,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
 
   /**
    * Sets the primary key column.
+   *
    * @param primaryKeyColumn the column name
    */
   public void setPrimaryKeyColumn(String primaryKeyColumn) {
@@ -112,8 +114,9 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   /**
    * Sets up the foreign key column from the database metadata result.
    *
-   * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @param resultSet the imported keys result set
+   * @throws SQLException if processing the result set failed
+   * @throws BackendException if the foreign key is inconsistent with the columns processed so far
    */
   public void setupForeignKeyColumnFromMetaData(ResultSet resultSet) throws SQLException {
 

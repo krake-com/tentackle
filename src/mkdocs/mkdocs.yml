@@ -115,6 +115,8 @@ nav:
       - The SAP HANA Backend: hana.md
       - The Firebird Backend: firebird.md
       - The CockroachDB Backend: cockroachdb.md
+      - The H2 Backend: h2.md
+      - The DB2 Backend: db2.md
   - Remoting:
       - TRIP — Remote Invocation Protocol: trip.md
       - TRIP over QUIC: quic.md

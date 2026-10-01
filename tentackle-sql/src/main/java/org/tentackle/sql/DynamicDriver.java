@@ -41,13 +41,14 @@ import java.util.logging.Logger;
 public class DynamicDriver implements Driver {
 
   /**
-   * Loads a JDBC driver dynamically.<br>
+   * Loads a JDBC driver dynamically and registers it at the {@link DriverManager}.<br>
    * The name consists of the driver's classname, followed by a colon, followed by the URL to load it.<br>
    * Example:
    * <pre>org.postgresql.Driver:jar:file:/usr/share/java/postgresql.jar!/</pre>
    *
    * @param name the driver classname and loading url
    * @return the loaded driver, never null
+   * @throws BackendException if the name is malformed or loading the driver failed
    */
   public static Driver load(String name) {
     int ndx = name.indexOf(':');
@@ -72,9 +73,11 @@ public class DynamicDriver implements Driver {
 
 
   /**
-   * Unloads the driver.
+   * Unloads the driver.<br>
+   * Deregisters the driver from the {@link DriverManager}.
    *
    * @param driver the driver previously loaded via {@link #load(String)}
+   * @throws BackendException if the driver was not loaded via {@link #load(String)} or deregistration failed
    */
   public static void unload(Driver driver) {
     if (driver instanceof DynamicDriver) {

@@ -71,6 +71,18 @@ public class Oracle23Test {
   }
 
   @Test
+  public void testBooleanDefault() {
+    // the native BOOLEAN default is stored as TRUE/FALSE, not as 1/0 like in older Oracle versions
+    Oracle23 backend = new Oracle23();
+    assertTrue(backend.isDefaultEqual(OracleTest.createColumnMetaData(backend, "TRUE "), SqlType.BIT, true),
+               "TRUE must not be reported as a changed default");
+    assertTrue(backend.isDefaultEqual(OracleTest.createColumnMetaData(backend, "false"), SqlType.BIT, false));
+    assertFalse(backend.isDefaultEqual(OracleTest.createColumnMetaData(backend, "FALSE"), SqlType.BIT, true));
+    // other types are still compared as in Oracle
+    assertTrue(backend.isDefaultEqual(OracleTest.createColumnMetaData(backend, "1 "), SqlType.BIGINT, 1L));
+  }
+
+  @Test
   public void testDropIfExists() {
     Oracle23 backend = new Oracle23();
     backend.setDropIfExistsEnabled(false);

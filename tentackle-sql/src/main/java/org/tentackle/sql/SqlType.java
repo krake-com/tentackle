@@ -30,7 +30,8 @@ import java.util.function.Function;
 /**
  * The SQL types used when talking to the database backend.
  * <p>
- * Defines a typesafe subset of {@link Types}.
+ * Defines a typesafe abstraction over {@link Types}. Most values correspond to a single JDBC type,
+ * while others (such as {@link #XML}, {@link #JSON} and {@link #UUID}) are mapped by the backend.
  *
  * @author harald
  */
@@ -199,9 +200,9 @@ public enum SqlType {
 
 
   /**
-   * Removes optional single quotes if returned from meta-data.
+   * Removes optional single quotes if returned from metadata.
    *
-   * @param str the meta data string
+   * @param str the metadata string
    * @return the cleaned string
    */
   private static String removeSingleQuotes(String str) {
@@ -227,7 +228,7 @@ public enum SqlType {
   }
 
   /**
-   * Gets the default value.<br>
+   * Gets the default value.
    *
    * @return the default, null if no default
    */
@@ -239,7 +240,7 @@ public enum SqlType {
    * Parses the string and converts to a java-value.
    *
    * @param str the string usually returned from JDBC metadata
-   * @return the java value
+   * @return the java value, the default value if parsing failed
    */
   public Object parse(String str) {
     return parser.apply(str);

@@ -20,7 +20,8 @@
 package org.tentackle.sql;
 
 /**
- * Join type.
+ * Join type.<br>
+ * The {@link #toString()} method returns the SQL keyword, such as {@code LEFT JOIN}.
  *
  * @author harald
  */

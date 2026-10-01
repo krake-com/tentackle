@@ -55,20 +55,25 @@ import java.util.Properties;
 @Service(Backend.class)
 public class Oracle8 extends AbstractSql2003Backend {
 
-  /** window function part 1. */
-  public static final String SQL_NESTED_SELECT_1 = "/*+ FIRST_ROWS */ * FROM (SELECT ";
-
-  /** window function part 2. */
-  public static final String SQL_NESTED_SELECT_2 = ") WHERE ";
-
-  /** condition for limit and offset. */
+  /** the ROWNUM pseudo column. */
   public static final String SQL_NESTED_SELECT_ROWNUM = "ROWNUM";
 
-  /** condition for limit and offset. */
-  public static final String SQL_NESTED_SELECT_LIMIT = SQL_NESTED_SELECT_ROWNUM + SQL_LESSOREQUAL_PAR;
+  /** the alias of the row number of the nested select. */
+  public static final String SQL_NESTED_SELECT_ROWNUM_ALIAS = "R_O_W";
 
-  /** condition for limit and offset. */
-  public static final String SQL_NESTED_SELECT_OFFSET = SQL_NESTED_SELECT_ROWNUM + SQL_GREATER_PAR;
+  /** nested select part 1: inserted after the leading SELECT. */
+  public static final String SQL_NESTED_SELECT_1 = "/*+ FIRST_ROWS */ * FROM (SELECT F_O_O.*, " +
+                                                   SQL_NESTED_SELECT_ROWNUM + " AS " + SQL_NESTED_SELECT_ROWNUM_ALIAS +
+                                                   " FROM (SELECT ";
+
+  /** nested select part 2: appended to the original select. */
+  public static final String SQL_NESTED_SELECT_2 = ") F_O_O) WHERE ";
+
+  /** condition for the limit (upper row number bound). */
+  public static final String SQL_NESTED_SELECT_LIMIT = SQL_NESTED_SELECT_ROWNUM_ALIAS + SQL_LESSOREQUAL_PAR;
+
+  /** condition for the offset (lower row number bound). */
+  public static final String SQL_NESTED_SELECT_OFFSET = SQL_NESTED_SELECT_ROWNUM_ALIAS + SQL_GREATER_PAR;
 
 
   // oracle format strings
@@ -207,7 +212,9 @@ public class Oracle8 extends AbstractSql2003Backend {
   @Override
   public Connection createConnection(String url, String username, char[] password) throws SQLException {
     Properties props = new Properties();
-    props.put("user", username);
+    if (username != null) {
+      props.put("user", username);
+    }
     if (password != null) {
       props.put("password", createPassword(password));
     }
@@ -375,11 +382,13 @@ public class Oracle8 extends AbstractSql2003Backend {
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
-    boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
     if (limit > 0 || offset > 0) {
-      sqlBuilder.insert(0, SQL_NESTED_SELECT_1);
+      // ROWNUM is assigned before the outer WHERE is evaluated, so "ROWNUM > ?" would never be true.
+      // Hence, the rows are numbered in a nested select and filtered by that number in the outer select.
+      removeLeadingSelect(sqlBuilder);
+      sqlBuilder.insert(0, SQL_NESTED_SELECT_1).insert(0, SQL_SELECT);
     }
-    if (insertSelect) {
+    else if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
     }
     if (writeLock) {
@@ -469,14 +478,6 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
-  public String sqlRenameTable(String tableName, String newTableName) {
-    return "RENAME TABLE " + tableName +
-           " TO " +
-           newTableName +
-           ";\n";
-  }
-
-  @Override
   public String sqlCreateTableComment(String tableName, String comment) {
     return NonStandardCommons.sqlCreateCommentOnTable(this, tableName, comment);
   }
@@ -511,6 +512,12 @@ public class Oracle8 extends AbstractSql2003Backend {
     return buf.toString();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
@@ -539,16 +546,6 @@ public class Oracle8 extends AbstractSql2003Backend {
     }
     buf.append(";\n");
     return buf.toString();
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_NESTED_SELECT_ROWNUM, whereOffset);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
   @Override

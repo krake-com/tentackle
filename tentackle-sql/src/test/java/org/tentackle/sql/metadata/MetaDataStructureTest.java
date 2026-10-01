@@ -335,6 +335,11 @@ public class MetaDataStructureTest {
     index.validate();
     assertEquals(index.getFilterCondition(), "(due_at > '2020-01-01')");
 
+    // type names with digits are stripped completely, and an adjacent operator is left untouched
+    index.setFilterCondition("((kind = 1::int4) AND ((code)::text||'x' <> 'ax'::text))");
+    index.validate();
+    assertEquals(index.getFilterCondition(), "((kind = 1) AND ((code)||'x' <> 'ax'))");
+
     index.setFilterCondition(null);
     index.validate();
     assertNull(index.getFilterCondition());

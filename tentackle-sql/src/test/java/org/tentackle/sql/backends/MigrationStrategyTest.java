@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 import java.sql.DatabaseMetaData;
 import java.sql.Types;
 import java.util.List;
+import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -148,6 +149,32 @@ public class MigrationStrategyTest {
     column.setTypeName("CLOB");
     column.setSize(0);
     assertTrue(column.matchesSqlType(SqlType.JSON), backend + ": a CLOB column must match a JSON attribute");
+  }
+
+  /**
+   * A backend without a native XML type stores it in a character column, so such a column
+   * must match an XML attribute as well, or the migration would alter it on every single run.
+   */
+  @Test
+  public void testEmulatedXmlColumnIsRecognized() {
+    Map<Backend, Integer> reportedTypes = Map.of(new H2(), Types.CLOB,
+                                                 new Hana(), Types.NCLOB,
+                                                 new Informix(), Types.CLOB,
+                                                 new MySql(), Types.LONGVARCHAR,
+                                                 new MariaDb(), Types.LONGVARCHAR,
+                                                 new Firebird(), Types.LONGVARCHAR,
+                                                 new CockroachDb(), Types.VARCHAR);
+    reportedTypes.forEach((backend, jdbcType) -> {
+      ColumnMetaData column = column(backend);
+      column.setType(jdbcType);
+      column.setSize(0);
+      assertTrue(column.matchesSqlType(SqlType.XML), backend + ": the XML column must match an XML attribute");
+    });
+
+    // a backend with a native XML type must still detect the type change from CLOB to XML
+    ColumnMetaData column = column(new Postgres());
+    column.setType(Types.CLOB);
+    assertFalse(column.matchesSqlType(SqlType.XML), "postgres: a text column is not an xml one");
   }
 
   @Test

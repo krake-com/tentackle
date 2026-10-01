@@ -28,7 +28,7 @@ import java.sql.SQLException;
 
 
 /**
- * Meta data for a column
+ * Metadata for a column.
  *
  * @author harald
  */
@@ -46,7 +46,7 @@ public class ColumnMetaData {
 
 
   /**
-   * Creates column meta data.
+   * Creates column metadata.
    *
    * @param tableMetaData the table metadata this column belongs to
    */
@@ -69,7 +69,7 @@ public class ColumnMetaData {
    * Sets up the column from the database metadata result.
    *
    * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @throws SQLException if processing the result set failed
    */
   public void setupColumnFromMetaData(ResultSet resultSet) throws SQLException {
     columnName = StringHelper.toLower(resultSet.getString("COLUMN_NAME"));
@@ -85,9 +85,9 @@ public class ColumnMetaData {
 
 
   /**
-   * Gets the columnName of the column.
+   * Gets the name of the column.
    *
-   * @return the columnName (always in lowercase)
+   * @return the column name (always in lowercase)
    */
   public String getColumnName() {
     return columnName;
@@ -140,9 +140,9 @@ public class ColumnMetaData {
   }
 
   /**
-   * Gets the backend-specific type columnName.
+   * Gets the backend-specific type name.
    *
-   * @return the type columnName
+   * @return the type name
    */
   public String getTypeName() {
     return typeName;
@@ -196,7 +196,7 @@ public class ColumnMetaData {
   /**
    * Gets the column's default.
    *
-   * @return the default value
+   * @return the default value, null if none
    */
   public String getDefaultValue() {
     return defaultValue;
@@ -231,9 +231,9 @@ public class ColumnMetaData {
   }
 
   /**
-   * Checks whether colunm's type matches given SqlType according to the backend.
+   * Checks whether the column type matches the given SqlType according to the backend.
    *
-   * @param sqlType the sqltype
+   * @param sqlType the SQL type
    * @return true if matches
    */
   public boolean matchesSqlType(SqlType sqlType) {

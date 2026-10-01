@@ -41,9 +41,11 @@ public interface DataTypeFactory {
 
 
   /**
-   * Gets the datatype singleton.
+   * Gets the datatype singleton.<br>
+   * If there is no datatype for the given java type name and the variant is empty,
+   * the name is looked up as a model type (such as {@code JSON} or {@code XML}).
    *
-   * @param name the type name
+   * @param name the java or model type name
    * @param variant the type variant, empty string if none
    * @return the datatype, null if no such type
    */
@@ -51,7 +53,8 @@ public interface DataTypeFactory {
 
 
   /**
-   * Gets the datatype singleton.
+   * Gets the datatype singleton.<br>
+   * The type is looked up by the simple name of the class.
    *
    * @param <T> the java type
    * @param clazz the java class
@@ -67,7 +70,7 @@ public interface DataTypeFactory {
   /**
    * Gets the datatype singleton.
    *
-   * @param javaType the java type
+   * @param javaType the java or model type name
    * @return the datatype, null if no such type
    */
   default DataType<?> get(String javaType) {

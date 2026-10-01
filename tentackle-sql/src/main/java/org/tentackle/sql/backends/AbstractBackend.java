@@ -65,56 +65,156 @@ import javax.sql.XADataSource;
 public abstract class AbstractBackend implements Backend {
 
   // --------------------- type strings ----------------------------
+  // used by the backends to declare the column types
 
+  /** BIGINT column type. */
   protected static final String TYPE_BIGINT = "BIGINT";
+
+  /** BIT column type. */
   protected static final String TYPE_BIT = "BIT";
+
+  /** BLOB column type. */
   protected static final String TYPE_BLOB = "BLOB";
+
+  /** CLOB column type. */
   protected static final String TYPE_CLOB = "CLOB";
+
+  /** BOOL column type. */
   protected static final String TYPE_BOOL = "BOOL";
+
+  /** BOOLEAN column type. */
   protected static final String TYPE_BOOLEAN = "BOOLEAN";
+
+  /** BYTEA column type. */
   protected static final String TYPE_BYTEA = "BYTEA";
+
+  /** BYTE column type. */
   protected static final String TYPE_BYTE = "BYTE";
+
+  /** CHAR(1) column type. */
   protected static final String TYPE_CHAR_1 = "CHAR(1)";
+
+  /** DATE column type. */
   protected static final String TYPE_DATE = "DATE";
+
+  /** DATETIME column type. */
   protected static final String TYPE_DATETIME = "DATETIME";
+
+  /** DATETIME(6) column type. */
   protected static final String TYPE_DATETIME_6 = "DATETIME(6)";
+
+  /** DATETIME YEAR TO SECOND column type. */
   protected static final String TYPE_DATETIME_YEAR_TO_SECOND = "DATETIME YEAR TO SECOND";
+
+  /** DECIMAL column type. */
   protected static final String TYPE_DECIMAL = "DECIMAL";
+
+  /** DECIMAL(19) column type. */
   protected static final String TYPE_DECIMAL_19 = "DECIMAL(19)";
+
+  /** DOUBLE column type. */
   protected static final String TYPE_DOUBLE = "DOUBLE";
+
+  /** DOUBLE PRECISION column type. */
   protected static final String TYPE_DOUBLE_PRECISION = "DOUBLE PRECISION";
+
+  /** FLOAT column type. */
   protected static final String TYPE_FLOAT = "FLOAT";
+
+  /** FLOAT4 column type. */
   protected static final String TYPE_FLOAT4 = "FLOAT4";
+
+  /** FLOAT8 column type. */
   protected static final String TYPE_FLOAT8 = "FLOAT8";
+
+  /** INT column type. */
   protected static final String TYPE_INT = "INT";
+
+  /** INT2 column type. */
   protected static final String TYPE_INT2 = "INT2";
+
+  /** INT4 column type. */
   protected static final String TYPE_INT4 = "INT4";
+
+  /** INT8 column type. */
   protected static final String TYPE_INT8 = "INT8";
+
+  /** INTEGER column type. */
   protected static final String TYPE_INTEGER = "INTEGER";
+
+  /** LONGBLOB column type. */
   protected static final String TYPE_LONGBLOB = "LONGBLOB";
+
+  /** LONGTEXT column type. */
   protected static final String TYPE_LONGTEXT = "LONGTEXT";
+
+  /** NCHAR(1) column type. */
   protected static final String TYPE_NCHAR_1 = "NCHAR(1)";
+
+  /** NUMBER column type. */
   protected static final String TYPE_NUMBER = "NUMBER";
+
+  /** NUMBER(1) column type. */
   protected static final String TYPE_NUMBER_1 = "NUMBER(1)";
+
+  /** NUMBER(5) column type. */
   protected static final String TYPE_NUMBER_5 = "NUMBER(5)";
+
+  /** NUMBER(10) column type. */
   protected static final String TYPE_NUMBER_10 = "NUMBER(10)";
+
+  /** NUMBER(19) column type. */
   protected static final String TYPE_NUMBER_19 = "NUMBER(19)";
+
+  /** NVARCHAR column type. */
   protected static final String TYPE_NVARCHAR = "NVARCHAR";
+
+  /** NVARCHAR(MAX) column type. */
   protected static final String TYPE_NVARCHAR_MAX = "NVARCHAR(MAX)";
+
+  /** REAL column type. */
   protected static final String TYPE_REAL = "REAL";
+
+  /** TEXT column type. */
   protected static final String TYPE_TEXT = "TEXT";
+
+  /** TIME column type. */
   protected static final String TYPE_TIME = "TIME";
+
+  /** TIME(6) column type. */
   protected static final String TYPE_TIME_6 = "TIME(6)";
+
+  /** TIMESTAMP column type. */
   protected static final String TYPE_TIMESTAMP = "TIMESTAMP";
+
+  /** TINYINT column type. */
   protected static final String TYPE_TINYINT = "TINYINT";
+
+  /** SMALLFLOAT column type. */
   protected static final String TYPE_SMALLFLOAT = "SMALLFLOAT";
+
+  /** SMALLINT column type. */
   protected static final String TYPE_SMALLINT = "SMALLINT";
+
+  /** VARBINARY(MAX) column type. */
   protected static final String TYPE_VARBINARY_MAX = "VARBINARY(MAX)";
+
+  /** VARCHAR column type. */
   protected static final String TYPE_VARCHAR = "VARCHAR";
+
+  /** UUID column type. */
   protected static final String TYPE_UUID = "UUID";
+
+  /** XML column type. */
   protected static final String TYPE_XML = "XML";
+
+  /** XMLTYPE column type. */
   protected static final String TYPE_XMLTYPE = "XMLTYPE";
+
+  /** JSON column type. */
   protected static final String TYPE_JSON = "JSON";
+
+  /** JSONB column type. */
   protected static final String TYPE_JSONB = "JSONB";
 
 
@@ -419,7 +519,7 @@ public abstract class AbstractBackend implements Backend {
     // Most implementations just return an empty result set if the table is not known,
     // but one never knows...
 
-    // try original tablename
+    // try original table name
     TableMetaData table = createTableMetaData(modelMetaData, tableName);
 
     String schemaPattern = null;
@@ -642,9 +742,10 @@ public abstract class AbstractBackend implements Backend {
     boolean typeChanged = !column.matchesSqlType(sqlType);
     boolean sizeChanged = maxSize != -1 &&
                           (size > column.getSize() ||    // model size increased
-                           // or changed from VARCHAR(x) to VARCHAR(maxSize)
+                           // or changed from VARCHAR(x) to VARCHAR(maxSize).
+                           // Some databases report an unbounded column with a size beyond maxSize.
                            size == 0 && sqlType == SqlType.VARCHAR &&
-                           column.getSize() > 0 && column.getSize() != maxSize);
+                           column.getSize() > 0 && column.getSize() < maxSize);
     boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
     boolean scaleWarning = maxSize != -1 && scale < column.getScale();
@@ -1052,7 +1153,9 @@ public abstract class AbstractBackend implements Backend {
       case Types.CLOB:
       case Types.NCLOB:
         // a backend without a native JSON type emulates it as CLOB, so a CLOB column
-        // must match a JSON attribute as well, or the migration would alter it forever
+        // must match a JSON attribute as well, or the migration would alter it forever.
+        // The same applies to XML, but only for backends without a native XML type,
+        // which therefore add XML in their overrides.
         return new SqlType[] { SqlType.CLOB, SqlType.JSON };
 
       case Types.SQLXML:
@@ -1516,8 +1619,8 @@ public abstract class AbstractBackend implements Backend {
   /**
    * Generates the first line of a CREATE TABLE statement.
    *
-   * @param tableName the tablename with optional schema separated by a dot
-   * @return the SQL code including the opening bracket
+   * @param tableName the table name with optional schema separated by a dot
+   * @return the SQL code including the opening parenthesis
    */
   protected String sqlCreateTableIntroWithoutComment(String tableName) {
     return "CREATE TABLE " + tableName + " (";
@@ -1556,7 +1659,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   /**
-   * Normalize the default string to compare.
+   * Normalizes the default string to compare.
    *
    * @param str the default value as a string, null if none
    * @return the normalized value, never null
@@ -1581,7 +1684,7 @@ public abstract class AbstractBackend implements Backend {
    * Generates the attribute definition of a CREATE TABLE statement.
    *
    * @param columnName the database column name
-   * @param sqlType the JDBC SQL type
+   * @param sqlType the SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -1602,29 +1705,6 @@ public abstract class AbstractBackend implements Backend {
       buf.append(',');
     }
     return buf.toString();
-  }
-
-  /**
-   * Extracts the where clause from a given sql.
-   *
-   * @param sql the SQL statement
-   * @param whereOffset the location of WHERE in SQL
-   * @return the where clause without the keyword WHERE
-   */
-  protected String extractWhereClause(String sql, int whereOffset) {
-    // cut order by
-    int ndx = sql.lastIndexOf(SQL_ORDERBY);
-    if (ndx >= 0) {
-      sql = sql.substring(whereOffset + SQL_WHERE.length(), ndx);
-    }
-    else  {
-      sql = sql.substring(whereOffset + SQL_WHERE.length());
-    }
-    sql = sql.trim();
-    if (sql.equals("1=1")) {
-      sql = "";
-    }
-    return sql;
   }
 
   /**

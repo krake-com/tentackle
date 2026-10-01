@@ -22,11 +22,9 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
-import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
-import org.tentackle.sql.metadata.ColumnMetaData;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -35,11 +33,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -57,7 +52,7 @@ public class H2 extends AbstractSql92Backend {
   /** H2's default schema. */
   public static final String DEFAULT_SCHEMA = "public";
 
-  /** LIMIT string. */
+  /** FETCH FIRST string. */
   public static final String SQL_FETCH_FIRST = " FETCH FIRST ";
 
   /** OFFSET string. */
@@ -238,6 +233,8 @@ public class H2 extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+      // XML is stored as CLOB
+      case Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.CLOB, SqlType.JSON, SqlType.XML};
       case Types.OTHER -> new SqlType[] { SqlType.UUID, SqlType.JSON };
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
@@ -342,6 +339,12 @@ public class H2 extends AbstractSql92Backend {
     return NonStandardCommons.sqlCreateCommentOnIndex(this, tableName, indexName, comment);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
@@ -349,8 +352,8 @@ public class H2 extends AbstractSql92Backend {
             SQL_ALTER_COLUMN +
             columnName +
             " TYPE " +
-            // nullable = true -> Postgres needs separate SET NOT NULL
-            // default = null -> Postgres needs separate SET DEFAULT
+            // nullable = true -> H2 needs separate SET NOT NULL
+            // default = null -> H2 needs separate SET DEFAULT
             columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, null) +
             ";\n";
   }
@@ -378,66 +381,8 @@ public class H2 extends AbstractSql92Backend {
   }
 
   @Override
-  public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
-                                                  SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
-
-    List<MigrationStrategy> strategies = new ArrayList<>();
-    int maxSize = getMaxSize(sqlType);
-
-    boolean nameChanged = !column.getColumnName().equalsIgnoreCase(columnName);
-    boolean commentChanged = !Objects.equals(column.getComment(), comment);
-    boolean defaultChanged = !isDefaultEqual(column, sqlType, defaultValue);
-    boolean nullChanged = column.isNullable() != nullable;
-    boolean typeChanged = !column.matchesSqlType(sqlType);
-    boolean sizeChanged = maxSize != -1 &&
-                          (size > column.getSize() ||    // model size increased
-                           // or changed from VARCHAR(x) to TEXT
-                           size == 0 && (sqlType == SqlType.VARCHAR || sqlType == SqlType.CLOB) &&
-                           column.getSize() > 0 && column.getSize() != Integer.MAX_VALUE);
-    boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
-    boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
-    boolean scaleWarning = maxSize != -1 && scale < column.getScale();
-
-    // ideal backend: name, comment, null and default can be changed separately from type,size and scale
-    if (nameChanged) {
-      strategies.add(MigrationStrategy.NAME);   // comes first because the next steps refer to the new column name
-    }
-    if (typeChanged || sizeChanged || scaleChanged) {
-      strategies.add(MigrationStrategy.TYPE);
-    }
-    else if (sizeWarning || scaleWarning) {
-      strategies.add(MigrationStrategy.TYPE_WARNING); // only as comment
-    }
-    if (nullChanged) {
-      strategies.add(MigrationStrategy.NULL);
-    }
-    if (defaultChanged) {
-      strategies.add(MigrationStrategy.DEFAULT);
-    }
-    if (commentChanged) {
-      strategies.add(MigrationStrategy.COMMENT);
-    }
-
-    return strategies.toArray(new MigrationStrategy[0]);
-  }
-
-  @Override
   public boolean isDatabaseInMemory(String url) {
     return isMatchingUrl(url) && url.contains(":mem:");
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_FETCH_FIRST);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_OFFSET);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
   @Override

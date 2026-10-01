@@ -71,6 +71,8 @@ the [Index](./index.md).
 - [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md) — `NVARCHAR` strings, unsigned `TINYINT`, migration by full column declaration.
 - [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md) — explicit row locks, sort order per index, tables that cannot be renamed.
 - [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md) — selecting it by name, index names per table, serializable transactions.
+- [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md) — the test backend: standard paging order, decimals without a size, native JSON bound as bytes.
+- [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md) — small integers for booleans, decimals without a size, line-oriented DDL scripts.
 
 ## Remoting
 

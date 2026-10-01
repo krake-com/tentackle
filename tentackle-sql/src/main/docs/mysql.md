@@ -10,7 +10,7 @@ the other backends and what the model must take into account.
 > MySQL server.
 
 **Minimum versions.** `MySql.validateVersion()` requires **MySQL 8.0** (8.0.13 in fact — functional indexes and
-defaults on `TEXT` columns; only the major version is available for the check).
+defaults on `TEXT` columns; only the major and minor version are available for the check, not the patch level).
 `MariaDb.validateVersion()` requires **MariaDB 10.3**, the first version with sequences.
 
 ---
@@ -28,7 +28,7 @@ defaults on `TEXT` columns; only the major version is available for the check).
 | `DECIMAL`   | `DECIMAL(19)`      | if the model gives no size — see [Decimals](#decimals)                     |
 | `TIMESTAMP` | `DATETIME(6)`      | without the `(6)` MySQL truncates to whole seconds                         |
 | `TIME`      | `TIME(6)`          | ditto                                                                       |
-| `BIT`       | `TINYINT`          | so are `TINYINT`; `SMALLINT`/`INTEGER`/`BIGINT` become `SMALLINT`/`INT`/`BIGINT` |
+| `BIT`       | `TINYINT`          | `TINYINT` as well; `SMALLINT`/`INTEGER`/`BIGINT` become `SMALLINT`/`INT`/`BIGINT` |
 
 ### Sizeless Strings
 
@@ -41,7 +41,7 @@ key** — and with `utf8mb4` a single `VARCHAR(4096)` already claims 16 KB of bo
 > MySQL indexes a `TEXT` column only with an explicit key length (`col(255)`), which the model has no syntax for,
 > and rejects a `VARCHAR` whose declared length exceeds 3072 bytes. **An indexed string attribute must therefore
 > declare a size of at most 768 characters** (3072 bytes ÷ 4 for `utf8mb4`). This is a MySQL limitation, not a
-> Tentackle one: PostgreSQL, Oracle, H2 and SQL Server index a large string column without complaining.
+> Tentackle one: PostgreSQL, Oracle and H2 index a large string column without complaining.
 
 Because `TEXT`, `BLOB` and `JSON` columns accept a default only when it is written as an *expression*
 (MySQL 8.0.13+, MariaDB 10.2.1+), `columnTypeNullDefaultToString()` emits `DEFAULT ('x')` rather than
@@ -61,7 +61,7 @@ MySQL reads a bare `DECIMAL` as `DECIMAL(10,0)` — it would silently round away
 attribute without an explicit size therefore becomes `DECIMAL(19,<scale>)` (`getDefaultSize`). The scale is
 capped at 30 (`getMaxScale`), which is MySQL's limit regardless of the precision.
 
-This matters for `DMoney` and `BigDecimal` attributes: on PostgreSQL and Oracle an unsized decimal column keeps
+This matters for `DMoney` and `BigDecimal` attributes: on PostgreSQL, Oracle and SAP HANA an unsized decimal column keeps
 whatever scale the value has, on MySQL the precision must be declared in the column.
 
 ---

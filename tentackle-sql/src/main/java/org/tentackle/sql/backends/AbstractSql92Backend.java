@@ -111,12 +111,30 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
    * Determines whether {@link #buildSelectSql(StringBuilder, boolean, int, int)} must prepend a <code>"SELECT "</code>.
    *
    * @param sqlBuilder the sql builder
-   * @return true if leading select keyword is missing
+   * @return true if the SQL starts with neither {@code SELECT} nor {@code WITH}
    */
   protected boolean isLeadingSelectMissing(StringBuilder sqlBuilder) {
     // does not start with SELECT or WITH
     String sql = sqlBuilder.toString().toUpperCase(Locale.ROOT);
     return !sql.startsWith(SQL_SELECT) && !sql.startsWith("WITH ");
+  }
+
+  /**
+   * Removes the leading {@code SELECT}, if present.<br>
+   * Used by backends that must insert paging keywords right after the {@code SELECT}
+   * or wrap the whole select into an enclosing one.
+   *
+   * @param sqlBuilder the sql builder
+   * @throws BackendException if the SQL starts with {@code WITH}, which cannot be paged this way
+   */
+  protected void removeLeadingSelect(StringBuilder sqlBuilder) {
+    String sql = sqlBuilder.toString().toUpperCase(Locale.ROOT);
+    if (sql.startsWith(SQL_SELECT)) {
+      sqlBuilder.delete(0, SQL_SELECT.length());
+    }
+    else if (sql.startsWith("WITH ")) {
+      throw new BackendException("backend " + this + " does not support LIMIT or OFFSET for selects starting with WITH");
+    }
   }
 
   @Override

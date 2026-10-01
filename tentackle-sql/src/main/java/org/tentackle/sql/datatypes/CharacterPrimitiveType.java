@@ -50,6 +50,13 @@ public final class CharacterPrimitiveType extends CharacterType {
     return DataTypeFactory.getInstance().get("Character");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Primitives are never null.
+   *
+   * @return false
+   */
   @Override
   public boolean isMapNullSupported() {
     return false;

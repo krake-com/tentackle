@@ -23,7 +23,8 @@ import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
- * Hook for the SQL module.
+ * Module hook for the SQL module.<br>
+ * Gives the framework access to the resource bundles of this module.
  *
  * @author harald
  */

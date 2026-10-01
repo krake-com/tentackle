@@ -19,7 +19,9 @@
 package org.tentackle.sql.metadata;
 
 /**
- * MySql does not return strings in single-quotes in default values.
+ * Column metadata for MySQL.<br>
+ * MySQL does not return string defaults in single quotes. Hence, the default is kept as is
+ * and compared by the backend (see {@code MySql#isDefaultEqual}).
  *
  * @author harald
  */

@@ -33,6 +33,9 @@ import java.sql.Types;
 
 /**
  * Backend for DB2.
+ * <p>
+ * The lines of a {@code CREATE TABLE} statement end with a backslash, the continuation character
+ * of the DB2 command line processor, since DB2 scripts are line-oriented.
  *
  * @author harald
  */
@@ -128,7 +131,8 @@ public class Db2 extends AbstractSql2003Backend {
       case DECIMAL -> TYPE_DECIMAL;
       case CHAR -> TYPE_CHAR_1;
       case VARCHAR -> TYPE_VARCHAR;
-      case DATE, TIME -> TYPE_DATE;
+      case DATE -> TYPE_DATE;
+      case TIME -> TYPE_TIME;
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BLOB;
       case CLOB -> TYPE_CLOB;
@@ -179,6 +183,12 @@ public class Db2 extends AbstractSql2003Backend {
             ");\n";
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {

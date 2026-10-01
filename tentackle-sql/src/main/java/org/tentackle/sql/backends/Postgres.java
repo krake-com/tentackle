@@ -390,6 +390,12 @@ public class Postgres extends AbstractSql92Backend {
     return NonStandardCommons.sqlCreateCommentOnIndex(this, tableName, indexName, comment);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
@@ -436,6 +442,12 @@ public class Postgres extends AbstractSql92Backend {
     return SQL_ARRAY_ALL.equals(operator) || SQL_ARRAY_ANY.equals(operator);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Unlike the default implementation, an unsized {@code VARCHAR} or {@code CLOB} is declared as {@code TEXT},
+   * which the driver reports with the size {@link Integer#MAX_VALUE}.
+   */
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
                                                   SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
@@ -483,20 +495,6 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public ScriptRunner createScriptRunner(Connection connection) {
     return new PostgresScriptRunner(this, connection);
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_LIMIT);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_OFFSET);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
   @Override

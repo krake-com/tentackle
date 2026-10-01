@@ -55,11 +55,12 @@ topic-grouped listing of every document, see the
 
 ## D
 
-- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md), [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md), [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
+- **Database backend** — [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md), [The SAP HANA Backend](../../../tentackle-sql/src/main/docs/hana.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md), [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md), [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Deserialization hardening (allowlisting, untrusted data)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **DB2 (backend peculiarities)** — [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Dictionary (type compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -99,6 +100,10 @@ topic-grouped listing of every document, see the
 - **Google sign-in / OAuth client** — [Single Sign-On with Google](./google-sso.md)
 - **GraphicProvider (icons/images by symbolic name, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md)
 - **GuiProvider (per-entity GUI services, default editor/finder)** — [GuiProvider](../../../tentackle-fx-rdc/src/main/docs/gui-provider.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+
+## H
+
+- **H2 (backend peculiarities, test database)** — [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 
 ## I
 

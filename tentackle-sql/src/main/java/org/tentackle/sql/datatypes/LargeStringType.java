@@ -32,7 +32,7 @@ import java.sql.Types;
 /**
  * Datatype for the large variant of {@link String}.
  * <p>
- * Notice that there are two types of strings. This one is for the SQL type <code>CLOB</code>.
+ * This variant of {@link StringType} is for the SQL type <code>CLOB</code>.
  */
 @Service(DataType.class)
 public final class LargeStringType extends StringType {

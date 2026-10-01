@@ -44,6 +44,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -528,6 +529,18 @@ public class SpecialDataTypeTest {
     assertEquals(type.valueOfLiteralToCode("123e4567-e89b-12d3-a456-426614174000", null),
                  "UUID.fromString(\"123e4567-e89b-12d3-a456-426614174000\")");
     assertEquals(type.valueOfLiteralToCode("\"already-quoted\"", null), "UUID.fromString(\"already-quoted\")");
+  }
+
+  /**
+   * Types that cannot be compared by the database must not be sortable either,
+   * so that the wurblets refuse to generate an ORDER BY for them.
+   */
+  @Test
+  public void testNotComparableIsNotSortable() {
+    for (AbstractDataType<?> type : List.of(new XMLType(), new JsonType())) {
+      assertFalse(type.isComparable());
+      assertNull(type.getSortableColumns(), type + " must not be sortable");
+    }
   }
 
 }

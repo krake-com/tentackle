@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Meta data for an index.
+ * Metadata for an index.
  *
  * @author harald
  */
@@ -46,7 +46,7 @@ public class IndexMetaData {
 
 
   /**
-   * Creates an index meta data object.
+   * Creates an index metadata object.
    *
    * @param tableMetaData the table the index belongs to
    */
@@ -59,8 +59,8 @@ public class IndexMetaData {
   /**
    * Sets up the index from the database metadata result.
    *
-   * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @param resultSet the index info result set
+   * @throws SQLException if processing the result set failed
    */
   public void setupIndexFromMetaData(ResultSet resultSet) throws SQLException {
     indexName = StringHelper.toLower(resultSet.getString("INDEX_NAME"));
@@ -83,8 +83,8 @@ public class IndexMetaData {
   /**
    * Adds an index column from the database metadata result.
    *
-   * @param resultSet the column result set
-   * @throws SQLException the processing the result set failed
+   * @param resultSet the index info result set
+   * @throws SQLException if processing the result set failed
    */
   public void addIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
     IndexColumnMetaData column = tableMetaData.getModelMetaData().getBackend().createIndexColumnMetaData(this);
@@ -96,7 +96,7 @@ public class IndexMetaData {
   /**
    * Gets the table.
    *
-   * @return the table meta-data
+   * @return the table metadata
    */
   public TableMetaData getTableMetaData() {
     return tableMetaData;

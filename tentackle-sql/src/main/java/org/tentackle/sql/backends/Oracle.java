@@ -79,19 +79,26 @@ public class Oracle extends Oracle8 {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Oracle's grammar requires the row limiting clause before the {@code FOR UPDATE} clause.
+   * Notice that Oracle refuses to combine both at runtime (ORA-02014), because it implements
+   * the row limit by a nested query.
+   */
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (isLeadingSelectMissing(sqlBuilder)) {
       sqlBuilder.insert(0, SQL_SELECT);
-    }
-    if (writeLock) {
-      sqlBuilder.append(SQL_FOR_UPDATE);
     }
     if (offset > 0) {   // offset must come before fetch next
       sqlBuilder.append(SQL_OFFSET_PAR);
     }
     if (limit > 0) {
       sqlBuilder.append(SQL_FETCHNEXT_PAR);
+    }
+    if (writeLock) {
+      sqlBuilder.append(SQL_FOR_UPDATE);
     }
   }
 
@@ -146,20 +153,6 @@ public class Oracle extends Oracle8 {
       return super.sqlCreateIndex(tableName, indexName, unique, null, caseColumnNames);
     }
     return super.sqlCreateIndex(tableName, indexName, unique, null, columnNames);
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_OFFSET_1);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_FETCHNEXT_1);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
 }

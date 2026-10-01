@@ -30,6 +30,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.Map;
 
 /**
@@ -76,6 +77,16 @@ public class CockroachDb extends Postgres {
     // JSON deliberately falls through to postgres: unlike "xml", CockroachDB does have a
     // native JSONB type and the driver binds it exactly as postgres does
     return super.sqlTypeToString(sqlType, size);
+  }
+
+  @Override
+  public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
+    return switch (jdbcType) {
+      // XML is stored as TEXT
+      case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.XML};
+      default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
+    };
   }
 
   @Override

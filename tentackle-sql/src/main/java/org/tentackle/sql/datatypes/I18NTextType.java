@@ -44,11 +44,12 @@ import java.util.Optional;
  *    <ol>
  *      <li><code>VARCHAR(max)</code>: where <code>max</code> is the maximum supported length by the backend. If an optional size is defined by the
  *      model, <code>max</code> is further limited by the model's size.</li>
- *      <li><code>CLOB</code>: if the string is too large to fit into the first column</code></li>
+ *      <li><code>CLOB</code>: if the string is too large to fit into the first column</li>
  *    </ol>
  *   </li>
  * </ul>
  * This type is not sortable and as a backend-specific type it cannot be used in wurblet arguments.
+ * Hence, {@link #getSortableColumns()} throws a {@link org.tentackle.sql.BackendException}.
  */
 @Service(DataType.class)
 public class I18NTextType extends AbstractDataType<I18NText> {

@@ -19,7 +19,9 @@
 package org.tentackle.sql;
 
 /**
- * SQL name type.
+ * The kind of an SQL identifier.<br>
+ * Used to validate names (see {@link Backend#assertValidName(SqlNameType, String)})
+ * and to determine their maximum length (see {@link Backend#getMaxNameLength(SqlNameType)}).
  */
 public enum SqlNameType {
 

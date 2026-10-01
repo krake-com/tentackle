@@ -37,6 +37,10 @@ import java.util.function.Consumer;
 
 /**
  * Default implementation of a script runner.
+ * <p>
+ * The script is split into statements at the backend's {@link Backend#getStatementSeparator() statement separator}.
+ * Single-line and block comments are skipped, separators and comment markers within single or double quotes
+ * are ignored, and backslash escapes are passed to the backend as is, if the backend supports POSIX escapes.
  */
 public class DefaultScriptRunner implements ScriptRunner {
 
@@ -52,8 +56,13 @@ public class DefaultScriptRunner implements ScriptRunner {
   private boolean readOnly;                             // optional read-only flag for the connection
   private boolean transactional;                        // true if the script is enclosed in a transaction
 
+  /** the listeners invoked with the SQL code of each statement before it is executed. */
   protected final List<Consumer<String>> executionListeners = new ArrayList<>();
+
+  /** the listeners invoked with the result of each statement. */
   protected final List<Consumer<ScriptRunnerResult>> resultListeners = new ArrayList<>();
+
+  /** the listeners invoked with the SQL code and the open result set of each query. */
   protected final List<BiConsumer<String, ResultSet>> resultSetListeners = new ArrayList<>();
 
 
@@ -64,6 +73,14 @@ public class DefaultScriptRunner implements ScriptRunner {
    * @param nextOffset the offset where to start searching for the next statement within the script
    */
   public record SQLCode(String sql, int nextOffset) {
+
+    /**
+     * Creates the SQL code.<br>
+     * Leading whitespace is removed from the SQL statement.
+     *
+     * @param sql        the SQL statement to execute
+     * @param nextOffset the offset where to start searching for the next statement within the script
+     */
     public SQLCode {
       // remove leading whitespaces
       sql = sql.stripLeading();
@@ -305,7 +322,7 @@ public class DefaultScriptRunner implements ScriptRunner {
    *
    * @param script the SQL script
    * @param offset the offset where to start in the script to find the next statement
-   * @return the next SQL code to send to the database, null if the end of the script found
+   * @return the next SQL code to send to the database, null if the end of the script is reached
    */
   public SQLCode determineNextSqlCode(String script, int offset) {
 
@@ -394,7 +411,7 @@ public class DefaultScriptRunner implements ScriptRunner {
 
 
   /**
-   * Determines whether Posix escape syntax is supported by the backend and/or connection.
+   * Determines whether POSIX escape syntax is supported by the backend and/or connection.
    *
    * @return true if supported
    */

@@ -24,18 +24,24 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.MigrationStrategy;
+import org.tentackle.sql.SqlType;
+import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.ModelMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
+import java.sql.Types;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests for the H2 backend.
@@ -140,41 +146,35 @@ public class H2Test {
 
 
   /**
-   * Records the ints bound and forwards them to a real statement, if given.
+   * A VARCHAR without a size in the model is created with the maximum size, and must not be
+   * reported as resized on every subsequent migration.
    */
-  private static class RecordingStatement implements InvocationHandler {
-
-    private final PreparedStatement stmt;
-    private final List<Integer> values = new ArrayList<>();
-
-    RecordingStatement(PreparedStatement stmt) {
-      this.stmt = stmt;
+  @Test
+  public void testUnsizedVarcharNeedsNoMigration() throws SQLException {
+    String columnType = backend.columnTypeToString(SqlType.VARCHAR, 0, 0);
+    assertEquals(columnType, "VARCHAR(" + backend.getMaxSize(SqlType.VARCHAR) + ")");
+    try (Statement stmt = connection.createStatement()) {
+      stmt.execute("CREATE TABLE h2unsized (id BIGINT NOT NULL PRIMARY KEY, text " + columnType + ")");
     }
 
-    /**
-     * Creates the proxy. {@link BackendPreparedStatement} is far too large to implement by hand
-     * and only {@code setInt} is of interest here.
-     *
-     * @return the proxy
-     */
-    BackendPreparedStatement proxy() {
-      return (BackendPreparedStatement) Proxy.newProxyInstance(
-          BackendPreparedStatement.class.getClassLoader(),
-          new Class<?>[] { BackendPreparedStatement.class }, this);
+    int reportedSize;
+    try (ResultSet rs = connection.getMetaData().getColumns(null, null, "H2UNSIZED", "TEXT")) {
+      assertTrue(rs.next());
+      reportedSize = rs.getInt("COLUMN_SIZE");
     }
 
-    @Override
-    public Object invoke(Object p, java.lang.reflect.Method method, Object[] args) throws Throwable {
-      if ("setInt".equals(method.getName())) {
-        int index = (Integer) args[0];
-        int value = (Integer) args[1];
-        values.add(value);
-        if (stmt != null) {
-          stmt.setInt(index, value);
-        }
-      }
-      return null;
-    }
+    TableMetaData table = new TableMetaData(new ModelMetaData(backend, new DatabaseMetaData[0], null), "h2unsized");
+    ColumnMetaData column = new ColumnMetaData(table);
+    column.setColumnName("text");
+    column.setType(Types.VARCHAR);
+    column.setTypeName("CHARACTER VARYING");
+    column.setSize(reportedSize);
+    column.setNullable(true);
+
+    assertEquals(List.of(backend.getMigrationStrategy(column, "text", null, SqlType.VARCHAR, 0, 0, true, null)),
+                 List.of(), "an unsized VARCHAR must not be migrated again");
+    assertEquals(List.of(backend.getMigrationStrategy(column, "text", null, SqlType.VARCHAR, 32, 0, true, null)),
+                 List.of(MigrationStrategy.TYPE_WARNING), "shrinking the column is only a warning");
   }
 
 }

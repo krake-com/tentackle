@@ -48,10 +48,10 @@ public class TableMetaData {
 
 
   /**
-   * Creates a table meta instance.
+   * Creates a table metadata instance.
    *
    * @param modelMetaData the model this table belongs to
-   * @param modelTableName the tablename used in the model
+   * @param modelTableName the table name used in the model
    */
   public TableMetaData(ModelMetaData modelMetaData, String modelTableName) {
     this.modelMetaData = modelMetaData;
@@ -63,7 +63,7 @@ public class TableMetaData {
 
 
   /**
-   * Sets up the column from the database metadata result.
+   * Sets up the table, its columns, indexes and foreign keys from the database metadata.
    * <p>
    * The method is idempotent: any state left over from a previous attempt is discarded.
    * This is essential because the caller retries with different name patterns and metadata
@@ -74,8 +74,8 @@ public class TableMetaData {
    * @param schemas valid schemas to scan, null if all
    * @param schemaPattern the schema (null if none, "" if without schema)
    * @param tablePattern the table pattern
-   * @throws SQLException the processing failed
-   * @throws BackendException if logical meta data processing error
+   * @throws SQLException if processing the metadata failed
+   * @throws BackendException if the metadata is inconsistent
    */
   public void setupTableFromMetaData(DatabaseMetaData metaData, String[] schemas, String schemaPattern, String tablePattern) throws SQLException {
     schemaName = null;
@@ -104,7 +104,7 @@ public class TableMetaData {
 
     try (ResultSet resultSet = metaData.getColumns(null, schemaName, tableName, null)) {
       while (resultSet.next()) {
-        // check same schema, tablename
+        // check same schema, table name
         String schema = resultSet.getString("TABLE_SCHEM");
         String table = resultSet.getString("TABLE_NAME");
         // check that we're getting the same results
@@ -207,7 +207,7 @@ public class TableMetaData {
   /**
    * Gets the table name used in the model.
    *
-   * @return the model's tablename
+   * @return the model's table name
    */
   public String getModelTableName() {
     return modelTableName;
@@ -215,7 +215,7 @@ public class TableMetaData {
 
   /**
    * Gets the database schema name.<br>
-   * Always in lowercase.
+   * The name is returned as reported by the database, which may be uppercase (Oracle, for example).
    *
    * @return the schema, null if none
    */
@@ -225,7 +225,7 @@ public class TableMetaData {
 
   /**
    * Gets the database table name.<br>
-   * Always in lowercase.
+   * The name is returned as reported by the database, which may be uppercase (Oracle, for example).
    *
    * @return the table name (without schema)
    */
@@ -234,8 +234,8 @@ public class TableMetaData {
   }
 
   /**
-   * Gets the database table name with optional schemaname prepended.<br>
-   * Always in lowercase.
+   * Gets the database table name with optional schema name prepended.<br>
+   * The name is returned as reported by the database, which may be uppercase (Oracle, for example).
    *
    * @return the full table name
    */

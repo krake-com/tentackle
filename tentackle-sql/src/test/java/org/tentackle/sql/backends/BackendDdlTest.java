@@ -331,7 +331,7 @@ public class BackendDdlTest {
                  "ALTER TABLE " + TABLE + " MODIFY (name VARCHAR(64));\n");
     assertEquals(backend.sqlAlterColumnNullConstraint(TABLE, "name", false),
                  "ALTER TABLE " + TABLE + " MODIFY (name NOT NULL);\n");
-    assertEquals(backend.sqlRenameTable(TABLE, "renamed"), "RENAME TABLE " + TABLE + " TO renamed;\n");
+    assertEquals(backend.sqlRenameTable(TABLE, "renamed"), "ALTER TABLE " + TABLE + " RENAME TO renamed;\n");
     assertEquals(backend.sqlNextFromSequence("myseq"), "SELECT myseq.NEXTVAL FROM DUAL");
     // an empty string is NULL on oracle, so MAPNULL has to fall back to a blank
     assertEquals(backend.getEmptyString(), " ");

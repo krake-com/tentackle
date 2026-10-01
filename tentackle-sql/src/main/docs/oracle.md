@@ -173,7 +173,8 @@ Two model values do not reach the DDL unchanged, because `valueToLiteral` rewrit
 Comparing the model value with the stored text directly would therefore fail — `""` against `' '`, `TRUE` against
 `1` — and unlike the trailing-blank case above, re-applying the `MODIFY` would *not* settle it: the mismatch
 would be reported on every single migration run, forever. `Oracle8.isDefaultEqual()` applies the same mapping to
-the model value before comparing.
+the model value before comparing. `Oracle23`, which declares booleans as native `BOOLEAN` columns, writes and
+compares the defaults as `TRUE`/`FALSE` instead.
 
 ---
 

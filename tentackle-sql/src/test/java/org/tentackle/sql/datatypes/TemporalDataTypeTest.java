@@ -96,6 +96,17 @@ public class TemporalDataTypeTest {
   }
 
   /**
+   * Each type that supports MAPNULL must provide the value null is mapped to.
+   */
+  @Test
+  public void testMappedNullValues() {
+    assertTrue(new LocalDateType().isMapNullSupported());
+    assertEquals(new LocalDateType().getMappedNullValue(null, 0), DateHelper.MIN_DATE);
+    assertEquals(new DateType().getMappedNullValue(null, 0), DateHelper.MIN_DATE);
+    assertEquals(new LocalDateTimeType().getMappedNullValue(null, 0), DateHelper.MIN_TIMESTAMP);
+  }
+
+  /**
    * A string that is not a timestamp at all must be rejected rather than silently become the epoch.
    */
   @Test

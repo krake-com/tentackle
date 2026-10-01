@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Oracle index meta data.<br>
+ * Oracle index metadata.<br>
  * Oracle implements filtered indexes, function-based indexes and descending indexes
  * all the same way: as an index over a hidden, system-generated virtual column.
  * {@link DatabaseMetaData#getIndexInfo} reports such columns as {@code SYS_NC0000n$}
@@ -56,7 +56,7 @@ public class OracleIndexMetaData extends IndexMetaData {
 
 
   /**
-   * Creates an index meta data object.
+   * Creates an index metadata object.
    *
    * @param tableMetaData the table the index belongs to
    */

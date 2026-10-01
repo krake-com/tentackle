@@ -22,7 +22,7 @@ import java.io.Serial;
 import java.util.List;
 
 /**
- * Runtime exception thrown when the {@link ScriptRunner}er encounters an error.
+ * Runtime exception thrown when a {@link ScriptRunner} encounters an error.
  *
  * @author harald
  */
@@ -31,7 +31,10 @@ public class ScriptRunnerException extends BackendException {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /** the SQL code that failed. */
   private final String sql;
+
+  /** the successful results collected so far. */
   @SuppressWarnings("serial")
   private final List<ScriptRunnerResult> results;
 
@@ -50,7 +53,8 @@ public class ScriptRunnerException extends BackendException {
   }
 
   /**
-   * For TRIP.
+   * Constructor used by TRIP deserialization.<br>
+   * The SQL code and the results are not transferred and remain null.
    *
    * @param message the detail message
    * @param cause the cause
@@ -65,7 +69,7 @@ public class ScriptRunnerException extends BackendException {
   /**
    * Gets the SQL code that failed.
    *
-   * @return the SQL code
+   * @return the SQL code, null if unknown
    */
   public String getSql() {
     return sql;
@@ -74,7 +78,7 @@ public class ScriptRunnerException extends BackendException {
   /**
    * Gets the results collected so far.
    *
-   * @return the results
+   * @return the results, null if unknown
    */
   public List<ScriptRunnerResult> getResults() {
     return results;

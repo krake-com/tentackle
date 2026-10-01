@@ -17,6 +17,14 @@
  */
 
 /**
- * SQL backend layer.
+ * The SQL backend layer.
+ * <p>
+ * Isolates the upper layers from the dialect, quirks and capabilities of the concrete database.
+ * The central abstraction is the {@link org.tentackle.sql.Backend}, one per kind of database,
+ * located via the {@link org.tentackle.sql.BackendFactory}. A {@link org.tentackle.sql.BackendInfo}
+ * describes a concrete connection target. The {@link org.tentackle.sql.DataType}s map the Java types
+ * of the model to one or more columns of a {@link org.tentackle.sql.SqlType}.
+ * Furthermore, the package provides the {@link org.tentackle.sql.ScriptRunner} to execute SQL scripts
+ * and the {@link org.tentackle.sql.DynamicDriver} to load JDBC drivers at runtime.
  */
 package org.tentackle.sql;

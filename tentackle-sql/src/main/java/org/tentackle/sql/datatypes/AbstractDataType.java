@@ -34,12 +34,14 @@ import java.util.stream.Stream;
 
 /**
  * Implements some common methods for data types.
+ *
+ * @param <T> the java type
  */
 public abstract class AbstractDataType<T> implements DataType<T> {
 
   /**
    * Maximum number of lines in literal.<br>
-   * &gt; 0 if unlimited.
+   * Unlimited if &le; 0 (default).
    */
   public static int maxLinesInLiteral = -1;
 
@@ -335,6 +337,9 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   /**
    * Checks that this type has a fixed number of columns or
    * the backend is specified.
+   *
+   * @param backend the backend, null if backend-agnostic
+   * @throws BackendException if the column count is backend-specific and no backend is given
    */
   protected void assertColumnCountNotBackendSpecific(Backend backend) {
     if (backend == null && isColumnCountBackendSpecific()) {

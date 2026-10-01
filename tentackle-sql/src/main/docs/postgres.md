@@ -1,6 +1,6 @@
 # The PostgreSQL Backend — Peculiarities
 
-[`Postgres`](../java/org/tentackle/sql/backends/Postgres.java) is the reference backend several others build on —
+[`Postgres`](../java/org/tentackle/sql/backends/Postgres.java) is the reference backend —
 [`CockroachDb`](../java/org/tentackle/sql/backends/CockroachDb.java) extends it directly and speaks the same wire
 protocol and mostly the same SQL. This document collects PostgreSQL's own peculiarities, in particular its `JSON`
 vs. `JSONB` choice, which the model cannot influence today.
@@ -70,8 +70,9 @@ exists. The index survives every subsequent migration run untouched.
 ## Other Peculiarities
 
 - **Reserved words beyond SQL-92**: `TEXT` and `UUID` (`RESERVED_WORDS_PG`).
-- **Reserved schemas**: `information_schema`, `pg_catalog`, `pg_temp_1`, `pg_toast`, `pg_toast_temp_1`, in addition
-  to the default schema `public` (which, unlike other reserved names, remains a legal schema name).
+- **Reserved schemas**: `information_schema`, `pg_catalog`, `pg_temp_1`, `pg_toast`, `pg_toast_temp_1` and the
+  reserved words. The default schema `public` is explicitly exempted and remains a legal schema name, although
+  `PUBLIC` is an SQL-92 reserved word.
 - **63-character identifiers** (`getMaxNameLength()`).
 - **Sequences** via `NEXTVAL('name')` as a string literal (unlike MariaDB, where `NEXTVAL` takes the sequence's
   identifier).

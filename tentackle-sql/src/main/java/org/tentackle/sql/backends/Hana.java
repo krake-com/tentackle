@@ -263,6 +263,8 @@ public class Hana extends AbstractSql2003Backend {
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
+      // XML and JSON are stored as NCLOB
+      case Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.CLOB, SqlType.JSON, SqlType.XML};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -384,6 +386,14 @@ public class Hana extends AbstractSql2003Backend {
     return null;    // HANA cannot change the default alone, see getMigrationStrategy
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * HANA cannot change the default of a column alone: the whole column declaration is repeated instead.
+   * Hence, a changed default yields {@link MigrationStrategy#TYPE}, and a changed null constraint
+   * yields {@link MigrationStrategy#NULL}, which carries the type and the default as well.
+   * {@link MigrationStrategy#DEFAULT} is never returned.
+   */
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
                                                   SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
@@ -423,20 +433,6 @@ public class Hana extends AbstractSql2003Backend {
     }
 
     return strategies.toArray(new MigrationStrategy[0]);
-  }
-
-  @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_LIMIT);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    ndx = sql.lastIndexOf(SQL_OFFSET);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
-    }
-    return sql;
   }
 
 }

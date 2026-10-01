@@ -38,7 +38,7 @@ public class MariaDb extends MySql {
   /** minimum major version. */
   private static final int MIN_MAJOR_VERSION = 10;
 
-  /** minimum minor version if {@link #MIN_MAJOR_VERSION}. */
+  /** minimum minor version if the major version equals {@link #MIN_MAJOR_VERSION}. */
   private static final int MIN_MINOR_VERSION = 3;
 
 

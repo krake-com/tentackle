@@ -20,7 +20,8 @@
 package org.tentackle.sql.metadata;
 
 /**
- * Postgres index meta data.
+ * PostgreSQL index metadata.<br>
+ * Strips the type casts PostgreSQL adds to the values of a filter condition.
  *
  * @author harald
  */
@@ -38,7 +39,7 @@ public class PostgresIndexMetaData extends IndexMetaData {
   };
 
   /**
-   * Creates an index meta data object.
+   * Creates an index metadata object.
    *
    * @param tableMetaData the table the index belongs to
    */
@@ -56,8 +57,8 @@ public class PostgresIndexMetaData extends IndexMetaData {
       for (String cast: CASTS) {
         condition = condition.replace(cast, "");
       }
-      // other simple casts such as ::long
-      setFilterCondition(condition.replaceAll("::[a-z|A-Z]*", ""));
+      // other simple casts such as ::bigint or ::int4
+      setFilterCondition(condition.replaceAll("::[a-zA-Z_][a-zA-Z0-9_]*", ""));
     }
   }
 

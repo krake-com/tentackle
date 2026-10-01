@@ -44,7 +44,7 @@ interface MetaDataUtilitiesHolder {
 public class MetaDataUtilities {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -73,6 +73,10 @@ public class MetaDataUtilities {
   private final Map<Integer,String> typeMap;    // maps JDBC type numbers to strings
 
 
+  /**
+   * Creates the utilities.<br>
+   * Builds the map of JDBC type names.
+   */
   public MetaDataUtilities() {
     typeMap = new HashMap<>();
     for (Field field: Types.class.getDeclaredFields()) {
@@ -89,10 +93,10 @@ public class MetaDataUtilities {
 
 
   /**
-   * Converts a jdbc type to a string.
+   * Converts a JDBC type to a string.
    *
-   * @param jdbcType the jdbc type
-   * @return the string, never null
+   * @param jdbcType the JDBC type
+   * @return the name of the {@link Types} constant, {@code UNKNOWN} if no such constant
    */
   public String jdbcTypeToString(int jdbcType) {
     String str = typeMap.get(jdbcType);
@@ -104,9 +108,10 @@ public class MetaDataUtilities {
 
 
   /**
-   * Returns whether the given tablename is reserved.
+   * Returns whether the given table name is reserved by Tentackle.<br>
+   * The check is case-insensitive and ignores the schema.
    *
-   * @param tableName the tablename, with or without schema
+   * @param tableName the table name, with or without schema
    * @return true if reserved
    */
   public boolean isReservedTable(String tableName) {

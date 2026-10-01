@@ -43,7 +43,6 @@ import java.time.format.DateTimeParseException;
 @Service(DataType.class)
 public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
 
-  // timestamp formats withZone necessary for Instant
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
@@ -114,7 +113,6 @@ public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime>
       // mindate is translated back to null
       return null;
     }
-    // upgrade to org.tentackle.common.Timestamp
     return timestamp.toLocalDateTime();
   }
 

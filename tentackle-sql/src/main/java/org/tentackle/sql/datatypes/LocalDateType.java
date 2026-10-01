@@ -61,6 +61,11 @@ public final class LocalDateType extends AbstractDateTimeType<LocalDate> {
   }
 
   @Override
+  public Date getMappedNullValue(Backend backend, int index) {
+    return DateHelper.MIN_DATE;
+  }
+
+  @Override
   public SqlType getSqlType(Backend backend, int index) {
     if (index != 0) {
       throw new IndexOutOfBoundsException();

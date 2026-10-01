@@ -18,8 +18,13 @@
 
 package org.tentackle.sql.backends;
 
+import org.tentackle.sql.BackendPreparedStatement;
+
 /**
  * Common to all SQL2008 backends.
+ * <p>
+ * Paging uses the standard {@code OFFSET} and {@code FETCH FIRST} clauses instead of the
+ * window function of {@link AbstractSql2003Backend}.
  *
  * @author harald
  */
@@ -30,10 +35,6 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
 
   /** FETCH FIRST string. */
   public static final String SQL_FETCH_FIRST = " FETCH FIRST ? ROWS ONLY";
-
-  // the leading keywords of the clauses above, to cut them off
-  private static final String SQL_OFFSET_KEYWORD = " OFFSET ";
-  private static final String SQL_FETCH_FIRST_KEYWORD = " FETCH FIRST ";
 
 
   /**
@@ -66,18 +67,20 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The offset is bound before the limit, which is the number of rows to fetch.
+   */
   @Override
-  protected String extractWhereClause(String sql, int whereOffset) {
-    sql = super.extractWhereClause(sql, whereOffset);
-    int ndx = sql.lastIndexOf(SQL_FETCH_FIRST_KEYWORD);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
+  public int setTrailingSelectParameters(BackendPreparedStatement stmt, int index, int limit, int offset) {
+    if (offset > 0) {
+      stmt.setInt(index++, offset);
     }
-    ndx = sql.lastIndexOf(SQL_OFFSET_KEYWORD);
-    if (ndx >= 0) {
-      sql = sql.substring(0, ndx);
+    if (limit > 0) {
+      stmt.setInt(index++, limit);
     }
-    return sql;
+    return index;
   }
 
 }

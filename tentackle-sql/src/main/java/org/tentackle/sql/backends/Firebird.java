@@ -255,9 +255,9 @@ public class Firebird extends AbstractSql2008Backend {
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
-      // a BLOB SUB_TYPE TEXT is reported as LONGVARCHAR
+      // a BLOB SUB_TYPE TEXT is reported as LONGVARCHAR, which also stores XML and JSON
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB
-              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.JSON};
+              -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB, SqlType.JSON, SqlType.XML};
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -399,6 +399,12 @@ public class Firebird extends AbstractSql2008Backend {
             getStatementSeparator() + "\n";
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Changes only the type. The null constraint and the default are separate column alterations
+   * (see {@link org.tentackle.sql.MigrationStrategy#NULL} and {@link org.tentackle.sql.MigrationStrategy#DEFAULT}).
+   */
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {

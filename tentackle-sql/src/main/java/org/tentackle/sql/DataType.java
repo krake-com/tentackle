@@ -34,9 +34,9 @@ import java.util.Optional;
  * not maintain any state and the <code>==</code> operator is logically equivalent to equals().
  * <p>
  * A predefined set of commonly used Java- and Tentackle-types is already provided, but the application may define
- * their own types (that's why <code>DataType</code> is not an enum).<br>
- * The combination of <code>javaName</code> and <code>variant</code> is unique.
- * The <code>javaName</code> is the plain classname without the package, since we don't want the model
+ * its own types (that's why <code>DataType</code> is not an enum).<br>
+ * The combination of {@link #getJavaType()} and {@link #getVariant()} is unique.
+ * The java type is the plain classname without the package, since we don't want the model
  * to refer to classes with the same name, but in different packages (usually a bad idea anyway).
  * <p>
  * The use of <code>DataType</code>s is threefold:
@@ -55,7 +55,7 @@ import java.util.Optional;
  * Finally, the <code>DataType</code>'s module must be made known to the following maven plugins:
  * <ul>
  *   <li>wurbelizer plugin: add as <code>wurbletDependency</code> (see the wurbelizer docs)</li>
- *   <li>tentackle sql plugin: add as plugin dependency</cpde></li>
+ *   <li>tentackle sql plugin: add as plugin dependency</li>
  * </ul>
  *
  * @param <T> the java type described by this data type
@@ -347,8 +347,8 @@ public interface DataType<T> {
   /**
    * Returns whether this type can be used literally in a query String.
    *
-   * @return true if literal String supported, else false
    * @param index column index, null if applies to the object of this type
+   * @return true if literal String supported, else false
    */
   boolean isLiteralSupported(Integer index);
 
