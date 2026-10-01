@@ -28,6 +28,18 @@ import java.util.List;
 
 /**
  * Runner for external tools.
+ * <p>
+ * The output and error streams are decoded with the platform's default charset.
+ * Example:
+ * <pre>
+ *   ToolRunner runner = new ToolRunner(new ToolFinder().find("git")).arg("status").run();
+ *   if (runner.getErrCode() == 0) {
+ *     String status = runner.getOutputAsString();
+ *     ...
+ *   }
+ * </pre>
+ *
+ * @see ToolFinder
  */
 public class ToolRunner {
 
@@ -39,10 +51,9 @@ public class ToolRunner {
 
   /**
    * Creates a runner for a tool.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if tool not found or not executable.
    *
    * @param tool the tool
+   * @throws TentackleRuntimeException if tool not found or not executable
    */
   public ToolRunner(File tool) {
     this.tool = tool;
@@ -57,9 +68,10 @@ public class ToolRunner {
   }
 
   /**
-   * Adds arguments.
+   * Adds arguments.<br>
+   * Each argument is converted to a string via {@link Object#toString()}.
    *
-   * @param args the arguments
+   * @param args the arguments, never null
    * @return this runner
    */
   public ToolRunner arg(Object... args) {
@@ -86,11 +98,10 @@ public class ToolRunner {
   }
 
   /**
-   * Runs the tool.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if running the tool failed.
+   * Runs the tool and waits for its termination.
    *
    * @return this runner
+   * @throws TentackleRuntimeException if running the tool failed or the thread was interrupted
    */
   public ToolRunner run() {
     try {
@@ -121,6 +132,7 @@ public class ToolRunner {
    * Gets the standard output.
    *
    * @return the output lines, never null
+   * @throws TentackleRuntimeException if run method not invoked yet
    */
   public List<String> getOutput() {
     assertExecuted();
@@ -128,9 +140,11 @@ public class ToolRunner {
   }
 
   /**
-   * Gets the standard output.
+   * Gets the standard output as a single string.<br>
+   * The lines are separated by newlines.
    *
    * @return the output, never null
+   * @throws TentackleRuntimeException if run method not invoked yet
    */
   public String getOutputAsString() {
     return linesToString(getOutput());
@@ -138,10 +152,9 @@ public class ToolRunner {
 
   /**
    * Gets the standard error output.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
    *
    * @return the error lines, never null
+   * @throws TentackleRuntimeException if run method not invoked yet
    */
   public List<String> getErrors() {
     assertExecuted();
@@ -149,22 +162,21 @@ public class ToolRunner {
   }
 
   /**
-   * Gets the standard error output.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
+   * Gets the standard error output as a single string.<br>
+   * The lines are separated by newlines.
    *
    * @return the errors, never null
+   * @throws TentackleRuntimeException if run method not invoked yet
    */
   public String getErrorsAsString() {
     return linesToString(getErrors());
   }
 
   /**
-   * Gets the error code.
-   * <p>
-   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
+   * Gets the exit code of the tool.
    *
-   * @return the error, 0 if ok
+   * @return the exit code, 0 if ok
+   * @throws TentackleRuntimeException if run method not invoked yet
    */
   public int getErrCode() {
     assertExecuted();
@@ -172,7 +184,8 @@ public class ToolRunner {
   }
 
   /**
-   * Clears arguments and results.
+   * Clears arguments and results.<br>
+   * The runner can be reused afterward.
    */
   public void clear() {
     command.clear();

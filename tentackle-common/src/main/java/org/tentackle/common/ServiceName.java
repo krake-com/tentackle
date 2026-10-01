@@ -29,8 +29,8 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to express that the annotated class is a service implementation.<br>
- * Differs from @{@link Service} that the service can be some arbitrary name.
- * Also useful, if the serviced class is not within the scope.
+ * Differs from @{@link Service} in that the service can be some arbitrary name.
+ * Also useful if the serviced class is not within the scope.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -39,17 +39,19 @@ import java.lang.annotation.Target;
 public @interface ServiceName {
 
   /**
-   * Gets the service name.<br>
+   * Gets the service name.
    *
    * @return the service name
    */
   String value();
 
   /**
-   * The method name of the mapped service that provides the value.<br>
+   * The name of the element that provides the value, if this annotation is used as a meta-annotation.<br>
+   * If {@link #meta()} is false, the element of the annotated annotation provides the serviced name
+   * (only if {@link #value()} is not given explicitly). If {@link #meta()} is true, it provides the servicing class.
    * The default is "value".
    *
-   * @return the method name
+   * @return the element name
    */
   String method() default "value";
 
@@ -60,7 +62,7 @@ public @interface ServiceName {
    * Meta services go to META-INF/meta-services instead of META-INF/services because the
    * provider usually resides in another module.
    *
-   * @return true if this a meta annotation and the servicing class is provided by the annotated annotation
+   * @return true if this is a meta annotation and the servicing class is provided by the annotated annotation
    */
   boolean meta() default false;
 

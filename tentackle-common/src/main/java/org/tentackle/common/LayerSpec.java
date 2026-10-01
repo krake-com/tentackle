@@ -36,6 +36,15 @@ import java.util.Objects;
  */
 public record LayerSpec(String name, List<String> parentNames, List<java.nio.file.Path> directories) {
 
+  /**
+   * Creates a layer spec.
+   *
+   * @param name the layer name
+   * @param parentNames the names of the parent layers
+   * @param directories the module-path directories
+   * @throws NullPointerException if any argument is null
+   * @throws TentackleRuntimeException if the name is blank or there are no directories
+   */
   public LayerSpec {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(parentNames, "parentNames");

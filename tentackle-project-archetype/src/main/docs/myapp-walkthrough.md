@@ -571,8 +571,7 @@ preferences dialog, and password-change view round out the shell.
 ## 11. Internationalization
 
 > Reference: [i18n](../../../../tentackle-i18n/src/main/docs/i18n.md),
-> [bundles](../../../../tentackle-common/src/main/docs/bundle.md),
-> [internationalization](../../../../tentackle-common/src/main/docs/internationalization.md).
+> [bundles and internationalization](../../../../tentackle-common/src/main/docs/bundle.md).
 
 Every module that emits user-facing text ships a `*Bundle.java` accessor and `*Bundle.properties` /
 `*Bundle_de.properties` pairs (`PdoBundle`, `DomainBundle`, `PersistenceBundle`, `ServerBundle`, `GuiBundle`, plus the

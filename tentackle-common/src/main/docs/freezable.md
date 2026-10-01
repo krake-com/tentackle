@@ -58,7 +58,7 @@ Two rules define its semantics:
 1. **Freezing is one-way and final.** Once frozen, an object can **never** be unfrozen. There is no
    `unfreeze()`. After `freeze()`, every mutator throws a
    [`TentackleRuntimeException`](../java/org/tentackle/common/TentackleRuntimeException.java).
-2. **Clones come out unfrozen.** Cloning (or copying) a frozen object yields a fresh, **mutable** instance.
+2. **Clones come out unfrozen.** Cloning a frozen object yields a fresh, **mutable** instance.
    This is what lets you take a frozen stored value, copy it, edit the copy, and assign it back — the normal
    "change a date" workflow.
 
@@ -76,8 +76,8 @@ the capability. They are the types you use as model attributes instead of the ra
 | [`Timestamp`](../java/org/tentackle/common/Timestamp.java)                                                    | `java.sql.Timestamp`                                                 | freezability + optional UTC flag                            |
 | [`Binary`](../java/org/tentackle/common/Binary.java) / [`TBinary`](../java/org/tentackle/common/TBinary.java) | [`AbstractBinary`](../java/org/tentackle/common/AbstractBinary.java) | freezability over a serialized byte buffer                  |
 
-Each carries a private `frozen` flag and overrides every state-changing method to check it first. From
-[`Date`](../java/org/tentackle/common/Date.java):
+Each carries a `frozen` flag (private in the date/time types, protected in `AbstractBinary`) and overrides
+every state-changing method to check it first. From [`Date`](../java/org/tentackle/common/Date.java):
 
 ```java
 @Override
@@ -109,6 +109,20 @@ public Date clone() {
 
 Note what is **not** here: `BMoney` / `DMoney` extend `BigDecimal` and are immutable by nature, so they don't
 need `Freezable`. Freezability is only for value types the JDK left mutable.
+
+Frozen instances can also be created directly:
+
+- `Date.createFrozen(epoch)`, `Time.createFrozen(epoch)` and `Timestamp.createFrozen(epoch, nanos)`
+  (the latter with the UTC flag off). `DateHelper.MIN_DATE` and `DateHelper.MIN_TIMESTAMP` are frozen
+  this way, so the shared constants cannot be modified by accident.
+- `Binary.create(stream, bufSize, frozen)` / `TBinary.create(...)` and the corresponding constructors,
+  as used when reading a binary from the database.
+
+The exception messages name the type: "date is frozen", "time is frozen", "timestamp is frozen" and
+"binary is frozen".
+
+> **One loophole.** `AbstractBinary.getData()` returns the internal byte array, not a copy, for
+> serialization purposes. Writing into that array changes even a frozen binary — don't.
 
 ---
 
@@ -174,7 +188,7 @@ side, including its three-state model and aggregate cascading.
   the raw `java.util` / `java.sql` types — you get freezability *and* timezone-stable serialization.
 - **Don't hold on to a stored value expecting to mutate it.** Once assigned to an entity, it is frozen. To change
   it, build/clone a new instance and call the setter.
-- **Clone to edit.** `clone()`/`copy()` of a frozen value returns a mutable one.
+- **Clone to edit.** `clone()` of a frozen value returns a mutable one.
 - **Freezing is permanent.** There is no unfreeze; a value's only path back to mutability is a fresh clone.
 
 ---

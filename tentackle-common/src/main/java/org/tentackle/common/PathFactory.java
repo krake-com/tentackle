@@ -45,7 +45,7 @@ public interface PathFactory<P extends Path<P,E>, E> {
    * Creates a new path by prepending elements to an existing path.
    *
    * @param elements the elements to prepend
-   * @param path the path to prepend elements
+   * @param path the path to prepend the elements to
    * @return the new concatenated path
    */
   P create(List<E> elements, P path);
@@ -53,7 +53,7 @@ public interface PathFactory<P extends Path<P,E>, E> {
 
 
   /**
-   * Merge paths to remove redundant path segments.<br>
+   * Merges paths to remove redundant path segments.<br>
    * The returned consolidated paths form a hierarchical graph.
    * <pre>
    * Example:

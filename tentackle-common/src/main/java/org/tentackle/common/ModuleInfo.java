@@ -31,7 +31,7 @@ public final class ModuleInfo {
 
   private final ModuleHook hook;                      // the module hook implementation
   private final String urlPath;                       // the path of the source URL
-  private final Module module;                        // the module name
+  private final Module module;                        // the module
   private final Set<String> requiredModuleNames;      // the required module names
 
   private int ordinal;                                // the ordinal (!= 0 if sorted)
@@ -41,6 +41,7 @@ public final class ModuleInfo {
    * Creates a module info.
    *
    * @param hook the module hook
+   * @throws TentackleRuntimeException if the hook does not belong to a named module
    */
   public ModuleInfo(ModuleHook hook) {
     this.hook = hook;
@@ -74,7 +75,7 @@ public final class ModuleInfo {
   /**
    * Gets the URL path of the hook's module.
    *
-   * @return the url path
+   * @return the URL path
    */
   public String getUrlPath() {
     return urlPath;
@@ -90,7 +91,10 @@ public final class ModuleInfo {
   }
 
   /**
-   * Gets the names of the required modules.
+   * Gets the names of the required modules.<br>
+   * Modules required {@code static} are not included.
+   * Once the module has been sorted by the {@link ModuleSorter}, the set contains only the names
+   * of required application modules, i.e., modules providing a {@link ModuleHook}.
    *
    * @return the directly required names
    */

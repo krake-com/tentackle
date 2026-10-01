@@ -21,14 +21,16 @@ package org.tentackle.common;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for common-package in tentackle-common.
+ * Bundle for the common package in tentackle-common.
+ * <p>
+ * Holds the words for digits used by {@link StringHelper#digitToString(Character)}.
  *
  * @author harald
  */
-public class CommonCommonBundle {   // not annotated with @Bundle but directly configured in resources
+public class CommonCommonBundle {   // not annotated with @Bundle but configured in META-INF/bundles/org.tentackle.common.Bundle
 
   /**
-   * Gets the bundle.
+   * Gets the bundle for the current locale.
    *
    * @return the resource bundle
    */
@@ -41,6 +43,7 @@ public class CommonCommonBundle {   // not annotated with @Bundle but directly c
    *
    * @param key the key
    * @return the string from the bundle
+   * @throws java.util.MissingResourceException if no such key
    */
   public static String getString(String key) {
     return getBundle().getString(key);

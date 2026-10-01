@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -127,6 +130,14 @@ public class ModuleLayerBuilderTest {
     Object providerInstance = providerClass.getDeclaredConstructor().newInstance();
     Object version = providerClass.getMethod("getVersion").invoke(providerInstance);
     assertEquals(version, expectedVersion);
+
+    // 3) the ServiceFactory keeps layer-bound and plain classloader-based finders apart
+    ServiceFinder plainFinder = ServiceFactory.getServiceFinder(leafLoader, "META-INF/services/");
+    ServiceFinder layerFinder = ServiceFactory.getServiceFinder(leaf, "META-INF/services");
+    assertNull(plainFinder.getModuleLayer());
+    assertEquals(layerFinder.getModuleLayer(), leaf);
+    assertNotSame(layerFinder, plainFinder);
+    assertSame(ServiceFactory.getServiceFinder(leaf, "/META-INF/services/"), layerFinder);
   }
 
   private java.nio.file.Path compileLib(String version) throws IOException {

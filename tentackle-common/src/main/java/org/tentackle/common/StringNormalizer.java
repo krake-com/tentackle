@@ -24,6 +24,9 @@ interface StringNormalizerHolder {
 
 /**
  * Translates strings to a reduced char set.
+ * <p>
+ * The default implementation is {@link DefaultStringNormalizer}.
+ * Applications can replace it via {@code @Service(StringNormalizer.class)}.
  */
 public interface StringNormalizer {
 
@@ -40,18 +43,21 @@ public interface StringNormalizer {
    * Normalizes a string (phonetically) for use as PDO.normText.
    *
    * @param str the string to be normalized
-   * @return the normalized string
+   * @return the normalized string, null if str is null
    */
   String normalize(String str);
 
 
   /**
-   * Converts special unicode characters (so-called diacrits) to standard ascii.<br>
-   * Supports also special german and northern european "umlauts".
+   * Converts special Unicode characters (so-called diacritics) to standard ASCII.<br>
+   * Supports also special German and Northern European "umlauts".
+   * <p>
+   * Characters that cannot be converted to the printable ASCII range are dropped, unless
+   * {@code keepLength} is true, in which case they are replaced by a question mark.
    *
    * @param str the string to be converted
-   * @param keepLength true if the length should be kept, i.e. no Ä to AE, but to A
-   * @return the converted string
+   * @param keepLength true if the length should be kept, i.e., no Ä to AE, but to A
+   * @return the converted string, null if str is null
    */
   String unDiacrit(String str, boolean keepLength);
 

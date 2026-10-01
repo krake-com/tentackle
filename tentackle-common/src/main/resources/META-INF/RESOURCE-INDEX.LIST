@@ -1,8 +1,10 @@
 # analyze mojo cannot be used in tentackle-common (not built yet)
 META-INF/bundles/org.tentackle.common.Bundle
-META-INF/services/org.tentackle.buildsupport.BundleAnalyzeHandler
 META-INF/services/org.tentackle.common.BundleFactory
+META-INF/services/org.tentackle.common.BundleSupport
 META-INF/services/org.tentackle.common.LocaleProvider
+META-INF/services/org.tentackle.common.NamingRules
+META-INF/services/org.tentackle.common.ObjectSerializer
 META-INF/services/org.tentackle.common.ServiceFactory
 META-INF/services/org.tentackle.common.ServiceFinder
-META-INF/services/org.tentackle.common.NamingRules
+META-INF/services/org.tentackle.common.StringNormalizer

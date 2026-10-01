@@ -110,4 +110,13 @@ public class I18NTextTest {
     }
   }
 
+  @Test
+  public void testDefaultLocaleFromParameterStringIsNarrowed() throws java.text.ParseException {
+    // the default locale must be stored the same way as the translation keys
+    I18NText text = new I18NText(new ParameterString("default='de_DE', de_DE='Bockwurst'"));
+    assertEquals(text.getDefaultLocale(), Locale.GERMAN);
+    assertEquals(text.getTranslations().keySet(), java.util.Set.of(Locale.GERMAN));
+    assertEquals(text.get(Locale.FRANCE), "Bockwurst");
+  }
+
 }

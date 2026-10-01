@@ -24,10 +24,15 @@ import java.util.spi.ResourceBundleProvider;
  * Interface to determine the module hierarchy.<br>
  * Provides a hook to access resources from within a module.
  * <p>
- * Each module must include exactly one such implementation and provide it via module-info.
+ * Each application module must include exactly one such implementation and provide it via module-info:
+ * <pre>
+ *  provides org.tentackle.common.ModuleHook with com.myapp.somepackage.Hook;
+ * </pre>
+ * Modules without a hook are not part of the module hierarchy determined by the {@link ModuleSorter}
+ * and are treated like automatic modules or the classpath.
  * <p>
  * Since ModuleHook extends {@link ResourceBundleProvider}, all classes must implement the following
- * method as follows:
+ * method:
  *
  * <pre>
  *    &#64;Override
@@ -36,9 +41,9 @@ import java.util.spi.ResourceBundleProvider;
  *    }
  * </pre>
  *
- * Notice: it must be implemented in the hook and not an abstract super class because
- * it is used by the BundleFactory to access the bundles from within the framework
- * and ResourceBundle uses the caller class to determine the caller module.
+ * Notice: it must be implemented in the hook itself and not in an abstract superclass, because
+ * it is used by the {@link BundleFactory} to access the bundles from within the framework,
+ * and {@link java.util.ResourceBundle} uses the caller class to determine the caller module.
  *
  * @author harald
  */

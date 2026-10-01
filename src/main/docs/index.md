@@ -30,7 +30,7 @@ topic-grouped listing of every document, see the
 - **BOM (Bill of Materials)** — [Tentackle BOM](../../../tentackle-bom/src/main/docs/bom.md)
 - **Bulk updates and deletes (`PdoUpdateBy`, `PdoDeleteBy`)** — [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md#pdoupdateby-and-pdodeleteby--bulk-writes)
 - **BundleMonkey (translation editor)** — [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
-- **Bundles (resource)** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
+- **Bundles (resource)** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
 
 ## C
 
@@ -102,7 +102,7 @@ topic-grouped listing of every document, see the
 
 ## I
 
-- **i18n / Internationalization** — [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md), [Internationalization](../../../tentackle-common/src/main/docs/internationalization.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
+- **i18n / Internationalization** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
 - **Icons / images (symbolic names, icon packs, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
 - **Immutability** — [Immutable](../../../tentackle-core/src/main/docs/immutable.md)

@@ -39,28 +39,23 @@ import java.util.Set;
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(ServiceFinder.class)
 public class DefaultServiceFinder implements ServiceFinder {
-  /**
-   * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
-   * on tentackle-common, i.e. this cannot be analyzed.
-   * META-INF/services must be edited manually!
-   */
 
   private final ClassLoader loader;                         // the default classloader, never null
   private final ModuleLayer layer;                          // optional module layer, null if not layer-based
-  private final String servicePath;                         // optional service path, null = SERVICE_PATH
+  private final String servicePath;                         // normalized service path, never null
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
 
 
   /**
-   * Creates a service finder.<br>
+   * Creates a service finder.
    *
    * @param loader optional classloader, null if use {@link ClassLoader#getSystemClassLoader()}
-   * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
+   * @param servicePath optional service path prefix, null if {@code "META-INF/services/"}
    */
   public DefaultServiceFinder(ClassLoader loader, String servicePath) {
     this(loader, null, servicePath);
@@ -74,7 +69,8 @@ public class DefaultServiceFinder implements ServiceFinder {
    * returns and what resource lookups are performed against.
    *
    * @param layer the module layer
-   * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
+   * @param servicePath optional service path prefix, null if {@code "META-INF/services/"}
+   * @throws TentackleRuntimeException if the layer contains no modules
    */
   public DefaultServiceFinder(ModuleLayer layer, String servicePath) {
     this(resolveLayerLoader(layer), layer, servicePath);
@@ -90,20 +86,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       throw new TentackleRuntimeException("cannot determine classloader");
     }
 
-    if (servicePath == null) {
-      this.servicePath = Constants.DEFAULT_SERVICE_PATH;
-    }
-    else  {
-      while (servicePath.startsWith("/")) {
-        // cut leading slashes, if any
-        servicePath = servicePath.substring(1);
-      }
-      if (!servicePath.endsWith("/")) {
-        // add trailing slash if missing
-        servicePath += "/";
-      }
-      this.servicePath = servicePath;
-    }
+    this.servicePath = normalizeServicePath(servicePath);
 
     serviceMap = new HashMap<>();
     classMap = new HashMap<>();
@@ -111,10 +94,33 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
+   * Normalizes a service path.<br>
+   * Leading slashes are removed and a trailing slash is added, if missing.
+   *
+   * @param servicePath the service path, null for {@link Constants#DEFAULT_SERVICE_PATH}
+   * @return the normalized path
+   */
+  static String normalizeServicePath(String servicePath) {
+    if (servicePath == null) {
+      return Constants.DEFAULT_SERVICE_PATH;
+    }
+    while (servicePath.startsWith("/")) {
+      // cut leading slashes, if any
+      servicePath = servicePath.substring(1);
+    }
+    if (!servicePath.endsWith("/")) {
+      // add trailing slash if missing
+      servicePath += "/";
+    }
+    return servicePath;
+  }
+
+
+  /**
    * Creates a default service finder.<br>
    * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
    *
-   * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
+   * @param servicePath optional service path prefix, null if {@code "META-INF/services/"}
    */
   public DefaultServiceFinder(String servicePath) {
     this(Thread.currentThread().getContextClassLoader(), servicePath);
@@ -124,7 +130,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   /**
    * Creates a default service finder.<br>
    * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.<br>
-   * The servicepath is {@code "META_INF/services/"}.
+   * The service path is {@code "META-INF/services/"}.
    */
   public DefaultServiceFinder() {
     this(null);
@@ -150,9 +156,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
   /**
-   * Gets the service path the finder is responsible for.
-   *
-   * @return the service path
+   * {@inheritDoc}
    */
   @Override
   public String getServicePath() {
@@ -188,10 +192,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds URLs of a service by name.<br>
-   *
-   * @param serviceName the service name, usually a classname
-   * @return the service's resource urls
+   * {@inheritDoc}
    */
   @Override
   public Collection<URL> findServiceURLs(String serviceName) {
@@ -206,11 +207,11 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds service configurations by service name.<br>
-   * Iterations over the returned map are ordered by discovery along the classpath.
-   *
-   * @param serviceName the service name, usually a classname
-   * @return a map of the configured services and their corresponding URLs
+   * {@inheritDoc}
+   * <p>
+   * The results are cached per service name. A configuration line found twice is tolerated
+   * only if both URLs end with the same service path suffix, which happens in IDEs or test environments
+   * that add the same resource directory more than once.
    */
   @Override
   public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
@@ -223,12 +224,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds the first service configurations by service name.<br>
-   * If similar configurations appear more than once on the classpath, the
-   * first is returned. Useful to override service default implementations.
-   *
-   * @param serviceName the service name, usually a classname
-   * @return the service configuration entry
+   * {@inheritDoc}
    */
   @Override
   public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
@@ -241,12 +237,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds a unique service configurations by service name.<br>
-   * It is checked that the service is defined exactly once.
-   * Useful for factories, singletons and alike.
-   *
-   * @param serviceName the service name, usually a classname
-   * @return the service configuration entry
+   * {@inheritDoc}
    */
   @Override
   public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
@@ -272,12 +263,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds the service providers by service names.
-   *
-   * @param <T> the service type
-   * @param service the service class
-   * @return the classes providing this service
-   * @throws ClassNotFoundException if some provider could not be loaded
+   * {@inheritDoc}
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
@@ -300,14 +286,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds the first service provider by service name.<br>
-   * If similar configurations appear more than once on the classpath, the
-   * first is returned. Useful to override service default implementations.
-   *
-   * @param <T> the service type
-   * @param service the service class
-   * @return the provider class
-   * @throws ClassNotFoundException if some provider could not be loaded
+   * {@inheritDoc}
    */
   @SuppressWarnings("unchecked")
   @Override
@@ -321,12 +300,7 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Finds the unique service provider by service class.<br>
-   *
-   * @param <T> the service type
-   * @param service the service class
-   * @return the provider class
-   * @throws ClassNotFoundException if some provider could not be loaded
+   * {@inheritDoc}
    */
   @SuppressWarnings("unchecked")
   @Override
@@ -340,13 +314,11 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Creates a map of classnames to mapped services.
+   * {@inheritDoc}
    * <p>
-   * They key of the map is the service name.
-   * The value is the name providing the service which comes first in the classpath.
-   *
-   * @param serviceName the service class
-   * @return the map
+   * Notice: the mapped configurations are always looked up via
+   * {@code ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH)}, i.e., independently of this finder's
+   * own service path, classloader and module layer.
    */
   @Override
   public synchronized Map<String, String> createNameMap(String serviceName) {
@@ -370,12 +342,14 @@ public class DefaultServiceFinder implements ServiceFinder {
 
 
   /**
-   * Creates a map of names to all mapped services.<p>
-   * They key of the map is the service name.
-   * The value is a list of names providing the service ordered by discovery along the classpath.
-   *
-   * @param serviceName the service class
-   * @return the map
+   * {@inheritDoc}
+   * <p>
+   * As opposed to {@link #createNameMap(String)}, the configuration is split at colons, equal signs <em>and</em> spaces,
+   * and the mapped name is not unquoted. Hence, names containing spaces are not supported.
+   * <p>
+   * Notice: the mapped configurations are always looked up via
+   * {@code ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH)}, i.e., independently of this finder's
+   * own service path, classloader and module layer.
    */
   @Override
   public synchronized Map<String, Set<String>> createNameMapToAll(String serviceName) {
@@ -419,9 +393,10 @@ public class DefaultServiceFinder implements ServiceFinder {
    * This includes the special case of key-only properties which is equivalent to
    * the format used in {@link java.util.ServiceLoader}.
    *
-   * @param url the url of the provider definition
+   * @param url the URL of the provider definition
    * @param serviceName the name of the service
    * @param services the implementing services map
+   * @throws TentackleRuntimeException if reading failed or a configuration line is defined more than once
    */
   protected void parseURL(URL url, String serviceName, Map<String, URL> services) {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(FileHelper.openStreamUncached(url), StandardCharsets.UTF_8))) {
@@ -452,7 +427,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
   /**
-   * Parses an enumeration of URLs.
+   * Parses a collection of URLs.
    *
    * @param urls the URLs
    * @param serviceName the service name
@@ -505,7 +480,8 @@ public class DefaultServiceFinder implements ServiceFinder {
    *
    * @param provider the provider
    * @param service the service
-   * @param url the url
+   * @param url the URL
+   * @throws TentackleRuntimeException if the provider does not implement the service
    */
   private void checkProvider(Class<?> provider, Class<?> service, URL url) {
     if (!service.isAssignableFrom(provider)) {

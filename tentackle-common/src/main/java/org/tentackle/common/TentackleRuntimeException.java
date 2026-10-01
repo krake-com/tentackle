@@ -24,6 +24,11 @@ import java.io.Serial;
 
 /**
  * Tentackle runtime exception.
+ * <p>
+ * The exception can be marked as temporary (see {@link #setTemporary(boolean)}), i.e., the cause
+ * may disappear after some time and the application may retry the operation later.
+ * Temporary exceptions can be found within an exception chain via
+ * {@link ExceptionHelper#extractTemporaryException(boolean, Throwable)}.
  *
  * @author harald
  */
@@ -33,7 +38,8 @@ public class TentackleRuntimeException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
 
-  private boolean temporary;    // temporary exception
+  /** true if temporary exception. */
+  private boolean temporary;
 
   /**
    * Constructs a new tentackle runtime exception

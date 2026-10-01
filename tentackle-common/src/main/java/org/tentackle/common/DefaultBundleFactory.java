@@ -34,11 +34,14 @@ import java.util.spi.ResourceBundleControlProvider;
  * Default implementation of a bundle factory.
  * <p>
  * Works for modular and non-modular applications.
+ * Bundles registered via {@link BundleSupport} for named modules are loaded through the module's {@link ModuleHook}.
+ * In modular applications, bundles registered for automatic or unnamed modules are loaded without a
+ * {@link ResourceBundle.Control}, since controls are not supported for them.
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze-maven-plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(BundleFactory.class)
 public class DefaultBundleFactory implements BundleFactory {
 
@@ -64,7 +67,7 @@ public class DefaultBundleFactory implements BundleFactory {
       }
       else if (modular) {
         // Found a bundle support in an automatic or unnamed module, which is not recommended but sometimes necessary
-        // if the artifact cannot be made fully modular for some reason (for ex. tentackle swing legacy modules).
+        // if the artifact cannot be made fully modular for some reason (e.g., legacy modules).
         // Since controls (see i18n module) are not supported for automatic or unnamed modules,
         // they must be ignored for those bundles to prevent exceptions.
         noControlBundles.add(support.getBundleName());

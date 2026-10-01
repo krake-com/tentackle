@@ -41,7 +41,11 @@ import java.util.stream.Collectors;
  * placed in the very same layer are not isolated from each other.
  * <p>
  * Layers are built in an order such that a layer's parents always exist before the layer itself is
- * built, which is possible because a {@link LayerGraphSpec} cannot describe cyclic parent relationships.
+ * built. Unknown or cyclic parent relationships are detected and rejected.
+ * <p>
+ * The classloader of a layer is parented on the classloader of its <em>first</em> parent layer
+ * (or on the given parent classloader for layers parented on the boot layer).
+ * This affects only the lookup of classes not defined in any module.
  * <p>
  * A layer with several parents that each (still) define a different, conflicting module of the same
  * name is rejected explicitly (see {@link #checkDisjointAncestry}), since the JDK's own module
@@ -57,10 +61,16 @@ public final class ModuleLayerBuilder {
   /**
    * Builds the module layer graph described by the given spec.
    *
+   * If the spec names a {@link LayerGraphSpec#leafMainModule()}, the package of the main class
+   * is opened to tentackle-common, so that {@link LayerBootstrap} can invoke the main method reflectively.
+   *
    * @param spec the layer graph spec
    * @param bootLayer the boot layer, usually {@link ModuleLayer#boot()}
    * @param parentLoader the classloader to use as the parent of layers directly parented on the boot layer
    * @return the built layers, keyed by layer name
+   * @throws TentackleRuntimeException if layer names are duplicate, parents are unknown or cyclic,
+   *         a layer cannot be resolved, a layer has conflicting parents, the leaf layer is not defined,
+   *         or the leaf main module is not found in the leaf layer
    */
   public static Map<String, ModuleLayer> build(LayerGraphSpec spec, ModuleLayer bootLayer, ClassLoader parentLoader) {
 
@@ -156,7 +166,7 @@ public final class ModuleLayerBuilder {
    * module happens to be found first. Since silently picking one of two coexisting versions would
    * defeat the entire purpose of this class, this is checked explicitly: a module name reachable
    * through more than one parent is fine as long as it is the very same {@link Module} instance
-   * (i.e. a shared ancestor layer), but an outright conflict if two different parents each define
+   * (i.e., a shared ancestor layer), but an outright conflict if two different parents each define
    * their own, distinct module of that name.
    *
    * @param parentLayers the layer's parents

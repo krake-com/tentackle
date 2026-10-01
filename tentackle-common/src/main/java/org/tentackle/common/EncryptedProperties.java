@@ -33,8 +33,11 @@ import java.util.Set;
  * If a value starts with a <code>~</code> (tilde), the remainder of the string is considered to be
  * encrypted by the application-specific {@link Cryptor}.
  * If an unencrypted value starts with a <code>~</code>, it must be escaped with a backslash.
+ * Notice that {@link Properties#load(java.io.Reader)} drops a single backslash in front of a character
+ * that is not an escape sequence. Hence, the escape must be written as <code>\~</code> in a properties file,
+ * whereas {@code setProperty(key, "\\~...")} in Java code needs only a single backslash in the value.
  * <p>
- * Also supports case-insensitive keys.
+ * Also supports case-insensitive keys and an optional key prefix.
  */
 public class EncryptedProperties extends Properties {
 
@@ -81,8 +84,12 @@ public class EncryptedProperties extends Properties {
 
 
   @Override
-  public EncryptedProperties clone() {
-    return (EncryptedProperties) super.clone();
+  public synchronized EncryptedProperties clone() {
+    EncryptedProperties clone = (EncryptedProperties) super.clone();
+    if (keyCaseMap != null) {
+      clone.keyCaseMap = new HashMap<>(keyCaseMap);   // don't share with the original
+    }
+    return clone;
   }
 
   /**
@@ -115,9 +122,9 @@ public class EncryptedProperties extends Properties {
 
   /**
    * Sets a key prefix.<br>
-   * The prefix is prepended to the key for {@link #getProperty(String)} and alike.
-   * This allows merging the properties with others (such as spring's application.properties)
-   * and avoid duplicates.<br>
+   * The prefix is prepended to the key for {@link #getProperty(String)}, {@link #setProperty(String, String)} and alike.
+   * This allows merging the properties with others (such as Spring's application.properties)
+   * and avoids duplicates.<br>
    * Notice that all low-level methods of {@link java.util.Hashtable} dealing with objects rather than strings
    * ignore the prefix.
    *
@@ -137,6 +144,7 @@ public class EncryptedProperties extends Properties {
    *
    * @param   key the property key
    * @return  the value in this property list with the specified key value
+   * @throws  TentackleRuntimeException if the value is encrypted, but there is no {@link Cryptor}
    * @see     #setProperty
    */
   @Override
@@ -144,6 +152,15 @@ public class EncryptedProperties extends Properties {
     return getValue(key).getText();
   }
 
+  /**
+   * Sets a property.<br>
+   * The key prefix, if any, is prepended to the key.
+   * The value is stored as is, i.e., it is <em>not</em> encrypted (see {@link #setEncryptedProperty(String, String)}).
+   *
+   * @param key the key to be placed into this property list
+   * @param value the value corresponding to key
+   * @return the previous value of the specified key in this property list, null if it did not have one
+   */
   @Override
   public synchronized Object setProperty(String key, String value) {
     if (keyCaseMap != null) {
@@ -165,10 +182,12 @@ public class EncryptedProperties extends Properties {
   }
 
   /**
-   * Gets the case-sensitive key.
+   * Gets the case-sensitive key.<br>
+   * Throws {@link TentackleRuntimeException}, if duplicate case-mapped keys are found when the
+   * case map is built on first invocation. Later keys colliding case-insensitively replace the mapping.
    *
    * @param key the case-insensitive key
-   * @return the original case-sensitive key
+   * @return the original case-sensitive key, the given key if no such key
    */
   public String getKeyIgnoreCase(String key) {
     String csKey = getKeyCaseMap().get(key.toUpperCase(Locale.ROOT));
@@ -214,6 +233,7 @@ public class EncryptedProperties extends Properties {
    *
    * @param key the property key
    * @return the value as a character array or null if no such key
+   * @throws TentackleRuntimeException if the value is encrypted, but there is no {@link Cryptor}
    */
   public char[] getPropertyAsChars(String key) {
     return getValue(key).getChars();
@@ -224,7 +244,8 @@ public class EncryptedProperties extends Properties {
    *
    * @param key the property key
    * @param defaults the default value
-   * @return the value as a character array or null if no such key
+   * @return the value as a character array or defaults if no such key
+   * @throws TentackleRuntimeException if the value is encrypted, but there is no {@link Cryptor}
    */
   public char[] getPropertyAsChars(String key, char[] defaults) {
     char[] chars = getPropertyAsChars(key);
@@ -232,36 +253,33 @@ public class EncryptedProperties extends Properties {
   }
 
   /**
-   * Sets the property string and stores it encrypted, if a Cryptor is available.
+   * Sets the property string and stores it encrypted, if a Cryptor is available.<br>
+   * Without a Cryptor, the value is stored unencrypted. A leading {@code ~} is escaped
+   * in that case, so that the value is not mistaken for an encrypted one.
    *
    * @param key the property key
    * @param value the unencrypted value
    */
   public void setEncryptedProperty(String key, String value) {
+    Objects.requireNonNull(value, "missing value (String)");
     Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
-      setProperty(key, '~' + cryptor.encrypt64(Objects.requireNonNull(value, "missing value (String)")));
-    }
-    else {
-      setProperty(key, value);
-    }
+    setProperty(key, cryptor != null ? '~' + cryptor.encrypt64(value) : escapeTilde(value));
   }
 
   /**
-   * Sets the property char array and stores it encrypted, if a Cryptor is available.
+   * Sets the property char array and stores it encrypted, if a Cryptor is available.<br>
+   * Without a Cryptor, the value is stored unencrypted. A leading {@code ~} is escaped
+   * in that case, so that the value is not mistaken for an encrypted one.
+   * <p>
+   * If a Cryptor is available, the given array is erased after encryption.
    *
    * @param key the property key
    * @param value the unencrypted value
    */
   public void setEncryptedProperty(String key, char[] value) {
-    key = translateKey(key);
+    Objects.requireNonNull(value, "missing value (char[])");
     Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
-      setProperty(key, '~' + Cryptor.getInstance().encrypt64(value));
-    }
-    else {
-      super.setProperty(key, String.valueOf(value));
-    }
+    setProperty(key, cryptor != null ? '~' + cryptor.encrypt64(value) : escapeTilde(String.valueOf(value)));
   }
 
 
@@ -310,6 +328,10 @@ public class EncryptedProperties extends Properties {
       }
     }
     return new Value(text, encrypted);
+  }
+
+  private static String escapeTilde(String value) {
+    return value.startsWith("~") ? "\\" + value : value;
   }
 
   private String translateKey(String key) {

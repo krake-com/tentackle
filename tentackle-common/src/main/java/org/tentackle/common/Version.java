@@ -25,6 +25,9 @@ import java.util.Properties;
 
 /**
  * Holds Tentackle versioning information.
+ * <p>
+ * The values are read from {@code org/tentackle/common/Version.properties}, which is filtered
+ * by Maven at build time. Running this class as a main class prints the version.
  *
  * @author harald
  */
@@ -42,10 +45,10 @@ public class Version {
   private static final Properties properties = getProperties();
 
 
-  /** the artifact version **/
+  /** the artifact version. */
   public static final String RELEASE = properties.getProperty("version", "<no-version>");
 
-  /** the build timestamp **/
+  /** the build timestamp. */
   public static final String DATE = properties.getProperty("date", "<no-date>");
 
 

@@ -21,16 +21,19 @@ package org.tentackle.common;
 /**
  * A named numeric variable passed to a {@link NumericEvaluator}.
  *
+ * @param name the variable name as referenced in the expression
+ * @param value the variable's value
  * @param <T> the numeric datatype of the value
  * @author harald
  */
 public record NumericVariable<T extends Number>(String name, T value) {
 
   /**
-   * Creates a numeric argument.
+   * Creates a numeric variable.
    *
    * @param name  the variable name as referenced in the expression, never null
    * @param value the variable's value, never null
+   * @throws NullPointerException if name or value is null
    */
   public NumericVariable {
     if (name == null) {

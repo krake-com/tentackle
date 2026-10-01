@@ -26,6 +26,8 @@ import java.util.Set;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
 
 /**
  * Tests for en- and decryption of properties.
@@ -94,6 +96,48 @@ public class EncryptedPropertiesTest {
     assertNull(properties.getPropertyAsChars("troll"));
 
     assertEquals(properties.getPropertyIgnoreCase(KEY_STARTSWITHTILDE_CASE), STARTSWITHTILDE);
+  }
+
+  @Test
+  public void encryptedCharsWithPrefix() {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.setKeyPrefix(KEY_PREFIX);
+    properties.setEncryptedProperty(KEY_ENCRYPTED, MSG.toCharArray());
+    // the prefix must be applied only once
+    assertNotNull(properties.get(KEY_PREFIX + KEY_ENCRYPTED));
+    assertNull(properties.get(KEY_PREFIX + KEY_PREFIX + KEY_ENCRYPTED));
+    assertEquals(properties.getProperty(KEY_ENCRYPTED), MSG);
+    assertEquals(properties.getPropertyIgnoreCase(KEY_ENCRYPTED.toUpperCase()), MSG);
+  }
+
+  @Test
+  public void cloneDoesNotShareKeyCaseMap() {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.setProperty(KEY_UNENCRYPTED, MSG);
+    assertEquals(properties.getPropertyIgnoreCase(KEY_UNENCRYPTED.toUpperCase()), MSG);   // creates the case map
+
+    EncryptedProperties clone = properties.clone();
+    clone.setProperty("cloneOnly", "x");
+    assertEquals(clone.getPropertyIgnoreCase("CLONEONLY"), "x");
+    assertNull(properties.getPropertyIgnoreCase("CLONEONLY"));
+    assertEquals(properties.getKeyIgnoreCase("CLONEONLY"), "CLONEONLY");
+  }
+
+  @Test
+  public void getPropertyAsCharsWithDefaults() {
+    EncryptedProperties properties = new EncryptedProperties();
+    char[] defaults = "dflt".toCharArray();
+    assertSame(properties.getPropertyAsChars("missing", defaults), defaults);
+  }
+
+  @Test
+  public void escapedTildeInFile() throws java.io.IOException {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.load(new java.io.StringReader("doubled=\\\\~plain\nsingle=\\~plain\n"));
+    // the doubled backslash survives Properties.load and escapes the tilde
+    assertEquals(properties.getProperty("doubled"), "~plain");
+    // a single backslash is dropped by Properties.load, hence the value is considered encrypted
+    assertEquals(properties.getPropertyBlunt("single"), "~plain");
   }
 
 }

@@ -31,6 +31,10 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 import static org.testng.Assert.assertEquals;
+import java.io.IOException;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests for {@link FileHelper}.
@@ -62,6 +66,60 @@ public class FileHelperTest {
     }
     finally {
       Files.deleteIfExists(jar);
+    }
+  }
+
+  @Test
+  public void unzipExtractsFilesAndDirectories() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-unzip");
+    try {
+      Path zip = tmp.resolve("test.zip");
+      try (java.util.zip.ZipOutputStream out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zip))) {
+        out.putNextEntry(new ZipEntry("empty/"));
+        out.closeEntry();
+        out.putNextEntry(new ZipEntry("sub/file.txt"));
+        out.write("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        out.closeEntry();
+      }
+      Path dest = tmp.resolve("dest");
+      java.util.List<java.io.File> consumed = new java.util.ArrayList<>();
+      FileHelper.unzip(zip.toFile(), dest.toFile(), consumed::add);
+      assertEquals(Files.readString(dest.resolve("sub/file.txt")), "hello");
+      assertTrue(Files.isDirectory(dest.resolve("empty")));
+      assertEquals(consumed.size(), 2);
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  @Test
+  public void unzipRejectsSiblingDirectoryWithSamePrefix() throws Exception {
+    Path tmp = Files.createTempDirectory("filehelper-zipslip");
+    try {
+      Path zip = tmp.resolve("evil.zip");
+      try (java.util.zip.ZipOutputStream out = new java.util.zip.ZipOutputStream(Files.newOutputStream(zip))) {
+        // resolves to <tmp>/dest2/evil.txt, which starts with the string <tmp>/dest
+        out.putNextEntry(new ZipEntry("../dest2/evil.txt"));
+        out.write('x');
+        out.closeEntry();
+      }
+      Path dest = tmp.resolve("dest");
+      java.util.List<java.io.File> consumed = new java.util.ArrayList<>();
+      assertThrows(IOException.class, () -> FileHelper.unzip(zip.toFile(), dest.toFile(), consumed::add));
+      assertFalse(Files.exists(tmp.resolve("dest2")));
+      assertTrue(consumed.isEmpty());
+    }
+    finally {
+      deleteRecursively(tmp);
+    }
+  }
+
+  private static void deleteRecursively(Path dir) throws IOException {
+    try (var stream = Files.walk(dir)) {
+      for (Path p : stream.sorted(java.util.Comparator.reverseOrder()).toList()) {
+        Files.deleteIfExists(p);
+      }
     }
   }
 

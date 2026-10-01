@@ -20,7 +20,10 @@ package org.tentackle.common;
 import java.io.Serial;
 
 /**
- * Wraps a checked {@link InterruptedException} into a {@link RuntimeException} and sets the interrupted flag.
+ * Runtime exception to signal that the current thread was interrupted.<br>
+ * Usually wraps a checked {@link InterruptedException}, but any cause is accepted.
+ * <p>
+ * Each constructor sets the interrupted flag of the current thread, so that the interrupt is not swallowed.
  */
 public class InterruptedRuntimeException extends RuntimeException {
 
@@ -28,7 +31,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   private static final long serialVersionUID = 1L;
 
   /**
-   * Constructs a new interrupt exception with {@code null} as its detail message
+   * Constructs a new interrupted runtime exception with {@code null} as its detail message
    * and sets the interrupted flag.
    */
   public InterruptedRuntimeException() {
@@ -37,7 +40,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   }
 
   /**
-   * Constructs a new interrupt exception with the specified detail message and
+   * Constructs a new interrupted runtime exception with the specified detail message and
    * cause.
    *
    * @param message the detail message (null allowed)
@@ -49,7 +52,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   }
 
   /**
-   * Constructs a new interrupt exception with the specified cause
+   * Constructs a new interrupted runtime exception with the specified cause.
    *
    * @param cause the cause (null allowed)
    */
@@ -59,7 +62,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   }
 
   /**
-   * Constructs a new interrupt exception with the specified detail
+   * Constructs a new interrupted runtime exception with the specified detail
    * message, cause, suppression enabled or disabled, and writable
    * stack trace enabled or disabled.
    *

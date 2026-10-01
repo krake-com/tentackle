@@ -32,12 +32,12 @@ Four general rules:
 
   | Placeholder         | Replaced by                                                                                     |
   |---------------------|-------------------------------------------------------------------------------------------------|
-  | `@{name}`           | the value of `name`; left empty if there is no such property                                    |
+  | `@{name}`           | the value of `name`; left unchanged (`@{name}`) if there is no such property                    |
   | `@{name?default}`   | the value of `name`, or `default` if the property is missing or blank                           |
   | `@{name!default}`   | the value of `name`, or `default` only if the property is missing                               |
   | `${name}`, `${name?default}`, `${name!default}` | the same, but placeholders within the value of `name` are replaced as well (recursively) |
 
-  A backslash quotes the next character, e.g. `\@{` for a literal `@{`. Prefer `@{…}` for file
+  A backslash quotes the next character, e.g., `\@{` for a literal `@{`. Prefer `@{…}` for file
   paths: with `${…}`, backslashes in a Windows path would be taken as quotes. Installations built with the
   [jpackage goal](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md#how-the-jpackage-goal-works)
   get the system property `RUNTIMEDIR` pointing at the runtime directory, while a plain jlink image is

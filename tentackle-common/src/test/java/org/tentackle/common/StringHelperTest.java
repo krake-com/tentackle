@@ -28,6 +28,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import java.io.IOException;
 
 /**
  * String helper test.
@@ -178,6 +179,58 @@ public class StringHelperTest {
 
     from = "This \\\" is to be quoted";
     assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\\\\\" is to be quoted\"");
+  }
+
+  @Test
+  public void countOccurrences() {
+    assertEquals(StringHelper.countOccurrences(null, 'a'), 0);
+    assertEquals(StringHelper.countOccurrences("", 'a'), 0);
+    assertEquals(StringHelper.countOccurrences("a", 'a'), 1);
+    assertEquals(StringHelper.countOccurrences("aXa", 'a'), 2);
+    assertEquals(StringHelper.countOccurrences("XaX", 'a'), 1);
+    assertEquals(StringHelper.countOccurrences("XXX", 'a'), 0);
+  }
+
+  @Test
+  public void validJavaPackageNames() {
+    assertTrue(StringHelper.isValidJavaPackageName("org.tentackle.common"));
+    assertTrue(StringHelper.isValidJavaPackageName("a"));
+    assertTrue(StringHelper.isValidJavaPackageName("org.my_app2"));
+    assertTrue(StringHelper.isValidJavaPackageName("_internal.x"));
+    assertFalse(StringHelper.isValidJavaPackageName(null));
+    assertFalse(StringHelper.isValidJavaPackageName(""));
+    assertFalse(StringHelper.isValidJavaPackageName("Foo.bar"));
+    assertFalse(StringHelper.isValidJavaPackageName("org.Tentackle"));
+    assertFalse(StringHelper.isValidJavaPackageName("-a"));
+    assertFalse(StringHelper.isValidJavaPackageName("$x"));
+    assertFalse(StringHelper.isValidJavaPackageName("4org"));
+    assertFalse(StringHelper.isValidJavaPackageName("a."));
+    assertFalse(StringHelper.isValidJavaPackageName(".a"));
+    assertFalse(StringHelper.isValidJavaPackageName("a..b"));
+    assertFalse(StringHelper.isValidJavaPackageName("org.int.x"));
+    assertFalse(StringHelper.isValidJavaPackageName("org._"));
+    assertFalse(StringHelper.isValidJavaClassName("Foo.Bar"));
+    assertFalse(StringHelper.isValidJavaClassName("org..Bar"));
+  }
+
+  @Test
+  public void stripEnclosingDoubleQuotes() {
+    assertNull(StringHelper.stripEnclosingDoubleQuotes(null));
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes(""), "");
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("\"\""), "");
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("\"abc\""), "abc");
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("abc"), "abc");
+    // unpaired quotes are not enclosing
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("\""), "\"");
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("abc\""), "abc\"");
+    assertEquals(StringHelper.stripEnclosingDoubleQuotes("\"abc"), "\"abc");
+  }
+
+  @Test
+  public void readTextFromResourceWithImplicitCaller() throws IOException {
+    // relative resource name: must be resolved against the caller's package, not StringHelper's
+    String text = org.tentackle.common.impl.ResourceReader.readText();
+    assertEquals(text, "caller relative\n");
   }
 
 }

@@ -18,8 +18,12 @@
 
 package org.tentackle.common;
 
-import java.util.Locale; /**
+import java.util.Locale;
+
+/**
  * Stripping mode for strings with respect to a filler character.
+ * <p>
+ * Each mode corresponds to a bind option (see {@link #getBindOption()} and {@link #fromBindOption(String)}).
  */
 public enum StripMode {
 
@@ -104,13 +108,12 @@ public enum StripMode {
 
   /**
    * Converts a mode string as defined in {@link Constants} to a StripMode.
-   * <p>
-   * Throws a TentackleRuntimeException if the string is invalid.
    *
    * @param s one of {@link Constants#BIND_STRIP_NONE}, {@link Constants#BIND_STRIP_LEFT},
    *          {@link Constants#BIND_STRIP_RIGHT}, {@link Constants#BIND_STRIP_BOTH},
-   *          case-insensitive
+   *          case-insensitive, never null
    * @return the corresponding StripMode
+   * @throws TentackleRuntimeException if the string is invalid
    */
   public static StripMode fromBindOption(String s) {
     return switch (s.toUpperCase(Locale.ROOT)) {

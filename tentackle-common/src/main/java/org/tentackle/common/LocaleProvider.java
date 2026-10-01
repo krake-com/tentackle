@@ -32,11 +32,16 @@ interface LocaleProviderHolder {
 /**
  * A provider for {@link Locale}s.<br>
  * Supports thread-local locales and mapping of locales according to the application requirements.
+ * <p>
+ * The default implementation maps each locale to itself and supports only {@link Locale#ENGLISH},
+ * which is also the fallback locale. Applications supporting more languages, especially for {@link I18NText},
+ * must provide their own implementation via {@code @Service(LocaleProvider.class)} and override
+ * {@link #getEffectiveLocale(Locale)}, {@link #getEffectiveLocales()} and {@link #isLocaleSupported(Locale)}.
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze-maven-plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(LocaleProvider.class)    // defaults to self
 public class LocaleProvider {
 
@@ -61,12 +66,12 @@ public class LocaleProvider {
   private final List<Locale> EFFECTIVE_LOCALES = List.of(Locale.ENGLISH);
 
   /**
-   * The initial locale on startup.
+   * The initial locale when the provider was created.
    */
   private final Locale initialLocale;
 
   /**
-   * The effective initial locale on startup.
+   * The effective initial locale, created lazily.
    */
   private Locale effectiveInitialLocale;
 
@@ -77,14 +82,17 @@ public class LocaleProvider {
 
 
   /**
-   * Creates a locale provider.
+   * Creates a locale provider.<br>
+   * The current default locale becomes the initial locale.
    */
   public LocaleProvider() {
     initialLocale = Locale.getDefault();
   }
 
   /**
-   * Gets the initial locale on startup of the JVM.
+   * Gets the initial locale.<br>
+   * This is the JVM's default locale at the time the provider was created,
+   * usually when it is used for the first time.
    *
    * @return the initial locale
    */
@@ -93,9 +101,11 @@ public class LocaleProvider {
   }
 
   /**
-   * Gets the effective initial locale on startup of the JVM.
+   * Gets the effective initial locale.
    *
    * @return the effective initial locale
+   * @see #getInitialLocale()
+   * @see #getEffectiveLocale(Locale)
    */
   public Locale getEffectiveInitialLocale() {
     if (effectiveInitialLocale == null) {
@@ -105,9 +115,10 @@ public class LocaleProvider {
   }
 
   /**
-   * Gets the locale used by the current thread.<br>
+   * Gets the locale used by the current thread.
    *
    * @return the locale, null if no thread-local Locale set
+   * @see #getLocale()
    */
   public Locale getCurrentLocale() {
     return tlLocale.get();
@@ -197,7 +208,8 @@ public class LocaleProvider {
 
 
   /**
-   * Returns an unmodifiable list of all supported effective locales.
+   * Returns an unmodifiable list of all supported effective locales.<br>
+   * The default is {@link Locale#ENGLISH} only.
    *
    * @return the possible effective locales
    */
@@ -206,10 +218,13 @@ public class LocaleProvider {
   }
 
   /**
-   * Returns whether the given locale is covered by the effective locales.
+   * Returns whether the given locale is supported.<br>
+   * The default implementation checks whether the locale is exactly one of the {@link #getEffectiveLocales()}.
+   * Applications mapping wider locales to effective locales, such as {@code de_DE} to {@code de},
+   * should override this method accordingly.
    *
    * @param locale the locale
-   * @return true if locale would map to a valid effective locale
+   * @return true if locale is one of the effective locales
    */
   public boolean isLocaleSupported(Locale locale) {
     for (Locale effectiveLocale : getEffectiveLocales()) {
@@ -225,6 +240,8 @@ public class LocaleProvider {
    * Converts a locale to a tag.<br>
    * Since there is no guarantee that {@link Locale#toLanguageTag()} and {@link Locale#forLanguageTag(String)} will round-trip,
    * this method is provided to guarantee that at least for the supported locales.
+   * The tag consists of the language, country and variant separated by underscores, such as {@code de_DE}
+   * (not a BCP 47 language tag).
    *
    * @param locale the locale
    * @return the tag
@@ -245,7 +262,8 @@ public class LocaleProvider {
   }
 
   /**
-   * Converts a tag to a supported locale.
+   * Converts a tag to a locale.<br>
+   * The locale is not checked to be supported.
    *
    * @param tag the tag
    * @return the locale, null if the tag is empty or null
@@ -292,6 +310,7 @@ public class LocaleProvider {
    *
    * @param locale the locale
    * @return the currency, never null
+   * @throws IllegalArgumentException if no country could be determined or the country is not supported
    */
   public Currency getCurrency(Locale locale) {
     if (locale.getCountry().isEmpty()) {    // country is mandatory to determine the currency from a locale
@@ -305,9 +324,11 @@ public class LocaleProvider {
   }
 
   /**
-   * Gets the currency for the current locale.
+   * Gets the currency for the current locale.<br>
+   * The currencies are cached per locale.
    *
    * @return the currency, never null
+   * @throws IllegalArgumentException if no country could be determined or the country is not supported
    */
   public Currency getCurrency() {
     return currencyMap.computeIfAbsent(getLocale(), this::getCurrency);

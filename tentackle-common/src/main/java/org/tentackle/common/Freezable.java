@@ -23,7 +23,8 @@ package org.tentackle.common;
  * <p>
  * Some classes are value objects by nature, but are not immutable, for example {@link java.util.Date}.<br>
  * Whenever the use case requires immutability, such objects cannot be used safely.<br>
- * That's why Tentackle provides extended implementations of those types, that can be made immutable.
+ * That's why Tentackle provides extended implementations of those types that can be made immutable,
+ * such as {@link Date}, {@link Time}, {@link Timestamp}, {@link Binary} and {@link TBinary}.
  * <p>
  * Once an object is frozen, it cannot be unfrozen anymore. However, its clones are unfrozen (if cloneable).<br>
  * Any attempt to modify a frozen object results in a {@link TentackleRuntimeException}.

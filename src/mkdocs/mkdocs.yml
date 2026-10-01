@@ -144,8 +144,7 @@ nav:
       - Tentackle Scripting: scripting.md
       - CompoundValue — Objects From Strings: compound-value.md
   - Internationalization:
-      - Resource Bundles: bundle.md
-      - Internationalization (i18n): internationalization.md
+      - Resource Bundles and Internationalization: bundle.md
       - Database-backed Resource Bundles: i18n.md
       - BundleMonkey: bundlemonkey.md
   - User Interface (JavaFX):

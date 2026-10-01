@@ -25,9 +25,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for manually written methods that must be remoting capable.
+ * Annotation for manually written methods that must be remoting-capable.
  * <p>
- * The analyze-handler's result is picked up by the <code>RemoteMethod</code> wurblet.
+ * The result of the {@code RemoteMethodAnalyzeHandler} is picked up by the <code>RemoteMethod</code> wurblet,
+ * which generates the remote delegate methods.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -36,7 +37,8 @@ import java.lang.annotation.Target;
 public @interface RemoteMethod {
 
   /**
-   * Fixed string for the actual method name.
+   * Placeholder denoting the actual method name.<br>
+   * This is the default for {@link #value()}.
    */
   String DEFAULT_METHODNAME = "[methodname]";
 

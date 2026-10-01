@@ -27,10 +27,11 @@ import java.io.Serializable;
 /**
  * Datatype for storing an object in a database.<br>
  * Same as {@link Binary}, but uses the application-specific {@link ObjectSerializer} implementation.
- * Since {@code tentackle-core} is part of any Tentackle application, {@code org.tentackle.trip.impl.TripObjectSerializer}
- * will be used by default.
+ * If {@code tentackle-core} is present, as in any multi-tier Tentackle application,
+ * {@code org.tentackle.trip.impl.TripObjectSerializer} is used. Otherwise, the {@link DefaultObjectSerializer}
+ * applies, which requires the objects to be {@link Serializable}.
  * <p>
- * Does not require the objects to be serializable implement {@link Serializable}.
+ * With TRIP, the objects are not required to implement {@link Serializable}.
  *
  * @param <T> the object type
  * @see Binary
@@ -46,13 +47,13 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
    * Used to read a {@code TBinary} from the database.
    * The stream is closed after creating the {@code TBinary}.
    *
-   * @param stream the InputStream (associated with the database) to read from may be null
-   * @param bufSize the initial buffer size, 0 = default size
+   * @param stream the InputStream (associated with the database) to read from, may be null
+   * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if {@code TBinary} is frozen
    *
    * @return the new {@code TBinary} or null if the stream is null or empty.
    * @throws IOException if reading from the input stream failed
-   * @param <T> the serializable type
+   * @param <T> the object type
    */
   public static <T> TBinary<T> create(InputStream stream, int bufSize, boolean frozen) throws IOException {
     if (stream == null) {
@@ -64,11 +65,11 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
 
 
   /**
-   * Creates a Binary from an object.
+   * Creates a {@code TBinary} from an object.
    *
    * @param object the object to be stored in the database
    *
-   * @throws IOException if some serialization error.
+   * @throws IOException if serialization failed
    */
   public TBinary(T object) throws IOException {
     setObject(object);
@@ -79,8 +80,8 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
    * Used to read a binary from the database.
    * The stream is closed after creating the binary.
    *
-   * @param stream the InputStream (associated with the database) to read from may be null
-   * @param bufSize the initial buffer size, 0 = default size
+   * @param stream the InputStream (associated with the database) to read from, never null (see {@code create})
+   * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if binary is frozen
    *
    * @throws IOException if reading from the input stream failed
@@ -106,27 +107,31 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
   }
 
   /**
-   * Retrieves the object encapsulated by the {@code Binary}.
+   * Retrieves the object encapsulated by the {@code TBinary}.<br>
+   * The object is deserialized on first invocation and cached afterward.
    *
    * @return the deserialized object (retrieved from the db), or null if NULL-value
    *
    * @throws IOException if reading the object failed
    * @throws ClassNotFoundException if the class of a serialized object cannot be found.
+   * @throws TentackleRuntimeException if the {@link ObjectSerializer} failed
    */
   @SuppressWarnings("unchecked")
   @Override
   public T getObject() throws IOException, ClassNotFoundException {
     if (object == null && data != null && length > 0) {
-      return (T) ObjectSerializer.getInstance().deserialize(getInputStream());
+      object = (T) ObjectSerializer.getInstance().deserialize(getInputStream());
     }
     return object;
   }
 
   /**
-   * Sets the serializable.
+   * Sets the object.<br>
+   * The object is serialized immediately.
    *
-   * @param object the serializable object.
+   * @param object the object, null to clear the binary
    * @throws IOException if the object could not be serialized
+   * @throws TentackleRuntimeException if the binary is frozen
    */
   @Override
   public void setObject(T object) throws IOException {

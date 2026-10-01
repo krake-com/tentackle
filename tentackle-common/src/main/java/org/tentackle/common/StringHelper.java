@@ -12,7 +12,7 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the DFree Software
+ * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
@@ -54,7 +54,7 @@ public final class StringHelper {
   };
 
   /**
-   * All java reserved words.
+   * All Java reserved words.
    */
   private static final String[] JAVA_RESERVED_WORDS = {
     "abstract",
@@ -109,7 +109,8 @@ public final class StringHelper {
     "try",
     "void",
     "volatile",
-    "while"
+    "while",
+    "_"
   };
 
   /**
@@ -128,7 +129,7 @@ public final class StringHelper {
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
    *
-   * @param maxLogCollectionSize the limit
+   * @param maxLogCollectionSize the limit, 0 or negative to log all items
    */
   public static void setMaxLogCollectionSize(int maxLogCollectionSize) {
     StringHelper.maxLogCollectionSize = maxLogCollectionSize;
@@ -159,7 +160,7 @@ public final class StringHelper {
    *
    * @param str the string to search in, null if none
    * @param subSeq the sub char sequence to search for, null if none
-   * @return true if the string contains the sub char sequence, false if not or both are null
+   * @return true if the string contains the sub char sequence, false if not or either is null
    */
   public static boolean contains(String str, CharSequence subSeq) {
     if (str == null || subSeq == null) {
@@ -173,7 +174,7 @@ public final class StringHelper {
    *
    * @param str the string to search in, null if none
    * @param subStr the sub char sequence to search for, null if none
-   * @return true if the string contains the sub char sequence, false if not or both are null
+   * @return true if the string contains the sub char sequence, false if not or either is null
    */
   public static boolean containsIgnoreCase(String str, CharSequence subStr) {
     if (str == null || subStr == null) {
@@ -214,7 +215,7 @@ public final class StringHelper {
    * Converts the first character of string to uppercase.
    *
    * @param str the string
-   * @return the converted string
+   * @return the converted string, null if str is null or empty
    */
   public static String firstToUpper(String str) {
     if (str != null && !str.isEmpty()) {
@@ -227,10 +228,10 @@ public final class StringHelper {
   }
 
   /**
-   * Converts the first character of string to uppercase.
+   * Converts the first character of string to lowercase.
    *
    * @param str the string
-   * @return the converted string
+   * @return the converted string, null if str is null or empty
    */
   public static String firstToLower(String str) {
     if (str != null && !str.isEmpty()) {
@@ -261,15 +262,17 @@ public final class StringHelper {
   /**
    * Checks whether the given string introduces a continuation line.
    * <p>
-   * This is the case if the last character is an unquoted backslash.
+   * This is the case if the last character is an unescaped backslash,
+   * i.e., if the line ends with an odd number of backslashes.
+   *
    * @param line the source line
-   * @return null if the line does not introduce a continuation line
+   * @return the line without the trailing backslash, null if the line does not introduce a continuation line
    */
   public static String getContinuedLine(String line) {
     if (line != null) {
       int len = line.length();
       if (len > 0 && line.charAt(len - 1) == '\\') {
-        // ends with double quote: check if number of quotes is odd
+        // ends with a backslash: check if the number of trailing backslashes is odd
         int ndx = len - 1;
         int slashCount = 1;
         while (--ndx >= 0) {
@@ -313,7 +316,7 @@ public final class StringHelper {
 
   /**
    * Takes a string, surrounds it with double-quotes, and escapes all double-quotes
-   * already in the string according to Unix rules.<br>
+   * and backslashes already in the string according to Unix rules.<br>
    * Formfeed, linefeed, carriage return, and tab will be converted to their
    * well-known escape sequence. All other ISO Controls are converted to spaces.
    * <p>
@@ -322,7 +325,7 @@ public final class StringHelper {
    * <code>Length 5" --&gt; "Length 5\""</code>
    * </pre>
    *
-   * @param str the string
+   * @param str the string, null for an empty string
    * @return the string in double quotes
    */
   public static String toDoubleQuotes(String str) {
@@ -410,13 +413,14 @@ public final class StringHelper {
    * will be removed. A backslash may escape those special characters.
    * The backslash itself can be written as a double backslash.
    * Special escapes are:<p>
-   * \n = new line
-   * \r = carriage return
-   * \t = tab
-   * \f = form feed
+   * \n = new line<br>
+   * \r = carriage return<br>
+   * \t = tab<br>
+   * \f = form feed<br>
    *
    * @param str the source string
    * @return a string, never null
+   * @throws TentackleRuntimeException if the string starts with a quote that is not balanced at the end
    */
   public static String parseString(String str) {
     StringBuilder buf = new StringBuilder();
@@ -456,9 +460,10 @@ public final class StringHelper {
   }
 
   /**
-   * Converts a string to a string parsable by {@link #parseString(java.lang.String)}.
+   * Converts a string to a string parsable by {@link #parseString(java.lang.String)}.<br>
+   * The string is enclosed in double quotes if it contains quotes, backslashes or whitespace.
    *
-   * @param str the string
+   * @param str the string, never null
    * @return the parsable string
    */
   public static String toParsableString(String str) {
@@ -490,7 +495,7 @@ public final class StringHelper {
   /**
    * Splits a string keeping strings together.<br>
    * The strings may be enclosed in double- or single quotes which
-   * will not be removed. A backslash may escape those special characters.
+   * will not be removed. Delimiters within quotes are kept. Consecutive delimiters are treated as one. A backslash may escape those special characters.
    * The backslash itself can be written as a double backslash.
    * Special escapes are:<p>
    * \n = new line<br>
@@ -585,7 +590,11 @@ public final class StringHelper {
 
   /**
    * Checks that the given string is a valid Java classname.<br>
-   * Both classnames with a full classpath or without are validated.
+   * Both classnames with or without a package prefix are validated.
+   * This is a restrictive verification: the simple name must start with an uppercase letter and
+   * may only contain letters, digits and underscores. Hence, nested classes in binary notation
+   * (containing {@code $}) are not accepted. The package name, if any, must be valid according to
+   * {@link #isValidJavaPackageName(String)}.
    *
    * @param className the classname
    * @return true if valid
@@ -618,32 +627,30 @@ public final class StringHelper {
 
   /**
    * Checks that the given string is a valid Java package name.<br>
-   * This is very restrictive verification. Package names
-   * must be all lowercase alphabetic or digits and must contain only dots and underscores.
+   * This is a very restrictive verification: the package name consists of one or more
+   * dot-separated segments. Each segment must be non-empty, start with a lowercase letter
+   * or an underscore, contain only lowercase letters, digits and underscores, and must not
+   * be a reserved word (see {@link #isReservedWord(String)}).
    *
    * @param packageName the package name
    * @return true if valid
    */
   public static boolean isValidJavaPackageName(String packageName) {
-    boolean lastWasDot = true;
-    for (int pos = 0; pos < packageName.length(); pos++) {
-      char c = packageName.charAt(pos);
-      if (c == '.') {
-        lastWasDot = true;
+    if (packageName == null || packageName.isEmpty()) {
+      return false;
+    }
+    for (String segment : packageName.split("\\.", -1)) {
+      if (segment.isEmpty() || isReservedWord(segment)) {
+        return false;   // leading, trailing or double dot, or keyword
       }
-      else  {
-        if (lastWasDot) {
-          lastWasDot = false;
-          if (Character.isDigit(c)) {
-            return false;   // must not start with a digit
-          }
-        }
-        else  {
-          if (!Character.isDigit(c) &&    // digit is ok if not at start of package name
-              (Character.isUpperCase(c) || (!Character.isAlphabetic(c) && c != '_'))) {
-            // must be lowercase alphabetic or underscore
-            return false;
-          }
+      char first = segment.charAt(0);
+      if (first != '_' && !(Character.isAlphabetic(first) && Character.isLowerCase(first))) {
+        return false;   // must start with a lowercase letter or underscore
+      }
+      for (int pos = 1; pos < segment.length(); pos++) {
+        char c = segment.charAt(pos);
+        if (c != '_' && !Character.isDigit(c) && !(Character.isAlphabetic(c) && Character.isLowerCase(c))) {
+          return false;   // must be lowercase alphabetic, digit or underscore
         }
       }
     }
@@ -651,7 +658,8 @@ public final class StringHelper {
   }
 
   /**
-   * Returns whether the given string is a valid java identifier.
+   * Returns whether the given string is a valid Java identifier.<br>
+   * Reserved words are not checked (see {@link #isReservedWord(String)}).
    *
    * @param str the string
    * @return true if valid, false if not
@@ -673,11 +681,14 @@ public final class StringHelper {
   }
 
   /**
-   * Reads a textfile from a resource.
+   * Reads a text file from a resource.
+   * <p>
+   * The resource is located via {@link FileHelper#createInputStream(Class, String)} and read with the
+   * default charset. Each line is terminated by a newline, including the last one.
    * <p>
    * Example:
    * <pre>
-   *   String model = StringHelper.readTextFromResource("/org/tentackle/model/TestModel.txt");
+   *   String model = StringHelper.readTextFromResource(null, "/org/tentackle/model/TestModel.txt");
    * </pre>
    *
    * @param caller the caller class, null to determine via {@link StackWalker}
@@ -687,6 +698,10 @@ public final class StringHelper {
    * @throws FileNotFoundException if no such resource found
    */
   public static String readTextFromResource(Class<?> caller, String resourceName) throws IOException {
+    if (caller == null) {
+      // must be determined here, or FileHelper would see StringHelper as the caller
+      caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+    }
     try (BufferedReader br = new BufferedReader(new InputStreamReader(FileHelper.createInputStream(caller, resourceName)))) {
       StringBuilder buf = new StringBuilder();
       String line;
@@ -709,10 +724,11 @@ public final class StringHelper {
   }
 
   /**
-   * Returns whether the given string is a reserved java keyword.
+   * Returns whether the given string is a reserved Java keyword or literal.<br>
+   * Contextual keywords, such as {@code record} or {@code var}, are not considered reserved.
    *
    * @param word the string to test
-   * @return true if java reserved word
+   * @return true if Java reserved word
    */
   public static boolean isReservedWord(String word) {
     if (word != null) {
@@ -733,34 +749,30 @@ public final class StringHelper {
    * </pre>
    *
    * @param digit the digit character
-   * @return the word-string
+   * @return the word-string in the current locale
+   * @throws java.util.MissingResourceException if the character is not a digit
    */
   public static String digitToString(Character digit) {
     return CommonCommonBundle.getString(String.valueOf(digit));
   }
 
   /**
-   * Strips enclosing double quotes.
+   * Strips enclosing double quotes.<br>
+   * The quotes are removed only if the string both starts and ends with a double quote.
    *
-   * @param str the original string
-   * @return the string with its double quotes removed
+   * @param str the original string, may be null
+   * @return the string with its enclosing double quotes removed
    */
   public static String stripEnclosingDoubleQuotes(String str) {
-    if (str != null && !str.isEmpty()) {
-      if (str.charAt(0) == '"') {
-        // strip enclosing quotes
-        str = str.substring(1);
-      }
-      if (!str.isEmpty() && str.charAt(str.length() - 1) == '"') {
-        str = str.substring(0, str.length() - 1);
-      }
+    if (str != null && str.length() >= 2 && str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"') {
+      str = str.substring(1, str.length() - 1);
     }
     return str;
   }
 
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with a fill character, whatever appropriate.
+   * filling up with a fill character, whichever is appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -789,7 +801,7 @@ public final class StringHelper {
 
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with spaces, whatever appropriate.
+   * filling up with spaces, whichever is appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -801,7 +813,7 @@ public final class StringHelper {
 
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with a fill character from the left, whatever appropriate.
+   * filling up with a fill character from the left, whichever is appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -830,7 +842,7 @@ public final class StringHelper {
 
   /**
    * Takes a string and returns one with a given length, cutting or
-   * filling up with spaces from the left, whatever appropriate.
+   * filling up with spaces from the left, whichever is appropriate.
    *
    * @param str the string
    * @param length the length of the returned string
@@ -841,10 +853,13 @@ public final class StringHelper {
   }
 
   /**
-   * Filters illegal chars for Java variable names.
+   * Filters illegal chars for Java variable names.<br>
+   * Only the ASCII letters and digits are kept, whitespace is converted to an underscore,
+   * and all other characters are dropped. Notice that the result may still start with a digit
+   * or be a reserved word.
    *
    * @param str the string
-   * @return the java conform string
+   * @return the Java conform string, null if str is null
    */
   public static String toVarName(String str)  {
     if (str != null)  {
@@ -897,7 +912,9 @@ public final class StringHelper {
    * Converts a camelCase string to a string with delimiters.
    * <p>
    * Example:<br>
-   * {@code "alphaBetaGamma"} is converted to {@code "alpha.beta.gamma"}, with delimiter {@code "."}.
+   * {@code "alphaBetaGamma"} is converted to {@code "alpha.beta.gamma"}, with delimiter {@code "."}.<br>
+   * Each uppercase character is lowercased and prepended by the delimiter. Hence, a leading uppercase
+   * character leads to a leading delimiter.
    *
    * @param str the camelcase string
    * @param delimiter the delimiter to insert between parts, null or empty if none
@@ -925,7 +942,7 @@ public final class StringHelper {
    * @param str the string to check
    * @param whitespaceAllowed true if whitespaces are allowed
    *
-   * @return true if no illegal char detected, false otherwise
+   * @return true if no illegal char detected (also if str is null or empty), false otherwise
    */
   public static boolean isAllDigits(String str, boolean whitespaceAllowed) {
     if (str != null)  {
@@ -948,7 +965,7 @@ public final class StringHelper {
    *
    * @param str the string to check
    *
-   * @return true if no illegal char detected, false otherwise
+   * @return true if no illegal char detected (also if str is null or empty), false otherwise
    */
   public static boolean isAllDigits(String str) {
     return isAllDigits(str, false);
@@ -959,7 +976,7 @@ public final class StringHelper {
    * The method is null-safe.
    *
    * @param s the string, null if none
-   * @param max the maximum number of characters, 0 = minimum length
+   * @param max the maximum number of characters, 0 or negative if no limit
    * @return the trimmed string, null if s == null
    */
   public static String trim(String s, int max) {
@@ -989,7 +1006,7 @@ public final class StringHelper {
    * <p>
    * Removes all trailing characters of the given value from the string.
    * If the string consists of those characters only, the
-   * returned string will empty.
+   * returned string will be empty.
    *
    * @param str the string
    * @param filler the filler to remove
@@ -1162,7 +1179,8 @@ public final class StringHelper {
   }
 
   /**
-   * Converts a UNICODE character to a byte-array.
+   * Converts a Unicode character to a byte-array.<br>
+   * The byte order is little-endian, i.e., the low byte comes first.
    *
    * @param c the character
    * @return the byte[2] array
@@ -1172,7 +1190,8 @@ public final class StringHelper {
   }
 
   /**
-   * Converts a char-array to a byte-array.
+   * Converts a char-array to a byte-array.<br>
+   * Each character is converted to two bytes as in {@link #toBytes(char)}.
    *
    * @param chars the character array
    * @return the byte array, empty if {@code chars} is null
@@ -1193,12 +1212,13 @@ public final class StringHelper {
   /**
    * Builds a hash from an array of chars.<br>
    * Note that this method converts the characters to bytes via {@link #toBytes(char[])}
-   * before applying the hash.
+   * before applying the hash. The salt is prepended to the input, unless the input is empty.
    *
-   * @param algorithm the hashing algorithm (all java runtimes support MD5, SHA-1, and SHA-256, at least)
+   * @param algorithm the hashing algorithm (all Java runtimes support MD5, SHA-1, and SHA-256, at least)
    * @param salt the "salt", null if plain hash
    * @param input is the input array of chars
-   * @return the hash as a string, null if input == null
+   * @return the hash as a hex string, null if input == null
+   * @throws TentackleRuntimeException if the algorithm is not supported
    */
   public static String hash(String algorithm, char[] salt, char[] input) {
     if (input != null) {
@@ -1223,6 +1243,12 @@ public final class StringHelper {
 
   /**
    * Converts a value to a loggable string.
+   * <ul>
+   * <li>null is converted to {@code <null>}</li>
+   * <li>strings are enclosed in double quotes. Multiline strings are cut after the first line, followed by {@code ...}</li>
+   * <li>collections with more than {@link #getMaxLogCollectionSize()} elements are logged as {@code [n items]}</li>
+   * <li>all other objects are converted via {@link Object#toString()}</li>
+   * </ul>
    *
    * @param object the object
    * @return the string
@@ -1259,19 +1285,17 @@ public final class StringHelper {
   /**
    * Counts the number of occurrences of a given character in a string.
    *
-   * @param str the string to test
+   * @param str the string to test, may be null
    * @param c the character to check for
-   * @return the number of times c is part of str
+   * @return the number of times c is part of str, 0 if str is null
    */
   public static int countOccurrences(String str, char c) {
     int count = 0;
     if (str != null && !str.isEmpty()) {
-      int ndx = 0;
+      int ndx = str.indexOf(c);
       while (ndx >= 0) {
+        count++;
         ndx = str.indexOf(c, ndx + 1);
-        if (ndx > 0) {
-          count++;
-        }
       }
     }
     return count;
@@ -1329,7 +1353,7 @@ public final class StringHelper {
    * Null-safe char array filler.<br>
    * Fills with blanks.
    *
-   * @param buf the char buff, null if none
+   * @param buf the char buffer, null if none
    * @see #fill(char[], char)
    */
   public static void blank(char[] buf) {
@@ -1340,8 +1364,9 @@ public final class StringHelper {
    * Converts a multiline string to an HTML string that
    * can be displayed in a label.<br>
    * Useful to print multiline labels.
+   * Notice that only the newlines are converted. The text itself is not HTML-escaped.
    *
-   * @param text the input string
+   * @param text the input string, null for an empty HTML string
    * @return the HTML string
    */
   public static String toHTML(String text) {
@@ -1374,15 +1399,15 @@ public final class StringHelper {
   }
 
   /**
-   * Converts to string containing only the letters A-z or digits.<br>
+   * Converts to string containing only the letters A-Z, a-z or digits.<br>
    * All other characters will be converted to an underscore.
-   * All diacrits will be converted first (see {@link StringNormalizer#unDiacrit}).
+   * All diacritics will be converted first (see {@link StringNormalizer#unDiacrit}).
    * The resulting string will not contain more than one underscore in a row.
    * <p>
    * Nice to create filenames.
    *
    * @param str the string
-   * @return the filename
+   * @return the filename, null if str is null
    */
   public static String toAsciiLetterOrDigit(String str) {
     if (str != null) {
@@ -1411,9 +1436,11 @@ public final class StringHelper {
   }
 
   /**
-   * Gets the name of the operating system from the system properties.
+   * Gets the name of the operating system from the system properties.<br>
+   * The name is lowercase and contains only letters. For Windows, the version is cut off.
    *
-   * @return the normalized platform name
+   * @return the normalized platform name, such as {@code "linux"}, {@code "macosx"} or {@code "windows"}
+   * @throws TentackleRuntimeException if the system property {@code os.name} is missing
    */
   public static String getPlatform() {
     String osName = System.getProperty("os.name");
@@ -1438,7 +1465,8 @@ public final class StringHelper {
   /**
    * Gets the name of the architecture from the system properties.
    *
-   * @return the normalized architecture name
+   * @return the normalized (lowercase) architecture name
+   * @throws TentackleRuntimeException if the system property {@code os.arch} is missing
    */
   public static String getArchitecture() {
     String osArch = System.getProperty("os.arch");
@@ -1505,7 +1533,7 @@ public final class StringHelper {
   }
 
   /**
-   * Same as {@link String#startsWith(String, int)}, but for more multiple prefixes.
+   * Same as {@link String#startsWith(String, int)}, but for multiple prefixes.
    *
    * @param str the string to check
    * @param offset where to begin looking in {@code str}
@@ -1524,7 +1552,7 @@ public final class StringHelper {
   }
 
   /**
-   * Same as {@link String#startsWith(String)}, but for more multiple prefixes.
+   * Same as {@link String#startsWith(String)}, but for multiple prefixes.
    *
    * @param str the string to check
    * @param prefixes the prefixes
@@ -1535,7 +1563,7 @@ public final class StringHelper {
   }
 
   /**
-   * Same as {@link String#endsWith(String)}, but for more multiple suffixes.
+   * Same as {@link String#endsWith(String)}, but for multiple suffixes.
    *
    * @param str the string to check
    * @param suffixes the suffixes
@@ -1554,12 +1582,19 @@ public final class StringHelper {
 
   /**
    * Evaluates a string replacing variables.<br>
-   * The semantics are very much the same as known from the maven resources plugin, but
+   * The semantics are very much the same as known from the Maven resources plugin, but
    * with the extension of optional default values and that <code>@</code> turns off nested variable processing.
    * <p>
    * Syntax: <code>$|&#64;{name[?|!default]}</code>, where <code>name</code> is the variable name
    * and <code>default</code> is the default value to be used if there is no such variable (!) or
-   * variable is empty (@{link {@link #isAllWhitespace(String)}}) or doesn't exist (?).
+   * the variable is empty ({@link #isAllWhitespace(String)}) or doesn't exist (?).
+   * <ul>
+   * <li>With <code>${...}</code>, the value of the variable is evaluated again, i.e., it may contain variables itself.
+   * A variable referring to itself, directly or indirectly, is not expanded again, which prevents endless loops.</li>
+   * <li>With <code>&#64;{...}</code>, the value is taken as is.</li>
+   * <li>If there is no such variable and no default value, the variable reference is kept unchanged.
+   * The same applies to a reference that is not closed by a <code>}</code>.</li>
+   * </ul>
    * <p>
    * Characters can be quoted with a backslash.
    * A double backslash is treated as a single backslash.
@@ -1656,7 +1691,6 @@ public final class StringHelper {
                   buf.append(varLead).append('{').append(variableName).append('}');
                 }
               }
-              // else: treat as empty
               variableName = null;
               defaultValue = null;
             }
@@ -1689,7 +1723,7 @@ public final class StringHelper {
   }
 
   /**
-   * prevent instantiation.
+   * Prevents instantiation.
    */
   private StringHelper() {}
 

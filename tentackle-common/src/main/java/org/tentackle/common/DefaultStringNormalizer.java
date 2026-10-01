@@ -21,18 +21,26 @@ package org.tentackle.common;
 import java.util.Locale;
 
 /**
- * The default normalizer (works sufficiently for most western languages).
+ * The default normalizer (works sufficiently for most Western languages).
+ * <p>
+ * {@link #normalize(String)} converts diacritics and umlauts, converts to uppercase, keeps only letters, digits
+ * and the field separator, and applies some phonetic reductions, such as {@code SCH} to {@code S},
+ * {@code CH} to {@code K}, repeated letters to a single one, {@code IE} to {@code I} and dropping the {@code H}
+ * between a vowel and a consonant. Words are concatenated, while the field separator is kept
+ * (repeated separators collapse into one).
+ * <p>
+ * Notice that changing the normalization rules changes the normalized texts persisted in the database.
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
-// Needs explicit config in resources/services/META-INF.
+// @Service does not work in tentackle-common, since the analyze goal of the tentackle-maven-plugin is not available at this build step yet.
+// Needs explicit config in src/main/resources/META-INF/services.
 @Service(StringNormalizer.class)
 public class DefaultStringNormalizer implements StringNormalizer {
 
-  // fixed maps for converting single-char diacrits (both same length!)
+  // fixed maps for converting single-char diacritics and special letters (both same length!)
   private static final char[] CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß".toCharArray();
-  private static final char[] NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys".toCharArray();
+  private static final char[] NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYTaaaaaaaceeeeiiiinodooooouuuuytys".toCharArray();
 
 
   /** to separate words during reduction. */
@@ -56,7 +64,7 @@ public class DefaultStringNormalizer implements StringNormalizer {
   }
 
   /**
-   * Creates normalizer.<br>
+   * Creates a normalizer.<br>
    * With a comma as the field separator and space as word separator.
    */
   public DefaultStringNormalizer() {
@@ -114,7 +122,7 @@ public class DefaultStringNormalizer implements StringNormalizer {
           }
         }
 
-        // convert possible diacrit (single char)
+        // convert possible diacritic (single char)
         for (int m=0; m < CRITS.length; m++) {
           if (CRITS[m] == c)  {
             c = NORMS[m];
@@ -141,7 +149,7 @@ public class DefaultStringNormalizer implements StringNormalizer {
    * Normalizes a string (phonetically) for use as PDO.normText.
    *
    * @param str the string to be normalized
-   * @return the normalized string
+   * @return the normalized string, null if str is null
    */
   @Override
   public String normalize(String str)  {
@@ -290,7 +298,7 @@ public class DefaultStringNormalizer implements StringNormalizer {
           char c3 = i + 2 < len ? sb.charAt(i+2) : ' ';
           if ((c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') &&
               c2 == 'H' &&
-              (c3 != 'A' || c3 != 'E' || c3 != 'I' || c3 != 'O' || c3 != 'U')) {
+              c3 != 'A' && c3 != 'E' && c3 != 'I' && c3 != 'O' && c3 != 'U') {
             sb.deleteCharAt(i+1);
             len--;
           }

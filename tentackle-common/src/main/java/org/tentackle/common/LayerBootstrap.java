@@ -30,7 +30,7 @@ import java.util.Properties;
  * Launcher building a {@link ModuleLayer} graph and handing off to the real application.
  * <p>
  * Applications never invoke this class themselves &mdash; it is what the {@code tentackle-jlink-maven-plugin}'s
- * generated launcher script runs instead of the real main class whenever {@code &lt;layers&gt;} are configured
+ * generated launcher script runs instead of the real main class whenever {@code <layers>} are configured
  * (see the {@code jlinkpackage.md} and {@code layers.md} documentation), and what an IDE run/debug configuration
  * points at to run an application with isolated layers locally.
  * <p>
@@ -39,6 +39,9 @@ import java.util.Properties;
  * classloader &mdash; which is what makes every existing, layer-unaware {@code ServiceFactory.getServiceFinder()}
  * call transparently resolve services from within the leaf layer &mdash; and then reflectively invokes the real
  * application's {@code main(String[])} method.
+ * <p>
+ * Relative layer directories in the properties file are resolved against the current working directory,
+ * not against the directory of the properties file.
  *
  * @author harald
  */
@@ -62,11 +65,11 @@ public final class LayerBootstrap {
 
   /**
    * Gets a layer built by this bootstrap, by name.<br>
-   * This is how application code reaches a layer other than its own leaf layer &mdash; e.g. one
+   * This is how application code reaches a layer other than its own leaf layer &mdash; e.g., one
    * pinning a specific version of a dependency &mdash; typically to then resolve a service from it
    * via {@link ServiceFactory#getServiceFinder(ModuleLayer, String)}. See the {@code layers.md}
-   * documentation for the full pattern, including why a leaf module should not itself directly
-   * {@code requires} two sibling layers that pin conflicting versions of the same module.
+   * documentation for the full pattern, including why a layer must not have two parent layers
+   * that define the same module (for example, two versions of the same library).
    *
    * @param name the layer name, as configured
    * @return the layer
@@ -94,6 +97,7 @@ public final class LayerBootstrap {
    *
    * @param args the application arguments, passed through unchanged
    * @throws Exception if the layer graph cannot be built or the application's main method fails
+   *         (the latter wrapped in a {@link TentackleRuntimeException})
    */
   public static void main(String[] args) throws Exception {
 

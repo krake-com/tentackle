@@ -26,6 +26,7 @@ framework, the wurblets, or the wizard templates.
 | Remote delegate interface        | `<Pdo>RemoteDelegate`                 | `InvoiceRemoteDelegate`     |
 | Remote delegate implementation   | `<Pdo>RemoteDelegateImpl`             | `InvoiceRemoteDelegateImpl` |
 | Remote delegate package          | persistence-impl package + `.trip`    | `com.example.persist.trip`  |
+| Remote delegate impl. package    | same as the remote delegate package   | `com.example.persist.trip`  |
 
 Two things are worth noting:
 
@@ -40,8 +41,10 @@ Two things are worth noting:
 
 ## The API: Forward and Reverse
 
-Every rule comes as a **pair**: a forward method deriving the name, and a reverse method parsing
-it back — returning `null` if the given name does not match the convention:
+Every class-name rule comes as a **pair**: a forward method deriving the name, and a reverse method
+parsing it back — returning `null` if the given name does not match the convention. (The two
+package rules, `get…RemoteInterfacePackageName` and `get…RemoteImplementationPackageName`, have no
+reverse.)
 
 ```java
 NamingRules rules = NamingRules.getInstance();
@@ -49,11 +52,16 @@ NamingRules rules = NamingRules.getInstance();
 rules.getPdoPersistenceImplementation("Invoice");          // "InvoicePersistenceImpl"
 rules.getPdoFromPersistenceImplementation("InvoicePersistenceImpl");  // "Invoice"
 rules.getPdoFromPersistenceImplementation("SomethingElse");           // null
+rules.getPdoFromPersistenceImplementation("PersistenceImpl");         // "" (the suffix alone)
 ```
 
-The reverse methods matter because the framework not only *generates* names but also *recognizes*
-them — for example, when tooling maps an implementation class back to its PDO. A replacement must
-therefore always override forward and reverse methods **consistently**.
+The reverse methods are there for code that has to *recognize* names rather than generate them —
+for example, tooling mapping an implementation class back to its PDO. The framework itself
+currently only uses the forward methods, but a replacement should nevertheless override forward
+and reverse methods **consistently**, so that both directions keep agreeing.
+
+Since the `getOperation…` methods delegate to the `getPdo…` methods, overriding a PDO rule changes
+the corresponding operation rule as well, unless the operation rule is overridden too.
 
 ## Who Uses the Rules
 
@@ -64,10 +72,12 @@ tier above through a per-session *remote delegate* (see
 [TRIP](../../../../tentackle-core/src/main/docs/trip.md)). These delegate classes are **found by
 name, not by registration**: the
 [`RemoteDbDelegateLocator`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/RemoteDbDelegateLocator.java)
-(itself a replaceable `@Service`) takes the package of the persistence implementation and the
+service — by default
+[`DbRemoteDelegateLocator`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/DbRemoteDelegateLocator.java),
+replaceable via `@Service` — takes the package of the persistence implementation and the
 simple name of its effective class, asks `NamingRules` for the remote interface and implementation
-names in the `.trip` sub-package, and loads them via `Class.forName` — verifying that the results
-really are a `RemoteDbDelegate` interface and a `RemoteDbDelegateImpl` class.
+names and packages (the `.trip` sub-package by default), and loads them via `Class.forName` —
+verifying that the results really are a `RemoteDbDelegate` interface and a `RemoteDbDelegateImpl` class.
 
 This is why generated delegates need no `META-INF` entries at all: the convention *is* the
 registration. Handwritten delegates that live elsewhere can opt out by annotating the
@@ -122,7 +132,7 @@ Because the rules are consulted in **two worlds**, a replacement must be visible
 
 - **at runtime**, as an ordinary dependency of the application — otherwise the server derives the
   wrong delegate names and remote session setup fails with a `ClassNotFoundException`;
-- **at build time**, on the classpath of the build tooling that generates code — i.e. as a plugin
+- **at build time**, on the classpath of the build tooling that generates code — i.e., as a plugin
   dependency of the `wurbelizer-maven-plugin` (which runs the wurblets) and of the
   `tentackle-wizard-maven-plugin`.
 

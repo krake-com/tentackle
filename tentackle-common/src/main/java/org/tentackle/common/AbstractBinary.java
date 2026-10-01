@@ -39,7 +39,7 @@ import java.util.Arrays;
  * <p>
  * See {@link TBinary} to serialize objects that don't need to implement {@link Serializable}.
  *
- * @param <T> the serializable type
+ * @param <T> the object type
  */
 public abstract sealed class AbstractBinary<T> implements Serializable, Cloneable, Freezable
                 permits Binary, TBinary {
@@ -48,7 +48,7 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
   private static final long serialVersionUID = 1L;
 
   /**
-   * initial default buffer size when reading from the database.
+   * Initial default buffer size when reading from the database.
    */
   private static final int INITIAL_SIZE = 1024;
 
@@ -79,7 +79,7 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
    *
    * @param object the object to be stored in the database
    *
-   * @throws IOException if some serialization error.
+   * @throws IOException if serialization failed
    */
   public AbstractBinary(T object) throws IOException {
     setObject(object);
@@ -90,8 +90,8 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
    * Used to read a binary from the database.
    * The stream is closed after creating the binary.
    *
-   * @param stream the InputStream (associated with the database) to read from may be null
-   * @param bufSize the initial buffer size, 0 = default size
+   * @param stream the InputStream (associated with the database) to read from, never null (see {@code create})
+   * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if binary is frozen
    *
    * @throws IOException if reading from the input stream failed
@@ -164,7 +164,7 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
     if (o == null || getClass() != o.getClass()) return false;
     AbstractBinary<?> binary = (AbstractBinary<?>) o;
     if (length != binary.length) return false;
-    // only the first 'length' bytes are valid: the backing array may be larger (e.g. read from a stream)
+    // only the first 'length' bytes are valid: the backing array may be larger (e.g., read from a stream)
     return length == 0 || Arrays.equals(data, 0, length, binary.data, 0, length);
   }
 
@@ -183,9 +183,9 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
   }
 
   /**
-   * Gets the length in bytes of this {@code Binary}.
-   * The length of a {@code Binary} is either the length of a byte-array (if {@code Binary(byte[])} used)
-   * or the length of the serialized object (if {@code Binary(Object)} used)
+   * Gets the length in bytes of this binary.<br>
+   * This is either the number of bytes read from the stream (if created from an {@link InputStream})
+   * or the length of the serialized object (if created from an object or {@link #setObject} was invoked).
    *
    * @return the length of the {@code Binary} in bytes
    */
@@ -194,27 +194,33 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
   }
 
   /**
-   * Gets the internal byte array of this {@code Binary}.<br>
+   * Gets the internal byte array of this binary.<br>
    * Only provided for serialization purposes.
-   * Don't mess around with it!
+   * Don't mess around with it! Notice that the array is not a copy, i.e., changing it
+   * also changes a frozen binary.
+   * <p>
+   * The array may be longer than {@link #getLength()}, if the binary was read from a stream.
+   * Only the first {@code getLength()} bytes are valid.
    *
-   * @return the internal byte array
+   * @return the internal byte array, null if the binary is empty
    */
   public byte[] getData() {
     return data;
   }
 
   /**
-   * Gets the stream to store the {@code Binary} in the database.
+   * Gets the stream to store the binary in the database.<br>
+   * The stream provides the {@link #getLength()} valid bytes.
    *
-   * @return the stream associated with the database.
+   * @return the stream associated with the database
    */
   public InputStream getInputStream() {
-    return new ByteArrayInputStream(data);
+    return new ByteArrayInputStream(data == null ? new byte[0] : data, 0, length);
   }
 
   /**
-   * Retrieves the object encapsulated by the {@code Binary}.
+   * Retrieves the object encapsulated by the binary.<br>
+   * The object is deserialized on first invocation and cached afterward.
    *
    * @return the deserialized object (retrieved from the db), or null if NULL-value
    *
@@ -224,16 +230,20 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
   public abstract T getObject() throws IOException, ClassNotFoundException;
 
   /**
-   * Sets the serializable.
+   * Sets the object.<br>
+   * The object is serialized immediately.
    *
-   * @param object the serializable object.
+   * @param object the object, null to clear the binary
    * @throws IOException if the object could not be serialized
+   * @throws TentackleRuntimeException if the binary is frozen
    */
   public abstract void setObject(T object) throws IOException;
 
 
   /**
    * Asserts that the binary is not frozen.
+   *
+   * @throws TentackleRuntimeException if frozen
    */
   protected void assertNotFrozen() {
     if (frozen) {

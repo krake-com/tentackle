@@ -50,11 +50,11 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
   /**
    * Creates a {@code Binary} out of an InputStream.
    * Used to read a {@code Binary} from the database.
-   * Notice that stream.available() cannot be used according to sun's spec.
+   * Notice that {@code stream.available()} cannot be used according to the {@link InputStream} contract.
    * The stream is closed after creating the {@code Binary}.
    *
-   * @param stream the InputStream (associated with the database) to read from may be null
-   * @param bufSize the initial buffer size, 0 = default size
+   * @param stream the InputStream (associated with the database) to read from, may be null
+   * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if {@code Binary} is frozen
    *
    * @return the new {@code Binary} or null if the stream is null or empty.
@@ -75,7 +75,7 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
    *
    * @param object the {@code Serializable} to be stored in the database
    *
-   * @throws IOException if some serialization error.
+   * @throws IOException if serialization failed
    */
   public Binary(T object) throws IOException {
     setObject(object);
@@ -86,8 +86,8 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
    * Used to read a binary from the database.
    * The stream is closed after creating the binary.
    *
-   * @param stream the InputStream (associated with the database) to read from may be null
-   * @param bufSize the initial buffer size, 0 = default size
+   * @param stream the InputStream (associated with the database) to read from, never null (see {@code create})
+   * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if binary is frozen
    *
    * @throws IOException if reading from the input stream failed
@@ -113,7 +113,8 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
   }
 
   /**
-   * Retrieves the object encapsulated by the {@code Binary}.
+   * Retrieves the object encapsulated by the {@code Binary}.<br>
+   * The object is deserialized on first invocation and cached afterward.
    *
    * @return the deserialized object (retrieved from the db), or null if NULL-value
    *
@@ -132,10 +133,12 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
   }
 
   /**
-   * Sets the serializable.
+   * Sets the object.<br>
+   * The object is serialized immediately.
    *
-   * @param object the serializable object.
+   * @param object the object, null to clear the binary
    * @throws IOException if the object could not be serialized
+   * @throws TentackleRuntimeException if the binary is frozen
    */
   @Override
   public void setObject(T object) throws IOException {

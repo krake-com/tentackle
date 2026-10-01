@@ -30,6 +30,7 @@ import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertSame;
 
 /**
  * Tests {@link Binary}, {@link TBinary} and the shared {@link AbstractBinary} logic.
@@ -155,6 +156,16 @@ public class BinaryTest {
     TBinary<String> frozen = new TBinary<>("x");
     frozen.freeze();
     assertThrows(TentackleRuntimeException.class, () -> frozen.setObject("y"));
+  }
+
+  @Test
+  public void testTBinaryCachesObject() throws IOException, ClassNotFoundException {
+    TBinary<String> binary = TBinary.create(
+        new ByteArrayInputStream(new TBinary<>("cached").getData()), 0, false);
+    String first = binary.getObject();
+    assertEquals(first, "cached");
+    // deserialized only once, like Binary
+    assertSame(binary.getObject(), first);
   }
 
 }

@@ -35,4 +35,21 @@ public class StringNormalizerTest {
     assertEquals(StringNormalizer.getInstance().normalize(" Mülleralia-Intercom & Co.KG   , GREEN"), "MUELERALIAINTERKOMKOK,KREN");
   }
 
+  @Test
+  public void testHBeforeVowelIsKept() {
+    StringNormalizer normalizer = StringNormalizer.getInstance();
+    // vowel + H + consonant: H is removed
+    assertEquals(normalizer.normalize("Mahler"), "MALER");
+    // vowel + H + vowel: H is kept
+    assertEquals(normalizer.normalize("Johann"), "JOHAN");
+  }
+
+  @Test
+  public void testDiacriticsMap() {
+    StringNormalizer normalizer = StringNormalizer.getInstance();
+    assertEquals(normalizer.unDiacrit("Ðð", true), "Dd");
+    assertEquals(normalizer.unDiacrit("Þþ", true), "Tt");
+    assertEquals(normalizer.unDiacrit("éñø", true), "eno");
+  }
+
 }

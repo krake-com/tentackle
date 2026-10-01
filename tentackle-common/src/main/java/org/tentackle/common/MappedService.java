@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.lang.annotation.Documented;
@@ -25,10 +24,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
-
 /**
- * Annotation to mark an annotation to be processed by the ServiceAnalyzeHandler.
+ * Annotation to mark an annotation to be processed by the {@code MappedServiceAnalyzeHandler}.<br>
+ * For each class annotated with the marked annotation, a line {@code <annotated class> = <value>}
+ * is appended to {@code META-INF/mapped-services/<service class>} (see {@link Constants#MAPPED_SERVICE_PATH}).
+ * The mappings are read via {@link ServiceFinder#createNameMap(String)}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -37,17 +37,17 @@ import java.lang.annotation.Target;
 public @interface MappedService {
 
   /**
-   * The classname of the service class.<br>
+   * The service class.
    *
    * @return the service class
    */
   Class<?> value();
 
   /**
-   * The method name of the mapped service that provides the value.<br>
+   * The name of the element of the marked annotation that provides the mapped value.<br>
    * The default is "value".
    *
-   * @return the method name
+   * @return the element name
    */
   String method() default "value";
 

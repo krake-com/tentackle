@@ -22,16 +22,42 @@ import java.util.Objects;
 
 /**
  * Key to map service finders.
+ * <p>
+ * Finders bound to a {@link ModuleLayer} are keyed separately from plain classloader-based finders,
+ * even if the layer's classloader is the same, since only the former are layer-aware
+ * (see {@link ServiceFinder#getModuleLayer()}).
+ * The service path is normalized the same way as {@link DefaultServiceFinder} does,
+ * so that {@code "META-INF/services"} and {@code "/META-INF/services/"} map to the same key.
  *
  * @param classLoader the classloader
+ * @param layer the module layer, null if the finder is not bound to a layer
  * @param servicePath the service path
  *
  * @author harald
  */
-public record ServiceFinderKey(ClassLoader classLoader, String servicePath) {
+public record ServiceFinderKey(ClassLoader classLoader, ModuleLayer layer, String servicePath) {
 
+  /**
+   * Creates a key.
+   *
+   * @param classLoader the classloader, never null
+   * @param layer the module layer, null if the finder is not bound to a layer
+   * @param servicePath the service path, never null
+   * @throws NullPointerException if classLoader or servicePath is null
+   */
   public ServiceFinderKey {
     Objects.requireNonNull(classLoader, "classLoader");
-    Objects.requireNonNull(servicePath, "servicePath");
+    servicePath = DefaultServiceFinder.normalizeServicePath(Objects.requireNonNull(servicePath, "servicePath"));
+  }
+
+  /**
+   * Creates a key for a finder that is not bound to a module layer.
+   *
+   * @param classLoader the classloader, never null
+   * @param servicePath the service path, never null
+   * @throws NullPointerException if classLoader or servicePath is null
+   */
+  public ServiceFinderKey(ClassLoader classLoader, String servicePath) {
+    this(classLoader, null, servicePath);
   }
 }
