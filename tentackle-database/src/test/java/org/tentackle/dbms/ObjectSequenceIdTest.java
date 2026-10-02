@@ -21,6 +21,9 @@ package org.tentackle.dbms;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import org.tentackle.common.EncryptedProperties;
+import org.tentackle.misc.PropertiesUtilities;
+import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
@@ -57,11 +60,57 @@ public class ObjectSequenceIdTest extends AbstractDbTest {
   public void createSequences() {
     Db db = getSession();
     Backend backend = db.getBackend();
-    for (String suffix : new String[] { "_mono", "_boundary", "_global" }) {
+    for (String suffix : new String[] { "_mono", "_boundary", "_global", "_low_user", "_multidb" }) {
       // each StatementWrapper is single-use: it detaches the session once executeUpdate() returns
       try (StatementWrapper st = db.createStatement()) {
         st.executeUpdate(backend.sqlCreateSequence(SEQUENCE_NAME + suffix, null, null));
       }
+    }
+    try (StatementWrapper st = db.createStatement()) {
+      st.executeUpdate(backend.sqlCreateSequence(SEQUENCE_NAME + "_high", 1000L, null));
+    }
+  }
+
+
+  @Test
+  public void testSourcesOnDifferentSequencesDontShareStatements() {
+    ObjectSequenceId low = ObjectSequenceId.get(SEQUENCE_NAME + "_low_user", SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
+    ObjectSequenceId high = ObjectSequenceId.get(SEQUENCE_NAME + "_high", SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
+    low.nextId(getSession());     // prepares the statement for the first sequence
+    long id = high.nextId(getSession());
+    assertTrue(id >= 1000L * SEQUENCE_MULTIPLIER, "id " + id + " must come from the sequence starting at 1000");
+  }
+
+
+  @Test
+  public void testRangesAreKeptPerDatabase() {
+    String name = SEQUENCE_NAME + "_multidb";
+    Db db1 = getSession();
+
+    // a second database with the same sequence, far ahead of the first one
+    EncryptedProperties properties = PropertiesUtilities.getInstance().create();
+    properties.setProperty("url", "jdbc:h2:mem:objseqidtest;DB_CLOSE_DELAY=-1");
+    properties.setProperty("user", "tentackle");
+    properties.setProperty("password", "tentackle");
+    ConnectionManager connectionManager = new DefaultConnectionManager("objseqidtest-mgr", 2, 2, 1, 0, 0);
+    Db db2 = new Db(connectionManager, new DefaultSessionInfo(properties));
+    try {
+      try (StatementWrapper st = db2.createStatement()) {
+        st.executeUpdate(db2.getBackend().sqlCreateSequence(name, 1000L, null));
+      }
+
+      ObjectSequenceId source = ObjectSequenceId.get(name, SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
+      long id1 = source.nextId(db1);
+      long id2 = source.nextId(db2);
+      assertTrue(id2 >= 1000L * SEQUENCE_MULTIPLIER,
+                 "id " + id2 + " must come from the sequence of the second database, not from the range of the first");
+      assertTrue(id1 < 1000L * SEQUENCE_MULTIPLIER, "id " + id1 + " must come from the sequence of the first database");
+      assertEquals(source.nextId(db1), id1 + 1, "the first database continues its own range");
+      assertEquals(source.nextId(db2), id2 + 1, "the second database continues its own range");
+    }
+    finally {
+      db2.close();
+      connectionManager.shutdown();
     }
   }
 

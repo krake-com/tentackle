@@ -20,6 +20,9 @@ package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
 
+import org.tentackle.sql.BackendInfo;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +31,10 @@ import java.util.Map;
  * <p>
  * To reduce the number of roundtrips, the sequence is multiplied by a sequence-multiplier and a
  * counter just incremented within that range.
+ * <p>
+ * There is one instance per sequence name, shared by all sessions. The range taken from the sequence
+ * is kept per database, i.e. per connection URL, user and schemas, so an application connected to
+ * several databases never hands out ids reserved in the sequence of another database.
  * <p>
  * The creation of the sequence is backend-specific. For example, postgres expects:
  * <pre>
@@ -115,14 +122,48 @@ public class ObjectSequenceId extends AbstractIdSource {
   private final int globalMultiplier;
 
   /**
-   * IDs created for the current sequence.
+   * The ranges taken from the sequence, one per database.<br>
+   * Guarded by this instance's monitor.
    */
-  private int idCount;
+  private final Map<DatabaseKey, Range> ranges = new HashMap<>();
+
 
   /**
-   * the last retrieved sequence-number.
+   * Identifies the database a sequence belongs to.<br>
+   * The user and the schemas are part of the key, since they may determine the schema
+   * the unqualified sequence name is resolved in.
+   *
+   * @param url the connection url
+   * @param user the username
+   * @param schemas the schemas, null if none
    */
-  private long sequenceNo;
+  private record DatabaseKey(String url, String user, String schemas) {
+
+    private DatabaseKey(BackendInfo backendInfo) {
+      this(backendInfo.getUrl(), backendInfo.getUser(),
+           backendInfo.getSchemas() == null ? null : Arrays.toString(backendInfo.getSchemas()));
+    }
+  }
+
+  /**
+   * The range taken from the sequence of a database.
+   */
+  private static class Range {
+
+    /**
+     * the last retrieved sequence-number.
+     */
+    private long sequenceNo;
+
+    /**
+     * IDs created for the current sequence number.
+     */
+    private int idCount;
+
+    private Range(int sequenceMultiplier) {
+      idCount = sequenceMultiplier;   // initially consumed -> force select
+    }
+  }
 
 
   /**
@@ -136,8 +177,6 @@ public class ObjectSequenceId extends AbstractIdSource {
     super(name);
     this.sequenceMultiplier = sequenceMultiplier;
     this.globalMultiplier = globalMultiplier;
-
-    idCount = sequenceMultiplier; // initially consumed -> force select
   }
 
   @Override
@@ -151,16 +190,17 @@ public class ObjectSequenceId extends AbstractIdSource {
 
     assertDbNotRemote(db);
 
-    if (idCount >= sequenceMultiplier) {
+    Range range = ranges.computeIfAbsent(new DatabaseKey(db.getBackendInfo()), _ -> new Range(sequenceMultiplier));
+    if (range.idCount >= sequenceMultiplier) {
       // get the new offset from the sequence
       try {
-        PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
+        PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass(), getName()), false,
                                                                 b -> b.sqlNextFromSequence(getName())
         );
         try (ResultSetWrapper rs = stmt.executeQuery()) {
           if (rs.next()) {
-            sequenceNo = rs.getLong(1);
-            idCount = 0;
+            range.sequenceNo = rs.getLong(1);
+            range.idCount = 0;
           }
           else {
             throw new PersistenceException(db, "cannot retrieve ID from sequence");
@@ -175,7 +215,7 @@ public class ObjectSequenceId extends AbstractIdSource {
       }
     }
 
-    return (sequenceNo * sequenceMultiplier + idCount++) * globalMultiplier;
+    return (range.sequenceNo * sequenceMultiplier + range.idCount++) * globalMultiplier;
   }
 
 }

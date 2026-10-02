@@ -140,7 +140,8 @@ with a multiplexing manager) supplies the default connection manager for new ses
   the database. The counting state belongs to the transaction, so one instance can be shared by all sessions.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
   by a configurable factor with an in-range counter to cut round-trips. There is one instance per sequence name,
-  shared by all sessions.
+  shared by all sessions. The range taken from the sequence is kept per database (connection URL, user and
+  schemas), so applications connected to several databases never mix up their ranges.
 
 [`AbstractIdSource`](../java/org/tentackle/dbms/AbstractIdSource.java) is the shared base; selection/configuration
 goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigurator.java) /
@@ -162,8 +163,9 @@ selects another one, in the syntax of the `DefaultIdSourceConfigurator`:
 
 Different entities may use different id sources: if a resource named after the persistent class
 (`com/example/persist/InvoicePersistenceImpl.properties`) exists and holds an `idsource` line, it
-overrides the session's id source for that class. Otherwise, the class uses the default id source of the
-first session that requests an id for it. All users of the same sequence must configure the
+overrides the session's id source for that class. The class-specific id source is configured once per backend.
+Otherwise, the class uses the default id source of the session that requests the id, so sessions on
+different backends or with a different `idsource` property each get the id source that fits. All users of the same sequence must configure the
 same multipliers, otherwise a `PersistenceException` is thrown.
 
 ### Statements, queries and result sets

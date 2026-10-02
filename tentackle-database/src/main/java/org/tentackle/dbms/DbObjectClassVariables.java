@@ -22,6 +22,7 @@ import org.tentackle.dbms.trip.AbstractDbObjectRemoteDelegate;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
+import org.tentackle.sql.Backend;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -292,9 +293,21 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * The source for getting a new ID.
+   * The {@code idsource} configuration of this class.<br>
+   * Lazily loaded by {@link #getIdSource(Db)} and guarded by this instance's monitor.
    */
-  private IdSource idSource;
+  private String idConfig;
+
+  /**
+   * true if {@link #idConfig} is loaded.
+   */
+  private boolean idConfigLoaded;
+
+  /**
+   * The class-specific id sources, one per backend.<br>
+   * Guarded by this instance's monitor.
+   */
+  private Map<Backend, IdSource> idSources;
 
   /**
    * ID for the remote delegate for this class.<br>
@@ -376,28 +389,31 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * Gets the IdSource.<br>
-   * If the IdSource is not set up so far, the method looks for
-   * a property file or resource named after the class (classname + ".properties").
+   * The method looks for a property file or resource named after the class (classname + ".properties").
    * If it contains an {@code idsource} line in the same syntax as the backend properties,
-   * an id source of its own is configured for this class.
+   * an id source of its own is configured for this class, once per backend.
    * Otherwise, the session's default id source is used.
+   * <p>
+   * Sessions on different backends or with a different {@code idsource} configuration thus get
+   * the id source that fits the session.
    *
    * @param db the session
    * @return the idSource
    */
   public synchronized IdSource getIdSource(Db db) {
-    if (idSource == null) {  // set up IdSource once for this class
-      String idConfig = getProperty(Db.IDSOURCE);
-      if (idConfig == null) {
-        // no such property: use the default id source from Db
-        idSource = db.getDefaultIdSource();
-      }
-      else  {
-        // create configurator and source from property
-        idSource = IdSourceConfigurator.getInstance().configure(db, idConfig);
-      }
+    if (!idConfigLoaded) {
+      idConfig = getProperty(Db.IDSOURCE);
+      idConfigLoaded = true;
     }
-    return idSource;
+    if (idConfig == null) {
+      // no such property: use the default id source from Db
+      return db.getDefaultIdSource();
+    }
+    // create the class-specific source from the property
+    if (idSources == null) {
+      idSources = new HashMap<>();
+    }
+    return idSources.computeIfAbsent(db.getBackend(), _ -> IdSourceConfigurator.getInstance().configure(db, idConfig));
   }
 
 
