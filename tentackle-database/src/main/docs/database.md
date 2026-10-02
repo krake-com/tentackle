@@ -135,7 +135,9 @@ with a multiplexing manager) supplies the default connection manager for new ses
 [`IdSource`](../java/org/tentackle/dbms/IdSource.java) supplies unique object IDs. Two implementations ship:
 
 - [`ObjectId`](../java/org/tentackle/dbms/ObjectId.java) — used when the backend has **no sequences**; updates a
-  counter table, optimized to write only once at the end of transaction.
+  counter table, optimized to write only once at the end of transaction. The first id of a transaction locks the
+  counter row until the transaction ends, so transactions allocating ids from the same table are serialized by
+  the database. The counting state belongs to the transaction, so one instance can be shared by all sessions.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
   by a configurable factor with an in-range counter to cut round-trips. There is one instance per sequence name,
   shared by all sessions.

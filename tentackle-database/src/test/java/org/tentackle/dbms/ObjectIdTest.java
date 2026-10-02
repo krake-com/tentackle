@@ -26,6 +26,11 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlType;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
@@ -43,26 +48,6 @@ public class ObjectIdTest extends AbstractDbTest {
 
   private static final String TABLE_NAME = "objectidtest";
   private static final String EMPTY_TABLE_NAME = "objectidtest_empty";
-
-  /*
-   * ObjectId caches its prepared statements by StatementKey(id, getClass()) - the class alone,
-   * not the configured table name (see ObjectId#nextId). Two ObjectId instances with different
-   * table names would therefore silently share (and corrupt) each other's cached statements
-   * unless they are of different classes. Real applications never hit this because there is
-   * normally exactly one id source per name; this test uses two distinct subclasses to keep
-   * their statement caches apart.
-   */
-  private static class CounterObjectId extends ObjectId {
-    CounterObjectId(String name) {
-      super(name);
-    }
-  }
-
-  private static class EmptyCounterObjectId extends ObjectId {
-    EmptyCounterObjectId(String name) {
-      super(name);
-    }
-  }
 
   public ObjectIdTest() {
     super(TransactionType.NONE);   // the transactions are managed by the test methods
@@ -113,7 +98,7 @@ public class ObjectIdTest extends AbstractDbTest {
   @Test
   public void testNextIdIncrementsAndPersists() {
     Db db = getSession();
-    ObjectId source = new CounterObjectId(TABLE_NAME);
+    ObjectId source = new ObjectId(TABLE_NAME);
     long voucher = db.begin("nextIdIncrementsTest");
 
     long first = source.nextId(db);
@@ -131,7 +116,7 @@ public class ObjectIdTest extends AbstractDbTest {
   @Test
   public void testNextIdWithinSameTransactionOptimizes() {
     Db db = getSession();
-    ObjectId source = new CounterObjectId(TABLE_NAME);
+    ObjectId source = new ObjectId(TABLE_NAME);
     long voucher = db.begin("nextIdOptimizesTest");
 
     long first = source.nextId(db);   // this call alone does the real UPDATE+SELECT roundtrip
@@ -151,8 +136,43 @@ public class ObjectIdTest extends AbstractDbTest {
 
 
   @Test
+  public void testConcurrentSessionsDontBlockOrCollide() throws Exception {
+    Db db1 = getSession();
+    Db db2 = db1.clone("objectIdTest");
+    ObjectId source = new ObjectId(TABLE_NAME);    // shared by both sessions, like the id source of a class
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      long voucher1 = db1.begin("objectIdTest1");
+      long a = source.nextId(db1);    // db1 holds the row lock until its commit
+
+      Future<Long> worker = executor.submit(() -> {
+        db2.setOwnerThread(Thread.currentThread());
+        long voucher2 = db2.begin("objectIdTest2");
+        long b = source.nextId(db2);   // waits for the row lock of db1
+        db2.commit(voucher2);
+        return b;
+      });
+      Thread.sleep(300);    // let the worker block on the database lock
+
+      // must not wait for the worker: the id source holds no lock while the worker waits for the database
+      long c = executor.submit(() -> source.nextId(db1)).get(5, TimeUnit.SECONDS);
+      assertEquals(c, a + 1);
+      db1.commit(voucher1);
+
+      long b = worker.get(10, TimeUnit.SECONDS);
+      assertTrue(b > c, "the waiting session must continue after the persisted counter: " + b + " <= " + c);
+      assertEquals(selectPersistedValue(db1, TABLE_NAME), b);
+    }
+    finally {
+      executor.shutdownNow();
+      db2.close();
+    }
+  }
+
+
+  @Test
   public void testIsLockFree() {
-    ObjectId source = new CounterObjectId(TABLE_NAME);
+    ObjectId source = new ObjectId(TABLE_NAME);
     assertFalse(source.isLockFree(), "ObjectId becomes part of the transaction and is therefore not lock-free");
   }
 
@@ -160,7 +180,7 @@ public class ObjectIdTest extends AbstractDbTest {
   @Test
   public void testEmptyTableThrows() {
     Db db = getSession();
-    ObjectId source = new EmptyCounterObjectId(EMPTY_TABLE_NAME);
+    ObjectId source = new ObjectId(EMPTY_TABLE_NAME);
     long voucher = db.begin("emptyTableTest");
 
     assertThrows(PersistenceException.class, () -> source.nextId(db));
