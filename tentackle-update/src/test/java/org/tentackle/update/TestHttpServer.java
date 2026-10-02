@@ -58,6 +58,9 @@ public final class TestHttpServer implements AutoCloseable {
   /** Paths answered with an error status instead of 200. */
   private final Map<String, String> errorStatus = new ConcurrentHashMap<>();
 
+  /** Paths answered with a redirect to another location. */
+  private final Map<String, String> redirects = new ConcurrentHashMap<>();
+
   /**
    * Creates and starts a server bound to an ephemeral port on the loopback interface.
    *
@@ -119,6 +122,19 @@ public final class TestHttpServer implements AutoCloseable {
   public TestHttpServer serveError(String path, String status, String body) {
     resources.put(path, body.getBytes(StandardCharsets.UTF_8));
     errorStatus.put(path, status);
+    return this;
+  }
+
+  /**
+   * Answers the given path with a {@code 302 Found} redirect.<br>
+   * This is what an edge server looks like that steers the download to a CDN or mirror.
+   *
+   * @param path the absolute request path
+   * @param location the absolute URL to redirect to
+   * @return this server
+   */
+  public TestHttpServer serveRedirect(String path, String location) {
+    redirects.put(path, location);
     return this;
   }
 
@@ -207,7 +223,12 @@ public final class TestHttpServer implements AutoCloseable {
 
       byte[] content = resources.get(path);
       OutputStream out = new BufferedOutputStream(socket.getOutputStream());
-      if (content == null) {
+      String location = redirects.get(path);
+      if (location != null) {
+        out.write(("HTTP/1.1 302 Found\r\nLocation: " + location + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                      .getBytes(StandardCharsets.ISO_8859_1));
+      }
+      else if (content == null) {
         writeHeader(out, "404 Not Found", 0, false);
       }
       else {

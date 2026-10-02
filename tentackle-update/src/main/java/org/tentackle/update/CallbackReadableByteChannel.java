@@ -25,6 +25,10 @@ import java.util.function.Consumer;
 
 /**
  * A {@link ReadableByteChannel} with an optional callback lambda to show the progress.
+ * <p>
+ * After each read that returned data, the consumer receives the ratio of the bytes read so far
+ * to the expected size. If the expected size is negative (unknown), the ratio is negative as well,
+ * which a JavaFX progress bar, for example, displays as indeterminate.
  */
 public class CallbackReadableByteChannel implements ReadableByteChannel {
 
@@ -39,7 +43,7 @@ public class CallbackReadableByteChannel implements ReadableByteChannel {
    * Creates a callback read channel.
    *
    * @param channel the channel to be wrapped
-   * @param expectedSize the expected size, negative if indefinite
+   * @param expectedSize the expected size in bytes, negative if indefinite
    * @param progressConsumer the optional consumer receiving the progress from 0.0 to 1.0 (negative if indefinite), null if none
    */
   public CallbackReadableByteChannel(ReadableByteChannel channel, long expectedSize, Consumer<Double> progressConsumer) {

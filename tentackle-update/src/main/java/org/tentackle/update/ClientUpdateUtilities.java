@@ -50,7 +50,11 @@ interface ClientUpdateUtilitiesHolder {
 }
 
 /**
- * Utility methods to implement the application update.
+ * Client side utility methods to implement the application update.<br>
+ * Detects whether the application runs from an updatable jlink or jpackage image,
+ * looks up the remote {@link UpdateService}, and downloads and verifies the update.
+ * <p>
+ * Replaceable via {@link Service}.
  */
 @Service(ClientUpdateUtilities.class)
 public class ClientUpdateUtilities {
@@ -77,7 +81,9 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Checks whether given directory an updatable jlink image.
+   * Checks whether the given directory holds an updatable jlink image.<br>
+   * The directory itself and its subdirectories {@code bin}, {@code conf}, {@code include},
+   * {@code legal} and {@code lib} must exist and be writable.
    *
    * @param dir the directory to check
    * @return true if updatable jlink structure found
@@ -100,17 +106,26 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Checks whether the application is running in an updatable jlink directory.
+   * Checks whether the application is running in an updatable jlink directory.<br>
+   * Jlink applications are started from the image's root directory, so the current
+   * working directory is checked.
    *
    * @return true if the current working directory contains an updatable jlink image
+   * @see #isUpdatableJlinkDirectory(File)
    */
   public boolean isUpdateableJlinkApplication() {
     return isUpdatableJlinkDirectory(new File("."));
   }
 
   /**
-   * Checks whether
-   * @return true if jlink structure and updatable
+   * Checks whether the application is running in an updatable jpackage installation.<br>
+   * The runtime embedded in the package must be an updatable jlink image.
+   * It is located in {@code runtime} (Windows), {@code Contents/runtime/Contents/Home} (macOS)
+   * or {@code lib/runtime} (Linux) below the package's root directory.
+   *
+   * @return true if jpackage structure found and updatable
+   * @see #determineJPackageRoot()
+   * @see #isUpdatableJlinkDirectory(File)
    */
   public boolean isUpdatableJPackageApplication() {
     File runtimeDir = null;
@@ -131,7 +146,13 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Determines the jpackage's root installation directory.
+   * Determines the jpackage's root installation directory.<br>
+   * Derived from the path of the running executable:
+   * <ul>
+   *   <li>Windows: the executable's directory, which must contain {@code app}</li>
+   *   <li>macOS: two levels above {@code Contents/MacOS}, which must contain {@code Contents}</li>
+   *   <li>Linux: the parent of {@code bin}, which must contain {@code lib/app}</li>
+   * </ul>
    *
    * @return the installation directory, null if not a jpackage installation
    */
@@ -168,7 +189,8 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Determines the installation type of the running application.
+   * Determines the installation type of the running application.<br>
+   * Jlink is checked first, then jpackage.
    *
    * @return the installation type, null if not an updatable installation
    */
@@ -184,9 +206,11 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Gets the remote update service object.
+   * Gets the remote update service object.<br>
+   * If a {@link Cryptor} is configured, the service name may be given as an encrypted URL
+   * disguised as an {@code http:}, {@code https:} or {@code rmi:} URL (see {@link Cryptor#deriveURL}).
    *
-   * @param serviceName the service name, for ex. {@code "trip://localhost/Update:33001"}
+   * @param serviceName the service URL, for ex. {@code "trip://localhost:33001/Update"}
    * @return the update service
    */
   public UpdateService getUpdateService(String serviceName) {
@@ -201,9 +225,9 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Gets the message digest to create the checksum of the downloaded zip file.
+   * Gets the message digest to create the checksum of the downloaded ZIP file.
    *
-   * @return the message digest
+   * @return the message digest, SHA-256
    * @throws NoSuchAlgorithmException if no such digest
    */
   public MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
@@ -211,12 +235,16 @@ public class ClientUpdateUtilities {
   }
 
   /**
-   * Downloads the zip-file.
+   * Downloads the ZIP file and verifies its checksum.<br>
+   * The update directory is created. If it already exists, it is removed and created again,
+   * so it is always empty. The checksum is compared case-insensitively against
+   * {@link UpdateInfo#checksum()}.
    *
    * @param updateInfo the update info
    * @param updateDir the directory to create for the update process
-   * @param progressConsumer the consumer receiving the progress from 0.0 to 1.0, null if none
+   * @param progressConsumer the consumer receiving the progress from 0.0 to 1.0 (negative if the size is unknown), null if none
    * @return the downloaded ZIP file in the created update directory
+   * @throws TentackleRuntimeException if the download failed, no checksum was provided or the checksum does not match
    */
   public File downloadZip(UpdateInfo updateInfo, File updateDir, Consumer<Double> progressConsumer) {
     try {
@@ -265,7 +293,7 @@ public class ClientUpdateUtilities {
       String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digestBytes).toString(16), digestBytes.length * 2, '0');
       // the hash is hex, so the case carries no information: sha256sum writes it lowercase, certutil uppercase
       if (!foundChecksum.equalsIgnoreCase(expectedChecksum)) {
-        throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);
+        throw new TentackleRuntimeException("checksum failed! (" + digest.getAlgorithm() + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);
       }
 
       return zipFile;

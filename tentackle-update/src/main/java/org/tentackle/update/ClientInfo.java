@@ -27,8 +27,8 @@ import org.tentackle.trip.TripReferencable;
  *
  * @param application  the client application name
  * @param version      the client application version
- * @param platform     the operating system
- * @param architecture the hardware architecture
+ * @param platform     the operating system, such as {@code windows}, {@code macosx} or {@code linux}
+ * @param architecture the hardware architecture, such as {@code amd64} or {@code aarch64}
  * @param installationType the installation type
  *
  * @see UpdateInfo
@@ -41,10 +41,12 @@ public record ClientInfo(String application, String version, String platform,
 
   /**
    * Creates a client application-info.<br>
-   * Platform and architecture are determined from the system properties.
+   * Platform and architecture are determined from the running JVM via
+   * {@link StringHelper#getPlatform()} and {@link StringHelper#getArchitecture()}.
    *
    * @param application the client application name
    * @param version     the client application version
+   * @param installationType the installation type
    */
   public ClientInfo(String application, String version, InstallationType installationType) {
     this(application, version, StringHelper.getPlatform(), StringHelper.getArchitecture(), installationType);

@@ -31,14 +31,18 @@ import java.net.URL;
 /**
  * Update info sent back to the client.
  * <p>
- * Notice: no more encrypted since there is now the "tripe" protocol
- * that should be used instead.
+ * The record itself is not encrypted. To protect it in transit, the update service should be
+ * published via the PSK-encrypted {@code tripe} transport rather than via TLS, because a new
+ * server version may come with a new certificate the outdated client does not trust yet.
+ * <p>
+ * Requests the client to close the transport after the reply has been received,
+ * since the client is about to terminate for the update.
  *
  * @param version the new application version
- * @param urlStr the string representation of the ZIP-file's URL
- * @param checksum the checksum hash to verify the downloaded file
- * @param size the size of the ZIP file
- * @param updateExecutor the filename to execute to perform the update
+ * @param urlStr the string representation of the ZIP file's URL
+ * @param checksum the SHA-256 checksum hash to verify the downloaded file
+ * @param size the size of the ZIP file in bytes, -1 if unknown
+ * @param updateExecutor the filename of the script to execute to perform the update
  *
  * @see ClientInfo
  * @see org.tentackle.trip.transport.EncryptedTransport
@@ -53,9 +57,9 @@ public record UpdateInfo(String version, String urlStr, String checksum, long si
    *
    * @param version the new application version
    * @param url the URL of the ZIP file the client must download
-   * @param checksum the checksum hash to verify the downloaded file
-   * @param size the size of the ZIP file
-   * @param updateExecutor the filename to execute to perform the update
+   * @param checksum the SHA-256 checksum hash to verify the downloaded file
+   * @param size the size of the ZIP file in bytes, -1 if unknown
+   * @param updateExecutor the filename of the script to execute to perform the update
    */
   public UpdateInfo(String version, URL url, String checksum, long size, String updateExecutor) {
     this(version, url.toExternalForm(), checksum, size, updateExecutor);
