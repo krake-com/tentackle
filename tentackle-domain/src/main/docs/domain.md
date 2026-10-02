@@ -40,6 +40,10 @@ ever caring.
 - **Thin base, rich subclasses.** The base classes carry almost no state — just a back-reference to the PDO
   proxy — and mostly *delegate* context/session access to the persistence delegate. All real business logic lives
   in the application's subclasses.
+- **Stateless domain logic.** PDOs are shared, cached and serialized between tiers, so a domain implementation
+  should not hold mutable state of its own. The annotation processor warns about every instance field; a field
+  that is effectively immutable is accepted with `@SuppressWarnings("stateful-domain-logic")` (see
+  [The Stateless Domain Logic Warning](../../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)).
 - **Strict layer separation.** The module depends solely on `tentackle-pdo`; it cannot reach the database. Domain
   code reaches persistence only through the PDO proxy and the `DomainContext`.
 - **Delegates, not instances, travel.** Both base classes are `@TripReferencable(NEVER)` — only the PDO proxy is
@@ -60,8 +64,9 @@ implementation of an entity PDO, where `T` is the PDO interface and `D` the conc
 
 Its job is small and well-defined:
 
-- **PDO back-reference.** It holds the `pdo` proxy it is a delegate for, exposed via `getPdo()` / `me()` (and set
-  by the linker via `setPdo()`). `me()` is the idiomatic way for business code to call back through the proxy so
+- **PDO back-reference.** It holds the `pdo` proxy it is a delegate for, exposed via `getPdo()` / `me()`. The
+  proxy is passed to the constructor or set later by the linker via `setPdo()` (see
+  [Creating and linking the delegate](#creating-and-linking-the-delegate)). `me()` is the idiomatic way for business code to call back through the proxy so
   that interceptors and the persistence delegate participate.
 - **Context/session access.** `getDomainContext()` and `getSession()` simply forward to the persistence delegate —
   the domain object reaches the [session](../../../../tentackle-session/src/main/docs/session.md) *through* the
@@ -75,14 +80,15 @@ Its job is small and well-defined:
   to the simple class name and a default English pluralization rule).
 - **Domain key.** The *unique domain key* — the business identity of a **root entity** (as opposed to the
   technical object id) — is exposed through `getUniqueDomainKey()` / `setUniqueDomainKey()` /
-  `getUniqueDomainKeyType()` / `findByUniqueDomainKey()` and the flag `isUniqueDomainKeyProvided()`. The base
-  implementations throw a `DomainException` (and assert root-entity), so an entity that has a domain key
-  **overrides** them; `assertRootEntity()` enforces that these are only used on roots. The whole concept —
+  `getUniqueDomainKeyType()` / `findByUniqueDomainKey()` and the flag `isUniqueDomainKeyProvided()`. The four
+  accessors assert a root entity (`assertRootEntity()`) and then throw a `DomainException`, while
+  `isUniqueDomainKeyProvided()` simply returns `false`; an entity that has a domain key **overrides** all five. The whole concept —
   declaration, generated key types, and framework usage — is covered in
   [Domain Keys](../../../../tentackle-pdo/src/main/docs/domain-key.md).
 - **String representation.** `toString()` returns the domain key for a root entity, or the singular name for a
-  component, and is carefully written never to throw (it falls back to `toGenericString()` — class plus
-  id/serial — on error), because it is used for logging and debugging.
+  component, and is carefully written never to throw, because it is used for logging and debugging: on error it
+  falls back to `toGenericString()` — class plus id/serial, or `unlinked` if the delegate has no PDO yet — and,
+  should even that fail, to the bare class name.
 
 ### AbstractDomainOperation
 
@@ -93,14 +99,38 @@ procedure (see [operation.md](../../../../tentackle-pdo/src/main/docs/operation.
 `getOperation()` / `setOperation()`), and likewise forwards `getDomainContext()` / `getSession()` to the
 persistence delegate. It is the domain-side counterpart to `AbstractPersistentOperation`.
 
-### Delegate linking
+### Creating and linking the delegate
 
-When a PDO proxy is created, its domain delegate must be connected back to the proxy.
+A domain delegate needs a reference back to its proxy, and there are two ways to obtain it — which is why every
+domain implementation must provide **two public constructors**:
+
+- **The `(T pdo)` constructor.** The usual way: when the factory creates a PDO (or an operation) together with its
+  delegates, the invocation handler instantiates the domain implementation via the constructor that takes the
+  proxy, so the delegate is linked from the start.
+- **The no-args constructor.** When a domain delegate is created on its own (`PdoFactory.createDomainDelegate()`)
+  and handed to the factory to build a proxy around it, the proxy is set afterward by the
+  `DomainDelegateLinker`.
+
 [`DefaultDomainDelegateLinker`](../java/org/tentackle/domain/DefaultDomainDelegateLinker.java)
-(`@Service(DomainDelegateLinker.class)`) is the SPI implementation that does this: `linkDomainObject(pdo, delegate)`
+(`@Service(DomainDelegateLinker.class)`) is the implementation of that linker: `linkDomainObject(pdo, delegate)`
 calls `setPdo()` on the `AbstractDomainObject`, and `linkDomainOperation(...)` calls `setOperation()` on the
-`AbstractDomainOperation`. This is the runtime glue that turns a freshly instantiated domain implementation into a
-working delegate of its proxy.
+`AbstractDomainOperation`. The linker exists so that `setPdo()` / `setOperation()` need not be part of the public
+PDO interfaces. If no linker service is available — in the persistence module's own unit tests, for example,
+where `tentackle-domain` is not on the path — `DomainDelegateLinker.getInstance()` falls back to invoking these
+setters via reflection.
+
+### Writing a domain implementation
+
+An application's domain class:
+
+- extends `AbstractDomainObject<Pdo, Impl>` (or `AbstractDomainOperation<Op, Impl>`),
+- implements the PDO's domain interface (e.g. `CustomerDomain`) **directly** — the proxy's mixin locates the
+  declaring interface via `getInterfaces()` of the implementation class, so inheriting it is not enough,
+- is annotated with `@DomainObjectService(Pdo.class)` (or `@DomainOperationService(Op.class)`), and
+- provides both public constructors described above.
+
+The annotation processors of `tentackle-pdo` check the constructors at compile time and warn about stateful
+fields. The built-in implementations below follow exactly this pattern.
 
 ---
 
@@ -110,29 +140,34 @@ Mirroring the built-in persistence implementations in `tentackle-persistence`, t
 half** of the framework's own infrastructure PDOs. Each is annotated `@DomainObjectService(...)` so it is
 discovered as the domain delegate of the corresponding PDO interface:
 
-- **Number sources** (`org.tentackle.domain.ns`) —
-  [`NumberPoolDomainImpl`](../java/org/tentackle/domain/ns/NumberPoolDomainImpl.java) and
-  [`NumberRangeDomainImpl`](../java/org/tentackle/domain/ns/NumberRangeDomainImpl.java) provide the business
-  behavior for unique-number allocation; their persistence counterparts live in `tentackle-persistence`'s
-  `ns` package.
+- **Number sources** (`org.tentackle.domain.ns`) — the business behavior for unique-number allocation; their
+  persistence counterparts live in `tentackle-persistence`'s `ns` package.
+  - [`NumberRangeDomainImpl`](../java/org/tentackle/domain/ns/NumberRangeDomainImpl.java) — a half-open range
+    `[begin, end)`: `size()`, `isEmpty()`, `popNumber()` / `popNumbers(count)` (the latter truncated to what is
+    left) and `intersects(begin, end)`.
+  - [`NumberPoolDomainImpl`](../java/org/tentackle/domain/ns/NumberPoolDomainImpl.java) — `getCurrentRange()`
+    picks the lowest non-empty range and, as housekeeping, removes the exhausted ones from the pool (deleted from
+    the database on the next save of the pool); `isSlave()` tells whether the pool refills itself from an uplink.
 - **Security rules** (`org.tentackle.domain.security`) —
-  [`SecurityDomainImpl`](../java/org/tentackle/domain/security/SecurityDomainImpl.java) provides the domain
-  behavior for access-control rules, paired with `SecurityPersistenceImpl`.
+  [`SecurityDomainImpl`](../java/org/tentackle/domain/security/SecurityDomainImpl.java), paired with
+  `SecurityPersistenceImpl`, evaluates whether a rule applies to a domain context and allows or denies a
+  permission, and renders the securable, grantee and context for display. A rule has no business key: its
+  `getUniqueDomainKey()` returns the object id so that `toString()` works, while `isUniqueDomainKeyProvided()`
+  stays `false`.
 
-These are the canonical examples of how an application's own domain classes are structured: extend
-`AbstractDomainObject<Pdo, Impl>`, implement the PDO's domain interface, and annotate with
-`@DomainObjectService(Pdo.class)`.
+These are the canonical examples of how an application's own domain classes are structured (see
+[Writing a domain implementation](#writing-a-domain-implementation)).
 
 ---
 
 ## Package Layout
 
-| Package                         | Contents                                                                                                |
-|---------------------------------|---------------------------------------------------------------------------------------------------------|
-| `org.tentackle.domain`          | The core: `AbstractDomainObject`, `AbstractDomainOperation` and the `DefaultDomainDelegateLinker`.      |
-| `org.tentackle.domain.ns`       | Domain implementations for number sources (number pool / range).                                        |
-| `org.tentackle.domain.security` | Domain implementation for security rules.                                                               |
-| `org.tentackle.domain.service`  | The [`Hook`](../java/org/tentackle/domain/service/Hook.java) (`ModuleHook`) for i18n bundle resolution. |
+| Package                         | Contents                                                                                                              |
+|---------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `org.tentackle.domain`          | The core: `AbstractDomainObject`, `AbstractDomainOperation` and the `DefaultDomainDelegateLinker`.                    |
+| `org.tentackle.domain.ns`       | Domain implementations for number sources (number pool / range).                                                      |
+| `org.tentackle.domain.security` | Domain implementation for security rules.                                                                             |
+| `org.tentackle.domain.service`  | The [`Hook`](../java/org/tentackle/domain/service/Hook.java) (`ModuleHook`) for i18n bundle resolution; not exported. |
 
 ---
 
@@ -157,10 +192,11 @@ A PDO proxy combines a domain delegate (from this module's subclasses) and a per
 
 At runtime:
 
-1. The PDO factory instantiates the domain implementation (located by `@DomainObjectService`) and the persistence
-   implementation (located by `@PersistentObjectService`).
-2. `DefaultDomainDelegateLinker` links the domain delegate back to the proxy (`setPdo`), and the persistence side
-   does likewise.
+1. The PDO factory creates the proxy, and its invocation handler instantiates the domain implementation (located
+   by `@DomainObjectService`) and the persistence implementation (located by `@PersistentObjectService`), passing
+   the proxy to their constructors.
+2. Only if a pre-built delegate is supplied instead, it is linked to the proxy afterward —
+   `DefaultDomainDelegateLinker` calls `setPdo`, and the persistence side does likewise.
 3. Business code calls flow into `AbstractDomainObject` subclasses; when they need to persist, query, or learn the
    session/context, they call back through `me()` / `getPersistenceDelegate()`, which routes to the persistence
    delegate — local or remote, identically.
@@ -183,7 +219,9 @@ extending the base classes here.
   **no** dependency on `tentackle-database`, `tentackle-sql` or any JDBC API.
 - It **opens** `org.tentackle.domain`, `org.tentackle.domain.ns` and `org.tentackle.domain.security` to
   `org.tentackle.core` for TRIP serialization.
-- It **provides** a `ModuleHook` service (`org.tentackle.domain.service.Hook`) for i18n.
+- It **exports** `org.tentackle.domain`, `org.tentackle.domain.ns` and `org.tentackle.domain.security`.
+- It **provides** a `ModuleHook` service (`org.tentackle.domain.service.Hook`) for i18n; that package is not
+  exported.
 - Through `@Service` it registers `DefaultDomainDelegateLinker` as the `DomainDelegateLinker`, and through
   `@DomainObjectService` it registers the built-in number-source and security domain implementations.
 

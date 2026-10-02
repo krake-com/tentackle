@@ -26,7 +26,9 @@ import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Default implementation of a {@link DomainDelegateLinker}.
+ * Default implementation of {@link DomainDelegateLinker}.<br>
+ * Links PDO and operation proxies to their domain delegates, which must
+ * extend {@link AbstractDomainObject} or {@link AbstractDomainOperation}, respectively.
  */
 @Service(DomainDelegateLinker.class)
 public class DefaultDomainDelegateLinker implements DomainDelegateLinker {

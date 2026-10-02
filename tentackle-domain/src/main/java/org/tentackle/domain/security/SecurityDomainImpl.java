@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * Security domain implementation.
+ * Security rule domain implementation.
  *
  * @author harald
  */
@@ -62,24 +62,54 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   private volatile Class<? extends Permission>[] permissions;
 
 
+  /**
+   * Creates the domain delegate for the given security rule.
+   *
+   * @param pdo the security rule PDO
+   */
   public SecurityDomainImpl(Security pdo) {
     super(pdo);
   }
 
+  /**
+   * Creates the domain delegate without a PDO.<br>
+   * The PDO is linked later via {@link #setPdo}.
+   */
   public SecurityDomainImpl() {
     super();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * A security rule has no business key. The object id is used instead, so that {@link #toString()} and
+   * {@code findDuplicate()} work. Since this is no real domain key, {@link #isUniqueDomainKeyProvided()}
+   * still returns false.
+   */
   @Override
   public Object getUniqueDomainKey() {
     return getPdo().getPersistenceDelegate().getId();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Selects the rule by its object id.
+   *
+   * @param domainKey the object id as a {@link Long}
+   */
   @Override
   public Security findByUniqueDomainKey(Object domainKey) {
     return getPdo().select((Long) domainKey);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The rule applies if the given context is within the rule's domain context (or no context is given).
+   * Depending on whether the rule allows or denies, the permission is checked to be allowed or denied by
+   * the rule's permissions, respectively.
+   */
   @Override
   public boolean evaluate(DomainContext context, Permission permission) {
     SecurityPersistence po = po();
@@ -135,9 +165,11 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   }
 
   /**
-   * Gets the permissions from the persistence object.
+   * Gets the permissions of this rule.<br>
+   * Parsed lazily from the comma-separated permission names of the persistence delegate.
    *
-   * @return the permissions
+   * @return the permission interfaces, never null
+   * @throws SecurityException if a permission name is unknown
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected Class<? extends Permission>[] getPermissions() {
@@ -167,7 +199,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   }
 
   /**
-   * Bypass the invocation handler.
+   * Gets the persistence delegate directly, bypassing the invocation handler.
    *
    * @return the persistence delegate
    */

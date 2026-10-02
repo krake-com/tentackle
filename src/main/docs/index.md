@@ -66,8 +66,10 @@ topic-grouped listing of every document, see the
 - **Deduplication (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **Deferred constraint checking (`deferred`, `deferrable`)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md#deferred-constraint-checking), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md)
 - **Dictionary (type compression)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Domain delegate (`AbstractDomainObject`, `AbstractDomainOperation`)** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Domain key (business identity, `findByUniqueDomainKey`)** — [Domain Keys](../../../tentackle-pdo/src/main/docs/domain-key.md)
 - **Domain logic layer** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
+- **DomainDelegateLinker (linking a domain delegate to its proxy)** — [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md#creating-and-linking-the-delegate)
 - **DomainContext / DomainContextProvider** — [The DomainContextProvider](../../../tentackle-pdo/src/main/docs/domain-context-provider.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **DSL (typed SQL projection queries)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md)
 - **DTO (Data Transfer Object) generation** — [The DTO Wurblet and `@RecordDTO`](../../../tentackle-wurblets/src/main/docs/dto-wurblet.md), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md)
@@ -260,7 +262,7 @@ topic-grouped listing of every document, see the
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
-- **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)
+- **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning), [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md)
 - **Session administration (list, log out, kill client sessions)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#remoting-trip)
 
 ## T

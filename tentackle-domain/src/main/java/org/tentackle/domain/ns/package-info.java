@@ -17,6 +17,6 @@
  */
 
 /**
- * Domain implementation for number sources.
+ * Domain implementations of the number source PDOs {@code NumberPool} and {@code NumberRange}.
  */
 package org.tentackle.domain.ns;

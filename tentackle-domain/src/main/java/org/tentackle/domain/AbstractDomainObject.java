@@ -35,9 +35,20 @@ import java.util.List;
 
 /**
  * Base domain implementation of a PDO.
+ * <p>
+ * Every domain delegate of an entity extends this class. It holds a reference to the PDO proxy it is a
+ * delegate for and forwards the domain context and session to the persistence delegate, so the domain
+ * logic never accesses the database directly. All business logic lives in the concrete subclasses.
+ * <p>
+ * Subclasses must provide two public constructors: one with the PDO as its only argument, used when the
+ * factory creates the PDO and its delegates in one go, and a no-args constructor, used when the domain
+ * delegate is created on its own and linked to the PDO later via {@link #setPdo(PersistentDomainObject)}.
+ * Both are enforced by the annotation processor for {@code @DomainObjectService}.
+ * <p>
+ * Domain delegates should be stateless, since PDOs are shared, cached and transferred between tiers.
  *
- * @param <T> the PDO class
- * @param <D> the domain object class
+ * @param <T> the PDO type (interface)
+ * @param <D> the domain implementation type
  * @author harald
  */
 @TripReferencable(TripReferencable.NEVER)  // only proxies are referenced, not implementations
@@ -48,14 +59,17 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   private static final long serialVersionUID = 1L;
 
 
-  private T pdo;   // instance of the PDO this is a delegate for
+  /**
+   * The PDO proxy this is a delegate for.
+   */
+  private T pdo;
 
 
 
   /**
-   * Creates an application domain object.
+   * Creates the domain delegate for the given PDO.
    *
-   * @param pdo the persistent domain object this is a delegate for
+   * @param pdo the PDO proxy this is a delegate for
    */
   public AbstractDomainObject(T pdo) {
     this.pdo = pdo;
@@ -63,7 +77,8 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
 
 
   /**
-   * Creates an application domain object.
+   * Creates the domain delegate without a PDO.<br>
+   * The PDO must be linked later via {@link #setPdo(PersistentDomainObject)}.
    */
   public AbstractDomainObject() {
   }
@@ -85,9 +100,10 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   }
 
   /**
-   * Sets the PDO.<br>
+   * Sets the PDO this is a delegate for.<br>
+   * Invoked by {@link DefaultDomainDelegateLinker}.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO proxy
    */
   public void setPdo(T pdo) {
     this.pdo = pdo;
@@ -103,11 +119,21 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
     return pdo.getEffectiveSuperClasses();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Forwarded to the persistence delegate.
+   */
   @Override
   public DomainContext getDomainContext() {
     return pdo.getPersistenceDelegate().getDomainContext();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Forwarded to the persistence delegate.
+   */
   @Override
   public Session getSession() {
     return pdo.getPersistenceDelegate().getSession();
@@ -134,10 +160,10 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   /**
    * Gets the string representation of this domain object.
    * <p>
-   * The default implementation returns the domain key if this is a root entity.
-   * If a component, its single-name will be returned.
-   * If evaluating the domain key failed, the generic string is returned
-   * along with the exception in parentheses.
+   * The default implementation returns the unique domain key if this is a root entity,
+   * or the singular name if it is a component.
+   * If that fails, the generic string is returned along with the exception in parentheses,
+   * or just the class name if even the generic string fails.
    * This is because {@code toString()} should never throw
    * an exception as it is used for logging and debugging.
    *
@@ -172,35 +198,74 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation returns false.
+   * Must be overridden along with the other domain key methods if the entity provides a unique domain key.
+   */
   @Override
   public boolean isUniqueDomainKeyProvided() {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation throws a {@link DomainException}.
+   *
+   * @throws DomainException if not a root entity or not overridden
+   */
   @Override
   public Class<?> getUniqueDomainKeyType() {
     assertRootEntity();
     throw new DomainException(pdo, "method getUniqueDomainKeyType not implemented in " + getClass());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation throws a {@link DomainException}.
+   *
+   * @throws DomainException if not a root entity or not overridden
+   */
   @Override
   public Object getUniqueDomainKey() {
     assertRootEntity();
     throw new DomainException(pdo, "method getUniqueDomainKey not implemented in " + getClass());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation throws a {@link DomainException}.
+   *
+   * @throws DomainException if not a root entity or not overridden
+   */
   @Override
   public void setUniqueDomainKey(Object domainKey) {
     assertRootEntity();
     throw new DomainException(pdo, "method setUniqueDomainKey not implemented in " + getClass());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation throws a {@link DomainException}.
+   *
+   * @throws DomainException if not a root entity or not overridden
+   */
   @Override
   public T findByUniqueDomainKey(Object domainKey) {
     assertRootEntity();
     throw new DomainException(pdo, "method findByUniqueDomainKey not implemented in " + getClass());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Defaults to the simple name of the effective class if no name is configured.
+   */
   @Override
   public String getSingular() {
     String name = PdoUtilities.getInstance().getSingular(me().getEffectiveClass());
@@ -210,6 +275,11 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
     return name;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Defaults to the singular name with the English plural suffix ("s" or "es") if no name is configured.
+   */
   @Override
   public String getPlural() {
     String name = PdoUtilities.getInstance().getPlural(me().getEffectiveClass());
@@ -221,7 +291,9 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   }
 
   /**
-   * Checks if the PDO is a root entity.
+   * Asserts that the PDO is a root entity.
+   *
+   * @throws DomainException if not a root entity
    */
   public void assertRootEntity() {
     if (!me().getPersistenceDelegate().isRootEntity()) {

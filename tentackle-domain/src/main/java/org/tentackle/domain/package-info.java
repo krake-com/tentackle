@@ -17,6 +17,7 @@
  */
 
 /**
- * Domain layer implementation.
+ * Base classes for the domain delegates of PDOs and operations,
+ * and the default linker that connects a domain delegate to its proxy.
  */
 package org.tentackle.domain;

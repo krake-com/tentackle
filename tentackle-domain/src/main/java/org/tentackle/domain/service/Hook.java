@@ -23,7 +23,8 @@ import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
- * Hook for the domain module.
+ * Hook for the domain module.<br>
+ * Loads the resource bundles within the context of this module.
  *
  * @author harald
  */

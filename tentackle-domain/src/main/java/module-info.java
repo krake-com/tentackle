@@ -17,7 +17,11 @@
  */
 
 /**
- * tentackle-domain module.
+ * The domain-logic layer base.<br>
+ * Provides the base classes for the domain side of the PDOs and operations defined in {@code org.tentackle.pdo},
+ * the default {@code DomainDelegateLinker}, and the domain implementations of the framework's own
+ * number source and security PDOs.
+ * Depends on {@code org.tentackle.pdo} only, i.e. the domain layer has no access to the database.
  */
 module org.tentackle.domain {
 

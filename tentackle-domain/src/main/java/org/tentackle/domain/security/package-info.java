@@ -17,6 +17,6 @@
  */
 
 /**
- * Domain implementation for security rules.
+ * Domain implementation of the security rule PDO {@code Security}.
  */
 package org.tentackle.domain.security;
