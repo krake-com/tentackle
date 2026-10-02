@@ -32,6 +32,10 @@ import java.util.Map;
 
 /**
  * A joined {@code SELECT}.
+ * <p>
+ * Holds the {@link Join}s of a query along with the state of the running query,
+ * i.e., the PDOs retrieved so far. Hence, a joined select is created per query and
+ * must not be shared between threads.
  *
  * @author harald
  * @param <T> the primary PDO type
@@ -41,7 +45,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   /** the joins. */
   private final List<Join<? super T,?>> joins;
 
-  /** the PDOs joined so far (the joins themselves are immutable and shared). */
+  /** the PDOs joined so far (the joins themselves are not modified and are shared). */
   private final JoinState joinState;
 
   /** the currently retrieved PDO. */
@@ -105,10 +109,11 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Creates the SQL code that does the joined select.
+   * Appends the joins to the SQL code of the select.
    *
    * @param pdo the PDO proxy
-   * @param selectSql the select builder without joins
+   * @param selectSql the select builder without joins, appended with the joins on return
+   * @throws PersistenceException if a join type is neither INNER nor LEFT
    */
   public void createJoinedSql(T pdo, StringBuilder selectSql) {
     AbstractPersistentObject<T,?> pdoPD = (AbstractPersistentObject<T,?>) pdo.getPersistenceDelegate();
@@ -121,7 +126,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   /**
    * Gets the PDO retrieved before the current PDO.
    *
-   * @return the last pdo
+   * @return the last PDO, null if none
    */
   public T getLastPdo() {
     return lastPdo;
@@ -130,17 +135,18 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   /**
    * Gets the currently retrieved PDO.
    *
-   * @return the pdo, null if no query running
+   * @return the PDO, null if no query running
    */
   public T currentPdo() {
     return pdo;
   }
 
   /**
-   * Finishes the current pdo and switches to the next.
+   * Finishes the current PDO and switches to the next.<br>
+   * When selecting into a list, a PDO already in the list is reused.
    *
-   * @param pdo the next pdo
-   * @return the pdo possibly changed if already in the list
+   * @param pdo the next PDO
+   * @return the next PDO, or the PDO already in the list with the same ID
    */
   public T nextPdo(T pdo) {
     lastPdo = this.pdo;
@@ -160,9 +166,11 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Initializes the joined select.
+   * Initializes the joined select.<br>
+   * Must be invoked before each query.
    *
-   * @param list the list if select to list
+   * @param list the list to fill when selecting into a list, null for cursors and single PDOs
+   * @throws PersistenceException if the list is not empty
    */
   public void initialize(List<T> list) {
     if (list != null && !list.isEmpty()) {

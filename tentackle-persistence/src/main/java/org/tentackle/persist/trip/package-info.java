@@ -17,6 +17,7 @@
  */
 
 /**
- * Higher-level PDO-aware persistence remoting.
+ * PDO-aware persistence remoting: the TRIP remote delegates for PDOs, operations,
+ * cursors and the session administration.
  */
 package org.tentackle.persist.trip;

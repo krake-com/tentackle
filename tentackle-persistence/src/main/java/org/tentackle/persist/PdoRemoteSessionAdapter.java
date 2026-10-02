@@ -49,9 +49,18 @@ public class PdoRemoteSessionAdapter extends RemoteSessionAdapter implements Pdo
     super(rs);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Checks the execute permission for the extension interface, creates the extension via
+   * the {@link ServiceFactory} and sets its domain context.
+   *
+   * @throws SecurityException if the user has no execute permission
+   * @throws PersistenceException if the extension could not be created
+   */
   @Override
   public <T extends DomainContextDependable> T getExtension(DomainContext context, Class<T> extIf) {
-    // Important: the server should its own checks for each method invocation!
+    // Important: the server should perform its own checks for each method invocation!
     SecurityFactory sf = SecurityFactory.getInstance();
     SecurityManager sm = sf.getSecurityManager();
     SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), extIf);

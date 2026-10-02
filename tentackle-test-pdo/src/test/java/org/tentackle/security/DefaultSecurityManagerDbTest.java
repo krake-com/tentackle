@@ -33,7 +33,10 @@ import org.tentackle.session.SessionInfo;
 
 import java.io.Serial;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -120,6 +123,40 @@ public class DefaultSecurityManagerDbTest extends AbstractPdoTest {
     }
     finally {
       // don't leave the rules of this (rolled back) transaction in the shared cache
+      Pdo.getCache(Security.class).invalidate();
+    }
+  }
+
+  @Test(groups = "local")
+  public void entityRuleRoundTrip() {
+    try {
+      // any entity will do as the protected object: use another rule
+      createRule(DefaultSecurityManagerDbTest.class, 0, ReadPermission.NAME, true);
+      Security protectedPdo = on(Security.class).selectAll().getFirst();
+
+      Security rule = on(Security.class);
+      rule.setObject(protectedPdo);
+      assertEquals(rule.getObjectId(), protectedPdo.getId());
+      assertEquals(rule.getObjectClassId(), protectedPdo.getClassId());
+      assertNull(rule.getObjectClassName(), "entity rule must not have a class name");
+      assertEquals(rule.getObjectClass(), Security.class);
+
+      rule.setGranteeClassId(USER_CLASS_ID);
+      rule.setGranteeId(USER_ID);
+      rule.setPermissions(ReadPermission.NAME);
+      rule.setAllowed(true);
+      rule = rule.persist();
+
+      Security object = (Security) on(Security.class).select(rule.getId()).getObject();
+      assertNotNull(object, "protected object not found");
+      assertEquals(object.getId(), protectedPdo.getId());
+
+      rule.setObject(null);
+      assertEquals(rule.getObjectId(), 0);
+      assertEquals(rule.getObjectClassId(), 0);
+      assertNull(rule.getObject());
+    }
+    finally {
       Pdo.getCache(Security.class).invalidate();
     }
   }

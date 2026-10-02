@@ -17,6 +17,6 @@
  */
 
 /**
- * LockManager default implementation.
+ * The default {@link org.tentackle.persist.LockManager} and its persisted {@link org.tentackle.persist.lock.DbTokenLock}s.
  */
 package org.tentackle.persist.lock;

@@ -195,7 +195,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * Creates a security rule without domain context or session.
+   * Creates a security rule without PDO, domain context or session.
    */
   public SecurityPersistenceImpl() {
     super();
@@ -205,18 +205,20 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
 
   /**
-   * Gets the object this rule applies to.<br>
-   * The object is retrieved in its valid context.
-   * @return the object, null if none (class rule)
+   * Gets the PDO this rule applies to.<br>
+   * The PDO is selected in the domain context of this rule.
+   * If the PDO cannot be loaded, a warning is logged and null is returned.
+   *
+   * @return the PDO, null if none (class rule or rule for all instances of an entity)
    */
   @Override
   public PersistentDomainObject<?> getObject() {
     if (objectId != 0 && objectClassId != 0)  {
       try {
-        return Pdo.create(objectClassName, getDomainContext()).select(objectId);
+        return Pdo.create(SessionUtilities.getInstance().getClassName(objectClassId), getDomainContext()).select(objectId);
       }
       catch (RuntimeException e) {
-        LOGGER.warning("can't get secured object for " + objectClassName + ", " + objectId);
+        LOGGER.warning("can't get secured object for class ID " + objectClassId + ", ID " + objectId, e);
       }
     }
     return null;
@@ -228,28 +230,31 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * Sets the object this rule applies to.<br>
-   * Setting the null object also clears the objectClass
-   * making the rule invalid.
+   * Sets the PDO this rule applies to.<br>
+   * Sets the object ID and class ID and clears the object class name, since entity rules
+   * are identified by their class ID.<br>
+   * Setting the null object clears the object ID and class ID, leaving the rule
+   * without a protected class (and thus invalid) until a class name or class ID is set.
    *
-   * @param object the object, null to clear
+   * @param object the PDO, null to clear
    */
   @Override
   public void setObject(PersistentDomainObject<?> object)  {
     if (object == null) {
       setObjectId(0);
-      setObjectClassName(null);
+      setObjectClassId(0);
     }
     else  {
       setObjectId(object.getPersistenceDelegate().getId());
-      setObjectClassName(object.getClass().getName());
+      setObjectClassId(object.getPersistenceDelegate().getClassId());
+      setObjectClassName(null);
     }
   }
 
   /**
    * Gets the grantee.
    *
-   * @return the grantee, null if grant class
+   * @return the grantee, null if granted to all (granteeId is 0)
    */
   @Override
   public PersistentDomainObject<?> getGrantee() {
@@ -275,8 +280,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * Gets the application context's object.<br>
-   * The object will be loaded in its valid context.
+   * Gets the domain context object this rule is restricted to.<br>
+   * The object is loaded from the cache in the domain context of this rule.
    *
    * @return the context object, null if no context (all)
    */
@@ -288,7 +293,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * Sets the application context's object.
+   * Sets the domain context object this rule is restricted to.
    *
    * @param contextObject the context object, null to clear (all)
    */
@@ -305,7 +310,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * for debugging only
+   * Returns a string representation of this rule for debugging purposes.
+   *
+   * @return the rule's attributes
    */
   @Override
   public String toString()  {
@@ -321,10 +328,20 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     getRemoteDelegate().assertRemoteSecurityManagerInitialized(getDomainContext());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * For entity rules, the class is determined from the class ID, otherwise from the class name.
+   *
+   * @throws PersistenceException if neither class ID nor class name is set, or the class cannot be loaded
+   */
   @Override
   public Class<?> getObjectClass() {
     String className = objectClassId != 0 ?
       SessionUtilities.getInstance().getClassName(objectClassId) : objectClassName;
+    if (className == null) {
+      throw new PersistenceException(this, "neither object class ID nor object class name set");
+    }
     try {
       return Class.forName(className);
     }

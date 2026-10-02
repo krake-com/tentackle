@@ -26,7 +26,10 @@ import org.tentackle.persist.LockManager;
 
 
 /**
- * TRIP Application Server.
+ * Base class for TRIP application servers.
+ * <p>
+ * Starts a {@link TripServer} the clients connect to and, if connected directly to the database,
+ * initializes the {@link LockManager}.
  *
  * @author harald
  */
@@ -43,7 +46,7 @@ public abstract class ServerApplication extends AbstractServerApplication {
    *
    * @param name the application name, null for default name
    * @param version the application version, null for the default version
-   * @param connectionClass the class of the connection object to instantiate, null = default, or from serverInfo's properties file
+   * @param connectionClass the class of the connection object to instantiate, null = default or from the server's properties
    */
   public ServerApplication(String name, String version, Class<? extends RemoteDbConnectionImpl> connectionClass) {
     super(name, version);
@@ -61,6 +64,11 @@ public abstract class ServerApplication extends AbstractServerApplication {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to start the TRIP server after the startup has finished.
+   */
   @Override
   protected void startup() {
     super.startup();
@@ -70,18 +78,24 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
 
   /**
-   * Creates the TRIP-server instance (but does not start it).<br>
+   * Creates the TRIP server instance (but does not start it).<br>
    * The default implementation creates a {@link TripServer}.
    *
    * @param connectionClass the class of the connection object to instantiate,
    *                        null = default or from server's properties
-   * @return the created RmiServer
+   * @return the created TRIP server
    */
   protected TripServer createTripServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
     return new TripServer(getSessionInfo(), connectionClass);
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to initialize the {@link LockManager} (if connected directly to the database)
+   * and to create the TRIP server.
+   */
   @Override
   protected void finishStartup() {
     if (!getSession().isRemote()) {
@@ -94,7 +108,7 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
 
   /**
-   * Starts the TRIP-server.<br>
+   * Starts the TRIP server.<br>
    * The default implementation just does {@code tripServer.start()}.
    */
   protected void startTripServer() {
@@ -102,6 +116,11 @@ public abstract class ServerApplication extends AbstractServerApplication {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to close all open client sessions and stop the TRIP server.
+   */
   @Override
   protected void cleanup() {
     // kill all sessions and GC resources.

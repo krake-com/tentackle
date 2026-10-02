@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Number Space persistence implementation.
+ * Number pool persistence implementation.
  *
  * @author harald
  */
@@ -152,9 +152,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
-   * Creates a number space.
+   * Creates a number pool.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number pool PDO
    * @param context the domain context
    */
   public NumberPoolPersistenceImpl (NumberPool pdo, DomainContext context)    {
@@ -162,9 +162,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   /**
-   * Creates a number space with a session only.
+   * Creates a number pool with a session only.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number pool PDO
    * @param session the session
    */
   public NumberPoolPersistenceImpl(NumberPool pdo, Session session) {
@@ -172,16 +172,16 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a number pool without domain context or session.
    *
-   * @param pdo the number space PDO
+   * @param pdo the number pool PDO
    */
   public NumberPoolPersistenceImpl(NumberPool pdo) {
     super(pdo);
   }
 
   /**
-   * Creates a number space without domain context or session.
+   * Creates a number pool without PDO, domain context or session.
    */
   public NumberPoolPersistenceImpl() {
     super();

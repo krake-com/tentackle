@@ -18,13 +18,12 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbOperationClassVariables;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.OperationMethodCache;
 
 /**
- * Extends {@link DbObjectClassVariables} for {@link AbstractPersistentOperation}s.
+ * Extends {@link DbOperationClassVariables} for {@link AbstractPersistentOperation}s.
  *
  * @param <T> the operation class type
  * @param <P> the persistence class type
@@ -33,12 +32,14 @@ import org.tentackle.pdo.OperationMethodCache;
 public class PersistentOperationClassVariables<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> extends DbOperationClassVariables<P> {
 
   /**
-   * Creates an operation class variable.
+   * Creates operation class variables.<br>
+   * Delegates to the {@link PersistentClassVariablesFactory}.
    *
-   * @param operationClass the operation's class (i.e. interface)
+   * @param operationClass the operation's class (i.e., interface)
    * @param clazz the class of the derived operation
    * @param <T> the operation class type
    * @param <P> the persistence class type
+   * @return the class variables
    */
   public static <T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> PersistentOperationClassVariables<T,P> create(
       Class<T> operationClass, Class<P> clazz)  {
@@ -48,20 +49,20 @@ public class PersistentOperationClassVariables<T extends Operation<T>, P extends
 
 
   /**
-   * The associated operation class (i.e. the interface)
+   * The associated operation class (i.e., the interface).
    */
   public final Class<T> operationClass;
 
   /**
-   * The PDO method invocation cache.
+   * The operation's method invocation cache.
    */
   public final OperationMethodCache<T> methodCache;
 
 
   /**
-   * Constructs a classvariable.
+   * Constructs operation class variables.
    *
-   * @param operationClass the operation's class (i.e. interface)
+   * @param operationClass the operation's class (i.e., interface)
    * @param clazz the class of the derived operation
    */
   public PersistentOperationClassVariables(Class<T> operationClass, Class<P> clazz)  {

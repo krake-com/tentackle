@@ -36,7 +36,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A cursor for a {@link ResultSetWrapper}.
+ * A cursor streaming PDOs from a query result.
+ * <p>
+ * The same class serves local and remote sessions: for a local session the cursor wraps a {@link ResultSetWrapper},
+ * for a remote session it forwards all calls to a {@link RemoteResultSetCursor} on the server, which in turn
+ * wraps a local cursor there. The application code is the same in both cases.
+ * <p>
+ * A local cursor may carry a {@link JoinedSelect} to load eager relations along with their root PDOs.
+ * Since several rows make up a single PDO then, the query must be sorted by the root's ID and the cursor supports
+ * forward navigation only: {@link #setRow(int)}, {@link #scroll(int)}, {@link #last()}, {@link #previous()}
+ * and {@link #afterLast()} throw a {@link PersistenceException}.
+ * <p>
+ * A cursor must be closed. If it becomes unreachable before, it is closed by a {@link Cleaner} and a warning is logged.
  *
  * @author harald
  * @param <T> the retrieved type
@@ -143,8 +154,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
 
   /**
-   * Creates a cursor for a remote session.<br>
-   * Constructor for pdo objects.
+   * Creates a cursor for a remote session.
    *
    * @param context the domain context
    * @param remoteCursor the remote cursor
@@ -164,7 +174,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   /**
    * Gets the result set.
    *
-   * @return the result set
+   * @return the result set, null if closed
+   * @throws PersistenceException if session is remote
    */
   public ResultSetWrapper getResultSet() {
     assertSessionIsLocal();
@@ -172,7 +183,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Gets the join configuration.<br>
+   * Gets the join configuration.
    *
    * @return the join configuration, null if no joins
    * @throws PersistenceException if session is remote
@@ -185,7 +196,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   /**
    * Gets the remote cursor.
    *
-   * @return the remote cursor
+   * @return the remote cursor, null if closed
    * @throws PersistenceException if session is local
    */
   public RemoteResultSetCursor<T> getRemoteCursor() {
@@ -263,6 +274,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    *
    * @param row the row number (must be &ge; 0)
    * @return true if done, false if no such row and the cursor is now before the first row or after the last row
+   * @throws PersistenceException if row &lt; 0 or the cursor has joins
    */
   @Override
   public boolean setRow (int row) {
@@ -326,9 +338,9 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     /*
-     * some drivers don't allow positioning in result-sets that are not TYPE_FORWARD_ONLY. However, first() is a
-     * convenient way to test whether the result set contains some data at all. If the cursor is at the beginning or no
-     * access made at all, we will do nothing or perform a next() instead.
+     * Some drivers don't allow positioning in result sets that are TYPE_FORWARD_ONLY. However, first() is a
+     * convenient way to test whether the result set contains some data at all. If the cursor is already on the first
+     * row or no access has been made at all, we do nothing or perform a next() instead.
      */
     if (row == 0) {
       // no access made yet
@@ -355,6 +367,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    * Positions the cursor on the last row.
    *
    * @return true if positioned, false if cursor is empty
+   * @throws PersistenceException if the cursor has joins
    */
   @Override
   public boolean last() {
@@ -437,9 +450,10 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Moves the cursor to the previous row.<br>
-   * If we are already at the beginning, the cursor remains unchanged.
+   * If there is no previous row, the cursor is positioned before the first row.
    *
-   * @return true if advanced, false if already at the beginning
+   * @return true if moved, false if already at or before the first row
+   * @throws PersistenceException if the cursor has joins
    */
   @Override
   public boolean previous() {
@@ -476,6 +490,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    *
    * @param rows the number of rows to move, negative to move backwards
    * @return true if moved, false if no such row and the cursor is now positioned before the first row or after the last row
+   * @throws PersistenceException if the cursor has joins
    */
   @Override
   public boolean scroll(int rows) {
@@ -517,8 +532,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       eof = false;
       /*
        * Not noNext = true: the joined select has just been re-initialized, so there is no row
-       * that has already been read and that the next next() would have to skip over. Worse, the
-       * next() a few lines below would consume the flag itself and return true without advancing,
+       * that has already been read and that the next next() would have to skip over. Instead,
+       * the next() following beforeFirst() would consume the flag and return true without advancing,
        * leaving the cursor before the first row with row == 0 -- which get() reads as "no row".
        */
       noNext = false;
@@ -531,6 +546,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   /**
    * Positions the cursor after the last row.<br>
    * Works even for empty cursors.
+   *
+   * @throws PersistenceException if the cursor has joins
    */
   @Override
   public void afterLast() {
@@ -582,9 +599,12 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Gets the data object of the current row.
+   * Gets the PDO of the current row.
+   * <p>
+   * For cursors with joins, the PDO is assembled from all consecutive rows belonging to it.
+   * Hence, the underlying result set is advanced up to the first row of the next PDO.
    *
-   * @return the object, null if invalid row or no such object
+   * @return the PDO, null if invalid row or no such PDO
    */
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -629,7 +649,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
             pdo = js.currentPdo();
           }
           else if (pdo != js.currentPdo()) {
-            // new PDO detected (pDo contains current PDO, js.currentPdo is the next one)
+            // new PDO detected (pdo contains current PDO, js.currentPdo is the next one)
             noNext = true;
             break;
           }
@@ -641,7 +661,9 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Returns the objects of this cursor as a list.
+   * Returns the PDOs of this cursor as a list.<br>
+   * The cursor is rewound to the first row before.
+   * For remote sessions, the list is created on the server and transferred in a single round trip.
    *
    * @return the list
    */
@@ -649,7 +671,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   public List<T> toList() {
     List<T> list;
     if (session.isRemote()) {
-      // this is faster than a getObject()-loop because it saves TRIP roundtrips
+      // this is faster than a get()-loop because it saves TRIP round trips
       list = resources.remoteCursor.toList();    // unchecked
       if (list != null) {
         for (T obj : list) {
@@ -665,7 +687,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Returns the objects of this cursor as a list and closes this cursor.
+   * Returns the PDOs of this cursor as a list and closes this cursor.
    *
    * @return the list
    */
@@ -708,30 +730,53 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Sets the fetch direction.
+   * Sets the fetch direction.<br>
+   * This is only a hint to the JDBC driver.
    *
-   * @param direction the direction, see {@link java.sql.ResultSet#setFetchDirection}.
+   * @param direction the direction, see {@link java.sql.ResultSet#setFetchDirection}
    */
   public void setFetchDirection(int direction) {
-    resources.rs.setFetchDirection(direction);
+    if (session.isRemote()) {
+      try {
+        resources.remoteCursor.setFetchDirection(direction);
+      }
+      catch (RuntimeException ex) {
+        throw new PersistenceException(session, ex);
+      }
+    }
+    else {
+      resources.rs.setFetchDirection(direction);
+    }
   }
 
   /**
    * Gets the fetch direction.
    *
-   * @return the direction
+   * @return the direction, see {@link java.sql.ResultSet#getFetchDirection}
    */
   public int getFetchDirection() {
+    if (session.isRemote()) {
+      try {
+        return resources.remoteCursor.getFetchDirection();
+      }
+      catch (RuntimeException ex) {
+        throw new PersistenceException(session, ex);
+      }
+    }
     return resources.rs.getFetchDirection();
   }
 
   /**
-   * Fetches the next objects up to the fetch size.<br>
+   * Fetches the next PDOs up to the fetch size.<br>
    * This method is provided to minimize the number of
-   * roundtrips especially for remote cursors.
-   * The cursor is closed at the end of the cursor.
+   * round trips, especially for remote cursors.
+   * The cursor is closed when its end is reached, and the returned list is marked as closed.
+   * <p>
+   * If the fetch size is not set (&lt; 1), all PDOs from the first row on are returned
+   * and the cursor is closed. Notice that for local sessions, the fetch size is only a hint
+   * to the JDBC driver, which may ignore it and report 0.
    *
-   * @return the list of objects, null if no more objects found
+   * @return the list of PDOs, null if the cursor is already closed or no more PDOs found
    */
   @Override
   public FetchList<T> fetch() {
@@ -749,7 +794,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           row += list.size();
           if (firstInvoked) {
             firstInvoked = false;
-            row--;    // subtract cause row started at 1, not 0
+            row--;    // subtract because row started at 1, not 0
           }
           if (list.isClosed()) {
             resources.remoteCursor = null;    // already closed on remote side
@@ -774,7 +819,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           // load next fetch block
           list = new FetchList<>();
           // special optimization if first() has been invoked before (to prevent beforeFirst()
-          // called on FORWARD_ONLY cursors, some databases don't support that, i.e. Oracle)
+          // called on FORWARD_ONLY cursors, some databases don't support that, e.g. Oracle)
           if (firstInvoked && row == 1) {
             T obj = get();
             if (obj != null) {
@@ -810,7 +855,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
 
   /**
-   * Adds the rest of the cursor to a list.
+   * Rewinds the cursor and adds all PDOs to a list.
    *
    * @param list the list
    */
@@ -827,7 +872,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
 
   /**
-   * Configures the remotely retrieved PDO.
+   * Configures a remotely retrieved PDO.<br>
+   * Attaches the PDO to the local domain context and session.
    *
    * @param pdo the PDO
    */
@@ -845,6 +891,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Asserts that session is remote.
+   *
+   * @throws PersistenceException if session is local
    */
   protected void assertSessionIsRemote() {
     if (!session.isRemote()) {
@@ -854,6 +902,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Asserts that session is local.
+   *
+   * @throws PersistenceException if session is remote
    */
   protected void assertSessionIsLocal() {
     if (session.isRemote()) {
@@ -863,6 +913,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Asserts that there are no joins in the query.
+   *
+   * @throws PersistenceException if the cursor has joins
    */
   protected void assertNoJoins() {
     if (js != null) {
@@ -872,7 +924,10 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
 
   /**
-   * Adds a closed flag to saveObject a roundtrip in remote sessions.
+   * A list of fetched PDOs.<br>
+   * Adds a closed flag to save a round trip in remote sessions.
+   *
+   * @param <T> the element type
    */
   public static class FetchList<T> extends ArrayList<T> {
 
@@ -889,7 +944,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     /**
-     * Returns whether list is closed.
+     * Returns whether the list is closed.<br>
+     * A closed list is the last block of the cursor, and the cursor has been closed.
      *
      * @return true if this is the last fetch
      */

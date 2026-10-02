@@ -2,7 +2,7 @@
 
 ## Overview and Motivation
 
-Two users open the same `Invoice`. Both edit it. Both save. In a naïve system the
+Two users open the same `Invoice`. Both edit it. Both save. In a naive system the
 second save silently overwrites the first — the *lost update* problem. Tentackle
 addresses this on **two independent levels**, and it is important to understand that
 they solve *different* problems and are *always both* in play for a writable entity:
@@ -43,28 +43,33 @@ UPDATE invoice SET ... , serial = serial + 1   WHERE id = ? AND serial = ?
 DELETE FROM  invoice                            WHERE id = ? AND serial = ?
 ```
 
-(See the generated update path
-[`AbstractPersistentObject.updateImpl`/`deleteImpl`](../java/org/tentackle/persist/AbstractPersistentObject.java),
-which bind `id` and `getSerial()`.)
+(See [`AbstractPersistentObject.updateImpl`/`deleteImpl`](../java/org/tentackle/persist/AbstractPersistentObject.java):
+`deleteImpl` binds `id` and `getSerial()` itself, while for updates both the SQL (`createUpdateSql`) and the
+binding of all columns including `id` and `serial` (`setFields`) are generated into the persistence class.)
 
 If another transaction has modified the row in the meantime, its serial has already
 advanced, so **zero rows match** and the statement updates nothing. Tentackle checks
 the affected-row count in
-[`assertThisRowAffected(int)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/AbstractDbObject.java):
+[`assertThisRowAffected(int)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/AbstractDbObject.java)
+(simplified):
 
 ```java
-if (count != 1) {
-  if (count < 1) {
+if (count < 1) {
+  long persistedSerial = 0;
+  boolean temporary = false;
+  if (!isVirgin()) {
     // re-read the serial to distinguish "changed" from "deleted"
-    long persistedSerial = selectSerial(getId());
-    boolean temporary = persistedSerial > 0;   // still there -> optimistic-locking conflict
-    NotFoundException nfx = new NotFoundException(this, message, persistedSerial);
-    nfx.setTemporary(temporary);
-    throw nfx;
+    persistedSerial = selectSerial(getId());   // -1 if the row is gone
+    temporary = persistedSerial > 0;           // still there -> optimistic-locking conflict
   }
-  ...
+  NotFoundException nfx = new NotFoundException(this, message, persistedSerial);
+  nfx.setTemporary(temporary);
+  throw nfx;
 }
 ```
+
+With [JDBC batching](../../../../tentackle-database/src/main/docs/batching.md) enabled, the same check
+runs when the batch is flushed, for each object of the batch — the exception names the very same object.
 
 Two outcomes are distinguished by re-reading the current serial:
 
@@ -73,7 +78,7 @@ Two outcomes are distinguished by re-reading the current serial:
   transaction (re-reading the now-current row) may well succeed. This is the hook a
   `@Transaction`-annotated method uses to transparently retry — see
   [Transactions and Transparent Retry](../../../../tentackle-pdo/src/main/docs/transaction.md).
-- **The row is gone** (`persistedSerial == 0`) → it was deleted concurrently; the
+- **The row is gone** (`selectSerial` returns `-1`) → it was deleted concurrently; the
   failure is permanent.
 
 Because the check is a side effect of the normal write, optimistic locking costs
@@ -84,11 +89,11 @@ nothing on the happy path and requires no held database locks — ideal for the 
 
 - `tableserial` (model option `tableserial`,
   [`CN_TABLESERIAL`](../../../../tentackle-common/src/main/java/org/tentackle/common/Constants.java)) is a
-  *table-wide* version advanced on every write, used by the
+  per-row column holding the *table-wide* modification serial at the time of the row's last write, used by the
   [`ModificationTracker`](persistence.md#modification-tracking) to drive **cache expiry** and
   cross-client change notification. It is a coherence/notification counter, not a
   per-row conflict guard — do not confuse it with `serial`.
-- `serial` is **per object**; `tableserial` is **per table**.
+- `serial` counts the versions of **one object**; `tableserial` relates a row to the version of **the whole table**.
 
 ---
 
@@ -127,8 +132,9 @@ invoice.isTokenLockableByMe();   // free, or already mine?
 
 Convenience round-trips combine a load and a lock in **one** server call (important for
 remote sessions): `selectTokenLocked(id)` (= `select` + `requestTokenLock`) and
-`reloadTokenLocked()` (= `reload` + `requestTokenLock`). On the write side,
-`persistTokenLocked()` saves *and renews* the token so the user can keep editing.
+`reloadTokenLocked()` (= `reload` + `requestTokenLock`). Both run within a transaction of their own,
+whereas the lower-level `select(id, forUpdate, tokenLocked)` requires the caller's transaction.
+On the write side, `persistTokenLocked()` saves *and renews* the token so the user can keep editing.
 
 ### How a token is granted — atomically, and serial-aware
 
@@ -159,8 +165,12 @@ precisely:
 - someone else genuinely holds a live token → `LockException` carrying that holder's
   `editedBy`/`editedSince`/`editedExpiry` so the UI can say *who* and *since when*.
 
+Unlike the optimistic-locking failure above, the two `NotFoundException`s are *not* temporary: requesting a
+token on a stale object indicates a logic error in the application (a missing `@Transaction`, for example),
+which a retry would not fix. A `LockException`, in contrast, is temporary.
+
 Note clause **(2c)**: tokens **auto-expire**. A token is a time-boxed reservation
-(`getTokenLockTimeout()` ms), not a permanent lock, so a crashed or walked-away client
+(`getTokenLockTimeout()` ms, one hour by default), not a permanent lock, so a crashed or walked-away client
 cannot block an object forever — once `editedexpiry` passes, the next requester simply
 takes it over.
 
@@ -173,16 +183,20 @@ Token state lives in the columns, but a parallel
 [`DbTokenLock`](../java/org/tentackle/persist/lock/DbTokenLock.java) rows) so they can be
 known without scanning every table. Its job is cleanup:
 
-- when a **client session crashes / logs out**, that user's tokens are dropped
-  (`cleanupUserTokens`);
+- when a **client logs out or its session crashes**, that user's tokens are dropped
+  (`cleanupUserTokens`, invoked from `PersistenceUtilities.cleanupRemoteSession`);
 - when the **server restarts**, all tokens are cleared (`initialize`).
+
+Applications can keep selected tokens in both cases by overriding
+`DefaultLockManager.isTokenLockToKeep`.
 
 It is enabled **only on a non-remote server**; in 2-tier and remote-client setups it is
 disabled (expiry alone then bounds a stale token's lifetime).
 
 `transferTokenLock(userId)` is an administrative escape hatch to hand a token to another
 user (or free it, `userId == 0`) without holding it — for corner cases like admin
-tools, not normal flow.
+tools, not normal flow. It is serial-checked as well (`WHERE id = ? AND serial = ?`).
+Handing the token to another user also refreshes its expiry; freeing it only clears `editedby`.
 
 ---
 
@@ -237,15 +251,15 @@ sits and edits, where discovering the conflict *after* the work is unacceptable 
 
 ## Summary
 
-|                                               | `serial` (optimistic)                                      | token lock                                       |
-|-----------------------------------------------|------------------------------------------------------------|--------------------------------------------------|
-| **Always present?**                           | Yes, on every persistent object                            | Opt-in via `tokenlock` model option              |
-| **When is a conflict found?**                 | At write (save/persist/delete)                             | At lock request (before editing)                 |
-| **Held resources**                            | None                                                       | A persisted, expiring reservation                |
-| **Crosses transactions / visible to others?** | No (it's a version number)                                 | Yes                                              |
-| **On conflict**                               | `NotFoundException` (temporary → `@Transaction` may retry) | `LockException` (names the holder)               |
-| **Bumps `serial`?**                           | Yes, every persist                                         | No (metadata only)                               |
-| **Guarantee**                                 | No lost update, unconditionally                            | Early, cooperative "already being edited" notice |
+|                                               | `serial` (optimistic)                                                              | token lock                                       |
+|-----------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------------------|
+| **Always present?**                           | Yes, on every persistent object                                                    | Opt-in via `tokenlock` model option              |
+| **When is a conflict found?**                 | At write (save/persist/delete)                                                     | At lock request (before editing)                 |
+| **Held resources**                            | None                                                                               | A persisted, expiring reservation                |
+| **Crosses transactions / visible to others?** | No (it's a version number)                                                         | Yes                                              |
+| **On conflict**                               | `NotFoundException` (temporary if the row still exists → `@Transaction` may retry) | `LockException` (temporary, names the holder)    |
+| **Bumps `serial`?**                           | Yes, every persist                                                                 | No (metadata only)                               |
+| **Guarantee**                                 | No lost update, unconditionally                                                    | Early, cooperative "already being edited" notice |
 
 The serial column is the unconditional correctness guarantee; the token lock is the
 cooperative, user-facing layer built on top of it — and because token acquisition is
@@ -256,4 +270,4 @@ itself serial-checked, the two reinforce rather than duplicate each other.
 - [persistence.md → Token locking](persistence.md#token-locking)
 - [pdo.md](../../../../tentackle-pdo/src/main/docs/pdo.md) — the token-lock family on the PDO API
 - [model-definition.md → Entity-level option flags](../../../../tentackle-model/src/main/docs/model-definition.md#entity-level-option-flags) — the `tokenlock` and `tableserial` options
-- [exceptions.md](../../../../src/main/docs/exceptions.md) — `LockException` and `NotFoundException` in the framework's exception model, and why both are *temporary*
+- [exceptions.md](../../../../src/main/docs/exceptions.md) — `LockException` and `NotFoundException` in the framework's exception model, and when they are *temporary*

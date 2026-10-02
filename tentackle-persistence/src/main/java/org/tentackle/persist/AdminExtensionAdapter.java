@@ -27,7 +27,11 @@ import org.tentackle.session.PersistenceException;
 import java.util.List;
 
 /**
- * Adapter for the admin session extension.
+ * Client-side adapter for the admin session extension.<br>
+ * Delegates all methods to the {@link AdminExtensionAdapterRemoteDelegate} on the server.
+ * Hence, the adapter requires a remote session.
+ * <p>
+ * The adapter is obtained via {@link org.tentackle.pdo.PdoRemoteSession#getExtension}.
  *
  * @author harald
  */
@@ -48,8 +52,10 @@ public class AdminExtensionAdapter implements AdminExtension {
    * {@inheritDoc}
    * <p>
    * Invoked from {@link PdoRemoteSessionAdapter}.
+   * The context can be set only once and is immutable afterward.
    *
-   * @param context the domain context of the client user
+   * @param context the domain context of the client user (must be connected to a remote session)
+   * @throws PersistenceException if the context is already set
    */
   @Override
   public void setDomainContext(DomainContext context) {
@@ -78,7 +84,7 @@ public class AdminExtensionAdapter implements AdminExtension {
   }
 
 
-  // ---- implements DomainContextDependable ---------- (not used) --------------
+  // ---- implements DomainContextDependable ----------------------------------
 
   @Override
   public void determineContextId() {
@@ -94,16 +100,37 @@ public class AdminExtensionAdapter implements AdminExtension {
     return getDomainContext();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Not supported by the adapter.
+   *
+   * @throws PersistenceException always
+   */
   @Override
   public DomainContext createValidContext() {
     throw new PersistenceException("illegal attempt to create a context");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The adapter's context is always immutable.
+   *
+   * @return always true
+   */
   @Override
   public boolean isDomainContextImmutable() {
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The adapter's context is always immutable.
+   *
+   * @throws PersistenceException if {@code contextImmutable} is false
+   */
   @Override
   public void setDomainContextImmutable(boolean contextImmutable) {
     if (!contextImmutable) {

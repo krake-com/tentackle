@@ -27,7 +27,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for PDO persistence classes containing a preloading, readonly cache.
+ * Annotation for PDO persistence classes containing a preloading, read-only cache.
  * <p>
  * Such classes are collected by {@link PersistenceUtilities#getPreloadCacheClassNames()}.
  */

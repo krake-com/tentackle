@@ -60,7 +60,7 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
   }
 
   /**
-   * Configures the delegate.<p>
+   * Configures the delegate.<br>
    * Invoked from {@link RemoteDbSessionImpl#createRemoteDelegateInstance} by reflection.
    *
    * @param args the configuration parameters
@@ -154,7 +154,7 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
   @Override
   public int last() {
     try {
-      return cursor.last() ? cursor.getRow() : -1;
+      return cursor.last() ? cursor.getRow() : 0;
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -264,6 +264,12 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
   }
 
 
+  /**
+   * Closes the local cursor after a failure and returns the exception to throw.
+   *
+   * @param ex the exception
+   * @return the exception
+   */
   private RuntimeException createException(RuntimeException ex) {
     try {
       cursor.close();

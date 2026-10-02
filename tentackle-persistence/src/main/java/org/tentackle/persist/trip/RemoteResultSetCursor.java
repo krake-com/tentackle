@@ -24,7 +24,8 @@ import org.tentackle.persist.ResultSetCursor.FetchList;
 import java.util.List;
 
 /**
- * Remote delegate interface for {@link org.tentackle.persist.ResultSetCursor}.
+ * Remote delegate interface for {@link org.tentackle.persist.ResultSetCursor}.<br>
+ * The server-side implementation wraps a local cursor, which is created along with the delegate.
  *
  * @author  harald
  * @param <T> the type
@@ -32,9 +33,8 @@ import java.util.List;
 public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
 
   /**
-   * Closes the scrollable resource.<br>
-   * The scrollable resource is opened in its constructor.
-   * Closing an already closed scrollable resource is allowed.
+   * Closes the cursor.<br>
+   * Closing an already closed cursor is allowed.
    */
   void close();
 
@@ -43,7 +43,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
    * Row numbers start at 1.
    *
    * @param row the row number (must be &ge; 0)
-   * @return the new row number
+   * @return the current row number after positioning
    */
   int setRow(int row);
 
@@ -57,12 +57,12 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
   /**
    * Positions the cursor on the last row.
    *
-   * @return the current row
+   * @return the current row, 0 if cursor is empty
    */
   int last();
 
   /**
-   * Moves the cursor to the next row.
+   * Moves the cursor to the next row.<br>
    * If there are no more rows the current row remains unchanged.
    *
    * @return true if moved, false if no more rows
@@ -70,10 +70,10 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
   boolean next();
 
   /**
-   * Moves the cursor to the previous row.
-   * If we are already at the beginning, the cursor remains unchanged.
+   * Moves the cursor to the previous row.<br>
+   * If there is no previous row, the cursor is positioned before the first row.
    *
-   * @return true if advanced, false if already at the beginning
+   * @return true if moved, false if already at or before the first row
    */
   boolean previous();
 
@@ -81,7 +81,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
    * Moves the cursor a given number of rows.
    *
    * @param rows the number of rows to move, negative to move backwards
-   * @return the current row
+   * @return the current row number after positioning
    */
   int scroll(int rows);
 
@@ -107,33 +107,34 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
   boolean isAfterLast();
 
   /**
-   * Gets the data object of the current row.
+   * Gets the PDO of the current row.
    *
-   * @return the object, null if invalid row or no such object
+   * @return the PDO, null if invalid row or no such PDO
    */
   T get();
 
   /**
-   * Returns the objects of this cursor as a list.
+   * Returns the PDOs of this cursor as a list.<br>
+   * The cursor is rewound to the first row before.
    *
    * @return the list
    */
   List<T> toList();
 
   /**
-   * Sets the fetchsize.<br>
+   * Sets the fetch size.<br>
    * This is the number of rows the cursor will fetch
    * from the server in one batch.
-   * A fetchsize of 0 means server default.
+   * A fetch size of 0 means server default.
    *
-   * @param rows the fetchsize
+   * @param rows the fetch size
    */
   void setFetchSize(int rows);
 
   /**
-   * Gets the fetchsize.
+   * Gets the fetch size.
    *
-   * @return the fetchsize
+   * @return the fetch size
    */
   int getFetchSize();
 
@@ -152,12 +153,12 @@ public interface RemoteResultSetCursor<T> extends RemoteDbDelegate {
   int getFetchDirection();
 
   /**
-   * Fetches the next objects up to the fetchsize.<br>
+   * Fetches the next PDOs up to the fetch size.<br>
    * This method is provided to minimize the number of
-   * roundtrips especially for remote cursors.
-   * The cursor is closed at the end of the cursor.
+   * round trips.
+   * The cursor is closed when its end is reached, and the returned list is marked as closed.
    *
-   * @return the list of objects, null if no more objects found
+   * @return the list of PDOs, null if the cursor is already closed or no more PDOs found
    */
   FetchList<T> fetch();
 

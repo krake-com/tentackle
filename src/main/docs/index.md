@@ -37,6 +37,7 @@ topic-grouped listing of every document, see the
 - **Cache / caching** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md), [Multi-Tier Cascade](./tiers.md)
 - **Cache preloading (`@PreloadCache`)** — [PDO Caching](../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Canonical construction (`@CanonicalConstructor`, builders)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [TRIP](../../../tentackle-core/src/main/docs/trip.md)
+- **Class variables (per-class persistence metadata)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#class-variables), [Persistence Wurblets](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblets.md)
 - **ClassMapper / class mapping** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md), [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md)
 - **CockroachDB (backend peculiarities, selection by name)** — [The CockroachDB Backend](../../../tentackle-sql/src/main/docs/cockroachdb.md)
 - **Collections (tracked, copy-on-write, immutable)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Immutable](../../../tentackle-core/src/main/docs/immutable.md)
@@ -90,6 +91,7 @@ topic-grouped listing of every document, see the
 ## F
 
 - **FFM API (native bindings)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
+- **Fetch size / `FetchList` (fetching cursor rows in blocks)** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md#fetching-in-blocks-fetch)
 - **Filtering (column autofilter in table headers)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#column-filters-autofilter)
 - **Firebird (backend peculiarities)** — [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Formatting (localized patterns)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Resource Bundles](../../../tentackle-common/src/main/docs/bundle.md)
@@ -128,6 +130,7 @@ topic-grouped listing of every document, see the
 - **JPMS / Jigsaw (modules, automatic modules)** — [Tentackle Modules](./modules.md#named-modules-and-automatic-modules), [Quickstart](./quickstart.md)
 - **JPMS: exporting new packages (wizard profiles, first operation)** — [Quickstart](./quickstart.md#the-first-operation-jpms-does-not-come-for-free), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#how-the-wizard-places-files-the-model-and-profiles)
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
+- **Joins (`Join`, `JoinedSelect`, `JoinState`)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#joins), [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md), [The Persistence Wurblet API](../../../tentackle-persistence-wurblets/src/main/docs/persistence-wurblet-api.md)
 - **JTA / XA (`jta` backend property, `XaConnectionManager`, `XaMpxConnectionManager`)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#global-transactions)
 - **JWT / ID token verification** — [Single Sign-On with Google](./google-sso.md)
 - **JWT / tokens on the client (storage)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [Single Sign-On with Google](./google-sso.md)
@@ -144,6 +147,7 @@ topic-grouped listing of every document, see the
 
 - **Location transparency (and its limits)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md), [Multi-Tier Cascade](./tiers.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [PDO](../../../tentackle-pdo/src/main/docs/pdo.md)
 - **Locking (optimistic `serial`, token locks)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md)
+- **LockManager (token lock cleanup on logout, crash and restart)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md#the-lockmanager-surviving-crashes), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#token-locking)
 - **`Loggable` (how much of an exception to log)** — [Exceptions and Error Handling](./exceptions.md#loggable-how-much-of-an-exception-to-log), [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md)
 - **Logging** — [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md), [SLF4J Provider](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md), [Log4J 2 Provider](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md)
 
@@ -170,7 +174,8 @@ topic-grouped listing of every document, see the
 
 - **Naming rules (derived class names, `NamingRules`)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md)
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
-- **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
+- **Normtext (phonetically normalized search, `NormText`)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#normtext), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#built-in-persistence-implementations)
 - **Number sources (unique business numbers)** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md)
 - **Notes and notifications (non-blocking dialogs, `NotificationBuilder`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#notes-and-notifications)
 
@@ -178,6 +183,7 @@ topic-grouped listing of every document, see the
 
 - **Object identity (`equals`/`hashCode`/`compareTo`, id-based, transient trap, why relations are lists not sets)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md#object-identity--equals-hashcode-and-why-relations-are-lists)
 - **Operations (behavior without an entity)** — [Operation](../../../tentackle-pdo/src/main/docs/operation.md)
+- **Optimistic locking (`serial` column, lost updates)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md#optimistic-locking-the-serial-column), [Correctness First](./correctness-first.md)
 - **Optional query conditions (QBF-style finders)** — [Query Methods](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md#optional-conditions-qbf-style-finders)
 - **Oracle (backend peculiarities)** — [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md)
 - **ORM comparison** — [PDOs vs. Traditional ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
@@ -235,7 +241,8 @@ topic-grouped listing of every document, see the
 - **Secrets on the client (SSO tokens, passwords)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md)
 - **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Schema migration (`tentackle-sql:migrate`, migration hints)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-migrate-goal), [AI Agent Tooling Support](./ai-agents.md#following-the-model-tentackle-sqlmigrate)
-- **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md)
+- **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#built-in-persistence-implementations)
+- **Server application (`ServerApplication`, `AbstractServerApplication`)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#server-application-lifecycle), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md)
 - **Serialization (wire format)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
@@ -254,7 +261,7 @@ topic-grouped listing of every document, see the
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning)
-- **Session administration (list, log out, kill client sessions)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration)
+- **Session administration (list, log out, kill client sessions)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#remoting-trip)
 
 ## T
 

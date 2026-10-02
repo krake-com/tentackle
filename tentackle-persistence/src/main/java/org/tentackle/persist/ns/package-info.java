@@ -17,6 +17,6 @@
  */
 
 /**
- * Persistence implementation for number sources.
+ * Persistence implementations for the number source PDOs (number pools and ranges).
  */
 package org.tentackle.persist.ns;

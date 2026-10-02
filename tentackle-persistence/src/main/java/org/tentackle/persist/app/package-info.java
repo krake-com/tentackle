@@ -17,6 +17,7 @@
  */
 
 /**
- * Application lifecycle.
+ * Server applications: the base classes for application servers connected directly to the
+ * database or to another server.
  */
 package org.tentackle.persist.app;

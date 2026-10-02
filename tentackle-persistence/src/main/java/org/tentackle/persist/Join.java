@@ -37,9 +37,9 @@ import java.util.function.BiConsumer;
  * Used by eager joins and explicit domain-driven joins.<br>
  * Works for composite and non-composite relations.
  * <p>
- * A join is an immutable description of <em>how</em> to join, not of a running query: the eager
- * joins of an entity are created once in the static class variables of its persistence class and
- * are therefore shared by all threads. The PDOs joined while a result set is read are consequently
+ * A join is a description of <em>how</em> to join, not of a running query, and is not modified
+ * once set up: the eager joins of an entity are created once in the static class variables of its
+ * persistence class and are therefore shared by all threads. The PDOs joined while a result set is read are consequently
  * kept in the per-query {@link JoinState} owned by the {@link JoinedSelect}, never in the join
  * itself.
  *
@@ -53,21 +53,21 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
 
   /**
    * The join type.<br>
-   * Currently supported is only INNER and LEFT.
+   * Only INNER and LEFT are currently supported.
    */
   private final JoinType type;
 
   /**
    * The column name of the table.
-   * For object-joins this is the alias-name of the table followed by a dot and a column name ending with "id"
-   * For list-joins this is the alias-name of the table followed by a dot and the ID-column name.
+   * For object joins this is the alias of the table followed by a dot and a column name ending with "id".
+   * For list joins this is the alias of the table followed by a dot and the ID column name.
    */
   private final String columnName;
 
   /**
    * The column name of the joined table.
-   * For object-joins this is the alias-name of the joined table followed by a dot and the ID-column name.
-   * For list-joins this is the alias-name of the joined table followed by a dot and a column name ending with "id"
+   * For object joins this is the alias of the joined table followed by a dot and the ID column name.
+   * For list joins this is the alias of the joined table followed by a dot and a column name ending with "id".
    */
   private final String joinedColumnName;
 
@@ -97,7 +97,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final boolean listJoin;
 
   /**
-   * True if the joined table gets an extra id added due to multiple ids within its select.
+   * True if the joined table gets an extra ID added due to multiple IDs within its select.
    */
   private final boolean explicitIdAliasRequired;
 
@@ -114,7 +114,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @param columnName the column name of the PDO (including table alias!)
    * @param joinedColumnName the column name of the joined PDO (including table alias!)
    * @param joinedClass the joined class
-   * @param joinAlias the alias of the joined pdo
+   * @param joinAlias the alias of the joined PDO
    * @param extraSql optional SQL code (usually a WHERE clause)
    * @param joiner the joiner
    */
@@ -143,7 +143,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @param columnName the column name of the PDO (including table alias!)
    * @param joinedColumnName the column name of the joined PDO (including table alias!)
    * @param joinedClass the joined class
-   * @param joinAlias the alias of the joined pdo
+   * @param joinAlias the alias of the joined PDO
    * @param joiner the joiner
    */
   public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
@@ -183,7 +183,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   /**
    * Gets the column name of the PDO.
    *
-   * @return the column name
+   * @return the column name including the table alias
    */
   public String getColumnName() {
     return columnName;
@@ -192,7 +192,8 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   /**
    * Gets the joined column name.
    *
-   * @return the column name, "id" if object join, else list join
+   * @return the column name including the table alias: the ID column for object joins,
+   *         the column referencing the PDO for list joins
    */
   public String getJoinedColumnName() {
     return joinedColumnName;
@@ -255,24 +256,26 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   }
 
   /**
-   * Creates a new PDO to join to given pdo.
+   * Creates a new PDO to join to the given PDO.<br>
+   * The new PDO is created in the domain context of the given PDO.
    *
-   * @param pdo the pdo to join to
-   * @return the pdo to join
+   * @param pdo the PDO to join to
+   * @return the PDO to join
    */
   public J createJoinedPdo(T pdo) {
     return Pdo.create(joinedClass, pdo.getPersistenceDelegate().getDomainContext());
   }
 
   /**
-   * Joins a pdo with another pdo.<br>
+   * Joins a PDO with another PDO.<br>
    * The PDOs joined so far are tracked in the given per-query state; hence the same join
-   * can be used by concurrently running selects.
+   * can be used by concurrently running selects. If a PDO with the same ID has already been joined,
+   * the joiner is not invoked again.
    *
    * @param joinState the state of the running joined select
-   * @param pdo the pdo that gets the join
-   * @param pdoToJoin the pdo to join, null to finish the joining process
-   * @return the new or already joined pdo
+   * @param pdo the PDO that gets the join
+   * @param pdoToJoin the PDO to join (must not be null)
+   * @return the new or already joined PDO
    */
   public J join(JoinState joinState, T pdo, J pdoToJoin) {
     Map<Long, J> lastJoined = joinState.getJoinedPdos(this, pdo);

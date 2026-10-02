@@ -33,15 +33,15 @@ interface LockManagerHolder {
  * Manager for token locks.
  * <p>
  * The lock manager maintains the state of all token locks in parallel to the token-lock attributes of the PDOs.<br>
- * This allows to know all locks without the need to scan the PDO tables.
+ * This makes it possible to know all locks without the need to scan the PDO tables.
  * <p>
  * The lock manager is used for 2 purposes:
  * <ol>
- *  <li>If a client session crashes, the locks held by the session's user are removed.</li>
+ *  <li>If a client logs out or its session crashes, the locks held by the session's user are removed.</li>
  *  <li>When the server crashes, all locks are removed at server start.</li>
  * </ol>
  * Notice that only non-remote servers provide an enabled lock manager.
- * In 2-tier and remote applications the lockmanager is disabled.
+ * In 2-tier and remote applications the lock manager is disabled.
  *
  * @see DefaultLockManager
  */
@@ -60,7 +60,7 @@ public interface LockManager {
   /**
    * Returns whether the lock manager is enabled.
    *
-   * @return true if server
+   * @return true if running in a server connected directly to the database
    */
   boolean isEnabled();
 
@@ -69,13 +69,13 @@ public interface LockManager {
    * The method is invoked when a user logs out or its session crashed.
    *
    * @param session the session to use
-   * @param userId the user id
+   * @param userId the user ID
    */
   void cleanupUserTokens(Db session, long userId);
 
   /**
-   * Initializes the lockmanager.<br>
-   * Called once at server startup to remove all locks.
+   * Initializes the lock manager.<br>
+   * Called once at server startup to remove all stale locks.
    *
    * @param session the session to use
    */
@@ -106,7 +106,7 @@ public interface LockManager {
   Collection<TokenLock> getLocks();
 
   /**
-   * Updates the lock token.<br>
+   * Updates the token lock.<br>
    * The method is invoked from within a transaction after the PDO has been persisted successfully.
    *
    * @param pdo the PDO
@@ -115,7 +115,7 @@ public interface LockManager {
   <T extends PersistentDomainObject<T>> void update(T pdo);
 
   /**
-   * Notifies the lockmanager that a transaction has been committed.
+   * Notifies the lock manager that a transaction has been committed.
    *
    * @param session the session
    * @param txNumber the unique transaction number
@@ -123,7 +123,7 @@ public interface LockManager {
   void commit(Db session, long txNumber);
 
   /**
-   * Notifies the lockmanager that a transaction has been rolled back.
+   * Notifies the lock manager that a transaction has been rolled back.
    *
    * @param session the session
    * @param txNumber the unique transaction number

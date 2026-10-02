@@ -28,7 +28,8 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 
 /**
- * The modification tracker for the PDO persistence layer.
+ * The modification tracker for the PDO persistence layer.<br>
+ * Replaces the {@link DbModificationTracker} of the database layer to make it PDO-aware.
  *
  * @author harald
  */
@@ -36,7 +37,7 @@ import org.tentackle.session.Session;
 public class PdoModificationTracker extends DbModificationTracker {
 
   /**
-   * Creates the Pdo tracker.
+   * Creates the PDO tracker.
    * <p>
    * Notice that the tracker is a singleton.
    */
@@ -44,6 +45,11 @@ public class PdoModificationTracker extends DbModificationTracker {
     super("PDO Modification Tracker");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to map PDO interfaces to their table names.
+   */
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public IdSerialTuple getIdSerialForClass(Class<?> clazz) {
@@ -53,11 +59,16 @@ public class PdoModificationTracker extends DbModificationTracker {
     return super.getIdSerialForClass(clazz);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to enable the local client mode for non-server applications connected directly to the database.
+   */
   @Override
   public void setSession(Session session) {
     super.setSession(session);
 
-    // enable local client mode if this is a non-server application with a local jdbc url.
+    // enable local client mode if this is a non-server application with a local JDBC URL.
     // in all other cases use optimized mode.
     Application application = Application.getInstance();
     setLocalClientMode(!session.isRemote() && application != null && !application.isServer());

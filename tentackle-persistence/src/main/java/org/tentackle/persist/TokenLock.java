@@ -21,28 +21,29 @@ package org.tentackle.persist;
 import org.tentackle.common.Timestamp;
 
 /**
- * A token lock.
+ * A token lock as maintained by the {@link LockManager}.<br>
+ * Mirrors the token lock attributes (editedBy, editedSince and editedExpiry) of a PDO.
  */
 public interface TokenLock {
 
   /**
-   * Gets the class id of the locked PDO.
+   * Gets the class ID of the locked PDO.
    *
-   * @return the class id
+   * @return the class ID
    */
   int getPdoClassId();
 
   /**
-   * Gets the object id of locked PDO.
+   * Gets the object ID of the locked PDO.
    *
-   * @return the object id
+   * @return the object ID
    */
   long getPdoId();
 
   /**
    * Gets the object ID of the user holding the token.
    *
-   * @return the user id, 0 = unlocked
+   * @return the user ID, 0 = unlocked
    */
   long getLockedBy();
 
@@ -54,9 +55,9 @@ public interface TokenLock {
   Timestamp getLockedSince();
 
   /**
-   * Gets the timestamp when token will expire.
+   * Gets the timestamp when the token will expire.
    *
-   * @return the timestamp when token will expire
+   * @return the timestamp when the token will expire
    */
   Timestamp getLockExpiry();
 

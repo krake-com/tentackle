@@ -27,7 +27,6 @@ import org.tentackle.pdo.PdoCacheOperation;
 import org.tentackle.pdo.PdoCachePreloadContent;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.PdoCacheOperationPersistenceImpl;
-import org.tentackle.persist.PdoModificationTracker;
 import org.tentackle.persist.PersistenceUtilities;
 
 import java.util.ArrayList;
@@ -35,7 +34,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Remote delegate implementation for {@link PdoModificationTracker}.
+ * Remote delegate implementation for {@link PdoCacheOperationPersistenceImpl}.
  *
  * @author  harald
  */
@@ -50,7 +49,7 @@ public class PdoCacheOperationRemoteDelegateImpl
   /**
    * Creates the remote delegate for {@link PdoCacheOperationPersistenceImpl}.
    *
-   * @param session the RMI session
+   * @param session the TRIP session
    * @param persistenceClass the persistence implementation class
    * @param operationClass the operation interface class
    */
@@ -75,7 +74,7 @@ public class PdoCacheOperationRemoteDelegateImpl
         preloadContents.add(cache.getPreloadContent(context));
       }
       else {
-        LOGGER.info("PdoCache " + cache + " is not a preloading, read-only cache or it is disabled -> skipped");
+        LOGGER.info("PdoCache " + cache + " is not a preloading read-only cache, or is disabled -> skipped");
       }
     }
     return preloadContents;

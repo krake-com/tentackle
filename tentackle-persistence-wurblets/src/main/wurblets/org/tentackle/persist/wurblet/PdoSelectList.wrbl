@@ -217,18 +217,18 @@ For more options, see {\@link DbModelWurblet}.
       if (cursor != null) {
 ]@
 @{to remoteOut}@
-  RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@);
+  RemoteResultSetCursor<@(pdoType)@> @(methodName)@(@(pcs(params, pdoType + " obj"))@);
 @{to implOut}@
 
   \@Override
-  public RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) {
+  public RemoteResultSetCursor<@(pdoType)@> @(methodName)@(@(pcs(params, pdoType + " obj"))@) {
     obj.setSession(getSession());
     obj.assertRootEntity();
     return createRemoteResultSetCursorDelegate(obj.@(methodName)@(@(iparms)@));
   }
 @{to}@
-        return new ResultSetCursor<>(getSession(), getRemoteDelegate().
-            @(methodName)@(@(pcs(iparms, "me()"))@));
+      return new ResultSetCursor<>(getDomainContext(), getRemoteDelegate().
+          @(methodName)@(@(pcs(iparms, "me()"))@));
 @[
       } // end if cursor
       else {
@@ -259,18 +259,18 @@ For more options, see {\@link DbModelWurblet}.
       if (cursor != null) {
 ]@
 @{to remoteOut}@
-  RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@);
+  RemoteResultSetCursor<@(pdoType)@> @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
 
   \@Override
-  public RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) {
+  public RemoteResultSetCursor<@(pdoType)@> @(methodName)@(@(pcs(params, "DomainContext context"))@) {
     setDomainContext(context);
     dbObject.assertRootEntity();
     return createRemoteResultSetCursorDelegate(dbObject.@(methodName)@(@(iparms)@));
   }
 @{to}@
-        return new ResultSetCursor<>(getSession(), getRemoteDelegate().
-            @(methodName)@(@(pcs(iparms, "getDomainContext()"))@));
+      return new ResultSetCursor<>(getDomainContext(), getRemoteDelegate().
+          @(methodName)@(@(pcs(iparms, "getDomainContext()"))@));
 @[
       } // end if cursor
       else {
@@ -385,7 +385,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         if (withJoins) {
 ]@
-    return new ResultSetCursor<>(me(), rs, js));
+    return new ResultSetCursor<>(me(), rs, js);
 @[
         }
         else  {

@@ -21,7 +21,7 @@ package org.tentackle.persist;
 import org.tentackle.common.StringNormalizer;
 
 /**
- * A helper class to create a normtext like string from a user's input.<br>
+ * A helper class to create a normtext-like string from a user's input.<br>
  * It is intended to search in normtext columns of PDOs with LIKE or NOT LIKE.
  *
  * @author harald
@@ -37,13 +37,15 @@ public class NormText {
    * This is usually a user input.<br>
    * The input will be normalized via {@link StringNormalizer#normalize(java.lang.String)}.
    * If the string starts with a "!" or "-" it will be treated as "NOT LIKE".
+   * The normalized string is wrapped in "%" to match anywhere in the normtext.
+   * An empty string matches all.
    *
    * @param str the search string
    */
   public NormText(String str) {
     String sqlPattern = str == null ? "" : str;
     inverted = sqlPattern.startsWith("!") || sqlPattern.startsWith("-");
-    sqlPattern = StringNormalizer.getInstance().normalize(sqlPattern);    // this removes also leading and trailing !,%,_, whitespaces and alike
+    sqlPattern = StringNormalizer.getInstance().normalize(sqlPattern);    // this also removes leading and trailing !,%,_, whitespace and the like
     matchingAll = sqlPattern.isEmpty();
     this.pattern = matchingAll ? null : ("%" + sqlPattern + "%");
   }

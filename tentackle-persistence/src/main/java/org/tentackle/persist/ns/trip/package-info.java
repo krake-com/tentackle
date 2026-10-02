@@ -17,6 +17,6 @@
  */
 
 /**
- * Number sources remoting.
+ * TRIP remote delegates for the number source PDOs.
  */
 package org.tentackle.persist.ns.trip;

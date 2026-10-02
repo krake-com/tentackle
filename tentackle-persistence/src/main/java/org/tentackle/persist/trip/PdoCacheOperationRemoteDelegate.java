@@ -26,7 +26,7 @@ import org.tentackle.persist.PdoCacheOperationPersistenceImpl;
 import java.util.Collection;
 
 /**
- * Remote delegate interface for {@link org.tentackle.session.ModificationTracker}.
+ * Remote delegate interface for {@link PdoCacheOperationPersistenceImpl}.
  *
  * @author  harald
  */
@@ -35,8 +35,8 @@ public interface PdoCacheOperationRemoteDelegate
 
   /**
    * Gets the content of all caches to preload.<br>
-   * The method is provided by the modification tracker since we need
-   * to keep the modification serial in sync with the cache data.
+   * The content includes the modification serials of the tables, which are needed
+   * to keep the client's modification tracker in sync with the cache data.
    *
    * @param context the domain context, never null
    * @return the content of all caches to preload, never null

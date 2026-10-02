@@ -38,7 +38,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Implementation of the remote delegate for {@link PersistentDomainObject}.<br>
+ * Implementation of the remote delegate for {@link AbstractPersistentObject}.<br>
+ * Executes the persistence methods on the server. The low-level methods inherited from the
+ * database layer are disabled to protect against malicious clients.
  *
  * @param <T> the {@code PersistentDomainObject} class
  * @param <P> the {@code AbstractPersistentObject} class (persistence implementation)
@@ -58,16 +60,16 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   protected final Class<T> pdoClass;
 
   /**
-   * PDO with a default domain context associated to the delegate's session.
+   * PDO with a default domain context associated with the delegate's session.
    */
   protected T pdo;
 
 
   /**
-   * Creates a delegate on the serverSession socket.
+   * Creates a delegate for the given TRIP session.
    *
    * @param serverSession the TRIP session
-   * @param persistenceClass the subclass of AbstractDbObject
+   * @param persistenceClass the subclass of AbstractPersistentObject
    * @param pdoClass the PDO class (interface)
    */
   public AbstractPersistentObjectRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> persistenceClass, Class<T> pdoClass) {
@@ -101,7 +103,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
 
   /**
-   * Creates a new pdo instance of the required class
+   * Creates a new PDO instance of the required class
    * for methods that return a new object.
    *
    * @param context the domain context
@@ -118,12 +120,12 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   /**
-   * Selects by ID into a new instance.<br>
-   * Throws {@link NotFoundException}, if no such PDO in database.
+   * Selects by ID into a new instance.
    *
    * @param context the domain context
    * @param id the ID
-   * @return the pdo, never null
+   * @return the PDO, never null
+   * @throws NotFoundException if no such PDO in database
    */
   protected T newInstance(DomainContext context, long id) {
     T newPdo = newInstance(context).select(id);
@@ -151,7 +153,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
    * @param context the domain context
    */
   protected void setDomainContext(DomainContext context) {
-    // set the db in the context first as this will be copied to the object below
+    // set the session in the context first as this will be copied to the object below
     if (context != null) {
       context.setSession(getSession());   // session in context is transient, so we must set it here
     }
@@ -279,107 +281,107 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public List<T> selectAll(DomainContext cb) {
-    setDomainContext(cb);
+  public List<T> selectAll(DomainContext context) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectAll();
   }
 
   @Override
-  public List<T> selectAny(DomainContext cb, Collection<Long> ids) {
-    setDomainContext(cb);
+  public List<T> selectAny(DomainContext context, Collection<Long> ids) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectAny(ids);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) {
-    return ((P) newInstance(cb).getPersistenceDelegate()).select(id, forUpdate, tokenLocked);
+  public T select(DomainContext context, long id, boolean forUpdate, boolean tokenLocked) {
+    return ((P) newInstance(context).getPersistenceDelegate()).select(id, forUpdate, tokenLocked);
   }
 
   @Override
-  public T selectTokenLocked(DomainContext cb, long id) {
-    return newInstance(cb).getPersistenceDelegate().selectTokenLocked(id);
+  public T selectTokenLocked(DomainContext context, long id) {
+    return newInstance(context).getPersistenceDelegate().selectTokenLocked(id);
   }
 
   @Override
-  public List<T> selectByNormText(DomainContext cb, String normText) {
-    setDomainContext(cb);
+  public List<T> selectByNormText(DomainContext context, String normText) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectByNormText(normText);
   }
 
   @Override
-  public RemoteResultSetCursor<T> selectByNormTextAsCursor(DomainContext cb, String normText) {
-    setDomainContext(cb);
+  public RemoteResultSetCursor<T> selectByNormTextAsCursor(DomainContext context, String normText) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return createRemoteResultSetCursorDelegate(dbObject.selectByNormTextAsCursor(normText));
   }
 
   @Override
-  public List<T> selectLatest(DomainContext cb, long greaterId, int limit) {
-    setDomainContext(cb);
+  public List<T> selectLatest(DomainContext context, long greaterId, int limit) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectLatest(greaterId, limit);
   }
 
   @Override
-  public List<T> selectAllForCache(DomainContext cb) {
-    setDomainContext(cb);
+  public List<T> selectAllForCache(DomainContext context) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     // load via cache, if there is a cache at all
     return dbObject.selectAllCached();
   }
 
   @Override
-  public List<T> selectAnyForCache(DomainContext cb, Collection<Long> ids) {
-    setDomainContext(cb);
+  public List<T> selectAnyForCache(DomainContext context, Collection<Long> ids) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     // load via cache, if there is a cache at all
     return dbObject.selectAnyCached(ids);
   }
 
   @Override
-  public T selectForCache(DomainContext cb, long id) {
+  public T selectForCache(DomainContext context, long id) {
     // load via cache, if there is a cache at all
-    return (newInstance(cb).getPersistenceDelegate()).selectCached(id);
+    return (newInstance(context).getPersistenceDelegate()).selectCached(id);
   }
 
   @Override
-  public RemoteResultSetCursor<T> selectAllAsCursor(DomainContext cb) {
-    setDomainContext(cb);
+  public RemoteResultSetCursor<T> selectAllAsCursor(DomainContext context) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return createRemoteResultSetCursorDelegate(dbObject.selectAllAsCursor());
   }
 
   @Override
-  public List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial) {
-    setDomainContext(cb);
+  public List<T> selectAllWithExpiredTableSerials(DomainContext context, long oldSerial) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectAllWithExpiredTableSerials(oldSerial);
   }
 
   @Override
-  public List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial, long maxSerial) {
-    setDomainContext(cb);
+  public List<T> selectAllWithExpiredTableSerials(DomainContext context, long oldSerial, long maxSerial) {
+    setDomainContext(context);
     dbObject.assertRootEntity();
     return dbObject.selectAllWithExpiredTableSerials(oldSerial, maxSerial);
   }
 
   @Override
-  public boolean isReferenced(DomainContext cb, long id) {
-    T obj = newInstance(cb).select(id);
+  public boolean isReferenced(DomainContext context, long id) {
+    T obj = newInstance(context).select(id);
     return obj != null && obj.isReferenced();
   }
 
   @Override
-  public TokenLockInfo updateTokenLock(DomainContext cb, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) {
+  public TokenLockInfo updateTokenLock(DomainContext context, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) {
     if (getSession().isRemote()) {
       // optimize, if running in remote middle tier
-      return dbObject.getRemoteDelegate().updateTokenLock(cb, id, tokenExpiry, userId, curTime);
+      return dbObject.getRemoteDelegate().updateTokenLock(context, id, tokenExpiry, userId, curTime);
     }
-    P po = getPersistenceDelegate(newInstance(cb, id));
+    P po = getPersistenceDelegate(newInstance(context, id));
     po.setId(id);
     po.updateTokenLock(tokenExpiry, userId, curTime);
     return new TokenLockInfo(po.getEditedBy(), po.getEditedSince(), po.getEditedExpiry());
@@ -391,13 +393,13 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public void updateTokenLockOnly(DomainContext cb, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
+  public void updateTokenLockOnly(DomainContext context, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
     if (getSession().isRemote()) {
       // optimize, if running in remote middle tier
-      dbObject.getRemoteDelegate().updateTokenLockOnly(cb, id, editedBy, editedSince, editedExpiry);
+      dbObject.getRemoteDelegate().updateTokenLockOnly(context, id, editedBy, editedSince, editedExpiry);
     }
     else {
-      P po = getPersistenceDelegate(newInstance(cb, id));
+      P po = getPersistenceDelegate(newInstance(context, id));
       po.setId(id);
       po.setEditedBy(editedBy);
       po.setEditedSince(editedSince);

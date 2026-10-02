@@ -25,7 +25,9 @@ import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PdoUtilities;
 
 /**
- * The default implementation for a {@link RemoteDbDelegateLocator}.
+ * PDO-aware implementation of a {@link RemoteDbDelegateLocator}.<br>
+ * Replaces the {@link DbRemoteDelegateLocator} of the database layer to determine the
+ * serviced class via {@link PdoUtilities} and to treat {@link Operation}s as operations.
  *
  * @author harald
  */
@@ -39,12 +41,22 @@ public class PdoRemoteDelegateLocator extends DbRemoteDelegateLocator {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to determine the PDO or operation interface via {@link PdoUtilities}.
+   */
   @Override
   protected Class<?> findEffectiveClass(Class<?> clazz) {
     Class<?> servicedClass = PdoUtilities.getInstance().determineServicedClass(clazz);
     return servicedClass != null ? servicedClass : super.findEffectiveClass(clazz);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to treat {@link Operation}s as operations.
+   */
   @Override
   protected boolean isOperation(Class<?> clazz) {
     return Operation.class.isAssignableFrom(clazz) || super.isOperation(clazz);
