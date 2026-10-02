@@ -23,7 +23,8 @@ import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Extended {@link ShortLongTextCellFactory} with security checks.
+ * Extended {@link ShortLongTextCellFactory} with security checks.<br>
+ * The texts of PDOs the user is not allowed to view are not shown.
  *
  * @param <T> the type
  */

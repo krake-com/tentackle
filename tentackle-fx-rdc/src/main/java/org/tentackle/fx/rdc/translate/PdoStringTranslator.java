@@ -41,7 +41,11 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * PDO to String translator.
+ * PDO to String translator.<br>
+ * Displays the PDO's unique domain key, formatted by the translator for the key's type.
+ * Entering a key looks up the PDO via {@code findByUniqueDomainKey}. If there is no such PDO,
+ * a modal search dialog is opened, preset with the input if possible.
+ * The {@link PdoComponentAddon} adds the PDO style, context menu, function keys, and drag and drop.
  *
  * @author harald
  * @param <T> the PDO type
@@ -83,7 +87,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       }
     }
     catch (RuntimeException rex) {
-      // no translator found, try default (see below)
+      // no translator found, try default (see toModelFunction)
     }
 
     setPdoAddon(createPdoAddon());
@@ -209,14 +213,14 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       });
     }
     catch (RdcRuntimeException rx) {
-      LOGGER.warning(rx.getMessage());    // probably no GuiController or no finder -> just log
+      LOGGER.warning(rx.getMessage());    // probably no GuiProvider or no finder -> just log
     }
   }
 
   /**
-   * Creates the PDO style implementation.
+   * Creates the PDO component addon.
    *
-   * @return the implementation
+   * @return the addon
    */
   protected PdoComponentAddon<T> createPdoAddon() {
     return new PdoComponentAddon<>(getComponent(), this::getPdo, this::setPdo);
@@ -224,7 +228,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
 
   /**
    * Gets the PDO via binding.<br>
-   * For non-editable combo-boxes this translator isn't used, but registered,
+   * For non-editable combo boxes this translator isn't used, but registered,
    * because it could be changed to editable.
    *
    * @return the model value
@@ -247,9 +251,11 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   }
 
   /**
-   * Preset the given proxy with the string from the component.
+   * Presets the given proxy with the string from the component.<br>
+   * Requires a static factory method {@code lenientValueOf(String)} in the unique domain key class.
+   * Does nothing if there is no such method.
    *
-   * @param proxy the proxy pdo
+   * @param proxy the proxy PDO
    * @param udkClass the class of the unique domain key
    * @param v the view value
    */
@@ -288,7 +294,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * methods in no particular order, so picking whatever comes first would apply different options
    * from one JVM to the next.
    *
-   * @param proxy the PDO class to inspect
+   * @param proxy the PDO to inspect
    * @return the annotation, null if not annotated with Bindable
    */
   protected Bindable getBindableAnnotation(T proxy) {

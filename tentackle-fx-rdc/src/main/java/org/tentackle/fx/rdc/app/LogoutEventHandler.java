@@ -28,13 +28,17 @@ import java.util.function.Consumer;
 
 /**
  * Handler for a {@link LogoutEvent} in a desktop application.<br>
- * Replaces the default logout handler and invokes Fx.terminate() from within the FX-thread.
+ * Replaces the default logout handler and invokes {@code Fx.terminate()} from within the FX thread.<br>
+ * The logout event is sent by the server, for example, if an administrator logs out the user's session.
  */
 @MasterSerialEventService(LogoutEvent.class)
 public class LogoutEventHandler implements Consumer<LogoutEvent> {
 
   private static final Logger LOGGER = Logger.get(LogoutEventHandler.class);
 
+  /**
+   * Creates the logout event handler.
+   */
   public LogoutEventHandler() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

@@ -27,10 +27,14 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 import javafx.util.Callback;
 import java.util.Collection;
-import java.util.function.Function;
 
 /**
- * PDO-aware combo box.
+ * PDO-aware combo box.<br>
+ * If bound to a PDO type, the combo box loads its items itself: all PDOs of that type in the
+ * binding's domain context. The items are reloaded when the entity's modification count changes.
+ * The popup hides the short and long texts of PDOs the user is not allowed to view.
+ * <p>
+ * Created by the FXML loader instead of a {@code ComboBox} via {@link org.tentackle.fx.rdc.component.build.RdcComboBoxBuilder}.
  *
  * @author harald
  * @param <T> the type
@@ -57,13 +61,14 @@ public class RdcComboBox<T> extends FxComboBox<T> {
    * @return the callback
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public Function<T, Collection<T>> getLoadAllPdosCallback() {
-    return (Function) getDelegate().getLoadAllPdosCallback();
+  public Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return (Callback) getDelegate().getLoadAllPdosCallback();
   }
 
   /**
    * Sets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   * The callback receives a proxy PDO of the component's type and returns the items.
    *
    * @param loadAllPdosCallback the callback
    */

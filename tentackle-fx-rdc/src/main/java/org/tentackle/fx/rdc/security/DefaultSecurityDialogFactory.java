@@ -29,7 +29,9 @@ import org.tentackle.session.SessionUtilities;
 import java.util.function.Consumer;
 
 /**
- * Default implementation of the {@link SecurityDialogFactory}.
+ * Default implementation of the {@link SecurityDialogFactory}.<br>
+ * Shows the {@link SecurityRulesView}, but provides neither a grantee nor a domain context selection.
+ * Applications must override {@link #selectGrantee}.
  *
  * @author harald
  */
@@ -47,6 +49,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
    * {@inheritDoc}
    * <p>
    * This needs to be implemented by the application!
+   * The default implementation throws an {@link RdcRuntimeException}.
    */
   @Override
   public void selectGrantee(Object owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {

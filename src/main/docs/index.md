@@ -46,6 +46,7 @@ topic-grouped listing of every document, see the
 - **Common module (foundation)** — [Tentackle Common](../../../tentackle-common/src/main/docs/common.md)
 - **CompoundValue (constants, references, scripts in annotations)** — [CompoundValue](../../../tentackle-core/src/main/docs/compound-value.md), [Validation](../../../tentackle-core/src/main/docs/validation.md), [Tentackle Scripting](../../../tentackle-core/src/main/docs/scripting.md)
 - **Connection migration (QUIC, stalled paths)** — [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md)
+- **Context menus (PDO tree and table items, `@PdoTreeContextMenuItemService`)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#context-menus)
 - **Core module (runtime foundation)** — [Tentackle Core](../../../tentackle-core/src/main/docs/core.md)
 - **Correctness guarantees** — [Correctness First](./correctness-first.md)
 - **Cryptor / encryption of secrets** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md)
@@ -154,6 +155,7 @@ topic-grouped listing of every document, see the
 - **LockManager (token lock cleanup on logout, crash and restart)** — [Locking](../../../tentackle-persistence/src/main/docs/locking.md#the-lockmanager-surviving-crashes), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#token-locking)
 - **`Loggable` (how much of an exception to log)** — [Exceptions and Error Handling](./exceptions.md#loggable-how-much-of-an-exception-to-log), [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md)
 - **Logging** — [Tentackle Logging](../../../tentackle-core/src/main/docs/logging.md), [SLF4J Provider](../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md), [Log4J 2 Provider](../../../tentackle-log-log4j2v/src/main/docs/tentackle-log-log4j2v.md)
+- **Login view (backend selection, failed logins, custom login view)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#application-lifecycle-app-login), [Authentication](../../../tentackle-session/src/main/docs/authentication.md)
 
 ## M
 
@@ -207,6 +209,7 @@ topic-grouped listing of every document, see the
 - **Persistence layer** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md)
 - **Pooling (resources, sessions)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **PostgreSQL (backend peculiarities, `JSON`/`JSONB`)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md)
+- **Printing (tables, tree tables)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Projection queries (plain data instead of PDOs)** — [The Query DSL](../../../tentackle-database/src/main/docs/query-dsl.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md)
 - **Properties (loading, change events)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
 - **Preferences (database-backed settings)** — [Preferences](../../../tentackle-core/src/main/docs/preferences.md)
@@ -247,6 +250,7 @@ topic-grouped listing of every document, see the
 - **Schema mapping (`mapSchema` / `mapSchemas`)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [The Oracle Backend](../../../tentackle-sql/src/main/docs/oracle.md), [The Firebird Backend](../../../tentackle-sql/src/main/docs/firebird.md)
 - **Schema migration (`tentackle-sql:migrate`, migration hints)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-migrate-goal), [AI Agent Tooling Support](./ai-agents.md#following-the-model-tentackle-sqlmigrate)
 - **Security model** — [Security](../../../tentackle-pdo/src/main/docs/security.md), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#built-in-persistence-implementations)
+- **Security rules editor (`SecurityRulesView`, `SecurityDialogFactory`)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#security-and-administration)
 - **Server application (`ServerApplication`, `AbstractServerApplication`)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#server-application-lifecycle), [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md), [Multi-Tier Cascade](./tiers.md)
 - **Select methods (generated queries)** — [PdoSelectList / PdoSelectUnique](../../../tentackle-persistence-wurblets/src/main/docs/pdo-select.md)
 - **Streaming results / batch processing** — [Cursors](../../../tentackle-persistence/src/main/docs/cursors.md), [SQL Statement Batching](../../../tentackle-database/src/main/docs/batching.md)
@@ -260,7 +264,7 @@ topic-grouped listing of every document, see the
 - **Single sign-on (SSO)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md), [Single Sign-On with Google](./google-sso.md)
 - **SessionTaskDispatcher (session-aware background tasks)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md#which-dispatcher-do-i-want), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)
-- **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md)
+- **Spreadsheet / XLS / Excel export** — [tentackle-fx-rdc-poi](../../../tentackle-fx-rdc-poi/src/main/docs/poi.md), [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Spring Remoting (comparison)** — [Location Transparency vs. REST, RMI and Spring Remoting](./remoting-comparison.md#part-2--tentackle-vs-rmi-and-spring-remoting)
 - **SQL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
@@ -274,6 +278,7 @@ topic-grouped listing of every document, see the
 - **Temporary exceptions (the retry classifier)** — [Exceptions and Error Handling](./exceptions.md#the-temporary-flag), [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md#what-is-retried--temporary-exceptions)
 - **Tables / tree-tables (configuration, cell types, layouts)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Table names (`@TableName`, schemas, prefixes)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Table popup (column chooser, CSV/XML export, table preferences)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **Testing (TestNG support)** — [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md), [tentackle-test-fx-rdc](../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md), [Tentackle PDO Mocks](../../../tentackle-pdo-mock/src/main/docs/pdo-mock.md)
 - **Tiers (nested servers/clients)** — [Multi-Tier Cascade](./tiers.md)

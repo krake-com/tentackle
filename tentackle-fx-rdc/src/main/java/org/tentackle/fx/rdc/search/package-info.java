@@ -17,6 +17,9 @@
  */
 
 /**
- * PDO search.
+ * PDO search.<br>
+ * The {@link org.tentackle.fx.rdc.search.PdoSearch} controller displays the results of a
+ * {@link org.tentackle.fx.rdc.PdoFinder} in a table or tree. The {@link org.tentackle.fx.rdc.search.DefaultPdoFinder}
+ * provides a normtext search for entities without a finder of their own.
  */
 package org.tentackle.fx.rdc.search;

@@ -56,7 +56,10 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 /**
- * Security editor controller.
+ * Controller to edit the security rules.<br>
+ * Shows the rules for a PDO class or a non-PDO class and, for an existing PDO, the rules for that
+ * object, in separate tabs. The rules are evaluated in the order shown, which the user can change.
+ * The selected rule is edited in a {@link SecurityEditor}.
  *
  * @author harald
  */
@@ -64,7 +67,7 @@ import java.util.ResourceBundle;
 public class SecurityRulesView extends AbstractFxController implements DomainContextProvider {
 
   /**
-   * Creates and shows the modal stage.
+   * Creates and shows the application-modal stage.
    *
    * @param owner the owner window or view, null if none
    * @param clazz the secured non-PDO class, null if PDO
@@ -214,24 +217,24 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
 
   /**
-   * Configures the view to edit security rule sets for a PDO.<br>
+   * Configures the view to edit security rule sets for a PDO.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public void setSecuredObject(PersistentDomainObject<?> pdo) {
     this.pdo = pdo;
     classId = pdo.getClassId();
     if (classId == 0) {
-      throw new RdcRuntimeException(pdo.toGenericString() + " does not provide a class-ID");
+      throw new RdcRuntimeException(pdo.toGenericString() + " does not provide a class ID");
     }
     clazz = null;
     setupSecuredObject();
   }
 
   /**
-   * Configures the view to edit security rule sets for a PDO-class.<br>
+   * Configures the view to edit security rule sets for a PDO class.
    *
-   * @param classId the class-ID
+   * @param classId the class ID
    */
   public void setSecuredObject(int classId) {
     if (classId == 0) {
@@ -244,7 +247,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   }
 
   /**
-   * Configures the view to edit security rule sets for a non-PDO-class.<br>
+   * Configures the view to edit security rule sets for a non-PDO class.
    *
    * @param clazz the class
    */

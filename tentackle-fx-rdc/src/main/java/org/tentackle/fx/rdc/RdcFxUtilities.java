@@ -25,7 +25,8 @@ import org.tentackle.pdo.PersistentDomainObject;
 import javafx.scene.control.TreeItem;
 
 /**
- * {@link FxUtilities} for RDC.
+ * {@link FxUtilities} for RDC.<br>
+ * Limits the recursive expansion of PDO trees by PDO type.
  */
 @Service(FxUtilities.class)
 public class RdcFxUtilities extends FxUtilities {
@@ -47,7 +48,9 @@ public class RdcFxUtilities extends FxUtilities {
   }
 
   /**
-   * Sames as {@link #isValueInParentPath(TreeItem)} but for PDO tree items.
+   * Same as {@link #isValueInParentPath(TreeItem)} but for PDO tree items.<br>
+   * Compares the PDO classes instead of the PDOs themselves, i.e. a PDO is considered to be in the
+   * parent path if any parent item holds a PDO of the same class.
    *
    * @param treeItem the PDO tree item
    * @param <T> the PDO type

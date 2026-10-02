@@ -81,7 +81,14 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Search controller for PDOs.
+ * Search controller for PDOs.<br>
+ * Wraps a {@link PdoFinder} with a result table, which can be switched to a tree of the found PDOs.
+ * Holding the shift key down while searching adds the new results to the existing ones.
+ * If the entity provides a normtext, a filter field narrows the displayed result.
+ * <p>
+ * In a modal dialog, the user selects one or more PDOs, which are returned via {@link #getSelectedItems()}.
+ * In a non-modal dialog, a double-click on a row opens the PDO in a CRUD dialog, which allows
+ * walking through the result list.
  *
  * @author harald
  * @param <T> the PDO type
@@ -130,7 +137,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   private InvalidationListener itemsListener;   // listener for item totals change
   private PdoFinder<T> finder;                  // the finder
-  private boolean viewSelectionPending;         // true if initial tree- or table view selection pending
+  private boolean viewSelectionPending;         // true if initial tree or table view selection pending
   private PdoCrud<T> pdoCrud;                   // the CRUD view
   private FxBorderPane tablePane;               // the border pane holding the table view
   private FxTableView<T> tableView;             // the table showing the results
@@ -138,8 +145,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private FxTreeView<T> treeView;               // the tree showing the results
   private boolean treeShown;                    // true if the tree shown, else table
   private TreeItem<T> rootItem;                 // root item to detect the top level nodes
-  private boolean tableViewInvalid;             // true if tableview is invalid
-  private boolean treeViewInvalid;              // true if tree-view is invalid
+  private boolean tableViewInvalid;             // true if table view is invalid
+  private boolean treeViewInvalid;              // true if tree view is invalid
   private boolean singleSelectMode;             // true if in (modal) single selection mode
   private BooleanProperty wrongTypeSelected;    // true if wrong type in the selected tree cell
   private T createdPdo;                         // != null if the new PDO has been created in modal mode
@@ -159,7 +166,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Gets the message displayed in tableview when there was no data found.
+   * Gets the message displayed in the table view when no data was found.
    *
    * @return the placeholder message, null if the default message, empty if no message at all
    */
@@ -168,7 +175,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Sets the message displayed in tableview when there was no data found.
+   * Sets the message displayed in the table view when no data was found.
    *
    * @param noDataMessage the placeholder message, null if the default message, empty if no message at all
    */
@@ -188,7 +195,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Sets the double click handler.<br>
    * If the search dialog is non-modal and the user double-clicks on a row of the table view,
-   * this handler will be invoked instead of the default (showing the PDO-editor if any provided).
+   * this handler will be invoked instead of the default (showing the PDO editor, if provided).
    *
    * @param doubleClickHandler the handler, null to clear
    */
@@ -208,7 +215,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Sets the pdo finder.
+   * Sets the PDO finder.<br>
+   * The finder can be set only once.
    *
    * @param finder the finder
    */
@@ -224,7 +232,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Gets the pdo finder.
+   * Gets the PDO finder.
    *
    * @return the finder
    */
@@ -234,9 +242,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Sets the pdo as a template for the search.
+   * Sets the PDO as a template for the search.<br>
+   * Creates the result table and tree, and runs the search immediately if
+   * {@link PdoFinder#isSearchRunningImmediately()}.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -387,9 +397,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Gets the pdo.
+   * Gets the PDO.
    *
-   * @return the pdo
+   * @return the PDO
    */
   @Override
   public T getPdo() {
@@ -399,8 +409,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   /**
    * Sets the visibility of the finder.<br>
-   * The method must be invoked after setPdo because the finder will be made visible
-   * according to
+   * The method must be invoked after {@link #setPdo}, because {@code setPdo} sets the visibility
+   * according to {@link PdoFinder#isVisible()}.
    *
    * @param visible true if visible
    */
@@ -436,7 +446,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Returns single selection mode.
+   * Returns whether in single selection mode.
    *
    * @return true if select a single PDO
    */
@@ -446,7 +456,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Sets whether creating a new PDO is allowed.
+   * Sets whether creating a new PDO is allowed.<br>
+   * Shows or hides the new button.
    *
    * @param allowed true if allowed
    */
@@ -513,7 +524,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Runs the search and displays the results.
+   * Runs the search and displays the results.<br>
+   * The search runs in the background if {@link PdoFinder#isSearchRunningInBackground()}.
    */
   public void find() {
     if (finder.validateForm()) {
@@ -540,8 +552,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   /**
    * Presets the scrolling according to the finder's configuration.<br>
-   * Scrolls to the end of the table- or tree-view, if {@link PdoFinder#isScrollingToEnd()} == true,
-   * otherwise scroll to the beginning.
+   * Scrolls to the end of the table or tree view, if {@link PdoFinder#isScrollingToEnd()} == true,
+   * otherwise to the beginning.
    */
   protected void presetScrolling() {
     if (items != null && !items.isEmpty()) {
@@ -573,7 +585,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Filters the viewable PDOs from the list and converts to {@link ObservableList}.
+   * Filters the viewable PDOs from the list and converts them to an {@link ObservableList}.
    *
    * @param pdos list of PDOs, null is treated as empty
    * @return the PDOs with view permission
@@ -592,9 +604,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Shows the search results.
+   * Shows the search results.<br>
+   * PDOs the user is not allowed to view are skipped. If the shift key is held down,
+   * the PDOs are added to the current results.
    *
-   * @param pdos the found PDO, null or empty to clear
+   * @param pdos the found PDOs, null or empty to clear
    */
   public void setItems(List<T> pdos) {
     ObservableList<T> viewablePdos = filterViewablePdos(pdos);
@@ -696,7 +710,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Filters the result.
+   * Filters the result.<br>
+   * Keeps only the PDOs whose normtext contains the normalized text of the filter field.
+   * A leading {@code !} or {@code -} inverts the filter.
    */
   public void filterResult() {
     String text = filterField.getText();
@@ -714,7 +730,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Returns the selected PDOs.
    *
-   * @return the selected PDOs, empty list, if nothing selected
+   * @return the selected PDOs or the newly created PDO, empty list if nothing selected
    */
   public ObservableList<T> getSelectedItems() {
     ObservableList<T> selectedItems;
@@ -778,7 +794,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Gets access to the tree view.<br>
    * If the table is shown, it will be switched to the tree view.
    *
-   * @return the table view
+   * @return the tree view
    */
   public FxTreeView<T> getTreeView() {
     showTree();    // make sure the tree is shown and valid
@@ -826,7 +842,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Close and cancel.
+   * Clears the selection and closes the search.
    */
   public void cancel() {
     clearSelection();
@@ -834,7 +850,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Close the search.
+   * Closes the search.
    */
   public void close() {
     Stage stage = Fx.getStage(getView());
@@ -845,7 +861,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
-   * Creates a new PDO.
+   * Creates a new PDO in a modal CRUD dialog.<br>
+   * The unique domain key, if any, is taken from the search template.
+   * If the PDO was saved, the search is closed and the new PDO is returned as the selected item.
    */
   public void createPdo() {
     T nPdo = getPdo().on();
@@ -960,7 +978,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Creates the placeholder node for the empty search result in the table view.
    *
-   * @return the node, null to use table-view's default placeholder
+   * @return the node, null to use the table view's default placeholder
    */
   protected Node createPlaceHolder() {
     Label placeHolder = Fx.create(Label.class);   // default impl always returns a placeholder

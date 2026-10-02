@@ -26,7 +26,8 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.rdc.component.RdcChoiceBox;
 
 /**
- * Builder to create a ChoiceBox.
+ * Builder to create a ChoiceBox.<br>
+ * Replaces the builder of tentackle-fx to create an {@link RdcChoiceBox}.
  *
  * @author harald
  */

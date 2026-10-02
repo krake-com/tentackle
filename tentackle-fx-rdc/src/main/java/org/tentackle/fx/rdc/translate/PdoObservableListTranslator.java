@@ -34,8 +34,9 @@ import java.util.List;
 
 /**
  * List translator.<br>
- * Replaces ObservableListTranslator and adds PDO detection for automatic
- * configuration via GuiProvider for tables.
+ * Replaces the {@code ObservableListTranslator} and adds PDO detection for the automatic
+ * configuration of tables via the {@link org.tentackle.fx.rdc.GuiProvider}.
+ * Falls back to the default table configuration provider if there is no GUI provider for the element type.
  *
  * @author harald
  * @param <T> the PDO type

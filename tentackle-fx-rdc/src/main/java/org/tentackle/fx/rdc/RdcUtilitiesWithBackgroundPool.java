@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.log.Logger;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
@@ -38,8 +39,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Extended {@link RdcUtilities} with a thread- and session pool for background execution.<br>
- * Replace it with the application-specific implementation via {@link org.tentackle.common.Service} annotation.
+ * Extended {@link RdcUtilities} with a thread and session pool for background execution.<br>
+ * Each background task runs in its own thread with its own session taken from the pool,
+ * so tasks run in parallel and the {@link ModificationTracker} is not blocked.
+ * <p>
+ * The class is not a service by itself: subclass it and register the subclass for {@link RdcUtilities}
+ * via the {@link org.tentackle.common.Service} annotation.
  * <p>
  * Example:
  * <pre>
@@ -59,6 +64,8 @@ import java.util.function.Supplier;
  * </pre>
  */
 public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
+
+  private static final Logger LOGGER = Logger.get(RdcUtilitiesWithBackgroundPool.class);
 
   private final SessionPooledExecutor executor;
 
@@ -80,6 +87,11 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to run the task in a thread of the pool with its own session.
+   */
   @Override
   public <V> void runInBackground(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
     Cursor oldCursor = setWaitCursor(node);
@@ -95,19 +107,25 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
                       if (failedUI != null) {
                         failedUI.accept(exception);
                       }
+                      else {
+                        LOGGER.severe("background task failed", exception);
+                      }
                     }));
   }
 
   /**
    * Runs a collection of runners in the background in parallel.<br>
+   * Each runner gets its own session from the pool. When all runners have finished, timed out,
+   * or failed, the handlers are invoked from within the FX event queue.
    * If there are failures, <code>failedUI</code> (if any) will be invoked <em>before</em> <code>finishedUI</code>.
+   * Runners returning null do not show up in the results map.
    *
    * @param <V>           the type returned by the runners
    * @param node          optional node the background execution is related to, null if none
    * @param runners       the runners to invoke
-   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
-   * @param finishedUI    UI updater invoked from within the FX event queue when all runners finished, null if none
-   * @param failedUI      UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
+   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, &le; 0 if no timeout
+   * @param finishedUI    UI updater always invoked from within the FX event queue with the results of the successful runners, null if none
+   * @param failedUI      UI updater invoked from within the FX event queue only if some runner failed or timed out, null to log only
    */
   public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
     Cursor oldCursor = setWaitCursor(node);
@@ -123,18 +141,21 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
                       if (failedUI != null) {
                         failedUI.accept(failHandler);
                       }
+                      else {
+                        failHandler.values().forEach(failure -> LOGGER.severe("background task failed", failure));
+                      }
                     }));
   }
 
   /**
    * Runs a collection of runners in the background in parallel.<br>
-   * Failures will be presented to the user in an error dialog.
+   * Failures will be presented to the user in a warning dialog.
    *
    * @param <V>           the type returned by the runners
    * @param node          optional node the background execution is related to, null if none
    * @param runners       the runners to invoke
-   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
-   * @param finishedUI    optional UI updater always invoked from within the FX event queue if all runners finished, null if none
+   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, &le; 0 if no timeout
+   * @param finishedUI    UI updater always invoked from within the FX event queue with the results of the successful runners, null if none
    */
   public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI) {
     runInBackground(node,
@@ -159,7 +180,9 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
 
 
   /**
-   * Creates the executor.
+   * Creates the executor.<br>
+   * The session pool is created from the modification tracker's session, and the executor
+   * is shut down when that session is closed.
    *
    * @return the executor
    */
@@ -182,7 +205,9 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Creates the session pool.
+   * Creates the session pool.<br>
+   * The default pool is named {@code "BG"}, opens no sessions initially and allows a maximum of 3 sessions.
+   * The thread pool will be of the same size.
    *
    * @param session the template session
    * @return the session pool

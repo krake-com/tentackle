@@ -47,7 +47,11 @@ import java.util.Set;
 
 /**
  * View showing all sessions logged in to the middle tier.<br>
- * Allows killing sessions as well.
+ * Allows sending a logout request to the selected sessions or killing them. Both apply to all sessions
+ * of the same session group and user as well. The security button edits the rules for the
+ * {@link AdminExtension}, which the server checks for every call.
+ * <p>
+ * Requires a remote session, i.e. a three-tier setup.
  *
  * @author harald
  */
@@ -132,16 +136,17 @@ public class SessionsView extends AbstractFxController {
 
 
   /**
-   * Returns whether killing a session is allowed.
+   * Returns whether killing a session is allowed.<br>
+   * Override to hide the kill button.
    *
-   * @return true if allowed
+   * @return true if allowed (default)
    */
   protected boolean isKillSessionAllowed() {
     return true;
   }
 
   /**
-   * Shows the security dialog.
+   * Shows the security dialog for the {@link AdminExtension}.
    */
   protected void showSecurityDialog() {
     SecurityDialogFactory.getInstance().showDialog(getView(), AdminExtension.class);
@@ -150,7 +155,7 @@ public class SessionsView extends AbstractFxController {
   /**
    * Creates the table configuration.
    *
-   * @return the table config
+   * @return the table configuration
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected TableConfiguration<SessionData> createTableConfiguration() {

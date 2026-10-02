@@ -31,7 +31,7 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Menu item to collapse this and all child nodes of a PDO.
+ * Tree menu item to collapse the node of a PDO and all its child nodes.
  *
  * @author harald
  * @param <T> the PDO type

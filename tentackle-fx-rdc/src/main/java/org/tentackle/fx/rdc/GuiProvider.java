@@ -35,7 +35,14 @@ import java.util.Collection;
 import java.util.ResourceBundle;
 
 /**
- * Provider of GUI-functionality for a pdo.
+ * Provider of the GUI functionality for a PDO.<br>
+ * Exactly one provider class exists per PDO type. It bundles all the entity-specific UI behavior:
+ * the icon and resource bundle, the editor and finder, the table configuration, the tree rendering
+ * and navigation, and drag and drop.
+ * <p>
+ * Providers are registered with {@link GuiProviderService} and created per PDO instance via
+ * {@link GuiProviderFactory}. Applications usually extend {@link DefaultGuiProvider} and override
+ * only what differs.
  *
  * @param <T> the PDO type
  * @author harald
@@ -68,29 +75,29 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   Node createGraphic();
 
   /**
-   * Returns whether a controller is available to edit or view this object.
+   * Returns whether a controller is available to edit or view the PDO.
    *
-   * @return true if a controller exists, false by default
+   * @return true if a controller exists
    * @see #createEditor()
    */
   boolean isEditorAvailable();
 
   /**
-   * Returns whether the editor allows editing of the current pdo.
+   * Returns whether the current user is allowed to edit the PDO.
    *
-   * @return true if editing allowed, always false if !editorExists
+   * @return true if editing is allowed, always false if not {@link #isEditorAvailable()}
    */
   boolean isEditAllowed();
 
   /**
-   * Returns whether the editor allows viewing of the current pdo.
+   * Returns whether the current user is allowed to view the PDO.
    *
-   * @return true if viewing allowed, always false if !editorExists
+   * @return true if viewing is allowed, always false if not {@link #isEditorAvailable()}
    */
   boolean isViewAllowed();
 
   /**
-   * Creates a controller to edit or view this object.
+   * Creates a controller to edit or view the PDO.
    *
    * @return the controller
    * @throws RdcRuntimeException if {@link #isEditorAvailable()} == false
@@ -100,7 +107,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   /**
    * Returns whether a finder is available to search for PDOs.
    *
-   * @return true if controller exists, false by default
+   * @return true if a finder exists
    * @see #createFinder()
    */
   boolean isFinderAvailable();
@@ -114,38 +121,41 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   PdoFinder<T> createFinder();
 
   /**
-   * Creates the dragboard for the pdo.
+   * Creates the dragboard for the PDO.
    *
    * @param node the drag source
-   * @return the dragboard, null if PDO is not a DnD source
+   * @return the dragboard, null if the PDO is not a DnD source
    */
   Dragboard createDragboard(Node node);
 
   /**
-   * Checks whether drag over the pdo is accepted.
+   * Checks whether a drag over the PDO is accepted.
    *
    * @param event the drag event
-   * @return true if accepted, false if PDO does not accept the drag
+   * @return true if accepted, false if the PDO does not accept the drag
    */
   boolean isDragAccepted(DragEvent event);
 
   /**
-   * Drops the dragboard on the pdo.
+   * Drops the dragboard on the PDO.
    *
    * @param dragboard the dragboard
    */
   void dropDragboard(Dragboard dragboard);
 
   /**
-   * Gets the object to be displayed in trees in place of this object.<br>
+   * Gets the object to be displayed in trees in place of the PDO.
+   *
+   * <p>
+   * Not used by the framework's {@link PdoTreeItem}. Provided for application-specific navigable trees.
    *
    * @return the object to be displayed in a tree
    */
   T getTreeRoot();
 
   /**
-   * Gets the tree text with respect to the parent object this
-   * object is displayed in a tree.<br>
+   * Gets the tree text with respect to the parent object
+   * the PDO is displayed under in a tree.
    *
    * @param <P> the parent PDO type
    * @param parent is the parent object, null if no parent
@@ -154,8 +164,8 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   <P extends PersistentDomainObject<P>> String getTreeText(P parent);
 
   /**
-   * Gets the tooltip text with respect to the parent object this
-   * object is displayed in a tree.<br>
+   * Gets the tooltip text with respect to the parent object
+   * the PDO is displayed under in a tree.
    *
    * @param <P> the parent PDO type
    * @param parent is the parent object, null if no parent
@@ -164,51 +174,55 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   <P extends PersistentDomainObject<P>> String getToolTipText(P parent);
 
   /**
-   * Creates the tree item for this pdo.
+   * Creates the tree item for the PDO.
    *
    * @return the tree item
    */
   TreeItem<T> createTreeItem();
 
   /**
-   * Creates a tree cell factory for a tree-view.
+   * Creates a tree cell factory for a tree view.
    *
    * @return the tree cell factory, never null
    */
   Callback<TreeView<T>, TreeCell<T>> getTreeCellFactory();
 
   /**
-   * Determines whether tree expansion should stop at this object.<br>
-   * Sometimes the child-nodes should not be expanded if in a recursive "expand all".
+   * Determines whether tree expansion should stop at the PDO.<br>
+   * Sometimes the child nodes should not be expanded in a recursive "expand all".
    * However, they should expand if the user explicitly wants to.
    * If this method returns true, the tree will not further expand this node
    * automatically (only on demand).
+   * <p>
+   * Not used by the framework's {@link PdoTreeItem}. Provided for application-specific navigable trees.
    *
-   * @return true if expansion should stop.
+   * @return true if expansion should stop
    */
   boolean stopTreeExpansion();
 
   /**
-   * Determines whether this object may have child objects that should
-   * be visible in a navigable tree.
+   * Determines whether the PDO may have child objects that should
+   * be visible in a navigable tree.<br>
+   * If false, the PDO is a leaf in the tree.
    *
    * @return true if object may have children
    */
   boolean providesTreeChildObjects();
 
   /**
-   * Gets the children with respect to the parent object this
-   * object is displayed in the current tree.
+   * Gets the children with respect to the parent object
+   * the PDO is displayed under in the current tree.
    *
    * @param <P> the parent PDO type
-   * @param parent the parent object of this object in the tree, null = no parent
+   * @param parent the parent object of the PDO in the tree, null if no parent
    * @return the children
    */
   <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeChildObjects(P parent);
 
   /**
-   * Gets the maximum level of expansion allowed in a navigable object tree.<br>
-   * The default is 0, i.e. no limit.
+   * Gets the maximum level of expansion allowed in a navigable object tree.
+   * <p>
+   * Not used by the framework's {@link PdoTreeItem}. Provided for application-specific navigable trees.
    *
    * @return the maximum depth of a subtree of this object, 0 = no limit (default)
    */
@@ -216,20 +230,23 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
 
   /**
    * Determines whether the navigable object tree should show the
-   * parents of this object.<br>
+   * parents of the PDO.<br>
    * Objects may be children of different parents in terms of "being referenced from"
-   * or any other relation, for example: the warehouses this customer
+   * or any other relation, for example: the warehouses a customer
    * visited.
    * Trees may provide a button to make these parents visible.
-   * The default implementation returns false.
+   * <p>
+   * Not used by the framework's {@link PdoTreeItem}. Provided for application-specific navigable trees.
    *
    * @return true if showing parents is enabled
    */
   boolean providesTreeParentObjects();
 
   /**
-   * Gets the parents with respect to the parent object this
-   * object is displayed in the current tree.
+   * Gets the parents with respect to the parent object
+   * the PDO is displayed under in the current tree.
+   * <p>
+   * Not used by the framework's {@link PdoTreeItem}. Provided for application-specific navigable trees.
    *
    * @param <P> the parent PDO type
    * @param parent the parent object, null if no parent
@@ -238,9 +255,10 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent);
 
   /**
-   * Creates the table view for given configuration.
+   * Creates a table view for the PDO type.<br>
+   * The view is configured and bound according to {@link #createTableConfiguration()}.
    *
-   * @return the view
+   * @return the table view
    */
   FxTableView<T> createTableView();
 

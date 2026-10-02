@@ -36,8 +36,12 @@ import java.util.List;
 
 /**
  * The simple default finder.<br>
- * Provides normtext-search criteria (if entity provides a normtext).
- * If no normtext, all PDOs are selected immediately.
+ * Provides a normtext search pattern field, if the entity provides a normtext.
+ * An empty pattern selects all PDOs.
+ * Without a normtext, the finder is hidden and all PDOs are selected immediately.
+ * <p>
+ * All PDOs are selected via {@code selectAllCached()} if the entity has a preloading cache, else via {@code selectAll()}.
+ * If the search runs immediately, the finder is hidden as well.
  *
  * @author harald
  * @param <T> the PDO type

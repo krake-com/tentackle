@@ -17,6 +17,9 @@
  */
 
 /**
- * Annotation processors.
+ * Annotation processors.<br>
+ * Verify at compile time that the classes annotated with {@code @GuiProviderService},
+ * {@code @PdoTableContextMenuItemService}, or {@code @PdoTreeContextMenuItemService}
+ * implement the required interface and provide the required constructor.
  */
 package org.tentackle.fx.rdc.apt;

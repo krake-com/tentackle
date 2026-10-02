@@ -24,7 +24,7 @@ import org.tentackle.common.BundleFactory;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for app-package in tentackle-fx-rdc.
+ * Bundle for the {@code org.tentackle.fx.rdc.app} package.
  *
  * @author harald
  */

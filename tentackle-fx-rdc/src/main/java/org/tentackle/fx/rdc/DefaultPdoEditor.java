@@ -54,8 +54,10 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * A default pdo editor.<br>
- * The view is generated from the PDO model via reflection.
+ * The default PDO editor.<br>
+ * The view is generated from the PDO model via reflection: a two-column grid with a label and
+ * a bound control for each bindable attribute.
+ * The labels are taken from the resource bundle, if provided, else from the attribute comments of the model.
  *
  * @param <T> the PDO type
  */
@@ -65,14 +67,14 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
   private final ResourceBundle bundle;                  // optional bundle
 
   private final Map<PdoMember, FxComponent> nodeMap;    // map of attributes to FX nodes
-  private final BindingMember pdoMember;                // the pdo parent binding member
+  private final BindingMember pdoMember;                // the PDO parent binding member
   private final BindingMember[] parents;
 
   private T pdo;                                        // the PDO being edited
   private static final String PDO = "pdo";              // ... and its variable name
 
   /**
-   * Creates the default editor from a pdo class.
+   * Creates the default editor from a PDO class.
    *
    * @param pdoClass the PDO class
    * @param bundle the optional resource bundle
@@ -139,7 +141,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
   }
 
   /**
-   * Gets the first focusable node.
+   * Gets the first focusable node.<br>
+   * This is the first changeable domain key attribute, if any, else the first changeable node.
    *
    * @param nodes the nodes map
    * @return the node, null if none
@@ -168,10 +171,16 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
   /**
    * Creates an FX node for a given PDO attribute.<br>
-   * Attributes must be bindable.
+   * Attributes must be bindable. The node type depends on the attribute type:
+   * <ul>
+   *   <li>a {@code ComboBox} for relations to PDOs with a preloading cache, else a {@code TextField}</li>
+   *   <li>a {@code CheckBox} for booleans</li>
+   *   <li>a {@code ChoiceBox} for enums</li>
+   *   <li>a {@code TextArea} if the binding options contain {@code LINES=}, else a {@code TextField}</li>
+   * </ul>
    *
    * @param attribute the PDO attribute
-   * @return the node, null if skip attribute
+   * @return the node, null to skip the attribute
    * @see Bindable
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -211,7 +220,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
   }
 
   /**
-   * Binds the node to the PDO member.
+   * Binds the node to the PDO member.<br>
+   * Sets the number of visible columns according to the model, unless already set via the {@code COLS=} option.
    *
    * @param parent the PDO parent binding member
    * @param attribute the PDO attribute
@@ -252,7 +262,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
 
   /**
-   * Creates a map of attributes to nodes.
+   * Creates a map of attributes to nodes.<br>
+   * Throws {@link RdcRuntimeException} if no bindable attributes were found.
    *
    * @return the node map
    */
@@ -303,7 +314,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
   /**
    * Creates the label.
    *
-   * @param attribute the pdo member
+   * @param attribute the PDO member
    * @return the label node
    */
   protected Label createLabel(PdoMember attribute) {

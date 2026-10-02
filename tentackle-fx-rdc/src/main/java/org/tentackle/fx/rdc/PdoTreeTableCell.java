@@ -28,11 +28,12 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * A PDO tree table cell.<br>
- * Used for cells <em>containing</em> a PDO.
+ * Used for cells <em>containing</em> a PDO.<br>
+ * Displays the PDO's {@code toString()} and shows the PDO's context menu.
  *
  * @author harald
  * @param <S> the table row's type
- * @param <T> the table cell's pdo type
+ * @param <T> the table cell's PDO type
  */
 public class PdoTreeTableCell<S,T extends PersistentDomainObject<T>> extends FxTreeTableCell<S,T> {
 

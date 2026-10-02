@@ -24,15 +24,15 @@ import org.tentackle.pdo.PersistentDomainObject;
 /**
  * A context menu item.<br>
  * Context menu items are used in popup menus for {@link PdoTreeTableCell}s.
- * The implementations must be annotated with {@link PdoTableContextMenuItemService} to be found.
+ * The implementations must extend {@code MenuItem} and must be annotated with {@link PdoTreeTableContextMenuItemService} to be found.
  * <p>
  * The menu item must provide the following constructor:
  * <pre>
- *   SomeMenuItem(PdoTableCell cell)
+ *   SomeMenuItem(PdoTreeTableCell cell)
  * </pre>
- * This is checked by an annotation processor.
+ * Notice: unlike the table and tree items, this is not checked by an annotation processor.
  * <p>
- * Items with isVisible() == false will not be added to the contextmenu.
+ * Items with {@code isVisible() == false} will not be added to the context menu.
  *
  * @author harald
  * @param <T> the PDO type

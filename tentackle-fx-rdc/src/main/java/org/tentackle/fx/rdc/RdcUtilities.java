@@ -84,7 +84,12 @@ interface RdcUtilitiesHolder {
 
 
 /**
- * RDC-related utility methods.
+ * RDC-related utility methods.<br>
+ * Displays the CRUD and search stages, caches and reuses their controllers per PDO class,
+ * runs code in the background, and provides drag-and-drop and file selection helpers.
+ * <p>
+ * Replaceable via {@code @Service(RdcUtilities.class)}, for example by a subclass of
+ * {@link RdcUtilitiesWithBackgroundPool}.
  *
  * @author harald
  */
@@ -131,7 +136,7 @@ public class RdcUtilities {
 
 
   /**
-   * Invalidates the caches for search- and crud dialogs.
+   * Invalidates the caches for the search and CRUD dialogs.
    */
   public synchronized void invalidateCaches() {
     crudCache.clear();
@@ -141,14 +146,14 @@ public class RdcUtilities {
   /**
    * CRUD of a PDO in a separate window.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
+   * @param <T> the PDO type
+   * @param pdo the PDO
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if the user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the PDO, false if to view only
    * @param modality the modality
    * @param owner the owner window, null if none
-   * @param updatedPdo the consumer for the possibly changed pdo if modal, null if no consumer
-   * @param configurator optional crud configurator
+   * @param updatedPdo the consumer for the possibly changed PDO if modal, null if no consumer
+   * @param configurator optional CRUD configurator
    */
   public <T extends PersistentDomainObject<T>> void displayCrudStage(
           T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner,
@@ -215,10 +220,10 @@ public class RdcUtilities {
    * If the PDO is already being edited,
    * the corresponding stage will be brought to the front and null is returned.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
+   * @param <T> the PDO type
+   * @param pdo the PDO
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if the user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the PDO, false if to view only
    * @param modality the modality
    * @param owner the owner window, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
@@ -276,7 +281,7 @@ public class RdcUtilities {
    * Gets a CRUD that is being used for the PDO.
    *
    * @param pdo the PDO
-   * @param editable true if the pdo is being edited, false for viewed only, null for don't care
+   * @param editable true if the PDO is being edited, false if viewed only, null if don't care
    * @return the {@link PdoCrud}, null if not being shown or edited
    * @param <T> the PDO type
    */
@@ -299,10 +304,11 @@ public class RdcUtilities {
   /**
    * Gets a CRUD stage for a PDO.<br>
    * Useful to check whether a PDO is being edited or shown currently.
+   * If found, the stage is brought to the front.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
-   * @param editable true if the user may edit the pdo, false if to view only
+   * @param <T> the PDO type
+   * @param pdo the PDO
+   * @param editable true if the user may edit the PDO, false if to view only
    * @return the CRUD-showing stage, null if there is no such stage
    */
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrudStage(T pdo, boolean editable) {
@@ -330,8 +336,8 @@ public class RdcUtilities {
   /**
    * Searches for PDOs in a separate window.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo as a template
+   * @param <T> the PDO type
+   * @param pdo the PDO as a template
    * @param modality the modality
    * @param owner the owner window, null if none
    * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
@@ -345,8 +351,8 @@ public class RdcUtilities {
   /**
    * Searches for PDOs in a separate window.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo as a template
+   * @param <T> the PDO type
+   * @param pdo the PDO as a template
    * @param modality the modality
    * @param owner the owner window, null if none
    * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
@@ -400,8 +406,8 @@ public class RdcUtilities {
   /**
    * Gets a search controller for a PDO.
    *
-   * @param <T> the pdo type
-   * @param pdo the pdo
+   * @param <T> the PDO type
+   * @param pdo the PDO
    * @param modality the modality
    * @param owner the owner, null if none
    * @return the search controller, never null
@@ -453,7 +459,7 @@ public class RdcUtilities {
    *
    * @param owner the owner window or node
    * @param doIt consumer invoked with true to save,
-   *             false to discard changes, null to cancel, and do nothing
+   *             false to discard the changes, or null to cancel
    */
   public void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
     Holder<Boolean> result = new Holder<>();
@@ -472,7 +478,7 @@ public class RdcUtilities {
   }
 
   /**
-   * Shows the tree of a PDO in a modal scene.
+   * Shows the tree of a PDO in an application-modal stage.
    *
    * @param owner the owner window or node
    * @param pdo the PDO
@@ -501,16 +507,19 @@ public class RdcUtilities {
    * <p>
    * The optional node will get the wait cursor set, while the task is executed in the background.
    * <p>
-   * The default implementation creates a {@link AbstractSessionTask} and runs it
-   * on behalf of the {@link ModificationTracker}. If the runner itself is a {@link SessionDependable}
+   * The default implementation creates an {@link AbstractSessionTask} and runs it
+   * on behalf of the {@link ModificationTracker}, i.e. tasks are executed one after another
+   * in the tracker's thread and session. If the runner itself is a {@link SessionDependable},
    * it gets the session set as well before it is invoked. The result is then passed to {@code updateUI}
    * and executed via {@link Platform#runLater(Runnable)}.<br>
+   * If there is no application and the tracker is not running, the task is executed in the current thread.
    *
    * @param <V>      the type returned by the runner
    * @param node     optional node this background task is related to, null if none
    * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue, null if none
-   * @param failedUI optional UI updater invoked if execution failed, null if log only as error
+   * @param failedUI optional UI updater invoked from within the FX event queue if execution failed,
+   *                 null to log the exception only
    */
   public <V> void runInBackground(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
     AbstractSessionTask task;
@@ -575,7 +584,9 @@ public class RdcUtilities {
   }
 
   /**
-   * Creates the dragboard for a node and PDOs.
+   * Creates the dragboard for a node and PDOs.<br>
+   * The PDOs are transferred as a comma-separated list of their ID strings.
+   * New PDOs and PDOs without a class ID are skipped.
    *
    * @param node the drag source
    * @param pdos the PDOs
@@ -723,7 +734,7 @@ public class RdcUtilities {
   /**
    * Gets the main stage of the current application.
    *
-   * @return the main stage
+   * @return the main stage, null if the application is not a {@link DesktopApplication}
    */
   public Stage getMainStage() {
     Application application = Application.getInstance();
@@ -732,7 +743,8 @@ public class RdcUtilities {
 
 
   /**
-   * Determines whether the search controller is cached.
+   * Determines whether the search controller is cached.<br>
+   * By default, caching is enabled unless running in a server or the {@code noRdcCache} property is set.
    *
    * @param pdo the PDO
    * @return true if cached
@@ -743,7 +755,8 @@ public class RdcUtilities {
   }
 
   /**
-   * Determines whether the crud controller is cached.
+   * Determines whether the CRUD controller is cached.<br>
+   * By default, caching is enabled unless running in a server or the {@code noRdcCache} property is set.
    *
    * @param pdo the PDO
    * @return true if cached

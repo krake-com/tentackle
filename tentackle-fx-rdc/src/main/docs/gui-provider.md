@@ -104,7 +104,7 @@ the application even runs.
 
 ## The Contract at a Glance
 
-The interface groups into six responsibilities:
+The interface groups into seven responsibilities:
 
 | Concern              | Methods                                                                                                                                                | Consumed by                                       |
 |----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
@@ -112,13 +112,19 @@ The interface groups into six responsibilities:
 | **Editing**          | `isEditorAvailable()`, `isEditAllowed()`, `isViewAllowed()`, `createEditor()`                                                                          | `PdoCrud`, context-menu *edit*/*view* items         |
 | **Searching**        | `isFinderAvailable()`, `createFinder()`                                                                                                                | `PdoSearch`                                         |
 | **Tables**           | `createTableConfiguration()` (inherited), `createTableView()`                                                                                          | search-result tables, `Rdc` table helpers           |
-| **Trees**            | `getTreeRoot()`, `getTreeText(parent)`, `getToolTipText(parent)`, `createTreeItem()`, `getTreeCellFactory()`, `providesTreeChildObjects()`, `getTreeChildObjects(parent)`, `providesTreeParentObjects()`, `getTreeParentObjects(parent)`, `getTreeExpandMaxDepth()`, `stopTreeExpansion()` | `PdoTreeItem`, `PdoTreeCell`, navigable object trees |
+| **Trees**            | `getTreeText(parent)`, `getToolTipText(parent)`, `createTreeItem()`, `getTreeCellFactory()`, `providesTreeChildObjects()`, `getTreeChildObjects(parent)` | `PdoTreeItem`, `PdoTreeCell`, search-result trees  |
+| **Navigation hooks** | `getTreeRoot()`, `providesTreeParentObjects()`, `getTreeParentObjects(parent)`, `getTreeExpandMaxDepth()`, `stopTreeExpansion()` | application-specific navigable object trees only |
 | **Drag & drop**      | `createDragboard(node)`, `isDragAccepted(event)`, `dropDragboard(dragboard)`                                                                           | tables, trees, PDO-aware components                 |
 
 The tree methods take the *parent* PDO as an argument because the same entity
 may render differently depending on where it hangs in a tree — an invoice
 under a customer may show a different text than the same invoice under a
 project.
+
+The framework's own trees use only the methods in the *Trees* row. The *navigation hooks* are not
+called by `PdoTreeItem` or any other framework class; they let an application build richer
+navigable trees of its own (for example, with a button to show an object's parents) on top of the
+same providers.
 
 ---
 
@@ -149,6 +155,7 @@ selectively, call `super` for the rest. What the defaults do:
 | `providesTreeParentObjects()` / `getTreeParentObjects(parent)` | `false` / empty.                                                                                                                        |
 | `getTreeExpandMaxDepth()` / `stopTreeExpansion()` | `0` (no limit) / `false`.                                                                                                                          |
 | `createTreeItem()` / `getTreeCellFactory()` | The standard lazily-expanding `PdoTreeItem` / `PdoTreeCell` via `Rdc`.                                                                                    |
+| `dropPdo(pdo)`                             | Throws an `RdcRuntimeException` — override it together with `isDragAccepted(event)`.                                                                      |
 
 Note the division of labor in the editing guards: `isEditorAvailable()` states
 whether an editor *exists* for the entity, while `isEditAllowed()` and
@@ -274,6 +281,9 @@ public PdoFinder<User> createFinder() {
 }
 ```
 
+Note that a `DefaultPdoFinder` running its search immediately hides its pattern field as well, so the
+user narrows the result with the search dialog's filter field instead.
+
 Entities with richer criteria implement their own
 [`PdoFinder`](../java/org/tentackle/fx/rdc/PdoFinder.java) controller and
 return it from `createFinder()`; the surrounding
@@ -395,9 +405,9 @@ provider bundles and its own views.
 [`tentackle-test-fx-rdc`](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md)
 ships a generic `GuiProviderTest` base class (TestNG and JUnit 5 flavors) that
 iterates over *all* registered `@GuiProviderService`s, instantiates each
-provider against a fresh PDO and verifies that it can be created and bound —
-catching missing constructors, broken bindings or unresolvable editors in the
-unit-test phase. A single subclass suffices:
+provider against a fresh PDO and creates its editor and finder (if available),
+graphic, table view and tree item — catching missing constructors, broken
+bindings or unresolvable editors in the unit-test phase. A single subclass suffices:
 
 ```java
 public class TestGuiProviders extends GuiProviderTest {

@@ -26,7 +26,8 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.rdc.component.RdcComboBox;
 
 /**
- * Builder to create a ComboBox.
+ * Builder to create a ComboBox.<br>
+ * Replaces the builder of tentackle-fx to create an {@link RdcComboBox}.
  *
  * @author harald
  */

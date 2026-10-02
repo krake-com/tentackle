@@ -33,7 +33,9 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Menu item to edit a PDO.
+ * Tree menu item to edit a PDO.<br>
+ * Opens the PDO in a modal CRUD dialog and replaces the tree item afterwards.
+ * Disabled if the GUI provider does not allow editing.
  *
  * @author harald
  * @param <T> the PDO type

@@ -73,7 +73,14 @@ import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
 /**
- * CRUD controller for PDOs.
+ * CRUD controller for PDOs.<br>
+ * Wraps a {@link PdoEditor} with a toolbar to navigate through a list of PDOs, show the PDO's tree,
+ * search, create (or copy, with the shift key held down), save, delete and print a PDO, edit its security
+ * rules, and close the dialog.
+ * <p>
+ * An existing PDO is token-locked while it is being edited, if the entity provides a token lock.
+ * Every persistence operation fires a {@link PdoEvent} to the handlers and filters registered
+ * via {@link #addPdoEventHandler} and {@link #addPdoEventFilter}.
  *
  * @author harald
  * @param <T> the PDO type
@@ -137,7 +144,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private boolean mouseOverNewButton;               // true if the mouse is over the newButton
 
   private final SimpleBooleanProperty editing  = new SimpleBooleanProperty();   // is editing allowed effectively?
-  private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();   // pdo is new?
+  private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();   // PDO is new?
 
 
   /**
@@ -185,7 +192,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Returns whether CRUD should be treated as modal.
+   * Returns whether the CRUD should be treated as modal.
    *
    * @return true if modal
    */
@@ -194,8 +201,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Sets this CRUD should be treated as modal.<br>
+   * Sets whether the CRUD should be treated as modal.<br>
    * Modality cannot be retrieved from the stage because there may be no stage yet.
+   * A modal CRUD hides the find, new and delete buttons, and closes after save or delete.
    *
    * @param modal true if modal
    */
@@ -206,9 +214,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Sets a list of PDOs to walk through via the up and next buttons.
+   * Sets a list of PDOs to walk through via the previous and next buttons.<br>
+   * List navigation hides the find, new and delete buttons.
    *
-   * @param pdoList the pdos, null to disable list navigation
+   * @param pdoList the PDOs, null to disable list navigation
    */
   public void setPdoList(ObservableList<T> pdoList) {
     this.pdoList = pdoList;
@@ -216,9 +225,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Gets the list of pdos to walk through.
+   * Gets the list of PDOs to walk through.
    *
-   * @return the pdos
+   * @return the PDOs, null if no list navigation
    */
   public List<T> getPdoList() {
     return pdoList;
@@ -227,7 +236,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Sets the pdo editor.
+   * Sets the PDO editor.
    *
    * @param editor the editor
    */
@@ -238,7 +247,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Gets the pdo editor.
+   * Gets the PDO editor.
    *
    * @return editor
    */
@@ -247,9 +256,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Sets the pdo to edit.
+   * Sets the PDO to edit.<br>
+   * Requests the token lock if the PDO is editable and the entity provides a token lock.
+   * If the lock is held by another user, the editor switches to view-only and informs the user.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   @Override
   public void setPdo(T pdo) {
@@ -301,9 +312,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Gets the pdo.
+   * Gets the PDO.
    *
-   * @return the pdo
+   * @return the PDO
    */
   @Override
   public T getPdo() {
@@ -410,7 +421,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Shows the browser tree of the current PDO.
+   * Shows the tree of the current PDO in a modal stage.
    */
   public void tree() {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, getStage());
@@ -485,7 +496,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Discards the current PDO and edits a new one.
+   * Discards the current PDO and edits a new one.<br>
+   * If the shift key is held down, the new PDO is a deep copy of the current one.
    */
   public void newPdo() {
     releasePdo(released -> {
@@ -592,7 +604,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Closes this CRUD.
+   * Closes this CRUD.<br>
+   * Asks the user to save or discard pending changes before.
    */
   public void cancel() {
     releasePdo(released -> {
@@ -606,7 +619,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Searches for a PDO.
+   * Searches for a PDO in a modal search dialog and edits the selected one.
    */
   public void find() {
     releasePdo(released -> {
@@ -623,7 +636,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Releases the current PDO.
+   * Releases the current PDO.<br>
+   * If the PDO has been modified, the user is asked to save, discard, or cancel.
+   * Releases the token lock unless canceled.
    *
    * @param released invoked with true if released, false if not (user answered CANCEL)
    */
@@ -666,7 +681,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   /**
    * Unlocks the given PDO.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public void releaseTokenLock(T pdo) {
     try {
@@ -681,7 +696,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Prints the PDO.
+   * Prints the PDO.<br>
+   * Delegates to {@link PdoEditor#print()}.
    */
   public void print() {
     getEditor().print();
@@ -699,7 +715,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Removes all PDO-event handlers and filters.<br>
+   * Removes all PDO event handlers and filters.<br>
    * The method is provided to avoid memory leaks.
    */
   public void removeAllPdoEventListeners() {
@@ -709,7 +725,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Adds a PDO-event filter.
+   * Adds a PDO event filter.
    *
    * @param eventType   the event type
    * @param eventFilter the filter
@@ -719,7 +735,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Removes a PDO-event filter.
+   * Removes a PDO event filter.
    *
    * @param eventType   the event type
    * @param eventFilter the filter
@@ -730,7 +746,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
-   * Adds a PDO-event handler.
+   * Adds a PDO event handler.
    *
    * @param eventType   the event type
    * @param eventHandler the handler
@@ -740,7 +756,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Removes a PDO-event handler.
+   * Removes a PDO event handler.
    *
    * @param eventType   the event type
    * @param eventHandler the handler
@@ -797,7 +813,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Enables/Disables the previous and next buttons.
+   * Enables or disables the previous and next buttons.
    */
   protected void updatePrevNextButtons() {
     previousButton.setDisable(pdoListIndex <= 0);

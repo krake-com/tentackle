@@ -54,7 +54,10 @@ import javafx.stage.WindowEvent;
 import java.util.ResourceBundle;
 
 /**
- * Login controller.
+ * Login controller.<br>
+ * Collects the credentials according to the configured authentication method: the username and password,
+ * or, for an interactive (single sign-on) method, a sign-in button that runs the {@link CredentialsProvider}
+ * in the background. Optionally, the user can select and edit the backend to connect to.
  *
  * @author harald
  */
@@ -160,7 +163,9 @@ public class Login extends AbstractFxController implements LoginController {
 
 
   /**
-   * Presets the user- and password field from the backend configuration.
+   * Presets the username and password fields from the backend configuration.<br>
+   * Applies only to remote backends, since the user and password of a JDBC or JNDI backend
+   * are used to connect to the database.
    *
    * @param backendConfiguration the backend config, null if none
    */
@@ -505,7 +510,7 @@ public class Login extends AbstractFxController implements LoginController {
       credentialsPrompt = null;
       Credentials credentials = service.getValue();
       if (credentials == null) {
-        // the user cancelled or the identity provider refused: let them try again
+        // the user canceled or the identity provider refused: let them try again
         setProgress(0.0);
         setMessage(resources.getString("sign in canceled"));
       }
@@ -534,9 +539,9 @@ public class Login extends AbstractFxController implements LoginController {
   }
 
   /**
-   * Sets the caps-lock message.
+   * Sets the caps lock message.
    *
-   * @param capsLock the caps-lock message
+   * @param capsLock true if caps lock is on
    */
   private void setCapsLockMessage(boolean capsLock) {
     if (capsLock) {
@@ -548,7 +553,7 @@ public class Login extends AbstractFxController implements LoginController {
   }
 
   /**
-   * Returns whether CAPS-LOCK is active.
+   * Returns whether caps lock is active.
    *
    * @return true if CAPS LOCK on
    */

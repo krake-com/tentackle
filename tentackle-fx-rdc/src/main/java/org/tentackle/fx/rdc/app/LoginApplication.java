@@ -49,7 +49,9 @@ import java.util.Locale;
 /**
  * The login FX application.
  * <p>
- * Displays the login view and spawns a login handler.
+ * Displays the login view, centered on the splash screen if any, and applies the theme preferences.
+ * The username and password may be preset via the command line, the backend properties, or the
+ * process environment. With auto-login, the user is logged in immediately.
  *
  * @author harald
  */
@@ -109,7 +111,7 @@ public class LoginApplication extends FxApplication {
       controller.requestInitialFocus();
     }
     catch (RuntimeException rx) {
-      throw new RdcRuntimeException("cannot create session info", rx);
+      throw new RdcRuntimeException("cannot start login application", rx);
     }
   }
 
@@ -125,7 +127,9 @@ public class LoginApplication extends FxApplication {
   }
 
   /**
-   * Creates the session info to be passed to the login controller.
+   * Creates the session info to be passed to the login controller.<br>
+   * The username and password are taken from the command line, the backend properties,
+   * or the process environment, in that order. The username defaults to the system's user name.
    *
    * @return the session info
    */

@@ -30,10 +30,12 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Tree item for a PDO.
+ * Tree item for a PDO.<br>
+ * The child items are loaded lazily via {@link GuiProvider#getTreeChildObjects(PersistentDomainObject)}
+ * when they are requested for the first time.
  *
  * @author harald
- * @param <T> the pdo type
+ * @param <T> the PDO type
  */
 public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T> {
 
@@ -44,7 +46,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
   /**
    * Creates a tree item for a PDO.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public PdoTreeItem(T pdo) {
     super(pdo);
@@ -61,10 +63,10 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
   }
 
   /**
-   * Sets the pdo.<br>
-   * Can be used to reload the pdo, for example.
+   * Sets the PDO.<br>
+   * Can be used to reload the PDO, for example. The child items will be loaded again on demand.
    *
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   public void setPdo(T pdo) {
     setValue(pdo);
@@ -116,7 +118,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * Gets the parent PDO.
    *
    * @param <P> the parent PDO type
-   * @return the patent PDO, null if no parent or parent item is no PdoTreeItem
+   * @return the parent PDO, null if no parent or parent item is no PdoTreeItem
    */
   public <P extends PersistentDomainObject<P>> P getParentPdo() {
     PdoTreeItem<P> parentItem = getParentPdoItem();
@@ -125,11 +127,11 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
 
 
   /**
-   * Gets the parent item's pdo.
+   * Gets the parent item's PDO.
    *
    * @param <P> the parent PDO type
    * @param parentPdoClass the entity class of the parent PDO
-   * @return the parent pdo, null if no parent or parent is no PdoTreeItem or not pointing to an instance of {@code parentPdoClass}
+   * @return the parent PDO, null if no parent, parent is no PdoTreeItem, or its PDO is not an instance of {@code parentPdoClass}
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public <P extends PersistentDomainObject<P>> P getParentPdo(Class<P> parentPdoClass) {

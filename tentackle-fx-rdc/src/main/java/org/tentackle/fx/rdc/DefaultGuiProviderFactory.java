@@ -28,7 +28,9 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The default GUI provider factory.
+ * The default GUI provider factory.<br>
+ * Maps the PDO's effective class to the provider class registered via {@link GuiProviderService},
+ * caches the provider's constructor, and creates a new provider instance per invocation.
  *
  * @author harald
  */
@@ -36,13 +38,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultGuiProviderFactory implements GuiProviderFactory {
 
   /**
-   * maps PDO-classes to the constructors of the provider classes.
+   * Maps PDO classes to the constructors of the provider classes.
    */
   @SuppressWarnings("rawtypes")
   private final ConcurrentHashMap<Class, Optional<Constructor>> serviceMap = new ConcurrentHashMap<>();
 
   /**
-   * maps PDO-classes to providers.
+   * Maps PDO classes to provider classes.
    */
   private final ClassMapper guiClassMapper;
 
@@ -77,13 +79,13 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   }
 
   /**
-   * Creates the {@link GuiProvider}'s constructor for a PDO class.
+   * Gets the {@link GuiProvider}'s constructor for a PDO class.
    * <p>
-   * Throws {@link RdcRuntimeException} if no matching constructor found.
+   * Throws {@link RdcRuntimeException} if no matching constructor was found.
    *
    * @param pdoClass the PDO class
    * @param <T> the PDO type
-   * @return the constructor's optional, empty if no such {@link GuiProviderService} found at all
+   * @return the constructor's optional, empty if no {@link GuiProviderService} was found at all
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected <T extends PersistentDomainObject<T>> Optional<Constructor> getConstructor(Class<T> pdoClass) {

@@ -37,7 +37,9 @@ interface SecurityDialogFactoryHolder {
 
 
 /**
- * A factory for security dialogs.
+ * A factory for security dialogs.<br>
+ * Applications must replace the default implementation to provide the selection of grantees
+ * (usually users and user groups) and, if used, of the domain context objects.
  *
  * @author harald
  */
@@ -54,7 +56,8 @@ public interface SecurityDialogFactory {
 
 
   /**
-   * Returns whether user determined by given domain context is allowed to use the security dialog.
+   * Returns whether the user determined by the given domain context is allowed to use the security dialog.<br>
+   * The default implementation checks the edit permission for the {@link Security} class.
    *
    * @param context the domain context
    * @return true if allowed
@@ -68,7 +71,7 @@ public interface SecurityDialogFactory {
 
   /**
    * Selects a grantee.<br>
-   * This is usually a search dialog for users and/or user-groups.
+   * This is usually a search dialog for users and/or user groups.
    *
    * @param owner the owner window or view
    * @param context the domain context
@@ -95,24 +98,24 @@ public interface SecurityDialogFactory {
   void selectDomainContextObject(Object owner, DomainContext context, Consumer<PersistentDomainObject<?>> contextPdo);
 
   /**
-   * Shows a dialog to edit security rule sets for a PDO.<br>
+   * Shows a dialog to edit security rule sets for a PDO.
    *
    * @param owner the owner window or view
-   * @param pdo the pdo
+   * @param pdo the PDO
    */
   void showDialog(Object owner, PersistentDomainObject<?> pdo);
 
   /**
-   * Shows a dialog to edit security rule sets for a PDO-class.<br>
+   * Shows a dialog to edit security rule sets for a PDO class.
    *
    * @param owner the owner window or view
-   * @param classId the class-ID
+   * @param classId the class ID
    * @param context the domain context
    */
   void showDialog(Object owner, int classId, DomainContext context);
 
   /**
-   * Shows a dialog to edit security rule sets for a non-PDO-class.<br>
+   * Shows a dialog to edit security rule sets for a non-PDO class.
    *
    * @param owner the owner window or view
    * @param clazz the class

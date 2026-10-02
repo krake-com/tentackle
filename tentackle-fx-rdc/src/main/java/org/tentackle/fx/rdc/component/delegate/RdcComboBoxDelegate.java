@@ -30,7 +30,7 @@ import javafx.util.Callback;
 import java.util.Collection;
 
 /**
- * Delegate for RdcComboBox.
+ * Delegate for {@link RdcComboBox}.
  *
  * @author harald
  */
@@ -73,6 +73,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    * Gets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @return the callback
    */
   public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
@@ -83,6 +84,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    * Sets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
+   * @param <T> the PDO type
    * @param loadAllPdosCallback the callback
    */
   public <T extends PersistentDomainObject<T>> void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
@@ -92,7 +94,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   /**
    * Gets the PDO addon.
    *
-   * @return the addon
+   * @return the addon, null if not bound to a PDO type
    */
   @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {

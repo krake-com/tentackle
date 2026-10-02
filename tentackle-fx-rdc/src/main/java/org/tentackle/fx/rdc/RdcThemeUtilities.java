@@ -24,7 +24,8 @@ import org.tentackle.fx.ThemeUtilities;
 import javafx.scene.Scene;
 
 /**
- * Rdc theme utilities.
+ * RDC theme utilities.<br>
+ * Adds the stylesheet for the PDO-bound components (style class {@code tt-pdo-style}) to every scene.
  */
 @Service(ThemeUtilities.class)
 public class RdcThemeUtilities extends ThemeUtilities {

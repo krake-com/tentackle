@@ -53,7 +53,12 @@ import java.util.Objects;
 import java.util.Properties;
 
 /**
- * Java FX tentackle desktop application.
+ * Tentackle JavaFX desktop application.<br>
+ * Launches the {@link FxApplication} (by default the {@link LoginApplication}), performs the login
+ * in a background service while showing the progress in the login view, and finally opens the main
+ * window with the main controller.
+ * <p>
+ * The modification tracker runs with its own session, a clone of the login session grouped with it.
  *
  * @author harald
  * @param <C> the main controller type
@@ -93,8 +98,8 @@ public abstract class DesktopApplication<C extends FxController>
   }
 
   /**
-   * Gets the main-controller to be displayed initially.<br>
-   * Maintains the main-scene of the application.
+   * Gets the main controller to be displayed initially.<br>
+   * Maintains the main scene of the application.
    *
    * @return the main controller class
    */
@@ -143,7 +148,7 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Returns the autologin flag.
    *
-   * @return true if the user is logged w/o being asked for username/password, default is false
+   * @return true if the user is logged in w/o being asked for username/password, default is false
    * @see Constants#BACKEND_AUTOLOGIN
    */
   public boolean isAutoLogin() {
@@ -171,8 +176,9 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Performs the login and final startup of the application.
    * <p>
-   * The method must hide the view when the main application window is displayed
-   * after successful login.
+   * The login runs in a background service. After a successful login, the application is configured,
+   * the main controller is loaded, and the main window is displayed. The login view is hidden
+   * when the main window is shown. Failed logins are handled by the {@link LoginFailedHandler}.
    * <p>
    * Notice that this method is invoked from within the FX thread.
    *
@@ -293,8 +299,8 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Gets the FX application instance.<br>
    * This is the instance of the class provided by {@link #getApplicationClass()}.<br>
-   * The FX-application usually provides a login-view and is responsible
-   * to spawn the main view after successful login.
+   * The FX application usually provides a login view and is responsible
+   * for spawning the main view after successful login.
    *
    * @return the FX application
    */
@@ -313,9 +319,10 @@ public abstract class DesktopApplication<C extends FxController>
 
 
   /**
-   * Gets the FX application class.
+   * Gets the FX application class.<br>
+   * Override to launch an application other than the {@link LoginApplication}.
    *
-   * @return the fx application class
+   * @return the FX application class
    */
   public Class<? extends FxApplication> getApplicationClass() {
     return LoginApplication.class;
@@ -376,7 +383,8 @@ public abstract class DesktopApplication<C extends FxController>
 
 
   /**
-   * Registers a handler for uncaught exceptions.
+   * Registers a handler for uncaught exceptions.<br>
+   * Applies to all threads and the FX thread.
    */
   public void registerUncaughtExceptionHandler() {
     Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
@@ -385,7 +393,8 @@ public abstract class DesktopApplication<C extends FxController>
 
 
   /**
-   * Gets the exception handler.
+   * Gets the exception handler.<br>
+   * The default handler logs the exception and shows it in an error dialog.
    *
    * @return the handler
    */
@@ -432,11 +441,12 @@ public abstract class DesktopApplication<C extends FxController>
 
   /**
    * Gets the configured dark mode and theme preferences.<br>
-   * It can be configured via command line or user preferences.
-   * If such configuration is missing, the mode is considered to be determined automatically according
+   * They can be configured via command line or user preferences.
+   * If the dark mode is not configured, it is determined automatically according
    * to the desktop settings.
    *
-   * @return null if automatic, TRUE if fixed dark mode, FALSE if fixed light mode
+   * @return the theme preferences, with {@code darkMode()} null if automatic, TRUE if fixed dark mode,
+   * FALSE if fixed light mode
    */
   public ThemeUtilities.ThemePreferences getThemePreferences() {
     String darkModeStr = getPropertyIgnoreCase(ThemeUtilities.DARK_MODE);
@@ -508,7 +518,8 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * {@inheritDoc}
    * <p>
-   * Whenever a PDO class is used the first time, pre-compile all validator scripts in the background, if any.
+   * Whenever a PDO class is used the first time, all field validators are prepared in the background,
+   * which pre-compiles the validator scripts, if any.
    * This usually improves UX snappiness.
    * <p>
    * The default implementation adds a {@link org.tentackle.task.Task} to the {@link ModificationTracker}.

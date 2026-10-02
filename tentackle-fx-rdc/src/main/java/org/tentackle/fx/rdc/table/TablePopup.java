@@ -45,9 +45,11 @@ import java.util.Objects;
 
 /**
  * Table popup.<br>
- * Provides a context menu with several handy features such as export to excel,
- * save and load table settings, etc...<br>
- * The popup can be used for tables and tree tables.
+ * Provides a context menu with several handy features: a column chooser, auto-adjusting the column widths,
+ * printing, exporting all or the selected rows to a spreadsheet or XML file, and saving or loading the
+ * table preferences. For tree tables, the menu also provides items to expand and collapse the tree.<br>
+ * The popup can be used for tables and tree tables. It installs its menu as the context menu of the
+ * table and all its columns.
  *
  * @author harald
  * @param <S> the table element type
@@ -56,7 +58,7 @@ public class TablePopup<S> {
 
   /*
    * TableView and TreeTableView don't inherit from each other and thus
-   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * each spawn their own related types such as TableColumn, TreeTableColumn, etc...
    * As a result, since TablePopup applies to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
@@ -90,7 +92,7 @@ public class TablePopup<S> {
   /**
    * Creates a table popup.
    *
-   * @param treeTable the treetable
+   * @param treeTable the tree table
    * @param preferencesSuffix the preferences suffix to load/save table preferences, null if from table config
    * @param title the title of the printed table, null if from table config
    */
@@ -114,7 +116,7 @@ public class TablePopup<S> {
   /**
    * Gets the table.
    *
-   * @return the table, null if treetable popup
+   * @return the table, null if tree table popup
    */
   public FxTableView<S> getTable() {
     return table;
@@ -123,7 +125,7 @@ public class TablePopup<S> {
   /**
    * Gets the tree table.
    *
-   * @return the treetable, null if table popup
+   * @return the tree table, null if table popup
    */
   public FxTreeTableView<S> getTreeTable() {
     return treeTable;
@@ -142,7 +144,7 @@ public class TablePopup<S> {
   /**
    * Sets the printed title.
    *
-   * @param title the title for printings
+   * @param title the title for printing
    */
   public void setTitle(String title) {
     this.title = title;
@@ -151,7 +153,7 @@ public class TablePopup<S> {
   /**
    * Gets the table preferences suffix.
    *
-   * @return the suffix
+   * @return the suffix, null if none
    */
   public String getPreferencesSuffix() {
     return preferencesSuffix;
@@ -177,7 +179,7 @@ public class TablePopup<S> {
 
   /**
    * Enables or disables the column menu.<br>
-   * The column menu allows to set the visibility of columns.
+   * The column menu allows the user to show or hide columns.
    *
    * @param columnMenuEnabled  true to enable column menu (default)
    */
@@ -186,9 +188,9 @@ public class TablePopup<S> {
   }
 
   /**
-   * Recursively expands the items of the treetable.
+   * Recursively expands the items of the tree table.
    *
-   * @param selectedItem the selected item to start, null for whole treetable
+   * @param selectedItem the selected item to start, null for the whole tree table
    */
   public void expandTreeTable(TreeItem<S> selectedItem) {
     if (treeTable != null) {
@@ -202,9 +204,9 @@ public class TablePopup<S> {
   }
 
   /**
-   * Recursively collapses the items of the treetable.
+   * Recursively collapses the items of the tree table.
    *
-   * @param selectedItem the selected item to start, null for whole treetable
+   * @param selectedItem the selected item to start, null for the whole tree table
    */
   public void collapseTreeTable(TreeItem<S> selectedItem) {
     if (treeTable != null) {
@@ -448,7 +450,8 @@ public class TablePopup<S> {
 
 
   /**
-   * Opens a dialog to export a table to an Excel sheet.
+   * Opens a dialog to export the table to a spreadsheet file.<br>
+   * The file is opened in the associated application afterward.
    *
    * @param onlySelected true if export only selected rows
    */
@@ -478,7 +481,8 @@ public class TablePopup<S> {
 
 
   /**
-   * Opens a dialog to export a table to a spreadsheet.
+   * Opens a dialog to export the table to an XML file.<br>
+   * The file is opened in the associated application afterward.
    *
    * @param onlySelected true if export only selected rows
    */
@@ -528,7 +532,7 @@ public class TablePopup<S> {
 
   /**
    * Saves the table preferences.<br>
-   * System- or user scope is determined from {@link PersistedPreferencesFactory}.
+   * System or user scope is determined from {@link PersistedPreferencesFactory}.
    */
   public void savePreferences() {
     savePreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
@@ -557,7 +561,7 @@ public class TablePopup<S> {
 
   /**
    * Loads the table preferences.<br>
-   * System- or user scope is determined from {@link PersistedPreferencesFactory}.
+   * System or user scope is determined from {@link PersistedPreferencesFactory}.
    */
   public void loadPreferences() {
     loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());

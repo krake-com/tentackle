@@ -25,7 +25,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for rdc-package in tentackle-swing-rdc.
+ * Bundle for the {@code org.tentackle.fx.rdc} package.
  *
  * @author harald
  */

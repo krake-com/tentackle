@@ -17,6 +17,8 @@
  */
 
 /**
- * Login view and controller.
+ * Login view and controller.<br>
+ * Also provides the dialog to edit the backend configurations and the credentials prompt for
+ * interactive authentication methods.
  */
 package org.tentackle.fx.rdc.login;
