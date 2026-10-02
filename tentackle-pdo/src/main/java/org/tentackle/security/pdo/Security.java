@@ -49,7 +49,7 @@ import org.tentackle.session.TableName;
  * long           granteeId               granteeid         the id of the entity the permissions are granted to, 0 if all grantees
  * int            priority                secprio           the priority or evaluation order, 0 is highest or first
  * String(128)    permissions             permissions       the permissions as a comma-separated list
- * boolean        allowed                 allowed           the false if denied, true if allowed
+ * boolean        allowed                 allowed           false if denied, true if allowed
  * String         message                 message           the user message
  *
  * ## indexes

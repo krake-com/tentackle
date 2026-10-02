@@ -154,7 +154,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   /** the permissions as a comma-separated list. */
   private String permissions;
 
-  /** the false if denied, true if allowed. */
+  /** false if denied, true if allowed. */
   private boolean allowed;
 
   /** the user message. */
