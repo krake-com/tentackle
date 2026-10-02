@@ -28,7 +28,13 @@ import org.tentackle.sql.Backend;
 import java.sql.SQLException;
 
 /**
- * Replaces {@link SessionUtilities} to handle {@link java.sql.SQLException}s for {@link org.tentackle.session.PersistenceException}.
+ * Replaces {@link SessionUtilities} to handle {@link java.sql.SQLException}s wrapped in a {@link PersistenceException}.
+ * <ul>
+ *   <li>driver-specific SQL exceptions are replaced by plain {@link java.sql.SQLException}s, which
+ *   remote clients can deserialize without the JDBC driver</li>
+ *   <li>exceptions are flagged temporary if the backend considers the SQL exception transient</li>
+ *   <li>exception messages are extended by the SQL message, error code, and SQL state</li>
+ * </ul>
  */
 @Service(SessionUtilities.class)
 public class DbSessionUtilities extends SessionUtilities {

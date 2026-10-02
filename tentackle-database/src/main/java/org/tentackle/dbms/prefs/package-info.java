@@ -18,5 +18,8 @@
 
 /**
  * Persisted preferences implementation.
+ * <p>
+ * Implements {@link java.util.prefs.Preferences} with the database as the backing store.
+ * Changes are propagated to all JVMs via the modification tracker.
  */
 package org.tentackle.dbms.prefs;

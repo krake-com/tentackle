@@ -118,6 +118,7 @@ public class DbTransactionFactory {
    * @param db the session
    * @param txName the transaction name, null if &lt;unnamed&gt;
    * @param fromRemote true if initiated from the remote client
+   * @return the transaction
    */
   public DbTransaction create(Db db, String txName, boolean fromRemote) {
     DbTransaction transaction = new DbTransaction(db, createVoucher(fromRemote), txName, TX_COUNT.incrementAndGet());
@@ -191,7 +192,7 @@ public class DbTransactionFactory {
   }
 
   /**
-   * Gets the number of check intervals that must elapse to for an idle transaction to time out.
+   * Gets the number of check intervals that must elapse for an idle transaction to time out.
    *
    * @return the idle count
    */
@@ -200,7 +201,7 @@ public class DbTransactionFactory {
   }
 
   /**
-   * Sets the number of check intervals that must elapse to for an idle transaction to time out.
+   * Sets the number of check intervals that must elapse for an idle transaction to time out.
    *
    * @param txIdleTimeout the idle count, &le; 0 to disable
    */
@@ -253,7 +254,7 @@ public class DbTransactionFactory {
 
   /**
    * The supervisor finds unreferenced transactions and cleans up.<br>
-   * It also closes sessions with transactions being idle too long.
+   * It also rolls back and closes the JDBC connections of transactions being idle too long.
    * The thread is started when the first transaction (local sessions only!) is created.
    * For remote sessions, the thread will never be started and the {@code DbTransactionFactory} is just dummy,
    * for example, in a remote {@code ServerApplication}.

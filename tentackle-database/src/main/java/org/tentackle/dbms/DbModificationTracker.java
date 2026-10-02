@@ -59,6 +59,12 @@ import java.util.function.Consumer;
 
 /**
  * The modification tracker for the tentackle persistence layer.
+ * <p>
+ * The tracker runs as a thread that periodically polls the modification table (see {@link DbModification})
+ * and notifies the registered {@link ModificationListener}s about changed tables.
+ * Modification counts are collected in {@link ModificationTally}s and persisted by the tracker
+ * thread, or immediately in {@link #isLocalClientMode() local client mode}.
+ * In remote clients, the tracker polls the server's tracker via a {@link DbModificationTrackerRemoteDelegate}.
  *
  * @author harald
  */
@@ -546,7 +552,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param name the name to set
    * @param idSerial the id/serial pair to set
    */
-   public synchronized void setIdSerialForName(String name, IdSerialTuple idSerial) {
+  public synchronized void setIdSerialForName(String name, IdSerialTuple idSerial) {
     TableEntry entry = tableEntriesByName.get(name);
     if (entry == null) {
       entry = new TableEntry(name, idSerial.getId(), idSerial.getSerial());
@@ -830,6 +836,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   /**
    * Reads the master-serial from the database.
+   *
    * @return the master serial
    */
   protected long selectMasterSerial() {
@@ -845,8 +852,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   /**
    * Selects id/serial/name tuples from the remote server's tracker.<br>
    * The method is provided to reduce the number of roundtrips during startup of the client application.
-   * <p>
-   * Throws a {@link PersistenceException} if invoked on a local session.
+   * For local sessions, the tuples are read from the modification table.
    *
    * @return the tuples
    */
@@ -885,7 +891,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Selects the pair of id/serial for a given table name.
    *
    * @param tableName the table to lookup
-   * @return the id/serial pair for the table name, null table not configured so far
+   * @return the id/serial pair for the table name, null if table not configured so far
    */
   protected IdSerialTuple selectIdSerialForName(String tableName) {
     Db session = getSession();
@@ -903,7 +909,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
-   * Gets the remote delegate.
+   * Gets the remote delegate ID.
    * <p>
    * Although the ModificationTracker is a singleton, the remote delegate is an instance variable.
    * If the application accidentally creates multiple instances of the ModificationTracker,
@@ -911,7 +917,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * So the old one is wasted, but the application does not fail with a ClassCastException if
    * the delegates are of different types.
    *
-   * @return the delegate
+   * @return the delegate ID
    */
   protected int getRemoteDelegateId() {
     int id = remoteDelegateId;
@@ -1236,7 +1242,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
-   * runs the shutdown runnables
+   * Runs the shutdown runnables.
    */
   private void invokeShutdownRunnables() {
     /*
@@ -1255,7 +1261,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         r.run();
       }
       catch (RuntimeException ex) {
-        // log but don't cause MD to stop
+        // log but don't stop the tracker
         LOGGER.logStacktrace(Level.SEVERE, ex);
       }
     }

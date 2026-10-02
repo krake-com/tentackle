@@ -143,7 +143,7 @@ public class DbTransaction extends AbstractTransaction {
    * Gets a savepoint by handle.
    *
    * @param handle the handle
-   * @return savepoint the savepoint
+   * @return the savepoint, null if no such handle
    */
   public Savepoint getSavepoint(SavepointHandle handle) {
     return savepoints == null ? null : savepoints.get(handle);
@@ -170,7 +170,7 @@ public class DbTransaction extends AbstractTransaction {
 
   /**
    * Registers a {@link PersistenceVisitor} to be invoked just before
-   * performing a persistence operation.<br>
+   * performing a persistence operation.
    *
    * @param visitor the visitor to register
    * @return the handle for the visitor
@@ -200,13 +200,16 @@ public class DbTransaction extends AbstractTransaction {
    * @return the visitors, null or empty if none
    */
   public Collection<PersistenceVisitor> getPersistenceVisitors() {
-    return visitors.values();
+    return visitors == null ? null : visitors.values();
   }
 
   /**
    * Performs the commit.<br>
-   * Finishes any pending batched statements.<br>
-   * Executes all commit runnables and removes them.<br>
+   * Executes any pending batched statements and finishes the transaction.
+   * <p>
+   * Notice that the physical commit is performed by the session.
+   *
+   * @see DbTransactionFactory#finish(DbTransaction, boolean)
    */
   public void commit() {
     executeBatch();
@@ -232,8 +235,12 @@ public class DbTransaction extends AbstractTransaction {
   }
 
   /**
-   * Performs a rollback.<br>
-   * Executes all rollback runnables and removes them.
+   * Finishes a rolled back transaction.<br>
+   * Pending batched statements are discarded.
+   * <p>
+   * Notice that the physical rollback is performed by the session.
+   *
+   * @see DbTransactionFactory#finish(DbTransaction, boolean)
    */
   public void rollback() {
     DbTransactionFactory.getInstance().finish(this, true);
@@ -241,7 +248,7 @@ public class DbTransaction extends AbstractTransaction {
 
   /**
    * Checks whether a persistence operation is allowed.<br>
-   * This is determined by consulting the {@link PersistenceVisitor}s.<br>
+   * This is determined by consulting the {@link PersistenceVisitor}s.
    *
    * @param object the persistence object
    * @param modType the modification type

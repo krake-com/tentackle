@@ -127,7 +127,8 @@ Table child  = CUSTOMER.as("k");
 ```
 
 For columns without a registered datatype there is `field(String)`, which yields an untyped, single-column
-field usable in the projection, in `GROUP BY` and in `COUNT`.
+field usable in the projection, in `GROUP BY` and in `COUNT`. Compared to a value, it takes the datatype of the
+value's class, which must span a single column as well.
 
 ---
 
@@ -141,7 +142,7 @@ where(NAME.eq(userInput))         //  ... WHERE c.name=?   with userInput bound 
 
 Table-, column-, function- and alias names, on the other hand, do end up in the SQL-code verbatim. They are
 therefore verified syntactically as soon as they enter the DSL — an identifier consisting of letters, digits,
-underscores and optional schema qualification is accepted, anything else is rejected:
+underscores (and `$` after the first character) and optional schema qualification is accepted, anything else is rejected:
 
 ```java
 table("customer; DROP TABLE customer")      // throws PersistenceException

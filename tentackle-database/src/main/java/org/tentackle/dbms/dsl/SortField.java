@@ -29,7 +29,8 @@ import java.util.Objects;
  * <p>
  * Expressions spanning more than one column are sorted by their sortable columns
  * in the order defined by the datatype (see {@link DataType#getSortableColumns()}).
- * Datatypes that cannot be sorted at all are rejected.
+ * Expressions of a datatype that cannot be sorted at all, such as {@code UUID}, are rejected.
+ * Single-column results of functions, such as the {@code SUM} of a multi-column datatype, can always be sorted.
  *
  * @author harald
  */
@@ -74,17 +75,22 @@ public class SortField implements SqlElement {
   public void render(RenderContext context) {
     Backend backend = context.getBackend();
     int columnCount = expression.getColumnCount(backend);
+    DataType<?> dataType = expression.getDataType();
+    int[] sortableColumns = null;
+
+    if (dataType != null && dataType.getColumnCount(backend) == columnCount) {
+      // the expression maps the columns of its datatype, e.g. a field (but not a function result)
+      sortableColumns = dataType.getSortableColumns();
+      if (sortableColumns == null || sortableColumns.length == 0) {
+        throw new PersistenceException(dataType + " cannot be sorted");
+      }
+    }
 
     if (columnCount == 1) {
       expression.render(context, 0);
       context.append(sortOrder.getSql());
     }
     else {
-      DataType<?> dataType = expression.getDataType();
-      int[] sortableColumns = dataType.getSortableColumns();
-      if (sortableColumns == null || sortableColumns.length == 0) {
-        throw new PersistenceException(dataType + " cannot be sorted");
-      }
       boolean needComma = false;
       for (int columnIndex : sortableColumns) {
         if (needComma) {

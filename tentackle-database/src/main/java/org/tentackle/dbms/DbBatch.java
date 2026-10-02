@@ -36,7 +36,7 @@ import java.util.Set;
  * important to ensure referential integrity. Furthermore, the batch is flushed on every savepoint,
  * whenever the same object is persisted again, a non-batchable statement is executed or the transaction committed.
  * <p>
- * By default, batching is enabled via the backend property <code>batchsize=...</code>, if the value is &gt; 1.
+ * Batching is enabled via the backend property <code>batchsize=...</code>, if the value is &gt; 1.
  * However, the batchsize can be set for each session programmatically as well. If certain transactions must be
  * treated individually, the application can provide its own {@link org.tentackle.session.SessionFactory} and
  * override {@link Db#createTransaction(String, boolean)} as well as {@link DbTransaction#createBatch()}.
@@ -131,7 +131,7 @@ public class DbBatch {
    * Statements with more than one parameter set are executed in batch mode,
    * otherwise in standard mode.
    *
-   * @param flush forget all statements as well
+   * @param flush true to forget all statements and objects as well
    */
   public void execute(boolean flush) {
     executePending(true, null);

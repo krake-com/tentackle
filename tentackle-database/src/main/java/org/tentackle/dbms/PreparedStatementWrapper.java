@@ -149,7 +149,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * Sets the column offset.
    * Useful for eager loading or joining in general.
    *
-   * @param columnOffset (default is 0)
+   * @param columnOffset the offset added to the column index (default is 0)
    */
   public void setColumnOffset(int columnOffset) {
     this.columnOffset = columnOffset;
@@ -167,7 +167,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   /**
    * Gets the effective position.<br>
    * The method is invoked immediately before setting the value into the statement, and only for that purpose!
-   * This the p + columnOffset.
+   * This is p + columnOffset.<br>
+   * If the statement is batched and the first parameter is set again, the previous parameter set is added to the batch.
    *
    * @param p the SQL position
    * @return effective position
@@ -421,8 +422,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   /**
    * Executes the query.
    *
-   * @param withinTx is true if start a transaction for this query.
-   *
+   * @param withinTx true to run the query within a transaction, committed when the result set is closed
    * @return the result set as a ResultSetWrapper
    */
   public ResultSetWrapper executeQuery (boolean withinTx) {
@@ -1104,9 +1104,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * A BMoney will not be stored as a single field but as two fields:
    * <ol>
    * <li>a double representing the value</li>
-   * <li>an int representing the scale</li>
+   * <li>a short representing the scale</li>
    * </ol>
-   * This is due to most DBMS can't store arbitrary scaled decimals in
+   * This is because most DBMS can't store arbitrary scaled decimals in
    * a single column, i.e., all values in the column must have the same scale.
    *
    * @param p the SQL position
@@ -1142,9 +1142,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * A DMoney will not be stored as a single field but as two fields:
    * <ol>
    * <li>a BigDecimal with a scale of 0 representing the value</li>
-   * <li>an int representing the scale</li>
+   * <li>a short representing the scale</li>
    * </ol>
-   * This is due to most DBMS can't store arbitrary scaled decimals in
+   * This is because most DBMS can't store arbitrary scaled decimals in
    * a single column, i.e., all values in the column must have the same scale.
    *
    * @param p the SQL position
@@ -1289,7 +1289,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * Sets the designated parameter to the given {@link Binary} value.
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
-   * The implementation translates the Binary into an InputStream and invokes
+   * The implementation translates the binary into an InputStream and invokes
    * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
@@ -1319,7 +1319,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * Sets the designated parameter to the given {@link TBinary} value.
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
-   * The implementation translates the Binary into an InputStream and invokes
+   * The implementation translates the binary into an InputStream and invokes
    * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...

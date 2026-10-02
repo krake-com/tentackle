@@ -210,6 +210,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * Loads a root node and all its sub-nodes from database.<br>
    * If the node is new, a new instance will be created, but not persisted yet.
    *
+   * @param db the session
    * @param user the username, null if system root
    * @return the root preferences
    */

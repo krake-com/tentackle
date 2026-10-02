@@ -111,7 +111,7 @@ public class ManagedConnection {
   private static Level logLevelForParallelOpenResultSets;
 
   /**
-   * Add detected and logged parallel result sets to the {@link StatementTracer}.
+   * Adds detected and logged parallel result sets to the {@link StatementTracer}.
    */
   private static boolean traceParallelOpenResultSets;
 
@@ -188,7 +188,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Sets Optional filter to log only statements for certain MappedDiagnosticContexts.<br>
+   * Sets the optional filter to log only statements for certain MappedDiagnosticContexts.<br>
    * If set, statements are only collected for logging if the MDC is valid and the pattern matches the toString-value
    * of the MDC.
    *
@@ -394,7 +394,7 @@ public class ManagedConnection {
 
 
   /**
-   * Gets the connection manager
+   * Gets the connection manager.
    *
    * @return the manager
    */
@@ -549,10 +549,8 @@ public class ManagedConnection {
   /**
    * Marks a connection being dead.
    * <p>
-   * Marking connections dead allows connection managers like
-   * {@link MpxConnectionManager} to re-open connections before
-   * being attached next time. Notice that not all connection managers
-   * honor the dead-flag (makes only sense in servers, anyway).
+   * Marking connections dead allows connection managers to close and re-open
+   * connections before being attached next time.
    *
    * @param dead true if marked dead, false not dead
    */
@@ -575,7 +573,7 @@ public class ManagedConnection {
   /**
    * Returns whether timeout is enabled and the connection wasn't used for a long time and needs verification.
    *
-   * @return return true if {@link #verifyConnection()} should be invoked before use
+   * @return true if {@link #verifyConnection()} should be invoked before use
    */
   public boolean isConnectionVerificationNecessary() {
     return isConnectionVerificationNecessary(System.currentTimeMillis());
@@ -585,7 +583,7 @@ public class ManagedConnection {
    * Returns whether timeout is enabled and the connection wasn't used for a long time and needs verification.
    *
    * @param currentTimeMillis the current epochal time in milliseconds
-   * @return return true if {@link #verifyConnection()} should be invoked before use
+   * @return true if {@link #verifyConnection()} should be invoked before use
    */
   public boolean isConnectionVerificationNecessary(long currentTimeMillis) {
     return connectionInactivityTimeoutMs > 0 && detachedSince > 0 &&
@@ -808,7 +806,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Gets the statement history.<br>
+   * Gets the statement history.
    *
    * @return the statements executed during the last attachment
    */
@@ -867,7 +865,7 @@ public class ManagedConnection {
     for (Iterator<WeakReference<ResultSetWrapper>> iter = openResultSets.iterator(); iter.hasNext(); ) {
       WeakReference<ResultSetWrapper> ref = iter.next();
       ResultSetWrapper refRs = ref.get();
-      // if closed or unreferenced or the db to remove
+      // if closed or unreferenced or the result set to remove
       if (refRs == null || refRs == rs) {   // == is okay here
         iter.remove();
       }
@@ -1218,7 +1216,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Cancels the(all) currently running statement(s).<br>
+   * Cancels all currently running statements.<br>
    * May be invoked from any thread.
    */
   public void cancelRunningStatements() {
@@ -1385,8 +1383,8 @@ public class ManagedConnection {
   }
 
   /**
-   * Creates a non-prepared statement.<br>
-   *
+   * Creates a non-prepared statement.
+   * <p>
    * One-shot statements (i.e., non-prepared statements) must attach the db as soon as they
    * are instantiated. The db is detached after executeUpdate or after executeQuery when
    * its result set is closed.
@@ -1437,10 +1435,10 @@ public class ManagedConnection {
   }
 
   /**
-   * Gets a prepared statement.<br>
-   *
+   * Gets a prepared statement.
+   * <p>
    * The statement will be reused if already prepared.
-   * Else it will be prepared according to the statement definition in BackendStatement.
+   * Otherwise, it will be prepared from the SQL code provided by the SQL supplier.
    *
    * @param statementKey the unique statement key
    * @param alwaysPrepare true if always do a physical preparing
@@ -1493,7 +1491,7 @@ public class ManagedConnection {
 
   /**
    * Checks for a dead communications link.<br>
-   * If the link is down, the database server closed it,
+   * If the link is down, for example, because the database server closed it,
    * the connection is marked dead.
    *
    * @param ex the SQL exception
@@ -1532,13 +1530,16 @@ public class ManagedConnection {
 
 
   /**
-   * Logs the execution start of a statement during a transaction.<br>
+   * Logs the execution start of a statement.<br>
    * The execution start is the current epochal time.
-   * The execution end must be set via {@link StatementHistory#end()}
+   * The execution end must be set via {@link StatementHistory#end()}.
+   * Within a transaction, the statement is appended to the statement history.
+   * Otherwise, it replaces the current statement.
    *
    * @param statement the statement
    * @param sql optional SQL string if statement does not provide it
    * @return the history with an execution start of now and execution end not set, never null
+   * @throws PersistenceException if the {@link #setMaxStatementsPerTransaction(int) statement limit} is exceeded
    */
   StatementHistory logStatementHistory(StatementWrapper statement, String sql) {
     StatementHistory history = new StatementHistory(statement, sql);
@@ -1618,7 +1619,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Unmark all prepared statements that are marked ready.
+   * Unmarks all prepared statements that are marked ready.
    */
   private void unmarkPreparedStatements() {
     // unmark all statements marked ready
@@ -1665,7 +1666,7 @@ public class ManagedConnection {
   }
 
   /**
-   * asserts that a connection is attached
+   * Asserts that a connection is attached.
    */
   private void assertAttached() {
     if (db == null) {
@@ -1674,7 +1675,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Check that the requested result type and concurrency matches the prepared statement to reuse.
+   * Checks that the requested result type and concurrency match the prepared statement to reuse.
    *
    * @param prepStmt the prepared statement
    * @param resultSetType the requested result set type

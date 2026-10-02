@@ -27,8 +27,7 @@ import org.tentackle.trip.Remote;
  * public XXXX(RemoteDbSessionImpl session, Class clazz)
  * </pre>
  *
- * while {@code session} is the remote session, and {@code clazz} is the delegate that implements
- * the remote methods.
+ * while {@code session} is the remote session, and {@code clazz} is the class serviced by the delegate.
  *
  * @author harald
  */

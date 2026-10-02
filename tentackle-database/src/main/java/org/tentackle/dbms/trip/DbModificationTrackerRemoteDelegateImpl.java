@@ -30,6 +30,7 @@ import java.util.List;
 
 /**
  * Remote delegate implementation for {@link DbModificationTracker}.
+ *
  * @param <T> the modification tracker class
  * @author  harald
  */

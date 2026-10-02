@@ -27,7 +27,7 @@ import java.text.ParseException;
 import java.util.List;
 
 /**
- * Remote delegate implementation  for {@link ModificationLog}.
+ * Remote delegate implementation for {@link ModificationLog}.
  *
  * @author  harald
  */

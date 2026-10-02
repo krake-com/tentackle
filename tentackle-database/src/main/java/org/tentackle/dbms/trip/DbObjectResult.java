@@ -26,8 +26,8 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Result used to return the possibly new object-ID, changed serial, and a
- * result code for success or failure.
+ * Result of a remote persistence operation.<br>
+ * Returns the possibly new object-ID, the changed serial, and the table serial to the client.
  *
  * @param id the object ID
  * @param serial the object's serial

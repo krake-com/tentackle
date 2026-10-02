@@ -128,7 +128,7 @@ topic-grouped listing of every document, see the
 - **JPMS / Jigsaw (modules, automatic modules)** — [Tentackle Modules](./modules.md#named-modules-and-automatic-modules), [Quickstart](./quickstart.md)
 - **JPMS: exporting new packages (wizard profiles, first operation)** — [Quickstart](./quickstart.md#the-first-operation-jpms-does-not-come-for-free), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#how-the-wizard-places-files-the-model-and-profiles)
 - **Jlink / Jpackage images** — [Jlink/Jpackage Maven Plugin](../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md), [Quickstart](./quickstart.md)
-- **JTA / XA (`jta` backend property, `XaConnectionManager`, `XaMpxConnectionManager`)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md)
+- **JTA / XA (`jta` backend property, `XaConnectionManager`, `XaMpxConnectionManager`)** — [Global Transactions — JTA and XA](../../../tentackle-jta/src/main/docs/jta.md), [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#global-transactions)
 - **JWT / ID token verification** — [Single Sign-On with Google](./google-sso.md)
 - **JWT / tokens on the client (storage)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [Single Sign-On with Google](./google-sso.md)
 - **JSON / JSONB (model type ↔ database column type)** — [The PostgreSQL Backend](../../../tentackle-sql/src/main/docs/postgres.md#json-and-jsonb), [The MySQL and MariaDB Backends](../../../tentackle-sql/src/main/docs/mysql.md#json), [Tentackle SQL](../../../tentackle-sql/src/main/docs/sql.md)

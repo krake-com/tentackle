@@ -98,17 +98,17 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Returns whether parallel execution on the same connection should be logged.
+   * Returns whether parallel execution on the same connection is ok and thus should not be logged.
    *
+   * @return true if parallel select is ok
    * @see ManagedConnection#getLogLevelForParallelOpenResultSets()
-   * @return true if parallel is select ok
    */
   public boolean isParallelOk() {
     return parallelOk;
   }
 
   /**
-   * Sets whether parallel execution on the same connection should be logged.<br>
+   * Sets whether parallel execution on the same connection is ok and thus should not be logged.<br>
    * Multiple open result sets on a single connection usually mean that
    * other selects are submitted while processing the result set. Under rare conditions
    * this might be ok, but usually it's not.
@@ -215,6 +215,7 @@ public class StatementWrapper implements AutoCloseable {
    * Returns whether this statement is marked ready.<br>
    * Used to determine unused pending statements in servers when closing
    * dead sessions.
+   *
    * @return true if pending
    */
   public synchronized boolean isMarkedReady() {
@@ -222,7 +223,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Consume a statement without executing it.<br>
+   * Consumes a statement without executing it.<br>
    * The method is invoked if a rollback is performed before consuming the statement.
    */
   public void consume() {
@@ -382,8 +383,7 @@ public class StatementWrapper implements AutoCloseable {
    * Executes a query.
    *
    * @param sql is the query SQL string
-   * @param withinTx is true if start a transaction for this query.
-   *
+   * @param withinTx true to run the query within a transaction, committed when the result set is closed
    * @return the result set as a ResultSetWrapper
    */
   public ResultSetWrapper executeQuery (String sql, boolean withinTx) {
@@ -401,7 +401,7 @@ public class StatementWrapper implements AutoCloseable {
       setRunning(true);   // will be cleared when the result set is closed
       if (withinTx) {
         txVoucher = db.begin("executeQuery");
-        // returns true if autocommit on, i.e., we were not within a transaction, and begin() started a new one.
+        // voucher != 0 if we were not within a transaction and begin() started a new one
       }
       StatementHistory history = con.logStatementHistory(this, sql);
       ResultSetWrapper resultSet = createResultSetWrapper(history, executeQueryImpl(sql));
@@ -420,7 +420,7 @@ public class StatementWrapper implements AutoCloseable {
         }
         catch (RuntimeException rex) {
           // just log
-          LOGGER.severe("statement failed", e);
+          LOGGER.severe("rollback failed", rex);
         }
       }
       else  {
@@ -430,7 +430,7 @@ public class StatementWrapper implements AutoCloseable {
         }
         catch (RuntimeException rex) {
           // just log
-          LOGGER.severe("detach failed", e);
+          LOGGER.severe("detach failed", rex);
         }
       }
       throw con.createFromSqlException(this.toString(), e);
@@ -661,7 +661,7 @@ public class StatementWrapper implements AutoCloseable {
 
 
   /**
-   * Detach the session from the connection.<br>
+   * Detaches the session from the connection.<br>
    * Statements detach the session on executeUpdate or
    * on close() in the {@link ResultSetWrapper} after executeQuery.
    */
@@ -674,7 +674,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Implementation of executeUpdate.<br>
+   * Implementation of executeUpdate.
    *
    * @param sql the SQL string
    * @return the number of affected rows
@@ -687,7 +687,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Implementation of executeQuery.<br>
+   * Implementation of executeQuery.
    *
    * @param sql the SQL string
    * @return the result set
@@ -749,7 +749,7 @@ public class StatementWrapper implements AutoCloseable {
   }
 
   /**
-   * Asserts db is writable.
+   * Asserts that the session is writable.
    */
   protected void assertNotReadOnly() {
     Db db = con.getSession();

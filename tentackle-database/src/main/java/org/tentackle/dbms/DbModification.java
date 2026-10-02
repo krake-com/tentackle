@@ -48,6 +48,9 @@ import java.io.Serial;
 
 /**
  * Modification information per table.
+ * <p>
+ * Each tracked name (usually a table name) gets a row in the modification table holding its modification
+ * serial. The row with ID 0 holds the master serial, which is incremented with every modification.
  *
  * @author harald
  */
@@ -259,8 +262,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
   /**
    * Adds an entry for this counter (== database object class)
    * to the modification table.<br>
-   * The tableserial is derived from the highest serial of all objects in the table
-   * this counter refers to.
+   * If the referenced table provides a tableserial column, the initial serial is derived from the
+   * highest tableserial of all objects in that table.
    *
    * @param tableExists true if related to a PDO, false if just a name
    * @param tableSerialTableName the table to scan for max tableserial if PDO manages a tableserial

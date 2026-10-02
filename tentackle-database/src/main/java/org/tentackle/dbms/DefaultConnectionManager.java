@@ -68,10 +68,10 @@ public class DefaultConnectionManager implements ConnectionManager {
   /** offset for session IDs. */
   protected final int idOffset;
 
-  /** min hours to close connections. */
+  /** min minutes to close connections. */
   protected final int minMinutes;
 
-  /** max hours to close connections. */
+  /** max minutes to close connections. */
   protected final int maxMinutes;
 
   /** randomizer. */
@@ -172,7 +172,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * <p>
    * With an initial size of 2, a maximum of 8 concurrent connections and an id offset of 1.
    * This is the default connection manager for 2-tier client applications.
-   * The max connections will prevent applications from tearing down the TRIP server
+   * The max connections will prevent applications from tearing down the database server
    * by opening connections excessively. The usual client application holds 2 connections and temporarily
    * a few more.<br>
    * Within 12 to 36h (approx. once a day), close and reopen connections
@@ -203,7 +203,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
   /**
-   * Gets the current setting for clearWarnings() trigger
+   * Gets the current setting for clearWarnings() trigger.
    *
    * @return the countForClearWarnings trigger, 0 = app must eat the warnings!
    */
@@ -522,7 +522,7 @@ public class DefaultConnectionManager implements ConnectionManager {
         pex.setTemporary(true);
         throw pex;
       }
-      // no more free Db entries: double the list size
+      // no more free connection entries: double the list size
       int newSize = conList.length << 1;
       if (maxConSize > 0 && newSize > maxConSize) {
         newSize = maxConSize;

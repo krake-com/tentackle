@@ -26,7 +26,9 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 /**
- * Session managed by the session pool.
+ * Slot of a {@link DbPool} holding a pooled session.<br>
+ * Closed sessions are removed from the pool.
+ * Remote sessions not belonging to a session group are kept alive while idle.
  */
 public class DbPoolSlot extends AbstractPoolSlot<Session> {
 

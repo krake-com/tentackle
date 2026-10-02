@@ -148,8 +148,8 @@ public class Table implements SqlElement {
 
   /**
    * Creates an untyped field of this table.<br>
-   * Untyped fields span a single column and cannot be compared to values,
-   * because the datatype of a value is determined by its class.
+   * Untyped fields span a single column. When compared to a value, the datatype
+   * is determined by the value's class, so the value must span a single column as well.
    *
    * @param name the column name
    * @return the field

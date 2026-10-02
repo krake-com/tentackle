@@ -30,6 +30,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Keeps a backlog of expiration sets.
+ * <p>
+ * An expiration set holds the id/tableserial tuples of the objects modified within a range of
+ * tableserials. The sets are kept round-robin, so that caches asking for the same range repeatedly
+ * do not have to query the database. If a range is requested that is older than the oldest set,
+ * the backlog is enlarged (up to a maximum size) and the caller must query the database.
+ * <p>
+ * In the server connected to the database, the sets are merged with the {@link TableSerialHistory}
+ * to fill the gaps caused by deletions, rollbacks, and multiple updates.
  *
  * @see ModificationTally
  * @author harald

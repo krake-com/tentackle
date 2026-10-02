@@ -55,8 +55,9 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @param clazz the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
-   * @param tableName theSQL table name
+   * @param tableName the SQL table name
    * @param <P> the persistence type
+   * @return the class variables
    */
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz, int classId, String tableName) {
     return DbClassVariablesFactory.getInstance().dbPoCv(clazz, classId, tableName);
@@ -68,6 +69,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @param clazz the class of the derived AbstractDbObject
    * @param <P> the persistence type
+   * @return the class variables
    */
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz) {
     return DbClassVariablesFactory.getInstance().dbPoCv(clazz);
@@ -88,10 +90,13 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Registers a class variables instance.
+   * Registers a class variables instance.<br>
+   * Class variables without a table name are not registered.
+   * If the table name is already registered, the new class must extend the registered one.
    *
    * @param <P> the persistence type
    * @param variables the class variables to register
+   * @throws PersistenceException if the table name is already registered for an unrelated class
    */
   public static <P extends AbstractDbObject<P>> void putVariables(DbObjectClassVariables<P> variables) {
     if (variables.tableName != null) {
@@ -253,13 +258,17 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final StatementId updateSerialAndTableSerialStatementId = new StatementId();
 
   /**
-   * prepared statement ID for selectExpiredTableSerials().
+   * prepared statement ID for selectExpiredTableSerials(long).
    */
   public final StatementId selectExpiredTableSerials1StatementId = new StatementId();
+
+  /**
+   * prepared statement ID for selectExpiredTableSerials(long, long).
+   */
   public final StatementId selectExpiredTableSerials2StatementId = new StatementId();
 
   /**
-   * prepared statement ID for selectObjectsWithExpiredTableSerials
+   * prepared statement ID for selectObjectsWithExpiredTableSerials().
    */
   public final StatementId selectObjectsWithExpiredTableSerialsStatementId = new StatementId();
 
@@ -302,11 +311,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * Constructs a class variable.<br>
-   * Throws IllegalStateException if already constructed.
+   * The class variables are registered by table name, see {@link #putVariables(DbObjectClassVariables)}.
    *
    * @param clazz the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
-   * @param tableName theSQL table name
+   * @param tableName the SQL table name
    */
   public DbObjectClassVariables(Class<P> clazz, int classId, String tableName)  {
 
@@ -324,7 +333,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * Constructs a class variable.<br>
-   * Throws IllegalStateException if already constructed.
    * ClassId and tablename are derived from META-INF.
    *
    * @param clazz the class of the derived AbstractDbObject
@@ -367,13 +375,12 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Get the IdSource.<br>
-   *
-   * If the IdSource is null, the method will look for
-   * a property file which is the classname + ".properties".
-   * The property file must contain an {@code idsource} line
-   * similar to that in Db.properties.<br>
-   * If there is no such file, the source from the db will be used.
+   * Gets the IdSource.<br>
+   * If the IdSource is not set up so far, the method looks for
+   * a property file or resource named after the class (classname + ".properties").
+   * If it contains an {@code idsource} line in the same syntax as the backend properties,
+   * an id source of its own is configured for this class.
+   * Otherwise, the session's default id source is used.
    *
    * @param db the session
    * @return the idSource
@@ -396,7 +403,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Determine the referencing priority.
+   * Determines the referencing priority.
    * <p>
    * The default implementation returns 0.
    * Provided to be overridden.
@@ -412,10 +419,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Adds a PDO class referencing the class of this class variable holder.
    * <p>
-   * The referencing class must provide a static method <code>isReferencing&lt;ClassBasename&gt;</code>,
+   * The referencing class must provide a public non-static method <code>isReferencing&lt;ClassBaseName&gt;</code>,
    * while <code>ClassBaseName</code> is the {@link #classBaseName} of the referenced class.
    * The method must provide the objectId as its only parameter and is usually generated
-   * by the ???IsReferencing-wurblets.<br>
+   * by the {@code DbIsReferencing} or {@code PdoIsReferencing} wurblets.<br>
    * The method name can also contain dots to denote a chain of methods to invoke.
    *
    * @param clazz the class to add
@@ -559,10 +566,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * Gets the delegateId of the class, i.e., subclass of AbstractDbObject.<br>
-   * If the remoteDelegateId is 0, it will be prepared
+   * If the remoteDelegateId is 0, it will be prepared.
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote sessions.
-   * The TRIP-server creates a delegate for each subclass of AbstractDbObject (DbObjectRemoteDelegateImpl resp.)
+   * The TRIP-server creates a delegate for each subclass of AbstractDbObject (AbstractDbObjectRemoteDelegateImpl resp.)
    *
    * @return the delegate id
    */
@@ -596,7 +603,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Gets a class property.
    *
    * @param key the property key
-   * @return the property value
+   * @return the property value, null if no such property
    */
   public String getProperty(String key) {
     return getProperties().getProperty(key);

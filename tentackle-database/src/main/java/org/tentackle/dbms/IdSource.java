@@ -21,14 +21,21 @@ package org.tentackle.dbms;
 /**
  * Source of ID numbers.
  * <p>
- * IdSources are unique instances per session.
+ * Whether an id source is shared depends on the implementation: an {@link ObjectSequenceId}
+ * is unique per sequence name and shared by all sessions, whereas an {@link ObjectId} is
+ * created per configuration.
+ * Each persistent class uses the id source configured for it, or the default id source of the
+ * first session requesting an id for that class.
+ *
+ * @see IdSourceConfigurator
+ * @see DbObjectClassVariables#getIdSource(Db)
  *
  * @author harald
  */
 public interface IdSource {
 
   /**
-   * Get the next unique ID.
+   * Gets the next unique ID.
    *
    * @param db the current session
    * @return a free ID.

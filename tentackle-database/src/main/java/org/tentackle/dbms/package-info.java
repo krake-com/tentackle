@@ -18,5 +18,9 @@
 
 /**
  * Low-level persistence layer implementation.
+ * <p>
+ * Provides the {@link org.tentackle.dbms.Db} session, the generic persistence engine
+ * {@link org.tentackle.dbms.AbstractDbObject}, connection management, id sources, statement wrappers,
+ * transactions, batching, modification tracking, and modification logging.
  */
 package org.tentackle.dbms;

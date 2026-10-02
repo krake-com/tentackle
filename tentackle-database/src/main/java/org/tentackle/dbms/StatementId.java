@@ -36,7 +36,7 @@ public class StatementId {
   private final int id;     // the id; cannot be changed once set
 
   /**
-   * Creates a unique statement id.<br>
+   * Creates a unique statement id.
    */
   public StatementId() {
     id = count.incrementAndGet();
@@ -45,7 +45,7 @@ public class StatementId {
   /**
    * Gets the value of the id.
    *
-   * @return the id, 0 if unset
+   * @return the id, always &gt; 0
    */
   public int value() {
     return id;

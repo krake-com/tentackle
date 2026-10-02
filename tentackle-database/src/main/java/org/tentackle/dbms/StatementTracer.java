@@ -36,7 +36,7 @@ interface StatementTracerHolder {
 
 
 /**
- * On demand SQL statement tracer.<br>
+ * On-demand SQL statement tracer.<br>
  * Primarily used to trace usage of certain SQL statements on demand at runtime.
  * <p>
  * The tracer is disabled by default for performance reasons.
@@ -108,7 +108,7 @@ public class StatementTracer {
   }
 
   /**
-   * Adds a SQL statement to the list of traced statements.
+   * Adds an SQL statement to the list of traced statements.
    *
    * @param sql the statement to add
    */
@@ -117,7 +117,7 @@ public class StatementTracer {
   }
 
   /**
-   * Removes a SQL statement from the list of traced statements.
+   * Removes an SQL statement from the list of traced statements.
    *
    * @param sql the statement to remove
    */

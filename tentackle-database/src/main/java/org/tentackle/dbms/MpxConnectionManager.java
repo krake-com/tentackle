@@ -28,8 +28,8 @@ import java.lang.ref.WeakReference;
 import java.util.Date;
 
 /**
- * Multiplexing connection manager.<br>
- *
+ * Multiplexing connection manager.
+ * <p>
  * A connection manager for applications with a large number of session instances,
  * for example, application servers. The manager will multiplex N session instances against
  * M connections, allowing N &gt; M. This is not to be mixed up with session-pooling, as connection
@@ -148,7 +148,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Start with 8 connections.
    * Add 2 connections at a time if all connections are in use.
    * Don't drop below 4 connections.
-   * Maximum of 40 connections, i.e., concurrent db operations (i.e., info above 10, warning above 20)
+   * Maximum of 40 connections, i.e., concurrent db operations (info above 10, warning above 20).
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    *
@@ -600,7 +600,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   /**
-   * Create spare connections.
+   * Creates spare connections.<br>
+   * At least as many as necessary to reach the minimum size, but never more than the maximum size.
    *
    * @param count the number of connections to create
    * @return the number of connections created
@@ -661,8 +662,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   /**
-   * closes a dead connection and removes it from the
+   * Closes a dead connection and removes it from the
    * connection list.
+   *
+   * @param con the dead connection
    */
   private void cleanupDeadConnection(ManagedConnection con) {
     // marked dead: close it (hard close) and remove it from the connection list

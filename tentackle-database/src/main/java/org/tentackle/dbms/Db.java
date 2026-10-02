@@ -114,10 +114,9 @@ import java.util.function.Consumer;
  * The configuration is achieved by a property file, which is located
  * by the {@link SessionInfo} passed to the session.
  * <p>
- * Local sessions can be either a DataSource bound via JNDI or a direct
- * JDBC connection. JNDI is used in application servers, for example, running
- * a JRuby on Rails application from within Glassfish (see tentackle-web).<br>
- * JDBC connections are for standalone 2-tier applications or Tentackle application servers.
+ * Local sessions use either a direct JDBC connection or a DataSource bound via JNDI.
+ * JDBC connections are for standalone 2-tier applications and Tentackle application servers.
+ * JNDI is used when the application runs inside a container that provides the DataSource.
  * <br>
  * For local sessions via JDBC, the file contains at least the following properties:
  *
@@ -154,6 +153,7 @@ import java.util.function.Consumer;
  * The currently supported transports are:
  * <ul>
  *   <li>{@code trip}: tentackle remote invocation protocol using TCP</li>
+ *   <li>{@code tripc}: compressed</li>
  *   <li>{@code trips}: trip with SSL</li>
  *   <li>{@code tripcs}: compressed + SSL</li>
  *   <li>{@code tripe}: encrypted (pre-shared key, see {@link org.tentackle.common.Cryptor})</li>
@@ -183,9 +183,10 @@ import java.util.function.Consumer;
  *  user=fixed-user
  *  password=fixed-password
  *  </pre>
- *  If the password begins with a {@code ~} <em>and</em> the application provides a {@link org.tentackle.common.Cryptor},
- *  the string following the {@code ~} is considered to be encrypted. If an unencrypted password must begin with a {@code ~},
- *  use {@code ~~} instead.
+ *  If the password begins with a {@code ~}, the string following the {@code ~} is considered to be encrypted
+ *  and is decrypted by the application's {@link org.tentackle.common.Cryptor}.
+ *  If an unencrypted password must begin with a {@code ~}, escape it as {@code \\~} in the property file.
+ *  See {@link org.tentackle.common.EncryptedProperties}.
  *  </li>
  *  <li>
  *  By default, the credentials used to connect to the backend are the same as the ones in the session info.
@@ -200,7 +201,7 @@ import java.util.function.Consumer;
  *  <pre>
  *  batchsize=size
  *  </pre>
- *  If the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
+ *  If the size is &gt; 1, the persistence layer collects matching statements and executes them within batches.
  *  See {@link DbBatch}.
  *  </li>
  *  <li>
@@ -218,7 +219,9 @@ import java.util.function.Consumer;
  *  <li>
  *  Each object persistable to the database (database object for short)
  *  gets a unique object ID which is generated
- *  by an {@link IdSource}. The default source is {@link ObjectId}.
+ *  by an {@link IdSource}. The default source is an {@link ObjectSequenceId} on the sequence
+ *  {@code object_sequence_id} if the backend supports sequences, otherwise an {@link ObjectId}
+ *  on the table {@code object_id}.
  *  <pre>
  *  idsource=id-source-descriptor
  *  </pre>
@@ -638,10 +641,10 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Creates an instance of a logical session.<br>
+   * Creates an instance of a logical session and opens it.<br>
    * If the login fails due to wrong passwords
-   * or denied access by the application server,
-   * the method {@link #handleConnectException} is invoked.
+   * or denied access by the application server, a {@link LoginFailedException} is thrown.
+   * Other connection errors are reported as a {@link PersistenceException}.
    *
    * @param conMgr the connection manager for the local connection (ignored if remote)
    * @param sessionInfo session information
@@ -1131,7 +1134,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts that a transaction with the given voucher is running.
+   * Asserts that a local transaction is running.
    */
   public void assertTxRunning() {
     try {
@@ -1161,7 +1164,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * asserts that this is not a remote session
+   * Asserts that this is not a remote session.
    */
   public void assertNotRemote() {
     if (isRemote()) {
@@ -1170,7 +1173,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * asserts that this is a remote session
+   * Asserts that this is a remote session.
    */
   public void assertRemote() {
     if (!isRemote()) {
@@ -1350,13 +1353,7 @@ public class Db implements Session, Cloneable {
    */
   private void setupIdSource() {
     if (!isRemote()) {
-      if (idConfig != null) {
-        setDefaultIdSource(IdSourceConfigurator.getInstance().configure(this, idConfig));
-      }
-      else  {
-        IdSource idSource = IdSourceConfigurator.getInstance().configure(this, null);
-        setDefaultIdSource(idSource);
-      }
+      setDefaultIdSource(IdSourceConfigurator.getInstance().configure(this, idConfig));   // null = backend's default
     }
   }
 
@@ -1506,7 +1503,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Sets an application-specific transaction property.<br>
-   * For local sessions, properties can be set while a transaction is running.
+   * Only for local sessions and only while a transaction is running.
    * The properties are cleared when a new transaction begins but survive
    * a commit or rollback. Thus, they can be queried before or after the transaction
    * has ended, for example, by a post-commit.
@@ -1528,7 +1525,7 @@ public class Db implements Session, Cloneable {
    * Gets a transaction property.
    *
    * @param key the key
-   * @return the value, null no such key
+   * @return the value, null if no such key
    */
   public synchronized Object getTransactionProperty(Object key) {
     return transactionProperties == null ? null : transactionProperties.get(key);
@@ -1626,7 +1623,7 @@ public class Db implements Session, Cloneable {
    * @param txName is the optional transaction name, null for none
    * @param fromRemote true if invocation from the remote client via {@link DbRemoteDelegate#begin}
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
-   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   * @param transactionWritability the transaction writability, null or {@link TransactionWritability#DEFAULT} if default
    *
    * @return the transaction voucher (!= 0) if a new transaction was begun, else 0
    */
@@ -1730,7 +1727,7 @@ public class Db implements Session, Cloneable {
    * @param start true to start a new global transaction, false to join the global transaction of the current thread
    * @param txName is the optional transaction name, null for none
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
-   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   * @param transactionWritability the transaction writability, null or {@link TransactionWritability#DEFAULT} if default
    * @return the transaction voucher if started, 0 if joined
    */
   private long beginGlobal(GlobalTransactionSupport support, boolean start, String txName,
@@ -2144,7 +2141,9 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Runs the post-commits in reverse order of their registration.
+   * Runs the post-commits.<br>
+   * Post-commits registered at a deeper transaction level run first.
+   * Within the same level, they run in the order of their registration.
    */
   public void runPostCommits() {
     if (postCommits != null) {
@@ -2180,7 +2179,9 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Runs the pre-commits in reverse order of their registration.
+   * Runs the pre-commits.<br>
+   * Pre-commits registered at a deeper transaction level run first.
+   * Within the same level, they run in the order of their registration.
    */
   public void runPreCommits() {
     if (preCommits != null) {
@@ -2458,7 +2459,7 @@ public class Db implements Session, Cloneable {
           // check low-level transaction state
           boolean connectionInTransaction = false;
           try {
-            connectionInTransaction = c.getConnection().getAutoCommit();
+            connectionInTransaction = !c.getConnection().getAutoCommit();
           }
           catch (SQLException ex) {
             c.checkForDeadLink(ex);
@@ -3006,7 +3007,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * clears the session's local data for close/clone
+   * Clears the session's local data for close/clone.
    */
   private void clearMembers() {
     if (isRemote()) {
@@ -3120,20 +3121,19 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the default fetchsize
+   * Gets the default fetch size.
    *
-   * @return the default fetchSize.
+   * @return the default fetch size, 0 = driver's default
    */
   public int getFetchSize() {
     return fetchSize;
   }
 
   /**
-   * Sets the default fetchsize for all "wrapped" statements
-   * (PreparedStatementWrapper and StatementWrapper)
+   * Sets the default fetch size for all "wrapped" statements
+   * (PreparedStatementWrapper and StatementWrapper).
    *
-   * @param fetchSize the new default fetchSize
-   *
+   * @param fetchSize the new default fetch size, 0 = driver's default
    */
   public void setFetchSize(int fetchSize) {
     this.fetchSize = fetchSize;
@@ -3141,7 +3141,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * gets the maximum number of rows in resultsets.
+   * Gets the maximum number of rows in result sets.
    *
    * @return the max rows, 0 = no limit
    */
@@ -3150,9 +3150,9 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * sets the maximum number of rows in resultsets.
-   * @param maxRows the max rows, 0 = no limit (default)
+   * Sets the maximum number of rows in result sets.
    *
+   * @param maxRows the max rows, 0 = no limit (default)
    */
   public void setMaxRows(int maxRows) {
     this.maxRows = maxRows;
@@ -3346,15 +3346,15 @@ public class Db implements Session, Cloneable {
    * {@link #popModificationLogsOfTransaction()}.
    * The state will be handed over to the remote session as well.
    * <p>
-   * Note: the deferred state will be reset to false after each begin/commit/rollback.
+   * Note: the deferred state is reset to false after each commit or rollback.
    * <p>
-   * Important: if the deferred state is changed within a transaction and there are
-   * already modifications made, i.e., modlogs were created, the deferred state will
-   * *not* be changed! Furthermore, if the deferred state is changed to false.
-   * The modlogs are removed from the database (but kept in memory).
-   * As a consequence, the in-memory modlogs will always contain the whole transaction
-   * or nothing. Only {@link #popModificationLogsOfTransaction()} removes the logs
-   * collected so far or the end of the transaction.
+   * Important: if the deferred state is changed within a transaction after modlogs have
+   * already been created, switching to deferred removes the modlogs written so far from the
+   * database (but keeps them in memory), whereas switching back to non-deferred is ignored
+   * until the end of the transaction.
+   * As a consequence, the in-memory modlogs always contain the whole transaction
+   * or nothing. Only {@link #popModificationLogsOfTransaction()} or the end of the transaction
+   * removes the logs collected so far.
    *
    * @param logModificationDeferred true to defer logs for the rest of the current transaction, false to "un-defer"
    */
@@ -3471,11 +3471,11 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Set the default {@link IdSource}.<br>
+   * Sets the default {@link IdSource}.<br>
    * This is the source used to generate unique object IDs
    * if classes did not configure their own source.
    *
-   * @param idSource New value of property idSource.
+   * @param idSource the id source
    */
   public void setDefaultIdSource(IdSource idSource) {
     this.defaultIdSource = idSource;
@@ -3485,7 +3485,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Returns the current transaction id from the last BEGIN modification log.
-   * The tx-ID is only available if logModificationTx is true.
+   * The tx-ID is only available if transaction logging is enabled, see {@link #setLogModificationTxEnabled(boolean)}.
    *
    * @return the tx ID, 0 if no transaction is pending.
    */

@@ -108,7 +108,10 @@ it for a transaction/one-shot, then *detaches* it — letting the manager broker
   connections; [`DefaultReconnectionPolicy`](../java/org/tentackle/dbms/DefaultReconnectionPolicy.java) decides how
   to reconnect after a failure.
 
-Connection managers are **not** used by remote sessions (those go over TRIP instead).
+Connection managers are **not** used by remote sessions (those go over TRIP instead). An application implementing
+[`ConnectionManagerProvider`](../java/org/tentackle/dbms/ConnectionManagerProvider.java) (such as a server application
+with a multiplexing manager) supplies the default connection manager for new sessions; otherwise, a
+`DefaultConnectionManager` is used.
 
 ### Session creation and pooling
 
@@ -119,23 +122,31 @@ Connection managers are **not** used by remote sessions (those go over TRIP inst
   `Db`s are virtual connections attached only during operations — the preferred server configuration.
 - [`MultiUserDbPool`](../java/org/tentackle/dbms/MultiUserDbPool.java) — a pool of `DbPool`s, one per
   `SessionInfo`, for multi-user servers.
-- [`DbRemoteSessionFactory`](../java/org/tentackle/dbms/DbRemoteSessionFactory.java)
-  (`@Service(RemoteSessionFactory.class)`) and [`RemoteSessionAdapter`](../java/org/tentackle/dbms/RemoteSessionAdapter.java)
+- [`DbPoolFactory`](../java/org/tentackle/dbms/DbPoolFactory.java) (`@Service(SessionPoolFactory.class)`) creates
+  both kinds of pools; each pooled session lives in a [`DbPoolSlot`](../java/org/tentackle/dbms/DbPoolSlot.java),
+  which removes closed sessions from the pool and keeps idle remote sessions alive.
+- [`RemoteSessionFactory`](../java/org/tentackle/dbms/RemoteSessionFactory.java), implemented by
+  [`DbRemoteSessionFactory`](../java/org/tentackle/dbms/DbRemoteSessionFactory.java)
+  (`@Service(RemoteSessionFactory.class)`), and [`RemoteSessionAdapter`](../java/org/tentackle/dbms/RemoteSessionAdapter.java)
   provide the remote-session side.
 
 ### Id sources
 
-[`IdSource`](../java/org/tentackle/dbms/IdSource.java) supplies unique object IDs (normally one instance per
-session). Two implementations ship:
+[`IdSource`](../java/org/tentackle/dbms/IdSource.java) supplies unique object IDs. Two implementations ship:
 
 - [`ObjectId`](../java/org/tentackle/dbms/ObjectId.java) — used when the backend has **no sequences**; updates a
   counter table, optimized to write only once at the end of transaction.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
-  by a configurable factor with an in-range counter to cut round-trips.
+  by a configurable factor with an in-range counter to cut round-trips. There is one instance per sequence name,
+  shared by all sessions.
 
 [`AbstractIdSource`](../java/org/tentackle/dbms/AbstractIdSource.java) is the shared base; selection/configuration
 goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigurator.java) /
-[`DefaultIdSourceConfigurator`](../java/org/tentackle/dbms/DefaultIdSourceConfigurator.java).
+[`DefaultIdSourceConfigurator`](../java/org/tentackle/dbms/DefaultIdSourceConfigurator.java)
+(`@Service(IdSourceConfigurator.class)`). Failures are reported as
+[`IdSourceException`](../java/org/tentackle/dbms/IdSourceException.java); its subclass
+[`IdSourceEmptyException`](../java/org/tentackle/dbms/IdSourceEmptyException.java) is provided for
+application-specific id sources with a limited range.
 
 The default id source is chosen from the backend: `sequence:object_sequence_id` if it supports
 sequences, `table:object_id` otherwise. The `idsource` [backend property](../../../../tentackle-session/src/main/docs/backend-properties.md)
@@ -149,7 +160,8 @@ selects another one, in the syntax of the `DefaultIdSourceConfigurator`:
 
 Different entities may use different id sources: if a resource named after the persistent class
 (`com/example/persist/InvoicePersistenceImpl.properties`) exists and holds an `idsource` line, it
-overrides the session's id source for that class. All users of the same sequence must configure the
+overrides the session's id source for that class. Otherwise, the class uses the default id source of the
+first session that requests an id for it. All users of the same sequence must configure the
 same multipliers, otherwise a `PersistenceException` is thrown.
 
 ### Statements, queries and result sets
@@ -159,7 +171,7 @@ same multipliers, otherwise a `PersistenceException` is thrown.
   catch/translate `SQLException`s, and guard against accidental reuse.
 - [`ResultSetWrapper`](../java/org/tentackle/dbms/ResultSetWrapper.java) — an `AutoCloseable` wrapper over a
   `ResultSet`; [`ResultSetSection`](../java/org/tentackle/dbms/ResultSetSection.java) /
-  [`ResultSetSkipBlock`](../java/org/tentackle/dbms/ResultSetSkipBlock.java) support joines (due to inheritance or for load joins).
+  [`ResultSetSkipBlock`](../java/org/tentackle/dbms/ResultSetSkipBlock.java) support joins (due to inheritance or for load joins).
 - [`Query`](../java/org/tentackle/dbms/Query.java) — builds the SQL string + parameter set for a one-off query
   (e.g., user-entered), adding the backend-specific `SELECT`/`LIMIT`/`OFFSET` automatically.
   All predefined [datatypes](../../../../tentackle-sql/src/main/docs/sql.md) are accepted as parameters, as well as
@@ -170,7 +182,9 @@ same multipliers, otherwise a `PersistenceException` is thrown.
   you — see [The Query DSL](./query-dsl.md).
 - [`DbBatch`](../java/org/tentackle/dbms/DbBatch.java) / [`DbBatchStatement`](../java/org/tentackle/dbms/DbBatchStatement.java)
   — JDBC batching of standard prepared statements, grouped per root-entity type to preserve referential
-  integrity, flushed at savepoints/commit. Enabled via the `batchsize` backend property; **off by default** and
+  integrity, flushed at savepoints/commit. Prepared statements are cached per
+  [`StatementKey`](../java/org/tentackle/dbms/StatementKey.java), i.e. the global
+  [`StatementId`](../java/org/tentackle/dbms/StatementId.java) plus the using class. Enabled via the `batchsize` backend property; **off by default** and
   to be used with care because it complicates error diagnosis. See [SQL Statement Batching](./batching.md).
 
 ### Transactions
@@ -180,7 +194,21 @@ same multipliers, otherwise a `PersistenceException` is thrown.
 [`RemoteTransaction`](../java/org/tentackle/dbms/RemoteTransaction.java) the remote variant.
 [`DbTransactionFactory`](../java/org/tentackle/dbms/DbTransactionFactory.java) creates them and
 [`DbTransactionHandle`](../java/org/tentackle/dbms/DbTransactionHandle.java) is the caller's handle.
-[`TransactionStatistics`](../java/org/tentackle/dbms/TransactionStatistics.java) collects per-transaction metrics.
+[`TransactionStatistics`](../java/org/tentackle/dbms/TransactionStatistics.java) collects the metrics per
+transaction name in [`TransactionStatisticsResult`](../java/org/tentackle/dbms/TransactionStatisticsResult.java)s:
+duration, number of statements and rollbacks.
+
+#### Global transactions
+
+A local session can take part in global (distributed) transactions, configured by the `jta`
+[backend property](../../../../tentackle-session/src/main/docs/backend-properties.md) or
+`Db.setGlobalTransactionMode(…)`. The [`GlobalTransactionMode`](../java/org/tentackle/dbms/GlobalTransactionMode.java)
+is `NONE` (default), `JOIN` (join a global transaction of the current thread, if any) or `REQUIRED` (the outermost
+`begin()` starts a global transaction if none is running). The session talks to the transaction manager only through
+the [`GlobalTransactionSupport`](../java/org/tentackle/dbms/GlobalTransactionSupport.java) SPI and completes its
+part via a [`GlobalTransactionListener`](../java/org/tentackle/dbms/GlobalTransactionListener.java); the
+implementation, together with the XA connection managers, is provided by the optional module `tentackle-jta`.
+See [Global Transactions — JTA and XA](../../../../tentackle-jta/src/main/docs/jta.md).
 
 #### Idle transaction supervisor
 
@@ -223,7 +251,8 @@ This layer implements the change-tracking contracts from `tentackle-session`:
   database; intermediate servers and clients fetch their expiration sets remotely.
 - [`DbModificationType`](../java/org/tentackle/dbms/DbModificationType.java) /
   [`ModificationType`](../java/org/tentackle/dbms/ModificationType.java) / [`ModificationTypeFactory`](../java/org/tentackle/dbms/ModificationTypeFactory.java)
-  — enumerate INSERT/UPDATE/DELETE (and friends).
+  — enumerate INSERT/UPDATE/DELETE plus BEGIN/COMMIT for transaction logging; applications may add their own
+  types via a replaced `ModificationTypeFactory`.
 
 ### Modification logging
 
@@ -275,8 +304,8 @@ statistics log every 30 seconds, and logging nested selects at `INFO`.
 
 When a connection's diagnostic info is logged — for example by the idle transaction supervisor — it
 includes the statement history. Code stuck in a loop can execute the same statements many thousand
-times, so histories of 256 or more entries are compressed: a block of up to 64 statements that repeats
-immediately is printed once, followed by the number of repetitions.
+times, so histories of 256 or more entries are compressed by the `StatementHistoryCompressor`: a block of
+up to 64 statements that repeats immediately is printed once, followed by the number of repetitions.
 
 ### Utilities (SPI replacements)
 
@@ -284,7 +313,9 @@ immediately is printed once, followed by the number of repetitions.
   helpers; the clean seam between the low- and high-level layers (the PDO layer replaces it with
   `PersistenceUtilities`).
 - [`DbSessionUtilities`](../java/org/tentackle/dbms/DbSessionUtilities.java) (`@Service(SessionUtilities.class)`) —
-  extends the session utilities to map `SQLException` → `PersistenceException`.
+  extends the session utilities by the handling of `SQLException`s wrapped in a `PersistenceException`:
+  driver-specific exceptions are replaced by plain `java.sql.SQLException`s that remote clients can
+  deserialize, transient errors flag the exception as temporary, and the messages carry SQL state and error code.
 
 ---
 
@@ -335,7 +366,11 @@ Each capability is exposed as a *remote delegate* (interface + `…Impl` executo
 ([`DbRemoteInvocationHandler`](../java/org/tentackle/dbms/trip/DbRemoteInvocationHandler.java),
 [`RemoteDbDelegateInvocationHandler`](../java/org/tentackle/dbms/trip/RemoteDbDelegateInvocationHandler.java)) and
 [`RemoteDbSessionInvocationFilter`](../java/org/tentackle/dbms/trip/RemoteDbSessionInvocationFilter.java) route and
-guard the calls. [`SQLExceptionComponentProvider`](../java/org/tentackle/dbms/trip/SQLExceptionComponentProvider.java)
+guard the calls. [`DbTripFactory`](../java/org/tentackle/dbms/trip/DbTripFactory.java) (`@Service(TripFactory.class)`)
+installs the client-side invocation handler, which translates a vanished server-side delegate into a
+[`RemoteSessionClosedException`](../java/org/tentackle/dbms/trip/RemoteSessionClosedException.java).
+[`DbObjectResult`](../java/org/tentackle/dbms/trip/DbObjectResult.java) carries the new id, serial and table serial
+of a remote insert/update/delete back to the client. [`SQLExceptionComponentProvider`](../java/org/tentackle/dbms/trip/SQLExceptionComponentProvider.java)
 / [`SQLExceptionInstanceCreator`](../java/org/tentackle/dbms/trip/SQLExceptionInstanceCreator.java) ensure JDBC
 exceptions serialize correctly across the wire, and [`DefaultMasterSerial`](../java/org/tentackle/dbms/trip/DefaultMasterSerial.java)
 carries the master modification serial back to clients.
@@ -442,15 +477,21 @@ plug into.
 
 - It **requires transitive** [`tentackle-session`](../../../../tentackle-session/src/main/docs/session.md) (the
   `Session` contract it implements) and [`tentackle-sql`](../../../../tentackle-sql/src/main/docs/sql.md) (the
-  dialect-aware `Backend` it executes), plus `java.naming`.
-- It bundles the PostgreSQL JDBC driver for tests; production drivers are supplied by the application.
+  dialect-aware `Backend` it executes).
+- JDBC drivers are supplied by the application. The tests run against H2; the PostgreSQL driver is a test
+  dependency only used with `-Ppostgres`.
 - It **opens** `org.tentackle.dbms` and `org.tentackle.dbms.prefs` to `org.tentackle.core` for
   [TRIP](../../../../tentackle-core/src/main/docs/trip.md) serialization.
 - It **provides** a `ModuleHook` service (`org.tentackle.dbms.service.Hook`) for i18n.
 - Through `@Service`, it **replaces** several lower-layer singletons (`SessionFactory` → `DbFactory`,
-  `ModificationTracker` → `DbModificationTracker`, `SessionUtilities` → `DbSessionUtilities`,
-  `DiagnosticUtilities` → `DbDiagnosticUtilities`, `PersistedPreferencesFactory` → `DbPreferencesFactory`); the
-  PDO layer above in turn replaces `DbUtilities`/`DbClassVariablesFactory` with PDO-aware versions.
+  `SessionPoolFactory` → `DbPoolFactory`, `ModificationTracker` → `DbModificationTracker`,
+  `SessionUtilities` → `DbSessionUtilities`, `DiagnosticUtilities` → `DbDiagnosticUtilities`,
+  `PersistedPreferencesFactory` → `DbPreferencesFactory`, `TripFactory` → `DbTripFactory`) and provides its own
+  replaceable services (`RemoteSessionFactory`, `IdSourceConfigurator`, `ModificationLogFactory`,
+  `RemoteDbDelegateLocator`, and the self-defaulting `DbUtilities`, `DbClassVariablesFactory`,
+  `DbTransactionFactory`, `ModificationTypeFactory`, `ManagedConnectionMonitor`, `StatementTracer`,
+  `TableSerialHistory`); the PDO layer above in turn replaces `DbUtilities`/`DbClassVariablesFactory` with
+  PDO-aware versions.
 
 ## Related Documentation
 

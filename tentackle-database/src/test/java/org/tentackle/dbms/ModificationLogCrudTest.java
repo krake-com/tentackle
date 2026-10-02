@@ -97,6 +97,57 @@ public class ModificationLogCrudTest extends AbstractDbTest {
   }
 
 
+  /**
+   * A visitor vetoing all updates.
+   */
+  public static class VetoUpdateVisitor extends PersistenceVisitor {
+
+    /**
+     * Visits all objects (the dispatched method).
+     *
+     * @param object the object
+     * @param modType the modification type
+     */
+    public void visit(AbstractDbObject<?> object, Character modType) {
+      // nothing to collect
+    }
+
+    @Override
+    public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {
+      return modType != DbModificationType.UPDATE;
+    }
+  }
+
+
+  @Test
+  public void testVetoedUpdateSerialKeepsSerial() {
+    Db db = getSession();
+
+    ModificationLog log = new ModificationLog(db);
+    log.setModType(DbModificationType.INSERT);
+    log.setUserId(1);
+    log.newId();
+    log.insertObject();
+    long serial = log.getSerial();
+
+    DbTransactionHandle handle = db.registerPersistenceVisitor(new VetoUpdateVisitor());
+    try {
+      log.updateSerial();
+      assertEquals(log.getSerial(), serial, "a vetoed updateSerial() must not advance the serial");
+      log.updateSerial(serial + 10);
+      assertEquals(log.getSerial(), serial, "a vetoed updateSerial(long) must not change the serial");
+    }
+    finally {
+      db.unregisterPersistenceVisitor(handle);
+    }
+
+    assertEquals(new ModificationLog(db).selectSerial(log.getId()), serial, "the persisted serial must be unchanged");
+    log.updateSerial();
+    assertEquals(log.getSerial(), serial + 1, "updateSerial() must advance the serial");
+    assertEquals(new ModificationLog(db).selectSerial(log.getId()), serial + 1);
+  }
+
+
   @Test
   public void testOptimisticLockConflictThrowsNotFoundException() {
     Db db = getSession();

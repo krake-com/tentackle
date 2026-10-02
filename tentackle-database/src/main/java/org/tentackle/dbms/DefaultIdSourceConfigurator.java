@@ -29,9 +29,12 @@ import java.util.StringTokenizer;
  * <p>
  * There are 2 configuration options:
  * <ol>
- * <li>table:&lt;name&gt;</li>
- * <li>sequence:&lt;name&gt;[:&lt;sequence-multiplier&gt;:&lt;global-multiplier&gt;]</li>
+ * <li>table:&lt;name&gt;: an {@link ObjectId} counting in the given table</li>
+ * <li>sequence:&lt;name&gt;[:&lt;sequence-multiplier&gt;:&lt;global-multiplier&gt;]: an {@link ObjectSequenceId}
+ * on the given sequence</li>
  * </ol>
+ * Without a configuration, the default is {@code sequence:object_sequence_id} if the backend supports
+ * sequences, otherwise {@code table:object_id}.
  *
  * @author harald
  */

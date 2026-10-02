@@ -19,7 +19,8 @@
 package org.tentackle.dbms;
 
 /**
- * The persistence layer's modification types.
+ * The persistence layer's modification types.<br>
+ * The external character values are stored in the modification log, see {@link ModificationLog}.
  */
 public enum DbModificationType implements ModificationType {
 
@@ -32,7 +33,7 @@ public enum DbModificationType implements ModificationType {
   /** insert object. */
   INSERT('I'),
 
-  /* update object. */
+  /** update object. */
   UPDATE('U'),
 
   /** delete object. */

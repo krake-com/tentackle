@@ -18,5 +18,8 @@
 
 /**
  * Low-level persistence layer remoting.
+ * <p>
+ * Contains the generic {@link org.tentackle.dbms.trip.TripServer}, the remote connection and session,
+ * and the remote delegates that make the persistence layer location-transparent via TRIP.
  */
 package org.tentackle.dbms.trip;

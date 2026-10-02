@@ -285,7 +285,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Set whether to commit() before close() or not.<br>
+   * Sets whether to commit() before close() or not.<br>
    * Some dbms (e.g., Postgres) cannot use cursors outside a transaction.
    * In this case a transaction must be started before executeQuery()
    * (see PreparedStatementWrapper and Query)
@@ -325,8 +325,9 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Set the statement to be closed when the result set is closed.<br>
-   * By default, the statement remains open.
+   * Sets the statement to be closed when the result set is closed.<br>
+   * By default, non-prepared statements and one-shot prepared statements are closed,
+   * whereas prepared statements with a statement key remain open for reuse.
    *
    * @param closeStatementOnClose true to close the statement on close
    */
@@ -348,7 +349,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Sets the column offset.
    * Useful for eager loading or joining in general.
    *
-   * @param columnOffset (default is 0)
+   * @param columnOffset the offset added to the column index (default is 0)
    */
   public void setColumnOffset(int columnOffset) {
     this.columnOffset = columnOffset;
@@ -398,9 +399,9 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Returns whether the result set is in skipmode.
+   * Returns whether the result set is in skip mode.
    *
-   * @return true if in skipmode
+   * @return true if in skip mode
    */
   public boolean isInSkipMode() {
     return resources.skipBlocks != null;
@@ -545,6 +546,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Skips to the next logical entity.
+   *
    * @see #startSkip()
    * @throws PersistenceException if not in skipmode
    */
@@ -595,7 +597,7 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * Example:
    * <pre>
-   *  if (rs.activateSection(CLASSVARIABLES)) {
+   *  if (rs.configureSection(CLASSVARIABLES)) {
    *    rs.configureColumn(CN_OBJECTCLASS);
    *    rs.configureColumn(CN_OBJECTID);
    *    ...
@@ -1144,7 +1146,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(java.lang.String, boolean)
    */
   public String getLargeString (String name) {
     return getLargeString(name, false);
@@ -1371,7 +1373,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>BMoney</code> with full precision.<br>
    * Notice that BMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "_2")
+   * one for the scale (= name + "_2").
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -1389,7 +1391,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>DMoney</code> with full precision.<br>
    * Notice that DMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "_2")
+   * one for the scale (= name + "_2").
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -2167,7 +2169,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(int, boolean)
    */
   public String getLargeString (int pos) {
     return getLargeString(pos, false);
@@ -2395,7 +2397,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>BMoney</code> with full precision.<br>
    * Notice that BMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (at {@code ppos})
    *
    * @param pos the parameter index for the amount in the result set
    * @param ppos the parameter index for the scale in the result set
@@ -2415,7 +2417,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>DMoney</code> with full precision.<br>
    * Notice that DMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (at {@code ppos})
    *
    * @param pos the parameter index for the amount in the result set
    * @param ppos the parameter index for the scale in the result set
@@ -3140,7 +3142,7 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
-   * @see #getString(java.lang.String, boolean)
+   * @see #getLargeString(boolean)
    */
   public String getLargeString () {
     return getLargeString(nextConfiguredIndex(), false);

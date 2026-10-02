@@ -83,7 +83,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Listeners are managed by the repository, not the nodes.
    * This allows un- and reloading the nodes without losing the listeners.
    * <p>
-   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * Notice that when a node is removed, its listeners will <em>not</em> be removed.
    * So, if the node is added again, the listeners are still there.
    * Listeners have to be removed by the application explicitly.
    */
@@ -288,7 +288,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Gets the current serial version of given user- or system root.
    *
-   * @param user the username, null of "" if system
+   * @param user the username, null or "" if system
    * @return the serial, 0 if no such root loaded
    */
   public long getSerial(String user) {
@@ -300,7 +300,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Adds a preferences changed listener.
    * <p>
-   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * Notice that when a node is removed, its listeners will <em>not</em> be removed.
    * So, if the node is added again, the listeners are still there.
    * Listeners have to be removed by the application explicitly.
    *
@@ -333,7 +333,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Adds a node listener.
    * <p>
-   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * Notice that when a node is removed, its listeners will <em>not</em> be removed.
    * So, if the node is added again, the listeners are still there.
    * Listeners have to be removed by the application explicitly.
    *
@@ -364,7 +364,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Invoke listeners when a node is added or removed.
+   * Invokes listeners when a node is added or removed.
    *
    * @param node the added or removed node
    */
@@ -390,7 +390,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Invoke listeners when a key is added, updated or removed.
+   * Invokes listeners when a key is added, updated or removed.
    *
    * @param node the node holding the key
    * @param key the changed key

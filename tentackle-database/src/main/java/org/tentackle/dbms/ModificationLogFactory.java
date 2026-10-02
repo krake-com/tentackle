@@ -47,6 +47,7 @@ public interface ModificationLogFactory {
 
   /**
    * Creates a modlog.
+   *
    * @return the created modlog
    */
   ModificationLog createModificationLog();

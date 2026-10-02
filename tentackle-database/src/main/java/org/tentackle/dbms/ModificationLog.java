@@ -76,8 +76,8 @@ import java.util.List;
 
 
 /**
- * Logging for object modifications.<br>
- *
+ * Logging for object modifications.
+ * <p>
  * Modifications of PDOs can be logged to a so-called modification log.<br>
  * Such modlogs can be used for asynchronous database coupling, higher level replication, etc...
  * <p>
@@ -161,7 +161,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * The {@link AbstractDbObject} the log belongs to. null = unknown. Speeds up {@link #getObject}
    * in distributed applications (see the poolkeeper framework).
    * <p>
-   * If the lazyObject is a PersistentObject, it's getPdo() method will hold the PDO.
+   * If the lazyObject is a PersistentObject, its getPdo() method will hold the PDO.
    */
   protected ModificationLoggable lazyObject;
 
@@ -894,7 +894,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Selects the unprocessed modlogs as a result set.<br>
+   * Selects the unprocessed modlogs as a result set, ordered by ID.
    *
    * @return the resultset
    *
@@ -978,10 +978,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Selects the first modlog since a given modification time.<br>
+   * Selects all modlogs since a given modification time, ordered by ID.
    *
    * @param when the starting modification time
-   * @return the modlog if any exists
+   * @return the result set
    *
    * @wurblet resultSetSince DbSelectList --model=$mapfile --resultset when:>= +id
    */
@@ -1013,10 +1013,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Selects the first modlog with an ID greater than given ID.
+   * Selects the first modlog with an ID greater than the given ID.
    *
    * @param id the given ID
-   * @return the modlog if any exists
+   * @return the modlog, null if none
    *
    * @wurblet selectGreaterId DbSelectUnique --model=$mapfile id:> +id
    */
@@ -1059,10 +1059,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Selects the first modlog with an ID greater than given ID.
+   * Selects all modlogs with an ID greater than the given ID, ordered by ID.
    *
    * @param id the given ID
-   * @return the modlog if any exists
+   * @return the result set
    *
    * @wurblet resultSetGreaterId DbSelectList --model=$mapfile --resultset id:> +id
    */
@@ -1586,7 +1586,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Deletes processed modlogs.<br>
    * Used to limit the backlog for recovery.
    * <p>
-   * Note: does not honour any transaction boundaries, so the first already processed
+   * Note: does not honor any transaction boundaries, so the first already processed
    * transaction may be incomplete.
    *
    * @param processed the maximum processing date
@@ -1869,10 +1869,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Perform preprocessing for replay.
+   * Performs preprocessing for replay.
    *
    * @param modlog the modification log
-   * @param object the object to insert
+   * @param object the replayed object
    */
   public void replayInitModification(ModificationLog modlog, AbstractDbObject<?> object) {
     try {
@@ -1886,10 +1886,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Perform postprocessing for replay.
+   * Performs postprocessing for replay.
    *
    * @param modlog the modification log
-   * @param object the object to insert
+   * @param object the replayed object
    */
   public void replayFinishModification(ModificationLog modlog, AbstractDbObject<?> object) {
     try {
@@ -1903,7 +1903,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Replay an insert.
+   * Replays an insert.
    *
    * @param modlog the modification log
    * @param object the object to insert
@@ -1943,7 +1943,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Replay an update.
+   * Replays an update.
    *
    * @param modlog the modification log
    * @param object the object to update
@@ -2021,7 +2021,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Replay a delete.
+   * Replays a delete.
    *
    * @param modlog the modification log
    * @param object the object to delete

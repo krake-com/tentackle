@@ -144,7 +144,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
   /**
    * Determines whether the given pooled session can be removed from the pool due to timeout.<br>
-   * This method is provided to override the default in {@link DbPool}, which is used a private subclass
+   * This method is provided to override the default in {@link DbPool}, which is used as a private subclass
    * in {@code MultiUserDbPool}.
    *
    * @param slot the pool's session slot
@@ -209,7 +209,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
      * If the pool needs to create a new session, its name is copied from the original session-info
      * passed to {@link #get(SessionInfo)}. As a result, the session names are the ones when the
      * sessions were created, but not when a session is re-used by the pool. This is perfectly
-     * ok for fixes sessions such as MT and FX. For pooled sessions, we're providing an internal
+     * ok for fixed sessions such as MT and FX. For pooled sessions, we're providing an internal
      * counter "faking" a slot number. As a result, the initial session names look exactly the same
      * as the ones of the client (remote) server.
      */
@@ -245,7 +245,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       super.shutdown();
       size.addAndGet(-sz);
       // notice that the map is thread-safe: acquiring the monitor of MultiUserDbPool.this here
-      // would invert the locking order and could deadlock, see the comment at poolMap
+      // would invert the locking order (MultiUserDbPool -> sub-pool) and could deadlock
       poolMap.remove(sessionInfo);
     }
 

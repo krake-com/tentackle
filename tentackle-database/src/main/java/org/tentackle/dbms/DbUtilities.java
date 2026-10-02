@@ -40,6 +40,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -102,8 +103,8 @@ public class DbUtilities {
    * Loads an object from the database.
    *
    * @param <T> the object type
-   * @param clazz the object class
    * @param session the session
+   * @param clazz the object class
    * @param objectId the object id
    * @param loadLazyReferences true if load lazy references
    * @return the object, null if no such object
@@ -122,7 +123,7 @@ public class DbUtilities {
   }
 
   /**
-   * Determines whether table serial is valid for this pdo class.
+   * Determines the name of the table holding the tableserial for a PDO class.
    *
    * @param clazzVar the class variables
    * @return the tablename holding the tableserial, null if no tableserial
@@ -230,7 +231,7 @@ public class DbUtilities {
     if (oldGroup != 0) {
       if (sessionGroupId != oldGroup) {
         throw new PersistenceException(session, "session already belongs to group " + oldGroup +
-                                                " (requested was " + sessionGroupId);
+                                                " (requested was " + sessionGroupId + ")");
       }
       return;   // nothing to do
     }
@@ -262,7 +263,7 @@ public class DbUtilities {
   }
 
   /**
-   * Close session groups if the session is a root session of a group.
+   * Closes session groups if the session is a root session of a group.
    *
    * @param session the closing session
    */
@@ -286,7 +287,7 @@ public class DbUtilities {
    * Applies the given backend configuration to properties.
    *
    * @param backendConfiguration the backend configuration
-   * @param properties the session properties.
+   * @param properties the session properties
    */
   public void applyBackendConfiguration(BackendConfiguration backendConfiguration, EncryptedProperties properties) {
     if (backendConfiguration.getUser() != null) {
@@ -414,20 +415,22 @@ public class DbUtilities {
     // find all setters
     if (clazz.isRecord()) {
       RecordComponent[] recordComponents = clazz.getRecordComponents();
-      // find the record constructor
-      for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-        List<ColumnMapping> mappings = new ArrayList<>();
-        for (RecordComponent recordComponent : recordComponents) {
-          ColumnMapping mapping = createColumnMapping(backend, recordComponent.getName(), columnNames, recordComponent.getType());
-          if (mapping != null) {
-            mappings.add(mapping);
-          }
+      List<ColumnMapping> mappings = new ArrayList<>();
+      for (RecordComponent recordComponent : recordComponents) {
+        ColumnMapping mapping = createColumnMapping(backend, recordComponent.getName(), columnNames, recordComponent.getType());
+        if (mapping != null) {
+          mappings.add(mapping);
         }
-        if (mappings.size() == recordComponents.length) {
-          // canonical constructor found!
-          recordConstructor = (Constructor<T>) constructor;
+      }
+      if (mappings.size() == recordComponents.length) {
+        // all components found in the result set: use the canonical constructor
+        Class<?>[] parameterTypes = Arrays.stream(recordComponents).map(RecordComponent::getType).toArray(Class<?>[]::new);
+        try {
+          recordConstructor = clazz.getDeclaredConstructor(parameterTypes);
           recordMappings = mappings;
-          break;
+        }
+        catch (NoSuchMethodException ex) {
+          throw new PersistenceException("missing canonical constructor in " + clazz, ex);
         }
       }
     }

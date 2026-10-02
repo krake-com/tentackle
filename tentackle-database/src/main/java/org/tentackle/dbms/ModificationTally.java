@@ -199,7 +199,8 @@ public class ModificationTally {
    * Adds a deletion.<br>
    * A deletion is represented by an {@link IdSerialTuple} while the serial
    * is the tableserial indicating the modification count of the whole table.<br>
-   * Deletions are
+   * If the table provides a tableserial column, deletions are memorized in the {@link TableSerialHistory},
+   * since they cannot be derived from the table itself.
    *
    * @param session the session associated with the deletion; it determines the transaction context
    * @param tuple the ID and negative(!) tableserial that represents the deletion to be added
@@ -267,7 +268,7 @@ public class ModificationTally {
   }
 
   /**
-   * Gets the latest serial updated by this counter.<br>
+   * Gets the latest serial updated by this counter.
    *
    * @return the latest serial from the last update plus pending count
    */
@@ -311,7 +312,7 @@ public class ModificationTally {
   }
 
   /**
-   * Get the current modification count by tablename.
+   * Gets the current modification count by tablename.
    *
    * @return the modification count
    */

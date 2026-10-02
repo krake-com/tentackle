@@ -45,11 +45,11 @@ public interface IdSourceConfigurator {
 
 
   /**
-   * Connect to the ID-Source.
+   * Creates the ID source from its configuration.
    *
    * @param db the session
-   * @param idConfig the configuration
-   * @return the connected IdSource
+   * @param idConfig the configuration, null for the backend's default
+   * @return the configured IdSource
    */
   IdSource configure(Db db, String idConfig);
 

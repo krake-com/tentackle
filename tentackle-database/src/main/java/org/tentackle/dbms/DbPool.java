@@ -73,7 +73,6 @@ public class DbPool extends AbstractPool<Session> implements SessionPool {
 
   /**
    * Creates a pool useful for most servers.<br>
-   * Using the default connection manager.
    * Starts with 8 Db instances, increments by 2, minSize 4, maxSize from connection manager.
    * Idle timeout 1 hour, usage timeout 1 day.
    *

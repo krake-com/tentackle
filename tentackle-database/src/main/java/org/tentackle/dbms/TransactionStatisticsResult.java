@@ -22,7 +22,7 @@ import org.tentackle.log.StatisticsResult;
 
 /**
  * Statistics result for transactions.<br>
- * Extends {@link StatisticsResult} by the number of statements.
+ * Extends {@link StatisticsResult} by the number of statements and rollbacks.
  */
 public class TransactionStatisticsResult extends StatisticsResult {
 
@@ -34,7 +34,7 @@ public class TransactionStatisticsResult extends StatisticsResult {
 
 
   /**
-   * Creates a statement statistics result.
+   * Creates a transaction statistics result.
    */
   public TransactionStatisticsResult() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -76,7 +76,7 @@ public class TransactionStatisticsResult extends StatisticsResult {
   /**
    * Gets the minimum number of statements.
    *
-   * @return the statement count, {@link Integer#MAX_VALUE} if no statements involved
+   * @return the statement count, {@link Long#MAX_VALUE} if no transaction counted so far
    */
   public long getMinStatements() {
     return minStatements;
@@ -85,7 +85,7 @@ public class TransactionStatisticsResult extends StatisticsResult {
   /**
    * Gets the maximum number of statements.
    *
-   * @return the statement count, {@link Integer#MIN_VALUE} if no statements involved
+   * @return the statement count, {@link Long#MIN_VALUE} if no transaction counted so far
    */
   public long getMaxStatements() {
     return maxStatements;

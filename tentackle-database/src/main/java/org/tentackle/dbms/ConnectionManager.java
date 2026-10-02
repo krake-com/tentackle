@@ -21,10 +21,10 @@ package org.tentackle.dbms;
 import java.util.Collection;
 
 /**
- * Connection Manager for local connections.<br>
- *
+ * Connection Manager for local connections.
+ * <p>
  * JDBC connections are never used directly. Instead, sessions refer to a ConnectionManager
- *  to use a connection. The usage of a connection is initiated by an attach-operation.
+ * to use a connection. The usage of a connection is initiated by an attach-operation.
  * After completion of the task (transaction, one-shot, etc...), the session will be detached.
  * The connection manager as a broker in between the session and a connection gives the opportunity to
  * multiplex connections. This is especially useful in application servers.
@@ -58,7 +58,7 @@ public interface ConnectionManager {
   /**
    * Logs out a session.<br>
    * The session is not allowed to attach anymore. If the session is still attached,
-   * a rollback of any pending transaction is done and an exception thrown.
+   * any pending transaction is rolled back.
    * <p>
    * Throws a {@link org.tentackle.session.PersistenceException} if the logout failed.
    *
@@ -164,7 +164,7 @@ public interface ConnectionManager {
   /**
    * Gets the connections.
    *
-   * @return the connection
+   * @return the connections, never null
    */
   Collection<ManagedConnection> getConnections();
 

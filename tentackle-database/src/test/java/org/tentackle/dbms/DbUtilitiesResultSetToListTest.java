@@ -112,6 +112,23 @@ public class DbUtilitiesResultSetToListTest extends AbstractDbTest {
   }
 
 
+  /** DTO exercising the record pattern: the canonical constructor. */
+  public record RecordDto(long id, String name) { }
+
+
+  /** Record DTO with additional constructors, which must not be mistaken for the canonical one. */
+  public record MultiConstructorRecordDto(long id, String name) {
+
+    public MultiConstructorRecordDto() {
+      this(0, "none");
+    }
+
+    public MultiConstructorRecordDto(String name) {
+      this(-1, name);
+    }
+  }
+
+
   private void executeUpdate(Db db, String sql) {
     // each StatementWrapper is single-use: it detaches the session once executeUpdate() returns
     try (StatementWrapper st = db.createStatement()) {
@@ -161,6 +178,20 @@ public class DbUtilitiesResultSetToListTest extends AbstractDbTest {
     assertEquals(dtos.get(0).getName(), "first");
     assertEquals(dtos.get(1).getId(), 2L);
     assertNull(dtos.get(1).getName());
+  }
+
+
+  @Test
+  public void testRecordDto() {
+    List<RecordDto> dtos = select(RecordDto.class);
+    assertEquals(dtos, List.of(new RecordDto(1, "first"), new RecordDto(2, null)));
+  }
+
+
+  @Test
+  public void testRecordDtoWithAdditionalConstructors() {
+    List<MultiConstructorRecordDto> dtos = select(MultiConstructorRecordDto.class);
+    assertEquals(dtos, List.of(new MultiConstructorRecordDto(1, "first"), new MultiConstructorRecordDto(2, null)));
   }
 
 }

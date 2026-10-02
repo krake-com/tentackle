@@ -168,7 +168,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   // data object attributes are always private
   private long id;                                    // unique Object ID
-  private long serial;                                // serial-nummer (version to detect simultaneous updates)
+  private long serial;                                // serial number (version to detect simultaneous updates)
   private int classId;                                // the class id (overrides classvariables classid)
   private long tableSerial;                           // last table serial from countModification (only if isTableSerialProvided() == true)
 
@@ -311,7 +311,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Accepts a persistence operation visitor.<br>
+   * Accepts a persistence operation visitor.
    *
    * @param visitor the visitor
    * @param modType the modification type
@@ -361,7 +361,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * <p>
    * Please notice that all listeners are automatically removed after setModified(false)!
    *
-   * @param propertyName one of the property names listed above
+   * @param propertyName the name of the property
    * @param listener the property change listener to be added
    *
    * @see #setModified(boolean)
@@ -425,7 +425,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Returns whether instances of this class exist as database entities.
-   * The default is true. An example of a non-entity object is PartialDbObject.
+   * The default is true.
    *
    * @return true if entity
    */
@@ -473,9 +473,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Sets the db to immutable.
+   * Sets the session to immutable.
    *
-   * @param sessionImmutable true if db cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   @Override
   public void setSessionImmutable(boolean sessionImmutable) {
@@ -483,7 +483,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Returns whether the db is immutable.
+   * Returns whether the session is immutable.
    *
    * @return true if immutable
    */
@@ -517,7 +517,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Get the session for this object.
+   * Gets the session for this object.
    *
    * @return the session
    */
@@ -779,7 +779,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Checks if the modifications of this object are tracked.<br>
-   * By default, {@code AbstractDbObjects} are <em>not</em>> tracked!
+   * By default, {@code AbstractDbObjects} are <em>not</em> tracked!
    * This is a quality measure to ensure that {@link #isModified()} returns
    * false if and only if it hasn't been modified, i.e., the setters
    * check for modification. See the wurblet DbMethods.
@@ -796,11 +796,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * By definition, an object is 'modified' if the object OR ANY
    * of its components are modified. See {@code PdoRelations.wrbl} on how
    * and when to override isModified().<p>
-   * New objects are "modified" by definition!<br>
-   * Furthermore, isModified() will invoke the errorhandler if
-   * isTracked() != true.
+   * New objects are "modified" by definition!
    *
-   * @return true if the object is modified and should be saved()
+   * @return true if the object is modified and should be saved
+   * @throws PersistenceException if the object is not {@link #isTracked() tracked}
    */
   public boolean isModified() {
     if (!isTracked()) {
@@ -814,7 +813,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * It does not check whether some of its components are modified!
    * This method can also be used for non-tracked entities.
    *
-   * @return true if this object
+   * @return true if attributes of this object are modified
    */
   public boolean attributesModified() {
     return modified;
@@ -822,7 +821,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Returns the modified flag.<br>
-   * Necessary for fulltracked PDOs only, since attributedModified will be overridden with differsPersisted
+   * Necessary for fulltracked PDOs only, since attributesModified will be overridden with differsPersisted
    * and setModified(true) invoked by the application would not have any effect.
    *
    * @return the modified flag
@@ -844,8 +843,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Determines whether this object is allowed to be stored in DB.<br>
    * By default, all mutable objects are allowed to be saved.
-   * Objects not allowed to be saved will force saveObject(), insert() and update()
-   * to return 'false' and silently skipped in saveCollection().
+   * Attempts to insert, update, or delete an object that is not persistable
+   * throw a {@link PersistenceException}.
    *
    * @return true if savable
    */
@@ -881,7 +880,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Creates a one-shot prepared statement.<br>
+   * Creates a one-shot prepared statement.
    *
    * @param sqlSupplier the SQL code supplier
    * @param resultSetType the result set type
@@ -961,7 +960,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * <p>
    * The application can assume a lazy context (invoked from is...Lazy)
    * if invoked outside a transaction. This is just an optimization hint.
-   * <p>
+   *
    * @return true if referenced
    */
   public boolean isReferenced() {
@@ -969,7 +968,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     if (db.isRemote()) {
       if (isNew())  {
         // new objects are never referenced because they simply don't exist in the db!
-        // so we can saveObject a roundtrip here
+        // so we can save a roundtrip here
         return false;
       }
       else  {
@@ -1059,6 +1058,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * will be invoked.
    *
    * @param object the object to test for equality
+   * @return true if equal
    */
   @Override
   public final boolean equals (Object object) {
@@ -1102,7 +1102,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * It is ok -- according to the contract of {@code hashCode()} -- that objects
    * in different tables with the same id may return the same hashcode.<br>
    * If the id is 0, i.e., the object has no domain-identity,
-   * so {@link Object#hashCode()} is returned.
+   * {@link Object#hashCode()} is returned.
    *
    * @return  a hash code value for this object.
    * @see java.lang.Object#equals(java.lang.Object)
@@ -1116,7 +1116,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Get the IdSource.<br>
+   * Gets the IdSource.
    *
    * @return the id source
    */
@@ -1161,7 +1161,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * select and don't make any further assumptions. This applies to
    * all select methods returning an object! Example:
    * <pre>
-   *    Customer customer = new Customer(db).select(customerId);
+   *    Customer customer = new Customer(db).selectObject(customerId);
    * </pre>
    *
    * @param id is the object id
@@ -1193,7 +1193,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Load the object from the database with an exclusive lock (aka write lock).<br>
+   * Loads the object from the database with an exclusive lock (aka write lock).<br>
    * This is implemented via "SELECT FOR UPDATE".
    *
    * @param id is the object id
@@ -1320,7 +1320,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Selects the next object from a result-set.<br>
-   * AbstractApplications should close the result-set if null is returned.
+   * Applications should close the result-set if null is returned.
    *
    * @param rs the result set
    * @return the next object, null if the end of the set is reached
@@ -1575,7 +1575,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       getRemoteDelegate().dummyUpdate((P) this);
     }
     else  {
-      // for Oracle notes see selectLocked().
+      // for Oracle notes see selectObjectForUpdate().
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().dummyUpdateStatementId,
                                                          _ -> createDummyUpdateSql());
       st.setLong(1, id);
@@ -1592,6 +1592,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * update the serial to indicate 'some modification' and to make
    * sure that this object is part of the transaction.
    * Whether it is necessary or not depends on the application.
+   * <p>
+   * If a {@link PersistenceVisitor} vetoes the update, the serial remains unchanged.
    *
    * @see #isUpdatingSerialEvenIfNotModified
    */
@@ -1599,6 +1601,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     Db db = getSession();
     if (db.isRemote())  {
       getRemoteDelegate().updateSerial(id, serial);
+      serial++;   // SQL statement incremented serial successfully
     }
     else  {
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
@@ -1607,15 +1610,17 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         st.setLong(1, id);
         st.setLong(2, serial);
         assertThisRowAffected(st.executeUpdate());
+        serial++;   // SQL statement incremented serial successfully
       }
     }
-    serial++;   // SQL statement incremented serial successfully
   }
 
   /**
    * Updates and sets the serial number of this object.<br>
    * Caution: this is a low-level method provided to fix the serial
    * if it is wrong for whatever reason.
+   * <p>
+   * If a {@link PersistenceVisitor} vetoes the update, the serial remains unchanged.
    *
    * @param serial the new serial
    */
@@ -1623,6 +1628,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     Db db = getSession();
     if (db.isRemote())  {
       getRemoteDelegate().updateAndSetSerial(id, serial);
+      this.serial = serial;
     }
     else  {
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
@@ -1631,15 +1637,15 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         st.setLong(1, serial);
         st.setLong(2, id);
         assertThisRowAffected(st.executeUpdate());
+        this.serial = serial;
       }
     }
-    this.serial = serial;
   }
 
   /**
-   * Same as {@link #updateSerial} but updates tableSerial as well.
-   * Notice: the tableSerial is NOT modified in the current object,
-   * but only in the database!
+   * Same as {@link #updateSerial()} but updates the tableSerial as well.<br>
+   * The tableSerial is set to the current value of this object's tableSerial.
+   * Notice that the tableSerial is <em>not</em> incremented.
    */
   public void updateSerialAndTableSerial ()  {
     Db db = getSession();
@@ -1741,7 +1747,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Updates this object to the database.<br>
-   * The modified attribute gets cleared if the insert was successful.
+   * The modified attribute gets cleared if the update was successful.
    * Note: this method should be used by the application with great care!
    * Use {@link #saveObject} instead!
    */
@@ -1792,7 +1798,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
               finishModification(DbModificationType.UPDATE);
             }
             else {
-              // saveObject linked objects without updating the serial of this object
+              // save linked objects without updating the serial of this object
               saveReferencedRelations(true);
               saveReferencingRelations(true);
               finishNotUpdated(DbModificationType.UPDATE);
@@ -1886,7 +1892,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         prepareSave();
       }
 
-      long oldId = id;    // saveObject in case of error
+      long oldId = id;    // save in case of error
       long txVoucher = db.begin(TX_SAVE);   // getting the ID should be used in transaction with insert()
 
       try {
@@ -1896,8 +1902,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             // object is new: get a new ID
             newId();
           }
-          // if id has been reserved, it will be made positive in insert or update
-          // don't use insertObject() bec. insert() OR insertObject()
+          // if id has been reserved, it will be made positive in insertObject()
           insertObject();
         }
         else {
@@ -1921,7 +1926,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Persists this object and returns it.
    *
-   * @return the persisted object, null if saveObject failed
+   * @return the persisted object, a new instance if remote, never null
    */
   @SuppressWarnings("unchecked")
   public P persistObject() {
@@ -1943,9 +1948,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Prepares this object for delete.<br>
-   * The method is invoked at the client-side only, i.e., but never at the server-side in 3-tier mode.
-   * The default implementation clears a non-transient flag that tells
-   * the server that prepareDelete() already has been invoked on the client side.
+   * The method is invoked at the client-side only, i.e., 3-tier or 2-tier,
+   * but never at the server-side in 3-tier mode.
+   * The default implementation does nothing.
    * Applications may override the method to perform any modifications to the
    * object before it is sent to the server.
    * <p>
@@ -1974,7 +1979,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * because it {@link #isNew} again.<br>
    * It is also verified that the object {@link #isPersistable} and is not new.
    *
-   * @throws NotFoundException if the object is new or not savable or not in the database
+   * @throws PersistenceException if the object is new or not persistable
+   * @throws NotFoundException if the object is not in the database or its serial is outdated
    */
   @SuppressWarnings("unchecked")
   public void deleteObject()  {
@@ -2226,8 +2232,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Determines whether prepared statements of this class should always
-   * be prepared each time when the statement used.
+   * Determines whether prepared statements of this class should
+   * be prepared physically each time the statement is used.
+   *
    * @return true if always prepare
    */
   public boolean isStatementAlwaysPrepared() {
@@ -2245,6 +2252,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Gets the database table name for the class of this object.
+   *
    * @return the table name
    */
   public String getTableName() {
@@ -2252,7 +2260,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Retrieves the values of all fields.<br>
+   * Retrieves the values of all fields from the result set.<br>
+   * The default implementation does nothing.
    *
    * @param rs the result set
    */
@@ -2532,7 +2541,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Creates the SQL code for the first statement to select expired table serials.
+   * Creates the SQL code to select the objects with expired table serials.
    *
    * @param backend the backend
    * @return the SQL code
@@ -2731,7 +2740,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * asserts that this object does not belong to a remote session.
+   * Asserts that this object does not belong to a remote session.
    */
   protected void assertNotRemote() {
     if (getSession().isRemote()) {
@@ -2740,7 +2749,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * asserts that this object belongs to a remote session.
+   * Asserts that this object belongs to a remote session.
    */
   protected void assertRemote() {
     if (!getSession().isRemote()) {
@@ -2757,6 +2766,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param expected the expected number of rows affected
    *
    * @throws NotFoundException if count &lt; 1
+   * @throws PersistenceException if count &ne; expected
    */
   protected void assertNumberOfRowsAffected(int count, int expected) {
     if (count != expected) {
@@ -2774,6 +2784,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Use whenever an executeUpdate is related to this object.
    *
    * @param count the effective number of rows affected
+   * @throws NotFoundException if no row was affected, flagged temporary if the object exists with another serial
+   * @throws PersistenceException if more than one row was affected
    */
   protected void assertThisRowAffected(int count) {
     if (count != 1) {
@@ -2832,7 +2844,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Asserts that this object is not overloaded.<br>
+   * Asserts that this object is not loaded again.<br>
+   * Loading an object more than once is only allowed if it is {@link #isOverloadable() overloadable}.
    */
   protected void assertNotOverloaded() {
     if (!isOverloadable() && !isVirgin()) {

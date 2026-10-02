@@ -74,7 +74,7 @@ public class ObjectId extends AbstractIdSource {
         lastTxCount = db.getTxNumber();   // remember current tx
         registerTxPending = true;         // next invocation will register final update
 
-        // increment by 1 (this starts isolation withing the transaction!)
+        // increment by 1 (this starts isolation within the transaction!)
         PreparedStatementWrapper incrementStatement = db.getPreparedStatement(new StatementKey(INCREMENT_ID, getClass()), false,
           _ -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL + CN_ID + "+1"
         );
@@ -88,7 +88,7 @@ public class ObjectId extends AbstractIdSource {
          */
         assertOneRowAffected(db, incrementStatement.executeUpdate());
 
-         // read back new value
+        // read back new value
         try (ResultSetWrapper rs = selectStatement.executeQuery()) {
           if (rs.next()) {
             lastId = rs.getLong(1);

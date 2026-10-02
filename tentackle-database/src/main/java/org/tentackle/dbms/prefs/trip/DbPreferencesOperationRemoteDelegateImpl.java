@@ -26,6 +26,7 @@ import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegateImpl;
 import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 
 /**
+ * Server-side implementation of the {@link DbPreferencesOperationRemoteDelegate}.
  *
  * @author harald
  */
