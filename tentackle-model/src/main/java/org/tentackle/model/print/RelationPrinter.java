@@ -55,7 +55,7 @@ public class RelationPrinter {
   /**
    * Prints the relation.
    *
-   * @return the pretty printed index
+   * @return the pretty printed relation
    */
   public String print() {
     StringBuilder buf = new StringBuilder();
@@ -73,13 +73,14 @@ public class RelationPrinter {
 
     boolean needComma = false;
 
-    // suppress "relation = serialized object" in compact mode
-    boolean skipCompact = configuration.compact() && !relation.isComposite() && relation.isSerialized() &&
-                          relation.getRelationType() == RelationType.OBJECT &&
-                          !relation.isProcessed() && !relation.isReferenced() &&
-                          !relation.isClearOnRemoteSave() && !relation.isImmutable() &&
-                          !relation.isShallow() && !relation.isPartOfNormText() &&
-                          !relation.isReversed() || relation.isEmbedding();
+    // suppress "relation = serialized object" in compact mode, and always for embedding relations
+    boolean skipCompact = (configuration.compact() && !relation.isComposite() && relation.isSerialized() &&
+                           relation.getRelationType() == RelationType.OBJECT &&
+                           !relation.isProcessed() && !relation.isReferenced() &&
+                           !relation.isClearOnRemoteSave() && !relation.isImmutable() &&
+                           !relation.isShallow() && !relation.isPartOfNormText() &&
+                           !relation.isReversed()) ||
+                          relation.isEmbedding();
 
     if (!skipCompact &&
         (relation.getRelationType() != RelationType.OBJECT || relation.isReversed() ||
@@ -230,6 +231,7 @@ public class RelationPrinter {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.COUNT).append(" = ").append(relation.getCountAttribute());
+      needComma = true;
     }
 
     if (relation.getMethodName() != null &&
@@ -239,6 +241,7 @@ public class RelationPrinter {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.METHOD).append(" = ").append(relation.getMethodName());
+      needComma = true;
     }
 
     if (relation.getMethodArgs().size() > 1) {
@@ -279,7 +282,7 @@ public class RelationPrinter {
     }
 
     if (relation.isEmbedding() &&
-        !(StringHelper.toLower(relation.getName()) + " ").equals(relation.getColumnPrefix())) {
+        !(StringHelper.toLower(relation.getName()) + "_").equals(relation.getColumnPrefix())) {
       if (needComma) {
         buf.append(",\n");
       }
@@ -327,6 +330,12 @@ public class RelationPrinter {
   }
 
 
+  /**
+   * Appends the indentation of a relation property line.
+   *
+   * @param buf the buffer to append to
+   * @return the buffer
+   */
   private StringBuilder lead(StringBuilder buf) {
     if (configuration.asComment()) {
       buf.append(" * ");

@@ -19,24 +19,27 @@
 package org.tentackle.model.parse;
 
 /**
- * The configuration file line type.
+ * The model source line type.
  *
  * <ol>
- * <li>All lines beginning with a '#' are comments. Anything following a # is comment as well.</li>
- * <li>Lines containing a '=' not containing a ':' in between the start-of-line and the '=' are configuration lines.
+ * <li>Empty lines or lines consisting of whitespace only are empty lines.</li>
+ * <li>All lines beginning with a '#' are comments.</li>
+ * <li>Lines beginning with '[' are global options.</li>
+ * <li>Lines containing {@code :=} are configuration lines.
  *   <ul>
- *      <li>pdo = &lt;Pdo-Interface&gt;</li>
- *      <li>index &lt;name&gt; = column_1, ...</li>
- *      <li>unique index &lt;name&gt; = column1, ...</li>
+ *      <li>name := &lt;Entity&gt;</li>
+ *      <li>index &lt;name&gt; := column_1 ...</li>
+ *      <li>unique index &lt;name&gt; := column1 ...</li>
  *   </ul>
  * </li>
- * <li>Lines beginning with '[' are global options.</li>
  * <li>Lines with the first word (sep. by whitespaces) not followed by a colon are attributes.</li>
  * <li>Lines with a word starting in lowercase followed by a colon are attribute option lines (e.g. for validation).</li>
- * <li>Lines with a word starting in uppercase followed by a colon are relation lines.</li>
+ * <li>Lines with a word starting in uppercase followed by a colon are relation lines,
+ * or relation option lines if the second word starts with an '@'.</li>
+ * <li>Lines starting with an '@' following an attribute or relation (option) line are option lines of the same kind.</li>
  * </ol>
  *
- * Leading whitespaces are ignored when determining the line type.
+ * Leading whitespace is ignored when determining the line type.
  *
  * @author harald
  */

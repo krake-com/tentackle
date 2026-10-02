@@ -39,7 +39,7 @@ public class IndexMigrator {
   /**
    * The migration result.
    *
-   * @param dropSql the SQL code to drop or rename indexes
+   * @param dropSql the SQL code to drop indexes, preceded by comments explaining filter differences
    * @param createSql the SQL code to create indexes
    */
   public record Result(String dropSql, String createSql) {
@@ -60,7 +60,7 @@ public class IndexMigrator {
   private final Backend backend;                  // the backend
   private final Entity entity;                    // the entity to migrate the index for
   private final Index index;                      // the index to migrate, null if no such index in the model
-  private final IndexMetaData indexMetaData;      // the index metadata, null if the key does not exist
+  private final IndexMetaData indexMetaData;      // the index metadata, null if the index does not exist
 
 
   /**
@@ -69,7 +69,7 @@ public class IndexMigrator {
    * @param entity the entity
    * @param index the index to migrate, null if no such index in the model
    * @param backend the backend
-   * @param indexMetaData the foreign metadata, null if key does not exist
+   * @param indexMetaData the index metadata, null if the index does not exist in the database
    */
   public IndexMigrator(Entity entity, Index index, Backend backend, IndexMetaData indexMetaData) {
     this.backend = backend;
@@ -108,7 +108,7 @@ public class IndexMigrator {
   /**
    * Gets the index metadata.
    *
-   * @return the meta-data, null if no such index in the database
+   * @return the metadata, null if no such index in the database
    */
   public IndexMetaData getIndexMetaData() {
     return indexMetaData;
@@ -118,7 +118,7 @@ public class IndexMigrator {
   /**
    * Migrates the index.
    *
-   * @return the SQL code, empty string if nothing to migrate
+   * @return the migration result, with empty strings if nothing to migrate
    */
   public Result migrate() {
     StringBuilder dropSql = new StringBuilder();
@@ -164,10 +164,11 @@ public class IndexMigrator {
    * @param backend the backend
    * @param modelIndex the index as defined in the model
    * @param dbIndex the index existing in the database
-   * @param commentBuf comment buffer to show the difference, null for none
+   * @param commentBuf comment buffer to show the filter differences, null for none
    * @return true if they are different, false if logically equal
    */
   public static boolean isLogicallyDifferent(Backend backend, Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
+    // model and metadata use different Deferrability enums -> compare by name
     boolean different = modelIndex.isUnique() != dbIndex.isUnique() ||
                          !modelIndex.getDeferrability().name().equals(dbIndex.getDeferrability().name());
     if (!different) {
@@ -240,12 +241,12 @@ public class IndexMigrator {
 
 
   /**
-   * Compares two expression strings ignoring extra matching parenthesis.<br>
-   * The backend or the user may add extra parenthesis which would cause comparison to fail.
+   * Compares two expression strings ignoring blanks and extra matching parentheses.<br>
+   * The backend or the user may add extra parentheses which would cause comparison to fail.
    *
    * @param s1 the first string
    * @param s2 the second string
-   * @return true if s1 equals s2
+   * @return true if equal, ignoring blanks and extra matching parentheses
    */
   private static boolean equalsIgnoreMatchingParenthesis(String s1, String s2) {
     s1 = s1.replace(" ", "");
@@ -255,7 +256,7 @@ public class IndexMigrator {
     int pending1 = 0;   // > 0 pending open parenthesis in s1
     int pending2 = 0;   // > 0 pending open parentheses in s2
 
-    while (ndx1 < s1.length() || ndx2 < s2.length()) {    // one of both still pending chars
+    while (ndx1 < s1.length() || ndx2 < s2.length()) {    // at least one string has characters left
       char c1 = ndx1 < s1.length() ? s1.charAt(ndx1) : 0;
       char c2 = ndx2 < s2.length() ? s2.charAt(ndx2) : 0;
       if (c1 != c2) {

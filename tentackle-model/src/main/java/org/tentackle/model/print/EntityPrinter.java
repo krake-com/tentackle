@@ -210,9 +210,10 @@ public class EntityPrinter {
 
 
   /**
-   * Begin a new line.
+   * Begins a new line.
    *
    * @param str the leading part of the line
+   * @return the builder
    */
   private StringBuilder line(String str) {
     if (configuration.asComment()) {

@@ -67,7 +67,7 @@ public interface CommonOptions extends Commented {
   /**
    * Element is mute.
    *
-   * @return true if not part of the pdo
+   * @return true if not part of the PDO
    */
   boolean isMute();
 
@@ -135,21 +135,21 @@ public interface CommonOptions extends Commented {
   boolean isAutoSelect();
 
   /**
-   * Returns whether lowercase conversion requested.
+   * Returns whether lowercase conversion is requested.
    *
    * @return true if lowercase
    */
   boolean isLowerCase();
 
   /**
-   * Returns true whether the maxcol binding option should be applied.
+   * Returns whether the maxcol binding option should be applied.
    *
    * @return true if maxcol
    */
   boolean isMaxCol();
 
   /**
-   * Returns whether uppercase conversion requested.
+   * Returns whether uppercase conversion is requested.
    *
    * @return true if uppercase
    */

@@ -25,28 +25,28 @@ package org.tentackle.model;
  */
 public enum Integrity {
 
-  /** no integrity checks at all. */
+  /** No integrity checks at all. */
   NONE(false, false, false),
 
-  /** application-level integrity checks only. */
+  /** Application-level integrity checks only. */
   SOFT(true, false, false),
 
-  /** application-level and foreign keys for non-composite relations. */
+  /** Application-level checks and foreign keys for non-composite relations. */
   RELATED(true, true, false),
 
-  /** application-level and composite relations. */
+  /** Application-level checks and foreign keys for composite relations. */
   COMPOSITE(true, false, true),
 
-  /** same as {@link #RELATED} but no check on application level. */
+  /** Same as {@link #RELATED} but no checks on the application level. */
   RELATED_DBONLY(false, true, false),
 
-  /** same as {@link #COMPOSITE} but no check on application level. */
+  /** Same as {@link #COMPOSITE} but no checks on the application level. */
   COMPOSITE_DBONLY(false, false, true),
 
-  /** same as {@link #FULL} but no check on application level. */
+  /** Same as {@link #FULL} but no checks on the application level. */
   FULL_DBONLY(false, true, true),
 
-  /** application-level and all related and composite relations. */
+  /** Application-level checks and foreign keys for all related and composite relations. */
   FULL(true, true, true);
 
 

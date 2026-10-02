@@ -95,7 +95,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   /** composite relation flag (belongs to a composite parent). */
   public static final String COMPOSITE = "composite";
-  /** synonym to 'composite' (preferred wording in the model and application sources). */
+  /** synonym for 'composite' (preferred wording in the model and application sources). */
   public static final String COMPONENT = "component";
 
   /** tracked relation flag. */
@@ -131,7 +131,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /** sets the relation to immutable after loading. */
   public static final String IMMUTABLE = "immutable";
 
-  /** add toString value to the partOfNormText. */
+  /** add the toString value to the normtext. */
   public static final String PART_OF_NORMTEXT = "normtext";
 
   /** add the blunt method to the interface. */
@@ -245,7 +245,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   @Override
-  protected RelationImpl clone() {    // leave it protected! use withEmbeddingParent instead!
+  protected RelationImpl clone() {    // leave it protected! use createEmbedded instead!
     try {
       RelationImpl relation = (RelationImpl) super.clone();
       relation.annotations = new ArrayList<>(annotations);
@@ -567,12 +567,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
             setName(entry.getValue());
             break;
 
-          // property name = ...
+          // property prefix = ...
           case PREFIX:
             setColumnPrefix(entry.getValue());
             break;
 
-          // property scope = ... *
+          // property scope = ...
           case SCOPE:
             try {
               setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase(Locale.ROOT)));
@@ -608,7 +608,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
         }
       }
 
-      // setup default args
+      // set up the default args
       if (getRelationType() == RelationType.LIST) {
         methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
       }
@@ -700,7 +700,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   /**
-   * Returns whether rule determined the selection type.
+   * Returns whether the selection type was set by a default rule rather than the model.
    *
    * @return false if provided by the model, true if by automatic rule
    */
@@ -937,7 +937,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   /**
    * Gets the name of this relation.<br>
-   * If no explicit name set, it defaults to the className.<br>
+   * If no explicit name set, it defaults to the className.
    *
    * @return the name
    */
@@ -974,7 +974,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /**
    * Creates a model exception.
    * <p>
-   * Refers to the source line if set, otherwise just the message.
+   * Refers to the source line if set, otherwise to the entity.
    *
    * @param message the message
    * @return the exception
@@ -993,7 +993,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /**
    * Creates a model exception.
    * <p>
-   * Refers to the source line if set, otherwise just the message.
+   * Refers to the source line if set, otherwise to the entity.
    *
    * @param message the message
    * @param cause the cause
@@ -1380,10 +1380,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
 
   /**
-   * Gets the unique build name of the relation.
+   * Builds the base name used for variables and method suffixes.<br>
+   * "List" is appended for unnamed non-reversed list relations.
    *
-   * @param tolower is true if the first letter is lowercase, else uppercase
-   * @return the setter/getter method name in the main class
+   * @param tolower true for a lowercase first letter, else uppercase
+   * @return the name
    */
   private String buildName(boolean tolower) {
     String str = name == null ? className : name;
@@ -1400,7 +1401,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   /**
-   * Gets the variable name.<br>
+   * Gets the variable name.
    *
    * @return the variable name
    */

@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * A directory holding model files.<br>
- * The model dir is capable to detect changes, usually model files added by the Wurbelizer.
+ * The model directory is capable of detecting changes, usually model files added by the Wurbelizer.
  *
  * @author harald
  */
@@ -38,9 +38,11 @@ public interface ModelDirectory {
   String getPath();
 
   /**
-   * Gets the model file URLs.
+   * Gets the model file URLs.<br>
+   * Hidden files are ignored.
    *
-   * @return the list of urls, never null
+   * @return the list of URLs, never null
+   * @throws ModelException if a file cannot be converted to a URL
    */
   List<URL> getURLs() throws ModelException;
 
@@ -59,7 +61,8 @@ public interface ModelDirectory {
   EntityAliases getEntityAliases();
 
   /**
-   * Returns whether the directory has changed.
+   * Returns whether the directory has changed since it was scanned, i.e. files were added or removed.<br>
+   * Changes of the file contents are detected per entity by {@link EntityInfo#hasChanged()}.
    *
    * @return true if changed
    */

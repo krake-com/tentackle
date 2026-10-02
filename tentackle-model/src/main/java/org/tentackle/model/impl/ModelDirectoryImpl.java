@@ -88,7 +88,7 @@ public class ModelDirectoryImpl implements ModelDirectory {
             paths.add(new File(path, file.getName()).toURI().toURL());
           }
           catch (MalformedURLException e) {
-            throw new ModelException("cannot convert file '" + file + " to URL", e);
+            throw new ModelException("cannot convert file '" + file + "' to URL", e);
           }
         }
       }

@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * An attribute.
  * <p>
- * Each attribute corresponds to a database column.
+ * Each attribute corresponds to one or more database columns, depending on its {@link DataType}.
  *
  * @author harald
  */
@@ -55,10 +55,12 @@ public interface Attribute extends ModelElement {
 
   /**
    * Gets the database column name.<br>
-   * For datatype with only one column, this is usually the same as the model's column name.
+   * For data types with only one column, this is usually the same as the model's column name.
    *
-   * @param columnIndex the column index according to the {@link DataType}.
+   * @param backend the backend
+   * @param columnIndex the column index according to the {@link DataType}
    * @return the column name used by the database
+   * @throws ModelException if the data type is misconfigured
    * @see #getColumnName()
    * @see #getDataType()
    */
@@ -157,7 +159,7 @@ public interface Attribute extends ModelElement {
 
   /**
    * Gets the pathname.<br>
-   * The pathname is identical to the java name for non-embedded entities.<br>
+   * The pathname is identical to the Java name for non-embedded entities.<br>
    * For embedded entities, the pathname consists of the dotted path from the parent entity to the embedded attribute.
    *
    * @return the pathname
@@ -197,14 +199,14 @@ public interface Attribute extends ModelElement {
   DataType<?> getEffectiveDataType() throws ModelException;
 
   /**
-   * Gets the java type.<br>
-   * Returns the java type with optional generic info.
+   * Gets the Java type.<br>
+   * Returns the Java type with optional generic info.
    * <p>
    * Examples:
    * <pre>
    * Date
    * Binary&lt;Invoice&gt;
-   * MyType;
+   * MyType
    * </pre>
    *
    * @return the type string
@@ -241,6 +243,7 @@ public interface Attribute extends ModelElement {
    * <pre>
    * "set" + getMethodNameSuffix() would return "setBlah" if the javaName is "blah".
    * </pre>
+   *
    * @return the suffix
    */
   String getMethodNameSuffix();
@@ -267,11 +270,12 @@ public interface Attribute extends ModelElement {
   String getBindableAnnotation();
 
   /**
-   * Converts a given value string to a valid java method argument.<br>
+   * Converts a given value string to a valid Java method argument.<br>
    * Adds a downcast, if necessary.
    *
    * @param value the value string
    * @return the method argument string
+   * @throws ModelException if the data type is misconfigured
    */
   String toMethodArgument(String value) throws ModelException;
 

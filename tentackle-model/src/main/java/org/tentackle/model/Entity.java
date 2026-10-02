@@ -49,7 +49,7 @@ public interface Entity extends ModelElement {
    * This restriction avoids unnecessary confusion and reduces the potential for errors
    * in SQL statements.
    *
-   * @return the tablename (always in lowercase), null if the entity doesn't map to its own table
+   * @return the table name (always in lowercase), null if the entity doesn't map to its own table
    */
   String getTableName();
 
@@ -61,14 +61,14 @@ public interface Entity extends ModelElement {
   String getSchemaName();
 
   /**
-   * Gets the tablename without the leading schema.
+   * Gets the table name without the leading schema.
    * <p>
    * Important: similar to the entity name, the table name must be unique among the whole model
    * and all schemas.
    * This restriction avoids unnecessary confusion and reduces the potential for errors
    * in SQL statements.
    *
-   * @return the tablename relative to its schema (always in lowercase), null if the entity doesn't map to its own table
+   * @return the table name relative to its schema (always in lowercase), null if the entity doesn't map to its own table
    */
   String getTableNameWithoutSchema();
 
@@ -82,7 +82,7 @@ public interface Entity extends ModelElement {
   String getTableAlias();
 
   /**
-   * Gets the table alias originally configured in the model.<br>
+   * Gets the table alias originally configured in the model.
    *
    * @return the fixed alias, null if automatic
    */
@@ -113,6 +113,7 @@ public interface Entity extends ModelElement {
    * Gets the inherited attributes.
    *
    * @return the attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getInheritedAttributes() throws ModelException;
 
@@ -120,6 +121,7 @@ public interface Entity extends ModelElement {
    * Gets the attributes of embedded entities.
    *
    * @return the embedded attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getEmbeddedAttributes() throws ModelException;
 
@@ -144,6 +146,7 @@ public interface Entity extends ModelElement {
    * Gets the attributes including the inherited ones.
    *
    * @return the attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getAttributesIncludingInherited() throws ModelException;
 
@@ -158,6 +161,7 @@ public interface Entity extends ModelElement {
    * Gets all attributes including inherited and from sub entities.
    *
    * @return the attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getAllAttributes() throws ModelException;
 
@@ -165,6 +169,7 @@ public interface Entity extends ModelElement {
    * Gets the attributes of the table mapped by this entity.
    *
    * @return the attributes, empty if the entity does not map to a table or does not provide attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getTableAttributes() throws ModelException;
 
@@ -172,13 +177,14 @@ public interface Entity extends ModelElement {
    * Gets the attributes mapped by the persistence layer for this entity.
    *
    * @return the attributes
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getMappedAttributes() throws ModelException;
 
   /**
-   * Gets an attribute by its java name.
+   * Gets an attribute by its Java name.
    *
-   * @param javaName the java name
+   * @param javaName the Java name
    * @param all true if include inherited attributes
    * @return the attribute, null if no such attribute
    */
@@ -203,7 +209,8 @@ public interface Entity extends ModelElement {
   /**
    * Gets the attributes describing the unique domain key.
    *
-   * @return the udk attributes, empty if no udk
+   * @return the UDK attributes, empty if no UDK
+   * @throws ModelException if the model is inconsistent
    */
   List<Attribute> getUniqueDomainKey() throws ModelException;
 
@@ -261,6 +268,7 @@ public interface Entity extends ModelElement {
    * Will also contain the relations from embedded entities.
    *
    * @return the relations, empty if the entity does not map to a table or provides no relations
+   * @throws ModelException if the model is inconsistent
    */
   List<Relation> getTableRelations() throws ModelException;
 
@@ -386,28 +394,28 @@ public interface Entity extends ModelElement {
    *
    * @param backend the backend to create SQL code for
    * @return the SQL code
-   * @throws ModelException if model inconsistent
+   * @throws ModelException if the model is inconsistent
    */
   String sqlCreateTable(Backend backend) throws ModelException;
 
   /**
-   * Returns whether the entity has composite relations.
+   * Returns whether the entity or one of its sub entities has composite relations.
    *
    * @return true if composite entity
    */
   boolean isComposite();
 
   /**
-   * Returns whether the entity has composite non-embedded relations.
+   * Returns whether the entity or one of its sub entities has composite non-embedded relations.
    *
    * @return true if not only embedded composite relations
    */
   boolean isEffectivelyComposite();
 
   /**
-   * Returns whether the class may be instantiated.
+   * Returns whether the entity is abstract, i.e. cannot be instantiated.
    *
-   * @return true if the class is abstract
+   * @return true if abstract
    */
   boolean isAbstract();
 
@@ -439,9 +447,11 @@ public interface Entity extends ModelElement {
   Boolean isDeletionCascaded();
 
   /**
-   * Returns the attributes that correspond to the root id.
+   * Returns the attributes linking this component to its composite parents.<br>
+   * The attributes are derived from the composite paths.
+   * For direct components of a root entity, they correspond to the root id.
    *
-   * @return the attributes, empty list if root id is provided separately or no root id at all
+   * @return the attributes, empty set if this is not a component
    */
   Set<Attribute> getRootAttributes();
 
@@ -455,8 +465,9 @@ public interface Entity extends ModelElement {
   /**
    * Returns the root entities.<br>
    * Returns all roots, even abstract ones.
+   * The roots are derived from the composite paths.
    *
-   * @return the root entities, empty list if rootclassid is provided separately or no rootclassid at all
+   * @return the root entities, empty set if this is not a component
    */
   Set<Entity> getRootEntities();
 
@@ -521,7 +532,7 @@ public interface Entity extends ModelElement {
   /**
    * Gets all super entities.
    *
-   * @return the path along up to the top super entity.
+   * @return the super entities, starting with the direct super entity up to the top super entity
    */
   List<Entity> getSuperEntities();
 
@@ -537,7 +548,7 @@ public interface Entity extends ModelElement {
    * Gets the inheritance chain from this entity down to the given sub entity.
    *
    * @param subEntity the sub entity
-   * @return the chain starting with this entity end ending with the sub entity
+   * @return the chain starting with this entity and ending with the sub entity
    * @throws ModelException if subEntity does not inherit this entity
    */
   List<Entity> getInheritanceChain(Entity subEntity) throws ModelException;
@@ -567,9 +578,9 @@ public interface Entity extends ModelElement {
   /**
    * Gets a set of all entities that are associated with this entity.<br>
    * The kind of association can be a relation, a foreign relation or some hierarchy dependency
-   * or a combination of.
+   * or a combination thereof.
    *
-   * @return the set of entities including me
+   * @return the set of entities including this entity
    */
   Set<Entity> getAssociatedEntities();
 
@@ -577,7 +588,7 @@ public interface Entity extends ModelElement {
    * Gets the paths of composite relations to this entity.<br>
    * Notice that this includes paths to sub-entities as well.
    *
-   * @return the paths, empty list if this is not a component of any other entity
+   * @return the paths, empty set if this is not a component of any other entity
    */
   Set<List<Relation>> getCompositePaths();
 
@@ -585,14 +596,14 @@ public interface Entity extends ModelElement {
    * Gets the paths of composite relations to this entity.<br>
    * Notice that this includes paths to sub-entities and super-entities as well.
    *
-   * @return the paths, empty list if this is not a component of any other entity
+   * @return the paths, empty set if this is not a component of any other entity
    */
   Set<List<Relation>> getAllCompositePaths();
 
   /**
    * Gets the paths of embedding relations to this entity.
    *
-   * @return the paths, empty list if this is not an embedded entity
+   * @return the paths, empty set if this is not an embedded entity
    */
   Set<List<Relation>> getEmbeddingPaths();
 
@@ -625,14 +636,14 @@ public interface Entity extends ModelElement {
   Set<Entity> getAllComponents();
 
   /**
-   * Returns whether this entity should provide a root class id according to model.
+   * Returns whether this entity should provide a root class id according to the model.
    *
-   * @return true provides a root class id according to the model, false otherwise
+   * @return true if the entity should provide a root class id
    */
   boolean isProvidingRootClassIdAccordingToModel();
 
   /**
-   * Returns whether this entity should provide a root id according to model.
+   * Returns whether this entity should provide a root id according to the model.
    *
    * @return true if the entity should provide a root id
    */
@@ -646,7 +657,7 @@ public interface Entity extends ModelElement {
   boolean isRootEntityAccordingToModel();
 
   /**
-   * Gets the deep references to this entity.<br>
+   * Gets the deep references to this entity.
    *
    * @return the deep references, empty if no deep references
    */

@@ -527,20 +527,20 @@ public class NameVerifierImpl implements NameVerifier {
   /**
    * Checks whether the given name is all upper- or all lowercase.<br>
    * The backends are usually not case-sensitive (unless the SQL names are quoted),
-   * but it is a good style to either use all upper- or all lowercase.
+   * but it is good style to either use all upper- or all lowercase.
    * Mixing the case pretends that the case is important, but in fact it's not.
    * This is only allowed for provided entities.
    *
    * @param name the name
    * @param entity the entity
-   * @return true if ok, false if mixed
+   * @return true if null, all upper- or lowercase, or the entity is provided; false if mixed
    */
   protected boolean isAllUpperOrLowerCase(String name, Entity entity) {
     return name == null || entity.getOptions().isProvided() || name.equals(name.toLowerCase(Locale.ROOT)) || name.equals(name.toUpperCase(Locale.ROOT));
   }
 
   /**
-   * Checks whether the name is quoted.
+   * Checks whether the name is unquoted, or the entity is provided (where quoting is allowed).
    *
    * @param name the name
    * @param entity the entity
@@ -582,7 +582,7 @@ public class NameVerifierImpl implements NameVerifier {
   /**
    * Gets the set of confusing names.
    *
-   * @return confusing model name
+   * @return the confusing model names (uppercase)
    */
   protected Set<String> getConfusingNames() {
     return CONFUSING_NAMES;

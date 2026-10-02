@@ -23,7 +23,7 @@ import org.tentackle.sql.Backend;
 /**
  * Foreign key for referential integrity.
  * <p>
- * Because Tentackle references PDOs only by id there is only one attribute per foreign key.
+ * Because Tentackle references PDOs only by ID, there is only one attribute per foreign key.
  *
  * @author harald
  */
@@ -75,9 +75,9 @@ public interface ForeignKey {
   Deferrability getDeferrability();
 
   /**
-   * Creates the foreign key creation sql code.
+   * Creates the foreign key creation SQL code.
    *
-   * @param backend the backend to create sql code for
+   * @param backend the backend to create SQL code for
    * @return the SQL code
    */
   String sqlCreateForeignKey(Backend backend);

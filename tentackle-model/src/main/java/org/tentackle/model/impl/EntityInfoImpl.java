@@ -43,7 +43,7 @@ public class EntityInfoImpl implements EntityInfo {
 
 
   /**
-   * Creates a model entity.
+   * Creates an entity info.
    *
    * @param entity the entity
    * @param url the model source URL

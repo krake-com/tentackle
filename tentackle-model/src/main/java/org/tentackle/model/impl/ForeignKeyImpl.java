@@ -47,10 +47,10 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
    * Creates a foreign key.
    *
    * @param referencingEntity the referencing entity
-   * @param referencingAttribute the referenced entity
+   * @param referencingAttribute the referencing attribute
    * @param referencedEntity the referenced entity
    * @param referencedAttribute the referenced attribute
-   * @param composite true if cascade on delete and update
+   * @param composite true if the reference is via a composite relation
    */
   public ForeignKeyImpl(Entity referencingEntity, Attribute referencingAttribute,
                         Entity referencedEntity, Attribute referencedAttribute,
@@ -126,6 +126,11 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
   }
 
 
+  /**
+   * Sets whether the reference is via a composite relation.
+   *
+   * @param composite true if composite
+   */
   public void setComposite(boolean composite) {
     this.composite = composite;
   }
@@ -135,6 +140,11 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
     return deferrability;
   }
 
+  /**
+   * Sets the deferrability of the foreign key constraint.
+   *
+   * @param deferrability the deferrability
+   */
   public void setDeferrability(Deferrability deferrability) {
     this.deferrability = deferrability;
   }

@@ -21,7 +21,11 @@ package org.tentackle.model.impl;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
+import org.tentackle.model.Attribute;
+import org.tentackle.model.Deferrability;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Index;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
@@ -41,6 +45,7 @@ import java.util.Map;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -183,6 +188,130 @@ public class ModelRegressionTest {
     catch (ModelException mex) {
       assertTrue(mex.getMessage().contains("missing attribute 'customerId'"), mex.getMessage());
     }
+  }
+
+
+  /**
+   * Values of options in attribute option lines must keep their case.
+   */
+  @Test
+  public void optionLineValuesKeepTheirCase() throws Exception {
+    Document document = new Document(entityModel("Simple", 1, "simple",
+                                                 "\ncode: init \"Abc\", @NotNull\n"));
+    Entity entity = createModel("optionLine").getEntityFactory().createEntity(document, null);
+    Attribute code = entity.getAttributeByJavaName("code", false);
+    assertEquals(code.getOptions().getInitialValue(), "\"Abc\"");
+    assertEquals(code.getOptions().getAnnotations(), List.of("@NotNull"));
+  }
+
+  /**
+   * The value of a binding option such as the filler character must keep its case.
+   * Removing an option without a value removes that option with any value, but not other options
+   * containing its name.
+   */
+  @Test
+  public void bindOptionValues() throws Exception {
+    Document document = new Document(entityModel("Simple", 1, "simple",
+                                                 "String(10) name name the name [filler='x', cols=5, maxcols=10, -cols]\n"));
+    Entity entity = createModel("bindOptions").getEntityFactory().createEntity(document, null);
+    String bindOptions = entity.getAttributeByJavaName("name", false).getOptions().getBindOptions();
+    assertTrue(bindOptions.contains("FILLER='x'"), bindOptions);
+    assertTrue(bindOptions.contains("MAXCOLS=10"), bindOptions);
+    assertFalse(bindOptions.contains("COLS=5"), bindOptions);
+    assertFalse(bindOptions.startsWith("="), bindOptions);
+  }
+
+  /**
+   * The keyword WHERE in an index line must be a separate word.
+   */
+  @Test
+  public void indexFilterKeywordIsWholeWord() throws Exception {
+    Document document = new Document(entityModel("Simple", 1, "simple",
+                                                 "long somewhereId somewhere_id somewhere\n" +
+                                                 "\nindex somewhere := somewhere_id\n" +
+                                                 "index filtered := code where code is not null\n"));
+    Entity entity = createModel("indexWhere").getEntityFactory().createEntity(document, null);
+    for (Index index : entity.getIndexes()) {
+      ((IndexImpl) index).parse(entity);
+    }
+    Index somewhere = entity.getIndexes().getFirst();
+    assertNull(somewhere.getFilterCondition());
+    assertEquals(somewhere.getAttributes().getFirst().getColumnName(), "somewhere_id");
+    assertEquals(entity.getIndexes().get(1).getFilterCondition(), "code is not null");
+  }
+
+  /**
+   * The default deferrability of the model defaults must not be applied to function-based unique indexes,
+   * which cannot be deferrable.
+   */
+  @Test(timeOut = TIMEOUT_MS)
+  public void defaultDeferrabilityIgnoresFunctionBasedIndexes() throws Exception {
+    Path modelDir = createModelDir("deferrable",
+                                   Map.of("simple.map", entityModel("Simple", 1, "simple",
+                                                                    "\nunique index code := code\n" +
+                                                                    "unique index ucode := upper(code)\n")));
+    Model model = createModel("deferrable");
+    model.setModelDefaults(new ModelDefaults("deferrable"));
+    model.loadFromDirectory(modelDir.toString(), true);
+    Entity entity = model.getByEntityName("Simple");
+    assertEquals(entity.getIndexes().getFirst().getDeferrability(), Deferrability.DEFERRABLE_IMMEDIATE);
+    assertEquals(entity.getIndexes().get(1).getDeferrability(), Deferrability.NOT_DEFERRABLE);
+  }
+
+  /**
+   * The model default for cascaded delete applies to component lists only,
+   * since object relations are always deleted cascaded.
+   */
+  @Test(timeOut = TIMEOUT_MS)
+  public void cascadeDefaultAppliesToComponentListsOnly() throws Exception {
+    Path modelDir = createModelDir("cascade",
+                                   Map.of("invoice.map", entityModel("Invoice", 1, "invoice",
+                                                                     "long addressId address_id the address\n" +
+                                                                     "\nAddress: relation = component, select = eager\n" +
+                                                                     "\nInvoiceLine: relation = component list, select = lazy\n"),
+                                          "address.map", entityModel("Address", 2, "address", ""),
+                                          "invoiceline.map", entityModel("InvoiceLine", 3, "invoiceline",
+                                                                         "long invoiceId invoice_id the invoice\n")));
+    Model model = createModel("cascade");
+    model.setModelDefaults(new ModelDefaults("cascade"));
+    model.loadFromDirectory(modelDir.toString(), true);   // used to fail for the 1:1 component
+    Entity invoice = model.getByEntityName("Invoice");
+    assertFalse(invoice.getRelation("Address", false).isDeletionCascaded());
+    assertTrue(invoice.getRelation("InvoiceLine", false).isDeletionCascaded());
+  }
+
+  /**
+   * Clearing the model must also clear the cached foreign keys.
+   */
+  @Test(timeOut = TIMEOUT_MS)
+  public void clearModelClearsForeignKeys() throws Exception {
+    Path modelDir = createModelDir("foreignKeys",
+                                   Map.of("invoice.map", entityModel("Invoice", 1, "invoice",
+                                                                     "long customerId customer_id the customer\n" +
+                                                                     "\nCustomer: select = lazy\n")
+                                                         .replace("integrity := none", "integrity := related"),
+                                          "customer.map", entityModel("Customer", 2, "customer", "")
+                                                          .replace("integrity := none", "integrity := related")));
+    Model model = createModel("foreignKeys");
+    model.loadFromDirectory(modelDir.toString(), true);
+    assertFalse(model.getForeignKeys().isEmpty());
+    model.clearModel();
+    assertTrue(model.getForeignKeys().isEmpty());
+  }
+
+  /**
+   * A boolean method argument must be accessed via its {@code is}-getter.
+   */
+  @Test
+  public void booleanMethodArgumentUsesIsGetter() throws Exception {
+    Document document = new Document(entityModel("Simple", 1, "simple",
+                                                 "boolean active active the flag [super]\n" +
+                                                 "long clientId client_id the client\n" +
+                                                 "\nCustomer: name = Client\n"));
+    Entity entity = createModel("booleanArg").getEntityFactory().createEntity(document, null);
+    MethodArgument argument = new MethodArgument(entity.getRelations().getFirst(),
+                                                 entity.getAttributeByJavaName("active", false));
+    assertEquals(argument.getMethodArgument(), "isActive()");
   }
 
 

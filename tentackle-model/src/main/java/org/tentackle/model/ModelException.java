@@ -22,7 +22,7 @@ import java.io.Serial;
 import java.util.Collection;
 
 /**
- * Model parsing exception.
+ * Exception thrown if the model is invalid or inconsistent.
  *
  * @author harald
  */

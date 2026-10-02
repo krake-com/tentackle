@@ -50,7 +50,7 @@ public enum TrackType {
   /**
    * Returns true if ATTRACKED or FULLTRACKED.
    *
-   * @return true if tracked
+   * @return true if attribute-tracked
    */
   public boolean isAttracked() {
     return this == ATTRACKED || this == FULLTRACKED;

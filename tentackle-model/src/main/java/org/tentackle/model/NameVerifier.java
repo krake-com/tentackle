@@ -27,6 +27,8 @@ interface NameVerifierHolder {
 /**
  * Enforces application-specific rules for names.<br>
  * This is an additional check to the backend rules.
+ * Covers the names of entities, tables, table aliases, attributes, columns, relations and indexes.<br>
+ * The default implementation can be replaced via {@code @Service(NameVerifier.class)}.
  */
 public interface NameVerifier {
 

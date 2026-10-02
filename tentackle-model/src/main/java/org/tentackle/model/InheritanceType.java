@@ -28,13 +28,13 @@ public enum InheritanceType {
   /**
    * There is no inheritance at all.<br>
    * This is the default.<br>
-   * The concrete entities, i.e. the leafs of the inheritance hierarchy are of type {@code NONE}.
+   * The concrete entities, i.e. the leaves of the inheritance hierarchy are of type {@code NONE}.
    */
   NONE(false, true, true),
 
   /**
    * OO inheritance only.<br>
-   * The entity extends its super-entity only in plain old java style.
+   * The entity extends its super-entity only in plain old Java style.
    * The mapping to the relational backend is unaffected.<br>
    * Allows sharing of common attributes and/or methods.<br>
    * The super-entity is abstract and cannot have instances.
@@ -48,7 +48,7 @@ public enum InheritanceType {
    * The table automatically gets an extra column "classId" to
    * denote the concrete class.
    * Persistence operations such as selects are allowed in the super entity
-   * and automatically create instances of the concrete type.<br>
+   * and automatically create instances of the concrete type.
    */
   SINGLE(true, false, true),
 
@@ -75,7 +75,7 @@ public enum InheritanceType {
 
 
 
-  /** true if this entity may have instances. */
+  /** true if this entity is abstract, i.e. cannot have instances. */
   private final boolean abstractClass;
 
   /** true if this entity provides its own table. */
@@ -88,7 +88,7 @@ public enum InheritanceType {
   /**
    * Creates an inheritance type.
    *
-   * @param abstractClass true if this entity may have instances
+   * @param abstractClass true if this entity is abstract, i.e. cannot have instances
    * @param mappingToOwnTable true if this entity provides its own table
    * @param mappingToSuperTable true if this entity maps to the table of the hierarchy root
    */
@@ -100,16 +100,16 @@ public enum InheritanceType {
 
 
   /**
-   * Returns whether entity may have instances.
+   * Returns whether the entity is abstract, i.e. cannot have instances.
    *
-   * @return true if this entity may have instances
+   * @return true if this entity is abstract
    */
   public boolean isAbstractClass() {
     return abstractClass;
   }
 
   /**
-   * Returns whether entity provides its own table.
+   * Returns whether the entity provides its own table.
    *
    * @return true if this entity provides its own table
    */
@@ -118,7 +118,7 @@ public enum InheritanceType {
   }
 
   /**
-   * Returns whether entity maps to the table of the hierarchy root.
+   * Returns whether the entity maps to the table of the hierarchy root.
    *
    * @return true if this entity maps to the table of the hierarchy root
    */
@@ -127,7 +127,7 @@ public enum InheritanceType {
   }
 
   /**
-   * Returns whether entity does not map to any table.
+   * Returns whether the entity does not map to any table.
    *
    * @return true if not mapping
    */

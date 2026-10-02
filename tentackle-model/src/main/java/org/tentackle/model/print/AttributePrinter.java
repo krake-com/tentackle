@@ -85,7 +85,7 @@ public class AttributePrinter {
   }
 
   /**
-   * Prints the attribute's java name.
+   * Prints the attribute's Java name.
    *
    * @return the name
    */

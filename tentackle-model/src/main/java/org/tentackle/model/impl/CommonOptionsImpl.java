@@ -192,10 +192,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   }
 
   /**
-   * Applies given option string.<br>
+   * Applies the given option string.
+   * <p>
+   * Option names are case-insensitive. The value of an option such as {@code FILLER='x'}
+   * keeps its case.
    *
    * @param option the option string
-   * @param ctrl option control: true if turn option on, false if option off, null if on/off missing (defaults to on)
+   * @param ctrl option control: true to turn the option on, false to turn it off, null if not specified (defaults to on)
    * @return true if applied, false if unknown option
    * @throws ModelException if applying the option failed
    */
@@ -203,9 +206,10 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
     String uco = option.toUpperCase(Locale.ROOT);
     String fullopt = uco;
-    int ndx = uco.indexOf('=');   // option followed by '=', ex. COLS=5
+    int ndx = uco.indexOf('=');   // option followed by '=', e.g. COLS=5
     if (ndx > 0) {
       uco = uco.substring(0, ndx);
+      fullopt = uco + option.substring(ndx);    // uppercase name, but keep the case of the value
     }
 
     boolean on = ctrl == null || ctrl;
@@ -330,7 +334,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
    * how the option should be treated.
    *
    * @param option the option string
-   * @return true if option applied, false if not known
+   * @return true if option applied, false if unknown, null or empty
    * @throws ModelException if option malformed
    */
   public boolean processOption(String option) throws ModelException {
@@ -406,7 +410,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   }
 
   /**
-   * Adds a bind option.<br>
+   * Adds a bind option.
    *
    * @param option the option
    */
@@ -418,18 +422,35 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   }
 
   /**
-   * Removes a bind option.<br>
+   * Removes a bind option.
+   * <p>
+   * Only whole options are removed, i.e. {@code COLS} does not remove {@code MAXCOLS=5}.
+   * An option without a value, such as {@code COLS}, also removes that option with any value,
+   * such as {@code COLS=5}.
    *
    * @param option the option
    */
   public void removeBindOption(String option) {
+    boolean withValue = option.indexOf('=') >= 0;
     int ndx = bindOptions.indexOf(option);
-    if (ndx >= 0) {
-      bindOptions.delete(ndx, ndx + option.length());
-      int commaIndex = ndx > 0 ? ndx - 1 : 0;
-      if (commaIndex < bindOptions.length() && bindOptions.charAt(commaIndex) == ',') {
-        bindOptions.deleteCharAt(commaIndex);    // remove comma as well
+    while (ndx >= 0) {
+      int end = ndx + option.length();
+      if ((ndx == 0 || bindOptions.charAt(ndx - 1) == ',') &&
+          (end == bindOptions.length() || bindOptions.charAt(end) == ',' ||
+           !withValue && bindOptions.charAt(end) == '=')) {
+        if (end < bindOptions.length() && bindOptions.charAt(end) == '=') {
+          // skip the value
+          int commaIndex = bindOptions.indexOf(",", end);
+          end = commaIndex < 0 ? bindOptions.length() : commaIndex;
+        }
+        bindOptions.delete(ndx, end);
+        int commaIndex = ndx > 0 ? ndx - 1 : 0;
+        if (commaIndex < bindOptions.length() && bindOptions.charAt(commaIndex) == ',') {
+          bindOptions.deleteCharAt(commaIndex);    // remove comma as well
+        }
+        break;
       }
+      ndx = bindOptions.indexOf(option, ndx + 1);
     }
   }
 
@@ -505,6 +526,12 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
     this.mute = mute;
   }
 
+  /**
+   * Sets the SUPER option.<br>
+   * If set, NODECLARE and NOMETHOD are set as well.
+   *
+   * @param fromSuper true if the attribute is declared in the super class
+   */
   public void setFromSuper(boolean fromSuper) {
     this.fromSuper = fromSuper;
     if (fromSuper) {
@@ -600,6 +627,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
     }
   }
 
+  /**
+   * Creates a model exception.<br>
+   * Overridden by subclasses to refer to the source line or the model element.
+   *
+   * @param message the message
+   * @return the exception
+   */
   public ModelException createModelException(String message) {
     return new ModelException(message);
   }

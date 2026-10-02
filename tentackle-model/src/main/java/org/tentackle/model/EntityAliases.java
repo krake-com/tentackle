@@ -24,7 +24,7 @@ import java.util.StringTokenizer;
 
 /**
  * Holds aliases for entities.<br>
- * Allows mapping of names used in relations or inheritance to map to entity names,
+ * Maps names used in relations or inheritance declarations to entity names,
  * for example, to simplify refactoring.
  * <p>
  * Example:
@@ -44,7 +44,7 @@ public class EntityAliases extends HashMap<String,String> {
   private static final long serialVersionUID = 1L;
 
   /**
-   * Creates empty aliases map.
+   * Creates an empty alias map.
    */
   public EntityAliases() {
   }

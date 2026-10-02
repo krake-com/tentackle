@@ -41,37 +41,42 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Index descriptor.
  * <p>
  * An index line is of the form:
  * <pre>
- *   [optional] [unique] index &lt;name&gt; := part1[ part2 ...] [| condition] [WHERE condition]
+ *   [optional] [unique] [deferred|deferrable|immediate] index &lt;name&gt; := part1[ part2 ...] [| condition | WHERE condition]
  * </pre>
  *
- * where:
+ * where the keywords before {@code index} may appear in any order and:
  * <ul>
  *   <li>{@code optional}: create if database backend supports it. This applies only to functions and conditions
  *   some databases don't support (usually in-memory for tests). In those cases, it may be acceptable to create the index only
  *   for the production database. Without {@code optional} the build would fail.</li>
  *   <li>{@code unique}: create a unique constraint</li>
- *   <li>{@code name}: the suffix of the index name. The effective index name is the tablename followed
- *   by an underscore and then followed by the name.</li>
+ *   <li>{@code deferred}, {@code deferrable}: create a deferrable unique constraint, initially deferred or immediate.
+ *   Only for unique indexes without condition and function. Ignored by backends not supporting deferred constraints.</li>
+ *   <li>{@code immediate}: not deferrable, even if the model defaults say otherwise</li>
+ *   <li>{@code name}: the suffix of the index name. The effective index name is the table name (without schema)
+ *   followed by an underscore and then followed by the name. A schema prefix of the name is ignored.</li>
  * </ul>
  *
  * and {@code part} is:
  * <pre>
- *   [+|-]&lt;column&gt; | &lt;function&gt;(&lt;column&gt;) [asc|desc]
+ *   [+|-]&lt;column&gt; | [+|-]&lt;function&gt;(&lt;column&gt;) [asc|desc]
  * </pre>
  *
  * where:
  * <ul>
- *   <li>{@code name}: is the index name (the table-name will be prepended, separated by an underscore)</li>
- *   <li>{@code column}: is the database column-name of the entity attribute name. Columns of embedded entities
+ *   <li>{@code column}: the database column name or the Java name of the attribute. Columns of embedded entities
  *   are defined by prepending the corresponding dotted path to the column. For multi-column types the
  *   column consists of the attribute's column name, followed by a hash, followed by the column name within the datatype.</li>
- *   <li>{@code function}: is a function name</li>
+ *   <li>{@code function}: a function name, converted to uppercase. The column within the function is converted
+ *   to lowercase.</li>
  *   <li>{@code ASC} or {@code +} for ascending order (default)</li>
  *   <li>{@code DESC} or {@code -} for descending order</li>
  * </ul>
@@ -91,6 +96,9 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public class IndexImpl implements Index {
+
+  /** The WHERE keyword introducing the filter condition. */
+  private static final Pattern WHERE_PATTERN = Pattern.compile("\\bwhere\\b", Pattern.CASE_INSENSITIVE);
 
   private final Entity entity;
   private final EntityFactoryImpl factory;
@@ -153,9 +161,9 @@ public class IndexImpl implements Index {
   }
 
   /**
-   * Parses a configuration line.
+   * Parses the stored index configuration line.
    *
-   * @param entity the entity
+   * @param entity the entity providing the attributes
    * @throws ModelException if parsing the model failed
    */
   public void parse(Entity entity) throws ModelException {
@@ -241,9 +249,11 @@ public class IndexImpl implements Index {
         text = text.substring(0, ndx);
       }
       else {
-        ndx = text.toUpperCase(Locale.ROOT).indexOf("WHERE");
-        if (ndx > 0) {
-          setFilterCondition(text.substring(ndx + 5));
+        // WHERE as a separate word only, not within a column name such as somewhere_id
+        Matcher matcher = WHERE_PATTERN.matcher(text);
+        if (matcher.find() && matcher.start() > 0) {
+          ndx = matcher.start();
+          setFilterCondition(text.substring(matcher.end()));
           text = text.substring(0, ndx);
         }
       }
@@ -319,7 +329,7 @@ public class IndexImpl implements Index {
             column = column.substring(sepNdx + 1);
           }
 
-          // check if the column name exists
+          // find the attribute by column or Java name
           for (Attribute attribute : attrEntity.getAttributes()) {
             if (attribute.getColumnName().equals(attrName) ||
                 attribute.getName().equals(attrName)) {
@@ -417,6 +427,20 @@ public class IndexImpl implements Index {
     return attributes;
   }
 
+  /**
+   * Returns whether at least one of the index columns is function-based.
+   *
+   * @return true if function-based index
+   */
+  public boolean isFunctionBased() {
+    for (IndexAttribute attribute : getAttributes()) {
+      if (attribute.getFunctionName() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 
   public void setName(String name) {
     this.name = name;
@@ -438,6 +462,11 @@ public class IndexImpl implements Index {
     this.optional = optional;
   }
 
+  /**
+   * Sets the filter condition of a partial index.
+   *
+   * @param filterCondition the condition, null or blank if none (trimmed)
+   */
   public void setFilterCondition(String filterCondition) {
     if (StringHelper.isAllWhitespace(filterCondition)) {
       this.filterCondition = null;
@@ -447,6 +476,13 @@ public class IndexImpl implements Index {
     }
   }
 
+  /**
+   * Sets the deferrability explicitly.<br>
+   * Explicit settings are not overridden by the model defaults.
+   *
+   * @param deferrability the deferrability
+   * @see #applyDefaultDeferrability(Deferrability)
+   */
   public void setDeferrability(Deferrability deferrability) {
     this.deferrability = deferrability;
     this.deferrabilityExplicit = true;
@@ -474,7 +510,7 @@ public class IndexImpl implements Index {
   }
 
   /**
-   * Sets the index to be parsed.<br>
+   * Sets whether the index is already parsed.<br>
    * Only necessary for model converters if the properties are set explicitly to prevent parsing.
    *
    * @param parsed true if already parsed
@@ -490,7 +526,7 @@ public class IndexImpl implements Index {
 
   /**
    * Returns whether the index is already parsed.<br>
-   * Indexes are parsed delayed because some attributes may be added later when
+   * Index parsing is delayed because some attributes may be added later when
    * the whole model is known.
    *
    * @return true if parsed
@@ -515,7 +551,6 @@ public class IndexImpl implements Index {
     if (diag != null) {
       throw createModelException(diag);
     }
-    // the leading underscore is ok, because the index name gets the tablename prepended
 
     if (deferrability != Deferrability.NOT_DEFERRABLE) {
       if (!isUnique()) {
@@ -525,15 +560,14 @@ public class IndexImpl implements Index {
       if (getFilterCondition() != null) {
         throw createModelException("a filtered/partial unique index cannot be deferrable");
       }
-      for (IndexAttribute attribute : getAttributes()) {
-        if (attribute.getFunctionName() != null) {
-          throw createModelException("a function-based unique index cannot be deferrable");
-        }
+      if (isFunctionBased()) {
+        throw createModelException("a function-based unique index cannot be deferrable");
       }
     }
 
     for (Backend backend: factory.getBackends()) {
       try {
+        // check the effective name: a leading underscore in the index name is ok, because the table name is prepended
         backend.assertValidName(SqlNameType.INDEX_NAME, createDatabaseIndexName(entity));
         if (getFilterCondition() != null && !backend.isFilteredIndexSupported() && !isOptional()) {
           throw createModelException("filtered/partial index not supported by " + backend);
@@ -582,7 +616,7 @@ public class IndexImpl implements Index {
   /**
    * Creates a model exception.
    * <p>
-   * Refers to the source line if set, otherwise just the message.
+   * Refers to the source line if set, otherwise to the entity.
    *
    * @param message the message
    * @return the exception
@@ -605,7 +639,9 @@ public class IndexImpl implements Index {
 
 
   /**
-   * Checks whether the other index is logically equal to this index.
+   * Checks whether the other index is logically equal to this index.<br>
+   * Compares the filter condition and the order, direction and function of the columns only.
+   * The name, uniqueness and deferrability are not compared.
    *
    * @param otherIndex the other index
    * @return true if equal

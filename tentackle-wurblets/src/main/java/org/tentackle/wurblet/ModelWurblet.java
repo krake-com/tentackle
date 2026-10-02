@@ -66,10 +66,17 @@ import java.util.regex.Pattern;
  * <ul>
  * <li><em>--method=&lt;method-name&gt;:</em> optional name of the generated method. Defaults to the wurblet tag.</li>
  * <li><em>--model=&lt;mapping&gt;:</em> optional model mapping. Derived from the source file, if missing.</li>
- * <li><em>--remote:</em> force generating remote code. Taken from model-defaults, if missing.</li>
- * <li><em>--noremote:</em> don't generate remote code. Taken from model-defaults, if missing.</li>
+ * <li><em>--remote:</em> force generating remote code.</li>
+ * <li><em>--noremote:</em> don't generate remote code.</li>
  * </ul>
+ * If neither {@code --remote} nor {@code --noremote} is given, the remote flag is taken from the entity's options,
+ * or from the model defaults if there is no entity.
+ * <p>
+ * The wurblet configuration option {@code missingModelOk} allows the entity to be missing, i.e. {@link #getEntity()}
+ * returns null.
+ * <p>
  * For the general form of a wurblet-anchor, see {@link AbstractWurblet}.
+ *
  * @author  harald
  */
 public class ModelWurblet extends AbstractJavaWurblet {
@@ -120,7 +127,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /** true if isPdo != null and wurblet anchor is declared within an interface. */
   private boolean isInterface;
 
-  /** true if --remote option set. */
+  /** the effective remote flag. */
   private boolean remote;
 
   /** the pdo classname if isPdo == true, the operation classname if isPdo == false, null if the class cannot be determined. */
@@ -313,7 +320,8 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Returns true if --remote option set.
+   * Returns whether remote code should be generated.<br>
+   * Determined by the {@code --remote}/{@code --noremote} options, the entity's options or the model defaults.
    *
    * @return true if remote
    */
@@ -446,7 +454,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /**
    * Gets the model entity.
    *
-   * @return the entity
+   * @return the entity, null only if the wurblet is configured with {@code missingModelOk}
    */
   public Entity getEntity() {
     return entity;
@@ -684,7 +692,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to load the map file.
+   * Overridden to load the model and determine the entity.
    *
    * @throws WurbelException if running the wurblet failed
    */

@@ -39,12 +39,12 @@ public record PrintConfiguration(boolean compact, boolean asComment, boolean use
    * Returns whether the given annotation should be printed as an attribute option.
    * <p>
    * {@link #optionAnnotations} is a list of annotations that should be printed as attribute options.<br>
-   * A comma separates multiple annotations.<br>
-   * If the annotation ends with a {@code |}, it matches only annotations without parameters.<br>
+   * If an entry ends with a {@code |}, it matches only the annotation without parameters.<br>
    * The special annotation {@code @*} matches all annotations and {@code @*|}
    * matches all annotations without parameters.
    * <p>
-   * Example: {@code @NotNull|, @NotZero}
+   * Example: the entries {@code @NotNull|} and {@code @NotZero} print {@code @NotNull}, {@code @NotZero}
+   * and {@code @NotZero(...)} as options, but not {@code @NotNull(...)}.
    *
    * @param annotation the annotation string
    * @return true to print as an attribute option
@@ -54,8 +54,8 @@ public record PrintConfiguration(boolean compact, boolean asComment, boolean use
     for (String anno: optionAnnotations) {
       if ("@*".equals(anno) ||
           "@*|".equals(anno) && !withParams ||
-          anno.endsWith("|") && anno.equals(annotation) ||
-          annotation.startsWith(anno) &&
+          anno.endsWith("|") && annotation.equals(anno.substring(0, anno.length() - 1)) ||
+          !anno.endsWith("|") && annotation.startsWith(anno) &&
             (annotation.equals(anno) ||
              // is longer and followed by some args
              !Character.isJavaIdentifierPart(annotation.charAt(anno.length())))) {

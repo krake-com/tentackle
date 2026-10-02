@@ -37,6 +37,7 @@ interface ModelUtilitiesHolder {
 
 /**
  * Model utility methods.<br>
+ * Used to generate table aliases from syllables and to detect renamed columns during migration.<br>
  * May be replaced by project-specific implementation via <code>@Service</code>.
  */
 @Service(ModelUtilities.class)    // defaults to self

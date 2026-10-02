@@ -49,7 +49,7 @@ public interface CustomMigrationValidator {
    * Validates a migration.
    *
    * @param migrator the table migrator
-   * @param result the generated sql
+   * @param result the migration result including the generated SQL
    * @throws ModelException if validation failed
    */
   void validate(TableMigrator migrator, TableMigrator.Result result) throws ModelException;
@@ -57,7 +57,7 @@ public interface CustomMigrationValidator {
 
 
   /**
-   * Gets all custom model validators.
+   * Gets all custom migration validators.
    *
    * @return the validators, never null
    */

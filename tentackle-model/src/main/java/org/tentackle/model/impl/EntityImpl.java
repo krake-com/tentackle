@@ -281,9 +281,9 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Sets the entity id.
+   * Sets the class id.
    *
-   * @param classId the id
+   * @param classId the class id
    */
   public void setClassId(int classId) {
     this.classId = classId;
@@ -317,9 +317,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Sets the tablename.
+   * Sets the table name.<br>
+   * The name is converted to lowercase. A schema prefix ({@code schema.table}) is split off into the schema name.
    *
-   * @param tableName the tablename
+   * @param tableName the table name, null if none
    */
   public void setTableName(String tableName) {
     if (tableName == null) {
@@ -440,25 +441,25 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public List<Entity> getLeafEntities() {
-    List<Entity> leafs = new ArrayList<>();
-    collectLeafEntities(leafs, this);
-    return leafs;
+    List<Entity> leaves = new ArrayList<>();
+    collectLeafEntities(leaves, this);
+    return leaves;
   }
 
   /**
    * Recursively collects the leaf children.
    *
-   * @param leafs the list of leaf children so far
+   * @param leaves the list of leaf children so far
    * @param entity the current entity to analyze
    */
-  protected void collectLeafEntities(List<Entity> leafs, Entity entity) {
+  protected void collectLeafEntities(List<Entity> leaves, Entity entity) {
     if (entity.isAbstract()) {
       for (Entity child: entity.getSubEntities()) {
-        collectLeafEntities(leafs, child);
+        collectLeafEntities(leaves, child);
       }
     }
     else  {
-      leafs.add(entity);
+      leaves.add(entity);
     }
   }
 
@@ -543,7 +544,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Sets the name of the super entity.
    *
-   * @param superEntityName the super entity
+   * @param superEntityName the name of the super entity
    */
   public void setSuperEntityName(String superEntityName) {
     this.superEntityName = superEntityName;
@@ -837,10 +838,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Moved id and serial to the end of a newly created attribute list.
+   * Moves id and serial to the end of a newly created attribute list.
    *
    * @param attributes the attribute list
-   * @return the new filtered attribute list
+   * @return a new list with id and serial moved to the end
    */
   protected List<Attribute> moveIdSerialToEnd(List<Attribute> attributes) {
     Attribute idAttribute = null;
@@ -889,7 +890,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    *
    * @param entity the entity defining id and serial
    * @param attributes the attribute list
-   * @return the new filtered attribute list
+   * @return a new list with id and serial of the given entity appended
    */
   protected List<Attribute> appendIdSerial(Entity entity, List<Attribute> attributes) {
     Attribute idAttribute = null;
@@ -1124,6 +1125,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     return deeplyReferenced;
   }
 
+  /**
+   * Sets whether this entity or one of its components is deeply referenced.
+   *
+   * @param deeplyReferenced true if deeply referenced
+   */
   public void setDeeplyReferenced(boolean deeplyReferenced) {
     this.deeplyReferenced = deeplyReferenced;
   }
@@ -1215,6 +1221,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    *
    * @param uniqueDomainKeys the unique domain key attributes
    * @param entity the entity to inspect
+   * @throws ModelException if the model is inconsistent
    */
   protected void getUniqueDomainKeyImpl(List<Attribute> uniqueDomainKeys, Entity entity) throws ModelException {
     getUniqueDomainKeyImpl(uniqueDomainKeys, entity, new HashSet<>());
@@ -1372,7 +1379,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public void validate() throws ModelException {
 
     if (StringHelper.isAllWhitespace(getName())) {
-      throw new ModelException("configuration 'name = ...' missing", this);
+      throw new ModelException("configuration 'name := ...' missing", this);
     }
     String diag = NameVerifier.getInstance().verifyEntityName(this);
     if (diag != null) {
@@ -1389,12 +1396,12 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     if (!isAbstract() && !isEmbedded()) {
       if (getClassId() == 0) {
-        throw new ModelException("configuration 'id = ...' missing", this);
+        throw new ModelException("configuration 'id := ...' missing", this);
       }
     }
     else  {
       if (getClassId() != 0) {
-        throw new ModelException("configuration 'id = ...' not allowed", this);
+        throw new ModelException("configuration 'id := ...' not allowed", this);
       }
     }
 
@@ -1459,6 +1466,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
+    // names that differ only in case or non-alphanumeric characters (e.g. underscores) are considered confusing
     Map<String,Attribute> javaNames = new HashMap<>();
     for (Attribute attribute: getAttributes()) {
       attribute.validate();
@@ -1480,6 +1488,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       if (!columnNames.add(normalizedColumnName)) {
         throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
       }
+      // a column name must not normalize to the Java name of another attribute
       Attribute other = javaNames.get(normalizedColumnName);
       if (other != null && !other.equals(attribute)) {
         throw new ModelException("misleading column name '" + attribute.getColumnName() +
@@ -1489,6 +1498,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
+    // indexes are parsed later in ModelImpl.updateRelations(): skip unparsed ones here
     Set<String> indexNames = new HashSet<>();
     for (Index index: getIndexes()) {
       if (((IndexImpl) index).isParsed()) {
@@ -1530,7 +1540,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public void validateRelated() throws ModelException {
     if (getTableProvidingEntity() == this) {
       if (StringHelper.isAllWhitespace(getTableName())) {
-        throw new ModelException("configuration 'table = ...' missing", this);
+        throw new ModelException("configuration 'table := ...' missing", this);
       }
       for (Backend backend: factory.getBackends()) {
         try {
@@ -1544,10 +1554,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     }
     else  {
       if (!StringHelper.isAllWhitespace(getTableName())) {
-        throw new ModelException("configuration 'table = ...' not allowed", this);
+        throw new ModelException("configuration 'table := ...' not allowed", this);
       }
       if (!StringHelper.isAllWhitespace(getTableAlias())) {
-        throw new ModelException("configuration 'alias = ...' not allowed", this);
+        throw new ModelException("configuration 'alias := ...' not allowed", this);
       }
     }
 
@@ -1713,7 +1723,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   /**
-   * Normalizes a name to detect misleading java- or column names.
+   * Normalizes a name to detect misleading Java or column names.
    *
    * @param name the name
    * @return the normalized name

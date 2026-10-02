@@ -96,6 +96,7 @@ public interface Index extends ModelElement, Commented {
    * @param backend the backend to create SQL code for
    * @param entity the entity to create the index for
    * @return the SQL code
+   * @throws org.tentackle.sql.BackendException if the index is not optional and not supported by the backend
    */
   String sqlCreateIndex(Backend backend, Entity entity);
 

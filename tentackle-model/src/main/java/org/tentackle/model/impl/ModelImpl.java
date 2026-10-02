@@ -95,7 +95,7 @@ public class ModelImpl implements Model {
   /** cached entities mapped by URL. */
   private final Map<String, EntityInfo> urlToEntityInfoMap;
 
-  /** cached java source paths mapped to file paths. */
+  /** source infos mapped by entity (to detect entities defined in more than one file). */
   private final Map<Entity, SourceInfo> entityToSourceInfoMap;
 
   /** cached entities mapped by entity name. */
@@ -104,7 +104,7 @@ public class ModelImpl implements Model {
   /** cached entities mapped by the table name (for entities associated with a table). */
   private final Map<String, EntityInfo> tableToEntityInfoMap;
 
-  /** cached entities mapped by entity id (for entities associated with a class id). */
+  /** cached entities mapped by class id (for entities associated with a class id). */
   private final Map<Integer, EntityInfo> classidToEntityInfoMap;
 
   /** model dirs processed so far. */
@@ -135,7 +135,8 @@ public class ModelImpl implements Model {
   /**
    * Creates a model.
    *
-   * @param name the model name.
+   * @param name the model name
+   * @throws ModelException if the model defaults or entity aliases given as system properties are malformed
    */
   public ModelImpl(String name) throws ModelException {
     this.name = name;
@@ -151,7 +152,7 @@ public class ModelImpl implements Model {
     /*
      * Presets model configuration from the runtime properties.
      * This is provided to easily configure unit tests as an alternative
-     * to extend DbTestUtilities in tentackle-test-pdo.
+     * to extending DbTestUtilities in tentackle-test-pdo.
      * Example:
      *
        <plugin>
@@ -256,6 +257,7 @@ public class ModelImpl implements Model {
     }
 
     // update track type and cascaded delete according to model defaults
+    // (the track type is only raised, never lowered by the defaults)
     boolean updateRelationsNecessary = false;
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       ModelDefaults defaults = entityInfo.getModelDefaults();
@@ -269,7 +271,9 @@ public class ModelImpl implements Model {
 
         if (Boolean.TRUE.equals(defaults.getDeletionCascaded())) {
           for (Relation relation : entity.getRelations()) {
-            if (relation.isComposite() && !relation.isDeletionCascaded()) {
+            // object relations are always deleted cascaded and must not be marked explicitly
+            if (relation.isComposite() && relation.getRelationType() == RelationType.LIST &&
+                !relation.isDeletionCascaded()) {
               ((RelationImpl) relation).setDeletionCascaded(true);
               updateRelationsNecessary = true;
             }
@@ -303,7 +307,7 @@ public class ModelImpl implements Model {
     }
 
     if (entityInfo == null) {
-      // load from file
+      // load from URL
       try {
         entityInfo = createEntityInfo(modelDefaults, url);
       }
@@ -407,7 +411,8 @@ public class ModelImpl implements Model {
         IndexImpl index = (IndexImpl) idx;
         if (!index.isParsed()) {
           index.parse(entity);
-          if (setDeferrability && index.isUnique() && index.getFilterCondition() == null) {
+          // only unique indexes can be deferrable, and neither filtered nor function-based ones
+          if (setDeferrability && index.isUnique() && index.getFilterCondition() == null && !index.isFunctionBased()) {
             index.applyDefaultDeferrability(Deferrability.DEFERRABLE_IMMEDIATE);
           }
         }
@@ -424,6 +429,7 @@ public class ModelImpl implements Model {
     urlToEntityInfoMap.clear();
     entityToSourceInfoMap.clear();
     modelDirs.clear();
+    foreignKeys = null;
   }
 
   @Override
@@ -633,7 +639,7 @@ public class ModelImpl implements Model {
 
       // apply the model defaults' deferrability: foreign keys are not user-declared,
       // so this is the only way to set their deferrability, always as DEFERRABLE_IMMEDIATE
-      // (deferred is never propagated automatically, see ModelDefaults#getDeferred())
+      // (deferred is never propagated automatically, see ModelDefaults#getDeferrability())
       for (ForeignKey foreignKey : foreignKeys) {
         Entity referencingEntity = foreignKey.getReferencingEntity();
         if (!referencingEntity.getOptions().noModelDefaults()) {
@@ -651,9 +657,11 @@ public class ModelImpl implements Model {
 
 
   /**
-   * Adds an entity to the model.
+   * Adds an entity to the model.<br>
+   * If schema names are mapped, the schema-qualified table name is folded into a flat table name
+   * ({@code schema.table} becomes {@code schema_table}).
    *
-   * @param entityInfo the model entity
+   * @param entityInfo the entity info
    * @throws ModelException if duplicate entities detected
    */
   protected void addEntityInfo(EntityInfo entityInfo) throws ModelException {
@@ -711,7 +719,7 @@ public class ModelImpl implements Model {
     Set<ModelError> errors = new LinkedHashSet<>();
     Entity loadedEntity = loadedEntityInfo == null ? null : loadedEntityInfo.getEntity();
 
-    // set inheritance entities links
+    // rebuild the super/sub entity links
 
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       EntityImpl entity = (EntityImpl) entityInfo.getEntity();
@@ -879,7 +887,7 @@ public class ModelImpl implements Model {
                 }
                 if (nmRelation.getSelectionType() == SelectionType.LAZY && !nmRelation.isSerialized()) {
                   // the PdoRelations wurblet will generate a join
-                  // which makes only sense if the PDOs are transferred via network
+                  // which only makes sense if the PDOs are transferred via network
                   ((RelationImpl) nmRelation).setSerialized(true);      // retrieve from server
                   ((RelationImpl) nmRelation).setClearOnRemoteSave(true); // but don't send back to server
                 }
@@ -965,7 +973,7 @@ public class ModelImpl implements Model {
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       /*
-       * The entity should provide a root class id if it is a composite of more than one root entities
+       * The entity should provide a root class id if it is a composite of more than one root entity
        * and holds exactly one root attribute column (2 means N:M relation, for example).
        */
       Set<Entity> rootEntities = entity.getRootEntities();
@@ -1002,7 +1010,7 @@ public class ModelImpl implements Model {
         }
       }
 
-      // The entity should provide a rootId if it is a composite with a relation path of more than one hops
+      // The entity should provide a rootId if it is a composite with a relation path of more than one hop
       // or an OBJECT-relation
       if (!entity.isEmbedded()) {
         for (List<Relation> compositePath : entity.getCompositePaths()) {
@@ -1015,7 +1023,8 @@ public class ModelImpl implements Model {
       }
     }
 
-    // applies model defaults
+    // apply the model defaults:
+    // the track type is only raised, ROOT, ROOTID and ROOTCLASSID go to the top super entity, REMOTE is forced
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       ModelDefaults defaults = entityInfo.getModelDefaults();
       Entity entity = entityInfo.getEntity();
@@ -1198,7 +1207,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    // generate the table aliases.
+    // collect the explicitly defined table aliases and detect duplicates
     Map<String,Entity> aliasMap = new HashMap<>();
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
@@ -1221,7 +1230,7 @@ public class ModelImpl implements Model {
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
-        // determine the meaningful letters: Start and end of camel case words
+        // determine the meaningful letters: the start of each camel-case word and all digits
         StringBuilder letters = new StringBuilder();
         for (int i = 0; i < entity.getName().length(); i++) {
           char currentChar = entity.getName().charAt(i);
@@ -1254,7 +1263,8 @@ public class ModelImpl implements Model {
         }
 
         if (!aliasFound) {
-          // try the first 3 chars, then the first 4, finally 5 non-vocal chars
+          // try the first syllable's letter, if any, followed by the consonants of the next 5 characters,
+          // starting at an alias length of 3
           if (letters.length() > 1) {
             letters.setLength(1);
           }
@@ -1298,7 +1308,7 @@ public class ModelImpl implements Model {
     // sets the ordinals of attributes, relations and indexes
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
-      if (!entity.isAbstract()) {   // only leafs
+      if (!entity.isAbstract()) {   // only concrete entities
         Entity[] entities = new Entity[entityInfo.getEntity().getOrdinal() + 1];
         List<Entity> superEntities = entity.getSuperEntities();
         // reverse the path in the array
@@ -1338,7 +1348,7 @@ public class ModelImpl implements Model {
       validateComponents(topEntity, topEntity.getIntegrity(), errors);
     }
     else  {
-      // check that within each class hierarchy
+      // validate every (sub)hierarchy
       for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
         Entity entity = entityInfo.getEntity();
         validateInheritanceHierarchy(entity, entity.getInheritanceType(), entity.getOptions().getTrackType(),
@@ -1356,7 +1366,7 @@ public class ModelImpl implements Model {
    * Checks whether extending the given super entity would create a cycle in the inheritance hierarchy.<br>
    * Walking up such a hierarchy would never terminate, so the link must not be established at all.
    *
-   * @param entity the entity to extend the super entity
+   * @param entity the entity that would extend the super entity
    * @param superEntity the super entity to be extended
    * @return true if the link would create a cycle
    */
@@ -1460,11 +1470,11 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Creates a model entity wrapper.
+   * Creates the entity info for a model source.
    *
-   * @param defaults the optional model defaults
-   * @param url the url of the model file
-   * @return the model entity
+   * @param defaults the optional model defaults, overridden by the defaults embedded in the model source
+   * @param url the URL of the model source
+   * @return the entity info
    * @throws ModelException if creation failed
    */
   protected EntityInfo createEntityInfo(ModelDefaults defaults, URL url) throws ModelException {
@@ -1489,7 +1499,7 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Creates a reader for the given name.
+   * Creates a reader for the given URL.
    *
    * @param url the model url
    * @return the reader
@@ -1544,7 +1554,7 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Verifies that the integrity is the same within a given composite hierarchy.<br>
+   * Verifies that the integrity is the same within a given composite hierarchy.
    *
    * @param entity the entity to check
    * @param integrity the integrity type

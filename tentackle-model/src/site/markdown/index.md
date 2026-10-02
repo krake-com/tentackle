@@ -1,6 +1,6 @@
 # Tentackle Data Model
 
-The model API describing the application's entities and relationships. It is consumed by the wurblets, the PDO wizard and the SQL plugin.
+The model API describing the application's entities and relationships. It is consumed by the wurblets, the PDO wizard, the SQL plugin and the MCP plugin.
 
 ## Documentation & reports
 

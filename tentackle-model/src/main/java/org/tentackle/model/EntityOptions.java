@@ -35,9 +35,11 @@ public interface EntityOptions extends CommonOptions {
   Entity getEntity();
 
   /**
-   * Returns whether global model defaults should be applied or not.<br>
+   * Returns whether the model defaults should be ignored.<br>
+   * Set by the global option {@code nodefaults}.
+   * See {@link ModelDefaults} for the defaults still applied.
    *
-   * @return true if ignore model defaults completely
+   * @return true if ignore model defaults
    */
   boolean noModelDefaults();
 
@@ -51,7 +53,7 @@ public interface EntityOptions extends CommonOptions {
   /**
    * true if [NOPKEY]-option set.
    *
-   * @return the NoPrimary
+   * @return true if no primary key
    */
   boolean isNoPrimaryKey();
 
@@ -77,7 +79,7 @@ public interface EntityOptions extends CommonOptions {
   boolean isNormTextProvided();
 
   /**
-   * true if [ROOT]-option set
+   * true if [ROOT]-option set.
    *
    * @return true if this is a root entity
    */
@@ -105,7 +107,7 @@ public interface EntityOptions extends CommonOptions {
   List<String> getSorting();
 
   /**
-   * Returns whether entity supports remoting.
+   * Returns whether the entity supports remoting.
    *
    * @return true if with remoting, false if only local
    */
@@ -113,7 +115,7 @@ public interface EntityOptions extends CommonOptions {
 
   /**
    * Returns whether the DDL of this entity is maintained by another application.<br>
-   * Provided entities are ignored by the tentackle-sql maven plugin and no SQL-code will be generated at all,
+   * Provided entities are ignored by the tentackle-sql-maven-plugin, and no SQL code will be generated at all,
    * neither for create nor any migration.
    *
    * @return true if provided

@@ -30,14 +30,14 @@ public class SourceInfo {
 
   private final String fileName;    // the filename
   private final int lineNumber;     // first line number in filename (starting at 1)
-  private final int position;       // the character position withing the line (starting at 1)
+  private final int position;       // the character position within the line (starting at 1)
 
   /**
    * Creates a source info.
    *
    * @param fileName the name
-   * @param lineNumber the linenumber (starting at 1, 0 if unknown)
-   * @param position the character position withing the line (starting at 1, 0 if unknown)
+   * @param lineNumber the line number (starting at 1, 0 if unknown)
+   * @param position the character position within the line (starting at 1, 0 if unknown)
    */
   public SourceInfo(String fileName, int lineNumber, int position) {
     this.fileName = fileName;
@@ -49,7 +49,7 @@ public class SourceInfo {
    * Creates a source info.
    *
    * @param fileName the name
-   * @param lineNumber the linenumber (starting at 1)
+   * @param lineNumber the line number (starting at 1)
    */
   public SourceInfo(String fileName, int lineNumber) {
     this(fileName, lineNumber, 0);
@@ -93,7 +93,7 @@ public class SourceInfo {
   /**
    * Gets the line number.
    *
-   * @return the line number starting at 1
+   * @return the line number starting at 1, 0 if unknown
    */
   public int getLineNumber() {
     return lineNumber;
@@ -102,7 +102,7 @@ public class SourceInfo {
   /**
    * Gets the character position within the line.
    *
-   * @return the position, starting at 1
+   * @return the position, starting at 1, 0 if unknown
    */
   public int getPosition() {
     return position;
