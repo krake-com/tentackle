@@ -79,7 +79,6 @@ public class DbTransactionFactory {
   private int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
   private volatile boolean configChanged;
   private boolean collectingStatistics;
-  private volatile boolean terminationRequested;
 
   // the transaction counter
   private static final AtomicLong TX_COUNT = new AtomicLong();
@@ -211,13 +210,24 @@ public class DbTransactionFactory {
   }
 
   /**
-   * Requests supervisor thread termination.
+   * Requests supervisor thread termination.<br>
+   * The supervisor is started again when the next transaction is created.
    */
-  public void requestTermination() {
+  public synchronized void requestTermination() {
     if (transactionSupervisor != null) {
-      terminationRequested = true;
+      transactionSupervisor.requestTermination();
       transactionSupervisor.interrupt();
+      transactionSupervisor = null;   // the next transaction starts a new supervisor
     }
+  }
+
+  /**
+   * Returns whether the supervisor thread is running.
+   *
+   * @return true if running, false if not started yet or terminated
+   */
+  public synchronized boolean isSupervisorRunning() {
+    return transactionSupervisor != null && transactionSupervisor.isAlive();
   }
 
 
@@ -242,13 +252,16 @@ public class DbTransactionFactory {
 
   private synchronized void ensureSupervisorAlive() {
     if (transactionSupervisor == null) {
+      configChanged = true;   // log the configuration when started
       transactionSupervisor = new TransactionSupervisor();
       transactionSupervisor.start();
     }
   }
 
-  private synchronized void supervisorTerminated() {
-    transactionSupervisor = null;
+  private synchronized void supervisorTerminated(TransactionSupervisor supervisor) {
+    if (transactionSupervisor == supervisor) {    // not replaced by a new supervisor in the meantime
+      transactionSupervisor = null;
+    }
   }
 
 
@@ -287,10 +300,20 @@ public class DbTransactionFactory {
     }
 
     private final Map<Long, TxIdleCounter> idleMap = new HashMap<>();    // idle transactions suspected to time out
+    private volatile boolean terminationRequested;                         // true if this thread should stop
 
     private TransactionSupervisor() {
       super("Transaction Supervisor");
       setDaemon(true);
+    }
+
+    /**
+     * Requests this thread to terminate.<br>
+     * The flag belongs to the thread, not to the factory, so that a supervisor started
+     * after the termination of a previous one is not stopped right away.
+     */
+    private void requestTermination() {
+      terminationRequested = true;
     }
 
     @Override
@@ -363,7 +386,7 @@ public class DbTransactionFactory {
         }
       }
 
-      supervisorTerminated();
+      supervisorTerminated(this);
       LOGGER.info("{0} terminated", getName());
     }
 
