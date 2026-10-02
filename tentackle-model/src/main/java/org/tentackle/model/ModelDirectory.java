@@ -47,21 +47,7 @@ public interface ModelDirectory {
   List<URL> getURLs() throws ModelException;
 
   /**
-   * Gets the model defaults.
-   *
-   * @return the defaults, null if none
-   */
-  ModelDefaults getModelDefaults();
-
-  /**
-   * Gets the entity aliases.
-   *
-   * @return the aliases, null if none
-   */
-  EntityAliases getEntityAliases();
-
-  /**
-   * Returns whether the directory has changed since it was scanned, i.e. files were added or removed.<br>
+   * Returns whether the directory has changed since it was scanned, i.e., files were added or removed.<br>
    * Changes of the file contents are detected per entity by {@link EntityInfo#hasChanged()}.
    *
    * @return true if changed

@@ -83,15 +83,4 @@ public class EntityAliases extends HashMap<String,String> {
     }
   }
 
-  /**
-   * Maps the given name to an entity name.
-   *
-   * @param name the original name used in the model
-   * @return the possibly mapped name if name was an alias
-   */
-  public String translate(String name) {
-    String mappedName = get(name);
-    return mappedName == null ? name : mappedName;
-  }
-  
 }

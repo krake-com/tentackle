@@ -1466,7 +1466,7 @@ public class ModelImpl implements Model {
    * @throws ModelException if the directory does not exist or is not a directory
    */
   protected ModelDirectory createModelDirectory(String modelDir) throws ModelException {
-    return new ModelDirectoryImpl(modelDir, modelDefaults, entityAliases);
+    return new ModelDirectoryImpl(modelDir);
   }
 
   /**
