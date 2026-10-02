@@ -106,7 +106,7 @@ public class PdoMember {
   /**
    * Gets the member's name.
    *
-   * @return the name (first letter capitalized)
+   * @return the name (first letter in lowercase)
    */
   public String getName() {
     return name;
@@ -170,7 +170,7 @@ public class PdoMember {
   /**
    * Gets the optional comment.
    *
-   * @return the comment, null if none
+   * @return the comment, empty or null if none
    */
   public String getComment() {
     return comment;
@@ -210,7 +210,7 @@ public class PdoMember {
       }
     }
     buf.append(type.text).append(' ').append(name);
-    if (comment != null) {
+    if (comment != null && !comment.isEmpty()) {
       buf.append(" \"").append(comment).append('"');
     }
     return buf.toString();

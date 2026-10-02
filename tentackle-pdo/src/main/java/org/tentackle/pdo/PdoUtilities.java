@@ -224,7 +224,7 @@ public class PdoUtilities {
 
 
   /**
-   * Gets the table name of given class.
+   * Gets the class id of given class.
    *
    * @param <T> the pdo type
    * @param clazz the pdo class
@@ -243,7 +243,7 @@ public class PdoUtilities {
 
 
   /**
-   * Gets the table name of given classes.
+   * Gets the table names of given classes.
    *
    * @param classes the PDO classes
    * @return the names, null if classes is null or empty
@@ -273,6 +273,7 @@ public class PdoUtilities {
    * @see PersistentObjectService
    * @see PersistentOperationService
    * @see DomainObjectService
+   * @see DomainOperationService
    */
   public Class<?> determineServicedClass(Class<?> implementingClass) {
     PersistentObjectService pobj = implementingClass.getAnnotation(PersistentObjectService.class);
@@ -316,11 +317,13 @@ public class PdoUtilities {
 
 
   /**
-   * Deletes a List of objects.
+   * Deletes a collection of objects.<br>
    * Virgin objects are not deleted.
+   * All objects must belong to the same session.
+   * The objects are deleted within a transaction, which is rolled back if deleting fails.
    *
-   * @param pdos the list of object to delete
-   * @return the number of objects deleted, -1 if error (some object wasn't deleted)
+   * @param pdos the objects to delete
+   * @return the number of objects deleted
    */
   public int deleteCollection (Collection<? extends PersistentDomainObject<?>> pdos) {
     int deleted = 0;
@@ -370,7 +373,7 @@ public class PdoUtilities {
    * @param oldCollection the list of objects stored in db
    * @param newCollection the new list of objects
    *
-   * @return the number of objects deleted, -1 if some error
+   * @return the number of objects deleted
    */
   public int deleteMissingInCollection(Collection<? extends PersistentDomainObject<?>> oldCollection,
                                               Collection<? extends PersistentDomainObject<?>> newCollection) {
@@ -434,15 +437,13 @@ public class PdoUtilities {
    * If modifiedOnly is true, only isModified() objects will be saved.
    * All objects with isPersistable() == false and isNew() == false
    * are removed!
-   * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
-   * The errorhandler will be invoked if such an object
-   * is detected. This is a quality measure to ensure code consistency.
-   * The wurblets automatically take care of that.
+   * All objects must belong to the same session.
+   * The objects are saved within a transaction, which is rolled back if saving fails.
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
    * @param usePersist true to use persist() instead of save() and replace objects in the collection
-   * @return the number of objects saved, -1 if some error
+   * @return the number of objects saved
    */
   @SuppressWarnings("unchecked")
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos, boolean modifiedOnly, boolean usePersist) {
@@ -515,14 +516,12 @@ public class PdoUtilities {
    * If modifiedOnly is true, only isModified() objects will be saved.
    * All objects with isPersistable() == false and isNew() == false
    * are removed!
-   * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
-   * The errorhandler will be invoked if such an object
-   * is detected. This is a quality measure to ensure code consistency.
-   * The wurblets automatically take care of that.
+   * All objects must belong to the same session.
+   * The objects are saved within a transaction, which is rolled back if saving fails.
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
-   * @return the number of objects saved, -1 if some error
+   * @return the number of objects saved
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos, boolean modifiedOnly) {
     return saveCollection(pdos, modifiedOnly, false);
@@ -534,7 +533,7 @@ public class PdoUtilities {
    *
    * @param pdos the collection of PDOs
    *
-   * @return the number of objects saved, -1 if some error
+   * @return the number of objects saved
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos) {
     return saveCollection(pdos, false);
@@ -551,23 +550,26 @@ public class PdoUtilities {
   public IdentifiableKey<PersistentDomainObject<?>> idStringToIdentifiableKey(String idString) {
     if (idString != null) {
       StringTokenizer stok = new StringTokenizer(idString, ":");
-      if (stok.hasMoreTokens()) {
-        int classId = Integer.parseInt(stok.nextToken());
-        if (stok.hasMoreTokens()) {
-          int id = Integer.parseInt(stok.nextToken());
-          String className = SessionUtilities.getInstance().getClassName(classId);
-          if (className != null && id != 0) {
-            try {
-              return new IdentifiableKey<>(className, id);
-            }
-            catch (ClassNotFoundException cx) {
-              throw new PersistenceException("cannot load PDO class " + className + " for classId " + classId, cx);
-            }
+      if (stok.countTokens() == 2) {
+        int classId;
+        long id;
+        try {
+          classId = Integer.parseInt(stok.nextToken());
+          id = Long.parseLong(stok.nextToken());
+        }
+        catch (NumberFormatException nx) {
+          throw new PersistenceException("not an id-string: '" + idString + "'", nx);
+        }
+        String className = SessionUtilities.getInstance().getClassName(classId);
+        if (className != null && id != 0) {
+          try {
+            return new IdentifiableKey<>(className, id);
           }
-          else {
-            throw new PersistenceException("no PDO key for " + classId + ":" + id);
+          catch (ClassNotFoundException cx) {
+            throw new PersistenceException("cannot load PDO class " + className + " for classId " + classId, cx);
           }
         }
+        throw new PersistenceException("no PDO key for " + classId + ":" + id);
       }
     }
     throw new PersistenceException("not an id-string: '" + idString + "'");
@@ -585,15 +587,18 @@ public class PdoUtilities {
     return memberMap.computeIfAbsent(clazz, cls -> {
       List<PdoMember> members = new ArrayList<>();
       for (Method method : cls.getMethods()) {
+        if (Modifier.isStatic(method.getModifiers()) || method.getReturnType() == void.class) {
+          continue;   // not a getter
+        }
         String name = method.getName();
-        if (!Modifier.isStatic(method.getModifiers()) && !method.getReturnType().equals(Void.class)) {
-          if (name.startsWith("is")) {
-            name = StringHelper.firstToLower(name.substring(2));
-          }
-          else if (name.startsWith("get")) {
-            name = StringHelper.firstToLower(name.substring(3));
-          }
-          else continue;    // not a getter
+        if (name.startsWith("is")) {
+          name = StringHelper.firstToLower(name.substring(2));
+        }
+        else if (name.startsWith("get")) {
+          name = StringHelper.firstToLower(name.substring(3));
+        }
+        else {
+          continue;   // not a getter
         }
         Persistent anno = method.getAnnotation(Persistent.class);
         if (anno != null) {   // getter annotated with @Persistent
@@ -758,6 +763,7 @@ public class PdoUtilities {
   /**
    * Gets the identifiable corresponding to the ID of a user.
    *
+   * @param <U> the user type
    * @param context the domain context
    * @param userId the ID of the identifiable (user)
    * @return the user, null if session not attached to a user (background server thread, for example) or no running {@link Application}
@@ -776,6 +782,7 @@ public class PdoUtilities {
   /**
    * Gets the identifiable corresponding to the current user related to the session of a domain context.
    *
+   * @param <U> the user type
    * @param context the domain context
    * @return the user, null if session not attached to a user (background server thread, for example) or no running {@link Application}
    */

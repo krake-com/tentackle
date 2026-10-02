@@ -23,6 +23,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class DefaultPdoCacheFactory implements PdoCacheFactory {
 
   @Override
   public synchronized Collection<PdoCache<? extends PersistentDomainObject<?>>> getAllCaches() {
-    return cacheMap.values();
+    return new ArrayList<>(cacheMap.values());    // a copy, since caches may be created while the caller iterates
   }
 
   @Override

@@ -55,8 +55,7 @@ import org.tentackle.session.TableName;
 
 
 /**
- * A number pool.
- * <p>
+ * A number range.
  *
  * @author harald
  */

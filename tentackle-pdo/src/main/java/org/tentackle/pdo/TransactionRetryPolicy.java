@@ -18,7 +18,14 @@
 
 package org.tentackle.pdo;
 
-
+/**
+ * Policy to determine whether and when a transaction is retried.<br>
+ * Policies are services annotated with {@link TransactionRetryPolicyService} and selected
+ * by name via {@link Transaction#retryPolicy()}.
+ *
+ * @see DefaultTransactionRetryPolicy
+ * @author harald
+ */
 public interface TransactionRetryPolicy {
 
   /**

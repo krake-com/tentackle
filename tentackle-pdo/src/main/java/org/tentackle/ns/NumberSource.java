@@ -25,6 +25,11 @@ package org.tentackle.ns;
  */
 public interface NumberSource {
 
+  /*
+   * Notice: all methods throw a NumberSourceException if the pool vanished.
+   * All methods except isOnline() throw a NumberSourceException if the pool is offline.
+   */
+
   /**
    * A range of numbers.
    *
@@ -47,6 +52,7 @@ public interface NumberSource {
   /**
    * Gets the ranges of this source.<br>
    * Does not consume any numbers.
+   * The ranges are not sorted and may contain empty ranges.
    *
    * @return the ranges, never null
    */
@@ -67,7 +73,8 @@ public interface NumberSource {
   boolean isEmpty();
 
   /**
-   * Returns whether pool is online.
+   * Returns whether pool is online.<br>
+   * Offline pools reject all other methods with a {@link NumberSourceException}.
    *
    * @return true if online (enabled), else offline (disabled)
    */
@@ -82,10 +89,11 @@ public interface NumberSource {
   long popNumber();
 
   /**
-   * Pops the next unique numbers from the source.
+   * Pops the next unique numbers from the source.<br>
+   * If the pool runs out of numbers, fewer than {@code count} numbers are returned.
    *
    * @param count the number count
-   * @return the next numbers as ranges, never null
+   * @return the next numbers as ranges sorted by numbers (ascending), never null
    * @throws NumberSourceEmptyException if pool is empty
    */
   Range[] popNumbers(long count);
@@ -94,9 +102,9 @@ public interface NumberSource {
    * Pops a range or ranges of unique numbers from the source.<br>
    * The returned ranges are sorted by numbers (ascending).
    *
-   * @param begin the start of range
-   * @param end the end of range
-   * @return the numbers range(s) &ge; <code>start</code> and &lt; <code>end</code>, never null
+   * @param begin the first number
+   * @param end the last number + 1
+   * @return the numbers range(s) &ge; <code>begin</code> and &lt; <code>end</code>, never null
    */
   Range[] popNumbers(long begin, long end);
 
@@ -112,8 +120,8 @@ public interface NumberSource {
    * Pushes a range of unique numbers to the source.<br>
    * The range may overlap with existing numbers.
    *
-   * @param begin the start of range
-   * @param end the end of range
+   * @param begin the first number
+   * @param end the last number + 1
    */
   void pushNumbers(long begin, long end);
 

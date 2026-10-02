@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.Interception;
@@ -27,15 +26,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
-
 /**
  * Annotation to verify that there is no transaction currently running.
  * <p>
  * This may be useful for methods providing stale data, for example cached or lazy references.
  * <p>
  * Another use case is to make sure that a new transaction is always started. This can be accomplished
- * by a {@code @NoTransaction} annotation followed by a {@code  @Transaction} annotation.
+ * by a {@code @NoTransaction} annotation followed by a {@code @Transaction} annotation.
  *
  * @see Transaction
  */
@@ -44,13 +41,14 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Interception(implementedBy=NoTransactionInterceptor.class, type = Interception.Type.PUBLIC)
 public @interface NoTransaction {
- 
+
   /**
-   * Transactions must be avoided only if the PDO is cached.
+   * Transactions must be avoided only if the PDO is cached.<br>
+   * For components, the cache status of the root entity is checked.
+   * If set, the annotated object must be a PDO.
    *
    * @return true if cached only, default is false
    */
   boolean cachedOnly() default false;
 
 }
-

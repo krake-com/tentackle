@@ -327,12 +327,12 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @param name the pool's name
    * @param realm the optional realm
-   * @return the pool
+   * @return the pool, null if not found
    */
   NumberPool selectByNameRealm(String name, String realm);
 
   /**
-   * Force the ranges to be reloaded.
+   * Forces the ranges to be reloaded.
    */
   void reloadRanges();
 

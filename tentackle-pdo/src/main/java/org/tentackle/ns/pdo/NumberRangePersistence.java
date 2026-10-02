@@ -25,7 +25,7 @@ import org.tentackle.pdo.PersistentObject;
 import org.tentackle.session.Persistent;
 
 /**
- * Persistence interface for security rules.
+ * Persistence interface for number ranges.
  *
  * @author harald
  */

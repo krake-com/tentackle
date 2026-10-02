@@ -64,7 +64,7 @@ public class PdoMethodCache<T extends PersistentDomainObject<T>> {
    * @param invocationHandler the invocation handler
    * @param method the original method of the interface
    * @param args the method's args
-   * @return the methods return value
+   * @return the method's return value
    * @throws Throwable if invocation fails
    */
   public Object invoke(PdoInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {

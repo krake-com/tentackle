@@ -31,10 +31,10 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
        extends DomainDelegate<T>, PdoProvider<T>, DomainContextProvider, SessionProvider {
 
   /**
-   * Returns whether PDO provides a unique domain key.<br>
+   * Returns whether the PDO provides a unique domain key.<br>
    * Use this method to prevent a DomainException.
    *
-   * @return true if provided, else no unique domain key
+   * @return true if provided, false otherwise
    */
   boolean isUniqueDomainKeyProvided();
 
@@ -67,7 +67,7 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
    * <p>
    * This is not the technical primary key, which is the object id!
    *
-   * @param domainKey the primary domain key
+   * @param domainKey the unique domain key
    * @return the object found, null if none
    */
   @NotInterceptable

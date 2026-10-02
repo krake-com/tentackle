@@ -376,22 +376,27 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @SuppressWarnings("rawtypes")
   protected void createComponentsInSnapshot(AbstractPersistentObject snapshot) {
     snapshot.objectIsSnapshot = true;
+    snapshot.snapshots = null;    // the clone must not share the list of snapshots with this object
   }
 
 
   /**
    * Reverts the state of this object to the given snapshot.
    * <p>
-   * The method must be implemented.
-   * The default implementation just throws PersistenceException.
+   * The snapshot and all snapshots taken after it are discarded.
    *
-   * @param snapshot the snapshot to revert to
+   * @param snapshot the snapshot to revert to, null to do nothing
+   * @throws PersistenceException if not a snapshot or not a snapshot of this object
    */
   @Override
   public void revertToSnapshot(T snapshot) {
     if (snapshot != null) {
       assertValidSnapshot(snapshot);
+      int index = getSnapshotIndex(snapshot);   // -1 if this is a copy
       applySnapshot(snapshot);
+      if (index >= 0) {
+        snapshots.subList(index, snapshots.size()).clear();   // truncate the timeline
+      }
     }
   }
 
@@ -454,7 +459,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     cacheAccessCount = snapshot.cacheAccessCount;
     cacheAccessTime = snapshot.cacheAccessTime;
     expired = snapshot.expired;
-    snapshots = snapshot.snapshots;
+    // the snapshots are not reverted: revertToSnapshot truncates them instead
     normText = snapshot.normText;
     validated = snapshot.validated;
     persistable = snapshot.persistable;
@@ -1337,9 +1342,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * The method is usually used by the presentation layer
    * to check for duplicates.
-   * The default implementation invokes findByUniqueDomainKey(getUniqueDomainKey())
-   * and throws {@link UnsupportedOperationException} if one of those methods is not implemented
-   * (which is the default).
+   * The default implementation invokes findByUniqueDomainKey(getUniqueDomainKey()) of the domain delegate,
+   * both of which throw a {@link org.tentackle.pdo.DomainException} by default,
+   * i.e., if the entity provides no unique domain key.
    *
    * @return the duplicate object, null if no duplicate
    */

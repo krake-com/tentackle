@@ -52,7 +52,7 @@ public interface AdminExtension extends DomainContextDependable {
     String getUserName();
 
     /**
-     * Gets the epochal time since when logged in.
+     * Gets the time since when the user is logged in.
      *
      * @return logged in since, null if not logged in
      */

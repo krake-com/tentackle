@@ -28,7 +28,7 @@ public interface PdoCacheOperationPersistence extends PersistentOperation<PdoCac
   /**
    * Preloads the PDO caches.
    *
-   * @return a countdown latch that can be used to wait for the preload to finish, null if no parallel download
+   * @return a countdown latch that can be used to wait for the preload to finish, null if preloaded synchronously
    */
   CountDownLatch preloadPdoCaches();
 

@@ -32,6 +32,12 @@ import java.util.function.Consumer;
  * <p>
  * When such a method is invoked, it is <em>not</em> immediately executed, but registered as a
  * pre-commit via {@link org.tentackle.session.Session#preCommit(Consumer)}.
+ * <ul>
+ *   <li>The method must return {@code void}, otherwise a {@link org.tentackle.session.PersistenceException} is thrown.</li>
+ *   <li>A transaction must be running when the method is invoked.</li>
+ *   <li>The method is executed only if the transaction is committed, and in the JVM it was invoked in,
+ *   i.e., it is not executed in the remote server.</li>
+ * </ul>
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

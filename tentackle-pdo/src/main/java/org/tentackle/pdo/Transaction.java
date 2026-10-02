@@ -129,7 +129,11 @@ public @interface Transaction {
   boolean retry() default false;
 
   /**
-   * Defines the retry policy.
+   * Defines the retry policy.<br>
+   * Only used if {@link #retry()} is true.
+   * The empty string denotes the default policy.
+   * An unknown policy name fails with a {@link org.tentackle.session.PersistenceException}
+   * before the transaction begins.
    *
    * @return the policy name
    * @see DefaultTransactionRetryPolicy

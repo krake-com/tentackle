@@ -31,6 +31,10 @@ import java.lang.annotation.Target;
  * <p>
  * Methods of the PDO- or Operation-interfaces annotated
  * with {@code @Secured} will be checked by the {@link SecurityManager}.
+ * <p>
+ * If the permissions are not granted, a {@link SecurityException} is thrown.
+ * If the annotated object is not a {@link org.tentackle.pdo.DomainContextProvider},
+ * a {@link org.tentackle.session.PersistenceException} is thrown.
  *
  * @author harald
  */
@@ -51,7 +55,7 @@ public @interface Secured {
    * Enforces explicit acceptance.
    *
    * @see SecurityResult#isDefault()
-   * @return true if permissions must be explicitly accepted, default is false, i.e. none must be denied
+   * @return true if permissions must be explicitly accepted, default is false, i.e., none must be denied
    */
   boolean explicit() default false;
 

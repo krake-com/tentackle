@@ -16,18 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-
 /**
- * Annotation for flag a member as a domain key.<br>
+ * Annotation to flag a member as a domain key.<br>
  * If the (unique) domain key consists of more than one member, each member
- * is annotated to <code>@DomainKey</code>.
+ * is annotated with <code>@DomainKey</code>.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -371,7 +371,7 @@ times:
    component to its root entity.
 3. **Which logical data space (tenant) does it belong to?** Through optional
    application-specific extensions it scopes queries to the current tenant.
-4. **which subdomain does it belong to?** A `DomainContext` can be **extended**
+4. **Which subdomain does it belong to?** A `DomainContext` can be **extended**
    to hold additional information or cloned to create a named sub-context.
 
 ### Aggregates and the root context
@@ -412,12 +412,12 @@ frameworks silently corrupt data. The guiding rule is the DDD invariant that
 **an aggregate is responsible for its own consistency, and nothing else may write
 to it behind its back**. Three concrete safeguards follow from it.
 
-#### 1. A component cannot be persisted in the wrong context
+#### 1. A component cannot be persisted on its own
 
-A component may only be persisted within the **root context of its own root
-entity**. Attempting to persist (or save) a component through a different
-`DomainContext` — one that is not the root context spanned by its aggregate root —
-throws an exception.
+A component may only be persisted **through its root entity**. Invoking `persist()`,
+`save()`, or `delete()` on a component throws an exception — in any context, even in
+the root context of its own aggregate. Components are written exclusively by their
+root, which inserts, updates, and deletes them along with itself.
 
 The reason is the aggregate invariant: only the root may decide when its components
 are valid, because only the root sees them all together. Consider an
@@ -426,11 +426,11 @@ must be positive"* (a validation owned by the `Invoice`, see
 [validation.md](../../../../tentackle-core/src/main/docs/validation.md)):
 
 ```java
-// WRONG — line is created in a bare context, not the invoice's root context
+// WRONG — the line is persisted on its own, bypassing its Invoice
 InvoiceLine line = Pdo.create(InvoiceLine.class, someOtherContext);
 line.setInvoiceId(125889L);
 line.setAmount(-500);
-line.persist();          // throws: line is not in the root context of its Invoice
+line.persist();          // throws: a component is not a root entity
 ```
 
 Inserting that line straight into the database, without going through the
@@ -667,7 +667,7 @@ one transaction of the PDOs' session (all elements must share it):
 - `saveCollection(pdos, modifiedOnly)` saves every persistable PDO (or only the modified ones) and
   deletes the elements that are no longer persistable but have been stored before;
   `saveCollection(pdos, modifiedOnly, true)` uses `persist()` instead and replaces the elements by
-  the returned instances. A `TrackedList` is marked unmodified afterwards.
+  the returned instances. A `TrackedList` is marked unmodified afterward.
 - `deleteMissingInCollection(oldPdos, newPdos)` deletes the stored elements of the old collection
   that are not contained in the new one — the usual way to remove the rows the user deleted.
 - `isCollectionModified(pdos)` tells whether any element is modified, or, for a `TrackedList`,

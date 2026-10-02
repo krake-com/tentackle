@@ -98,6 +98,16 @@ public class PdoMemberTest {
     assertEquals(member.toString(), "attribute id \"the id\"");
   }
 
+  /**
+   * {@code @Persistent.comment()} defaults to the empty string, which is no comment.
+   */
+  @Test
+  public void testToStringAttributeWithEmptyComment() {
+    PdoMember member = new PdoMember(PdoMember.Type.ATTRIBUTE, "id", null, null,
+                                     false, false, false, false, "", 0);
+    assertEquals(member.toString(), "attribute id");
+  }
+
   @Test
   public void testToStringComponentParentRelation() {
     PdoMember member = new PdoMember(PdoMember.Type.RELATION, "children", null, null,

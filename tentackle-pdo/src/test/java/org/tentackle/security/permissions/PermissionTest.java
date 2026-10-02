@@ -37,7 +37,7 @@ import static org.testng.Assert.assertTrue;
  * Unit tests for the predefined permissions.
  * <p>
  * The permission hierarchy is expressed by the interfaces extending each other:
- * {@code EDIT -> WRITE -> READ}, {@code VIEW -> READ} and {@code EXEC}, with {@code ALL} matching
+ * {@code EDIT -> WRITE -> READ}, {@code EDIT -> VIEW -> READ} and {@code EXEC}, with {@code ALL} matching
  * everything. {@link Permission#isAllowedBy} and {@link Permission#isDeniedBy} translate that
  * hierarchy into the two directions a rule can be configured in.
  */
@@ -135,13 +135,16 @@ public class PermissionTest {
   }
 
   /**
-   * ALL grants and denies every permission, and grants and denies everything else as well.
+   * A configured ALL grants and denies every requested permission.<br>
+   * A requested ALL is denied by any denial, but only granted by ALL.
    */
   @Test
   public void testAllPermission() {
     Permission all = new AllPermissionImpl();
-    assertTrue(all.isAllowedBy(ReadPermission.class), "ALL always matches");
-    assertTrue(all.isDeniedBy(ExecutePermission.class), "ALL always matches");
+    assertFalse(all.isAllowedBy(ReadPermission.class), "granting READ must not grant ALL");
+    assertFalse(all.isAllowedBy(EditPermission.class, ExecutePermission.class), "granting EDIT and EXEC must not grant ALL");
+    assertTrue(all.isAllowedBy(ReadPermission.class, AllPermission.class));
+    assertTrue(all.isDeniedBy(ExecutePermission.class), "denying anything denies ALL");
 
     assertTrue(new EditPermissionImpl().isAllowedBy(AllPermission.class));
     assertTrue(new ExecutePermissionImpl().isDeniedBy(AllPermission.class));

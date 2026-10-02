@@ -21,7 +21,6 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.Serial;
@@ -40,7 +39,7 @@ public class DomainException extends TentackleRuntimeException {
   /**
    * Extracts the {@link DomainException} from an exception.
    * <p>
-   * Scans the exception chain until it finds an {@link PersistenceException}.
+   * Scans the exception chain until it finds a {@link DomainException}.
    *
    * @param e the exception head
    * @return the DomainException, null if none
@@ -57,7 +56,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   private transient Session session;        // the session this exception belongs to
-  private Identifiable identifiable;        // the db object this exception belongs to
+  private Identifiable identifiable;        // the object this exception belongs to
 
 
   /**
@@ -128,12 +127,12 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new domain runtime exception for a given db object
+   * Constructs a new domain runtime exception for a given object
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param identifiable the db object
+   * @param identifiable the object
    */
   public DomainException(Identifiable identifiable) {
     super();
@@ -142,7 +141,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new domain runtime exception for a given session with the specified detail message.
+   * Constructs a new domain runtime exception for a given object with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -156,7 +155,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception for a given session with the specified detail message and
+   * Constructs a new domain runtime exception for a given object with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -175,7 +174,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception for a given session with the specified cause and a
+   * Constructs a new domain runtime exception for a given object with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -274,12 +273,11 @@ public class DomainException extends TentackleRuntimeException {
   /**
    * {@inheritDoc}
    * <p>
-   * This the classname plus optional message plus the
-   * optional object with the optional session in brackets.
+   * This is the message plus the optional object with the optional session in braces.
    * <p>
    * Example:
    * <pre>
-   *   "org.tentackle.session.PersistenceException: no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
+   *   "no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
    * </pre>
    * @return the message
    */

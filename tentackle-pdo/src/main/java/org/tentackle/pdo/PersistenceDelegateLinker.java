@@ -83,7 +83,7 @@ public interface PersistenceDelegateLinker {
   }
 
   /**
-   * Link the persistence delegate to its {@link PersistentDomainObject}.
+   * Links the persistence delegate to its {@link PersistentDomainObject}.
    *
    * @param pdo the PDO proxy
    * @param delegate the persistence delegate implementation

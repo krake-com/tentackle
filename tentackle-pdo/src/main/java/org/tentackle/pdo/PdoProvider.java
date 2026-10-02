@@ -46,7 +46,9 @@ public interface PdoProvider<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Creates a new instance of the same type as the PDO within a new sub context.
+   * Creates a new instance of the same type as the PDO within a sub context.<br>
+   * The sub context is created only if the PDO's context is not already within the given name.
+   * The root entity of the context, if any, is kept.
    *
    * @param contextName the context name
    * @return the new instance

@@ -50,9 +50,12 @@ record Range(long begin, long end) {
 | `popNumbers(long begin, long end)`  | Take a *specific* interval, if the pool holds it. Returns the parts actually consumed. |
 | `pushNumber(long number)`           | Give one number back. A number already in the pool is ignored.                         |
 | `pushNumbers(long begin, long end)` | Give an interval back. May overlap what the pool already holds.                        |
-| `getRanges()`                       | The current ranges, consuming nothing.                                                 |
+| `getRanges()`                       | The current ranges, consuming nothing. Unsorted, and may contain empty ranges.         |
 | `getCount()`                        | How many numbers remain.                                                               |
 | `isEmpty()` / `isOnline()`          | Whether the pool is exhausted / enabled.                                               |
+
+All methods except `isOnline()` fail with a `NumberSourceException` if the pool is offline,
+and all of them if the pool no longer exists.
 
 Failures are unchecked:
 [`NumberSourceException`](../java/org/tentackle/ns/NumberSourceException.java)
@@ -103,7 +106,10 @@ singleton resolved through `ServiceFactory.createService(...)`, defaulting to
 (annotated `@Service(NumberSourceFactory.class)`). The default factory caches one
 source per `pool:realm` key, and throws `NumberSourceException` if no such pool
 exists in the database — a missing pool is a configuration error, not an empty
-result.
+result. The cache is never invalidated: a source whose pool has been deleted keeps
+failing with "vanished", even if a pool of the same name is created again, until the
+application is restarted. Notice further that the key is built by concatenation: avoid
+colons in pool names, and use either `null` or the empty string for "no realm", not both.
 
 ---
 
@@ -140,9 +146,9 @@ class id `7`, options `[remote, fulltracked]`:
 | `begin`        | `rbegin` | `long` | First number in the range. |
 | `end`          | `rend`   | `long` | Last number **+ 1**.       |
 
-Both entities declare `integrity := none`: no foreign keys are emitted, because the aggregate 
-is managed programmatically which allows performance optimizations and an efficient caching 
-when handling with the pool's ranges.
+Both entities declare `integrity := none`: no foreign keys are emitted, because the aggregate
+is managed programmatically, which allows performance optimizations and efficient caching
+when handling the pool's ranges.
 The relation is a composite list with `delete = cascade`: deleting a pool deletes its
 ranges, which is necessary due to `integrity := none`.
 
@@ -172,10 +178,13 @@ pool.save();
 ```
 
 A pool may hold **several disjoint ranges**, and they need not be added in order —
-numbers are always handed out from the lowest non-empty range first, whatever order
-the ranges were created in. Setting `online` to `false` disables the pool: every
-attempt to draw from it fails with `NumberSourceException` until it is re-enabled,
-which is the intended way to take a pool out of service without deleting it.
+numbers are handed out from the lowest non-empty range first, whatever order
+the ranges were created in. (The current range is cached, though: a number pushed back
+*below* it is handed out only after the current range is exhausted or the pool was
+modified by another tier.) Setting `online` to `false` disables the pool: every
+attempt to draw from or inspect it fails with `NumberSourceException` until it is
+re-enabled — only `isOnline()` still answers. This is the intended way to take a pool
+out of service without deleting it.
 
 ---
 
@@ -207,12 +216,13 @@ requested interval out of them — consuming a whole range, trimming its head, t
 its tail, or, when the interval falls strictly inside a range, **splitting it into
 two** by creating a fresh `NumberRange`.
 
-The push operations merge a returned number or interval into an adjacent or
+The push operations merge a returned number or interval into the first adjacent or
 overlapping range, or create a new range when it stands alone. Afterwards `fixRanges()`
-sorts the ranges and merges any that now overlap or touch. That last step is what
-makes uniqueness a property of the pool rather than of the caller: however sloppily
-numbers are pushed back, the pool never ends up holding the same number twice, so it
-can never hand it out twice.
+walks the ranges sorted by `begin` and `end` and merges any that now overlap or touch,
+deleting the ones merged into others. That last step is what makes uniqueness a
+property of the pool rather than of the caller: however sloppily numbers are pushed
+back, the pool never ends up holding the same number twice, so it can never hand it
+out twice.
 
 ---
 
@@ -316,7 +326,9 @@ attributes describe this:
 - `uplink` — how to reach the master.
 
 [`NumberPoolDomain.isSlave()`](../java/org/tentackle/ns/pdo/NumberPoolDomain.java)
-reports whether a pool is configured as one:
+reports whether a pool is configured as one. The default implementation in
+[`NumberPoolDomainImpl`](../../../../tentackle-domain/src/main/java/org/tentackle/domain/ns/NumberPoolDomainImpl.java)
+reads:
 
 ```java
 @Override
@@ -336,12 +348,13 @@ uplink: @NotNull(condition="$slave")
 never reads `lowWaterMark`, `requestSize` or `uplink`; a pool configured as a slave
 behaves exactly like a standalone one and simply runs empty. As its Javadoc states,
 it "does not implement any logic to access an uplink source, and thus needs to be
-extended if an uplink is required."
+wrapped or replaced if an uplink is required."
 
 The attributes, the `isSlave()` predicate and its validation are the **extension
-point**, not a shipped feature. To implement refilling, subclass
-`DefaultNumberSource`, override the drawing methods to top up from the uplink when
-`getCount()` falls below `lowWaterMark`, and publish a factory that returns it:
+point**, not a shipped feature. To implement refilling, provide a `NumberSource` whose
+drawing methods top up from the uplink when `getCount()` falls below `lowWaterMark` —
+for example, by delegating to a `DefaultNumberSource` (whose pool and ranges are private,
+so subclassing gains nothing over delegation) — and publish a factory that returns it:
 
 ```java
 @Service(NumberSourceFactory.class)

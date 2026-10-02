@@ -24,6 +24,8 @@ import org.tentackle.session.Session;
 /**
  * The SecurityManager applies security rules to {@link org.tentackle.pdo.PersistentDomainObject}s
  * or classes and grants or denies permissions.
+ * <p>
+ * A disabled security manager grants everything.
  *
  * @author harald
  */
@@ -37,6 +39,7 @@ public interface SecurityManager {
    * @param objectClassId the object class id
    * @param objectId the identifiable id, 0 for all PDOs of that class
    * @return the SecurityResult
+   * @throws SecurityException if the arguments are invalid or the grantee cannot be determined
    */
   SecurityResult evaluate(DomainContext context, Permission permission, int objectClassId, long objectId);
 
@@ -47,6 +50,7 @@ public interface SecurityManager {
    * @param permission the requested permission
    * @param clazz the class
    * @return the SecurityResult
+   * @throws SecurityException if the arguments are invalid or the grantee cannot be determined
    */
   SecurityResult evaluate(DomainContext context, Permission permission, Class<?> clazz);
 
@@ -60,7 +64,9 @@ public interface SecurityManager {
    * Removes obsolete rules.
    * <p>
    * Since the model has no relation to the security implementation, security rules may become
-   * obsolete if PDOs are deleted. This method will remove such obsolete rules.
+   * obsolete if PDOs are deleted. This method will remove such obsolete rules, i.e., rules whose
+   * secured PDO or grantee no longer exists.<br>
+   * Failures are logged and the transaction is rolled back, but no exception is thrown.
    *
    * @param session the session
    */
@@ -74,7 +80,8 @@ public interface SecurityManager {
   boolean isEnabled();
 
   /**
-   * Enables or disables this security manager.
+   * Enables or disables this security manager.<br>
+   * A disabled security manager grants everything.
    *
    * @param enabled true to enable the security manager
    * @see #setAcceptByDefault(boolean)
@@ -89,12 +96,9 @@ public interface SecurityManager {
   boolean isAcceptByDefault();
 
   /**
-   * Sets the default behaviour for "no rules found" for the
-   * {@link SecurityResult} to "accepted".
-   * This is the default.
-   * <p>
-   * Notice: setting both acceptByDefault and denyByDefault to false will
-   * return "neither accepted nor denied" security results if no rules fire.
+   * Sets the default behavior if no rule fires.<br>
+   * If true, the {@link SecurityResult} is "accepted", otherwise "denied".
+   * The default is true.
    *
    * @param acceptByDefault true if {@link SecurityResult#isAccepted} returns true if no rules found.
    */

@@ -63,11 +63,13 @@ public interface DomainContextProvider {
   /**
    * Creates a PDO within a new named domain context.<br>
    * Same as {@link #on(Class)}, but uses a new sub context of the given name.
+   * The new context has no root entity.
    *
    * @param <T> the persistent domain object type
    * @param clazz the PDO interface
    * @param contextName the context name
    * @return the created PDO
+   * @throws DomainException if the context is already within the given name
    */
   default <T extends PersistentDomainObject<T>> T on(Class<T> clazz, String contextName) {
     return PdoFactory.getInstance().create(clazz, getDomainContext().clone(contextName));
@@ -88,11 +90,13 @@ public interface DomainContextProvider {
   /**
    * Creates an operation within a new domain context.<br>
    * Same as {@link #op(Class)}, but uses a new sub context of the given name.
+   * The new context has no root entity.
    *
    * @param <T> the operation type
    * @param clazz the operation interface
    * @param contextName the context name
    * @return the created operation
+   * @throws DomainException if the context is already within the given name
    */
   default <T extends Operation<T>> T op(Class<T> clazz, String contextName) {
     return OperationFactory.getInstance().create(clazz, getDomainContext().clone(contextName));

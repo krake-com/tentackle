@@ -100,7 +100,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   String toIdString();
 
   /**
-   * Returns whether this an abstract PDO.<br>
+   * Returns whether this is an abstract PDO.<br>
    * Abstract PDOs are real objects but cannot be persisted.
    * They may be used to retrieve data for the concrete implementations, however.
    *
@@ -239,7 +239,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   SecurityResult getSecurityResult(Permission permission);
 
   /**
-   * Checks if the permission for a given permission is accepted.
+   * Checks whether the given permission is accepted.
    *
    * @param permission the requested permission
    * @return true if permission is accepted
@@ -288,7 +288,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * A new object with a reserved ID can be distinguished from
    * a deleted object by its serial. See also {@link #isVirgin}.
    * If the object already has an ID or is deleted,
-   * the ID will _not_ change.
+   * the ID will <em>not</em> change.
    */
   void reserveId();
 
@@ -326,7 +326,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * It does not check whether some of its components are modified!
    * This method can also be used for non-tracked entities.
    *
-   * @return true if this object
+   * @return true if at least one attribute is modified
    */
   boolean attributesModified();
 
@@ -340,8 +340,8 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Determines whether this object is allowed to be stored in the database.<br>
-   * Notice that once a PDO is persisted, the same object reference is no more persistable
-   * and must be reloaded. Rule: if the reference is no more used, use {@link #save()},
+   * Notice that once a PDO is persisted, the same object reference is no longer persistable
+   * and must be reloaded. Rule: if the reference is no longer used, use {@link #save()},
    * otherwise use {@link #persist()} and replace the reference with the return value.
    *
    * @return true if persistable (default)
@@ -470,6 +470,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
+   * @param maxSerial inclusive upper bound for tableSerial (&lt;= maxSerial)
    * @return the list of objects, never null
    */
   List<T> selectAllWithExpiredTableSerials(long oldSerial, long maxSerial);
@@ -565,9 +566,9 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Checks whether this object (if saved) would violate any unique constraints.
    * <p>
    * The method is usually used by the presentation layer to check for duplicates.
-   * The default implementation invokes findByUniqueDomainKey(getUniqueDomainKey())
-   * and throws {@link UnsupportedOperationException} if one of those methods is not implemented
-   * (which is the default).
+   * The default implementation invokes {@link DomainObject#findByUniqueDomainKey(Object)} with
+   * {@link DomainObject#getUniqueDomainKey()}, both of which throw a {@link DomainException} by default,
+   * i.e., if the entity provides no unique domain key.
    *
    * @return the duplicate object, null if no duplicate
    */
@@ -582,7 +583,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Gets the expiration in milliseconds of the token lock.<br>
-   * Returns a value greater 0 if {@link #isTokenLockProvided()}, else 0.
+   * Returns a value greater than 0 if {@link #isTokenLockProvided()}, else 0.
    *
    * @return the timespan in ms, 0 if no token lock
    */
@@ -618,7 +619,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Checks whether this object is token locked by the given user.
    *
    * @param userId the user's ID
-   * @return true locked
+   * @return true if locked by that user
    */
   boolean isTokenLockedBy(long userId);
 
@@ -653,7 +654,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T transferTokenLock(long userId);
 
   /**
-   * Loads a PDO from the database by its unique ID.<br>
+   * Loads a PDO from the database by its unique ID.
    *
    * @param id is the object id
    *
@@ -781,9 +782,9 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * <p>
    * The method is used mainly by {@link PdoCache} as an optimization to retrieve
    * the list of PDOs from the remote server cache.
+   * For local sessions, it is the same as {@link #selectAll()}.
    *
    * @return the list, never null
-   * @throws PersistenceException if the session is not remote
    */
   List<T> selectAllForCache();
 
@@ -845,7 +846,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * If the object is new, a new ID is obtained and the object inserted.
    * Otherwise, the object is updated.
    * <p>
-   * A saved object is no more persistable.
+   * A saved object is no longer persistable.
    * It must be {@link #reload()}-ed to make it persistable again.
    * <p>
    * Any token lock will be removed.
@@ -893,7 +894,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   Timestamp getEditedSince();
 
   /**
-   * Gets the time since when this object is being edited.
+   * Gets the time when the token lock expires.
    *
    * @return the timestamp, null if not being edited
    */
@@ -943,7 +944,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * composite object relations recursively.
    * Furthermore, it can be used to get a map of all components.
    *
-   * @param onlyLoaded true if return only already loaded components (lazy composite relations)
+   * @param onlyLoaded true to return only already loaded components (lazy composite relations)
    * @return the map of all components, including this object.
    */
   IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded);

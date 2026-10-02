@@ -45,7 +45,7 @@ public interface PdoFactory {
   }
 
   /**
-   * Gets the persistence class mapper associated to this factory.<br>
+   * Gets the persistence class mapper associated with this factory.<br>
    * The classmapper maps PDO interfaces to their persistence implementation.
    *
    * @return the mapper for the persistence implementations
@@ -53,7 +53,7 @@ public interface PdoFactory {
   ClassMapper getPersistenceMapper();
 
   /**
-   * Gets the domain class mapper associated to this factory.<br>
+   * Gets the domain class mapper associated with this factory.<br>
    * The classmapper maps PDO interfaces to their domain implementation.
    *
    * @return the mapper for the domain implementations

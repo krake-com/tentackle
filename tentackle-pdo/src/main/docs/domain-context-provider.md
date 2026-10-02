@@ -64,12 +64,17 @@ DomainContext context = Pdo.createDomainContext(session);
 ```
 
 [`Pdo.createDomainContext(...)`](../java/org/tentackle/pdo/Pdo.java) wraps the session
-in a [`DefaultDomainContext`](../java/org/tentackle/pdo/DefaultDomainContext.java)
-(itself just `new DefaultDomainContext(session)`). From that root context onward,
+in a context created by the [`DomainContextFactory`](../java/org/tentackle/pdo/DomainContextFactory.java)
+— a [`DefaultDomainContext`](../java/org/tentackle/pdo/DefaultDomainContext.java), unless the
+application replaces the factory. From that initial context onward,
 domain code never calls `createDomainContext` again — it uses `on(...)`/`op(...)`,
 which clone or reuse the context it is already in. In a typical application the
-[`Application`](../java/org/tentackle/app/Application.java) singleton holds this root
-context and hands it out via `getDomainContext()`.
+[`Application`](../java/org/tentackle/app/Application.java) singleton holds this initial
+context and hands it out via `getDomainContext()`. `AbstractApplication` creates it with an
+immutable session (`Pdo.createDomainContext(session, true)`).
+
+> Don't confuse this initial context with a [root context](pdo.md#aggregates-and-the-root-context):
+> the latter is the context of an aggregate's root entity, shared by its components.
 
 > A `DomainContext` *is a* [`SessionHolder`](../../../../tentackle-session/src/main/java/org/tentackle/session/SessionHolder.java):
 > it carries the session in which its objects live, and therefore the transaction.

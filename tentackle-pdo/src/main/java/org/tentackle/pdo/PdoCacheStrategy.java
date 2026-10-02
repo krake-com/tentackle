@@ -35,20 +35,20 @@ public enum PdoCacheStrategy {
 
   /**
    * If a PDO is not in the cache, it will be loaded from the database.<br>
-   * When the maximum size of the cache reached, the cache is purged completely.
+   * When the maximum size of the cache is exceeded, the cache is purged completely.
    */
   FORGET,
 
   /**
    * If a PDO is not in the cache, it will be loaded from the database.<br>
-   * When the maximum size of the cache reached, the least recently used PDOs
+   * When the maximum size of the cache is exceeded, the least recently used PDOs
    * are removed from the cache, according to a keep-quota.
    */
   LRU,
 
   /**
    * If a PDO is not in the cache, it will be loaded from the database.<br>
-   * When the maximum size of the cache reached, the least frequently used PDOs
+   * When the maximum size of the cache is exceeded, the least frequently used PDOs
    * are removed from the cache, according to a keep-quota.
    */
   LFU

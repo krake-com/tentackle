@@ -46,8 +46,8 @@ public interface NumberSourceFactory {
   /**
    * Gets a local number source.
    *
-   * @param pool the number source name
-   * @param realm the realm
+   * @param pool the pool name
+   * @param realm the realm, null if none
    * @return the number source
    * @throws NumberSourceException if failed
    */

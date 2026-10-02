@@ -33,7 +33,7 @@ For a method annotated with plain `@Transaction`, the interceptor:
 2. **invokes** the method;
 3. **commits** on normal return, or **rolls back** on any exception, which is then rethrown.
 
-The transaction gets a **name** and is visible in logs. 
+The transaction gets a **name** and is visible in logs.
 By default, it is derived from the method: `DeclaringClass#methodName`. Set it explicitly via the
 `value` attribute when several methods form one logical unit or when a
 [retry policy](#custom-retry-policies) should treat certain transactions specially:
@@ -75,6 +75,8 @@ Two consistency rules apply at the join point:
 
 `DEFAULT` for `isolation` and `writability` means: whatever the session (and ultimately the
 database backend) is configured with — most applications never need to override either.
+`retryPolicy` is ignored unless `retry = true`; an unknown policy name fails with a
+`PersistenceException` before the transaction even begins.
 
 ### Asserting an open transaction with `running`
 
@@ -175,6 +177,8 @@ disappear if you try again". The flag is set by:
 - the **backend's error classification**: `SQLException`s the
   [backend](../../../../tentackle-sql/src/main/docs/sql.md) recognizes as transient — deadlock
   victim, serialization failure — are wrapped in a temporary `PersistenceException`;
+- the **token lock**: a [`LockException`](../java/org/tentackle/pdo/LockException.java) because
+  another user (or another named context) holds the token lock is temporary as well;
 - any application code that throws a `TentackleRuntimeException` with `setTemporary(true)`.
 
 Everything else — constraint violations, domain exceptions, programming errors — fails

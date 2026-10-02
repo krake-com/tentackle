@@ -65,7 +65,6 @@ import org.tentackle.session.TableName;
 
 /**
  * A number pool.
- * <p>
  *
  * @author harald
  */

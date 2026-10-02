@@ -116,6 +116,16 @@ public class PdoUtilitiesTest {
     assertEquals(key.getIdentifiableId(), 42);
   }
 
+  /**
+   * Object IDs are longs.
+   */
+  @Test
+  public void testIdStringWithLongId() {
+    IdentifiableKey<PersistentDomainObject<?>> key =
+        PdoUtilities.getInstance().idStringToIdentifiableKey("5:" + (Integer.MAX_VALUE + 1L));
+    assertEquals(key.getIdentifiableId(), Integer.MAX_VALUE + 1L);
+  }
+
   @Test
   public void testMalformedIdStringRejected() {
     PdoUtilities utilities = PdoUtilities.getInstance();
@@ -127,6 +137,10 @@ public class PdoUtilitiesTest {
                  PersistenceException.class, () -> utilities.idStringToIdentifiableKey("5:0"));
     assertThrows("no PDO is registered for that class id",
                  PersistenceException.class, () -> utilities.idStringToIdentifiableKey("4711:42"));
+    assertThrows("not a number",
+                 PersistenceException.class, () -> utilities.idStringToIdentifiableKey("5:abc"));
+    assertThrows("too many parts",
+                 PersistenceException.class, () -> utilities.idStringToIdentifiableKey("5:42:1"));
   }
 
   @Test
@@ -193,6 +207,30 @@ public class PdoUtilitiesTest {
                                 "domainContextClassId", "domainContextId",
                                 "granteeClassId", "granteeId", "priority",
                                 "permissions", "allowed", "message"));
+  }
+
+  /**
+   * A PDO interface with annotated methods that are not getters of an instance.
+   */
+  private interface MisannotatedPdo extends PersistentDomainObject<MisannotatedPdo> {
+
+    @org.tentackle.session.Persistent(comment = "not a getter")
+    void setFoo(String foo);
+
+    @org.tentackle.session.Persistent(comment = "static")
+    static String getBar() {
+      return null;
+    }
+  }
+
+  /**
+   * Only the getters of an instance are members, even if other methods are annotated.
+   */
+  @Test
+  public void testOnlyGettersAreMembers() {
+    assertTrue(PdoUtilities.getInstance().getMembers(MisannotatedPdo.class).stream()
+                   .noneMatch(m -> m.getName().toLowerCase().contains("foo") ||
+                                   m.getName().toLowerCase().contains("bar")));
   }
 
   @Test

@@ -62,10 +62,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   // preloaded methods of Operation
   private static final Method GETDOMAINDELEGATE_METHOD;
   private static final Method GETPERSISTENCEDELEGATE_METHOD;
-  private static final Method OP_METHOD;
 
-  // preloaded methods of OperationHolder
+  // preloaded methods of OperationProvider
   private static final Method GETOPERATION_METHOD;
+  private static final Method OP_METHOD;
 
   // preloaded methods of EffectiveClassProvider
   private static final Method GETEFFECTIVECLASS_METHOD;
@@ -139,7 +139,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     }
 
     if (persistenceMixin == null && domainMixin == null) {
-      throw new ClassNotFoundException("neither domain- nor persistence mapping found for '" + clazz.getName());
+      throw new ClassNotFoundException("neither domain- nor persistence mapping found for '" + clazz.getName() + "'");
     }
     else if (persistenceMixin == null) {
       // create dummy persistence mixin
@@ -273,7 +273,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
 
   /**
-   * Creates the delegates for the given proxy instance, a session and domain delegate.
+   * Sets the delegates for the given proxy instance.
    *
    * @param operation the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate

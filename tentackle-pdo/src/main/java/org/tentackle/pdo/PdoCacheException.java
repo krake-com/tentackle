@@ -26,6 +26,9 @@ import java.io.Serial;
 
 /**
  * PDO cache exception.<br>
+ * Thrown by the {@link PdoCache}, for example if a unique violation or a modified key is detected
+ * (the cache invalidates itself and retries once), or to prevent cache pollution within a transaction
+ * (rolls back the transaction).
  *
  * @author harald
  */
@@ -99,12 +102,12 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception for a given db object
+   * Constructs a new pdo cache exception for a given PDO
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param pdo the db object
+   * @param pdo the PDO
    */
   public PdoCacheException(PersistentDomainObject<?> pdo) {
     super(pdo);
@@ -112,11 +115,11 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception for a given session with the specified detail message.
+   * Constructs a new pdo cache exception for a given PDO with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
-   * @param   pdo the db object
+   * @param   pdo the PDO
    * @param   message   the detail message. The detail message is saved for
    *          later retrieval by the {@link #getMessage()} method.
    */
@@ -125,12 +128,12 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception for a given session with the specified detail message and
+   * Constructs a new pdo cache exception for a given PDO with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
    *
-   * @param  pdo the db object
+   * @param  pdo the PDO
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
@@ -143,13 +146,13 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception for a given session with the specified cause and a
+   * Constructs a new pdo cache exception for a given PDO with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other throwables.
    *
-   * @param  pdo the db object
+   * @param  pdo the PDO
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or

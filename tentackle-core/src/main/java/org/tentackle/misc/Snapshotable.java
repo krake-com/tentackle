@@ -47,7 +47,8 @@ public interface Snapshotable<T> {
   T createSnapshot();
 
   /**
-   * Reverts the state of this object to the given snapshot.
+   * Reverts the state of this object to the given snapshot.<br>
+   * The snapshot itself and all snapshots taken after it are discarded.
    *
    * @param snapshot the snapshot to revert to
    */

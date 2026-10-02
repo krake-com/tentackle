@@ -64,42 +64,42 @@ public interface SecurityFactory {
   SecurityManager getSecurityManager();
 
   /**
-   * Gets the request all permission singleton.
+   * Gets the singleton of the all permission.
    *
    * @return the all permission
    */
   AllPermission getAllPermission();
 
   /**
-   * Gets the request read permission singleton.
+   * Gets the singleton of the read permission.
    *
    * @return the permission
    */
   ReadPermission getReadPermission();
 
   /**
-   * Gets the request write permission singleton.
+   * Gets the singleton of the write permission.
    *
    * @return the permission
    */
   WritePermission getWritePermission();
 
   /**
-   * Gets the request view permission singleton.
+   * Gets the singleton of the view permission.
    *
    * @return the permission
    */
   ViewPermission getViewPermission();
 
   /**
-   * Gets the request edit permission singleton.
+   * Gets the singleton of the edit permission.
    *
    * @return the permission
    */
   EditPermission getEditPermission();
 
   /**
-   * Gets the request execute permission singleton.
+   * Gets the singleton of the execute permission.
    *
    * @return the permission
    */
@@ -154,7 +154,7 @@ public interface SecurityFactory {
   <T extends Permission> T getPermission(Class<T> iFace);
 
   /**
-   * Converts a comma separated string to a set of permission interfaces.
+   * Converts a comma-separated string to an array of permission interfaces.
    *
    * @param str the string
    * @return the permission interfaces in the same order as in str, empty array if string is null
@@ -163,7 +163,7 @@ public interface SecurityFactory {
   Class<?>[] stringToPermissionInterfaces(String str);
 
   /**
-   * Converts a comma separated string to a set of permissions.
+   * Converts a comma-separated string to a set of permissions.
    *
    * @param str the string
    * @return the permissions in the same order as in str, empty set if string is null
@@ -172,7 +172,7 @@ public interface SecurityFactory {
   Set<Permission> stringToPermissions(String str);
 
   /**
-   * Converts a set of permissions to a comma seperated string.
+   * Converts a set of permissions to a comma-separated string.
    *
    * @param permissions the permissions
    * @return the string, empty string if permissions is null

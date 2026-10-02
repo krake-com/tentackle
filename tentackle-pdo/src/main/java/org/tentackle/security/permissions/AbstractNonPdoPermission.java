@@ -23,7 +23,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 /**
  * Abstract permission applicable to non-PDOs.
  * <p>
- * Those are all non-persistent classes such as user interfaces, operations, etc...
+ * Those are all non-persistent classes such as user interfaces, operations, etc.
  *
  * @author harald
  */

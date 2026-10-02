@@ -1,0 +1,2 @@
+# tentackle-pdo is compiled with proc:none due to chicken-egg
+org.tentackle.pdo.LocalSessionOnly

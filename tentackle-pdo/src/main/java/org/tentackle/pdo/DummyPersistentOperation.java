@@ -29,7 +29,9 @@ import java.util.Objects;
 
 
 /**
- * Dummy persistent delegate if operation provides only the domain part.
+ * Dummy persistent delegate if operation provides only the domain part.<br>
+ * The {@link DefaultOperationFactory} uses it as the default persistence implementation,
+ * so that operations without a persistence part still carry their domain context and session.
  *
  * @author harald
  * @param <T> the operation type
@@ -39,9 +41,6 @@ public class DummyPersistentOperation<T extends Operation<T>>
 
   @Serial
   private static final long serialVersionUID = 1L;
-
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  private static final OperationMethodCache METHOD_CACHE = new OperationMethodCache(Operation.class);
 
   private DomainContext context;                  // application domain context
   private transient Session session;              // the session
@@ -53,7 +52,7 @@ public class DummyPersistentOperation<T extends Operation<T>>
    * Creates an operation object.
    *
    * @param operation the operation object this is a delegate for
-   * @param context the database context
+   * @param context the domain context
    */
   public DummyPersistentOperation(T operation, DomainContext context) {
     this.operation = operation;
@@ -62,18 +61,19 @@ public class DummyPersistentOperation<T extends Operation<T>>
 
   /**
    * Creates an operation object without a domain context
-   * for a given connection.<p>
+   * for a given session.<p>
    * Note: the application must set the context.
    *
    * @param operation the operation object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param session the session
    */
   public DummyPersistentOperation(T operation, Session session) {
     this.operation = operation;
+    this.session = session;
   }
 
   /**
-   * Creates an operation object without a database context.<p>
+   * Creates an operation object without a domain context.<p>
    * Note: the application must set the context.
    *
    * @param operation the persistent operation object this is a delegate for
@@ -83,7 +83,7 @@ public class DummyPersistentOperation<T extends Operation<T>>
   }
 
   /**
-   * Creates an operation object without a database context.
+   * Creates an operation object without a domain context.
    */
   public DummyPersistentOperation() {
   }
@@ -97,7 +97,11 @@ public class DummyPersistentOperation<T extends Operation<T>>
   @Override
   public void setSession(Session session)  {
     if (context != null)  {
-      context.setSession(session);
+      context.setSession(session);    // the context checks its own immutability
+    }
+    else if (sessionImmutable && this.session != session) {
+      throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " + this +
+                                                   " from " + this.session + " to " + session);
     }
     this.session = session;
   }
@@ -167,7 +171,7 @@ public class DummyPersistentOperation<T extends Operation<T>>
   /**
    * {@inheritDoc}
    * <p>
-   * The default implementation just returns a new {@link DomainContext}.<br>
+   * The default implementation just returns a new {@link DomainContext}.
    */
   @Override
   public DomainContext createValidContext() {
@@ -224,9 +228,14 @@ public class DummyPersistentOperation<T extends Operation<T>>
     }
   }
 
-  @SuppressWarnings("unchecked")
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Not used by the {@link OperationInvocationHandler}, since it uses the global cache for dummy delegates
+   * (see {@link org.tentackle.reflect.Mixin#isDummy()}).
+   */
   @Override
   public OperationMethodCache<T> getOperationMethodCache() {
-    return METHOD_CACHE;
+    return OperationMethodCache.getCache(operation.getEffectiveClass());
   }
 }

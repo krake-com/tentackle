@@ -13,7 +13,7 @@ context** is alive. Outside that window it is a plain — and dangerous — bag 
 fields: half-initialized, throwing `LazyInitializationException` the moment you
 touch a relation that was never fetched.
 
-A **PDO is a real object**. It carries everything it needs to fulfil its contract
+A **PDO is a real object**. It carries everything it needs to fulfill its contract
 — persistence delegate, domain delegate, session, context — *inside itself*. No
 external manager owns it, no lifecycle scope governs it. It is created, used,
 passed around, and garbage-collected exactly like any other Java object. There is
@@ -339,9 +339,9 @@ From that one fact the DDD rule is enforced mechanically rather than by conventi
 
 - **You cannot persist a component by setting a parent id.** There is no
   "create a line, set `invoiceId`, save the line" path. A component may only be
-  persisted within the **root context of its own root entity**; attempt it through
-  any other context, and the persistence layer throws, fail-fast. The orphaned
-  write that JPA waves through simply has no API in Tentackle.
+  persisted **through its root entity**; persisting, saving, or deleting a component
+  directly throws, fail-fast, whatever the context. The orphaned write that JPA waves
+  through simply has no API in Tentackle.
 - **The only way in is through the root.** You attach the component to its
   aggregate and persist the *root*, which validates the whole cluster as a unit
   before a single row is touched:
@@ -369,7 +369,7 @@ three safeguards, with the mechanics, are detailed in
 |------------------------------------------|---------------------------------------------------|-------------------------------------------------|
 | What is the unit of persistence?         | The single `@Entity`                              | The aggregate, through its root                 |
 | Is "aggregate" enforced or convention?   | Convention (in your head)                         | Structural (the layer knows root vs. component) |
-| Can a child be written without its root? | Yes — set the FK and `persist()`                  | No — throws unless in the root's context        |
+| Can a child be written without its root? | Yes — set the FK and `persist()`                  | No — only through its root                      |
 | What validation runs on a write?         | The row's field constraints (`@Valid`)            | The whole aggregate, via the root               |
 | Cross-entity invariant ("sum > 0")       | Hand-coded in a service, runs only if on the path | Owned by the root, runs on every persist        |
 | Mutating a component out of context      | Allowed (silently)                                | Immutable, fail-fast                            |
@@ -457,7 +457,7 @@ behave like objects.
 | Lifecycle states               | transient / managed / detached / removed                       | none — it just exists                            |
 | Lazy relation after scope ends | `LazyInitializationException`                                  | always works (no such exception exists)          |
 | Lifecycle scope to manage      | transaction / web request / conversation                       | none                                             |
-| Behaviour location             | services (anemic entity)                                       | on the object (rich domain)                      |
+| Behavior location              | services (anemic entity)                                       | on the object (rich domain)                      |
 | Inheritance                    | single slot shared by mapping + logic                          | multiple inheritance emulated via proxy          |
 | Cross-tier transfer            | DTOs + merge + fetch plans                                     | the PDO itself, fully functional                 |
 | Transaction ↔ object           | intertwined                                                    | cleanly separated                                |

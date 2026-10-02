@@ -44,6 +44,7 @@ public class OperationMethodCache<T extends Operation<T>> {
   /**
    * Gets the cache for given class.
    *
+   * @param <T> the operation type
    * @param effectiveClass the interceptable class
    * @return the method cache
    */
@@ -82,7 +83,7 @@ public class OperationMethodCache<T extends Operation<T>> {
    * @param invocationHandler the invocation handler
    * @param method the original method of the interface
    * @param args the method's args
-   * @return the methods return value
+   * @return the method's return value
    * @throws Throwable if invocation fails
    */
   public Object invoke(OperationInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {
