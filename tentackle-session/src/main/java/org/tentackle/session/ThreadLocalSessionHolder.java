@@ -22,7 +22,10 @@ import java.io.Serial;
 
 /**
  * A session holder returning the thread-local session.<br>
- * Nice if no domain context available, e.g., for low-level AbstractDbObjects.
+ * Nice if no domain context is available, e.g., for low-level {@code AbstractDbObject}s.
+ * <p>
+ * The session cannot be changed: {@link #setSession(Session)} throws an
+ * {@link UnsupportedOperationException} unless the given session is the current thread-local session.
  *
  * @author harald
  */

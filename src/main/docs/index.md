@@ -135,6 +135,7 @@ topic-grouped listing of every document, see the
 
 ## K
 
+- **Keep-alive (sessions, `SessionKeepAliveDaemon`)** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md#session-task-dispatching), [Tentackle Session — Session utilities](../../../tentackle-session/src/main/docs/session.md#session-utilities)
 - **Keychain (macOS), Credential Manager (Windows), Secret Service (Linux)** — [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md)
 - **Keyring (secrets on the client)** — [Keyring](../../../tentackle-core/src/main/docs/keyring.md), [OS Credential Stores](../../../tentackle-keyring/src/main/docs/platform-keyring.md), [Single Sign-On with Google](./google-sso.md)
 - **Keyboard handling (ENTER navigation, `Ctrl-Z`/`Ctrl-Y`, `F1`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#keyboard-handling), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#pdo-bound-components) (`F2`/`F3`)
@@ -242,6 +243,8 @@ topic-grouped listing of every document, see the
 - **Services (`@Service`, `@ServiceName`, `@MappedService`)** — [Service and Configuration API](../../../tentackle-common/src/main/docs/services.md#the-annotations), [Reflection](../../../tentackle-core/src/main/docs/reflect.md)
 - **Session** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Session pool** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
+- **SessionPooledExecutor (parallel background work on pooled sessions)** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md#session-creation-factory-and-pooling)
+- **SessionUtilities (class/table/class-id lookup, keep-alive daemon, exception hooks)** — [Tentackle Session](../../../tentackle-session/src/main/docs/session.md#session-utilities), [Exceptions and Error Handling](./exceptions.md)
 - **Single sign-on (SSO)** — [Authentication](../../../tentackle-session/src/main/docs/authentication.md), [Single Sign-On with Google](./google-sso.md)
 - **SessionTaskDispatcher (session-aware background tasks)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md#which-dispatcher-do-i-want), [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md)
 - **Snapshots and copies** — [Snapshots and Copies](../../../tentackle-pdo/src/main/docs/snapshot.md)

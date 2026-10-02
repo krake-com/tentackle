@@ -29,10 +29,13 @@ interface ModificationTrackerHolder {
 
 
 /**
- * Tracks global PDO changes.
+ * Tracks global changes.
  * <p>
- * The PDO tracker maintains its own session.
- * The application can request an exclusive use of this session for a
+ * The tracker is a {@link SessionTaskDispatcher} that maintains its own session and periodically
+ * polls for modifications, notifying the registered {@link ModificationListener}s.
+ * Remote clients poll the server's tracker instead of the database, which may also push
+ * {@link MasterSerialEvent}s along.
+ * The application can request an exclusive use of the tracker's session for a
  * (short) period of time and release it afterward.
  *
  * @author harald
@@ -115,7 +118,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    *
    * @param session the session persisting the modification, null if thread-local session (never remote)
    * @param name a unique name to track modifications
-   * @return the modification serial
+   * @return the modification serial, could be higher already
    */
   long countModification(Session session, String name);
 
@@ -139,8 +142,8 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
   void rollbackModification(Session session, long txNumber);
 
   /**
-   * Registers a pure runnable to be executed if the pdo tracker is terminated
-   * due to severe errors.
+   * Registers a runnable to be executed once when the tracker thread terminates.<br>
+   * This applies to an orderly termination as well as to a termination due to severe errors.
    *
    * @param runnable the runnable
    */
@@ -155,10 +158,11 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
   boolean removeShutdownRunnable(Runnable runnable);
 
   /**
-   * Gets the serial for a given class.
+   * Gets the pair of id/serial for a given class.<br>
+   * The modification name is determined from the class's table name.
    *
    * @param clazz the tracked class
-   * @return the table serial
+   * @return the id/serial pair, never null
    */
   IdSerialTuple getIdSerialForClass(Class<?> clazz);
 
@@ -166,8 +170,8 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Gets the pair of id/serial for a given modification name.<br>
    * Used in remote connections.
    *
-   * @param name the name to lookup
-   * @return the id/serial pair for the table name, never null
+   * @param name the name to look up
+   * @return the id/serial pair for the name, never null
    */
   IdSerialTuple getIdSerialForName(String name);
 

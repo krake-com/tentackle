@@ -86,8 +86,10 @@ opens.
 3. **A TRIP URI** — anything else, e.g. `trips://myserver:18000/MyApp`: no local database at all, the
    session is *remote* and all persistence operations are delegated to the server at that URI. The
    scheme selects the [transport](../../../../tentackle-core/src/main/docs/trip.md): `trip` (plain
-   TCP), `trips` (SSL), `tripe` (encrypting), `tripce` (compressing + encrypting), and with
-   [tentackle-quic](../../../../tentackle-quic/src/main/docs/quic.md) `tripq`/`tripcq`.
+   TCP), `trips` (SSL), `tripe` (pre-shared key encryption), `tripc` (compressing), `tripcs`
+   (compressing + SSL), `tripce` (compressing + pre-shared key encryption), and QUIC with
+   [tentackle-quic](../../../../tentackle-quic/src/main/docs/quic.md) (`tripq`/`tripcq`) or
+   [tentackle-quiche](../../../../tentackle-quiche/src/main/docs/quiche.md) (`tripj`/`tripcj`).
 
 For the `jdbc:` and `jndi:` forms, the URL may carry a `|<BackendName>` suffix to pin the SQL
 dialect explicitly when it cannot (or should not) be derived — e.g.

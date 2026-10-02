@@ -22,7 +22,8 @@ import org.tentackle.misc.Pool;
 
 /**
  * A pool of sessions for a given session-info.<br>
- * Allows a single user to use multiple sessions in parallel.
+ * Allows a single user to use multiple sessions in parallel.<br>
+ * The sessions are created via {@link SessionFactory#create(SessionPool, SessionInfo)}.
  *
  * @see SessionPoolFactory
  * @author harald

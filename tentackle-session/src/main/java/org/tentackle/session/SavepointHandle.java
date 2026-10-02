@@ -35,6 +35,15 @@ public record SavepointHandle(String name, Integer id) implements Serializable {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates a savepoint handle.<br>
+   * Exactly one of name or id must be given.
+   *
+   * @param name the savepoint's name, null if unnamed
+   * @param id the savepoint's id, null if named
+   * @throws NullPointerException if neither name nor id is given
+   * @throws IllegalArgumentException if both are given, or the name is empty
+   */
   public SavepointHandle {
     if (id == null) {
       if (Objects.requireNonNull(name, "name").isEmpty()) {

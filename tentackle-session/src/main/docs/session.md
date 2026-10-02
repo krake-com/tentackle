@@ -12,7 +12,7 @@ The module sits between [`tentackle-core`](../../../../tentackle-core/src/main/d
 stack ([`tentackle-database`](../../../../tentackle-database/src/main/docs/database.md), [`tentackle-persistence`](../../../../tentackle-persistence/src/main/docs/persistence.md),
 [`tentackle-pdo`](../../../../tentackle-pdo/src/main/docs/pdo.md)). It deliberately contains **only interfaces, abstract bases,
 annotations, events, and a handful of small helper classes** — the concrete `Session` implementation lives in
-`tentackle-database` (local) and in the remoting modules (remote). This keeps the contract that the whole
+`tentackle-database`, which covers both the local (JDBC) and the remote (TRIP) case. This keeps the contract that the whole
 framework programs against free of any JDBC, SQL-dialect, or wire-protocol detail.
 
 A central design goal is **location transparency**. The same `Session` API is used whether persistence runs
@@ -46,7 +46,7 @@ context*. Its responsibilities group into:
 | Group                          | Methods                                                                                                                        | Purpose                                                                                                    |
 |--------------------------------|--------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
 | **Current-session management** | `getCurrentSession`, `setCurrentSession`, `getSession`, `makeCurrent`, `isCurrent`, `clearCurrent`                             | Maintain and reach the thread-local "current" session.                                                     |
-| **Lifecycle**                  | `close`, `reOpen`, `clone`, `registerCloseHandler`, `isPooled`                                                                 | Open/close/clone sessions and react to closing.                                                            |
+| **Lifecycle**                  | `close`, `reOpen`, `clone`, `registerCloseHandler`, `unregisterCloseHandler`, `isPooled`                                       | Open/close/clone sessions and react to closing.                                                            |
 | **Transactions**               | `begin`, `commit`, `rollback`, `rollbackSilently`, `transaction(...)`, `isTxRunning`, `getTxName`, `getTxNumber`, `getTxLevel`, `setConstraintsDeferred`, `isConstraintsDeferred` | Start and finish (possibly nested) transactions; defer deferrable constraint checks to commit time. |
 | **Savepoints**                 | `setSavepoint`, `rollback(SavepointHandle)`, `releaseSavepoint`                                                                | Fine-grained rollback within a transaction.                                                                |
 | **Pre/post-commit hooks**      | `preCommit`, `postCommit`                                                                                                      | Run logic immediately before, or right after, the physical commit (e.g. firing events post-commit).        |
@@ -54,7 +54,7 @@ context*. Its responsibilities group into:
 | **Locality**                   | `isRemote`, `getRemoteSession`, `getUrl`                                                                                       | Discover whether the backend is local or reached via a server.                                             |
 | **Keep-alive**                 | `setAlive`, `isAlive`, `setKeepAliveInterval`, `getKeepAliveInterval`                                                          | Prevent idle remote sessions from being timed out by the server.                                           |
 | **State sharing**              | `setProperty`, `getProperty`, `clearProperties`                                                                                | Application state that, for remote sessions, is mirrored to the server-side session.                       |
-| **Misc**                       | `getDispatcher`, `setOwnerThread`, `getInstanceNumber`, `applyTo(...)`                                                         | Async task dispatch, accidental-cross-thread detection, propagating the session onto `SessionDependable`s. |
+| **Misc**                       | `getDispatcher`, `setOwnerThread`, `getInstanceNumber`, `getName`, `getSessionInfo`, `preloadRemoteDelegates`, `applyTo(...)`  | Async task dispatch, accidental-cross-thread detection, remote startup tuning, propagating the session onto `SessionDependable`s. |
 
 The static `getCurrentSession()`/`setCurrentSession()` pair backs the thread-local model; `getSession()` asserts
 one is present and throws a [`PersistenceException`](../java/org/tentackle/session/PersistenceException.java)
@@ -80,12 +80,18 @@ other than the default.
 
 ### SessionInfo
 
-[`SessionInfo`](../java/org/tentackle/session/SessionInfo.java) is the **immutable, serializable descriptor** of
+[`SessionInfo`](../java/org/tentackle/session/SessionInfo.java) is the **serializable descriptor** of
 *who* and *what* a session represents: user id/name/class-id, the
 [`Credentials`](../java/org/tentackle/session/auth/Credentials.java) proving that identity, application name/id,
 locale, timezone, client version, host/OS/VM info, and the connection `properties`/`propertiesName`. It travels to
 the server via TRIP when a remote session logs in, and the server may write values back (e.g., the resolved
 user-id) for the client to read.
+
+A session info is mutable until it is made `Immutable` (server applications do this with their own info);
+after that, setters throw an `ImmutableException`. Equality is by **username alone**, so a clone, the original
+and an info created just to name a user are interchangeable as keys — `MultiUserSessionPool` depends on it.
+`clone()` copies the credentials physically, clears the session name, and enables `lockLingerEnabled`.
+The connection properties are loaded lazily from `getPropertiesName()` (default `backend`) on first access.
 
 The credentials default to
 [`PasswordCredentials`](../java/org/tentackle/session/auth/PasswordCredentials.java), so `getUserName()`,
@@ -147,8 +153,11 @@ Note that this applies to sessions reaching the database through a Tentackle ser
   `SessionInfo`s, so different users can each have parallel sessions (typical for a server).
 - [`SessionPoolProvider`](../java/org/tentackle/session/SessionPoolProvider.java) — abstracts whether a pool is
   local or remote.
-- [`SessionPooledExecutor`](../java/org/tentackle/session/SessionPooledExecutor.java) — runs `Runnable`s in
-  parallel, each on its own pooled session, for background work.
+- [`SessionPooledExecutor`](../java/org/tentackle/session/SessionPooledExecutor.java) — runs `Supplier`s in
+  parallel, each on its own pooled session (as the thread-local session), for background work. A success or
+  fail handler is invoked once the session is back in the pool. The batch variant `submit(Collection, …)`
+  does not block: a separate waiter thread collects the results (and failures, including a timeout) and then
+  invokes the handlers.
 
 ### Modification tracking
 
@@ -188,25 +197,31 @@ server to client:
   `MappedService` that maps an event type to its handler. This means the **server need not know the handlers at
   all**, and different clients can react differently to the same server-side event.
 - [`MasterSerialListEvent`](../java/org/tentackle/session/MasterSerialListEvent.java) bundles several pending
-  events for a client (always add via `add(...)` so the override-older-events rule is honored).
+  events for a client. Its constructor, `add(...)` and `addAll(...)` honor the override-older-events rule;
+  the positional mutators inherited from `ArrayList` (`add(int, …)`, `addFirst`, `set`, …) do not.
 - [`MasterSerialEventHandlerFactory`](../java/org/tentackle/session/MasterSerialEventHandlerFactory.java) (default
   [`DefaultMasterSerialEventHandlerFactory`](../java/org/tentackle/session/DefaultMasterSerialEventHandlerFactory.java))
-  resolves handlers. The annotation is processed at build time by
-  [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java).
+  resolves handlers, one stateless singleton per event type, or `null` if the client has no handler for it.
+  The annotation is verified at compile time by
+  [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java)
+  (`Consumer` implemented, no-args constructor present).
 
 ### Session task dispatching
 
 - [`SessionTaskDispatcher`](../java/org/tentackle/session/SessionTaskDispatcher.java) — a `TaskDispatcher` bound to
   a `Session`, executing submitted tasks **serially on one exclusive connection** (default impl
   [`DefaultSessionTaskDispatcher`](../java/org/tentackle/session/DefaultSessionTaskDispatcher.java), with
-  [`SessionTaskDispatcherLock`](../java/org/tentackle/session/SessionTaskDispatcherLock.java)). It can keep its
-  session alive and optionally close it on termination.
+  [`SessionTaskDispatcherLock`](../java/org/tentackle/session/SessionTaskDispatcherLock.java)). The dispatcher
+  thread owns the session and makes it its thread-local session; a pooled session is refused. It can keep its
+  session alive while idle, terminates when the session gets closed, and optionally closes the session on
+  termination.
 - [`AbstractSessionTask`](../java/org/tentackle/session/AbstractSessionTask.java) — base for tasks that need the
   dispatcher's session (it is a `SessionDependable`).
 - [`SessionKeepAliveDaemon`](../java/org/tentackle/session/SessionKeepAliveDaemon.java) /
   [`SessionKeepAliveTask`](../java/org/tentackle/session/SessionKeepAliveTask.java) — periodically `setAlive()` a
-  session (pinging asynchronously so a slow remote line cannot block the dispatcher), honoring each session's
-  `keepAliveInterval`.
+  session (pinging asynchronously so a slow remote line cannot block the daemon), honoring each session's
+  `keepAliveInterval` (at least 1 second). After more than 10 failed pings in a row, the session is closed and
+  it is up to the application to re-open it. A negative interval requests a non-blocking close.
 
 ### Session providers and dependables
 
@@ -259,6 +274,22 @@ These annotations let the persistence layer examine the generated model by refle
 overriding the core `ValidationUtilities`) uses the `@Persistent` ordinal so validators fire in priority plus
 source-code order.
 
+### Session utilities
+
+[`SessionUtilities`](../java/org/tentackle/session/SessionUtilities.java) is a replaceable `@Service` singleton
+(the database layer replaces it by `DbSessionUtilities`) bundling the module's infrastructure:
+
+- **Model lookup** — maps between class names, table names and class ids, built once from the `@TableName`
+  and `@ClassId` mapped services (`getTableName`, `getClassName`, `getClassId`, `getClassNames`), plus
+  `determineTablename`/`determineClassId` reading the annotations of a class directly.
+- **Keep-alive** — `keepAliveIntervalChanged(session)` starts the `SessionKeepAliveDaemon` on demand. Should the
+  daemon have died, the next call starts a new one and hands all registered sessions over to it.
+  `terminateHelperThreads()` stops it.
+- **Exception hooks** — `alignExceptionCause` (replace driver-specific causes a remote JVM cannot deserialize),
+  `alignTemporaryExceptionStatus` (flag transient database errors as temporary), `isSilentRollbackSufficient`
+  and `createLazyExceptionMessage`, used by `PersistenceException`. See
+  [Exceptions and Error Handling](../../../../src/main/docs/exceptions.md).
+
 ### Exceptions
 
 A family of (mostly persistence-related) exceptions is defined here so the upper layers share one vocabulary:
@@ -284,7 +315,7 @@ the client that refreshing the credentials and retrying is worth a try.
 |---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `org.tentackle.session`         | The whole public API: `Session`, `SessionInfo`, the factories and pools, the modification-tracking and master-serial types, the task-dispatcher types, the configuration classes, the model annotations, the `Default*` helper implementations and the exceptions. |
 | `org.tentackle.session.auth`    | Authentication: the `Credentials` types and their `Secret`, the server-side `AuthenticationProvider`/`AuthenticationManager`/`UserResolver` SPI, the client-side `CredentialsProvider`/`CredentialsPrompt` SPI, and the authentication exceptions.                                             |
-| `org.tentackle.session.service` | The [`Hook`](../java/org/tentackle/session/service/Hook.java) (`ModuleHook`) providing resource-bundle/i18n access for the module.                                                                                                                                 |
+| `org.tentackle.session.service` | The [`Hook`](../java/org/tentackle/session/service/Hook.java) (`ModuleHook`) placing the module in the module hierarchy and providing resource-bundle/i18n access.                                                                                                 |
 | `org.tentackle.session.apt`     | The annotation processor [`MasterSerialEventServiceAnnotationProcessor`](../java/org/tentackle/session/apt/MasterSerialEventServiceAnnotationProcessor.java) for `@MasterSerialEventService`.                                                                      |
 
 ---
@@ -336,11 +367,12 @@ whereas a local session authenticates at the database itself.
 
 ### Reacting to changes across clients
 
-A client registers a `ModificationListener` with the `ModificationTracker`. The tracker (in remote mode)
-periodically polls the server's master serial; when it advances, the server returns the pending
-`MasterSerialEvent`s, the matching `@MasterSerialEventService` handlers run, and registered listeners receive
-`ModificationEvent`s for the names they care about — so a change committed by one user can refresh the screens of
-another.
+A client registers a `ModificationListener` with the `ModificationTracker`. The tracker of a remote client
+periodically polls the server's master serial. When it advances, the tracker reads the serials of the tracked
+names and the registered listeners receive `ModificationEvent`s for the names they care about — so a change
+committed by one user can refresh the screens of another. Independently of that, any `MasterSerialEvent`s the
+server queued for the client ride along with the polled master serial, and the matching
+`@MasterSerialEventService` handlers run on the client.
 
 ---
 
@@ -355,6 +387,8 @@ another.
   [Authentication](authentication.md).
 - **Reacting to session lifecycle:** register a `SessionCloseHandler` (per session, or globally via the
   `SessionFactory`) — but keep it non-blocking, as it runs during close.
+- **Custom session utilities:** replace `SessionUtilities` via `@Service(SessionUtilities.class)` — usually by
+  extending `DbSessionUtilities` — e.g. to align further exception types.
 
 ---
 

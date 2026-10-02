@@ -33,13 +33,13 @@ public interface ModificationListener {
   /**
    * Gets the names to listen to.
    *
-   * @return the modification names, null if listen for any change
+   * @return the modification names, null or empty to listen for any change (master listener)
    */
   String[] getNames();
 
   /**
    * Gets the execution priority.<br>
-   * Determines the order of execution. Lower priority comes first.
+   * Determines the order of execution. Lower values come first.
    *
    * @return the execution priority
    */
@@ -52,7 +52,7 @@ public interface ModificationListener {
    * The same listener is only fired once even if the corresponding event occurs
    * again before the listener gets invoked.
    *
-   * @return the execution time window
+   * @return the execution time window in milliseconds, 0 if none
    */
   long getTimeFrame();
 
@@ -67,10 +67,10 @@ public interface ModificationListener {
   long getTimeDelay();
 
   /**
-   * Invoked whenever an instance of the given class has changed.
+   * Invoked whenever the data of one of the listened names has changed.
    *
    * @param ev the modification event
    */
-   void dataChanged(ModificationEvent ev);
+  void dataChanged(ModificationEvent ev);
 
 }

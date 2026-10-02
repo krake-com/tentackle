@@ -32,6 +32,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A task dispatcher to keep sessions alive.
+ * <p>
+ * Each session with a {@link Session#getKeepAliveInterval() keep-alive interval} gets its own
+ * {@link SessionKeepAliveTask}, repeated at that interval, but not more often than the minimum
+ * alive-interval. A negative interval requests a non-blocking close of the session.
+ * <p>
+ * Usually not used directly, but via {@link SessionUtilities#keepAliveIntervalChanged(Session)}.
  *
  * @author harald
  */
@@ -197,8 +203,9 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
    * @return the created task
    */
   protected Task createAliveTask(Session session, long interval) {
-    // (sessionTaskMap.size() + 1) to make sure that even if all tasks time out,
-    // the keep-alive interval is still enough to check all tasks.
+    // Wait only (sessionTaskMap.size() + 1) ms for a ping to complete: even if all pings hang,
+    // the daemon is not blocked and gets around to all tasks within their intervals.
+    // A pending ping is checked again on the task's next run.
     return new SessionKeepAliveTask(this, session, interval, (sessionTaskMap.size() + 1));
   }
 

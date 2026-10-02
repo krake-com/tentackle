@@ -24,7 +24,11 @@ import org.tentackle.task.DefaultTaskDispatcher;
 import org.tentackle.task.Task;
 
 /**
- * A thread executing tasks in a serialized manner on an exclusive connection.
+ * A thread executing tasks in a serialized manner on an exclusive session.
+ * <p>
+ * The dispatcher thread becomes the owner of the session and makes it its thread-local session.
+ * Tasks extending {@link AbstractSessionTask} get the session applied when added.
+ * The dispatcher terminates when its session gets closed.
  *
  * @author harald
  */
@@ -41,12 +45,13 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
   /**
    * Creates an execution thread for a given session.<br>
    * The session must not be used by any other thread!
-   * <p>
+   *
    * @param name                      the dispatcher's name
-   * @param session                   the open session
+   * @param session                   the open session, must not be pooled
    * @param useMutexLocking           true use a mutex for locking, else just a counter
    * @param keepAliveMillis           keep alive in milliseconds
    * @param deadInterval              interval in milliseconds to detect a dead dispatcher, 0 to disable detection
+   * @throws IllegalArgumentException if the session is pooled
    */
   public DefaultSessionTaskDispatcher(String name, Session session,
                                       boolean useMutexLocking, long keepAliveMillis, long deadInterval) {
@@ -91,7 +96,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
       session.makeCurrent();
     }
     else {
-      // no change allowed from another thread unless the tracker wasn't started already
+      // no change allowed from another thread unless the dispatcher wasn't started yet
       assertNotAlive();
     }
     this.session = session;
@@ -115,7 +120,8 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
 
   /**
-   * Adds a task to the queue.
+   * Adds a task to the queue.<br>
+   * Applies the dispatcher's session to {@link AbstractSessionTask}s.
    *
    * @param task the task to add
    * @return true if added, false if already in the queue
@@ -132,7 +138,9 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to run {@link Session#setAlive(boolean)} when sleeping for a while.
+   * Overridden to run {@link Session#setAlive(boolean)} when sleeping for a while, if the
+   * session is {@link #isSessionKeptAlive() kept alive}. Requests termination if that fails
+   * or the session has been closed.
    */
   @Override
   protected void unlockInternal(long sleepMs) {
@@ -174,7 +182,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to close the session.
+   * Overridden to close the session, if {@link #isSessionClosedOnTermination()}.
    */
   @Override
   protected void cleanup() {

@@ -94,23 +94,23 @@ public class NotFoundException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database object not found exception for a given pc object
+   * Constructs a new database object not found exception for a given {@link Identifiable}
    * with <code>null</code> as its detail message.
    * The cause is not initialized and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param object the persistent object
+   * @param object the identifiable
    */
   public NotFoundException(Identifiable object) {
     super(object);
   }
 
   /**
-   * Constructs a new database object not found exception for a given session with the specified detail message.
+   * Constructs a new database object not found exception for a given {@link Identifiable} with the specified detail message.
    * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
-   * @param   object the persistent object
+   * @param   object the identifiable
    * @param   message   the detail message. The detail message is saved for
    *          later retrieval by the {@link #getMessage()} method.
    */
@@ -119,11 +119,11 @@ public class NotFoundException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database object not found exception for a given session with the specified detail message.
+   * Constructs a new database object not found exception for a given {@link Identifiable} with the specified detail message.
    * The cause is not initialized and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
-   * @param   object the persistent object
+   * @param   object the identifiable
    * @param   message   the detail message. The detail message is saved for
    *          later retrieval by the {@link #getMessage()} method.
    * @param   persistedSerial the serial of the object in the database, -1 if no such object, 0 if unknown
@@ -134,10 +134,10 @@ public class NotFoundException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database object not found exception for a given session with the specified detail message and
+   * Constructs a new database object not found exception for a given {@link Identifiable} with the specified detail message and
    * cause.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
@@ -150,13 +150,13 @@ public class NotFoundException extends PersistenceException {
   }
 
   /**
-   * Constructs a new database object not found exception for a given session with the specified cause and a
+   * Constructs a new database object not found exception for a given {@link Identifiable} with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other {@link Throwable}s.
    *
-   * @param  object the persistent object
+   * @param  object the identifiable
    * @param  cause the cause (which is saved for later retrieval by the
    *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted and indicates that the cause is nonexistent or

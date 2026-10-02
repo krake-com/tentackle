@@ -20,20 +20,26 @@ package org.tentackle.session;
 
 /**
  * Provider for local or remote session pools.
+ * <p>
+ * Implemented by server applications. A server serving remote clients takes the sessions for its
+ * clients from the single-user {@link #getSessionPool() session pool}, if available.
+ * Otherwise, typically for a middle tier connected to another server, from the
+ * {@link #getRemoteSessionPool() multi-user pool}, which keeps the sessions per client user.
+ * If neither is available, a new session is created for each client.
  *
  * @author harald
  */
 public interface SessionPoolProvider {
 
   /**
-   * Gets the session pool for local sessions.
+   * Gets the single-user session pool, shared by all clients.
    *
    * @return the pool, null if none available
    */
   SessionPool getSessionPool();
 
   /**
-   * Gets the session pool for remote sessions.
+   * Gets the multi-user session pool, keeping the sessions per client.
    *
    * @return the pool, null if none available
    */

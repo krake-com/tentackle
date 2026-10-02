@@ -337,7 +337,7 @@ the listener that receives it:
 
 | Flavor | `isMasterEvent()` | `getName()` | `getDetails()` | When |
 |---|---|---|---|---|
-| **master** | `true` | `null` | `null` — do not call | listener registered without names; carries only the master serial |
+| **master** | `true` | `null` | empty | listener registered without names; carries only the master serial |
 | **single** | `false` | the name | one detail | one tracked name advanced |
 | **multi** | `false` | first name | one detail per name | several of the listener's names advanced in the same poll |
 
@@ -346,8 +346,9 @@ Each [`ModificationEventDetail`](../java/org/tentackle/session/ModificationEvent
 cleanly when a delayed event accumulates several polls' worth. `getSession()` on the event returns the
 tracker's session.
 
-> Calling `getDetails()` on a master event throws a `NullPointerException` — the details map is `null`.
-> Check `isMasterEvent()` first, as `PdoCache.expire(...)` does.
+> A master event has no details: `getDetails()` returns an empty collection and `getDetail(name)` returns
+> `null`, so a listener can iterate the details of any event unconditionally. Check `isMasterEvent()` to
+> tell a master event apart, as `PdoCache.expire(...)` does.
 
 ### Delaying and coalescing
 
@@ -492,8 +493,9 @@ On the client, `extractMasterSerial(...)` unwraps: if the master serial is a `Co
 dispatched to its handler; otherwise the event itself is. Then the plain `serial()` continues through the poll
 loop as if nothing had happened.
 
-> **`MasterSerialListEvent.add(...)` is the only safe way to add.** It is what enforces
-> `isOverridingOlderEvents()`; `addAll`, `addFirst` and friends are not overridden and will bypass the rule.
+> **Append, don't insert.** The constructor, `MasterSerialListEvent.add(...)` and `addAll(...)` enforce
+> `isOverridingOlderEvents()`; the positional mutators inherited from `ArrayList` (`add(int, …)`, `addFirst`,
+> `set`, …) are not overridden and bypass the rule.
 
 ### A worked example: LogoutEvent
 

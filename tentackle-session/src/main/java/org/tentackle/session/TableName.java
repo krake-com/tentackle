@@ -29,35 +29,39 @@ import java.lang.annotation.Target;
 /**
  * Annotation for the tablename of a PDO.
  * <p>
- * The tablename can be modified by the options:
+ * The tablename can be modified by the build-time options:
  * <ul>
  * <li>mapSchema: if true, dots will be replaced by underscores</li>
- * <li>prefix: prepends the given string to each tablename</li>
+ * <li>prefix: prepends the given string to the tablename, i.e. to the schema, if any</li>
  * </ul>
  *
- * Those options can be provided as maven properties such as:
+ * Those options are provided as wurblet properties in the pom, such as:
  * <pre>
       &lt;wurbletProperties&gt;
-              &lt;tablePrefix&gt;pls&lt;/tablePrefix&gt;
+              &lt;mapSchema&gt;false&lt;/mapSchema&gt;
+              &lt;tablePrefix&gt;app&lt;/tablePrefix&gt;
               ...
    </pre>
  *
- * and in the code:
+ * and injected into the code by the wurblets:
  *
  * <pre>
-   &#64;TableName(value=&#47;*&#64;*&#47;"md.ingotcategory"&#47;*&#64;*&#47;,    // &#64;wurblet &lt; Inject --string $tablename
-           mapSchema=&#47;*&#64;*&#47;false&#47;*&#64;*&#47;,     // @wurblet &lt; Inject $mapSchema
-           prefix=&#47;*&#64;*&#47;""&#47;*&#64;*&#47;)       // @wurblet &lt; Inject --string $tablePrefix
+   &#64;TableName(value=&#47;*&#64;*&#47;"md.customer"&#47;*&#64;*&#47;,    // &#64;wurblet &lt; Inject --string $tablename
+           mapSchema=&#47;*&#64;*&#47;false&#47;*&#64;*&#47;,     // &#64;wurblet &lt; Inject $mapSchema
+           prefix=&#47;*&#64;*&#47;"app"&#47;*&#64;*&#47;)    // &#64;wurblet &lt; Inject --string $tablePrefix
   </pre>
  *
- * Means: all schemas get "pls" prepended (for example, "td.message" becomes "plstd.message").
- * Non-schema tables from the Tentackle framework (technical tables) remain in the default schema.
+ * Means: all schemas get "app" prepended (for example, "td.message" becomes "apptd.message").
+ * The technical tables of the Tentackle framework are built without these options and therefore
+ * keep their plain names in the default schema.
  * This configuration is particularly useful for databases like Oracle that
- * emulate schemas via extra users. As a result, the main user "pls" remains unchanged;
- * transaction data goes to the "schema-user" plstd while the master data goes to plsmd.
- * The model, however, remains unchanged! It's just a configuration in pom.xml.<p>
+ * emulate schemas via extra users. As a result, the main user "app" remains unchanged;
+ * transaction data goes to the "schema-user" apptd while the master data goes to appmd.
+ * The model, however, remains unchanged! It's just a configuration in the pom.<p>
  * With mapSchema=true and prefix="" all tables go to the default schema, while
  * master data tables start with md_ and transaction data with td_.
+ * <p>
+ * Notice that the prefix is not applied to the generated DDL, see the documentation on table names.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -83,9 +87,9 @@ public @interface TableName {
   boolean mapSchema() default false;
 
   /**
-   * Adds a prefix to the tablename or schema.
+   * Adds a prefix to the tablename, i.e. to the schema name if the tablename contains a schema.
    *
-   * @return the optional prefix
+   * @return the optional prefix, empty if none
    */
   String prefix() default "";
 

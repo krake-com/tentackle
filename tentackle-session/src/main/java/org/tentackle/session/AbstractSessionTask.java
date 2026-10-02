@@ -23,7 +23,8 @@ import org.tentackle.task.AbstractTask;
 import java.io.Serial;
 
 /**
- * A task being executed by the {@link SessionTaskDispatcher}.
+ * A task being executed by a {@link SessionTaskDispatcher}.<br>
+ * The dispatcher applies its session when the task is added.
  *
  * @author harald
  */
@@ -44,10 +45,11 @@ public abstract class AbstractSessionTask extends AbstractTask implements Sessio
   }
 
   /**
-   * Sets the db.<br>
-   * Done by {@link SessionTaskDispatcher}.
+   * Sets the session.<br>
+   * Done by the {@link DefaultSessionTaskDispatcher} when the task is added.
    *
    * @param session the session
+   * @throws PersistenceException if the session is immutable and the new session differs
    */
   public void setSession(Session session) {
     if (isSessionImmutable() && this.session != session) {
@@ -58,9 +60,9 @@ public abstract class AbstractSessionTask extends AbstractTask implements Sessio
   }
 
   /**
-   * Gets the db the runnable <em>must</em> use.
+   * Gets the session the task <em>must</em> use.
    *
-   * @return the db
+   * @return the session
    */
   public Session getSession() {
     return session;

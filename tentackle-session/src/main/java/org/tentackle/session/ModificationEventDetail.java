@@ -23,7 +23,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Holds the event detail.
+ * Holds the event detail.<br>
+ * Details are equal if their names are equal, regardless of the serial.
  *
  * @author harald
  */
@@ -42,8 +43,8 @@ public class ModificationEventDetail implements Serializable {
   /**
    * Creates an event detail.
    *
+   * @param name the modification name, never null or empty
    * @param serial the serial
-   * @param name the modification name
    */
   public ModificationEventDetail(String name, long serial) {
     if (Objects.requireNonNull(name, "name").isEmpty()) {

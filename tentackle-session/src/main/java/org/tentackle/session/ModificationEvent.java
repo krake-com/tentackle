@@ -52,7 +52,7 @@ public class ModificationEvent implements Serializable {
   @SuppressWarnings("serial")
   private final Map<String,ModificationEventDetail> details;    //  null if master event
 
-  /** the modification serial, master, or first of details. */
+  /** the modification serial, master, or of the first detail. */
   private final long serial;
 
   /** the first modification name, null if master. */
@@ -60,10 +60,11 @@ public class ModificationEvent implements Serializable {
 
 
   /**
-   * Creates a modification event.
+   * Creates a named modification event.<br>
+   * The first detail determines the {@link #getName() name} and {@link #getSerial() serial} of the event.
    *
    * @param session the session, never null
-   * @param details the modification details, one for each name
+   * @param details the modification details, one for each name, never null or empty
    */
   public ModificationEvent(Session session, Collection<ModificationEventDetail> details) {
     this.session = Objects.requireNonNull(session, "session");
@@ -91,7 +92,7 @@ public class ModificationEvent implements Serializable {
    * @param serial the master modification serial
    */
   public ModificationEvent(Session session, long serial) {
-    this.session = session;
+    this.session = Objects.requireNonNull(session, "session");
     this.details = null;
     this.serial = serial;
     this.name = null;
@@ -128,7 +129,7 @@ public class ModificationEvent implements Serializable {
   }
 
   /**
-   * Returns whether this a multi-named event.
+   * Returns whether this is a multi-named event.
    *
    * @return true if a multi-named event
    */
@@ -137,7 +138,7 @@ public class ModificationEvent implements Serializable {
   }
 
   /**
-   * Gets the modification serial of the first detail or master.
+   * Gets the modification serial of the first detail, or the master serial.
    *
    * @return the serial
    */

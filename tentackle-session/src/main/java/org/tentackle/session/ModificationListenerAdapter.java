@@ -19,7 +19,8 @@
 package org.tentackle.session;
 
 /**
- * A modification listener adapter.
+ * A modification listener adapter.<br>
+ * Provides the default priority 100, no time frame and no time delay.
  *
  * @author harald
  */

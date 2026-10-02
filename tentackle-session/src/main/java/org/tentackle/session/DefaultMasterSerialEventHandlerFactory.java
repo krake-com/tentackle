@@ -35,13 +35,13 @@ import java.util.function.Consumer;
 public class DefaultMasterSerialEventHandlerFactory implements MasterSerialEventHandlerFactory {
 
   /**
-   * maps event classes to the constructors of the master serials.
+   * caches the handler per event class, empty if there is no handler.
    */
   @SuppressWarnings("rawtypes")
   private final ConcurrentHashMap<Class, Optional> serviceMap = new ConcurrentHashMap<>();
 
   /**
-   * maps events to handlers.
+   * maps event classes to handler classes, according to {@link MasterSerialEventService}.
    */
   private final ClassMapper eventClassMapper;
 
@@ -60,6 +60,15 @@ public class DefaultMasterSerialEventHandlerFactory implements MasterSerialEvent
   }
 
 
+  /**
+   * Creates the handler for an event class.<br>
+   * Invoked only once per event class, the result is cached by {@link #getEventHandler(Class)}.
+   *
+   * @param <T> the event type
+   * @param eventClass the event class
+   * @return the handler, empty if there is no handler for this event class
+   * @throws PersistenceException if the handler could not be instantiated
+   */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected <T extends MasterSerialEvent> Optional<Consumer<T>> getHandler(Class<T> eventClass) {
     try {
@@ -68,8 +77,8 @@ public class DefaultMasterSerialEventHandlerFactory implements MasterSerialEvent
         return Optional.of((Consumer<T>) serviceClass.getConstructor().newInstance());
       }
       catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-        throw new PersistenceException("no no-args constructor for " + serviceClass.getName() +
-                                       " (master serial event handler for " + eventClass.getName() + ")");
+        throw new PersistenceException("cannot instantiate " + serviceClass.getName() +
+                                       " (master serial event handler for " + eventClass.getName() + ")", e);
       }
     }
     catch (ClassNotFoundException ex) {
