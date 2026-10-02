@@ -229,7 +229,9 @@ connection's diagnostic info (including its statement history), then rolls back 
 connection at the lowest level — in a separate thread, so a hanging driver cannot block the
 supervisor. The thread stuck in the transaction gets an exception on its next database access.
 The supervisor also logs a transaction that is no longer referenced but was never finished (as
-`SEVERE`).
+`SEVERE`). When it is asked to stop — `terminateHelperThreads()` at application shutdown — it keeps
+supervising the transactions still running and terminates only after they have finished or timed
+out. The next transaction starts it again.
 
 The defaults are an interval of `1000` ms and a timeout of `60` intervals, i.e. one minute.
 Application servers configure both from the `txIdleInterval` and `txIdleTimeout`

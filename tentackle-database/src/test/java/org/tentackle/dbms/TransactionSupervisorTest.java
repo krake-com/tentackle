@@ -56,4 +56,32 @@ public class TransactionSupervisorTest extends AbstractDbTest {
     }
   }
 
+  @Test
+  public void testSupervisesRunningTransactionsAfterTermination() throws InterruptedException {
+    DbTransactionFactory factory = new DbTransactionFactory();    // not the singleton used by the other tests
+    factory.setTxIdleInterval(50);
+    Db db = getSession();
+    DbTransaction tx = factory.create(db, "running", false);
+    try {
+      factory.requestTermination();
+      assertTrue(factory.isSupervisorRunning(), "supervisor must keep running while transactions are running");
+
+      Thread.sleep(300);    // several supervisor intervals
+      assertTrue(factory.isSupervisorRunning(), "supervisor must still supervise the running transaction");
+
+      factory.finish(tx, false);
+      tx = null;
+      for (int i = 0; i < 40 && factory.isSupervisorRunning(); i++) {
+        Thread.sleep(50);
+      }
+      assertFalse(factory.isSupervisorRunning(), "supervisor must terminate when no transactions are running");
+    }
+    finally {
+      if (tx != null) {
+        factory.finish(tx, false);
+      }
+      factory.requestTermination();
+    }
+  }
+
 }

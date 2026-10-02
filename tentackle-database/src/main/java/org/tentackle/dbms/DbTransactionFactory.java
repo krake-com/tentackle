@@ -211,13 +211,16 @@ public class DbTransactionFactory {
 
   /**
    * Requests supervisor thread termination.<br>
+   * If transactions are still running, the supervisor keeps running until they are finished or timed out.
    * The supervisor is started again when the next transaction is created.
    */
   public synchronized void requestTermination() {
     if (transactionSupervisor != null) {
       transactionSupervisor.requestTermination();
-      transactionSupervisor.interrupt();
-      transactionSupervisor = null;   // the next transaction starts a new supervisor
+      transactionSupervisor.interrupt();    // wake up to re-check promptly
+      if (transactions.isEmpty()) {
+        transactionSupervisor = null;       // nothing to supervise: the next transaction starts a new supervisor
+      }
     }
   }
 
@@ -258,10 +261,23 @@ public class DbTransactionFactory {
     }
   }
 
-  private synchronized void supervisorTerminated(TransactionSupervisor supervisor) {
-    if (transactionSupervisor == supervisor) {    // not replaced by a new supervisor in the meantime
-      transactionSupervisor = null;
+  /**
+   * Determines whether the supervisor should keep running.<br>
+   * Synchronized with {@link #ensureSupervisorAlive()}, so that a transaction created concurrently
+   * is either picked up by the terminating supervisor or starts a new one.
+   *
+   * @param supervisor the supervisor thread
+   * @return true if keep running, false if terminate
+   */
+  private synchronized boolean keepSupervising(TransactionSupervisor supervisor) {
+    if (transactionSupervisor != supervisor) {
+      return false;   // dropped by requestTermination()
     }
+    if (supervisor.terminationRequested && transactions.isEmpty()) {
+      transactionSupervisor = null;   // the next transaction starts a new supervisor
+      return false;
+    }
+    return true;
   }
 
 
@@ -309,6 +325,7 @@ public class DbTransactionFactory {
 
     /**
      * Requests this thread to terminate.<br>
+     * The thread terminates as soon as no transactions are running anymore.
      * The flag belongs to the thread, not to the factory, so that a supervisor started
      * after the termination of a previous one is not stopped right away.
      */
@@ -318,7 +335,7 @@ public class DbTransactionFactory {
 
     @Override
     public void run() {
-      while (!terminationRequested) {
+      while (keepSupervising(this)) {
         if (configChanged) {
           LOGGER.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
           configChanged = false;
@@ -379,14 +396,13 @@ public class DbTransactionFactory {
           }
         }
         catch (InterruptedException ix) {
-          // daemon thread is terminated via requestTermination()
+          // daemon thread is terminated via requestTermination() as soon as no transactions are running
         }
         catch (RuntimeException ex) {
           LOGGER.severe("cleanup transactions failed", ex);
         }
       }
 
-      supervisorTerminated(this);
       LOGGER.info("{0} terminated", getName());
     }
 
