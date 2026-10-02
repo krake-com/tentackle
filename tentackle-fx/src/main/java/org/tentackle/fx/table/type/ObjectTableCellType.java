@@ -27,7 +27,7 @@ import org.tentackle.fx.table.TableCellTypeService;
 
 /**
  * The most simple cell type.<br>
- * Fallback if type does not correspond to a known cell-type.
+ * Fallback if the type does not correspond to a known cell type.
  *
  * @author harald
  */

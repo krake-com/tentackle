@@ -44,7 +44,7 @@ interface MacUtilitiesHolder {
 
 
 /**
- * Utilities for Mac OS X.
+ * Utilities for macOS.
  */
 @Service(MacUtilities.class)
 public class MacUtilities {
@@ -59,7 +59,7 @@ public class MacUtilities {
   }
 
 
-  private static final int ICON_SIZE = 16;    // system menu bar icon size on Mac OS X
+  private static final int ICON_SIZE = 16;    // system menu bar icon size on macOS
 
   /** Key to remember the converted icon in the properties of the {@link ImageView}. */
   private static final String ICON_CODE_KEY = MacUtilities.class.getName() + ".iconCode";

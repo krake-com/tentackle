@@ -17,6 +17,8 @@
  */
 
 /**
- * Configurators for FX containers.
+ * Configurators for FX containers.<br>
+ * Registered via {@link org.tentackle.fx.ConfiguratorService}. The {@link org.tentackle.fx.container.config.WindowConfigurator}
+ * applies to all windows created via {@link org.tentackle.fx.FxFactory#createStage}.
  */
 package org.tentackle.fx.container.config;

@@ -40,6 +40,8 @@ import java.util.function.Function;
 /**
  * List translator.<br>
  * Used for components maintaining a list of elements, such as a table.
+ * For tables with sortable columns, the list is wrapped in a {@link SortedList} bound to the table's comparator.
+ * Translation to the model is not supported, since the view updates the list directly.
  *
  * @author harald
  * @param <T> the element type

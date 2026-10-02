@@ -41,7 +41,10 @@ import java.util.function.Function;
 
 
 /**
- * Delegate for FxComboBox.
+ * Delegate for FxComboBox.<br>
+ * An editable combo box is a text component and translates the editor's text via the value translator.
+ * A non-editable combo box selects the items, which are of the model's type already.
+ * For enums, the items are set to the enum constants.
  *
  * @author harald
  */
@@ -155,7 +158,9 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
 
   /**
-   * Returns whether deselect is allowed.
+   * Returns whether deselect is allowed.<br>
+   * If not set explicitly via {@link FxComboBox#setDeselectAllowed(Boolean)},
+   * deselect is allowed unless the type is primitive or the component is mandatory.
    *
    * @return true if allowed
    */

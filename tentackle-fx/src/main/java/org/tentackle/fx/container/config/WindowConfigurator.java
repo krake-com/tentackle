@@ -39,7 +39,7 @@ import org.tentackle.fx.FxUtilities;
 public class WindowConfigurator<T extends Window> implements Configurator<T> {
 
   /**
-   * Creates the configurator for {@link Window}.
+   * Creates the configurator for a {@link Window}.
    */
   public WindowConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -55,6 +55,7 @@ public class WindowConfigurator<T extends Window> implements Configurator<T> {
    * Registers event filters.
    *
    * @param window the window
+   * @see FxUtilities#registerWindowEventFilters(Window)
    */
   protected void registerEventFilters(T window) {
     FxUtilities.getInstance().registerWindowEventFilters(window);

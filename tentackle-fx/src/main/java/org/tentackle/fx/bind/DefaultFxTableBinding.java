@@ -89,9 +89,7 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
   }
 
   /**
-   * Applies the model's type to the component.
-   *
-   * @throws BindingException if component does not accept type
+   * Applies the model's type to the column configuration.
    */
   @SuppressWarnings("unchecked")
   protected void applyType() {

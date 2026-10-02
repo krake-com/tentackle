@@ -35,6 +35,11 @@ public class DateStringTranslator extends ValueStringTranslator<java.util.Date> 
 
   private final LocalDateStringTranslator translator;
 
+  /**
+   * Creates a translator.
+   *
+   * @param component the text component
+   */
   public DateStringTranslator(FxTextComponent component) {
     super(component);
     translator = new LocalDateStringTranslator(component);

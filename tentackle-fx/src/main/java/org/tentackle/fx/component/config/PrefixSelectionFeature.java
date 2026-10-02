@@ -40,6 +40,8 @@ import java.util.function.Supplier;
  * Useful for (non-editable) ComboBoxes and ChoiceBoxes but can be applied to any control providing a list of items
  * that can be selected.<br>
  * The prefix selection is case-sensitive if the first typed character is uppercase.
+ * The prefix is reset after {@link FxUtilities#getPrefixSelectionTimeout()} without a keystroke.
+ * With {@link #CAMEL_CASE}, the typed characters match the uppercase letters and digits of the item text.
  *
  * @author harald
  * @param <T> the control type
@@ -64,13 +66,24 @@ public class PrefixSelectionFeature<T extends Control> {
   public static final String CAMEL_CASE = "CamelCase";
 
 
+  /** The control. */
   protected final T control;
+
+  /** The condition to activate preselection by keystrokes. */
   protected final BooleanSupplier asYouTypeCondition;
+
+  /** The items that can be selected. */
   protected final Supplier<Collection> itemProvider;
+
+  /** The item to string converter. */
   protected final Supplier<StringConverter> itemConverter;
+
+  /** The selector to select an item by its index. */
   protected final Consumer<Integer> selector;
 
-  protected final StringBuilder prefixBuf;    // collected prefix string
+  /** The collected prefix string. */
+  protected final StringBuilder prefixBuf;
+
   private long lastPressMillis;               // epochal time of last keystroke
   private Integer index;                      // where to start the search, null if n/a
   private boolean isDropDownVisible;          // true if dropdown is visible
@@ -193,7 +206,7 @@ public class PrefixSelectionFeature<T extends Control> {
   }
 
   /**
-   * Select an item according to the current prefix.
+   * Selects an item according to the current prefix.
    */
   protected void select() {
     String prefix = getPrefix();
@@ -238,7 +251,7 @@ public class PrefixSelectionFeature<T extends Control> {
   }
 
   /**
-   * Returns whether the item is matching prefix string.<br>
+   * Returns whether the item matches the prefix string.<br>
    * Items without a displayable text never match. Notice that a null item is perfectly valid,
    * as it is the common idiom for the "nothing selected" entry of a dropdown list.
    *

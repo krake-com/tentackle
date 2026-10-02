@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
- * Default implementation of a binding factory for Fx.
+ * Default implementation of the FX binding factory.
  *
  * @author harald
  */
@@ -47,7 +47,7 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
 
 
   /**
-   * Map of component classes to binding classes
+   * Map of component classes to binding classes.
    */
   private final Map<Class<? extends FxComponent>, Class<? extends FxComponentBinding>> componentClassMap = new ConcurrentHashMap<>();
 
@@ -58,7 +58,7 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
 
 
   /**
-   * Creates a form binding factory.
+   * Creates the FX binding factory.
    */
   public DefaultFxBindingFactory() {
     super();
@@ -112,7 +112,7 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
       }
     }
     else {
-      // if all else fails: createBinding a default binding
+      // if all else fails: create a default binding
       binding = new DefaultFxComponentBinding(binder, parents, member, component, componentOptions);
     }
 

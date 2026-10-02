@@ -44,7 +44,7 @@ public interface FxControl {
   FxContainer getParentContainer();
 
   /**
-   * Set the control to be changeable.<br>
+   * Sets the control to be changeable.<br>
    * This is a unified abstraction and will be translated to setEditable or
    * setDisabled, whatever is appropriate to this control.
    *
@@ -121,7 +121,7 @@ public interface FxControl {
   void setViewModified(boolean viewModified);
 
   /**
-   * Returns whether the user has modified the view since the last {@link #updateView}.
+   * Returns whether the user has modified the view since the last {@link #saveView}.
    *
    * @return true if user changed the visual representation
    */
@@ -143,7 +143,7 @@ public interface FxControl {
   void setBindable(boolean bindable);
 
   /**
-   * Determines whether this container is bindable.
+   * Determines whether this control is bindable.
    *
    * @return true if bindable, else not eligible for the binding process
    */
@@ -151,9 +151,8 @@ public interface FxControl {
 
   /**
    * Sets the online-help URL.<br>
-   * If a help url is set, a browser will
-   * be launched to show that url if there is no help url
-   * for the control the help was requested for.
+   * If help is requested for a control without a help URL,
+   * the URL of the nearest parent container providing one is shown in the browser.
    *
    * @param helpUrl the help url
    */

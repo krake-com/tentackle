@@ -32,7 +32,8 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Popup;
 
 /**
- * Extended Label.
+ * Extended Label.<br>
+ * Optionally provides a context menu to copy the label's text.
  *
  * @author harald
  */
@@ -50,7 +51,7 @@ public class FxLabel extends Label {
   /**
    * Enables a context menu for this label.<br>
    * Since the label's text cannot be selected, it cannot be copied to the clipboard.
-   * By enabling a contextmenu, two menu items will be available:
+   * By enabling a context menu, two menu items will be available:
    * <ol>
    *   <li>Copy the label's text to the clipboard.</li>
    *   <li>Copy the label's text to a textarea in a popup window. Allows selecting only
@@ -92,7 +93,7 @@ public class FxLabel extends Label {
 
   /**
    * Adds menu items to copy the label's text to the clipboard and
-   * to open a scratchpad to select only parts the of the text.
+   * to open a scratchpad to select only parts of the text.
    *
    * @param contextMenu the context menu to append the menu items to
    */

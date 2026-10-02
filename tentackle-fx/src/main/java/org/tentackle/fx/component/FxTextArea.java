@@ -54,14 +54,15 @@ import java.util.function.Function;
  * <p>
  * A text area displayed with only one or very few lines can offer an expand-button at its top
  * right edge. Clicking it pops up a multi-line editor covering the text area, which collapses again
- * as soon as it loses the focus. The feature is opt-in via {@link #setExpandable(boolean)}.
+ * as soon as it loses the focus. The feature is opt-in via {@link #setExpandable(boolean)},
+ * regardless of the number of rows.
  *
  * @author harald
  */
 public class FxTextArea extends TextArea implements FxTextComponent {
 
   /**
-   * True if enter/shift-Enter navigates to the next/previous component.
+   * True if enter/shift-enter navigates to the next/previous component.
    */
   private BooleanProperty navigateViaEnterEnabledProperty;
 
@@ -87,7 +88,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
 
 
   /**
-   * Returns whether enter/tab is treated the Tentackle way.
+   * Returns whether enter is treated the Tentackle way.
    *
    * @return true if tentackle, false if standard FX
    */
@@ -96,8 +97,9 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   /**
-   * By default, enter/shift-enter or tab navigates to the next/previous component and
-   * ctrl-enter/tab inserts the character.
+   * Sets whether enter is treated the Tentackle way.<br>
+   * By default, enter/shift-enter navigates to the next/previous component and
+   * ctrl-enter/ctrl-tab inserts the character.
    *
    * @param navigateViaEnterEnabled false to restore FX standard behavior
    */
@@ -118,7 +120,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   /**
-   * Returns whether a one-liner offers the expand button.
+   * Returns whether the text area offers the expand button.
    *
    * @return true if expandable, false if never expand (default)
    */
@@ -127,8 +129,8 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   /**
-   * Sets whether a one-liner offers the expand button.<br>
-   * Has no effect on text areas that are multi-line anyway.
+   * Sets whether the text area offers the expand button.<br>
+   * Usually enabled for text areas displayed as a one-liner.
    *
    * @param expandable true if expandable, false if never expand (default)
    */
@@ -187,7 +189,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   /**
    * Expands this text area to a multi-line editor.<br>
    * Does nothing if not {@link #isExpandable()}, already expanded
-   * or not displayed at all.
+   * or not displayed on screen.
    */
   public void expand() {
     if (isExpandable()) {

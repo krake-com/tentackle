@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Delegate for text input fields.
+ * Base delegate for components derived from {@link TextInputControl}.<br>
+ * Installs the delegate as the filter of the component's {@link TextFormatter} and provides the auto-completion.
  *
  * @author harald
  * @param <T> the text component type

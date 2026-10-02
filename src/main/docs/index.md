@@ -60,6 +60,7 @@ topic-grouped listing of every document, see the
 - **Daemon / supervisor (background threads)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)
 - **DataTypes (application-specific)** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Binding](../../../tentackle-core/src/main/docs/binding.md), [Freezable](../../../tentackle-common/src/main/docs/freezable.md)
 - **Date/time parsing (smart syntax, shortcuts)** — [Miscellaneous](../../../tentackle-core/src/main/docs/misc.md)
+- **Date/time input (reference date `@`, sliding year window)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#date-and-time-input)
 - **Deserialization hardening (allowlisting, untrusted data)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md)
 - **DB2 (backend peculiarities)** — [The DB2 Backend](../../../tentackle-sql/src/main/docs/db2.md)
 - **DDL generation** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
@@ -113,6 +114,7 @@ topic-grouped listing of every document, see the
 
 ## I
 
+- **I18NText (multilingual values, translation editor)** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md#the-i18ntext-value-type), [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#multilingual-texts)
 - **i18n / Internationalization** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md), [Tentackle I18N](../../../tentackle-i18n/src/main/docs/i18n.md), [I18N Maven Plugin](../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md), [BundleMonkey](../../../tentackle-i18n/src/main/docs/bundlemonkey.md)
 - **Icons / images (symbolic names, icon packs, realms)** — [GraphicProvider](../../../tentackle-fx/src/main/docs/graphic-provider.md), [tentackle-fx-atlanta](../../../tentackle-fx-atlanta/src/main/docs/atlanta.md)
 - **Id sources (technical object ids)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md), [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md) (for business numbers)
@@ -198,6 +200,7 @@ topic-grouped listing of every document, see the
 - **PDO (Persistent Domain Objects)** — [PDO](../../../tentackle-pdo/src/main/docs/pdo.md), [PDOs vs. ORMs](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)
 - **PDO Browser (generating test-fixture code)** — [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#the-browse-goal), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md#generating-fixture-code-with-the-pdo-browser), [AI Agent Tooling Support](./ai-agents.md#java-code-from-the-database-tentackle-wizardbrowse-in-batch-mode)
 - **Parallel builds (`mvn -T`, thread-safe plugins and wurblets)** — [Tentackle Maven Support](../../../tentackle-maven-support/src/main/docs/tentackle-maven-support.md#parallel-builds), [Wurblets](../../../tentackle-wurblets/src/main/docs/wurblets.md#parallel-builds), [The Wurblet API](../../../tentackle-wurblets/src/main/docs/wurblet-api.md#thread-safety)
+- **Password input (`char[]`, `FxPasswordField`)** — [tentackle-fx](../../../tentackle-fx/src/main/docs/fx.md#secure-password-input)
 - **Passwords / credentials (storage, encryption)** — [Cryptor and EncryptedProperties](../../../tentackle-common/src/main/docs/cryptor.md), [Authentication](../../../tentackle-session/src/main/docs/authentication.md#the-credential-model), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **PKCE (authorization code flow with proof key)** — [Single Sign-On with Google](./google-sso.md)
 - **Permissions / grantees** — [Security](../../../tentackle-pdo/src/main/docs/security.md)

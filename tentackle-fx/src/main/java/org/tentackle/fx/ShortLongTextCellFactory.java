@@ -31,12 +31,16 @@ import javafx.util.Callback;
 import java.util.List;
 
 /**
- * Cell factory to display items implementing {@link ShortLongText}.
+ * Cell factory to display items implementing {@link ShortLongText}.<br>
+ * The short and long texts are shown in two aligned columns.
+ * Items not implementing {@link ShortLongText} are shown via {@code toString()}.
+ *
+ * @param <T> the item type
  */
 public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
   private static final double GRID_GAP = 20.0;      // visual gap between short and long text columns
-  private static final double FONT_PADDING = 2.0;   // extra passing to avoid dots due to rounding errors
+  private static final double FONT_PADDING = 2.0;   // extra padding to avoid ellipses due to rounding errors
 
   private boolean listenerPending = true;           // true if add listener to check if the popup was closed
   private boolean widthPending;                     // true if (re-)compute widths
@@ -127,10 +131,10 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
 
 
   /**
-   * Returns whether the long text should be shown for the given item.
+   * Gets the short/long text of an item.
    *
    * @param item the item
-   * @return the {@link ShortLongText} to be displayed, null if only short text as toString()
+   * @return the {@link ShortLongText} to be displayed, null to display only {@code toString()} as the short text
    */
   protected ShortLongText getShortLongText(T item) {
     return item instanceof ShortLongText ? (ShortLongText) item : null;

@@ -82,7 +82,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
 
   /**
-   * Returns whether two-column list view enabled for items implementing {@link org.tentackle.misc.ShortLongText}.
+   * Returns whether the two-column list view is enabled for items implementing {@link org.tentackle.misc.ShortLongText}.
    *
    * @return true if enabled (default)
    */
@@ -103,7 +103,9 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
 
   /**
-   * Filter keyboard events.
+   * Filters keyboard events.<br>
+   * {@code Shift-BACKSPACE} clears the editor of an editable combo box.
+   * {@code DELETE} or {@code BACKSPACE} deselect the value of a non-editable combo box, if deselect is allowed.
    *
    * @param event the key event
    */

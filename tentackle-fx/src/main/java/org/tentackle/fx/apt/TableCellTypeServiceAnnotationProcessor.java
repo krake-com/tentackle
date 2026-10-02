@@ -27,11 +27,7 @@ import javax.tools.Diagnostic;
 
 /**
  * Annotation processor for the {@code @TableCellTypeService} annotation.<br>
- * Enforces the implementation of the following constructors:
- *
- * <ul>
- *   <li>({@link Class})</li>
- * </ul>
+ * Enforces a no-args constructor and the implementation of {@code TableCellType}.
  *
  * @author harald
  */

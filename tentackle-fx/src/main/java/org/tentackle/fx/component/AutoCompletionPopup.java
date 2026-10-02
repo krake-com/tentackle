@@ -50,7 +50,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Popup for auto-completion.
+ * Popup for auto-completion.<br>
+ * Shows the suggestions of an {@link AutoCompletionController} below the text input component.
+ * The visible row count and the row height are styleable via {@code -tt-autocomplete-visible-row-count}
+ * and {@code -tt-autocomplete-fixed-cell-size}.
  */
 public class AutoCompletionPopup extends PopupControl {
 
@@ -194,7 +197,7 @@ public class AutoCompletionPopup extends PopupControl {
   }
 
   /**
-   * Creates the autocompletion cell factory.
+   * Creates the auto-completion cell factory.
    *
    * @return the cell factory
    */
@@ -248,6 +251,11 @@ public class AutoCompletionPopup extends PopupControl {
     STYLEABLES = Collections.unmodifiableList(temp);
   }
 
+  /**
+   * Gets the CSS metadata of this class.
+   *
+   * @return the CSS metadata, including the styleable properties of {@link PopupControl}
+   */
   public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
     return STYLEABLES;
   }

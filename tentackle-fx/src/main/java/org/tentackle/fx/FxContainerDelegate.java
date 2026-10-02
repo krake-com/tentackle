@@ -19,13 +19,16 @@
 
 package org.tentackle.fx;
 
+import javafx.css.Styleable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 
 import java.util.List;
 
 /**
- * Delegate implementing FxContainer.
+ * Delegate implementing {@link FxContainer}.<br>
+ * Propagates the container operations, such as updating the view or model, saving the view,
+ * changeability, and clearing errors, to the components of the container.
  *
  * @author harald
  */
@@ -90,7 +93,8 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
     StringBuilder buf = new StringBuilder();
     buf.append("container ").
         append(getContainer().getClass().getName());
-    String id = ((Node) getContainer()).getId();
+    // not necessarily a node, e.g. FxTab
+    String id = getContainer() instanceof Styleable styleable ? styleable.getId() : null;
     if (id != null) {
       buf.append('[').append(id).append(']');
     }
@@ -104,7 +108,9 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
 
 
   /**
-   * Gets the container as a node.
+   * Gets the container as a node.<br>
+   * Containers that are not nodes, such as {@link org.tentackle.fx.container.FxTab}, must override
+   * all methods using it, such as {@link #getParentContainer()}.
    *
    * @return the node
    */

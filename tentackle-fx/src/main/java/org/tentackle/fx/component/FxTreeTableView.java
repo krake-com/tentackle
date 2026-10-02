@@ -52,7 +52,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Extended TreeTableView.
+ * Extended TreeTableView.<br>
+ * Usually configured by a {@link TableConfiguration}, which also provides the column filters
+ * and the preferences-backed layouts.
  *
  * @author harald
  * @param <S> the type
@@ -83,7 +85,8 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
 
   /**
    * Filters dangerous keys.<br>
-   * Since the TreeTableViewBehaviour is private, we cannot modify the input map and filter the keys before
+   * {@code *} expands all nodes, {@code Shift-*} collapses them, both without running into recursion loops.
+   * Since the TreeTableViewBehavior is private, we cannot modify the input map and filter the keys before
    * they reach the key event handler.
    *
    * @param event the key event
@@ -239,7 +242,8 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   /**
-   * Gets the displayed items.
+   * Gets the displayed items.<br>
+   * These are the values of all tree items that are visible if scrolled into view, i.e. whose parents are expanded.
    *
    * @return the items
    */
@@ -343,7 +347,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   /**
-   * Configures the table to copy a cell via Ctrl-C to the clipboard.
+   * Configures the table to copy the selected cells via Ctrl-C to the clipboard.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -361,7 +365,9 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   /**
-   * Handles all key events.
+   * Handles all key events.<br>
+   * Implements the copy-to-clipboard feature, if enabled. The copied text is shown in a note
+   * as long as the control key is held down.
    *
    * @param event the key event
    */
@@ -370,7 +376,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
       if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
         String text = copyToClipboard();
         if (text != null) {
-          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          // display copied text for as long as the control button is held down (see KEY_RELEASED below)
           Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);

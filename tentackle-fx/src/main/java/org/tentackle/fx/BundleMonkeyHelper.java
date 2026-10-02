@@ -30,6 +30,11 @@ import java.nio.file.Path;
 
 /**
  * Provides access to BundleMonkey services.
+ * <p>
+ * BundleMonkey is a tool to edit the resource bundles of a running application.
+ * It listens on a Unix domain socket in the user's home directory and receives
+ * component hierarchy dumps (see {@link FxUtilities#dumpComponentHierarchy(javafx.scene.Node)})
+ * to navigate to the resource bundle keys of the selected node.
  */
 public class BundleMonkeyHelper {
 
@@ -48,21 +53,44 @@ public class BundleMonkeyHelper {
    */
   public static final String BUNDLENAME_POSTFIX = "}$";
 
+  /**
+   * Locale prefix in hierarchy dump.
+   */
   public static final String LOCALE_PREFIX = "(LOCALE=";
 
+  /**
+   * Locale postfix in hierarchy dump.
+   */
   public static final String LOCALE_POSTFIX = ")";
 
   private static final Logger LOGGER = Logger.get(BundleMonkeyHelper.class);
 
 
+  /**
+   * Creates the path of the Unix domain socket BundleMonkey listens on.
+   *
+   * @return the socket path {@code ~/.bmonkey.sock}
+   */
   public static Path createSocketPath() {
     return Path.of(System.getProperty("user.home")).resolve(SOCKET_NAME);
   }
 
+  /**
+   * Creates the string that denotes a resource bundle name in a hierarchy dump.
+   *
+   * @param bundleName the resource bundle name
+   * @return the bundle name enclosed in {@link #BUNDLENAME_PREFIX} and {@link #BUNDLENAME_POSTFIX}
+   */
   public static String createNavigationString(String bundleName) {
     return BUNDLENAME_PREFIX + bundleName + BUNDLENAME_POSTFIX;
   }
 
+  /**
+   * Sends a component hierarchy dump to BundleMonkey.<br>
+   * Does nothing (except logging) if BundleMonkey is not listening.
+   *
+   * @param hierarchyDump the hierarchy dump
+   */
   public static void navigateTo(String hierarchyDump) {
     try (SocketChannel channel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
       channel.connect(UnixDomainSocketAddress.of(createSocketPath()));

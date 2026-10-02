@@ -103,19 +103,19 @@ realm, mapping symbolic names to the Ikonli **materialdesign2** pack (a compile-
 tentackle-fx, `requires transitive` in its `module-info`). These are the names the framework itself
 asks for — the vocabulary any replacement for the default realm should answer:
 
-| | | | |
-|---------|---------|-----------|-----------|
-| `about` | `add` | `browser` | `cancel` |
-| `checked` | `close` | `collapse` | `copy` |
-| `cut` | `delete` | `down` | `edit` |
-| `exit` | `expand` | `file` | `filter` |
-| `generate` | `help` | `hide` | `id` |
-| `login` | `new` | `object` | `ok` |
-| `password` | `preferences` | `print` | `reload` |
-| `run` | `save` | `script` | `search` |
-| `security` | `session` | `subtract` | `table` |
-| `theme` | `tree` | `unchecked` | `unknown` |
-| `up` | `view` | | |
+|               |               |            |             |
+|---------------|---------------|------------|-------------|
+| `about`       | `add`         | `browser`  | `cancel`    |
+| `checked`     | `close`       | `collapse` | `copy`      |
+| `cut`         | `delete`      | `down`     | `edit`      |
+| `exit`        | `expand`      | `file`     | `filter`    |
+| `filter-active` | `generate`  | `help`     | `hide`      |
+| `id`          | `login`       | `new`      | `object`    |
+| `ok`          | `password`    | `preferences` | `print`  |
+| `reload`      | `run`         | `save`     | `script`    |
+| `search`      | `security`    | `session`  | `stop`      |
+| `subtract`    | `table`       | `theme`    | `tree`      |
+| `unchecked`   | `unknown`     | `up`       | `view`      |
 
 To swap the pack while keeping the framework's icons working, subclass `IkonliGraphicProvider` (or
 `ImageGraphicProvider`), annotate it `@GraphicProviderService` with the default realm, cover these

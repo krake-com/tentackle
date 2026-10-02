@@ -54,7 +54,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   /*
    * TableView and TreeTableView don't inherit from each other, and thus
-   * each spawns their own related types such as TableColum, TreeTableColumn, etc...
+   * each spawns their own related types such as TableColumn, TreeTableColumn, etc.
    * As a result, since TableConfiguration and TableColumnConfiguration apply
    * to both tables and tree-tables, a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's little we can do to reduce it.
@@ -172,7 +172,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * Creates a configuration.
    *
    * @param objectClass the object class
-   * @param name the table's name, null if basename from effective class of template
+   * @param name the table's name, null if basename of the object class
    */
   public DefaultTableConfiguration(Class<S> objectClass, String name) {
     this.template = null;
@@ -293,7 +293,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     ObservableList<TableColumn<S,?>> sortOrder = table.getSortOrder();
@@ -350,7 +350,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     Map<Integer, TableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index
@@ -455,7 +455,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     ObservableList<TreeTableColumn<S,?>> sortOrder = treeTable.getSortOrder();
@@ -507,7 +507,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     if (suffix != null) {
       prefName.append('_').append(suffix);
     }
-    // always add the locale since header sizes etc... may vary
+    // always add the locale since header sizes etc. may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
     Map<Integer, TreeTableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index

@@ -30,9 +30,9 @@ import org.tentackle.fx.ValueTranslatorService;
 public class StringStringTranslator extends IdentityTranslator<String> {
 
   /**
-   * Creates a null translator.
+   * Creates an identity translator.
    *
-   * @param component the text component
+   * @param component the component
    */
   public StringStringTranslator(FxComponent component) {
     super(component);

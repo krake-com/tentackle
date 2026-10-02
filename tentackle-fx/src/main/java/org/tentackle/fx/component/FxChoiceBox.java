@@ -48,14 +48,15 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   private Boolean deselectAllowed;
   
   /**
-   * Filter keyboard events.
+   * Filters keyboard events.<br>
+   * Consumes {@code ESC} if the dropdown is not showing, so that it does not trigger the cancel button.
    *
    * @param event the key event
    */
   public void filterKeyPressed(KeyEvent event) {
     if (event.getCode() == KeyCode.ESCAPE && !isDisabled() && !isShowing()) {
       // ignore ESC if no drop-down shown as this would pass the ESC to the cancel-button.
-      // -> same behaviour as in combobox.
+      // -> same behavior as in combobox.
       event.consume();
     }
   }

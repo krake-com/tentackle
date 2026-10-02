@@ -43,6 +43,12 @@ public abstract class ValueStringTranslator<M> extends AbstractValueTranslator<M
     return (FxTextComponent) super.getComponent();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Replaces the filler by spaces and trims the text before parsing.
+   * Empty input is translated to null. A temporary error of the component is cleared.
+   */
   @Override
   public M toModel(String text) {
     FxTextComponent component = getComponent();
@@ -66,7 +72,8 @@ public abstract class ValueStringTranslator<M> extends AbstractValueTranslator<M
 
 
   /**
-   * Gets the valid input characters.
+   * Gets the valid input characters.<br>
+   * Applied by the component in addition to its own valid characters.
    *
    * @return the valid input chars, null if unlimited
    */

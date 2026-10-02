@@ -46,7 +46,7 @@ import java.text.MessageFormat;
 
 /**
  * Skin for {@link TableFilterPopup}.<br>
- * Arranges the sort shortcuts, the search field, the value list and the condition editor
+ * Arranges the search field, the value list and the condition editor
  * top down, with the action buttons at the bottom.
  *
  * @param <S> type of the objects contained within the table's or treetable's items list

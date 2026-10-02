@@ -17,6 +17,8 @@
  */
 
 /**
- * Extended FX components.
+ * Extended FX components.<br>
+ * The tentackle implementations of the JavaFX controls, implementing {@link org.tentackle.fx.FxComponent},
+ * plus notes, the auto-completion popup, and the expanded text popup.
  */
 package org.tentackle.fx.component;

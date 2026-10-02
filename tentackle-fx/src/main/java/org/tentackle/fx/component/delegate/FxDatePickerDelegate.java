@@ -131,7 +131,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
   @Override
   public void setType(Class<?> type) {
-    // allow only Date and Timestamp, others don't make any sense to the datepicker popup.
+    // allow only java.util.Date (except Time), LocalDate, LocalDateTime and LocalTime
     if ((!Date.class.isAssignableFrom(type) || Time.class.isAssignableFrom(type)) &&
         !LocalDate.class.isAssignableFrom(type) &&
         !LocalTime.class.isAssignableFrom(type) &&
@@ -157,7 +157,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
-		public String toString(LocalDate object) {
+    public String toString(LocalDate object) {
       if (component.isChangeable()) {
         if (object != null) {
           if (object.equals(lastDate) &&
@@ -179,7 +179,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
       else {
         return lastText;
       }
-		}
+    }
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -200,7 +200,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
       }
       return lastDate;
     }
-	}
+  }
 
   @Override
   public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {

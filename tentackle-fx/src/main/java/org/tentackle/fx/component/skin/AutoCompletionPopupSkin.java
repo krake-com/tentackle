@@ -77,10 +77,6 @@ public class AutoCompletionPopupSkin implements Skin<AutoCompletionPopup> {
     listView.getStyleClass().add(STYLE_CLASS_LIST);
     listView.setFixedCellSize(popup.getFixedCellSize());
     popup.getFixedCellSizeProperty().addListener(observable -> listView.setFixedCellSize(popup.getFixedCellSize()));
-    listView.getItems().addListener((InvalidationListener) observable -> {
-      suggestionsChanged = true;
-      updateHeight();
-    });
 
     popup.getCellFactoryProperty().addListener((observable, oldVal, newVal) -> {
       if (newVal != null) {

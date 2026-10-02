@@ -25,7 +25,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for fx-package in tentackle-FX.
+ * Bundle for the {@code org.tentackle.fx} package.
  *
  * @author harald
  */

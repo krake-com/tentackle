@@ -17,6 +17,9 @@
  */
 
 /**
- * Column filters for table and treetable views (autofilter).
+ * Column filters for table and treetable views (autofilter).<br>
+ * The {@link org.tentackle.fx.table.filter.TableFilterSupport} adds a filter button to the column headers,
+ * which opens a {@link org.tentackle.fx.table.filter.TableFilterPopup} to edit the
+ * {@link org.tentackle.fx.table.filter.TableColumnFilter} of the column.
  */
 package org.tentackle.fx.table.filter;

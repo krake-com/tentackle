@@ -32,7 +32,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for Tentackle FX-controllers.
+ * Annotation for Tentackle FX controllers.
+ * <p>
+ * Annotated controllers are created via {@link FxFactory#createController}, which loads
+ * the view (from FXML, programmatically, or via {@link #view()}), the resource bundle and the
+ * stylesheet, binds the components according to {@link #binding()} and finally invokes
+ * {@link FxController#configure()}.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -99,21 +104,22 @@ public @interface FxControllerService {
   /**
    * Gets the fxml-URL for the annotated controller.
    *
-   * @return the fxml-URL or empty string if <code>&lt;controller-classname&gt;.fxml</code>
+   * @return the fxml-URL, empty string for <code>&lt;controller-classname&gt;.fxml</code>
    */
   String url() default "";
 
   /**
    * Gets the resource bundle for the annotated controller.
    *
-   * @return the bundle url, empty string if <code>&lt;controller-classname&gt;.properties</code>, no resources if {@link #RESOURCES_NONE}
+   * @return the bundle name, empty string for <code>&lt;controller-classname&gt;.properties</code>, no resources if {@link #RESOURCES_NONE}
    */
   String resources() default "";
 
   /**
    * The stylesheet.<br>
    * By default, a file <code>&lt;controller-classname&gt;.css</code> is searched for. Missing is ok.
-   * @return the CSS string
+   *
+   * @return the CSS file name, relative to the controller class, empty string for the default
    */
   String css() default "";
 
@@ -141,7 +147,7 @@ public @interface FxControllerService {
 
   /**
    * When set, instances of the given view class and annotated controller are created without using {@link javafx.fxml.FXMLLoader} at all.<br>
-   * This option is provided for situations, when creating the view programmatically turns out to be easier than sticking to the {@code FXML} approach.
+   * This option is provided for situations where creating the view programmatically turns out to be easier than sticking to the {@code FXML} approach.
    * Although no {@code FXML} file is involved anymore, the controller code does not require any changes.
    * Even switching back to {@code FXML} is then just a matter of changing this annotation parameter.
    *

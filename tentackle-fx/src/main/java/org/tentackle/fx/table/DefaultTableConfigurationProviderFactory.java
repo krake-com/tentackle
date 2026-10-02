@@ -35,19 +35,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultTableConfigurationProviderFactory implements TableConfigurationProviderFactory {
 
   /**
-   * maps classes to the providers.
+   * Maps classes to the providers.<br>
    * Notice that providers are per class!
    */
   @SuppressWarnings("rawtypes")
   private final ConcurrentHashMap<Class, TableConfigurationProvider> serviceMap = new ConcurrentHashMap<>();
 
   /**
-   * maps classes to providers.
+   * Maps classes to provider classes.
    */
   private final ClassMapper classMapper;
 
   /**
-   * Value for no co provider found.
+   * Marker value if no provider found.
    */
   @SuppressWarnings("rawtypes")
   private final TableConfigurationProvider noProvider;

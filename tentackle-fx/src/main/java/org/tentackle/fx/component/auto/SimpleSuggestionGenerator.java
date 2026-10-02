@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  * Simple suggestion generator function.<br>
- * Finds the first match of the user's input.
+ * Matches all items containing the user's input and marks its first occurrence.
  *
  * @param <T> the type of the available choices
  */
@@ -33,6 +33,9 @@ public class SimpleSuggestionGenerator<T> extends AbstractSuggestionGenerator<T>
 
   private boolean caseSensitive;
 
+  /**
+   * Creates the suggestion generator.
+   */
   public SimpleSuggestionGenerator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

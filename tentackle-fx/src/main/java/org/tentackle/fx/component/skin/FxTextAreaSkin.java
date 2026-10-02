@@ -27,7 +27,7 @@ import javafx.scene.layout.StackPane;
 
 /**
  * Skin for {@link FxTextArea}.<br>
- * Adds the expand-button to text areas displayed as a one-liner.
+ * Adds the expand-button to expandable text areas.
  * <p>
  * The button is placed at the right edge of the component, and the text is laid out in the
  * remaining space so that it never disappears underneath the icon.
@@ -62,7 +62,6 @@ public class FxTextAreaSkin extends TextAreaSkin {
     this.textArea = textArea;
     expandableListener = observable -> updateExpandButton();
     textArea.expandableProperty().addListener(expandableListener);
-    textArea.prefRowCountProperty().addListener(expandableListener);
     updateExpandButton();
   }
 
@@ -70,7 +69,6 @@ public class FxTextAreaSkin extends TextAreaSkin {
   @Override
   public void dispose() {
     textArea.expandableProperty().removeListener(expandableListener);
-    textArea.prefRowCountProperty().removeListener(expandableListener);
     super.dispose();
   }
 

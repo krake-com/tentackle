@@ -41,7 +41,11 @@ interface ThemeUtilitiesHolder {
 }
 
 /**
- * Utility methods for theme management.
+ * Utility methods for theme management.<br>
+ * Maintains the dark mode and the theme name, applies the stylesheets to the scenes,
+ * and saves/loads the user's theme preferences.
+ * The default implementation supports the JavaFX default theme Modena only.
+ * Theme modules such as {@code tentackle-fx-atlanta} replace the singleton to provide more themes.
  *
  * @author harald
  */
@@ -101,16 +105,10 @@ public class ThemeUtilities {
   }
 
 
-  /**
-   * Holds the dark theme boolean.<br>
-   * False is light mode (default).
-   */
+  // holds the dark theme boolean, false is light mode (default)
   private final BooleanProperty darkMode = new SimpleBooleanProperty();
 
-  /**
-   * Holds the theme name.<br>
-   * "Modena" for the default theme.
-   */
+  // holds the theme name, "Modena" for the default theme
   private final StringProperty themeName = new SimpleStringProperty();
 
   /**
@@ -146,9 +144,9 @@ public class ThemeUtilities {
 
 
   /**
-   * Returns whether to enable dark mode.
+   * Returns whether dark mode is enabled.
    *
-   * @return true to enable dark mode
+   * @return true if dark mode, false if light mode (default)
    */
   public boolean isDarkMode() {
     return darkModeProperty().get();
@@ -167,6 +165,12 @@ public class ThemeUtilities {
     }
   }
 
+  /**
+   * Gets the dark mode property.<br>
+   * Changing the property updates the stylesheets of all scenes.
+   *
+   * @return the property
+   */
   public BooleanProperty darkModeProperty() {
     return darkMode;
   }
@@ -210,12 +214,19 @@ public class ThemeUtilities {
     }
   }
 
+  /**
+   * Gets the theme name property.<br>
+   * Changing the property updates the stylesheets of all scenes.
+   *
+   * @return the property
+   */
   public StringProperty themeNameProperty() {
     return themeName;
   }
 
   /**
-   * Sets the theme name and dark mode simultaneously.
+   * Sets the theme name and dark mode simultaneously.<br>
+   * The stylesheets are updated only once.
    *
    * @param darkMode the dark mode flag
    * @param themeName the theme name
@@ -287,7 +298,8 @@ public class ThemeUtilities {
   }
 
   /**
-   * Applies the theme preferences.
+   * Applies the theme preferences.<br>
+   * Preferences that are null leave the current setting unchanged.
    *
    * @param preferences the preferences
    */
@@ -298,7 +310,9 @@ public class ThemeUtilities {
 
 
   /**
-   * Applies the user agent stylesheet.
+   * Applies the user agent stylesheet.<br>
+   * The default implementation does nothing, i.e. keeps the JavaFX default Modena.
+   * Overridden by theme implementations.
    */
   public void applyUserAgentStylesheet() {
     // the default does nothing, resulting in Modena
@@ -359,7 +373,8 @@ public class ThemeUtilities {
 
 
   /**
-   * Updates the stylesheets according to the dark mode and theme setting.
+   * Updates the stylesheets according to the dark mode and theme setting.<br>
+   * Does nothing if not invoked from the FX application thread or while {@link #setTheme(boolean, String)} is in progress.
    */
   protected void updateStyles() {
     if (styleUpdateEnabled && Platform.isFxApplicationThread()) {

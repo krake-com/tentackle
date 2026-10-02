@@ -108,7 +108,7 @@ public class FxTreeTableViewDelegate extends FxComponentDelegate {
 
   @Override
   public void updateModel() {
-    // no conversion back to model because the object is/are updated in the tree item,
+    // no conversion back to model because the objects are updated in the tree items,
     // which holds only the references.
   }
 
@@ -119,7 +119,7 @@ public class FxTreeTableViewDelegate extends FxComponentDelegate {
 
   @Override
   public void setContainerChangeable(boolean containerChangeable) {
-    // dto.
+    // ditto.
   }
 
 }

@@ -17,7 +17,12 @@
  */
 
 /**
- * tentackle-fx module.
+ * The extended JavaFX layer.<br>
+ * Provides the tentackle implementations of the JavaFX controls and containers with binding,
+ * validation feedback, value translators, configuration-driven tables and tree-tables with column filters,
+ * auto-completion, notifications, and theme support.
+ * The FXML builders and configurators make the {@code FXMLLoader} create the tentackle implementations
+ * transparently, so that views can be designed with the standard JavaFX tools.
  */
 module org.tentackle.fx {
 

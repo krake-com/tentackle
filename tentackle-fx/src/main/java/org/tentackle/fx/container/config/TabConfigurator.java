@@ -42,7 +42,7 @@ public class TabConfigurator<T extends Tab> implements Configurator<T> {
 
   @Override
   public void configure(T object) {
-    // nothing to dp
+    // nothing to do
   }
 
 }

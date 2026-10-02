@@ -43,7 +43,9 @@ interface FxFactoryHolder {
 }
 
 /**
- * A factory for FX-related stuff.
+ * A factory for FX-related objects.<br>
+ * Creates controllers, stages, scenes, value translators, graphics, notifications, and
+ * table configurations, and provides the configurators and the FXML builder factory.
  *
  * @author harald
  */
@@ -91,6 +93,7 @@ public interface FxFactory {
    * @param viewClass the view's value class
    * @param component the fx component
    * @return the value translator best fitting for the requested types
+   * @throws FxRuntimeException if there is no translator for the view class or the model class
    */
   <M,V> ValueTranslator<V,M> createValueTranslator(Class<M> modelClass, Class<V> viewClass, FxComponent component);
 
@@ -99,7 +102,7 @@ public interface FxFactory {
    *
    * @param stageStyle the style
    * @param modality the modality
-   * @param owner the view or window, null if none
+   * @param owner the owner window or a node of it, null if none
    * @return the stage
    */
   Stage createStage(StageStyle stageStyle, Modality modality, Object owner);
@@ -135,25 +138,27 @@ public interface FxFactory {
    *
    * @param <T> the controller type
    * @param controllerClass the controller class
-   * @param fxmlUrl the URL to load the FXML from, null if derived from controllerClass or FxController annotation
-   * @param resources the resource bundle, null if derived from controllerClass or FxController annotation
-   * @param cssUrl the URL to load the CSS from, null if derived from controllerClass or FxController annotation
+   * @param fxmlUrl the URL to load the FXML from, null if derived from controllerClass or the {@link FxControllerService} annotation
+   * @param resources the resource bundle, null if derived from controllerClass or the {@link FxControllerService} annotation
+   * @param cssUrl the URL to load the CSS from, null if derived from controllerClass or the {@link FxControllerService} annotation
    * @return the initialized controller
    */
   <T extends FxController> T createController(Class<T> controllerClass, URL fxmlUrl, ResourceBundle resources, URL cssUrl);
 
   /**
-   * Creates the graphic node for a given realm and name.<br>
-   * Throws IllegalArgumentException if no such icon and/or realm.
+   * Creates the graphic node for a given realm and name.
    *
-   * @param realm the realm, null of empty if default tentackle realm
+   * @param realm the realm, null or empty for the framework's default realm
    * @param name the graphic name
    * @return the graphic node
+   * @throws IllegalArgumentException if there is no graphic provider for the realm
+   * @throws FxRuntimeException if the provider has no such graphic
    */
   Node createGraphic(String realm, String name);
 
   /**
-   * Creates an image from the given node.
+   * Creates an image from the given node.<br>
+   * The node is temporarily added to an internal scene to render its snapshot.
    *
    * @param node the node
    * @param fill the background color

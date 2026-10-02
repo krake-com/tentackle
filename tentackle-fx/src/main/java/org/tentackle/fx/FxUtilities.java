@@ -119,7 +119,11 @@ interface FxUtilitiesHolder {
 
 
 /**
- * Utility methods for Fx.
+ * Utility methods for the FX layer.<br>
+ * Covers dialogs and notifications, error and info popups, validation results, focus and key handling,
+ * online help, stage positioning, tree and table helpers, printing, and the binding options.
+ * <p>
+ * Applications may replace the singleton via {@code @Service(FxUtilities.class)} to adapt the defaults.
  *
  * @author harald
  */
@@ -155,7 +159,7 @@ public class FxUtilities {
   private String helpURL;
 
   /**
-   * Flag to avoid invoking Platform.exit() more than once
+   * Flag to avoid invoking Platform.exit() more than once.
    */
   private boolean terminated;
 
@@ -202,9 +206,9 @@ public class FxUtilities {
   }
 
   /**
-   * Returns whether decimal separator should be inserted automatically if missing in money input.<br>
+   * Returns whether the decimal separator should be inserted automatically if missing in money input.<br>
    * This is usually a global setting for the whole application, but it can be filtered according
-   * to the component (parent component, etc...).
+   * to the component (parent component, etc.).
    *
    * @param component the input component
    * @return true if insert separator according to scale if missing
@@ -262,7 +266,10 @@ public class FxUtilities {
   }
 
   /**
-   * Opens the online help for a given component.
+   * Opens the online help for a given component.<br>
+   * The help URL is the {@linkplain #getHelpURL() URL prefix} followed by the help URL of the control
+   * or, if it has none, of its nearest parent container providing one.
+   * The browser is launched in a background thread.
    *
    * @param owner the owner window or node
    * @see #setHelpURL(String)
@@ -579,7 +586,7 @@ public class FxUtilities {
 
   /**
    * Runs a runnable in a separate thread.<br>
-   * Avoids blocking the FX-application thread.<br>
+   * Avoids blocking the FX application thread.<br>
    * If the execution fails, an error dialog is shown.
    *
    * @param owner the owner window or node
@@ -682,11 +689,11 @@ public class FxUtilities {
    * method returns immediately. The result is then provided via a {@link Consumer}.<br>
    * As a convenience, typing the key "0" is interpreted as "no" and "1" as "yes".
    * <p>
-   * Note: if you need to wait for a decision of the user (i.e., no async use), you can do that from another
-   * than the FX-thread by using a {@link org.tentackle.misc.BlockingHolder} like so:
+   * Note: if you need to wait for a decision of the user (i.e., no async use), you can do that from a thread
+   * other than the FX thread by using a {@link org.tentackle.misc.BlockingHolder} like so:
    * <pre>
    *      BlockingHolder&lt;Boolean&gt; answer = new BlockingHolder&lt;&gt;();
-   *      Platform.runLater(() -> Fx.question(..., answer);
+   *      Platform.runLater(() -&gt; Fx.question(..., answer));
    *      if (answer.get()) {
    *        ...
    *      }
@@ -768,7 +775,7 @@ public class FxUtilities {
    * Shows an error popup for a component.
    *
    * @param component the component
-   * @return the popup window (null if no errormessage in the component)
+   * @return the popup window, null if the component's error message is null or blank
    */
   public PopupWindow showErrorPopup(ErrorPopupSupported component) {
     PopupWindow popup = null;
@@ -788,7 +795,7 @@ public class FxUtilities {
    * Shows an info popup for a component.
    *
    * @param component the component
-   * @return the popup window (null if no info-message in the component)
+   * @return the popup window, null if the component's info message is null or blank
    */
   public PopupWindow showInfoPopup(InfoPopupSupported component) {
     PopupWindow popup = null;
@@ -835,7 +842,8 @@ public class FxUtilities {
 
   /**
    * Shows the validation warnings and errors in a dialog and marks the {@link FxControl}s related to those errors.<br>
-   * Errors and warnings are shown in error or info dialogs.
+   * If there are errors, all messages are shown in an error dialog, otherwise the warnings are shown in an info dialog.
+   * When the dialog is closed, the related components get the error or warning set as their error or info message.
    *
    * @param owner the owner window or node
    * @param ex the validation exception
@@ -895,7 +903,9 @@ public class FxUtilities {
   }
 
   /**
-   * Adds focus handling to sync with the model.
+   * Adds focus handling to sync with the model.<br>
+   * Invokes {@link #focusGained(FxComponent)} and {@link #focusLost(FxComponent)}, and shows the
+   * error or info popup while the component is focused or hovered.
    *
    * @param control the fx control
    */
@@ -941,10 +951,10 @@ public class FxUtilities {
     if (component.getError() == null) {  // don't override the view if there is a parsing error
       component.updateView();
       if (component.isChangeable() && component instanceof FxTextComponent) {
-        // By default, FX auto-selects a field if on re-focus.
-        // This cannot be configured and is hard-wired (for whatever reason).
+        // By default, FX auto-selects a field on re-focus.
+        // This cannot be configured and is hard-wired.
         // In TT, this is configurable via the autoSelect feature.
-        // in FX components are auto-selected if the field is focused by TAB (or ENTER in TT).
+        // In FX, components are auto-selected if the field is focused by TAB (or ENTER in TT).
         // If by mouse, the cursor is positioned where the mouse points to and nothing is selected.
         // For numeric fields, however, this behavior leads to unexpected data entry.
         Platform.runLater(((FxTextComponent) component)::autoSelect);
@@ -959,7 +969,7 @@ public class FxUtilities {
    */
   public void focusLost(FxComponent component) {
     component.updateModel();    // some components will do nothing here and...
-    // ... isModelUpdate() will return false.
+    // ... isModelUpdated() will return false.
     if (component.isModelUpdated() && component.getError() == null) {    // no conversion error
       // update view again to match the converted value
       component.updateView();   // this will clear modelUpdated
@@ -971,7 +981,8 @@ public class FxUtilities {
   }
 
   /**
-   * Remaps certain keys.
+   * Remaps certain keys.<br>
+   * The default implementation maps ENTER to TAB, i.e. ENTER moves the focus to the next control.
    *
    * @param control the fx control
    */
@@ -1011,7 +1022,13 @@ public class FxUtilities {
   }
 
   /**
-   * Filters certain keys for special features.
+   * Filters certain keys for special features.<br>
+   * For {@link FxComponent}s:
+   * <ul>
+   *   <li>{@code Ctrl-Z}: restores the saved view value, if the view was modified</li>
+   *   <li>{@code Ctrl-Y}: brings back the value replaced by {@code Ctrl-Z} or set from the model</li>
+   *   <li>{@code F1}: shows the online help</li>
+   * </ul>
    *
    * @param control the fx control
    */
@@ -1057,7 +1074,10 @@ public class FxUtilities {
   }
 
   /**
-   * Registers event filters for windows.
+   * Registers event filters for windows.<br>
+   * The default implementation dumps the component hierarchy of the node under the mouse
+   * when {@code Ctrl-Shift} + popup trigger (usually the right mouse button) is clicked,
+   * logs it and sends it to BundleMonkey (see {@link BundleMonkeyHelper}).
    *
    * @param window the window
    */
@@ -1082,8 +1102,8 @@ public class FxUtilities {
 
   /**
    * Recursively expands all tree items while checking for recursion loops.<br>
-   * The default implementation in TreeViewBehavior and TreeTableViewBehavior is not only in a private API
-   * but cannot be accessed from the applications at all. The default implementation is dangerous since
+   * The default implementation in TreeViewBehavior and TreeTableViewBehavior is part of a private API
+   * and cannot be accessed by applications at all. It is also dangerous, since
    * it does not check for recursion loops. We replace it by mapping the event to this utility method.
    *
    * @param treeItem the item to start expansion
@@ -1236,9 +1256,9 @@ public class FxUtilities {
   /**
    * Gets a binding option from an option string.
    *
-   * @param options the binding option string
-   * @param key the option key
-   * @return the option, null if no such option
+   * @param options the comma-separated binding options
+   * @param key the option key in uppercase
+   * @return the uppercased option, null if no such option
    */
   public String getBindingOption(String options, String key) {
     String option = null;
@@ -1259,6 +1279,7 @@ public class FxUtilities {
    * @param comp the component
    * @param member the binding member
    * @param options the options from the @{@link Bindable} annotation
+   * @throws BindingException if an option is invalid or unsupported
    */
   public void applyBindingOptions(FxTextComponent comp, BindingMember member, String options) {
     applyBindingOptions(comp, null, member, options);
@@ -1270,6 +1291,7 @@ public class FxUtilities {
    * @param columnConfiguration the column configuration
    * @param member the binding member
    * @param options the options from the @{@link Bindable} annotation
+   * @throws BindingException if an option is invalid or unsupported
    */
   @SuppressWarnings("rawtypes")
   public void applyBindingOptions(TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
@@ -1388,7 +1410,7 @@ public class FxUtilities {
   }
 
   /**
-   * Delivers a lis of all showing stages.
+   * Gets a list of all showing stages.
    *
    * @return the stages
    */
@@ -1425,7 +1447,8 @@ public class FxUtilities {
 
   /**
    * Calculates the position of a stage on the screen so that
-   * it is being display in an optimal manner.
+   * it is displayed in an optimal manner.<br>
+   * A stage that has not been positioned yet is centered above its owner, or on the screen if it has no owner.
    *
    * @param stage the stage to be positioned on the screen
    * @return the location
@@ -1546,7 +1569,8 @@ public class FxUtilities {
    * Creates an auto-completion controller for a text component.
    *
    * @param component the component
-   * @return the auto-completion
+   * @param suggestionGenerator the function providing the suggestions for the user's input
+   * @return the auto-completion controller
    */
   public AutoCompletionController createAutoCompletion(TextInputControl component, Function<String, List<List<SubString>>> suggestionGenerator) {
     return new AutoCompletionController(component, suggestionGenerator);
@@ -1626,7 +1650,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_COLS + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
     else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
@@ -1636,7 +1660,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
     else if (option.startsWith(Constants.BIND_SCALE + "=")) {
@@ -1646,7 +1670,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
     else if (option.startsWith(Constants.BIND_LINES + "=")) {
@@ -1657,12 +1681,12 @@ public class FxUtilities {
         }
         catch (NumberFormatException ex) {
           throw new BindingException("invalid " + Constants.BIND_LINES + " @Bindable option \"" +
-                                     option + "\") in " + member, ex);
+                                     option + "\" in " + member, ex);
         }
       }
       else {
         throw new BindingException(Constants.BIND_LINES + " @Bindable option \"" +
-                                   option + "\") in " + member + " not applicable to " + comp.getClass().getName());
+                                   option + "\" in " + member + " not applicable to " + comp.getClass().getName());
       }
     }
     else if (option.startsWith(Constants.BIND_FILLER + "=")) {
@@ -1682,7 +1706,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_FILLER + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
 
@@ -1690,9 +1714,10 @@ public class FxUtilities {
   }
 
   /**
-   * Processes an option for a table binding.
+   * Applies a single binding option to a table column.<br>
+   * Options not applicable to table cells, such as {@code COLS=} or the strip modes, are accepted but ignored.
    *
-   * @param columnConfiguration the column config
+   * @param columnConfiguration the column configuration
    * @param member the binding member
    * @param option the option
    * @return true if option known and processed, false if an unknown option
@@ -1744,7 +1769,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
     else if (option.startsWith(Constants.BIND_SCALE + "=")) {
@@ -1754,7 +1779,7 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
+                                   option + "\" in " + member, ex);
       }
     }
     else if (option.startsWith(Constants.BIND_COLS + "=") ||
@@ -1973,7 +1998,7 @@ public class FxUtilities {
   }
 
   /**
-   * Applies the binding options to a text component.
+   * Applies the binding options to a text component or a table column.
    *
    * @param comp the text component, null if not a text component
    * @param columnConfiguration the table column configuration, null if not a table column
@@ -1997,7 +2022,7 @@ public class FxUtilities {
           throw new BindingException("unsupported @Bindable target " + member);
         }
         if (!processed) {
-          throw new BindingException("unsupported @Bindable option \"" + token + "\") in " + member);
+          throw new BindingException("unsupported @Bindable option \"" + token + "\" in " + member);
         }
       }
     }

@@ -28,7 +28,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 /**
- * Configures a {@link TextInputControl}.
+ * Configures a {@link TextInputControl}.<br>
+ * In addition to the component's configuration, {@code Shift-BACKSPACE} clears the field and
+ * the {@link InputAlert} is raised if backspace has nothing to delete.
  *
  * @author harald
  * @param <T> the text field type
@@ -72,6 +74,11 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * {@code ENTER} and {@code Shift-ENTER} move the focus to the next or previous component.
+   */
   @Override
   protected void remapKeys(T control) {
 

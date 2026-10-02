@@ -17,6 +17,8 @@
  */
 
 /**
- * FX component builders.
+ * FX component builders.<br>
+ * Registered via {@link org.tentackle.fx.BuilderService}, they let the FXML loader create the tentackle
+ * implementations of the standard JavaFX controls.
  */
 package org.tentackle.fx.component.build;

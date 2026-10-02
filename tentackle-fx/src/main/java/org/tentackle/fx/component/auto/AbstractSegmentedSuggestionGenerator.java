@@ -27,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base class for a segmented suggestion generator.
+ * Base class for a segmented suggestion generator.<br>
+ * Both the user's input and the items are split into segments.
+ * An item matches if each input segment matches one of the item's segments, in the same order.
  *
  * @param <T> the type of the available choices
  */
@@ -36,6 +38,9 @@ public abstract class AbstractSegmentedSuggestionGenerator<T> extends AbstractSu
   private final Map<String, List<SubString>> itemSegmentsCache = new HashMap<>();
   private int maxSuggestions;
 
+  /**
+   * Parent constructor.
+   */
   public AbstractSegmentedSuggestionGenerator() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }

@@ -52,7 +52,8 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
 
   /**
    * Filters dangerous keys.<br>
-   * Since the TreeViewBehaviour is private, we cannot modify the input map and filter the keys before
+   * {@code *} expands all nodes, {@code Shift-*} collapses them, both without running into recursion loops.
+   * Since the TreeViewBehavior is private, we cannot modify the input map and filter the keys before
    * they reach the key event handler.
    *
    * @param event the key event
@@ -109,7 +110,8 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
 
 
   /**
-   * Gets the displayed items.
+   * Gets the displayed items.<br>
+   * These are the values of all tree items that are visible if scrolled into view, i.e. whose parents are expanded.
    *
    * @return the items
    */

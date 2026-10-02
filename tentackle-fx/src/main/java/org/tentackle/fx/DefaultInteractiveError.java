@@ -32,7 +32,7 @@ public class DefaultInteractiveError implements InteractiveError {
 
   private final boolean warning;                      // true if just a warning
   private final String text;                          // error text
-  private final String errorCode;                     // optional error code (from TT2 validation)
+  private final String errorCode;                     // optional error code
   private final ValidationResult validationResult;    // the validation result
   private final FxControl control;                    // the ui control, null if none
 

@@ -24,7 +24,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the fx module.
+ * Hook for the fx module.<br>
+ * Loads the resource bundles within the context of this module.
  *
  * @author harald
  */

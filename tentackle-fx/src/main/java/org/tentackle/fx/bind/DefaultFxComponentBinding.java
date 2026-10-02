@@ -57,7 +57,7 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    *
    * @param binder the binder managing this binding
    * @param component the GUI-component to bind
-   * @param componentOptions options to configure the component.<br>
+   * @param componentOptions options to configure the component, applied to text components only.<br>
    *        Defined are:
    *        <ul>
    *          <li>UC: convert to uppercase</li>
@@ -66,9 +66,12 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    *          <li>MAXCOLS=n: limit input to max. columns</li>
    *          <li>LINES=n: number of lines in text areas</li>
    *          <li>[-]AUTOSELECT: turn autoselect on/off</li>
-   *          <li>UTC: utc timestamps</li>
+   *          <li>[-]UTC: UTC timestamps</li>
    *          <li>SCALE=n: numeric scale</li>
-   *          <li>UNSIGNED: unsigned numeric value.</li>
+   *          <li>[-]UNSIGNED: unsigned numeric value</li>
+   *          <li>DIGITS: allow digits only</li>
+   *          <li>FILLER=c: the filler character, either quoted like {@code 'x'} or as a numeric code</li>
+   *          <li>STRIP, NOSTRIP, LSTRIP, RSTRIP: the strip mode</li>
    *        </ul>
    * @param parents the members building the declaration chain to this member, null if this binding's member is in controller
    * @param member the member field to bind
@@ -193,9 +196,9 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
 
 
   /**
-   * Determines the component's type.<br>
-   * This is an estimation derived from the getter and setter methods,
-   * usually setViewValue and getViewValue.
+   * {@inheritDoc}
+   * <p>
+   * Returns the type applied to the component, i.e. the type of the bound member.
    *
    * @return the component's type
    */
@@ -206,9 +209,10 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
 
 
   /**
-   * Applies the model's type to the component.
+   * Applies the model's type to the component.<br>
+   * Components bound to read-only members are made non-changeable.
    *
-   * @throws BindingException if component does not accept type
+   * @throws org.tentackle.fx.FxRuntimeException if the component does not accept the type
    */
   protected void applyType() {
     component.setGenericType(getMember().getGenericType());

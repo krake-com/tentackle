@@ -36,7 +36,9 @@ import java.util.TreeMap;
 
 
 /**
- * Binding Workhorse.
+ * Default implementation of a table binder.<br>
+ * Binds the columns of a table configuration to the members of the row objects.
+ * The column names are the binding paths.
  *
  * @param <S> type of the objects contained within the table's items list
  * @author harald
@@ -78,7 +80,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
 
 
   /**
-   * Removes all bindings of the form.
+   * Removes all bindings of the table.
    */
   @Override
   public void unbind() {
@@ -157,12 +159,12 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
     /*
      * To detect recursion loops:
      * we don't need to recursively walk down the binding path more
-     * than the max binding path length of all components in the container.
+     * than the max binding path length of all columns of the table.
      */
     if (parentMemberPath != null) {
       boolean found = false;
       for (TableColumnConfiguration<S,?> column: tableConfig.getColumnConfigurations()) {
-        // check if the binding path is leading part of any component
+        // check if the binding path is leading part of any column
         String bindingPath = column.getName();
         if (bindingPath != null && bindingPath.startsWith(parentMemberPath)) {
           found = true;

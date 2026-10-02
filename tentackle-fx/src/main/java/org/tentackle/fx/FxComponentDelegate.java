@@ -41,7 +41,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Delegate implementing FxComponent.
+ * Delegate implementing {@link FxComponent}.<br>
+ * Holds the state and behavior common to all components, such as binding,
+ * mandatory, error and info handling, and view-modified tracking.
  *
  * @author harald
  */
@@ -88,17 +90,17 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private BooleanProperty mandatoryProperty;
 
   /**
-   * the field path to bind, null if auto-binding
+   * The field path to bind, null if auto-binding.
    */
   private String bindingPath;
 
   /**
-   * the current binding, null if none.
+   * The current binding, null if none.
    */
   private FxComponentBinding binding;
 
   /**
-   * the component's declaration path.
+   * The component's declaration path.
    */
   private String componentPath;
 
@@ -147,8 +149,8 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private PopupWindow infoPopup;
 
   /**
-   * true if model was updated.<br>
-   * Will be cleared if view is updated again.
+   * True if the model was updated.<br>
+   * Will be cleared if the view is updated again.
    */
   private boolean modelUpdated;
 
@@ -173,12 +175,12 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private FxTreeTableCell<?,?> treeTableCell;
 
   /**
-   * true if suppress invocation of listeners if view model did not change.
+   * True to suppress the invocation of listeners if the model did not change.
    */
   private boolean listenerSuppressedIfModelUnchanged;
 
   /**
-   * true if suppress invocation of listeners, if view will not change at all
+   * True to suppress the invocation of listeners if the view will not change at all.
    */
   private boolean listenerSuppressedIfViewUnchanged;
 
@@ -468,7 +470,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       getNode().getStyleClass().add(ERROR_STYLE);
     }
     if (!enable || getNode().isFocused()) {
-      showErrorPopup();   // show/hide info popup, node has focus (see ComponentConfigurator)
+      showErrorPopup();   // show/hide error popup, node has focus (see ComponentConfigurator)
     }
   }
 
@@ -657,8 +659,8 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   /**
-   * Does the physical update of the style.
-   * See resources/org/tentackle/fx/tentackle.css
+   * Does the physical update of the style.<br>
+   * See resources/org/tentackle/fx/tentackle.css.
    *
    * @param mandatory true if mandatory
    */

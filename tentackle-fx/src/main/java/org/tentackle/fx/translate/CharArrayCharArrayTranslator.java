@@ -22,7 +22,7 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
- * Identity CharArray translator.
+ * Identity translator for {@code char[]}.
  *
  * @author harald
  */
@@ -30,7 +30,7 @@ import org.tentackle.fx.ValueTranslatorService;
 public class CharArrayCharArrayTranslator extends IdentityTranslator<char[]> {
 
   /**
-   * Creates an enum translator.
+   * Creates a char array translator.
    *
    * @param component the component
    */

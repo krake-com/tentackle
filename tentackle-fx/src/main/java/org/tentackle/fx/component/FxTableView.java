@@ -50,7 +50,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Extended TableView.
+ * Extended TableView.<br>
+ * Usually configured by a {@link TableConfiguration}, which also provides the column filters
+ * and the preferences-backed layouts.
  *
  * @author harald
  * @param <S> the row type
@@ -258,7 +260,8 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
-   * Configures the table to copy a cell via Ctrl-C to the clipboard.
+   * Configures the table to copy the selected cells via Ctrl-C to the clipboard.<br>
+   * With Ctrl-Shift-C, rows and columns are swapped.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -377,7 +380,9 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
-   * Handles all key events.
+   * Handles all key events.<br>
+   * Implements the copy-to-clipboard feature, if enabled. The copied text is shown in a note
+   * as long as the control key is held down.
    *
    * @param event the key event
    */
@@ -386,7 +391,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
       if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
         String text = copyToClipboard(event.isShiftDown());
         if (text != null) {
-          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          // display copied text for as long as the control button is held down (see KEY_RELEASED below)
           Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);

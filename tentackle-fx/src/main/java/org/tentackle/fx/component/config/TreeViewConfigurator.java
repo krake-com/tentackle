@@ -28,7 +28,7 @@ import org.tentackle.fx.component.FxTreeView;
  * Configures a {@link TreeView}.
  *
  * @author harald
- * @param <T> the treetable view type
+ * @param <T> the tree view type
  */
 @ConfiguratorService(TreeView.class)
 public class TreeViewConfigurator<T extends TreeView<?>> extends ComponentConfigurator<T> {

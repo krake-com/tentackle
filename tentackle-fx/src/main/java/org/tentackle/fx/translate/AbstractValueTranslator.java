@@ -31,7 +31,7 @@ import org.tentackle.fx.ValueTranslator;
 public abstract class AbstractValueTranslator<M,V> implements ValueTranslator<M,V> {
 
   /**
-   * the component.
+   * The component.
    */
   private final FxComponent component;
 

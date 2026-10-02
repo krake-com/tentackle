@@ -98,7 +98,7 @@ public class DefaultFxFactory implements FxFactory {
   private final Map<Class<?>, Optional<Configurator<?>>> fxToConfiguratorMap;   // Optional to denote: not present, null if not determined yet
 
   /**
-   * all FX controller classes.
+   * All FX controller classes.
    */
   private final Collection<Class<FxController>> controllerClasses;
 
@@ -162,7 +162,7 @@ public class DefaultFxFactory implements FxFactory {
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
            InvocationTargetException | NoSuchMethodException ex) {
-      throw new FxRuntimeException("loading image providers failed", ex);
+      throw new FxRuntimeException("loading graphic providers failed", ex);
     }
 
     record ValueTranslatorKey<M, V>(Class<M> modelClass, Class<V> viewClass) {}

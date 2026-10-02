@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * suggestion generator function for strings composed of separated strings.<br>
+ * Suggestion generator function for strings composed of separated strings.<br>
  * Useful for number matching in choices like <code>XXX-YYY-Z-AAA</code>.
  *
  * @param <T> the type of the available choices
@@ -36,7 +36,7 @@ public class SeparatorSuggestionGenerator<T> extends AbstractSegmentedSuggestion
   private boolean caseSensitive;
 
   /**
-   * Creates an suggestion generator for a given separator.
+   * Creates a suggestion generator for a given separator.
    *
    * @param separator the separator string
    */

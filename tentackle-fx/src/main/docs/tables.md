@@ -32,7 +32,7 @@ derives from it:
   spreadsheet/XML export ([`tentackle-fx-rdc-poi`](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md)
   upgrades the export to real Excel workbooks).
 
-The foundation lives in `org.tentackle.fx.table` (+ `table.type`) in this module; the PDO layer in
+The foundation lives in `org.tentackle.fx.table` (+ `table.type` and `table.filter`) in this module; the PDO layer in
 `org.tentackle.fx.rdc.table` of [tentackle-fx-rdc](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 is covered [below](#the-rdc-layer-pdo-aware-tables).
 
@@ -65,11 +65,12 @@ TableConfiguration<Invoice> config = FxFactory.getInstance().createTableConfigur
 config.addColumn("invoiceNumber", bundle.getString("invoiceNumber"));
 config.addColumn("total", bundle.getString("total"));
 config.setEditMode(TableConfiguration.EDITMODE.ROW);
-config.configure(tableView);      // creates columns, cells, editors, applies preferences
+config.configure(tableView);      // creates the columns with their cells and editors
+tableView.loadPreferences(null, false);   // optional: restores the saved layout
 ```
 
 `configure(...)` accepts either an `FxTableView` or an `FxTreeTableView` — the configuration is
-view-type agnostic (for tree-tables it also creates the `TreeItem`s via `createTreeItem`).
+view-type agnostic (for tree-tables, the value translators create the `TreeItem`s via `createTreeItem`).
 
 Two enums control the overall behavior:
 
@@ -78,7 +79,8 @@ Two enums control the overall behavior:
   or `NO`.
 - `EDITMODE` — `NO` (read-only, the default), `SIMPLE` (edit the current cell only), `ROW`
   (commit moves to the next/previous cell in the row) or `COLUMN` (commit moves to the cell
-  below/above).
+  below/above). Any mode other than `NO` makes all columns editable; in mode `NO`, a column is
+  editable only if its `editable` property is `TRUE`.
 
 The configuration owns an [`FxTableBinder`](../java/org/tentackle/fx/bind/FxTableBinder.java) that
 binds the *cells* to the row objects. Don't confuse it with the controller's binder, which binds a
@@ -95,9 +97,9 @@ needs is a property, with `null` meaning "use the default derived from the colum
 
 | Aspect     | Properties                                                                          |
 |------------|-------------------------------------------------------------------------------------|
-| Display    | `displayedName`, `alignment`, `pattern` (yields a `DecimalFormat` or `DateTimeFormatter`), `blankZero` |
+| Display    | `displayedName`, `alignment`, `pattern` (yields a `DecimalFormat` or `DateTimeFormatter`), `blankZero` (not evaluated by the built-in cell types) |
 | Editing    | `editable`, `editor` (an `FxComponent` overriding the cell type's default), `validChars` / `invalidChars`, `unsigned`, `scale`, `maxColumns`, `caseConversion`, `autoSelect` |
-| Behavior   | `summable` (defaults to true for numeric types — see [totals](#totals)), `cellType` (overrides the type-derived cell type), `binding` |
+| Behavior   | `summable` (defaults to true for numeric types — see [totals](#totals)), `filterable` (see [column filters](#column-filters-autofilter)), `cellType` (overrides the type-derived cell type), `binding` |
 
 The configuration creates and caches the actual `TableColumn` or `TreeTableColumn` on demand
 (`getTableColumn()` / `getTreeTableColumn()`).
@@ -159,8 +161,8 @@ by simply saving them once.
 
 JavaFX can filter rows only programmatically — a `FilteredList` and a `Predicate` — and offers
 nothing at all for `TreeTableView`. Tentackle adds the **autofilter** known from spreadsheet
-applications: a filter button in each column header opening a popup with sort shortcuts, a search
-field, a checkbox list of the column's distinct values, and a type-aware condition editor.
+applications: a filter button in each column header opening a popup with a search field, a checkbox
+list of the column's distinct values, and a type-aware condition editor.
 
 Filtering is **off by default** and is switched on per table configuration:
 
@@ -323,11 +325,12 @@ A controller displaying a list of invoices in an editable table:
    `guiProvider.createTableView()` in an RDC application).
 2. The table configuration — from a `TableConfigurationProvider`, the PDO's `GuiProvider`, or
    built inline — is applied with `config.configure(tableView)`: columns, cell types, editors, and
-   formats appear, and the saved layout is restored from the preferences.
+   formats appear.
 3. The controller's [binder](../../../../tentackle-core/src/main/docs/binding.md) binds the data
    list to the table by name; the table's own binder moves values between cells and row objects,
    translating and validating through the same machinery as any form field.
-4. `Rdc.createTablePopup(...)` adds the column chooser, printing, export, and layout save/load.
+4. `Rdc.createTablePopup(...)` adds the column chooser, printing, export, and layout save/load;
+   its `loadPreferences()` restores the saved layout.
 5. When the user rearranges columns and saves, the layout lands in the (database-backed)
    preferences and greets them on every workstation from then on.
 

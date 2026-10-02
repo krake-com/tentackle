@@ -17,6 +17,9 @@
  */
 
 /**
- * FX value translators.
+ * FX value translators.<br>
+ * The built-in {@link org.tentackle.fx.ValueTranslator}s converting between the model types
+ * (numbers, temporals, enums, money, colors, {@link org.tentackle.common.I18NText}, collections, strings, ...)
+ * and the view types of the components.
  */
 package org.tentackle.fx.translate;

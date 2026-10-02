@@ -161,7 +161,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
 
   /**
    * Creates only the instance of a table configuration w/o column configs.<br>
-   * Override this method to create application-specific implementations.
+   * Invokes {@link #createEmptyTableConfiguration(String)} with the default name.
    *
    * @return the table configuration
    */
@@ -173,9 +173,10 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
   /**
    * Adds all bindable columns.<br>
    * Override this method to specify the optional components.
+   * Dotted display names are shortened to their last part, if unique among all columns.
    *
    * @param configuration the table configuration
-   * @param components the binding path of components that should in turn be analyzed for bindables
+   * @param components the binding paths of components that should in turn be analyzed for bindables
    */
   @SuppressWarnings("rawtypes")
   protected void addBindableColumns(TableConfiguration<T> configuration, String... components) {
@@ -216,7 +217,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
    * @param columnPrefix the prefix for the column names
    * @param displayPrefix the prefix for the display names
    * @param clazz the class to analyze for bindable elements
-   * @param components the binding path of components that should in turn be analyzed for bindables
+   * @param components the binding paths of components that should in turn be analyzed for bindables
    */
   protected void addBindableColumns(TableConfiguration<T> configuration, String columnPrefix, String displayPrefix,
                                     Class<?> clazz, String... components) {

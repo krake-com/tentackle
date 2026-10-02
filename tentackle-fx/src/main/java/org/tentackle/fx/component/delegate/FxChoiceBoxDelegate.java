@@ -33,10 +33,13 @@ import java.util.Arrays;
 /**
  * Delegate for FxChoiceBox.
  * <p>
- * As a convenience for boolean model types the choicebox can fake
- * the boolean with 2 items: first for TRUE and the second for FALSE.
- * If the application already specified 2 items, they will be kept,
- * otherwise overridden from the name of the model member.
+ * As a convenience for boolean model types the choice box can fake
+ * the boolean with 2 items: the first for TRUE and the second for FALSE.
+ * If the application already specified exactly 2 items, they will be kept.
+ * If there are no items, they are created from the name of the model member.
+ * Any other number of items is left unchanged and not treated as a boolean.
+ * <p>
+ * For enums, the items are set to the enum constants.
  *
  * @author harald
  */
@@ -151,7 +154,9 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
 
 
   /**
-   * Returns whether deselect is allowed.
+   * Returns whether deselect is allowed.<br>
+   * If not set explicitly via {@link FxChoiceBox#setDeselectAllowed(Boolean)},
+   * deselect is allowed unless the type is primitive or the component is mandatory.
    *
    * @return true if allowed
    */

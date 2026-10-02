@@ -85,7 +85,8 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
 
 
   /**
-   * Configures the table to copy a cell via Ctrl-C to the clipboard.
+   * Configures the list to copy the selected items via Ctrl-C to the clipboard.<br>
+   * With Ctrl-Shift-C, the items are copied as a single comma-separated line.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -127,7 +128,9 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
 
 
   /**
-   * Handles all key events.
+   * Handles all key events.<br>
+   * Implements the copy-to-clipboard feature, if enabled. The copied text is shown in a note
+   * as long as the control key is held down.
    *
    * @param event the key event
    */
@@ -136,7 +139,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
       if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
         String text = copyToClipboard(event.isShiftDown());   // shift+ctrl -> comma separated
         if (text != null) {
-          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          // display copied text for as long as the control button is held down (see KEY_RELEASED below)
           Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);

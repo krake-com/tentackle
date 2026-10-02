@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
- * The default implementation of an {@link NoFXMLLinker}.<br>
+ * The default implementation of a {@link NoFXMLLinker}.<br>
  * Injects the nodes, resources, invokes initialize and sets the view into the controller.
  * <p>
  * Notice that the old {@link javafx.fxml.Initializable} interface is not supported

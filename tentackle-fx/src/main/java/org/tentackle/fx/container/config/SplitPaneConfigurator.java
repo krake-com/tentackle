@@ -24,7 +24,7 @@ import javafx.scene.control.SplitPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a SplitPane.
+ * Configures a {@link SplitPane}.
  *
  * @author harald
  * @param <T> the container type

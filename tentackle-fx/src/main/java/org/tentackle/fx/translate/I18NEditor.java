@@ -83,6 +83,9 @@ public class I18NEditor extends AbstractFxController {
   private Map<Locale, TextInputControl> editorMap;
 
 
+  /**
+   * Creates the editor.
+   */
   public I18NEditor() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
@@ -94,7 +97,7 @@ public class I18NEditor extends AbstractFxController {
   }
 
   /**
-   * Set up the editor.
+   * Sets up the editor.
    *
    * @param i18NText the I18N text object
    * @param i18NTextStringTranslator the translator for the current component

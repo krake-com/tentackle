@@ -29,7 +29,8 @@ import java.text.DecimalFormat;
 
 /**
  * The {@link Number} cell type.<br>
- * Provided as a fallback to application-specific types that don't provide t
+ * Applies to all numeric types and serves as a fallback for application-specific
+ * number types that don't provide a cell type of their own.
  *
  * @param <T> the item type
  * @author harald

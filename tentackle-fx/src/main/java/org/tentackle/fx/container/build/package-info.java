@@ -17,6 +17,8 @@
  */
 
 /**
- * Builder for FX containers.
+ * Builders for FX containers.<br>
+ * Registered via {@link org.tentackle.fx.BuilderService}, they let the FXML loader create the tentackle
+ * implementations of the standard JavaFX containers.
  */
 package org.tentackle.fx.container.build;

@@ -32,7 +32,9 @@ import java.util.function.Function;
 
 /**
  * TreeItem translator for {@link FxTreeView} and
- * {@link org.tentackle.fx.component.FxTreeTableView}.
+ * {@link org.tentackle.fx.component.FxTreeTableView}.<br>
+ * Used if the model provides a single object, which becomes the root item.
+ * The tree items are created via the {@link TableConfiguration}, if available.
  *
  * @author harald
  * @param <T> the object type
@@ -93,9 +95,6 @@ public class TreeItemTranslator<T> extends AbstractValueTranslator<T, TreeItem<T
         if (provider == null && getComponent().isBindable()) {
           // create default provider w/o bundle and standard binding
           provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
-        }
-        if (provider != null) {
-          configuration = provider.createTableConfiguration();
         }
       }
       providerLoaded = true;

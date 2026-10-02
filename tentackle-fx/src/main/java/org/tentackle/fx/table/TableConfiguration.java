@@ -50,7 +50,7 @@ public interface TableConfiguration<S> {
     /** standard binding. */
     YES,
 
-    /** bindable inherited. */
+    /** binding including inherited bindables. */
     INHERITED
 
   }
@@ -92,7 +92,7 @@ public interface TableConfiguration<S> {
    * Gets a column configuration by its name.
    *
    * @param name the name
-   * @return the config, null if no such name and displayed name
+   * @return the config, null if no such column
    */
   TableColumnConfiguration<S,?> getColumnConfiguration(String name);
 
@@ -145,7 +145,10 @@ public interface TableConfiguration<S> {
   void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration);
 
   /**
-   * Saves the column sizes, visibility, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size and sorting to the preferences.<br>
+   * Sorting, view size and filters are included according to {@link #isSortingIncluded()},
+   * {@link #isViewSizeIncluded()} and {@link #isFilterIncluded()}.
+   * The preferences node is the table's name, the optional suffix and the current locale.
    *
    * @param table the table
    * @param suffix the configuration suffix, null if none
@@ -163,7 +166,10 @@ public interface TableConfiguration<S> {
   void loadPreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
-   * Saves the column sizes, visibility, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size and sorting to the preferences.<br>
+   * Sorting, view size and filters are included according to {@link #isSortingIncluded()},
+   * {@link #isViewSizeIncluded()} and {@link #isFilterIncluded()}.
+   * The preferences node is the table's name, the optional suffix and the current locale.
    *
    * @param treeTable the treetable
    * @param suffix the configuration suffix, null if none
@@ -174,7 +180,7 @@ public interface TableConfiguration<S> {
   /**
    * Loads the column sizes, visibility, view size and sorting from the preferences.
    *
-   * @param treeTable the table
+   * @param treeTable the treetable
    * @param suffix the configuration suffix, null if none
    * @param system true if load from system prefs only, else user prefs first
    */

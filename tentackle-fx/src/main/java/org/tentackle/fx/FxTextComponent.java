@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * A text component.
+ * A component that is edited as text.
  *
  * @author harald
  */
@@ -94,7 +94,7 @@ public interface FxTextComponent extends FxComponent {
 
   /**
    * Sets the maximum number of columns.<br>
-   * The model will enforce the number of columns.
+   * Input exceeding the maximum is truncated and an {@link InputAlert} is raised.
    *
    * @param maxColumns the maximum number of columns, 0 if unlimited (default)
    */
@@ -156,7 +156,7 @@ public interface FxTextComponent extends FxComponent {
   /**
    * Changes the format according to the given scale.
    *
-   * @param scale the number of digits after the comma
+   * @param scale the number of digits after the decimal point
    */
   void setScale(int scale);
 
@@ -211,9 +211,11 @@ public interface FxTextComponent extends FxComponent {
 
   /**
    * Sets the filler character.<br>
-   * The default is space.
+   * Spaces in the input are replaced by the filler, and the filler is stripped
+   * according to the {@link #getStripMode()}. The default is space.
    *
    * @param filler the filler
+   * @throws FxRuntimeException if the filler is an ISO control character
    */
   void setFiller(char filler);
 
@@ -227,7 +229,7 @@ public interface FxTextComponent extends FxComponent {
   /**
    * Sets the input strip mode.
    *
-   * @param stripMode the trim mode, null for no trim (translates to {@link StripMode#NONE})
+   * @param stripMode the strip mode, null for the default {@link StripMode#BOTH}
    */
   void setStripMode(StripMode stripMode);
 
@@ -235,7 +237,7 @@ public interface FxTextComponent extends FxComponent {
    * Gets the input strip mode.<br>
    * The default is {@link StripMode#BOTH}.
    *
-   * @return the trim mode, never null
+   * @return the strip mode, never null
    */
   StripMode getStripMode();
 
@@ -270,6 +272,7 @@ public interface FxTextComponent extends FxComponent {
   /**
    * Sets a text converter.<br>
    * Converts input text to the view's text.
+   * Applied as the last step when filtering the input.
    *
    * @param textConverter the converter
    */
@@ -283,7 +286,7 @@ public interface FxTextComponent extends FxComponent {
   Function<String,String> getTextConverter();
 
   /**
-   * Selects or deselects all text in the text input.<br>
+   * Selects all text if auto-select is enabled, otherwise deselects it.
    *
    * @see #isAutoSelect()
    */

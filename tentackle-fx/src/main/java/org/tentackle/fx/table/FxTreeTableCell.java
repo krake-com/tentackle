@@ -32,7 +32,10 @@ import javafx.scene.control.TreeTablePosition;
 import javafx.scene.input.KeyEvent;
 
 /**
- * Extended tree table cell.
+ * Extended tree table cell.<br>
+ * Renders the item via the column's {@link TableCellType} and edits it via an {@link FxComponent}.
+ * After committing with {@code ENTER} or {@code TAB}, the next cell to edit is selected according to
+ * the {@link TableConfiguration.EDITMODE}.
  *
  * @param <S> type of the objects contained within the tree table's item list
  * @param <T> type of the content in all cells in this column
@@ -117,11 +120,11 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
         if (editor != node) {
           // for whatever reason, ESC is sometimes not forwarded to the inner component.
           // In such a case, catch the keystroke on the outer one (for ex. DatePicker).
-          // @todo: check if still necessary in newer releases then Java 9
+          // @todo: check if still necessary in newer releases than Java 9
           ((Node) editor).setOnKeyPressed(handler);
         }
 
-        // same sh*t as in Swing... hoping 3 loops in eventQ is enough
+        // as in Swing, the focus request must be deferred... hoping 3 loops in the event queue are enough
         Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
       }
     }
