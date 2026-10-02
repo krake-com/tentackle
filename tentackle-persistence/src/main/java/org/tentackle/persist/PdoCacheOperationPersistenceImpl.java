@@ -176,7 +176,7 @@ public class PdoCacheOperationPersistenceImpl
   protected void preloadCachesFromRemote(DomainContext context) {
     LOGGER.info("preloading PDO caches from remote ...");
     Collection<PdoCachePreloadContent<?>> cachesContent =
-      getRemoteDelegate().getPreloadingCachesContent(context, getPreloadCacheClassNames());
+      getRemoteDelegate().getPreloadingCachesContent(context);
     for (PdoCachePreloadContent<?> cacheContent : cachesContent) {
       PersistentDomainObject<?> pdo = Pdo.create(cacheContent.pdoClass(), context);
       PdoCache cache = pdo.getPersistenceDelegate().getCache();

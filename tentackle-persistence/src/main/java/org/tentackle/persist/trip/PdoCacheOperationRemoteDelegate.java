@@ -39,10 +39,9 @@ public interface PdoCacheOperationRemoteDelegate
    * to keep the modification serial in sync with the cache data.
    *
    * @param context the domain context, never null
-   * @param classNames the class names of persistence implementations holding the caches to preload, never null
    * @return the content of all caches to preload, never null
    * @see org.tentackle.persist.PreloadCache
    */
-  Collection<PdoCachePreloadContent<?>> getPreloadingCachesContent(DomainContext context, String[] classNames);
+  Collection<PdoCachePreloadContent<?>> getPreloadingCachesContent(DomainContext context);
 
 }

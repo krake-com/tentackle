@@ -64,7 +64,7 @@ public class PdoCacheOperationRemoteDelegateImpl
 
 
   @Override
-  public Collection<PdoCachePreloadContent<?>> getPreloadingCachesContent(DomainContext context, String[] classNames) {
+  public Collection<PdoCachePreloadContent<?>> getPreloadingCachesContent(DomainContext context) {
     context.setSession(getSession());
     List<PdoCache<? extends PersistentDomainObject<?>>> caches =
       ((PersistenceUtilities) DbUtilities.getInstance()).getPreloadingCaches();
