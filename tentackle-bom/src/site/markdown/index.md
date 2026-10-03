@@ -1,6 +1,6 @@
 # Tentackle BOM
 
-The Bill of Materials for downstream projects. Import it in your `dependencyManagement` to align all Tentackle artifact versions.
+The Bill of Materials for downstream projects. Import it in your `dependencyManagement` to align the versions of all Tentackle runtime and test-support modules. The Maven plugins are versioned separately.
 
 ## Documentation & reports
 

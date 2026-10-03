@@ -49,7 +49,7 @@ as the `archetypeVersion`):
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=25.18.2.0
+    -DarchetypeVersion=25.19.0.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
 you will be asked for:
