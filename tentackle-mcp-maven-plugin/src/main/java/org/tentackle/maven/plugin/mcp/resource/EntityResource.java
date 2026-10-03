@@ -61,7 +61,8 @@ public class EntityResource implements McpResource {
 
   @Override
   public String description() {
-    return "The model definition of one entity, as loaded. Substitute the entity name for {name}.";
+    return "The model definition of one entity, as loaded from its model file. Substitute the entity name, " +
+           "'table:<tableName>' or 'id:<classId>' for {name}.";
   }
 
   @Override

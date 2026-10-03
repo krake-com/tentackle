@@ -34,7 +34,7 @@ import java.util.List;
  * @param modelDefaults the project-wide model defaults, null if none
  * @param entityAliases the fixed table aliases, null if none
  * @param schemaNameMapped true if schema names are mapped
- * @param backendNames the comma separated backend names to validate against, null for none
+ * @param backendNames the comma-separated backend names to validate against, null for none
  *
  * @author harald
  */
@@ -55,7 +55,7 @@ public record ModelConfiguration(String modelName,
    * @param modelDefaults the model defaults, null if none
    * @param entityAliases the entity aliases, null if none
    * @param schemaNameMapped true if schema names are mapped
-   * @param backendNames the comma separated backend names, null for none
+   * @param backendNames the comma-separated backend names, null for none
    */
   public ModelConfiguration {
     modelDirs = List.copyOf(modelDirs);

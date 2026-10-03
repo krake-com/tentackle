@@ -35,7 +35,7 @@ import java.util.Locale;
  * Searches the model by name.
  * <p>
  * The question "where does {@code custId} appear?" cannot be answered by listing entities, and grepping the
- * sources misses everything the model derived. One pattern across six kinds of the element answers it.
+ * sources misses everything the model derived. One pattern across six kinds of element answers it.
  *
  * @author harald
  */
@@ -44,7 +44,7 @@ public class FindTool implements ModelTool {
   /** The tool name. */
   public static final String NAME = "model_find";
 
-  /** The kinds of the element that can be searched. */
+  /** The kinds of element that can be searched. */
   public static final String[] KINDS = { "entity", "table", "attribute", "column", "relation", "index" };
 
   private final int maxResults;

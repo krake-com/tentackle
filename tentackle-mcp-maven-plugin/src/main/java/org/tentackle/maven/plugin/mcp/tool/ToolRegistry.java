@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The tools this server offers, in order an agent should discover them.
+ * The tools this server offers, in the order an agent should discover them.
  *
  * @author harald
  */

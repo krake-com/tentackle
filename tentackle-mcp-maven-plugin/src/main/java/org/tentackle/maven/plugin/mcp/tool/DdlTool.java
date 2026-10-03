@@ -67,8 +67,8 @@ public class DdlTool implements ModelTool {
     return """
         Renders CREATE TABLE, CREATE INDEX and foreign key statements for one or more entities and a given \
         database backend. This is text for reading, not for running: nothing is executed and no database is \
-        contacted. Requires the plugin's 'backends' parameter to be configured. Omit 'entity' to render the \
-        whole model. Only entities with a table of their own are rendered: an entity of a single- or \
+        contacted. Needs a backend: the 'backend' argument, or else the first backend of the plugin's \
+        'backends' parameter. Omit 'entity' to render the whole model. Only entities with a table of their own are rendered: an entity of a single- or \
         multi-table hierarchy is stored in the table of its hierarchy root, and a 'provided' table is \
         maintained outside the application.""";
   }
@@ -78,7 +78,8 @@ public class DdlTool implements ModelTool {
     return new SchemaBuilder()
         .stringArray("entity", "The entities to render, each a name, 'table:<tableName>' or 'id:<classId>'. " +
                                "Omit to render the whole model.")
-        .string("backend", "The database backend, for instance 'PostgreSQL'. Defaults to the first " +
+        .string("backend", "The database backend, for instance 'PostgreSQL'. Any backend known to the " +
+                           "server is accepted, not just the configured ones. Defaults to the first " +
                            "configured backend.")
         .stringArray("parts", "Which statements to render. Defaults to all of them.", PARTS)
         .build();

@@ -143,7 +143,7 @@ without a restart.
 | `model_paths`           | How two entities are connected; direct neighbors; composite and embedding paths.                  |
 | `model_ddl`             | The `CREATE TABLE` / `CREATE INDEX` / foreign key statements for a backend. Text only.            |
 | `model_validate`        | Is the model consistent — or would *this draft definition* be? See below.                         |
-| `model_reload`          | Refresh after a build; `full` after an entity was deleted or renamed.                             |
+| `model_reload`          | Refresh right away and list what changed; `full` for a clean reload. Rarely needed: changes are picked up by themselves. |
 
 Every entity argument accepts the entity name, `table:<tableName>` or `id:<classId>`, because all three
 turn up in the sources an agent is reading.
@@ -269,7 +269,8 @@ gets the next free id.
 The generated files are scaffolding. The model block is filled in, but the business logic is not — that
 is the part a human or an agent writes next. Then run the build, which drives
 `tentackle:analyze` → Wurbelizer → compiler and produces the persistence mappings and the SQL. Once
-the build is through, call `model_reload` so the MCP server sees the new entities.
+the build is through, the MCP server picks up the new entities by itself before its next answer;
+`model_reload` lists which ones changed.
 
 ### Bootstrapping From an Existing Database
 

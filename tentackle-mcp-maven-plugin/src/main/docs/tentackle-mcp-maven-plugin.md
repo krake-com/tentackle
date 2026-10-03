@@ -34,8 +34,8 @@ stdio, stdout *is* the protocol channel and Maven writes to it unconditionally.
 
 ### Prerequisites
 
-JDK >= 25 and Maven >= 3.9.10 (Maven 4 is supported as well), like the rest of Tentackle. The model must have been generated at least once, so
-run a build before the first start:
+JDK >= 25 and Maven >= 3.9.10 (Maven 4 is supported as well), like the rest of Tentackle. The model must have
+been generated at least once, so run a build before the first start:
 
 ```bash
 mvn -DskipTests generate-sources
@@ -46,8 +46,9 @@ mvn -DskipTests generate-sources
 | Goal    | Default phase | Purpose                                                    |
 |---------|---------------|------------------------------------------------------------|
 | `serve` | none          | Runs the MCP server until stopped with `Ctrl-C`.            |
+| `help`  | none          | Lists the goals and their parameters (`-Ddetail -Dgoal=serve`). |
 
-The goal is an aggregator and is not bound to a lifecycle phase: the model spans the whole reactor, so the
+The `serve` goal is an aggregator and is not bound to a lifecycle phase: the model spans the whole reactor, so the
 server runs once, at the root, and is started explicitly.
 
 ### Configuration
@@ -83,19 +84,24 @@ The parameters in detail:
   `target/wurbel/model`.
 - `filesets`: model directories in load order, dependency models first. If given, `modelDir` is ignored. Every
   directory is loaded without resolving relations and a single resolution pass follows once the last one is in —
-  the only order in which relations across dependency models resolve.
+  the only order in which relations across dependency models resolve. Only the `directory` of each fileset
+  counts: includes and excludes are ignored and every `.map` file in it is loaded. A fileset without a
+  `directory` stands for `modelDir`.
 - `modelDefaults` (`tentackle.modelDefaults`): the project-wide model defaults. **Always set this**, see below.
 - `entityAliases` (`tentackle.entityAliases`): fixed table aliases, for instance `usr=User, grp=Group`.
 - `mapSchemas` (`tentackle.mapSchemas`): map schema names.
 - `backends` (`tentackle.backends`): comma-separated database backends to validate against, for instance
-  `PostgreSQL,H2`. `all` selects every non-deprecated backend. Without them names, types and sizes are not
-  verified and `model_ddl` has nothing to render.
+  `PostgreSQL,H2`. `all` selects every non-deprecated backend. Without them, names, types and sizes are not
+  verified, the `ddl` section of `model_describe_entity` renders nothing and `model_ddl` needs an explicit
+  `backend`.
 - `loadModelFromDependencies`: additionally load the model from the plugin's classpath. Defaults to `false`.
+  That part of the model is a snapshot: only the model directories are watched for changes.
 
 Server parameters:
 
 - `host` (`tentackle.mcp.host`): the address to bind to. Defaults to `localhost`.
-- `port` (`tentackle.mcp.port`): the port to listen on. Defaults to `8770`.
+- `port` (`tentackle.mcp.port`): the port to listen on. Defaults to `8770`. `0` picks a free port; the logged
+  endpoint shows which.
 - `path` (`tentackle.mcp.path`): the path of the MCP endpoint. Defaults to `/mcp`.
 - `serverName`: the name reported to the client during initialization. Defaults to `tentackle-model`.
 - `stalenessCheckMillis`: minimum delay between two checks for changed model files. Defaults to `1000`.
@@ -118,7 +124,8 @@ serialized (see [Parallel builds](../../../../tentackle-maven-support/src/main/d
 mvn tentackle-mcp:serve
 ```
 
-It logs the endpoint and the command that registers it, then blocks:
+It loads the model, logs any configuration warnings, the endpoint and the command that registers it, then
+blocks:
 
 ```
 [INFO] 42 entities loaded from /home/me/myapp/target/wurbel/model
@@ -127,7 +134,10 @@ It logs the endpoint and the command that registers it, then blocks:
 [INFO] stop with Ctrl-C
 ```
 
-Every parameter can be overridden on the command line:
+If the model does not load, the goal fails rather than serve a fragment of it — fix the reported model file,
+or run the build that generates it, and start again.
+
+Every parameter that has a user property can be overridden on the command line:
 
 ```bash
 mvn tentackle-mcp:serve -Dtentackle.mcp.port=9000 -Dtentackle.backends=PostgreSQL
@@ -206,9 +216,23 @@ The arguments of the tools (a `limit` is always capped by `maxResults`, which is
 | `model_describe_entity` | `entity` (required), `scope` (`own`, `inherited`, `subentities` or `all`; default `inherited`), `sections` (array, see below)                                      |
 | `model_source`          | `entity` (required), `format` (`raw`, `canonical` or `compact`; default `canonical`), `asComment` (default `false`), `useVariables` (default `false`)              |
 | `model_paths`           | `from` (required), `to` (omit for the direct neighbors of `from`), `kind` (`relations`, `composite` or `embedding`; default `relations`), `direction` (`forward`, `reverse` or `both`; default `both`), `maxDepth` (default `4`), `limit` |
-| `model_ddl`             | `entity` (array; omit for the whole model), `backend` (default: the first configured backend), `parts` (array of `table`, `indexes`, `foreignkeys`; default all)   |
+| `model_ddl`             | `entity` (array; omit for the whole model), `backend` (any backend known to the server; default: the first configured backend), `parts` (array of `table`, `indexes`, `foreignkeys`; default all) |
 | `model_validate`        | `source` (a candidate definition, without the `@>`/`@<` markers), `entity` (the entity the candidate replaces; omit for a new one)                                |
 | `model_reload`          | `full` (clear and reload instead of refreshing changed files; default `false`)                                                                                    |
+
+The arguments are read leniently, because agents are not consistent about JSON types: an array argument also
+takes a single string or a comma-separated one, numbers and booleans may arrive as strings, and a boolean
+accepts `true`/`false`, `yes`/`no` and `1`/`0`.
+
+A few details the table cannot show:
+
+- `model_find` matches names; with `comments` it also matches the comments of entities, attributes, relations
+  and indexes. Table and column names have no comment.
+- `model_paths` with `kind` `relations` follows inherited relations as well. With `kind` `composite` or
+  `embedding`, `to` keeps only the paths that involve it, and `direction`, `maxDepth` and `limit` do not apply.
+- `model_source` with `useVariables` writes `$classname`, `$tablename`, `$classid` and `$integrity` back, and
+  `$mapping` as well if `asComment` is set — the form the block has in a PDO interface. `raw` is the `.map`
+  file as loaded, with the variables already expanded.
 
 #### `model_describe_entity`
 
@@ -222,12 +246,17 @@ because they are computed from the whole graph are added explicitly:
 The header additionally reports the source file and line of the `@> … @<` block, which is the file to edit and
 which no other section reveals.
 
+The `ddl` section renders the table and its indexes for every configured backend, and nothing without them;
+`model_ddl` renders for any single backend and adds the foreign keys.
+
 #### `model_validate`
 
 Without arguments it reloads and validates everything that is configured. With `source` it validates a
 **candidate** model definition: the candidate is staged into a scratch copy of the model sources — replacing
 `entity` if given, added as a new entity otherwise — relations are resolved across the whole set and the
-`CustomModelValidator` implementations run. Nothing is written and the live model is untouched.
+`CustomModelValidator` implementations run. A replacement takes the place of the entity's own file, a new
+entity is added to the last model directory, and the dependency models loaded from the classpath take part as
+well. Nothing is written to the model directories and the live model is untouched.
 
 That turns "write a model block, run the reactor, read the stack trace" into a sub-second loop:
 
@@ -245,7 +274,7 @@ duplicate entity id 9001 for Note, already assigned to Customer
 |----------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | `tentackle-model://grammar/model-definition` | [Model Definition Syntax](../../../../tentackle-model/src/main/docs/model-definition.md), packaged with the plugin, so an agent never has to guess the DSL. |
 | `tentackle-model://index`                    | All entities with class id, table and super entity.                                                              |
-| `tentackle-model://entity/{name}`            | One entity's model source.                                                                                        |
+| `tentackle-model://entity/{name}`            | One entity's model source as loaded. `{name}` also takes `table:<tableName>` or `id:<classId>`.                   |
 
 One prompt, `new-entity`, walks an agent through adding an entity in the order that works: look at comparable
 entities, check the class id, validate the candidate, and only then write the file. Its arguments are `entity`
@@ -256,17 +285,21 @@ aggregate root, if the entity is a component).
 
 - **Read-only.** Nothing is written, no database connection is opened, no application class is loaded. The
   server parses model text. Every tool is announced with a `readOnlyHint`, and only `model_reload` and
-  `model_validate` clear it — they reload the model, which changes what the other tools see.
-- **Self-refreshing.** Model files are re-scanned before each call, at most once per `stalenessCheckMillis`, and
-  the model is reloaded when they moved. A rebuild in another terminal is picked up without a restart. A
-  *removed* file forces a full reload, because a refresh alone keeps entities whose source is gone — that is what
-  `model_reload` with `full` is for.
+  `model_validate` clear it — they reload the model, which changes what the other tools see. All tools are
+  further announced as non-destructive, idempotent and closed-world.
+- **Self-refreshing.** The `.map` files in the model directories are re-scanned before each call, at most once
+  per `stalenessCheckMillis`, and the model is refreshed when they changed. A rebuild in another terminal is
+  picked up without a restart. A *removed* file forces a full reload, because a refresh alone keeps entities
+  whose source is gone. `model_reload` is only needed to pick up a change right away, to learn which entities
+  changed, or with `full` to force a clean reload.
 - **Never half a model.** Sources are read into a scratch model before the loaded one is replaced, so a build
   that is halfway through writing the model directory leaves the server on the model it had, and says so in its
-  warnings. An answer is never a model with entities silently missing from it.
+  warnings, until a later reload succeeds. An answer is never a model with entities silently missing from it.
 - **Consistent.** The model implementation synchronizes individual methods, which makes a single getter safe but
   not a tool call that walks an entity through a hundred of them. A whole invocation therefore runs under one
   lock, so a refresh can never land halfway through a description.
+- **Errors are answers.** A malformed argument, an unknown entity or an inconsistent model comes back as a
+  tool result flagged as an error, with the reason in plain text — never as a protocol error or a stack trace.
 - **Honest about its configuration.** Missing model defaults or backends are reported in every overview and
   validation result, so a configuration gap is never mistaken for a broken model.
 
@@ -277,7 +310,7 @@ the server. It is a template: copy it into your own project.
 
 ```bash
 mkdir -p .claude/skills
-cp path/to/tentackle-mcp-maven-plugin/src/skills/tentackle-model/SKILL.md .claude/skills/tentackle-model/
+cp -r path/to/tentackle-mcp-maven-plugin/src/skills/tentackle-model .claude/skills/
 ```
 
 Agents that do not support skills can be pointed at the same file as plain instructions — in `AGENTS.md`, in a

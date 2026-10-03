@@ -33,7 +33,8 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Serves the model to coding agents over MCP.
  * <p>
- * Blocks until the server is stopped with {@code Ctrl-C}.
+ * Loads the model, logs the configuration warnings and the endpoint, and blocks until the server is stopped
+ * with {@code Ctrl-C}. If the model does not load, the goal fails instead of serving a fragment of it.
  *
  * @author harald
  */
@@ -44,7 +45,7 @@ public class ServeMojo extends AbstractMcpMojo {
   @Parameter(defaultValue = "localhost", property = "tentackle.mcp.host")
   private String host;
 
-  /** The port to listen on. */
+  /** The port to listen on, 0 for any free port (the logged endpoint shows the one chosen). */
   @Parameter(defaultValue = "8770", property = "tentackle.mcp.port")
   private int port;
 
@@ -60,7 +61,7 @@ public class ServeMojo extends AbstractMcpMojo {
   @Parameter(defaultValue = "1000")
   private long stalenessCheckMillis;
 
-  /** The maximum number of rows a tool may return. */
+  /** The hard upper bound for the number of rows a tool may return, also the default of every {@code limit}. */
   @Parameter(defaultValue = "1000")
   private int maxResults;
 

@@ -47,7 +47,7 @@ public class PathsTool implements ModelTool {
   /** The kinds of connection that can be traced. */
   public static final String[] KINDS = { "relations", "composite", "embedding" };
 
-  /** The directions of a relation path may be traversed in. */
+  /** The directions a relation path may be traversed in. */
   public static final String[] DIRECTIONS = { "forward", "reverse", "both" };
 
   /** The default maximum number of hops. */
@@ -80,7 +80,8 @@ public class PathsTool implements ModelTool {
         Shows how entities are connected. With 'kind' = relations it searches the relation graph from 'from' \
         to 'to' and lists every path up to 'maxDepth' hops; omit 'to' to list the direct neighbors instead. \
         With 'kind' = composite it shows the aggregate paths from the root entity down to 'from', and with \
-        'kind' = embedding the paths along which 'from' is embedded. Use it before writing a query or a \
+        'kind' = embedding the paths along which 'from' is embedded; 'to' then keeps only the paths that \
+        involve it, and 'direction', 'maxDepth' and 'limit' do not apply. Use it before writing a query or a \
         relation, to see whether a link already exists.""";
   }
 
@@ -88,7 +89,8 @@ public class PathsTool implements ModelTool {
   public String getInputSchema() {
     return new SchemaBuilder()
         .requiredString("from", "The entity to start at: a name, 'table:<tableName>' or 'id:<classId>'.")
-        .string("to", "The entity to reach. Omit to list the direct neighbors of 'from'.")
+        .string("to", "The entity to reach. Omit to list the direct neighbors of 'from'. With kind " +
+                      "'composite' or 'embedding', only the paths involving this entity are listed.")
         .enumeration("kind", "Which kind of connection to trace.", "relations", KINDS)
         .enumeration("direction", "Whether to follow relations declared by the entity ('forward'), relations " +
                                   "pointing at it ('reverse') or both.", "both", DIRECTIONS)

@@ -67,7 +67,8 @@ public class SourceTool implements ModelTool {
         is printed from the resolved model with everything spelled out, and 'compact' omits what the project's \
         model defaults already imply -- which is what you would actually write into a PDO interface. Set \
         'asComment' to wrap the result in a '@> ... @<' block ready to paste, and 'useVariables' to keep the \
-        $classname, $classid and $tablename placeholders.""";
+        $classname, $tablename, $classid and $integrity placeholders (and $mapping in a '@> ... @<' block) \
+        as they are written in a PDO interface.""";
   }
 
   @Override
@@ -76,8 +77,8 @@ public class SourceTool implements ModelTool {
         .requiredString("entity", "The entity name, 'table:<tableName>' or 'id:<classId>'.")
         .enumeration("format", "How the definition is rendered.", "canonical", FORMATS)
         .bool("asComment", "Wrap the result in a '@> ... @<' comment block.", false)
-        .bool("useVariables", "Keep the $classname, $classid, $tablename, $mapping and $integrity variables.",
-              false)
+        .bool("useVariables", "Keep the $classname, $tablename, $classid and $integrity variables, and " +
+                              "$mapping when 'asComment' is set.", false)
         .build();
   }
 
