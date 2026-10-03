@@ -28,6 +28,7 @@ import org.tentackle.pdo.testng.TestApplication;
 import org.tentackle.session.Session;
 
 import javafx.application.Platform;
+import javafx.scene.control.Label;
 import java.awt.GraphicsEnvironment;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -101,6 +102,36 @@ public abstract class FxRdcTestApplication extends TestApplication {
       catch (RuntimeException rex) {
         throw new SkipException("FX not supported -> no FX tests", rex);
       }
+      initCssOnFxThread();
+    }
+  }
+
+  /**
+   * Initializes the CSS and control classes on the FX thread.<br>
+   * {@link Platform#startup(Runnable)}, unlike {@code Application.launch}, does not load the default user agent
+   * stylesheet. The first control created by the test thread would load it via {@link Platform#runLater(Runnable)},
+   * and the FX thread would then initialize the {@code Styleable...Property} classes concurrently to the test thread.
+   * Since these classes and {@code com.sun.javafx.css.StyleablePropertyHelper} initialize each other in their
+   * static initializers, this may deadlock both threads. Creating a control on the FX thread first avoids that.
+   */
+  private static void initCssOnFxThread() {
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      try {
+        new Label();    // loads the default stylesheet synchronously and initializes the styleable properties
+      }
+      finally {
+        latch.countDown();
+      }
+    });
+    try {
+      if (!latch.await(DEFAULT_FX_TIMEOUT, TimeUnit.SECONDS)) {
+        Assert.fail("initializing FX timed out");
+      }
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      Assert.fail("initializing FX interrupted", e);
     }
   }
 

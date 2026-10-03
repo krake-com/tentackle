@@ -29,6 +29,7 @@ import org.tentackle.pdo.junit.TestApplication;
 import org.tentackle.session.Session;
 
 import javafx.application.Platform;
+import javafx.scene.control.Label;
 import java.awt.GraphicsEnvironment;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -123,19 +124,51 @@ public abstract class FxRdcTestApplication extends TestApplication {
         else {
           try {
             Platform.startup(() -> System.out.println("FX started"));
-            fxStarted = true;
           }
           catch (IllegalStateException ix) {
-            fxStarted = true;   // toolkit already initialized by someone else
+            // toolkit already initialized by someone else
           }
           catch (RuntimeException rex) {
             fxFailure = new TestAbortedException("FX not supported -> no FX tests", rex);
+          }
+          if (fxFailure == null) {
+            initCssOnFxThread();
+            fxStarted = true;
           }
         }
       }
       if (fxFailure != null) {
         throw fxFailure;
       }
+    }
+  }
+
+  /**
+   * Initializes the CSS and control classes on the FX thread.<br>
+   * {@link Platform#startup(Runnable)}, unlike {@code Application.launch}, does not load the default user agent
+   * stylesheet. The first control created by the test thread would load it via {@link Platform#runLater(Runnable)},
+   * and the FX thread would then initialize the {@code Styleable...Property} classes concurrently to the test thread.
+   * Since these classes and {@code com.sun.javafx.css.StyleablePropertyHelper} initialize each other in their
+   * static initializers, this may deadlock both threads. Creating a control on the FX thread first avoids that.
+   */
+  private static void initCssOnFxThread() {
+    CountDownLatch latch = new CountDownLatch(1);
+    Platform.runLater(() -> {
+      try {
+        new Label();    // loads the default stylesheet synchronously and initializes the styleable properties
+      }
+      finally {
+        latch.countDown();
+      }
+    });
+    try {
+      if (!latch.await(DEFAULT_FX_TIMEOUT, TimeUnit.SECONDS)) {
+        Assertions.fail("initializing FX timed out");
+      }
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      Assertions.fail("initializing FX interrupted", e);
     }
   }
 
