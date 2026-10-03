@@ -17,6 +17,6 @@
  */
 
 /**
- * Tentackle application testing maven plugin.
+ * Maven plugin for build-time checks of resource bundle keys and annotation-based validations.
  */
 package org.tentackle.maven.plugin.check;

@@ -44,9 +44,12 @@ import java.util.MissingResourceException;
 /**
  * Verifies all annotation-based validations.<br>
  * Scans for validator annotations (annotated with &#64;Validation), creates the validators and
- * their compound values for the annotation's value, message and condition. If the compound values are scripts,
- * the scripts will be compiled. If a message-script is an i18n-script (see &#64;MessageScriptConverter),
- * the script will be evaluated for each configured locale.
+ * their compound values for the annotation's value, message and condition. Value and condition scripts
+ * are compiled once. Message scripts are evaluated for each configured locale, which resolves the
+ * translations of i18n-scripts (see &#64;MessageScriptConverter) as well.
+ * <p>
+ * The plugin ships no scripting language. The provider of the language, such as tentackle-script-groovy,
+ * must be added as a plugin dependency.
  *
  * @author harald
  */
@@ -77,7 +80,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
   }
 
   @Override
-  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+  public void finishExecute() throws MojoExecutionException {
 
     // set the classloader (otherwise ValidationUtilities doesn't know the classpath)
     ValidationUtilities.getInstance().setValidationBundleClassLoader(getProcessingClassloader());
@@ -85,15 +88,24 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
     int count = processor.getValidators().size();
     errors = processor.getErrors();
 
-    // check validation messages for all locales
-    for (Locale bundleLocale : bundleLocales) {
-      LocaleProvider.getInstance().setCurrentLocale(bundleLocale);
+    // values and conditions don't depend on the locale
+    for (ValidatorEntry validatorEntry: processor.getValidators()) {
+      checkValue(validatorEntry);
+      checkCondition(validatorEntry);
+    }
 
-      for (ValidatorEntry validatorEntry: processor.getValidators()) {
-        checkValue(validatorEntry);
-        checkMessage(validatorEntry);
-        checkCondition(validatorEntry);
+    // check validation messages for all locales
+    try {
+      for (Locale bundleLocale : bundleLocales) {
+        LocaleProvider.getInstance().setCurrentLocale(bundleLocale);
+        for (ValidatorEntry validatorEntry: processor.getValidators()) {
+          checkMessage(validatorEntry);
+        }
       }
+    }
+    finally {
+      // don't leave the locale behind in the build thread
+      LocaleProvider.getInstance().setCurrentLocale(null);
     }
 
     // show results
@@ -120,12 +132,12 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
 
 
   /**
-   * Checks the message script.
+   * Checks the message script for the current locale.<br>
+   * The script is evaluated, which also resolves the translations of an i18n-script.
    *
    * @param validatorEntry the validator
-   * @throws MojoFailureException if no message script converter for the scripting language
    */
-  private void checkMessage(ValidatorEntry validatorEntry) throws MojoFailureException {
+  private void checkMessage(ValidatorEntry validatorEntry) {
     try {
       Validator validator = validatorEntry.validator();
       Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.className());
@@ -180,7 +192,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
   }
 
   /**
-   * Checks the condition script.
+   * Checks the value script.
    *
    * @param validatorEntry the validator
    */

@@ -37,7 +37,9 @@ import java.util.List;
 
 
 /**
- * Tree path scanner for bundle getString() method invocations.
+ * Tree path scanner for bundle getString() method invocations.<br>
+ * Collects every invocation of {@code getString} with a single string literal argument,
+ * regardless of the type it is invoked on.
  *
  * @author harald
  */
@@ -104,7 +106,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
   /**
    * Extracts the bundle key from a string expression.
    *
-   * @param stringExpr the expression getString(...)
+   * @param stringExpr the argument expression of getString(...)
    * @return the bundle key string, null if it could not be determined
    */
   private String determineBundleKey(ExpressionTree stringExpr) {
@@ -125,7 +127,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
    * Builds the classname that contains the method invocation.
    *
    * @param path the tree path
-   * @return the classname
+   * @return the classname, nested classes separated by a dot
    */
   private String buildUsingClassName(TreePath path) {
     StringBuilder name = new StringBuilder();

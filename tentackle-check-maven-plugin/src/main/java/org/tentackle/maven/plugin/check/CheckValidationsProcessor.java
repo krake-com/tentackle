@@ -44,7 +44,9 @@ import java.util.Set;
 
 
 /**
- * Validations checker processor.
+ * Validations checker processor.<br>
+ * Creates a validator for each occurrence of a validation annotation, including repeated ones.
+ * Validators that cannot be created are reported as errors via the {@code Messager}.
  *
  * @author harald
  */
@@ -54,7 +56,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
   /**
    * Validator entry.<br>
-   * Hold the validator and the class where the annotation was found.
+   * Holds the validator and the class where the annotation was found.
    *
    * @param validator the validator instance
    * @param className the binary name of the enclosing class of the annotation, i.e. nested classes
@@ -209,7 +211,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
    *        a repeated annotation
    * @param annotationType the validation annotation type, i.e. the repeated annotation itself
    * @param mirror the {@code @Validation} mirror of the validation annotation type
-   * @param roundEnv the processing environment
+   * @param roundEnv the round environment
    */
   @SuppressWarnings("unchecked")
   public void processAnnotation(TypeElement declaredType, TypeElement annotationType,

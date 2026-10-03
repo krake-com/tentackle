@@ -32,8 +32,10 @@ import java.util.Set;
 
 
 /**
- * Bundle checker processor.
- * 
+ * Bundle checker processor.<br>
+ * Passes the syntax trees of all root elements to the {@link CheckBundlesScanner}.
+ * Claims all annotations, since it is the only processor that runs.
+ *
  * @author harald
  */
 @SupportedOptions("verbosity")
@@ -43,6 +45,11 @@ public class CheckBundlesProcessor extends AbstractTentackleProcessor {
   private final CheckBundlesScanner bundleScanner;
   private Trees trees;
 
+  /**
+   * Creates the processor.
+   *
+   * @param bundleScanner the scanner collecting the bundle keys
+   */
   public CheckBundlesProcessor(CheckBundlesScanner bundleScanner) {
     this.bundleScanner = bundleScanner;
   }

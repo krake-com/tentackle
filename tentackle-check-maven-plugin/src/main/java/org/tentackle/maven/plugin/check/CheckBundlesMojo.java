@@ -39,17 +39,24 @@ import java.util.Set;
 /**
  * Verifies all bundle getString() invocations.
  * <p>
- * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>.<br>
- * Where <code>&lt;reference&gt;</code> is:
+ * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>,
+ * where <code>&lt;reference&gt;</code> is:
  * <ul>
- * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.</li>
+ * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.
+ * The class is resolved via a single-type import or the package of the invoking class.</li>
  * <li>a method that refers to a bundle with the same name as the class containing the method invocation,
  * e.g. getBundle().getString("foo") in class Blah corresponds to the key "foo" in Blah.properties.</li>
  * <li>a variable or constant: same as method, i.e. the bundle name is that of the containing class,
  * e.g. resources.getString("foo").</li>
  * </ul>
- *
- * If a class must not be checked for bundle keys, it needs to be excluded from the fileset.
+ * Nested classes refer to the bundle of their outermost class.
+ * Each referenced bundle must be registered via an annotation such as &#64;Bundle or
+ * &#64;FxControllerService (see {@link BundleSupport}), and is loaded for each configured locale.
+ * Furthermore, the key sets of each referenced bundle are compared across all locales.
+ * <p>
+ * Any single-argument {@code getString} invocation with a string literal counts, regardless of the type
+ * it is invoked on. Classes that must not be checked, for example because they invoke
+ * {@code ResultSet.getString("column")}, need to be excluded from the fileset.
  * <p>
  * The following cases are not covered by this mojo:
  * <ul>
@@ -90,7 +97,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       }
     }
 
-    // Key locale:bundlename
+    // key locale:bundlename
     record NameKey(Locale locale, String name) {
       @Override
       public String toString() {
@@ -99,7 +106,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     }
 
     // load referenced bundles in given locales
-    Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
+    Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <locale:bundlename> : <bundle>
 
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/bundles file!)
     for (BundleSupport bundleSupport: BundleSupport.getBundles(getProcessingClassloader())) {
@@ -146,7 +153,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       }
     }
 
-    // find diffs in bundles.
+    // find diffs in bundles: the keys of the first locale are compared against those of all others.
     // Notice: due to the nature of bundles, missing keys are not detected if provided
     // by a parent bundle (for ex. bundle_de.properties misses a key provided by the fallback bundle.properties).
     // However, this check will detect missing keys that would cause a MissingResourceException at runtime.

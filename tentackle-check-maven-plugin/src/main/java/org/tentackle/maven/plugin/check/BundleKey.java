@@ -21,21 +21,21 @@ package org.tentackle.maven.plugin.check;
 import java.util.Locale;
 
 /**
- * Bundle key.
+ * A bundle key referenced in the sources via {@code <reference>.getString("<key>")}.
  *
  * @author harald
  */
 public class BundleKey {
 
-  private final String path;          // java class containing the method invocation
-  private final String name;          // the classname of the bundle
+  private final String path;          // the class containing the method invocation
+  private final String name;          // the reference, qualified by its import or package
   private final String key;           // the bundle key
 
   /**
    * Creates a bundle key.
    *
-   * @param path the java class containing the method invocation
-   * @param name the classname of the bundle
+   * @param path the name of the class containing the method invocation, nested classes separated by a dot
+   * @param name the reference {@code getString} is invoked on, qualified by its import or package
    * @param key the bundle key
    */
   public BundleKey(String path, String name, String key) {
@@ -45,18 +45,19 @@ public class BundleKey {
   }
 
   /**
-   * Gets the java class containing the method invocation.
+   * Gets the name of the class containing the method invocation.
    *
-   * @return the path
+   * @return the class name, nested classes separated by a dot
    */
   public String getPath() {
     return path;
   }
 
   /**
-   * Gets the classname of the bundle.
+   * Gets the reference {@code getString} is invoked on.<br>
+   * Qualified by the matching single-type import or, if there is none, by the package of the class.
    *
-   * @return the bundle class
+   * @return the qualified reference
    */
   public String getName() {
     return name;
@@ -71,7 +72,15 @@ public class BundleKey {
     return key;
   }
 
-
+  /**
+   * Gets the name of the bundle the key belongs to.
+   * <p>
+   * If the reference is a method invocation, such as {@code getBundle()}, or
+   * a variable or constant, i.e. its last segment starts lowercase or is all uppercase, the bundle
+   * is that of the class containing the invocation. Otherwise, the reference is the bundle's class.
+   *
+   * @return the bundle name, may still contain nested class names
+   */
   public String getBundleName() {
     String bundleName = name;
     if (name.endsWith("()")) {

@@ -23,6 +23,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.maven.plugin.check.CheckTestSupport.RecordingLog;
 import org.tentackle.maven.plugin.check.CheckTestSupport.TestValidationsMojo;
 import org.tentackle.maven.plugin.check.CheckValidationsProcessor.ValidatorEntry;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -362,6 +364,55 @@ public class CheckValidationsMojoTest {
     assertTrue(RecordingLog.contains(log.getInfoMessages(),
                                      "1 annotation, 0 scripts checked for en_US, de_DE, no errors"),
                log.getInfoMessages().toString());
+  }
+
+  /**
+   * Conditions and values don't depend on the locale, so a broken one is reported once, not once
+   * per locale.
+   */
+  @Test
+  public void aBrokenConditionIsReportedOnceForAllLocales() {
+    CheckTestSupport.setField(mojo, "locales", "en_US, de_DE");
+    source("Entity.java", """
+        package com.example.app;
+
+        import org.tentackle.validate.validator.Mandatory;
+
+        public class Entity {
+          @Mandatory(condition = "{name != null}")
+          private String name;
+        }
+        """);
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, this::run);
+
+    assertEquals(ex.getMessage(), "1 annotation, 0 scripts checked for en_US, de_DE, 1 errors");
+    assertEquals(log.getErrorMessages().stream()
+                    .filter(msg -> msg.contains("validation condition check failed")).count(), 1L,
+                 log.getErrorMessages().toString());
+  }
+
+  /**
+   * The messages are checked with the locale set for the current thread. It must not stick to
+   * the build thread once the goal has finished.
+   */
+  @Test
+  public void clearsTheThreadLocalLocale() throws Exception {
+    CheckTestSupport.setField(mojo, "locales", "en_US, de_DE");
+    source("Entity.java", """
+        package com.example.app;
+
+        import org.tentackle.validate.validator.Mandatory;
+
+        public class Entity {
+          @Mandatory
+          private String name;
+        }
+        """);
+
+    run();
+
+    assertNull(LocaleProvider.getInstance().getCurrentLocale());
   }
 
   /**
