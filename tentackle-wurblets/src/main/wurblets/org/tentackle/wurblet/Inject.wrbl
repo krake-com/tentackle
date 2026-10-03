@@ -16,13 +16,14 @@ arguments:
 <li><em>--string:</em> enclose in double quotes.</li>
 <li><em>text:</em> the text to inject.</li>
 </ul>
-The Inject-wurblet is a tag-less wurblet and injects the code between two empty comment blocks &#047;**&#047;...&#047;**&#047;.
+The Inject-wurblet is a tag-less wurblet and injects the code between two inline comment markers &#047;*&#064;*&#047;...&#047;*&#064;*&#047;
+(or the legacy &#047;**&#047;...&#047;**&#047;, which causes a "dangling doc comment" warning since Java 23).
 If the wurblet should scan for such a pattern to the left, the pseudo tag-name {\@code <} must be used.
 If to the right, use {\@code >}.
 <p>
 Example:
 <pre>
-  String text = &#047;**&#047;"blah"&#047;**&#047;;  // &#064;wurblet &lt; Inject --string $some_variable
+  String text = &#047;*&#064;*&#047;"blah"&#047;*&#064;*&#047;;  // &#064;wurblet &lt; Inject --string $some_variable
 </pre>
 }@
 @[

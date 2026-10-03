@@ -128,7 +128,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         if (!property.isInherited()) {
 ]@
   /** property name for @(property.getComment())@. */
-  public static@(noFinal?"":"final")@ String @(property.getConstant())@ = "@(property.getName())@";
+  public static final String @(property.getConstant())@ = "@(property.getName())@";
 
 @[
         }
