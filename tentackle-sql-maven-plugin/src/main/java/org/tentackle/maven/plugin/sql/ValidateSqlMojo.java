@@ -23,7 +23,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Validates the database against the model.<br>
- * The build fails if something to migrate found.<br>
+ * Same as the {@code migrate} goal, but the build fails if anything needs to be migrated.<br>
  * Alternative to the {@code validate} configuration option of the {@code migrate} goal.
  */
 @Mojo(name = "validate", aggregator = true, threadSafe = true)

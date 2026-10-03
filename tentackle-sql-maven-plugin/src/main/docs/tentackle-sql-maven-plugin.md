@@ -70,7 +70,8 @@ configured separately (see [below](#the-reveng-goal)).
 - `sqlDir` (`tentackle.sqlDir`): the base directory of the generated scripts, one sub-directory per
   backend. Defaults to `${project.build.directory}/sql`.
 - `generateHeaderComment` (default `true`): start each generated script with a comment naming the
-  model location, the creation time, the user and host, and the backend.
+  model location, the creation time, the user and host, and the backend. For `migrate`, it also
+  enables the statistics and the list of unexpected tables at the top of the script.
 
 All goals are thread-safe. The model, however, is held in a JVM-wide singleton, so in a parallel build
 (`mvn -T …`) concurrent executions are serialized, except for `reveng`; see
@@ -107,7 +108,9 @@ definitions override earlier ones for the same backend name:
    connectable.
 
 A connectable backend is required for `migrate`, `validate` and `run`; `create` and `document` work
-with name-only backends because they never touch a database.
+with name-only backends because they never touch a database. The goals that connect process each
+connectable backend separately, keyed by its JDBC URL — two databases of the same backend type are
+both processed. `create` and `document` generate one script or page tree per backend *name* instead.
 
 ```xml
 <backends>
@@ -121,8 +124,14 @@ with name-only backends because they never touch a database.
 ```
 
 Instead of an inline `<user>`/`<password>` you can reference a `<serverId>` from `settings.xml`; the
-plugin then reads the (optionally encrypted) credentials from the maven settings. The `<minVersion>`
-element is used for migration-hint version filtering (see below).
+plugin then reads the (optionally encrypted) credentials from the Maven settings, replacing any inline
+ones. An unknown `<serverId>` fails the build.
+
+The schemas restrict `migrate` and `validate` to the entities whose tables live in one of the listed
+schemas (the others are counted as *skipped*) and to the unexpected tables of those schemas. Without
+schemas, all entities are migrated. The `<migrationHints>` and `<minVersion>` elements configure the
+migration hints and their version filtering (see below). They exist only for `<backends>` entries:
+backends from `backendProperties` are migrated without hints.
 
 #### Name checks
 
@@ -137,15 +146,24 @@ element is used for migration-hint version filtering (see below).
   not collide with reserved words of the configured backends.
 - `alienTables`: a list of regular expressions matching tables that exist in the database but do not
   belong to the model (without schema prefix). They are excluded from the "unexpected tables"
-  reporting and must not be claimed by a model entity.
+  reporting and must not be claimed by a model entity: if one is, `create` and `migrate` fail.
+
+Model errors are counted, and a goal with errors fails with `<n> model errors` after the script has
+been written, so the output can still be inspected. A model that uses deferred or deferrable
+constraints for a backend that does not support them only logs a warning: the DDL falls back to
+`NOT DEFERRABLE`. At the end, `create`, `migrate` and `validate` warn about entities with
+numbered fallback table aliases ("consider specifying explicit table aliases"), since such aliases
+may change as the model evolves.
 
 #### Diagnostics and dumps
 
 These parameters help inspect what the plugin understood from the model — useful for debugging and
-for packaging a model so downstream projects can build on it:
+for packaging a model so downstream projects can build on it. They are honored by `create`,
+`migrate` and `validate` only (and not by `migrate` with `loadModelFromClassPath`):
 
 - `dumpDir`: dump every parsed entity (plus `_aliases_.txt`, `_tables_.txt`, `_classid_.txt` index
-  files). The formatting is controlled by:
+  files). Entities are dumped as `<Entity>.txt`, or as `<Entity>.map` if neither `dumpAsComment` nor
+  `dumpVariables` is set. The formatting is controlled by:
     - `dumpCompact` (default `false`): print only the configuration keywords that are actually
       required, instead of all of them for proofreading;
     - `dumpAsComment` (default `true`): dump the entities as comment blocks;
@@ -165,8 +183,16 @@ for packaging a model so downstream projects can build on it:
 ### The `create` Goal
 
 Generates a script that creates the whole schema from scratch. For every table-providing entity it
-emits, in order: the `CREATE SCHEMA` (unless `mapSchemas` or `createSchemas=false`), the
-`CREATE TABLE`, its indexes, and finally the foreign-key constraints for the generated entities.
+emits, in order: the `CREATE SCHEMA` (once per schema, unless `mapSchemas` or `createSchemas=false`),
+the `CREATE TABLE`, and its indexes. The foreign-key constraints for the generated entities follow
+after all tables. The complete script is laid out as:
+
+1. the `prependFilesets`,
+2. the classpath model, if `prependModelFromClassPath`,
+3. the header comment, the tables and the foreign keys of the model,
+4. the classpath model, if `appendModelFromClassPath`,
+5. the `sequences`,
+6. the `appendFilesets`.
 
 ```bash
 mvn tentackle-sql:create -Dtentackle.backendNames=postgres
@@ -179,7 +205,8 @@ The default output file is `createmodel.sql` (parameter `sqlFileName`, property 
 - `sequences`: a list of `<sequence>` elements (`name`, `comment`, `start`, `increment`) to create.
   Backends that do not support sequences get a commented-out note instead.
 - `prependFilesets` / `appendFilesets`: file sets whose content is copied verbatim to the beginning
-  resp. end of the generated script (e.g., for grants or seed data).
+  or end of the generated script (e.g., for grants or seed data). Without a `<directory>`, the
+  includes are relative to the project's base directory.
 - `prependModelFromClassPath` / `appendModelFromClassPath`: also generate the tables for a model found
   on the classpath, e.g., the Tentackle framework's own tables. Requires the dependency to ship its
   model resources (built with `dumpModelSource` + `dumpModelIndex`).
@@ -211,6 +238,10 @@ emitted as a comment rather than as a statement that would fail or lose data.
 
 Table renames, by contrast, are never guessed — they need a `rename` hint.
 
+Tables that exist in the database but neither belong to the model nor match `alienTables` are
+*unexpected tables*. Tables outside the backend's `schemas` or in its reserved schemas, and with
+`checkReservedTables` also the framework's own tables, don't count.
+
 ```bash
 mvn tentackle-sql:migrate
 ```
@@ -225,22 +256,64 @@ migration is only a *warning* — the build stays green unless `validate` is set
 
 The default output file is `migratemodel.sql` (parameter `sqlFileName`, property `tentackle.migrateSqlFile`). Important parameters:
 
-- `validate`: fail the build if any migration would be required (see the `validate` goal).
-- `failOnUnexpectedTables` (default `false`): fail if the database contains user tables that are
-  neither in the model nor declared as `alienTables`. When `false`, such tables are only listed as a
-  comment with the suggestion to add them to `<alienTables>` or remove them.
+- `validate`: fail the build if any migration would be required (see the `validate` goal). It has no
+  user property, so `-Dvalidate=true` does nothing; use the `validate` goal on the command line.
+- `failOnUnexpectedTables` (default `false`): fail if the database contains unexpected tables. The
+  script then lists them as `DROP TABLE` statements. When `false`, they are only listed as a comment
+  with the suggestion to add them to `<alienTables>` or remove them.
 - `loadModelFromClassPath` (`tentackle.loadModelFromClassPath`): migrate the model found on the classpath instead of the local model files
   (e.g., to migrate only the framework's tables). When set, the model files in the file sets are
   ignored; usually combined with `checkReservedTables=false`.
 - `useDropIfExists`: use `DROP ... IF EXISTS` for dropping indexes, constraints, and columns where the
-  backend supports it (a warning is logged otherwise).
+  backend supports it (a warning is logged otherwise). Applies to `migrate` and `validate` only.
 - `split`: write one file per migrated table into numbered sub-folders instead of a single script —
-  handy when the migrations are post-processed by shell scripts. `before all`/`after all` and the
-  unconditional `always before`/`always after` hints get their own folders (`0…` and the highest
-  number).
+  handy when the migrations are post-processed by shell scripts. See [Script layout](#script-layout).
 - `asTemplate` (`tentackle.migrateSqlAsTemplate`): treat the generated migration as a FreeMarker
-  template. For each entity a boolean template variable `<entity-name>` is set (`TRUE` if it needs
-  migration), so the final SQL can be tailored per entity.
+  template. The migration is first written to `migratemodel-sql.ftl` (the file name with dots
+  replaced by dashes), which is then rendered into `migratemodel.sql` and removed. With `split`, each
+  file is rendered separately. The template sees:
+    - `migrate.<EntityName>`: `true` if that entity's table needs migration, `false` if not
+      (only defined for the processed entities),
+    - `url`: the backend's JDBC URL,
+    - all system and Maven properties, with their keys converted to camelCase (`os.name` → `osName`).
+
+  This way, the final SQL can be tailored to what actually changed, e.g. recreate a view only if one
+  of its tables was migrated:
+
+  ```
+  <#if migrate.User || migrate.UserGroup>
+  DROP VIEW user_info;
+  CREATE VIEW user_info AS ...;
+  </#if>
+  ```
+
+#### Script layout
+
+The generated `migratemodel.sql` consists of, in this order:
+
+1. the header comment, the statistics (tables per schema, processed/skipped entities) and the list of
+   unexpected tables (with `generateHeaderComment` only),
+2. the `always before` hints,
+3. if anything has to be migrated: the `before all` hints, the table migrations, the foreign keys and
+   the `after all` hints — or otherwise (with `generateHeaderComment`) a comment that no migration is
+   necessary,
+4. the `always after` hints,
+5. the `DROP TABLE` statements of the `drop` hints ("tables removed from the model"),
+6. a `WARNINGS` section with the optional migrations the migrator commented out.
+
+With `split`, the main script only keeps items 1, 5 and 6. The rest goes into numbered sub-folders of
+the backend's SQL directory, zero-padded to the same width:
+
+| Folder              | File(s)                                         |
+|---------------------|-------------------------------------------------|
+| `0`                 | `_always_before.sql`, `_before_all.sql`         |
+| `1` … `n`           | `<table>.sql`, one per migrated table           |
+| next                | `_foreign_keys.sql`, if any foreign key changed |
+| next                | `_after_all.sql`                                |
+| highest             | `_always_after.sql`                             |
+
+As in the single script, `before all`, `after all` and the foreign keys only appear if anything
+has to be migrated.
 
 #### Migration hints
 
@@ -251,8 +324,9 @@ migrator guessed wrong, ordering migrations that depend on each other, choosing 
 automatic migrations, or injecting handwritten SQL. This is what *migration hints* are for.
 
 Hints are plain text files supplied per backend via the `<migrationHints>` file sets inside a
-`<backend>`. Each file is a sequence of sections; a section starts at the beginning of a line with a
-keyword immediately followed by a colon and extends until the next keyword:
+`<backend>`. Without a `<directory>`, the project's resource directories are searched. Each file is a
+sequence of sections; a section starts at the beginning of a line with a keyword followed by a colon
+and extends until the next keyword. Text before the first keyword is ignored:
 
 ```
 -- rename the customer table and one of its columns, then add hand-written SQL
@@ -281,8 +355,22 @@ Recognized keywords:
 | `depend <table>: t1, t2, …`        | Delay the migration of `<table>` until the listed tables are migrated.                           |
 | `--`                               | A comment describing the hint; not copied into the generated SQL.                                |
 
-Multiple sections for the same table/keyword are concatenated. Custom validators discovered via
-`CustomMigrationValidator` are run against each generated migration and can fail the build.
+Some rules worth knowing:
+
+- Keywords are lowercase and case-sensitive. A line that happens to start with a keyword and contains
+  a colon (`after`, `drop`, …) starts a new section, so write the SQL in uppercase.
+- Table and column names are converted to lowercase and may be schema-qualified
+  (`before md.customer:`). The new name of a `rename` is given without schema, since a table can only
+  be renamed within its schema. A trailing `;` after the new name is tolerated.
+- A `--` comment needs a colon, just like any other keyword. A `--` line without a colon is not a
+  keyword: before the first section it is ignored, but within a section it becomes part of the
+  section's text.
+- Multiple sections for the same table and keyword are concatenated.
+- If the `depend` hints form a loop, the pending tables are migrated in arbitrary order, and a
+  `CAUTION` comment and an error are reported.
+
+Custom validators discovered via `CustomMigrationValidator` are run against each generated table
+migration. A failed validation is reported as an error and fails the build.
 
 #### Version filtering of hints
 
@@ -291,15 +379,20 @@ database's current version are applied. A backend's `<minVersion>` provides that
 may be:
 
 1. a fixed version string such as `3.1.0`,
-2. an SQL `SELECT` returning the version from the database, or
-3. the fully-qualified class name of a `DatabaseVersionLoader` implementation (which must be on the
-   plugin classpath).
+2. an SQL statement starting with `SELECT` (case-insensitive), whose first column of the first row is
+   the version, or
+3. the fully-qualified class name of a `DatabaseVersionLoader` implementation with a no-args
+   constructor (which must be on the plugin classpath).
 
-The default `SemanticVersionFileFilter` interprets the hint directory name as a semantic version
-(`major.minor.hotfix`, dots or underscores, optional `-SNAPSHOT`/`-M1` suffix) and applies the hint
-only if its version is greater than the database version. Directories whose name does not start with a
-digit are treated as permanent (always applied). The filter is pluggable via the `VersionFileFilter`
-service.
+Without `<minVersion>`, there is no filtering: all hint files are applied.
+
+The default `SemanticVersionFileFilter` interprets the name of the directory holding the hint file as a
+semantic version (`major.minor.hotfix`, dots or underscores, optional `-SNAPSHOT`/`-M1` suffix, which is
+ignored) and applies the hint only if its version is strictly greater than the database version — a
+database at `3.1.0` gets the hints in `3.1.1` and `3_2`, but not those in `3.1.0`. A version with more
+components wins over its prefix, so `3.2.0` counts as newer than `3.2`. Directories whose name does not
+start with a digit are treated as permanent (always applied). An application can replace the filter
+with its own `@Service(VersionFileFilter.class)` on the plugin classpath.
 
 ### The `validate` Goal
 
@@ -317,7 +410,8 @@ It accepts the same parameters as `migrate`.
 
 Executes a single SQL script against every configured connectable backend, using the backend's script
 runner. It inherits the same backend configuration as `migrate`, which is convenient because the
-target database is usually the same.
+target database is usually the same. Name-only backends from `backendNames` are ignored, since they
+cannot be connected to.
 
 > **A development tool.** `run` is meant for the database on a developer's machine and for the test
 > database of a build — trying out a generated migration, fixing up local data, looking at what is
@@ -331,7 +425,8 @@ target database is usually the same.
 mvn tentackle-sql:run -Dscript=src/sql/myscript.sql
 ```
 
-- `script` (`script`, required): the SQL file to execute.
+- `script` (`script`, required): the SQL file to execute, read with the project's encoding
+  (`charset`).
 
 Every statement's outcome is logged: result sets as an aligned table with column headers, other
 statements as their update count. The script is split on the backend's statement separator (`;`), and
@@ -346,20 +441,21 @@ leaves the statements before the failure committed and fails the build.
 
 Renders the model as a set of static HTML or Markdown pages under `docDir`, nested one directory per
 backend (`docDir/<backend-name>/`, same layout convention as `create`'s `sqlDir/<backend-name>/`): one
-page per entity plus an `index.html` (or `index.md`). Each entity page shows the same relationship information as the
-[`ModelComment`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#the-wurblets) wurblet's
-Javadoc comment block — referencing entities, composite/component structure, outgoing references, deep
-references, composite membership and inheritance — except that every entity name mentioned is a
-hyperlink to that entity's own page, so the whole model can be browsed by clicking through it instead of
-manually finding the next file.
+page per entity plus an `index.html` (or `index.md`).
 
-The index page has two sections: **Aggregates** lists each root entity that has components, with its
-component tree (root entities without components are not aggregates in any useful sense and are left
-out), and **All Entities** lists every entity with its comment. As in the `ModelComment` wurblet, an
-N:M link component is followed by the entity on the opposite side, e.g.
-`User2Group [N:M] to UserGroup as userGroups`.
+#### The entity pages
 
-It also shows two attribute tables: **Attributes**, the entity's user-declared attributes, and
+Each entity page starts with the entity's comment (the long comment, if there is one) and a meta table
+with the **Table**, **Schema**, **Class ID** and **Extends** rows (the latter two only where
+applicable).
+
+The **Table** row shows the table name relative to its schema (the schema itself, if
+any, is shown in the separate **Schema** row right below, so it isn't repeated). If `mapSchemas` is set,
+the table name shown is the effective, flattened name actually used at runtime (see `mapSchemas` under
+[Model selection](#model-selection) above) — and since a mapped entity no longer has a separate schema,
+the **Schema** row is omitted for it.
+
+Next come two attribute tables: **Attributes**, the entity's user-declared attributes, and
 **Framework Attributes**, the attributes added implicitly by the framework — `id`/`serial` on every
 entity, plus `classId`, `tableSerial`, `rootId`/`rootClassId` and the tokenlock/`normText` attributes
 where the corresponding entity option is set (see
@@ -374,11 +470,23 @@ indexes (an entity's `## indexes` section — not the implicit primary key) as t
 backend-specific `CREATE INDEX`/`CREATE UNIQUE INDEX` statements, the same statements `create` would
 emit for the same model.
 
-The entity page's meta table shows the **Table** name relative to its schema (the schema itself, if
-any, is shown in the separate **Schema** row right below, so it isn't repeated). If `mapSchemas` is set,
-the table name shown is the effective, flattened name actually used at runtime (see `mapSchemas` under
-[Model selection](#model-selection) above) — and since a mapped entity no longer has a separate schema,
-the **Schema** row is omitted for it.
+Finally, the **Relationships** section shows the same information as the
+[`ModelComment`](../../../../tentackle-wurblets/src/main/docs/wurblets.md#the-wurblets) wurblet's
+Javadoc comment block — referencing entities, composite/component structure, outgoing references, deep
+references, composite membership and inheritance — except that every entity name mentioned is a
+hyperlink to that entity's own page, so the whole model can be browsed by clicking through it instead of
+manually finding the next file.
+
+#### The index page
+
+The index page has two sections: **Aggregates** lists each root entity that has components, with its
+component tree (root entities without components are not aggregates in any useful sense and are left
+out), and **All Entities** lists every entity with its comment. As in the `ModelComment` wurblet, an
+N:M link component is followed by the entity on the opposite side, e.g.
+`User2Group [N:M] to UserGroup as userGroups`. A component reachable from more than one aggregate is
+expanded only under the first one.
+
+#### Running it
 
 ```bash
 mvn tentackle-sql:document -Dtentackle.backendNames=h2
@@ -390,13 +498,17 @@ but because that mapping can differ between backends, at least one must be selec
 (see [Backend selection](#backend-selection) above). Usually that is `backendNames`, but backends
 configured via `backendProperties` or `backends` for the other goals are documented as well. One
 self-contained page tree is generated per backend. There is no default — like `create`, nothing is
-generated if no backend is configured. Parameters (beyond the shared ones listed above):
+generated if no backend is configured. The model is taken from `modelDir`, or from the directories of
+the `filesets` — each directory is loaded as a whole, the includes and excludes are ignored. The pages
+are always written in UTF-8, and the [dump parameters](#diagnostics-and-dumps) don't apply.
+Parameters (beyond the shared ones listed above):
+
 - `format` (`tentackle.docFormat`): the output format, `html` (default) or `markdown` (alias `md`),
   case-insensitive. See [Markdown output](#markdown-output) below.
 - `docDir` (`tentackle.docDir`): directory to create the pages in, for both formats. Defaults to
   `${project.build.directory}/model-doc`.
 - `title` (`tentackle.htmlTitle`): the heading shown on the index page, for both formats. Defaults to
-  the maven project's name.
+  the Maven project's name.
 - `loadModelFromClassPath` (`tentackle.loadModelFromClassPath`): also render entities from the model
   found on the classpath (e.g. a dependency's own model), so entities referenced from a dependency
   aren't dead links. Unlike `migrate`, `document` loads the local model files as well.
@@ -483,6 +595,16 @@ database against the model) and writes one model-source file into `outputDir`
   global options line, comma-separated, e.g. `remote, tracked`.
 - `overwrite` (default `false`): whether to overwrite files already present in `outputDir`.
 
+**How names and types are derived.** The table names in `tables` are matched case-insensitively.
+Each table becomes an entity named in PascalCase after it (`order_item` → `OrderItem`). If two tables
+map to the same entity name, the goal fails. Columns become camelCase attributes that keep the
+original column name. The `id` and `classid` columns are skipped, since the model adds them
+implicitly. A foreign-key column becomes an attribute named `<relation>Id`, where the relation name
+is the column name without a trailing `_id`, or the target entity's name if those are the same. The
+column type is mapped to one Java type per SQL type (e.g. `VARCHAR(60)` → `String(60)`,
+`DECIMAL(10,2)` → `BigDecimal(10,2)`, `CLOB` → `String(0)`, `BLOB` → `Binary<byte[]>`, an unknown type →
+`String`). The files are written in UTF-8, and the log names the follow-up `tentackle-wizard:pdo` call.
+
 **What gets inferred, and what does not.** A foreign key becomes a plain, non-composite object
 relation using `integrity`; whether it should really be a `component`/`composite` relation, use
 `delete = cascade`, or an eager `select` strategy cannot be inferred from schema metadata alone —
@@ -497,7 +619,10 @@ but declared `[nopkey]` and will not behave like a normal identity-bearing PDO. 
 constraints are represented by choosing a Java primitive over its wrapper type where one exists (the
 model has no other way to express column nullability); for types without a primitive form (`String`,
 dates, `BigDecimal`, …) a `NOT NULL` column instead gets a `@NotNull` validation, since the database
-constraint itself cannot be reproduced that way.
+constraint itself cannot be reproduced that way. Foreign keys spanning more than one column cannot be
+expressed as a Tentackle relation and are left as plain attributes, and an index that duplicates
+another one on the same columns (as some databases create for a foreign key) is skipped. Both are
+logged as warnings.
 
 ### The Skills
 

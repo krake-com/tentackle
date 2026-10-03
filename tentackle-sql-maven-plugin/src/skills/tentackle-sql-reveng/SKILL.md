@@ -72,7 +72,8 @@ Key parameters (all `-Dtentackle.reveng.*`):
   `OrderItem`; a foreign key column becomes an attribute named `<relation>Id` (derived from the
   column name with a trailing `_id` stripped, not from the original column name) so the framework's
   naming convention between a relation and its backing attribute holds. The original database column
-  name is kept as the model's column name either way.
+  name is kept as the model's column name either way. The `id` and `classid` columns are not written
+  at all: the model adds them implicitly.
 - **A second run does not merge with a first one.** By default an existing `<Entity>.map` in
   `outputDir` is left untouched and a warning is logged; pass `-Dtentackle.reveng.overwrite=true` to
   replace it — which discards any hand-editing already done on that file.

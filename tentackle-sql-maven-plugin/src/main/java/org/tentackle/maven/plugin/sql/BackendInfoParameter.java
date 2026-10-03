@@ -101,12 +101,14 @@ public class BackendInfoParameter {
    * <p>
    * There are 3 kinds of filters:
    * <ol>
-   * <li>Strings holding a fixed version number, e.g. 3.1.0</li>
-   * <li>String starting with 'SELECT' which is an SQL-select returning a version number (the current database version)</li>
-   * <li>FQCN of a class with a no-args constructor implementing {@link DatabaseVersionLoader}. Notice that this class must
+   * <li>a string holding a fixed version number, e.g. 3.1.0</li>
+   * <li>a string starting with {@code SELECT} (case-insensitive), which is an SQL select returning
+   * the current database version in the first column of the first row</li>
+   * <li>the FQCN of a class with a no-args constructor implementing {@link DatabaseVersionLoader}. Notice that this class must
    * be added to the classpath via plugin dependencies.</li>
    * </ol>
-   * If given, the version number will be applied to the <em>directories</em> of the hint-files.
+   * The version is applied to the <em>directories</em> of the hint files via the {@link VersionFileFilter}.
+   * If missing, all hint files are loaded.
    */
   public String minVersion;
 
@@ -169,13 +171,14 @@ public class BackendInfoParameter {
 
 
   /**
-   * Load the migration hints.
+   * Loads the migration hints.<br>
+   * Resolves the {@link #minVersion} first, if given.
    *
    * @param backendInfo the backend info
    * @param mojo the sql mojo
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
-   * @return the hints the migration hints
+   * @return the migration hints
    * @throws MojoExecutionException if failed
    */
   public MigrationHints loadMigrationHints(BackendInfo backendInfo, AbstractSqlMojo mojo, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {

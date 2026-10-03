@@ -17,6 +17,9 @@
  */
 
 /**
- * Tentackle SQL backend maven plugin.
+ * Tentackle SQL maven plugin.<br>
+ * Turns the Tentackle model into backend-specific DDL ({@code create}), migration scripts
+ * ({@code migrate}, {@code validate}) and cross-linked documentation ({@code document}),
+ * runs SQL scripts ({@code run}), and reverse-engineers existing tables into model source ({@code reveng}).
  */
 package org.tentackle.maven.plugin.sql;

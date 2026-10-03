@@ -57,8 +57,9 @@ import java.util.regex.PatternSyntaxException;
  * &lt;keyword&gt;:
  * </pre>
  *
- * Kewords start at the first character of a line and are immediately followed by a colon. Their scope spans to the end of the current and
- * all following lines until the next keyword.
+ * Keywords start at the first character of a line and are followed by a colon. Their scope spans to the end of the current and
+ * all following lines until the next keyword. Keywords are lowercase and case-sensitive, table- and column names
+ * are converted to lowercase. Text before the first keyword is ignored.
  * <br>
  * Valid keywords are:
  *
@@ -80,11 +81,12 @@ import java.util.regex.PatternSyntaxException;
  * the model, generate a drop table statement at the end of the migration script.</li>
  * <li>hint &lt;tablename&gt;: migration hint (regular expression). Used to select automatic migrations that were commented out
  * as alternatives by the table migrator.</li>
- * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated
- * <li>--: comment describing the hint (not copied to the generated SQL)</li>
+ * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated</li>
+ * <li>--: comment describing the hint (not copied to the generated SQL). Like any other keyword, the line must contain
+ * a colon, otherwise it is just appended to the text of the current section.</li>
  * </ul>
  *
- * Several hints for the same table/section will be concatenated.
+ * Several hints for the same table/section are concatenated.
  *
  * @author harald
  */
@@ -381,7 +383,7 @@ public class MigrationHints {
   }
 
   /**
-   * Gets the name columns hints.
+   * Gets the rename column hints.
    *
    * @param tableName the tablename
    * @return a map of new- to old column names, null if none
@@ -438,12 +440,13 @@ public class MigrationHints {
 
 
   /**
-   * Load the migration hints.
+   * Loads the migration hints.<br>
+   * Only hint files accepted by the {@link VersionFileFilter} are loaded.
    *
    * @param mojo the mojo
    * @param verbose true if verbose
    * @param filesets the filesets to load hints from
-   * @param version the minimum hint file version
+   * @param version the current database version, null to load all hint files
    * @param resourceDirs resource dirs, null if none
    * @throws MojoExecutionException if failed
    */
@@ -515,11 +518,8 @@ public class MigrationHints {
                 }
               }
               catch (MojoExecutionException mox) {
-                String msg = mox.getMessage() + " in " + hintFile + ", line " + lineNumber;
-                if (mox.getCause() != null) {
-                  throw new MojoExecutionException(msg);
-                }
-                throw new MojoExecutionException(msg, mox.getCause());
+                throw new MojoExecutionException(mox.getMessage() + " in " + hintFile + ", line " + lineNumber,
+                                                 mox.getCause());
               }
             }
             else {

@@ -37,7 +37,9 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 /**
- * Runs an SQL script.<br>
+ * Runs an SQL script against every configured connectable backend.<br>
+ * The statements are executed in autocommit mode, i.e. without a transaction.
+ * Each statement's result is logged.<br>
  * Example:
  * <pre>
  *   mvn tentackle-sql:run -Dscript=src/sql/myscript.sql
@@ -48,7 +50,8 @@ public class RunSqlMojo extends AbstractSqlMojo {
   // extending AbstractSqlMojo to inherit the backend configuration which is usually the same as for the migrate-goal
 
   /**
-   * SQL script to execute.
+   * The SQL script to execute.<br>
+   * Read with the project's encoding.
    */
   @Parameter(required = true, property = "script")
   private File script;
@@ -75,7 +78,7 @@ public class RunSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected Collection<BackendInfo> getBackendInfosToExecute() {
-    return backendInfos.values();
+    return connectableBackendInfos.values();
   }
 
   @Override

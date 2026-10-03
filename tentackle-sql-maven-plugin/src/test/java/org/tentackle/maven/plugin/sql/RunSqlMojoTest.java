@@ -57,6 +57,30 @@ public class RunSqlMojoTest extends AbstractSqlDbMojoTest {
                getLog().getInfoMessages().toString());
   }
 
+  /**
+   * Name-only backends ({@code backendNames}) cannot be connected to and are not executed:
+   * the script runs once per connectable backend.
+   */
+  @Test
+  public void runsOnlyAgainstConnectableBackends() throws Exception {
+    File script = SqlTestSupport.writeFile(getModelDir().getParentFile(), "script.sql",
+        "CREATE TABLE counter (n INT);\n" +
+        "INSERT INTO counter VALUES (1);\n");
+
+    RunSqlMojo mojo = configure(new RunSqlMojo(), "runsOnlyAgainstConnectableBackends");
+    SqlTestSupport.setField(mojo, "script", script);
+    SqlTestSupport.setField(mojo, "backendNames", "H2,PostgreSQL");
+
+    run(mojo);
+
+    try (java.sql.Connection con = java.sql.DriverManager.getConnection(URL);
+         Statement stmt = con.createStatement();
+         ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM counter")) {
+      assertTrue(rs.next());
+      assertEquals(rs.getInt(1), 1);
+    }
+  }
+
   @Test
   public void failsOnASqlError() throws Exception {
     File script = SqlTestSupport.writeFile(getModelDir().getParentFile(), "script.sql",

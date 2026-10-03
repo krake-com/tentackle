@@ -172,8 +172,7 @@ public class MigrateSqlMojoTest extends AbstractSqlDbMojoTest {
     BackendInfoParameter backendWithHints = new BackendInfoParameter();
     backendWithHints.url = URL;
     backendWithHints.migrationHints = List.of(hintFileset);
-    // VersionFileFilter#isValid requires a non-null version even for a "permanent" hint directory
-    backendWithHints.minVersion = "1.0.0";
+    // no minVersion: all hint files apply
     SqlTestSupport.setField(mojo, "backends", List.of(backendWithHints));
 
     run(mojo);
@@ -184,6 +183,76 @@ public class MigrateSqlMojoTest extends AbstractSqlDbMojoTest {
     assertFalse(sql.toUpperCase().contains("CREATE TABLE"), sql);
   }
 
+
+  /**
+   * A backend configured via {@code backendProperties} has no migration hints of its own -
+   * the goal must run with empty hints instead of failing.
+   */
+  @Test
+  public void migratesABackendConfiguredViaBackendProperties() throws Exception {
+    String modelName = "migratesABackendConfiguredViaBackendProperties";
+    SqlTestSupport.writeFile(getModelDir(), "Item.txt", ITEM_MODEL);
+    bootstrapSchemaFromModel(modelName);
+
+    File propsDir = SqlTestSupport.createDir(getModelDir().getParentFile(), "props");
+    SqlTestSupport.writeFile(propsDir, "backend.properties", "url=" + URL + "\n");
+    FileSet propsFileset = new FileSet();
+    propsFileset.setDirectory(propsDir.getPath());
+    propsFileset.addInclude("backend.properties");
+
+    MigrateSqlMojo mojo = configure(modelName);
+    SqlTestSupport.setField(mojo, "backends", null);
+    SqlTestSupport.setField(mojo, "backendProperties", List.of(propsFileset));
+
+    run(mojo);
+
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(), "database meta data matches object model"),
+               getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * With {@code split=true}, the foreign key migrations go into a folder of their own after the tables
+   * instead of being lost.
+   */
+  @Test
+  public void splitWritesTheForeignKeysIntoAFolderOfTheirOwn() throws Exception {
+    SqlTestSupport.writeFile(getModelDir(), "Customer.txt",
+        "name := Customer\n" +
+        "id := 1\n" +
+        "table := customer\n" +
+        "integrity := related\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "String(30)      name            name            the customer's name\n");
+    SqlTestSupport.writeFile(getModelDir(), "Order.txt",
+        "name := Order\n" +
+        "id := 2\n" +
+        "table := orders\n" +
+        "\n" +
+        "## attributes\n" +
+        "[root]\n" +
+        "\n" +
+        "Long            customerId      customer_id     object ID of the customer\n" +
+        "\n" +
+        "## relations\n" +
+        "Customer:\n" +
+        "    select = lazy\n");
+
+    MigrateSqlMojo mojo = configure("splitWritesTheForeignKeysIntoAFolderOfTheirOwn");
+    SqlTestSupport.setField(mojo, "split", true);
+    run(mojo);
+
+    File backendDir = new File(getSqlDir(), "H2");
+    // customer, orders, foreign keys
+    assertTrue(new File(new File(backendDir, "1"), "customer.sql").isFile());
+    assertTrue(new File(new File(backendDir, "2"), "orders.sql").isFile());
+    File fkFile = new File(new File(backendDir, "3"), "_foreign_keys.sql");
+    assertTrue(fkFile.isFile(), "missing " + fkFile);
+    String sql = SqlTestSupport.readFile(fkFile);
+    assertTrue(sql.contains("FOREIGN KEY") && sql.contains("REFERENCES customer"), sql);
+  }
 
   private MigrateSqlMojo configure(String modelName) {
     MigrateSqlMojo mojo = configure(new MigrateSqlMojo(), modelName);

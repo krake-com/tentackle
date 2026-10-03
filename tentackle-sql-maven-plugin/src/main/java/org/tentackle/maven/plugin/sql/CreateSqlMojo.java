@@ -47,7 +47,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Generates an SQL script to create the database tables according to the model.
+ * Generates an SQL script to create the database tables according to the model.<br>
+ * The script contains, in this order: the {@link #prependFilesets}, the classpath model if
+ * {@link #prependModelFromClassPath}, the schemas, tables and indexes per entity, the foreign keys,
+ * the classpath model if {@link #appendModelFromClassPath}, the {@link #sequences}, and finally the
+ * {@link #appendFilesets}.
  *
  * @author harald
  */
@@ -73,7 +77,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
    * Prepends the SQL code for the model found in the resources of the classpath.<br>
    * Useful to create the database tables for dependencies, for example, the Tentackle model.<br>
    * Requires that the plugin dependencies contain the model resources
-   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
+   * (see {@link #dumpModelIndex} and {@link #dumpModelSource}).
    */
   @Parameter
   private boolean prependModelFromClassPath;
@@ -91,13 +95,15 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   private List<SequenceParameter> sequences;
 
   /**
-   * Optional filesets to prepend to the generated sql file.
+   * Optional filesets to prepend to the generated sql file.<br>
+   * Without a {@code <directory>}, the files are relative to the project's base directory.
    */
   @Parameter
   private List<FileSet> prependFilesets;
 
   /**
-   * Optional filesets to append to the generated sql file.
+   * Optional filesets to append to the generated sql file.<br>
+   * Without a {@code <directory>}, the files are relative to the project's base directory.
    */
   @Parameter
   private List<FileSet> appendFilesets;
@@ -264,6 +270,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
    * Copies the contents of the given filesets to the generated sql file.
    *
    * @param fileSets the filesets, null if none
+   * @throws MojoExecutionException if a file could not be copied
    */
   protected void copyFileSets(List<FileSet> fileSets) throws MojoExecutionException {
     if (fileSets != null) {

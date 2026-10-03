@@ -48,7 +48,8 @@ import java.util.TreeSet;
  * ({@code tentackle-wurblets/src/main/wurblets/org/tentackle/wurblet/ModelComment.wrbl} and its
  * {@code ModelCommentSupport} helper) - same sections, same ordering, same wording - except that
  * every entity name mentioned is rendered as a link to that entity's own page instead of
- * plain text. Additionally, each page shows a table of the entity's attributes.
+ * plain text. Additionally, each page shows the entity's metadata, two attribute tables (declared
+ * and framework attributes) and the backend-specific DDL of its indexes.
  * <p>
  * This class holds the format-independent traversal of the model. The concrete markup is left to the
  * subclasses via the rendering primitives, so all formats provide the same content and the same
@@ -490,8 +491,8 @@ abstract class AbstractModelDocGenerator {
 
     heading(buf, 2, "Framework Attributes");
     comment(buf, "Attributes added implicitly by the framework - identity, " +
-                 "optimistic-locking serial, class id, root/component bookkeeping - not declared in " +
-                 "the model source.");
+                 "optimistic-locking serial, class id, table serial, root/component bookkeeping, " +
+                 "token lock and normtext - not declared in the model source.");
     appendAttributeTable(buf, implicitAttributes, "No framework attributes.");
   }
 

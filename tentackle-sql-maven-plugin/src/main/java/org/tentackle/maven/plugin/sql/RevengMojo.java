@@ -195,7 +195,7 @@ public class RevengMojo extends AbstractTentackleMojo {
         TableMetaData table = findTable(modelMetaData, tableName);
         if (table == null) {
           throw new MojoFailureException("table '" + tableName + "' not found" +
-                                         (schemas != null ? " (check that --schemas matches its actual schema)" : ""));
+                                         (schemas != null ? " (check that tentackle.reveng.schemas matches its actual schema)" : ""));
         }
         tablesByRequestedName.put(tableName, table);
       }

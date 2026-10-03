@@ -53,16 +53,25 @@ public class SemanticVersionFileFilterTest {
   }
 
   /**
-   * No parent directory or no version at all: not valid - even for a permanent (non-digit)
-   * directory name, a missing version makes the hint inapplicable rather than always applying.
+   * A version without a parent directory to compare against: not valid.
    */
   @Test
-  public void isValidRequiresAParentDirectoryAndAVersion() {
+  public void isValidRequiresAParentDirectory() {
     SemanticVersionFileFilter fileFilter = new SemanticVersionFileFilter();
 
     assertFalse(fileFilter.isValid("1.2.3", new File("hints.txt")));
-    assertFalse(fileFilter.isValid(null, new File(new File("1.2.4"), "hints.txt")));
-    assertFalse(fileFilter.isValid(null, new File(new File("permanent"), "hints.txt")));
+  }
+
+  /**
+   * No version at all (no {@code <minVersion>} configured): no filtering, every hint file applies.
+   */
+  @Test
+  public void isValidWithoutVersionAlwaysApplies() {
+    SemanticVersionFileFilter fileFilter = new SemanticVersionFileFilter();
+
+    assertTrue(fileFilter.isValid(null, new File("hints.txt")));
+    assertTrue(fileFilter.isValid(null, new File(new File("1.2.4"), "hints.txt")));
+    assertTrue(fileFilter.isValid(null, new File(new File("permanent"), "hints.txt")));
   }
 
   @Test
