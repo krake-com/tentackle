@@ -25,14 +25,17 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Base class for generators.
+ * Base class for FreeMarker-based code generators.
+ * <p>
+ * Holds the template directory and creates a FreeMarker {@link Configuration} with the settings shared by all
+ * Tentackle generators. Used by the build-time plugins (e.g. the SQL, wizard and jlink Maven plugins).
  */
 public abstract class AbstractGenerator {
 
   private File templateDirectory;
 
   /**
-   * Gets the freemarker template directory.
+   * Gets the FreeMarker template directory.
    *
    * @return the template directory
    */
@@ -41,16 +44,19 @@ public abstract class AbstractGenerator {
   }
 
   /**
-   * Sets the freemarker template directory.
+   * Sets the FreeMarker template directory.
    *
-   * @param templateDirectory the template directory
+   * @param templateDirectory the template directory, null if templates are loaded otherwise
    */
   public void setTemplateDirectory(File templateDirectory) {
     this.templateDirectory = templateDirectory;
   }
 
   /**
-   * Creates the freemarker configuration.
+   * Creates the FreeMarker configuration.
+   * <p>
+   * The configuration loads the templates from the template directory (if set), reads them as UTF-8
+   * and rethrows template exceptions instead of logging them, wrapping unchecked exceptions.
    *
    * @return the config
    * @throws IOException if there's some trouble with the template directory

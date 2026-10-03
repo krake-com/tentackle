@@ -59,6 +59,16 @@ public class GeneratedStringTest {
     assertEquals(new GeneratedString(cfg, model, "b.ftl").generate(), "B: x");
   }
 
+  @Test
+  public void keepsNonAsciiCharacters() throws IOException, TemplateException {
+    Configuration cfg = configurationWithTemplate("umlauts.ftl", "Grüße, ${name}!");
+
+    TemplateModel model = new TemplateModel();
+    model.putValue("name", "Jürgen €");
+
+    assertEquals(new GeneratedString(cfg, model, "umlauts.ftl").generate(), "Grüße, Jürgen €!");
+  }
+
   private static Configuration configurationWithTemplate(String name, String source) throws IOException {
     Configuration cfg = new Configuration(Configuration.VERSION_2_3_34);
     cfg.setDefaultEncoding("UTF-8");

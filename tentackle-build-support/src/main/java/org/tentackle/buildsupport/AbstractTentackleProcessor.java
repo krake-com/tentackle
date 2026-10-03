@@ -29,7 +29,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Abstract tentackle annotation processor.
+ * Abstract Tentackle annotation processor.
+ * <p>
+ * Adds the concerns shared by Tentackle's processors: a {@link ResourceManager} per output directory,
+ * verbosity handling via the processor option {@code verbosity} ({@code info} or {@code debug}),
+ * and a {@link #cleanup()} that closes all resources. The supported source version is always the latest.
  * <p>
  * In order to avoid warnings, annotation processors should be annotated
  * with {@code @SupportedOptions("verbosity")}.
@@ -40,8 +44,8 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
 
   private File sourceDir;                                     // source directory for java files
   private final Map<File,ResourceManager> resourceManagers;   // manager for generated resources
-  private boolean debugLogging;                               // true if info logging
-  private boolean infoLogging;                                // true if debug logging
+  private boolean debugLogging;                               // true if debug logging
+  private boolean infoLogging;                                // true if info logging
 
 
 
@@ -96,7 +100,8 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
 
 
   /**
-   * Gets a resource manager.
+   * Gets the resource manager for a directory.<br>
+   * The manager is created on first access and cached until {@link #cleanup()}.
    *
    * @param directory the base directory
    * @return the resource manager
@@ -116,7 +121,7 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
 
 
   /**
-   * Closes the resource- and source-manager.
+   * Closes all resource managers and removes them from the cache.
    *
    * @throws IOException if cleanup failed
    */
@@ -139,9 +144,11 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
 
 
   /**
-   * Gets the source directory.
+   * Gets the source directory.<br>
+   * An optional hint for processors that need to know where the sources live.
+   * It is not used by the processors of this module and not set by the Tentackle Maven plugins.
    *
-   * @return the source file dir
+   * @return the source file dir, null if not set
    */
   public File getSourceDir() {
     return sourceDir;
@@ -150,7 +157,7 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
   /**
    * Sets the source directory.
    *
-   * @param sourceDir the source dir
+   * @param sourceDir the source dir, null if unknown
    */
   public void setSourceDir(File sourceDir) {
     this.sourceDir = sourceDir;

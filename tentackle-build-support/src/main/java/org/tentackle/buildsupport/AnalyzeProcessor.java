@@ -40,7 +40,13 @@ import java.util.Set;
 
 
 /**
- * Annotation Processor for all annotations annotated with {@link Analyze}.
+ * Annotation processor for all annotations annotated with {@link Analyze}.
+ * <p>
+ * The processor claims all annotations and follows their meta-annotations recursively until it finds
+ * {@code @Analyze}. The handler named by {@code @Analyze} is loaded via the {@linkplain #getProcessingClassLoader()
+ * processing classloader}, instantiated, and invoked for the annotation.
+ * The handlers write service descriptors to the {@linkplain #getServiceDir() service directory} and
+ * analyze info files to the {@linkplain #getAnalyzeDir() analyze directory}.
  *
  * @author harald
  */
@@ -50,7 +56,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
   /**
    * Logfile for compilation errors during the analyze-phase.<br>
-   * The logfile is missing, if no errors where detected. Otherwise, analyze info files
+   * The logfile is missing if no errors were detected. Otherwise, analyze info files
    * may be incomplete or missing.
    */
   public static final String COMPILE_ERROR_LOG = "error.log";
@@ -58,7 +64,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
 
   private static final int MAX_HANDLERS = 1000;   // to detect endless loops
-  private static final int MAX_DEPTH = 100;       // dto...
+  private static final int MAX_DEPTH = 100;       // max. nesting level of meta-annotations, to detect loops
   private static final String ANALYZE_CLASSNAME = Analyze.class.getName();
 
 
@@ -68,9 +74,11 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
 
   /**
-   * Gets the classloader to be used instead of the default.
+   * Gets the classloader to be used instead of the default.<br>
+   * Used to load the handlers and, if necessary, the annotation classes.
+   * The Tentackle Maven plugin sets a classloader that also searches the project's classpath.
    *
-   * @return the classloader, never null (fallback to current classloader)
+   * @return the classloader, never null (fallback to the classloader of this processor)
    */
   public ClassLoader getProcessingClassLoader() {
     return processingClassLoader == null ? getClass().getClassLoader() : processingClassLoader;
@@ -125,8 +133,9 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
   /**
    * {@inheritDoc}
    * <p>
-   * Processes all annotations that itself or any inherited annotations are annotated with @Analyze.
-   * The recursive scan allows annotating only once for a group of annotations.
+   * Processes all annotations that are annotated with {@code @Analyze}, either directly or via
+   * meta-annotations. The recursive scan allows annotating only once for a group of annotations.
+   * An annotation is claimed if at least one handler was found.
    */
   @Override
   public boolean process(Set<? extends TypeElement> annotationTypes, RoundEnvironment roundEnv) {
@@ -151,11 +160,11 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
 
   /**
-   * Finds the handler for a given annotation.
+   * Finds the handlers for a given annotation.
    *
    * @param annotationType the annotation type
    * @param handlers the collected handlers
-   * @param depth to detect annotation loops
+   * @param depth the nesting level of meta-annotations, to detect annotation loops
    */
   private void findHandlers(TypeElement annotationType, List<AnalyzeHandler> handlers, int depth) {
 
@@ -177,7 +186,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
               }
               try {
                 @SuppressWarnings("unchecked")
-                Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName);
+                Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName, true, getProcessingClassLoader());
                 AnalyzeHandler handler = handlerClass.getDeclaredConstructor().newInstance();
                 handler.setProcessor(this);
                 handlers.add(handler);
@@ -195,14 +204,14 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
         else {
           // recursively scan inherited annotation
           TypeElement parentAnnotation = (TypeElement) mi.getAnnotationType().asElement();
-          if (++depth > MAX_DEPTH) {
+          if (depth >= MAX_DEPTH) {
             getProcessingEnvironment().getMessager().printMessage(
                   Kind.WARNING,
                   "annotation-loop detected while processing " + parentAnnotation + " -> ignored",
                   annotationType);
             return;
           }
-          findHandlers(parentAnnotation, handlers, depth);
+          findHandlers(parentAnnotation, handlers, depth + 1);
         }
       }
     }

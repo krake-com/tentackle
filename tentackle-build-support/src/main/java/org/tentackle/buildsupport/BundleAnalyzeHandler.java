@@ -35,7 +35,13 @@ import java.util.Map;
 
 /**
  * Handler to extract the name of the resource bundle from
- * the class annotated with {@code @Bundle}.
+ * the class annotated with {@code @Bundle} or a similar annotation.
+ * <p>
+ * Appends a line to {@code META-INF/bundles/<annotation>} in the service directory.
+ * The line holds the bundle name, followed by {@code " = <annotated class>"} if the bundle name differs from the
+ * classname. The bundle name defaults to the classname and is overridden by the annotation's {@code value}
+ * (for {@code @GuiProviderService}, that's the PDO class). If the annotation provides {@code noBundle=true},
+ * no line is written.
  *
  * @author harald
  */
@@ -97,9 +103,9 @@ public class BundleAnalyzeHandler extends AbstractAnalyzeHandler {
 
 
   /**
-   * Gets the bundlename from the annotated element.
+   * Gets the bundle name from the annotated element.
    *
-   * @param element the bundle name
+   * @param element the annotated element
    * @param annotationName the annotation name (e.g. ...Bundle)
    * @return the bundle name, null if no bundle
    */
@@ -133,7 +139,9 @@ public class BundleAnalyzeHandler extends AbstractAnalyzeHandler {
 
 
   /**
-   * Translates the bundle name to a standard format.
+   * Translates the bundle name to a standard format.<br>
+   * Strips enclosing double quotes, a trailing {@code .properties} or {@code .class}, and a leading slash,
+   * and converts slashes to dots.
    *
    * @param bundleName the name
    * @return the standardized name in dot format (without .class)

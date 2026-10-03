@@ -31,6 +31,9 @@ import java.util.Map;
 /**
  * Handler to extract the name of the resource bundle from
  * the class annotated with {@code @FxControllerService}.
+ * <p>
+ * The bundle name is given by the annotation's {@code resources} and defaults to the controller's classname.
+ * {@code RESOURCES_NONE} (or the literal {@code "NONE"}) means that the controller has no bundle.
  *
  * @author harald
  */

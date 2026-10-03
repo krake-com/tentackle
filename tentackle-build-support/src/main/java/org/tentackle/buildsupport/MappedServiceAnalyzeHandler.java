@@ -37,6 +37,11 @@ import java.util.Map;
 
 /**
  * Handler for the {@code @MappedService} annotation.
+ * <p>
+ * {@code @MappedService} is used as a meta-annotation: its {@code value} denotes the service, and
+ * the element of the annotated annotation named by {@code method} provides the key the annotated class is mapped to.
+ * Appends {@code <annotated class> = <key>} to {@code META-INF/mapped-services/<service>} in the service directory
+ * and logs it to {@code <annotated class>/service.log} in the analyze directory.
  *
  * @author harald
  */

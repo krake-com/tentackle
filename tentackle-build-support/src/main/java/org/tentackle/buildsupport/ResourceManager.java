@@ -38,7 +38,12 @@ import org.tentackle.common.Settings;
 
 
 /**
- * A manager for resources.
+ * A manager for resources generated during annotation processing.
+ * <p>
+ * The resources are files relative to a base directory, named by slash-separated paths.
+ * Writers and readers are created lazily on first access, use the encoding configured by
+ * {@link Settings}, and are cached until {@link #close()}. Missing parent directories are created.
+ * The names of all accessed resources are available via {@link #getResourceNames()}, even after {@link #close()}.
  *
  * @author harald
  */
@@ -122,7 +127,7 @@ public class ResourceManager {
   }
 
   /**
-   * Gets the resource names.
+   * Gets the names of all resources accessed so far.
    *
    * @return the names, never null
    */
@@ -142,9 +147,10 @@ public class ResourceManager {
 
 
   /**
-   * Gets the writer.
+   * Gets the writer for a resource.<br>
+   * Creates or truncates the file on first access.
    *
-   * @param name the writer's name
+   * @param name the resource name
    * @return the writer
    * @throws IOException if writer could not be created
    */
@@ -154,9 +160,9 @@ public class ResourceManager {
 
 
   /**
-   * Gets the reader.
+   * Gets the reader for a resource.
    *
-   * @param name the reader's name
+   * @param name the resource name
    * @return the reader
    * @throws IOException if reader could not be created
    */
@@ -168,7 +174,7 @@ public class ResourceManager {
   /**
    * Returns whether given resource file exists.
    *
-   * @param name the file;s name
+   * @param name the resource name
    * @return true if exists
    */
   public boolean exists(String name) {
@@ -177,7 +183,7 @@ public class ResourceManager {
 
 
   /**
-   * Closes all resources.
+   * Closes all open readers and writers.
    *
    * @throws IOException if closing a resource failed
    */

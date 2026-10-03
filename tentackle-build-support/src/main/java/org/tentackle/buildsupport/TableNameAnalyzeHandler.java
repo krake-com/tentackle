@@ -36,7 +36,11 @@ import java.util.Map;
 /**
  * Handler for the {@code @TableName} annotation.
  * <p>
- * Although a mapped service, we need an extra implementation because of <code>mapSchema=true|false</code>.
+ * Although a mapped service, it needs its own implementation because of {@code mapSchema} and {@code prefix}:
+ * {@code mapSchema=true} maps {@code "schema.table"} to {@code "schema_table"}, and the optional {@code prefix}
+ * is prepended to the (possibly mapped) table name.
+ * Appends {@code <annotated class> = "<table name>"} to {@code META-INF/mapped-services/<annotation>} in the
+ * service directory and logs it to {@code <annotated class>/service.log} in the analyze directory.
  *
  * @author harald
  */
@@ -103,10 +107,10 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
         }
 
         if (tableName == null) {
-          print(Diagnostic.Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annotationType.getClass().getName(), '.'), element);
+          print(Diagnostic.Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annoName, '.'), element);
         }
         else {
-          // notice: tablename is a string enclosed in double quotes!
+          // notice: tablename is a string enclosed in double quotes, hence the prefix goes after the first char
 
           if (mapSchema) {
             tableName = tableName.replace('.', '_');

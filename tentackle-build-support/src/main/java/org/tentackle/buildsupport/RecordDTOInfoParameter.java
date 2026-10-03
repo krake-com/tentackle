@@ -33,7 +33,7 @@ public class RecordDTOInfoParameter {
 
 
   /**
-   * Constructs a RecordDTOInfoParameter.
+   * Constructs a RecordDTOInfoParameter during annotation processing.
    *
    * @param info the parent info
    * @param recordComponent the record component
@@ -45,7 +45,7 @@ public class RecordDTOInfoParameter {
   }
 
   /**
-   * Constructs a RecordDTOInfoParameter.
+   * Constructs a RecordDTOInfoParameter from an info file.
    *
    * @param info the parent info
    * @param stok the tokenizer to read from
@@ -66,23 +66,25 @@ public class RecordDTOInfoParameter {
   }
 
   /**
-   * Gets the formal parameter name
-   * @return the parameter name
+   * Gets the record component name.
+   *
+   * @return the component name
    */
   public String getName() {
     return name;
   }
 
   /**
-   * Gets the parameter type
-   * @return the parameter type
+   * Gets the record component type.
+   *
+   * @return the component type
    */
   public String getType() {
     return type;
   }
 
   /**
-   * Writes this parameter to the infofile.
+   * Writes this parameter to the info file.
    *
    * @param writer the writer bound to the infofile
    */

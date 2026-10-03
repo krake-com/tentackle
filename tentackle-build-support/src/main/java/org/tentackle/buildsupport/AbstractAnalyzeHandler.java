@@ -33,7 +33,9 @@ import java.util.StringTokenizer;
 public abstract class AbstractAnalyzeHandler implements AnalyzeHandler {
 
   /**
-   * Creates a directory in given basedir for a classname.
+   * Gets the directory in the given base directory for a classname.<br>
+   * Each dot-separated part of the classname becomes a subdirectory.
+   * The directory is not created.
    *
    * @param baseDir the base directory
    * @param className the classname
@@ -50,8 +52,8 @@ public abstract class AbstractAnalyzeHandler implements AnalyzeHandler {
   }
 
   /**
-   * Prints a message of the specified kind at the location of the
-   * element.
+   * Prints a message of the specified kind at the location of the element.<br>
+   * The simple name of the handler class is appended to the message.
    *
    * @param kind the kind of message
    * @param msg  the message

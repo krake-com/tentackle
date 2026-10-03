@@ -32,11 +32,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
 
 
 /**
  * Handler for the {@code @RecordDTO} annotation.
+ * <p>
+ * Writes a {@link RecordDTOInfo} for each annotated record to {@code <record>/record.info}
+ * in the analyze directory.
  *
  * @author harald
  */
@@ -55,18 +57,7 @@ public class RecordDTOAnalyzeHandler extends AbstractAnalyzeHandler {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv) {
-
-    Class<Annotation> annotationClass;
-    try {
-      annotationClass = (Class<Annotation>) Class.forName(annotationType.toString());
-    }
-    catch (ClassNotFoundException nfe) {
-      print(Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe, annotationType);
-      return;
-    }
-
     for (Element element : roundEnv.getElementsAnnotatedWith(annotationType)) {
       if (element.getKind().equals(ElementKind.ANNOTATION_TYPE)) {
         continue;   // ignore annotated annotations (such as in tentackle-core)
@@ -74,7 +65,6 @@ public class RecordDTOAnalyzeHandler extends AbstractAnalyzeHandler {
       if (element.getKind().equals(ElementKind.RECORD)) {
         TypeElement recordElement = (TypeElement) element;
         String recordName = recordElement.toString();
-        Annotation annotation = recordElement.getAnnotation(annotationClass);
         if (getProcessor().isDebugLogging()) {
           print(Kind.NOTE, "found annotated record " + recordName, element);
         }

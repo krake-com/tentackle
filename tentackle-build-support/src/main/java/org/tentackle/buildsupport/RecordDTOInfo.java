@@ -34,7 +34,10 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * Holds information gathered by the {@code @RecordDTO} annotation.
+ * Holds information gathered from a record annotated with {@code @RecordDTO}.
+ * <p>
+ * The {@link RecordDTOAnalyzeHandler} creates an info file during the analyze phase, and
+ * the {@code DTO} wurblet picks up this information to generate code.
  */
 public class RecordDTOInfo {
 
@@ -57,7 +60,7 @@ public class RecordDTOInfo {
    * Reads info from a file.
    *
    * @param infoFile the file to read from
-   * @return an RecordDTOInfo object, null if file is empty or does not contain an RecordDTOInfo-text
+   * @return the record info, null if the file is empty or does not contain such info
    * @throws IOException if reading failed
    */
   public static RecordDTOInfo readInfo(File infoFile) throws IOException {
@@ -74,8 +77,8 @@ public class RecordDTOInfo {
   /**
    * Reads info from a line reader.
    *
-   * @param reader is the LineNumberReader
-   * @return the record info, null if file is empty or does not contain such info
+   * @param reader the line reader
+   * @return the record info, null if the file is empty or does not contain such info
    * @throws IOException if reading failed
    */
   public static RecordDTOInfo readInfo(LineNumberReader reader) throws IOException {
@@ -94,7 +97,7 @@ public class RecordDTOInfo {
             String text = stok.nextToken();
             stok = new StringTokenizer(text);
             if (TYPE.equals(type)) {
-              info.setRecordName(text);
+              info.setRecordName(text.trim());
             }
             else if (type.startsWith(ARG)) {
               info.addParameter(new RecordDTOInfoParameter(info, stok));
@@ -109,20 +112,20 @@ public class RecordDTOInfo {
 
 
   // information gathered from apt run
-  private String recordName;                                  // name of the class
-  private List<RecordDTOInfoParameter> parameterList;         // formal parameters
+  private String recordName;                                  // name of the record
+  private List<RecordDTOInfoParameter> parameterList;         // record components
 
 
   /**
-   * Creates an RecordDTOInfo for a given type.
-   * Used when reading from infofile.
+   * Creates an empty RecordDTOInfo.<br>
+   * Used when reading from an info file.
    */
   public RecordDTOInfo() {
   }
 
   /**
-   * Creates an RecordDTOInfo from a method element.
-   * Used during apt processing.
+   * Creates a RecordDTOInfo from a record element.<br>
+   * Used during annotation processing.
    *
    * @param processingEnv the annotation processor's environment
    * @param recordElement the record type element
@@ -135,35 +138,36 @@ public class RecordDTOInfo {
   }
 
   /**
-   * Gets the name of the class this analyze-info is part of.
+   * Gets the name of the record.
    *
-   * @return the classname
+   * @return the full record name
    */
   public String getRecordName() {
     return recordName;
   }
 
   /**
-   * Sets the classname and the packagename from a given classname.
+   * Sets the name of the record.
    *
-   * @param recordName the full class name
+   * @param recordName the full record name
    */
   public void setRecordName(String recordName) {
     this.recordName = recordName;
   }
 
   /**
-   * Gets the formal parameters of the method.
+   * Gets the record components.
    *
-   * @return the array of parameters
+   * @return the array of components, null if none
    */
   public RecordDTOInfoParameter[] getParameters() {
     return parameterList == null ? null : parameterList.toArray(new RecordDTOInfoParameter[0]);
   }
 
   /**
-   * Adds a formal parameter
-   * @param parameter the formal parameter to add
+   * Adds a record component.
+   *
+   * @param parameter the component to add
    */
   public void addParameter(RecordDTOInfoParameter parameter) {
     if (parameterList == null) {
@@ -187,7 +191,7 @@ public class RecordDTOInfo {
   /**
    * Writes this object to an info file.
    *
-   * @param writer is the PrintWriter object
+   * @param writer the writer
    */
   public void write(PrintWriter writer) {
     writer.println("# " + getClass().getName() + " Version " + INFO_FILE_VERSION);

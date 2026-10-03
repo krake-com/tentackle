@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- * Abstraction of a method parameter.
+ * Abstraction of a method parameter of a {@link RemoteMethodInfo}.
  */
 public class RemoteMethodInfoParameter {
 
@@ -45,7 +45,7 @@ public class RemoteMethodInfoParameter {
 
 
   /**
-   * Constructs a RemoteMethodInfoParameter.
+   * Constructs a RemoteMethodInfoParameter during annotation processing.
    *
    * @param info the parent info
    * @param processingEnv the annotation processing environment
@@ -66,7 +66,7 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Constructs a RemoteMethodInfoParameter.
+   * Constructs a RemoteMethodInfoParameter from an info file.
    *
    * @param info the parent info
    * @param stok the tokenizer to read from
@@ -83,7 +83,8 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Constructs a RemoteMethodInfoParameter.
+   * Constructs a RemoteMethodInfoParameter with a name and type only.<br>
+   * All flags are false and there are no modifiers.
    *
    * @param info the parent info
    * @param name the parameter name
@@ -105,7 +106,8 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Gets the formal parameter name
+   * Gets the formal parameter name.
+   *
    * @return the parameter name
    */
   public String getName() {
@@ -113,7 +115,9 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Gets the parameter type
+   * Gets the parameter type.<br>
+   * For a vararg, this is the component type.
+   *
    * @return the parameter type
    */
   public String getType() {
@@ -121,8 +125,9 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Gets the modifiers
-   * @return the array of modifiers
+   * Gets the modifiers.
+   *
+   * @return the array of modifiers, null if none
    */
   public Modifier[] getModifiers() {
     return modifiers;
@@ -131,32 +136,63 @@ public class RemoteMethodInfoParameter {
   /**
    * Returns whether the parameter is an instance of a session.
    *
-   * @return true if instanceof Db
+   * @return true if instanceof Session
    */
   public boolean isInstanceOfSession() {
     return instanceOfSession;
   }
 
+  /**
+   * Returns whether the parameter is an instance of a low-level db object.<br>
+   * Also true for a PDO.
+   *
+   * @return true if instanceof AbstractDbObject or PDO
+   */
   public boolean isInstanceOfDbObject() {
     return instanceOfDbObject;
   }
 
+  /**
+   * Returns whether the parameter is an instance of a PDO.
+   *
+   * @return true if instanceof PersistentDomainObject
+   */
   public boolean isInstanceOfPdo() {
     return instanceOfPdo;
   }
 
+  /**
+   * Gets the modifiers as a string.
+   *
+   * @return the blank-separated modifiers, empty if none
+   */
   public String getModifiersAsString() {
     return AnnotationProcessingHelper.objectArrayToString(modifiers, " ");
   }
 
+  /**
+   * Returns whether the parameter is an instance of a domain context.
+   *
+   * @return true if instanceof DomainContext
+   */
   public boolean isInstanceOfContext() {
     return instanceOfContext;
   }
 
+  /**
+   * Returns whether this is the vararg parameter of a varargs method.
+   *
+   * @return true if vararg
+   */
   public boolean isVarArg() {
     return varArg;
   }
 
+  /**
+   * Sets whether this is the vararg parameter of a varargs method.
+   *
+   * @param varArg true if vararg
+   */
   public void setVarArg(boolean varArg) {
     this.varArg = varArg;
   }
@@ -167,14 +203,14 @@ public class RemoteMethodInfoParameter {
    * Checks if a given modifier is set.
    *
    * @param modifier the modifier to test
-   * @return true modifier set
+   * @return true if modifier set
    */
   public boolean isModifierSet(Modifier modifier) {
     return AnnotationProcessingHelper.isModifierSet(modifier, modifiers);
   }
 
   /**
-   * Writes this parameter to the infofile.
+   * Writes this parameter to the info file.
    *
    * @param writer the writer bound to the infofile
    */

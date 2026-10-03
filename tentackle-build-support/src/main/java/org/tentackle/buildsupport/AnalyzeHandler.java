@@ -24,6 +24,10 @@ import javax.lang.model.element.TypeElement;
 
 /**
  * A handler invoked for an annotation annotated with {@link org.tentackle.common.Analyze}.
+ * <p>
+ * Handlers are named by their classname in {@code @Analyze} and instantiated by the {@link AnalyzeProcessor}
+ * via their no-arg constructor. A new instance is created for each annotation type and round.
+ * A handler can do whatever is appropriate, usually writing service descriptors or analyze info files.
  *
  * @author harald
  */
