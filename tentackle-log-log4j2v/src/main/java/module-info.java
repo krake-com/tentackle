@@ -17,7 +17,7 @@
  */
 
 /**
- * tentackle-log-log4j2v module.
+ * Log4J 2 provider for the Tentackle logging API.
  */
 module org.tentackle.log.log4j2v {
 

@@ -254,8 +254,8 @@ For **OSGi**, both providers are available as bundles (`tentackle.log.slf4j.osgi
 
 ### Choosing a backend
 
-Add **exactly one** provider module as a dependency (plus its own backend libraries — e.g. a Logback binding for
-SLF4J, or the Log4J 2 core). With none present, Tentackle logs via `java.util.logging`.
+Add **exactly one** provider module as a dependency (plus, for SLF4J, its own backend binding — e.g. Logback; the
+Log4J 2 provider already brings `log4j-core`). With none present, Tentackle logs via `java.util.logging`.
 
 ```xml
 <!-- e.g. route Tentackle logging through SLF4J -->

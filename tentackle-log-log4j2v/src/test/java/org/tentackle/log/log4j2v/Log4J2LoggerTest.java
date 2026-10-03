@@ -318,6 +318,19 @@ public class Log4J2LoggerTest {
     assertEquals(capture.singleEvent().getMessage().getFormattedMessage(), "raw {0} text");
   }
 
+  @Test
+  public void testMessageWithParamsUnescapesQuotes() {
+    logger.info("it''s {0}", "x");
+    assertEquals(capture.singleEvent().getMessage().getFormattedMessage(), "it's x");
+  }
+
+  @Test
+  public void testEmptyParamSuppliersAreFormatted() {
+    // unlike Object... params, the supplier variants always apply MessageFormat
+    logger.info("it''s", new Supplier<?>[0]);
+    assertEquals(capture.singleEvent().getMessage().getFormattedMessage(), "it's");
+  }
+
 
   // ------------------------------------------------------------------ laziness
 
