@@ -31,6 +31,7 @@ import static org.testng.Assert.assertNull;
 /**
  * Tests the {@link TableSerialHistory}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TableSerialHistoryTest {
 
   @Test

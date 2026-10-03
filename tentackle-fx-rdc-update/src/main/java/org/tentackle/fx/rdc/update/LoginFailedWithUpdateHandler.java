@@ -103,6 +103,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * Like the handler itself, the runnable is invoked from within the login service's background thread.
    */
   @Override
+  @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
     if (ex instanceof VersionIncompatibleException ||
         // or SSL certificate changed due to a new server version
