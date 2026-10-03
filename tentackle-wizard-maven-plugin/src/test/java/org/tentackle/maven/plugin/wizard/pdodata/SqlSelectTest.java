@@ -100,16 +100,6 @@ public class SqlSelectTest {
                  "SELECT n.*,h.*,p.* FROM node n JOIN hub h ON h.id=n.id JOIN port p ON p.id=n.id WHERE n.id=4711;");
   }
 
-
-  /**
-   * Creates an attribute node as the {@link DataNodeFactory} does.
-   *
-   * @param pdoEntityName the entity of the PDO
-   * @param attributeEntityName the entity declaring the attribute
-   * @param attributeName the attribute name
-   * @param value the value
-   * @return the node
-   */
   /**
    * A null reference has no SQL condition.
    */

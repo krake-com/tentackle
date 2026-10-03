@@ -358,17 +358,17 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     }
   }
 
-  @Bindable
-  @True(value = "$isNewClassId", scope = InteractiveScope.class, message = "class ID already in use")
-  @Changeable(condition = "$isClassIdNecessary")
-  @GreaterOrEqual(value = "100", condition = "$isClassIdNecessary",
-                  message = "class IDs below 100 are reserved for tentackle", scope = InteractiveScope.class)
   /**
    * Gets the class ID.<br>
    * If a class ID is necessary but missing or outside the profile's range, the next free class ID of the profile is set.
    *
    * @return the class ID, null if none
    */
+  @Bindable
+  @True(value = "$isNewClassId", scope = InteractiveScope.class, message = "class ID already in use")
+  @Changeable(condition = "$isClassIdNecessary")
+  @GreaterOrEqual(value = "100", condition = "$isClassIdNecessary",
+                  message = "class IDs below 100 are reserved for tentackle", scope = InteractiveScope.class)
   @NotNull(condition = "$isClassIdNecessary", message = "missing class ID")
   public Integer getClassId() {
     if (isClassIdNecessary() &&

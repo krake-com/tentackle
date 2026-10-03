@@ -391,7 +391,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param snapshot the snapshot
    */
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected void createComponentsInSnapshot(AbstractPersistentObject snapshot) {
     snapshot.objectIsSnapshot = true;
     snapshot.snapshots = null;    // the clone must not share the list of snapshots with this object

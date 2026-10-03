@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import org.tentackle.session.NotFoundException;
 
+import java.io.Serial;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
@@ -101,6 +103,9 @@ public class ModificationLogCrudTest extends AbstractDbTest {
    * A visitor vetoing all updates.
    */
   public static class VetoUpdateVisitor extends PersistenceVisitor {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * Visits all objects (the dispatched method).

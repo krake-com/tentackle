@@ -57,7 +57,7 @@ import static org.testng.Assert.expectThrows;
  *
  * @author harald
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class PdoCacheDbTest extends AbstractPersistenceDbTest {
 
   private static final String TABLE_NAME = "democached";
