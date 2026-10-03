@@ -28,10 +28,14 @@ import org.tentackle.session.Session;
 import java.io.Serial;
 
 /**
- * A mocked domain object.
+ * Mock domain delegate of an {@link Operation}.
+ * <p>
+ * Pairs with a real persistent operation to test persistence logic without domain logic.
+ * It keeps only the operation, and the domain context and session are read from the operation.
+ * {@link #getPersistenceDelegate()} throws an {@link UnsupportedOperationException} with message {@link #UNSUPPORTED}.
  *
- * @param <T> the PDO class
- * @param <D> the domain object class
+ * @param <T> the operation type
+ * @param <D> the concrete mock type
  * @author harald
  */
 public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOperation<T,D>>
@@ -50,16 +54,16 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
 
 
   /**
-   * Creates an operation domain object.
+   * Creates a domain delegate for an operation.
    *
-   * @param operation the operation object this is a delegate for
+   * @param operation the operation this is a delegate for
    */
   public MockDomainOperation(T operation) {
     this.operation = operation;
   }
 
   /**
-   * Creates an application domain object.
+   * Creates a domain delegate without an operation.
    */
   public MockDomainOperation() {
   }
@@ -75,7 +79,7 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
   }
 
   /**
-   * Sets the operation.<br>
+   * Sets the operation.
    *
    * @param operation the operation
    */

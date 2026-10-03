@@ -103,7 +103,7 @@ PDO a well-formed object:
 Permissive or empty defaults, so that a test isn't blocked by machinery it doesn't care about:
 
 - `isWriteAllowed()`, `isViewAllowed()`, `isEditAllowed()` → `true`; `validate()`, `requestTokenLock()`,
-  `releaseTokenLock()` → no-ops.
+  `releaseTokenLock()`, `setCopy()`, `setImmutableLoggingLevel()` → no-ops; `getImmutableLoggingLevel()` → `null`.
 - `isRootEntity()`, `isEmbedded()`, `isSnapshot()`, `isCopy()`, `isTableSerialProvided()`, `isTokenLockProvided()`,
   `isNormTextProvided()`, `isRootIdProvided()`, `isRootClassIdProvided()` → `false`
   (override `isRootEntity()` in your mock if the domain logic branches on it — the defaults of
@@ -112,16 +112,21 @@ Permissive or empty defaults, so that a test isn't blocked by machinery it doesn
   `null`, `discardSnapshot(s)` → no-ops.
 - `isValidated()` → `!isModified()`, `toIdString()` → `classId:id`.
 
+> **Derived methods need their inputs.** `isValidated()`, `toIdString()` and — for a root entity — `isRootEntityOf()`
+> are built on `isModified()` resp. `getClassId()`, which throw. They work only once your mock overrides those.
+
 The **cached select variants delegate to their uncached counterparts** — `selectCached(id)`, `selectForCache(id)`
 and `selectCachedOnly(id)` route to `select(id)`; `selectAllCached()` / `selectAllForCache()` to `selectAll()`;
 `selectAnyCached(ids)` / `selectAnyForCache(ids)` to `selectAny(ids)`. Overriding a single `select…` method in your
 mock therefore covers the [cache](../../../../tentackle-pdo/src/main/docs/cache.md) paths as well.
 
-Everything else — `save()`, `persist()`, `delete()`, all `select…`/`reload…` methods, the
-[token lock](../../../../tentackle-persistence/src/main/docs/locking.md) state, the
-[snapshot](../../../../tentackle-pdo/src/main/docs/snapshot.md) methods, `getTableName()`, `getClassId()`,
-`isNew()`, `isModified()`, `getSecurityResult()` and the modification-tracking queries — throws
-`UnsupportedOperationException(UNSUPPORTED)`. Override in your mock subclass exactly what the code under test needs.
+Everything else — `save()`, `persist()`, `delete()`, all other `select…`/`reload…` methods, the
+[token lock](../../../../tentackle-persistence/src/main/docs/locking.md) state, `createSnapshot()`/`revertToSnapshot()`,
+`getTableName()`, `getClassId()`, `getClassBaseName()`, `isNew()`, `isModified()`, the security checks
+(`getSecurityResult()`, `isPermissionAccepted()`), the cache and modification-tracking queries, the domain-context
+helpers (`getContextId()`, `getBaseContext()`, `createValidContext()`, `is/setDomainContextImmutable()`),
+`getDomainDelegate()` and `toGenericString()` — throws `UnsupportedOperationException(UNSUPPORTED)`. Override in
+your mock subclass exactly what the code under test needs.
 
 ### The other three
 
@@ -130,8 +135,8 @@ Everything else — `save()`, `persist()`, `delete()`, all `select…`/`reload�
   [domain key](../../../../tentackle-pdo/src/main/docs/domain-key.md) methods, `getSingular()`/`getPlural()` and
   `getPersistenceDelegate()` throw.
 - **`MockPersistentOperation`** is the operation counterpart of `MockPersistentObject`: operation reference,
-  session (with the same immutability check), domain context and the operation method cache work; the context-ID
-  and delegate lookups throw.
+  session (with the same immutability check), domain context and the operation method cache work; the
+  domain-context helpers and `getDomainDelegate()` throw.
 - **`MockDomainOperation`** keeps the operation reference and routes `getDomainContext()`/`getSession()` to it;
   `getPersistenceDelegate()` throws.
 
@@ -173,6 +178,8 @@ public class NumberRangePersistenceMock extends MockPersistentObject<NumberRange
   private long begin;
   private long end;
 
+  // … the four constructors …
+
   @Override public long getBegin()          { return begin; }
   @Override public void setBegin(long begin){ this.begin = begin; }
   @Override public long getEnd()            { return end; }
@@ -185,15 +192,20 @@ public class NumberRangePersistenceMock extends MockPersistentObject<NumberRange
 NumberRange range = Pdo.create(NumberRange.class);
 range.setBegin(10);
 range.setEnd(20);
-assertEquals(range.size(), 10);
+assertEquals(range.size(), 10);   // size() is the domain logic under test
 ```
 
 `Pdo.create(Class)` without a [domain context](../../../../tentackle-pdo/src/main/docs/domain-context-provider.md)
 or session is the database-less entry point. Operations use `Pdo.createOperation(Class)` accordingly.
 
-The four constructors of every `Mock…` class mirror the real base classes — `(pdo, context)`, `(pdo, session)`,
-`(pdo)` and the no-arg one — so the factory finds whichever it needs. Provide all four in your mock; the
-`Declare`/`MethodsImpl` wurblets and the archetype template do the same.
+The factory instantiates a delegate through the public constructor matching the arguments it has at hand, so
+your mock must provide the same constructors as its `Mock…` base class:
+
+- the **persistence** mocks (`MockPersistentObject`, `MockPersistentOperation`) have four — `(pdo, context)`,
+  `(pdo, session)`, `(pdo)` and the no-arg one — mirroring `AbstractPersistentObject`;
+- the **domain** mocks (`MockDomainObject`, `MockDomainOperation`) have two — `(pdo)` and the no-arg one.
+
+The archetype's `MessagePersistenceMock` shows the four persistence constructors.
 
 ### Testing persistence logic
 
@@ -225,8 +237,10 @@ Message message = Pdo.create(Message.class, myPersistenceDelegate);          // 
 Message message = Pdo.create(Message.class, context, myDomainDelegate);      // mock the domain half
 ```
 
-The same pair exists as `Pdo.createOperation(Class, PersistentOperation)` and
-`Pdo.createOperation(Class, DomainContext, DomainOperation)`.
+`Pdo.create(Class, PersistentObject, DomainObject)` injects both halves at once. The same overloads exist for
+operations: `Pdo.createOperation(Class, PersistentOperation)`,
+`Pdo.createOperation(Class, DomainContext, DomainOperation)` and
+`Pdo.createOperation(Class, PersistentOperation, DomainOperation)`.
 
 ---
 
@@ -263,8 +277,9 @@ In `--mock` mode the wurblets emit the *plain* variant of everything and skip th
 - **`Declare --mock`** — plain fields; no persisted/modified shadow fields.
 - **`MethodsImpl --mock`** — plain getters and setters (no `assertMutable()`, no property-change events, no
   modification tracking); `is<Attribute>Modified()` returns `false`; `get<Attribute>Persisted()` returns the current
-  value; `isRootEntity()` returns `true` for a root entity. No snapshot methods.
-- **`PdoRelations --mock`** — relation fields (list relations are pre-initialized to an empty list, a
+  value; `isRootEntity()` returns `true` for a root entity (unless `--noisroot`); `selectByUniqueDomainKey(…)` is a
+  stub that throws. No snapshot methods.
+- **`PdoRelations --mock`** — relation fields (non-reversed list relations are pre-initialized to an empty list, a
   `TrackedArrayList` for tracked relations), plain
   relation getters/setters and `is<Relation>Loaded()`; none of `loadComponents`, `insertPlainWithComponents`,
   `deletePlainWithComponents`, the referencing-class registration, `createNormText`, `validate`, `setImmutable`,

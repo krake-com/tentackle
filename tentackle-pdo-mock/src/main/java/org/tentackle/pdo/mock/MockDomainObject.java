@@ -28,10 +28,15 @@ import org.tentackle.session.Session;
 import java.io.Serial;
 
 /**
- * A mocked domain object.
+ * Mock domain delegate of a {@link PersistentDomainObject}.
+ * <p>
+ * Pairs with a real persistence delegate to test persistence logic without domain logic.
+ * It keeps only the PDO, and the domain context and session are read from the PDO.
+ * Every other method throws an {@link UnsupportedOperationException} with message {@link #UNSUPPORTED},
+ * except {@link #toGenericString()} and {@link #isUniqueDomainKeyProvided()}.
  *
- * @param <T> the PDO class
- * @param <D> the domain object class
+ * @param <T> the PDO type
+ * @param <D> the concrete mock type
  * @author harald
  */
 public class MockDomainObject<T extends PersistentDomainObject<T>, D extends MockDomainObject<T,D>>
@@ -50,7 +55,7 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
 
 
   /**
-   * Creates an application domain object.
+   * Creates a domain delegate for a PDO.
    *
    * @param pdo the persistent domain object this is a delegate for
    */
@@ -60,7 +65,7 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
 
 
   /**
-   * Creates an application domain object.
+   * Creates a domain delegate without a PDO.
    */
   public MockDomainObject() {
   }
@@ -77,7 +82,7 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
   }
 
   /**
-   * Sets the PDO.<br>
+   * Sets the PDO.
    *
    * @param pdo the pdo
    */
@@ -85,6 +90,11 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
     this.pdo = pdo;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The mock returns {@link Object#toString()} of the delegate.
+   */
   @Override
   public String toGenericString() {
     return super.toString();

@@ -33,9 +33,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A mocked persistence object.
+ * Mock persistence delegate of an {@link Operation}.
+ * <p>
+ * Pairs with a real domain operation to test its logic without a session or database.
+ * It keeps the operation, domain context and session.
+ * Every other method throws an {@link UnsupportedOperationException} with message {@link #UNSUPPORTED}.
+ * <p>
+ * {@link OperationMethodCacheProvider} is implemented because the operation invocation handler requires it
+ * from every persistence delegate.
  *
- * @param <T> the pdo type
+ * @param <T> the operation type
  * @author harald
  */
 public class MockPersistentOperation<T extends Operation<T>>
@@ -53,17 +60,18 @@ public class MockPersistentOperation<T extends Operation<T>>
   private static final Map<Class, OperationMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 
 
-  private DomainContext context;                  // application database context
+  private DomainContext context;                  // the domain context
   private T operation;                            // the operation instance this is a delegate for
   private transient Session session;              // the session
   private transient boolean sessionImmutable;     // true if session is immutable
 
 
   /**
-   * Creates an operation object.
+   * Creates a persistence delegate for an operation with a domain context.<br>
+   * The session is taken from the context.
    *
-   * @param operation the operation object this is a delegate for
-   * @param context the database context
+   * @param operation the operation this is a delegate for
+   * @param context the domain context, may be null
    */
   public MockPersistentOperation(T operation, DomainContext context) {
     this.operation = operation;
@@ -73,12 +81,10 @@ public class MockPersistentOperation<T extends Operation<T>>
 
 
   /**
-   * Creates an operation object without a domain context
-   * for a given connection.<p>
-   * Note: the application must set the context.
+   * Creates a persistence delegate for an operation with a session, but without a domain context.
    *
-   * @param operation the operation object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param operation the operation this is a delegate for
+   * @param session the session
    */
   public MockPersistentOperation(T operation, Session session) {
     this.operation = operation;
@@ -86,10 +92,9 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   /**
-   * Creates an operation object without a database context.<p>
-   * Note: the application must set the context.
+   * Creates a persistence delegate for an operation without a domain context and session.
    *
-   * @param operation the operation object this is a delegate for
+   * @param operation the operation this is a delegate for
    */
   public MockPersistentOperation(T operation) {
     this.operation = operation;
@@ -97,11 +102,16 @@ public class MockPersistentOperation<T extends Operation<T>>
 
 
   /**
-   * Creates an operation object without a database context.
+   * Creates a persistence delegate without an operation, domain context and session.
    */
   public MockPersistentOperation() {
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The mock shares one cache per effective operation class.
+   */
   @SuppressWarnings("unchecked")
   @Override
   public OperationMethodCache<T> getOperationMethodCache() {
@@ -184,7 +194,7 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   /**
-   * Sets the operation.<br>
+   * Sets the operation.
    *
    * @param operation the operation
    */
