@@ -18,6 +18,7 @@
 
 package org.tentackle.jta;
 
+import jakarta.transaction.RollbackException;
 import jakarta.transaction.Status;
 import jakarta.transaction.SystemException;
 import org.testng.annotations.Test;
@@ -30,7 +31,9 @@ import java.util.List;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests {@link GlobalTransactionMode#JOIN}: the global transactions are demarcated by the application
@@ -106,6 +109,36 @@ public class JoinModeTest extends AbstractJtaTest {
     tm.rollback();
     assertFalse(db1.isTxRunning());
     assertEquals(countRows(db1), 0);
+  }
+
+  @Test
+  public void testExternalPreCommitFailureNotRetained() throws Exception {
+    tm.begin();
+    long voucher = db1.begin("pre-commit fails");
+    insertRow(db1, 1);
+    db1.preCommit(_ -> { throw new IllegalStateException("pre-commit"); });
+    db1.commit(voucher);
+
+    expectThrows(RollbackException.class, () -> tm.commit());
+    assertFalse(db1.isTxRunning());
+    assertEquals(countRows(db1), 0);
+    assertNull(JtaTransactionSupport.getCompletionFailure(),
+               "nobody takes the failure of an externally owned global transaction");
+  }
+
+  @Test
+  public void testExternalPostCommitFailureNotRetained() throws Exception {
+    tm.begin();
+    long voucher = db1.begin("post-commit fails");
+    insertRow(db1, 1);
+    db1.postCommit(_ -> { throw new IllegalStateException("post-commit"); });
+    db1.commit(voucher);
+
+    tm.commit();    // logged, not thrown: the owner is not a Tentackle session
+    assertFalse(db1.isTxRunning());
+    assertEquals(countRows(db1), 1);
+    assertNull(JtaTransactionSupport.getCompletionFailure(),
+               "nobody takes the failure of an externally owned global transaction");
   }
 
   @Test

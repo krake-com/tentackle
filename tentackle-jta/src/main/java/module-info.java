@@ -18,6 +18,8 @@
 
 /**
  * tentackle-jta module.
+ * <p>
+ * Lets local sessions join or start global (JTA/XA) transactions coordinated by a JTA transaction manager.
  */
 module org.tentackle.jta {
 

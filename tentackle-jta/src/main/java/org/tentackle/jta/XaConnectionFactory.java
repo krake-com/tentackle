@@ -35,7 +35,8 @@ import javax.sql.XAConnection;
 /**
  * Creates the XA connections for the XA connection managers.
  * <p>
- * Implements the connection hooks of {@link org.tentackle.dbms.DefaultConnectionManager}:
+ * Implements the connection hooks of {@link org.tentackle.dbms.DefaultConnectionManager}, which are
+ * inherited by the {@link org.tentackle.dbms.MpxConnectionManager}:
  * the physical XA connection is created in {@code connect}, and its logical connection is wrapped
  * into an {@link XaManagedConnection} in {@code createManagedConnection}. In between, the physical
  * connection is kept here.

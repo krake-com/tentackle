@@ -65,8 +65,8 @@ public class XaMpxConnectionManager extends MpxConnectionManager {
   /**
    * Creates a connection manager with the defaults of {@link MpxConnectionManager#MpxConnectionManager(BackendInfo, int)}.
    *
-   * @param backendInfo backend info to use for creating connections
-   * @param idOffset the offset for connection ids (&gt; 0)
+   * @param backendInfo the backend info to use for creating connections
+   * @param idOffset the offset for the session ids (&gt; 0)
    */
   public XaMpxConnectionManager(BackendInfo backendInfo, int idOffset) {
     this("xa-mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 40, 720, 2160);

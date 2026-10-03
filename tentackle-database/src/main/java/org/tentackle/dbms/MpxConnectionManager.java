@@ -153,7 +153,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    *
    * @param backendInfo backend info to use for creating connections
-   * @param idOffset the offset for connection ids (&gt; 0)
+   * @param idOffset the offset for the session ids (&gt; 0)
    */
   public MpxConnectionManager(BackendInfo backendInfo, int idOffset) {
     this("mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 40, 720, 2160);

@@ -20,6 +20,8 @@ package org.tentackle.jta;
 
 import jakarta.transaction.Status;
 import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.TransactionManager;
 import org.testng.annotations.Test;
 
 import org.tentackle.dbms.Db;
@@ -29,6 +31,9 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import javax.transaction.xa.XAException;
@@ -246,6 +251,89 @@ public class RequiredModeTest extends AbstractJtaTest {
     }
     finally {
       plainManager.shutdown();
+    }
+  }
+
+  @Test
+  public void testFailedSynchronizationLeavesConnectionUnenlisted() throws SystemException {
+    List<String> calls = new ArrayList<>();
+    JtaTransactionSupport.setTransactionManager(createFailingTransactionManager("registerSynchronization", calls));
+    try {
+      assertThrows(PersistenceException.class, () -> db1.begin("synchronization fails"));
+    }
+    finally {
+      JtaTransactionSupport.setTransactionManager(tm);
+    }
+    assertFalse(calls.contains("enlistResource"),
+                "the connection must not be enlisted, since the session is detached from it: " + calls);
+    assertFalse(db1.isTxRunning());
+    assertEquals(tm.getStatus(), Status.STATUS_NO_TRANSACTION, "the started global transaction must be rolled back");
+    assertCommitSpansBothDatabases();
+  }
+
+  @Test
+  public void testFailedEnlistmentIsCleanedUp() throws SystemException {
+    List<String> calls = new ArrayList<>();
+    JtaTransactionSupport.setTransactionManager(createFailingTransactionManager("enlistResource", calls));
+    try {
+      assertThrows(PersistenceException.class, () -> db1.begin("enlistment fails"));
+    }
+    finally {
+      JtaTransactionSupport.setTransactionManager(tm);
+    }
+    assertTrue(calls.contains("enlistResource"), calls.toString());
+    assertFalse(db1.isTxRunning());
+    assertEquals(tm.getStatus(), Status.STATUS_NO_TRANSACTION, "the started global transaction must be rolled back");
+    assertCommitSpansBothDatabases();   // the synchronization of the failed attempt must not interfere
+  }
+
+
+  /**
+   * Runs a global transaction across both databases and checks that it is committed.
+   */
+  private void assertCommitSpansBothDatabases() {
+    long voucher = db1.begin("both");
+    insertRow(db1, 1);
+    long voucher2 = db2.begin("joined");
+    insertRow(db2, 2);
+    db2.commit(voucher2);
+    assertTrue(db1.commit(voucher));
+    assertEquals(countRows(db1), 1);
+    assertEquals(countRows(db2), 1);
+  }
+
+  /**
+   * Creates a transaction manager delegating to the test's transaction manager, whose transactions fail
+   * in the given method.
+   *
+   * @param failingMethod the name of the {@link Transaction} method that throws an {@link IllegalStateException}
+   * @param calls the names of the invoked {@link Transaction} methods
+   * @return the transaction manager
+   */
+  private TransactionManager createFailingTransactionManager(String failingMethod, List<String> calls) {
+    return (TransactionManager) Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[] { TransactionManager.class }, (_, method, args) -> {
+          Object result = invoke(method, tm, args);
+          if (result instanceof Transaction transaction) {
+            return Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] { Transaction.class }, (_, txMethod, txArgs) -> {
+                  calls.add(txMethod.getName());
+                  if (txMethod.getName().equals(failingMethod)) {
+                    throw new IllegalStateException(failingMethod + " fails");
+                  }
+                  return invoke(txMethod, transaction, txArgs);
+                });
+          }
+          return result;
+        });
+  }
+
+  private static Object invoke(Method method, Object target, Object[] args) throws Throwable {
+    try {
+      return method.invoke(target, args);
+    }
+    catch (InvocationTargetException ix) {
+      throw ix.getCause();
     }
   }
 

@@ -73,10 +73,12 @@ Use XA when you need real atomicity across several databases, or when the contai
    JtaTransactionSupport.setTransactionManager(com.arjuna.ats.jta.TransactionManager.transactionManager());
    ```
 
-   Otherwise, it is looked up via JNDI. The name is taken from the system property
-   `tentackle.jta.transactionManager`, or else the common container names are tried
-   (`java:comp/TransactionManager`, `java:appserver/TransactionManager`, `java:jboss/TransactionManager`,
-   `java:/TransactionManager`).
+   Otherwise, it is looked up via JNDI when a session needs it for the first time. The name is taken
+   from the system property `tentackle.jta.transactionManager`, or else the common container names are
+   tried (`java:comp/TransactionManager`, `java:appserver/TransactionManager`, `java:jboss/TransactionManager`,
+   `java:/TransactionManager`). The manager found is kept; `setTransactionManager(null)` forces a new
+   lookup. If none is found, the session's transaction fails with a `PersistenceException`, and the
+   lookup is repeated next time.
 
 4. Choose the mode per session in the [backend properties](../../../../tentackle-session/src/main/docs/backend-properties.md):
 
@@ -152,11 +154,14 @@ thread, it enlists its connection in the global transaction instead of starting 
 of the session's transaction belongs to the owner of the global transaction. The session itself
 continues at level 2, just like a nested transaction. So `begin()` returns a voucher of `0`,
 and no `@Transaction` method ever commits, rolls back or retries the global transaction. Only its
-owner does. The session stays enlisted until the global transaction completes, and further units
-of work within the same global transaction simply join it again.
+owner does. The session stays enlisted until the global transaction completes, so `isTxRunning()`
+returns `true` until then, and further units of work within the same global transaction simply join
+it again.
 
 If a unit of work of the session fails, i.e. its outermost joined level is rolled back, the global
-transaction is marked *rollback-only*. Its owner can no longer commit it.
+transaction is marked *rollback-only*. Its owner can no longer commit it. A session that is not yet
+enlisted cannot join a global transaction that is already marked rollback-only: its `begin()` fails
+with a `PersistenceException`.
 
 ### `required` — Tentackle as the coordinator
 
@@ -187,16 +192,16 @@ transactions that is done within this method joins it.
 
 ## How Tentackle's Features Behave
 
-| Feature                                    | In a global transaction                                                                                                                                                                                                                                                                                                                                                                                    |
-|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Pre-commits, statement batch               | Run and flushed when the transaction manager calls `beforeCompletion`, i.e. before the *prepare*. An exception rolls back the global transaction and is rethrown by the owner's `commit()`. This also holds for an optimistic-lock conflict of a batched update.                                                                                                                               |
-| Post-commits, modification tracking        | Run after the global transaction is committed (`afterCompletion`), and not at all after a rollback. If a post-commit fails, the owner's `commit()` throws the exception, as it would in a local transaction.                                                                                                                                                                                                                                                  |
-| [Transparent retry](../../../../tentackle-pdo/src/main/docs/transaction.md#transparent-retry) | Works for the owner: the global transaction is the unit that is retried. A failed commit is *temporary* if a pre-commit threw a temporary exception or a resource failed with `XA_RBDEADLOCK`, `XA_RBTIMEOUT` or `XA_RBTRANSIENT`. A joined session never retries, just like a nested transaction.                                                                                                                                   |
-| [Optimistic locking](../../../../tentackle-persistence/src/main/docs/locking.md), token locks | Unchanged: plain SQL within the transaction branch.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Isolation and writability                  | Cannot be changed: a non-default `isolation` or `writability` of `@Transaction` or `begin()` throws a `PersistenceException`. Configure them on the data source instead.                                                                                                                                                                                                                                              |
-| Savepoints                                 | Depend on the JDBC driver: some drivers support savepoints within an XA branch, others don't.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `rollbackImmediately()`                    | Rolls back the global transaction if the session owns it, otherwise marks it rollback-only. The connection is never rolled back directly, because it is enlisted.                                                                                                                                                                                                                                                                                                            |
-| [Remote sessions](../../../../src/main/docs/tiers.md) | A JTA transaction never crosses a tier boundary. A `@Transaction` method executed on the server (a `@RemoteMethod`) takes part in global transactions on the server. A transaction begun by a remote client spans several remote calls and always stays local.                                                                                                                                                                                                                                        |
+| Feature                                                                                       | In a global transaction                                                                                                                                                                                                                                                                                                     |
+|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pre-commits, statement batch                                                                  | Run and flushed when the transaction manager calls `beforeCompletion`, i.e. before the *prepare*, and the COMMIT entry of the modification log is written. An exception rolls back the global transaction and is rethrown by the owner's `commit()`. This also holds for an optimistic-lock conflict of a batched update.   |
+| Post-commits, modification tracking                                                           | Run after the global transaction is committed (`afterCompletion`), and not at all after a rollback. If a post-commit fails and a Tentackle session owns the global transaction, the owner's `commit()` throws the exception, as it would in a local transaction. If someone else owns it (`join`), the exception is logged. |
+| [Transparent retry](../../../../tentackle-pdo/src/main/docs/transaction.md#transparent-retry) | Works for the owner: the global transaction is the unit that is retried. A failed commit is *temporary* if a pre-commit threw a temporary exception or a resource failed with `XA_RBDEADLOCK`, `XA_RBTIMEOUT` or `XA_RBTRANSIENT`. A joined session never retries, just like a nested transaction.                          |
+| [Optimistic locking](../../../../tentackle-persistence/src/main/docs/locking.md), token locks | Unchanged: plain SQL within the transaction branch.                                                                                                                                                                                                                                                                         |
+| Isolation and writability                                                                     | Cannot be set: a non-default `isolation` or `writability` of `@Transaction` or `begin()` throws a `PersistenceException` when the session starts or joins a global transaction. A nested `begin()` follows the rules of a local transaction. Configure them on the data source instead.                                     |
+| Savepoints                                                                                    | Depend on the JDBC driver: some drivers support savepoints within an XA branch, others don't.                                                                                                                                                                                                                               |
+| `rollbackImmediately()`                                                                       | Rolls back the global transaction if the session owns it, otherwise marks it rollback-only. The connection is never rolled back directly, because it is enlisted.                                                                                                                                                           |
+| [Remote sessions](../../../../src/main/docs/tiers.md)                                         | A JTA transaction never crosses a tier boundary. A `@Transaction` method executed on the server (a `@RemoteMethod`) takes part in global transactions on the server. A transaction begun by a remote client spans several remote calls and always stays local.                                                              |
 
 The transaction manager may call `afterCompletion` from another thread, for example when it rolls
 back a timed-out transaction. After a rollback, Tentackle only resets the session's state and runs
@@ -214,10 +219,10 @@ with the url and credentials from the backend properties.
 | Oracle              | `oracle.jdbc.xa.client.OracleXADataSource`                    |                                                                                    |
 | MySQL               | `com.mysql.cj.jdbc.MysqlXADataSource`                         | InnoDB only.                                                                       |
 | MariaDB             | `org.mariadb.jdbc.MariaDbDataSource`                          |                                                                                    |
-| Microsoft SQL Server | `com.microsoft.sqlserver.jdbc.SQLServerXADataSource`         | Requires the XA stored procedures to be installed and MSDTC to be enabled.        |
+| SQL Server          | `com.microsoft.sqlserver.jdbc.SQLServerXADataSource`          | Requires the XA stored procedures to be installed and MSDTC to be enabled.         |
 | H2                  | `org.h2.jdbcx.JdbcDataSource`                                 | Used by the module's tests.                                                        |
 | CockroachDB         | —                                                             | No two-phase commit.                                                               |
-| others              | —                                                             | Override `getXADataSourceClassName()`, or bind an `XADataSource` via JNDI.       |
+| others              | —                                                             | Override `getXADataSourceClassName()`, or bind an `XADataSource` via JNDI.         |
 
 ## Architecture: the Global Transaction SPI
 
@@ -230,13 +235,13 @@ when it needs it for the first time. `tentackle-jta` provides the implementation
 `@Service(GlobalTransactionSupport.class)`; without the module, a session configured for global
 transactions fails with `no GlobalTransactionSupport service found (module tentackle-jta missing?)`.
 
-| Method                               | Invoked                                                                       |
-|--------------------------------------|-------------------------------------------------------------------------------|
-| `isGlobalTransactionActive()`        | when a session begins a transaction, to decide whether it joins a global one  |
-| `begin(session, txName)`             | by a `required` session starting the global transaction                       |
-| `enlist(session, listener)`          | when a session's attached connection takes part in the global transaction     |
-| `commit(session)` / `rollback(session)` | by the session that started the global transaction                         |
-| `setRollbackOnly(session)`           | by any session that needs the global transaction to fail                      |
+| Method                                  | Invoked                                                                      |
+|-----------------------------------------|------------------------------------------------------------------------------|
+| `isGlobalTransactionActive()`           | when a session begins a transaction, to decide whether it joins a global one |
+| `begin(session, txName)`                | by a `required` session starting the global transaction                      |
+| `enlist(session, listener)`             | when a session's attached connection takes part in the global transaction    |
+| `commit(session)` / `rollback(session)` | by the session that started the global transaction                           |
+| `setRollbackOnly(session)`              | by any session that needs the global transaction to fail                     |
 
 The session registers a
 [`GlobalTransactionListener`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/GlobalTransactionListener.java)
@@ -247,10 +252,12 @@ transaction — possibly from another thread, as described [above](#how-tentackl
 All methods are invoked from the thread the global transaction is associated with. An
 implementation reports failures as a `PersistenceException` and flags it *temporary* if the cause
 is transient, such as a deadlock; this is what makes [transparent retry](#how-tentackles-features-behave)
-work. To couple Tentackle's sessions with a coordinator other than JTA, implement the interface in
-your own module, annotated with `@Service(GlobalTransactionSupport.class)` — as with every service,
-a module's own provider [overrides](../../../../tentackle-common/src/main/docs/services.md) the ones of
-the modules it depends on.
+work. `JtaTransactionSupport` decides this in `isTemporary()`. To treat further failures as
+transient, or to couple Tentackle's sessions with a coordinator other than JTA, extend
+`JtaTransactionSupport` or implement the interface in your own module, annotated with
+`@Service(GlobalTransactionSupport.class)` — as with every service, a module's own provider
+[overrides](../../../../tentackle-common/src/main/docs/services.md) the ones of the modules it
+depends on.
 
 ## Recovery
 
