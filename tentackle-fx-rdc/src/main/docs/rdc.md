@@ -294,8 +294,9 @@ The exports and printing are implemented by
 [`TableUtilities`](../java/org/tentackle/fx/rdc/table/TableUtilities.java), a replaceable
 `@Service`. Only the visible columns are exported, with the same text as displayed in the table. The
 default spreadsheet format is CSV (RFC 4180); with
-[`tentackle-fx-rdc-poi`](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) on the module path,
-it is an Excel file instead. The last file chosen is remembered per table in the user's preferences.
+[`tentackle-fx-rdc-poi`](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) on the classpath,
+it is an Excel file instead. The last file chosen is remembered per table in the JDK's user
+preferences of the local machine.
 
 [`TablePrinter`](../java/org/tentackle/fx/rdc/table/TablePrinter.java) prints the visible columns,
 scaled down to the page width if necessary, with a title, the date and page numbers, and the totals

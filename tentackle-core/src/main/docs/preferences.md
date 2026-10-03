@@ -147,10 +147,13 @@ because the user name is taken from its `SessionInfo`.
 
 ## A concrete consumer
 
-The [POI spreadsheet exporter](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) uses preferences
-to remember the last export directory per table (key prefix `lastXlsNames/`). The same mechanism
-backs RDC window geometry and table column layouts — settings that, thanks to the database backing
-store, are restored on whatever client the user signs in to next.
+RDC table column layouts are kept in the persisted preferences — settings that, thanks to the
+database backing store, are restored on whatever client the user signs in to next.
+
+Settings that only make sense on one machine deliberately bypass the database. The RDC's file
+selection, used for instance by the
+[POI spreadsheet exporter](../../../../tentackle-fx-rdc-poi/src/main/docs/poi.md) to remember the last
+exported file per table, writes to the JDK's `java.util.prefs.Preferences.userRoot()` instead.
 
 ## Preferenzr — Browsing and Editing the Store
 
