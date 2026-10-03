@@ -14,8 +14,10 @@ binds to a concrete scripting engine; it creates and runs scripts through the la
 
 Selecting Groovy is purely a matter of dependencies: put this module on the path and the
 [`ScriptFactory`](../../../../tentackle-core/src/main/java/org/tentackle/script/ScriptFactory.java) discovers it
-automatically. Groovy is the conventional **default** language for Tentackle's script-backed expressions, most
-notably the `condition`, `value` and `message` slots of the [validation framework](../../../../tentackle-core/src/main/docs/validation.md).
+automatically. Groovy is the usual choice for Tentackle's script-backed expressions, most notably the `condition`,
+`value` and `message` slots of the [validation framework](../../../../tentackle-core/src/main/docs/validation.md).
+There is no built-in default language, though: it is set explicitly (for example, from the application's
+`scripting` property), or the application picks the only language available.
 
 ```xml
 <!-- add Groovy scripting to an application -->
@@ -40,12 +42,14 @@ The dependency on `tentackle-core` is declared `optional` in the POM so that add
 
 The module ships a single language implementation,
 [`GroovyLanguage`](../java/org/tentackle/script/groovy/GroovyLanguage.java), annotated
-`@Service(ScriptingLanguage.class)`. The `@Service` annotation processor generates
+`@Service(ScriptingLanguage.class)`. The `analyze` goal of the `tentackle-maven-plugin` turns it into
 `META-INF/services/org.tentackle.script.ScriptingLanguage`, so when this jar is on the path
 `DefaultScriptFactory` discovers it through `ServiceFinder` and registers it — no configuration required.
 
-`GroovyLanguage` reports the canonical name **`Groovy`** and the abbreviations **`Groovy`** and **`gv`** (matched
-case-insensitively in a she-bang prefix). It does not override `createLocalVariableReference`, so a plain variable
+`GroovyLanguage` reports the canonical name **`Groovy`** and the abbreviations **`Groovy`** and **`gv`** (registered
+lower-cased and matched case-insensitively, e.g. in a she-bang prefix). If [`tentackle-script-jsr`](../../../../tentackle-script-jsr/src/main/docs/jsr.md)
+is on the path as well, its JSR-223 engines are registered first, and `groovy` then refers to the `groovy-jsr223`
+engine (if present), while `gv` still selects this provider. It does not override `createLocalVariableReference`, so a plain variable
 name is used verbatim — a Groovy script references the validated bean simply as `object`, e.g.
 
 ```
@@ -53,8 +57,10 @@ name is used verbatim — a Groovy script references the validated bean simply a
 #!{ object.amount > 200 }        // when Groovy is the default language
 ```
 
-The language owns a **single** `GroovyClassLoader`, created with the module's own class loader as its parent and
-shared by every script it creates.
+The language owns a **single** `GroovyClassLoader` shared by every script it creates. Its parent is the thread's
+context class loader at the time the language is instantiated (i.e., when the factory loads its languages on first
+use), or the module's own class loader if there is no context class loader. Hence, scripts can reference the
+application classes visible from that class loader.
 
 ---
 
@@ -72,6 +78,9 @@ by the language. It follows the API's uniform *create → (lazily compile) → e
 - Parsing goes through `GroovyClassLoader.parseClass(code)`, which yields a `groovy.lang.Script` subclass. Any
   failure is wrapped as a [`ScriptRuntimeException`](../../../../tentackle-core/src/main/java/org/tentackle/script/ScriptRuntimeException.java)
   whose message includes the offending script.
+- The shared cache is never evicted: every distinct cached source string keeps its compiled class loaded for the
+  lifetime of the JVM. Use `cached = true` for a bounded set of expressions (validators, model-defined scripts), not
+  for generated or user-entered code.
 
 ---
 
@@ -82,7 +91,9 @@ provider. Each call to `execute(...)` builds a fresh `groovy.lang.Binding` from 
 [`ScriptVariable`](../../../../tentackle-core/src/main/java/org/tentackle/script/ScriptVariable.java)s, creates a
 **new** script instance bound to that `Binding`, and runs it. Because no mutable state is shared between runs, the
 same `Script` object can be executed from many threads in parallel (exercised by `GroovyThreadingTest`). The result
-of the last expression is returned and cast to the caller's expected type.
+of the last expression is returned and cast to the caller's expected type. A runtime failure of the script (e.g. an
+`ArithmeticException` or a `MissingPropertyException`) is wrapped in a `ScriptRuntimeException`, as required by the
+`Script.execute` contract.
 
 [`CompiledGroovyScript`](../java/org/tentackle/script/groovy/CompiledGroovyScript.java) wraps the parsed script
 class and is responsible for instantiating it per execution. It scans the class's constructors and:
@@ -91,7 +102,7 @@ class and is responsible for instantiating it per execution. It scans the class'
 - otherwise falls back to the no-arg constructor plus `setBinding(...)`, logging a warning that asks for the
   missing `Binding` constructor.
 
-This fallback exists, so a developer may supply a **custom `groovy.lang.Script` subclass** as the script body, not
+This fallback exists so that a developer may supply a **custom `groovy.lang.Script` subclass** as the script body, not
 just a bare expression. If neither constructor is present, instantiation fails with a `ScriptRuntimeException`.
 
 ---
@@ -102,12 +113,15 @@ Validator messages may use the i18n shortcut `@('key', args…)`, which the scri
 method call before compilation via a [`ScriptConverter`](../../../../tentackle-core/src/main/java/org/tentackle/script/ScriptConverter.java).
 The per-language rewrite is located as a service. For Groovy this is
 [`GroovyValidationMessageConverter`](../java/org/tentackle/script/groovy/GroovyValidationMessageConverter.java),
-annotated `@MessageScriptConverter(GroovyLanguage.NAME)`. It simply extends
+annotated `@MessageScriptConverter(GroovyLanguage.NAME)` and registered as a mapped service under
+`META-INF/mapped-services/`. The converter is selected by the language *name* (`Groovy`), not by an abbreviation.
+It simply extends
 `AbstractScriptValidationMessageConverter` with **no overrides** — because Groovy refers to the validated object as
 plain `object` (the default variable reference), the generic rewrite is already syntactically correct and nothing
 language-specific needs changing. (The Ruby converter is likewise empty: the base converter expresses the object
 through each language's own `createLocalVariableReference`, which yields `object` for Groovy and `@object` for
-Ruby automatically.)
+Ruby automatically.) Since the `groovy-jsr223` engine reports the same language name `Groovy`, this
+converter also serves Groovy reached through `tentackle-script-jsr`.
 
 ---
 
@@ -135,4 +149,4 @@ automatic module.
 
 - **[Tentackle Scripting — the pluggable scripting language API](../../../../tentackle-core/src/main/docs/scripting.md)** — the factory, `Script`/`ScriptVariable`, she-bang notation, converters and language discovery.
 - **[Validation](../../../../tentackle-core/src/main/docs/validation.md)** — the largest consumer of scripting, where Groovy is the default expression language.
-- The sibling providers: `tentackle-script-ruby` (native JRuby embed API) and `tentackle-script-jsr` (any JSR-223 engine), both described in the [scripting deep-dive](../../../../tentackle-core/src/main/docs/scripting.md#the-implementations).
+- The sibling providers: [`tentackle-script-ruby`](../../../../tentackle-script-ruby/src/main/docs/ruby.md) (native JRuby embed API) and [`tentackle-script-jsr`](../../../../tentackle-script-jsr/src/main/docs/jsr.md) (any JSR-223 engine), both summarized in the [scripting deep-dive](../../../../tentackle-core/src/main/docs/scripting.md#the-implementations).

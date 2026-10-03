@@ -29,7 +29,11 @@ import org.tentackle.script.ScriptingLanguage;
 import java.util.function.Function;
 
 /**
- * The groovy scripting language.
+ * The Ruby scripting language based on the native JRuby embed API.
+ * <p>
+ * Registered under the abbreviations {@code Ruby}, {@code jruby}, {@code rb} and {@code ruby} (case-insensitive).
+ * All scripts are run by a single {@link ScriptingContainer} owned by this language.
+ * Variables are referenced as Ruby instance variables, i.e. {@code object} becomes {@code @object}.
  *
  * @author harald
  */
@@ -41,7 +45,15 @@ public class RubyLanguage extends AbstractScriptingLanguage {
 
   private static final String[] abbreviations = new String[] { NAME, "jruby", "rb", "ruby" };
 
+  /** the single ruby container. */
   private final ScriptingContainer container = new ScriptingContainer();
+
+  /**
+   * Creates the Ruby language.
+   */
+  public RubyLanguage() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {
@@ -58,6 +70,11 @@ public class RubyLanguage extends AbstractScriptingLanguage {
     return new RubyScript(this, container, getEffectiveCode(code, converterProvider), cached, threadSafe);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Ruby variables are mapped to instance variables, i.e. the name is prefixed with {@code @}.
+   */
   @Override
   public String createLocalVariableReference(String name) {
     return "@" + name;

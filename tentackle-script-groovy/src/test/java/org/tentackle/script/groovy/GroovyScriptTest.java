@@ -41,7 +41,14 @@ public class GroovyScriptTest {
   public void testValidateCompilesWithoutExecuting() {
     GroovyScript script = new GroovyScript(language, classLoader, "1 / 0", false, false);
     script.validate();     // must compile fine, division by zero is only a runtime error
-    Assert.assertThrows(ArithmeticException.class, () -> script.execute());
+    Assert.assertThrows(ScriptRuntimeException.class, () -> script.execute());
+  }
+
+  @Test
+  public void testExecuteWrapsRuntimeExceptionAsScriptRuntimeException() {
+    GroovyScript script = new GroovyScript(language, classLoader, "1 / 0", false, false);
+    ScriptRuntimeException ex = Assert.expectThrows(ScriptRuntimeException.class, script::execute);
+    Assert.assertTrue(ex.getCause() instanceof ArithmeticException, String.valueOf(ex.getCause()));
   }
 
   @Test

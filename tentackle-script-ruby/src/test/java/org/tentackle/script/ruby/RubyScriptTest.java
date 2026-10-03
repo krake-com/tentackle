@@ -65,6 +65,23 @@ public class RubyScriptTest {
   }
 
   @Test
+  public void testVariablesAreResetAfterExecution() {
+    RubyScript bind = new RubyScript(language, container, "@leaked * 2", false, false);
+    long result = bind.execute(new ScriptVariable("leaked", 21));
+    Assert.assertEquals(result, 42L);
+    RubyScript probe = new RubyScript(language, container, "@leaked", false, false);
+    Assert.assertNull(probe.execute());
+  }
+
+  @Test
+  public void testVariablesAreResetAfterFailedExecution() {
+    RubyScript bind = new RubyScript(language, container, "@leakedOnError / 0", false, false);
+    Assert.assertThrows(ScriptRuntimeException.class, () -> bind.execute(new ScriptVariable("leakedOnError", 1)));
+    RubyScript probe = new RubyScript(language, container, "@leakedOnError", false, false);
+    Assert.assertNull(probe.execute());
+  }
+
+  @Test
   public void testInvalidSyntaxThrowsScriptRuntimeExceptionOnValidate() {
     RubyScript script = new RubyScript(language, container, "def foo(", false, false);
     ScriptRuntimeException ex = Assert.expectThrows(ScriptRuntimeException.class, script::validate);

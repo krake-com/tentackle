@@ -18,5 +18,7 @@
 
 /**
  * Groovy scripting.
+ * <p>
+ * Provides the {@link org.tentackle.script.groovy.GroovyLanguage} for the Tentackle scripting API.
  */
 package org.tentackle.script.groovy;

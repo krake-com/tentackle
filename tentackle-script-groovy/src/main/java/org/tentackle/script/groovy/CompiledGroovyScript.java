@@ -28,7 +28,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * The compiled groovy script.
+ * The compiled Groovy script.
+ * <p>
+ * Holds the script class parsed from the source code and creates a new instance of it for each execution.
+ * A constructor taking a {@link Binding} is preferred. If missing, as it may be for a custom subclass of
+ * {@link Script}, the no-arg constructor is used followed by {@link Script#setBinding(Binding)}.
  */
 public class CompiledGroovyScript {
 
@@ -46,7 +50,8 @@ public class CompiledGroovyScript {
    * Creates a compiled script.
    *
    * @param code the source code
-   * @param scriptClass the groovy script class
+   * @param scriptClass the Groovy script class
+   * @throws ScriptRuntimeException if the class provides neither a binding- nor a no-arg constructor
    */
   @SuppressWarnings("unchecked")
   public CompiledGroovyScript(String code, Class<Script> scriptClass) {
@@ -78,7 +83,7 @@ public class CompiledGroovyScript {
   /**
    * Gets the effective script code.
    *
-   * @return the effectiveCode the source code
+   * @return the source code
    */
   public String getCode() {
     return code;
@@ -87,17 +92,18 @@ public class CompiledGroovyScript {
   /**
    * Gets the compiled script class.
    *
-   * @return the groovy script class
+   * @return the Groovy script class
    */
   public Class<Script> getScriptClass() {
     return scriptClass;
   }
 
   /**
-   * Creates a groovy script instance.
+   * Creates a Groovy script instance.
    *
-   * @param binding the groovy binding
+   * @param binding the Groovy binding
    * @return the script instance
+   * @throws ScriptRuntimeException if instantiation failed
    */
   public Script createInstance(Binding binding) {
     try {

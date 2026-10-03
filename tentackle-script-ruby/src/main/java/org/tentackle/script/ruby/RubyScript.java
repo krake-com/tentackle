@@ -28,7 +28,9 @@ import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +38,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Ruby script.
+ * <p>
+ * The code is compiled lazily on first use into a {@link CompiledRubyScript}, shared by all scripts with the
+ * same code if cached. All scripts are executed by the single {@link ScriptingContainer} of the
+ * {@link RubyLanguage}, which is not thread-safe. Hence, if the script is thread-safe, execution is synchronized
+ * on the container. The variables are reset to {@code nil} after each execution.
  *
  * @author harald
  */
@@ -46,7 +53,7 @@ public class RubyScript extends AbstractScript {
   /** map of code:scripts. */
   private static final Map<String, CompiledRubyScript> SCRIPT_CACHE = new ConcurrentHashMap<>();
 
-  /** the ruby container. */
+  /** the Ruby container. */
   private final ScriptingContainer container;
 
   /** the compiled script instance, null if not compiled yet. */
@@ -54,9 +61,10 @@ public class RubyScript extends AbstractScript {
 
 
   /**
-   * Creates a ruby script.
+   * Creates a Ruby script.
    *
    * @param language the language
+   * @param container the scripting container
    * @param code the scripting code
    * @param cached true if cached
    * @param threadSafe true if thread-safety required
@@ -96,7 +104,7 @@ public class RubyScript extends AbstractScript {
 
   /**
    * Gets the compiled script.<br>
-   * Will be parsed if not done yet.
+   * Will be compiled if not done yet.
    *
    * @return the compiled script
    */
@@ -120,6 +128,7 @@ public class RubyScript extends AbstractScript {
    *
    * @param code the scripting source code
    * @return the compiled script
+   * @throws ScriptRuntimeException if compilation failed
    */
   protected CompiledRubyScript compileScript(String code) {
     try {
@@ -136,15 +145,39 @@ public class RubyScript extends AbstractScript {
     }
   }
 
+  /**
+   * Executes the compiled script.<br>
+   * The variables are bound to the container as instance variables and reset to {@code nil} after execution,
+   * so that subsequent scripts don't see their values and the objects can be garbage collected
+   * (as soon as the next script injects the {@code nil}).
+   *
+   * @param <T> the result type
+   * @param script the compiled script
+   * @param variables the variables, null if none
+   * @return the result converted to Java, null if none
+   */
   @SuppressWarnings("unchecked")
   protected <T> T executeImpl(CompiledRubyScript script, Collection<ScriptVariable> variables) {
-    if (variables != null) {
-      for (ScriptVariable variable: variables) {
-        script.getContainer().put(getLanguage().createLocalVariableReference(variable.getName()), variable.getValue());
+    ScriptingContainer scriptContainer = script.getContainer();
+    List<String> boundNames = new ArrayList<>();
+    try {
+      if (variables != null) {
+        for (ScriptVariable variable: variables) {
+          String name = getLanguage().createLocalVariableReference(variable.getName());
+          scriptContainer.put(name, variable.getValue());
+          boundNames.add(name);
+        }
+      }
+      IRubyObject rubyResult = script.getRubyScript().run();
+      return rubyResult == null ? null : (T) rubyResult.toJava(rubyResult.getJavaClass());
+    }
+    finally {
+      // reset to nil: ScriptingContainer.remove() is not sufficient, since the instance variable remains defined
+      // in the runtime and would be copied back into the container's map by the next execution
+      for (String name : boundNames) {
+        scriptContainer.put(name, null);
       }
     }
-    IRubyObject rubyResult = script.getRubyScript().run();
-    return rubyResult == null ? null : (T) rubyResult.toJava(rubyResult.getJavaClass());
   }
 
 }

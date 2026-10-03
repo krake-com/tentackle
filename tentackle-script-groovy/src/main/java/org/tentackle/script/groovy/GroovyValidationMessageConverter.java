@@ -30,6 +30,6 @@ import org.tentackle.validate.validator.MessageScriptConverter;
 @MessageScriptConverter(GroovyLanguage.NAME)
 public class GroovyValidationMessageConverter extends AbstractScriptValidationMessageConverter {
 
-  // nothing to change
+  // nothing to change (object remains object)
 
 }

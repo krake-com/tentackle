@@ -27,7 +27,11 @@ import javax.script.ScriptEngineFactory;
 import java.util.function.Function;
 
 /**
- * A scripting language based on JSR-223.
+ * A scripting language based on a JSR-223 engine.
+ * <p>
+ * Name and abbreviations are taken from the {@link ScriptEngineFactory}. One {@link ScriptEngine} is created
+ * along with the language and used by all its scripts. Unlike the native languages, the JSR-223 languages
+ * are no services, but are created by the {@link JSR223ScriptFactory} for each engine found.
  *
  * @author harald, bei
  */
@@ -74,9 +78,10 @@ public class JSR223Language extends AbstractScriptingLanguage {
   }
 
   /**
-   * Returns whether engine is threadsafe.
+   * Returns whether the engine is thread-safe.
    *
-   * @return true if threadsafe, else needs synchronization
+   * @return true if thread-safe, false if parallel executions must be synchronized
+   * @see #isEngineThreadSafe(ScriptEngineFactory)
    */
   public boolean isThreadSafe() {
     return threadSafe;
@@ -103,10 +108,15 @@ public class JSR223Language extends AbstractScriptingLanguage {
   }
 
   /**
-   * Determines whether the execution of scripts is threadsafe.
+   * Determines whether the execution of scripts is thread-safe.
+   * <p>
+   * An engine is considered thread-safe if it provides a {@code THREADING} parameter, which is
+   * {@code null} for engines that are not thread-safe. Exceptions are JRuby, which claims to be
+   * {@code THREAD_ISOLATED} but isn't, and Nashorn, which returns {@code null} but is thread-safe
+   * because each execution gets its own bindings.
    *
    * @param engineFactory the factory
-   * @return true if threadsafe, false if synchronization is required
+   * @return true if thread-safe, false if synchronization is required
    */
   protected boolean isEngineThreadSafe(ScriptEngineFactory engineFactory) {
     if (engineFactory.getEngineName().contains(JRUBY_ENGINE_NAME_PART)) {
@@ -115,14 +125,15 @@ public class JSR223Language extends AbstractScriptingLanguage {
       return false;
     }
     if (engineFactory.getEngineName().contains(JAVASCRIPT_ENGINE_NAME_PART)) {
-      // is threadsafe although getParameter returns null (since we pass bindings as new to eval)
+      // the standalone OpenJDK Nashorn is thread-safe although getParameter returns null (since we pass new bindings to eval)
       return true;
     }
     return engineFactory.getParameter(THREADING_PARAMETER) != null;
   }
 
   /**
-   * Determines the optional variable name translator.
+   * Determines the optional variable name translator.<br>
+   * JRuby references variables as instance variables, i.e. {@code @name}.
    *
    * @param engineFactory the factory
    * @return the translator, null if none

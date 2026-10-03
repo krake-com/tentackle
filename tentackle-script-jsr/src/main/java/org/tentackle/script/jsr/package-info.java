@@ -19,7 +19,9 @@
 /**
  * JSR-223 scripting.
  * <p>
- * Notice: Nashorn is deprecated since Java 11 and may be replaced some day with an implementation
- * derived from GraalVm.
+ * Bridges the Tentackle scripting API to all {@code javax.script} engines found by the
+ * {@link javax.script.ScriptEngineManager}. No engine is included: since Nashorn has been removed
+ * from the JDK, the application must provide the engines, for example {@code groovy-jsr223},
+ * JRuby or GraalJS.
  */
 package org.tentackle.script.jsr;

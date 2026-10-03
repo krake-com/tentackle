@@ -22,7 +22,9 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 
 /**
- * The compiled ruby script.
+ * The compiled Ruby script.
+ * <p>
+ * Holds the parsed {@link EmbedEvalUnit} together with the container it was parsed by.
  */
 public class CompiledRubyScript {
 
@@ -31,11 +33,11 @@ public class CompiledRubyScript {
   private final EmbedEvalUnit rubyScript;         // the compiled script
 
   /**
-   * Creates a compiled ruby script.
+   * Creates a compiled Ruby script.
    *
-   * @param container     the scripting container
+   * @param container the scripting container
    * @param code the source code
-   * @param rubyScript    the ruby script object
+   * @param rubyScript the parsed Ruby script
    */
   public CompiledRubyScript(ScriptingContainer container, String code, EmbedEvalUnit rubyScript) {
     this.container = container;
@@ -44,6 +46,8 @@ public class CompiledRubyScript {
   }
 
   /**
+   * Gets the scripting container.
+   *
    * @return the container
    */
   public ScriptingContainer getContainer() {
@@ -51,14 +55,18 @@ public class CompiledRubyScript {
   }
 
   /**
-   * @return the effectiveCode
+   * Gets the effective script code.
+   *
+   * @return the source code
    */
   public String getCode() {
     return code;
   }
 
   /**
-   * @return the rubyScript
+   * Gets the parsed Ruby script.
+   *
+   * @return the evaluation unit
    */
   public EmbedEvalUnit getRubyScript() {
     return rubyScript;

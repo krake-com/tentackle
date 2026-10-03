@@ -24,8 +24,10 @@ import org.testng.annotations.Test;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import java.lang.reflect.Proxy;
 import java.util.Set;
 
 /**
@@ -48,6 +50,20 @@ public class JSR223ScriptTest {
     JSR223Script script = new JSR223Script(language, "1 / 0", false, false);
     script.validate();     // must compile fine, division by zero is only a runtime error
     Assert.assertThrows(ScriptRuntimeException.class, () -> script.execute());
+  }
+
+  @Test
+  public void testEngineNotCompilableThrowsScriptRuntimeException() {
+    ScriptEngineFactory groovyFactory = groovyFactory();
+    ScriptEngine notCompilableEngine = (ScriptEngine) Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[] { ScriptEngine.class }, (proxy, method, args) -> null);
+    ScriptEngineFactory factory = (ScriptEngineFactory) Proxy.newProxyInstance(
+        getClass().getClassLoader(), new Class<?>[] { ScriptEngineFactory.class },
+        (proxy, method, args) -> "getScriptEngine".equals(method.getName()) ?
+                                 notCompilableEngine : method.invoke(groovyFactory, args));
+    JSR223Script script = new JSR223Script(new JSR223Language(factory), "1 + 1", false, false);
+    ScriptRuntimeException ex = Assert.expectThrows(ScriptRuntimeException.class, script::validate);
+    Assert.assertTrue(ex.getMessage().contains("does not support compilation"), ex.getMessage());
   }
 
   @Test
@@ -94,6 +110,17 @@ public class JSR223ScriptTest {
     JSR223Script script1 = new JSR223Script(language, code, true, false);
     JSR223Script script2 = new JSR223Script(language, code, true, false);
     Assert.assertSame(script1.getCompiledScript(), script2.getCompiledScript());
+  }
+
+  @Test
+  public void testCachedTrueDoesNotShareCompiledScriptAcrossEngines() {
+    String code = "1 + 1 // unique_cached_engines_" + System.nanoTime();
+    JSR223Language otherLanguage = new JSR223Language(groovyFactory());    // same language, but different engine
+    Assert.assertNotSame(otherLanguage.getEngine(), language.getEngine());
+    JSR223Script script1 = new JSR223Script(language, code, true, false);
+    JSR223Script script2 = new JSR223Script(otherLanguage, code, true, false);
+    Assert.assertNotSame(script1.getCompiledScript(), script2.getCompiledScript());
+    Assert.assertSame(script2.getCompiledScript().getCompiledScript().getEngine(), otherLanguage.getEngine());
   }
 
   @Test

@@ -29,7 +29,10 @@ import org.tentackle.script.ScriptingLanguage;
 import java.util.function.Function;
 
 /**
- * The groovy scripting language.
+ * The Groovy scripting language.
+ * <p>
+ * Registered under the abbreviations {@code Groovy} and {@code gv} (case-insensitive).
+ * All scripts are compiled by a single {@link GroovyClassLoader} owned by this language.
  *
  * @author harald
  */
@@ -41,11 +44,13 @@ public class GroovyLanguage extends AbstractScriptingLanguage {
 
   private static final String[] abbreviations = new String[] { NAME, "gv" };
 
-  /** the single groovy classloader. */
+  /** the single Groovy classloader. */
   private final GroovyClassLoader groovyClassLoader;
 
   /**
-   * Creates the groovy language.
+   * Creates the Groovy language.<br>
+   * The parent of the Groovy classloader is the thread's context classloader, if set,
+   * else the classloader of this class.
    */
   public GroovyLanguage() {
     ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -63,8 +68,8 @@ public class GroovyLanguage extends AbstractScriptingLanguage {
   }
 
   @Override
-  public Script createScript(String code, boolean cached, boolean theadSafe, Function<String, ScriptConverter> converterProvider) {
-    return new GroovyScript(this, groovyClassLoader, getEffectiveCode(code, converterProvider), cached, theadSafe);
+  public Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
+    return new GroovyScript(this, groovyClassLoader, getEffectiveCode(code, converterProvider), cached, threadSafe);
   }
 
 }

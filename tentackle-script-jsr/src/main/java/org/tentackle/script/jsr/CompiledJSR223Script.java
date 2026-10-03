@@ -21,7 +21,9 @@ package org.tentackle.script.jsr;
 import javax.script.CompiledScript;
 
 /**
- * The compiled JSR script.
+ * The compiled JSR-223 script.
+ * <p>
+ * Holds the {@link CompiledScript} together with its source code.
  */
 public class CompiledJSR223Script {
 
@@ -42,7 +44,7 @@ public class CompiledJSR223Script {
   /**
    * Gets the effective script code.
    *
-   * @return the effectiveCode the source code
+   * @return the source code
    */
   public String getCode() {
     return code;

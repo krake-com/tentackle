@@ -11,7 +11,7 @@ visible consumer is the [validation framework](validation.md): a `@NotNull(condi
 The design goal is that *the code using a script never needs to know which language it is written in*. A caller
 asks the [`ScriptFactory`](../java/org/tentackle/script/ScriptFactory.java) for a [`Script`](../java/org/tentackle/script/Script.java),
 supplies named variables, and executes it. Whether the expression is Groovy, Ruby, or a JSR-223 engine such as
-Nashorn is decided by a short language tag in the text, and by which implementation jars happen to be on the path.
+GraalJS is decided by a short language tag in the text, and by which implementation jars happen to be on the path.
 
 The API lives in `org.tentackle.script` in **`tentackle-core`** (exported by the module). The concrete languages
 ship as separate modules, so an application only pays for what it uses:
@@ -20,7 +20,7 @@ ship as separate modules, so an application only pays for what it uses:
 |---------------------------|----------------------------------------|-----------------------------------------------|
 | `tentackle-script-groovy` | Groovy                                 | Embedded `GroovyClassLoader`                  |
 | `tentackle-script-ruby`   | Ruby (JRuby)                           | JRuby `ScriptingContainer` (native embed API) |
-| `tentackle-script-jsr`    | any JSR-223 engine (Nashorn, JRuby, …) | `javax.script`                                |
+| `tentackle-script-jsr`    | any JSR-223 engine (GraalJS, JRuby, …) | `javax.script`                                |
 
 ### Design principles
 
@@ -202,7 +202,7 @@ otherwise.
 
 [`GroovyLanguage`](../../../../tentackle-script-groovy/src/main/java/org/tentackle/script/groovy/GroovyLanguage.java)
 (name `Groovy`, abbreviations `Groovy` and `gv`) owns a single
-`GroovyClassLoader`. Compilation parses the source into a `groovy.lang.Script` subclass
+`GroovyClassLoader`, whose parent is the thread's context class loader (or the module's own class loader, if none). Compilation parses the source into a `groovy.lang.Script` subclass
 ([`CompiledGroovyScript`](../../../../tentackle-script-groovy/src/main/java/org/tentackle/script/groovy/CompiledGroovyScript.java)),
 cached by source string.
 
@@ -210,7 +210,8 @@ Execution is **inherently thread-safe**: each run creates a fresh script instanc
 `threadSafe` flag needs no extra synchronization. Variables become entries in the `Binding`. The compiled wrapper
 scans the generated class's constructors and prefers a `Script(Binding)` constructor, falling back to the
 no-arg constructor plus `setBinding(...)` (with a warning) — this lets developers supply a custom `groovy.lang.Script`
-subclass as the script body. Groovy is the conventional **default** language for validation expressions.
+subclass as the script body. Runtime failures are wrapped in a `ScriptRuntimeException`. Groovy is the usual choice
+for validation expressions.
 
 See the **[Groovy provider deep-dive](../../../../tentackle-script-groovy/src/main/docs/groovy.md)** for the full
 details of this module.
@@ -225,7 +226,8 @@ details of this module.
 Because the shared container is not safe for parallel use, [`RubyScript`](../../../../tentackle-script-ruby/src/main/java/org/tentackle/script/ruby/RubyScript.java)
 **synchronizes on the container** when `threadSafe` is set. Ruby variables use the `@name` instance-variable
 syntax, so `createLocalVariableReference` prepends `@`; results are converted back to Java via
-`IRubyObject.toJava(...)`.
+`IRubyObject.toJava(...)`. After each run, the bound variables are reset to `nil`, so later scripts don't see stale
+values.
 
 See the **[Ruby provider deep-dive](../../../../tentackle-script-ruby/src/main/docs/ruby.md)** for the full details
 of this module.
@@ -234,7 +236,8 @@ of this module.
 
 This module bridges the API to any `javax.script` engine. [`JSR223Language`](../../../../tentackle-script-jsr/src/main/java/org/tentackle/script/jsr/JSR223Language.java)
 wraps a `ScriptEngineFactory`; its name and abbreviations come straight from the engine
-(`getLanguageName()` / `getNames()`). Compilation goes through the engine's `Compilable` interface
+(`getLanguageName()` / `getNames()`). Compilation goes through the engine's `Compilable` interface, which the
+engine must therefore implement
 ([`CompiledJSR223Script`](../../../../tentackle-script-jsr/src/main/java/org/tentackle/script/jsr/CompiledJSR223Script.java)).
 
 What makes this module different is that it replaces the factory itself:
@@ -242,16 +245,22 @@ What makes this module different is that it replaces the factory itself:
 is also a `@Service(ScriptFactory.class)` and extends `DefaultScriptFactory`. Its `loadLanguages()` enumerates
 **every engine** registered with the `ScriptEngineManager`, then calls `super.loadLanguages()` to add the
 annotation-based `@Service` languages (without overriding abbreviations already claimed by a JSR engine). So with
-this module present, a single application can mix JSR engines and the native Groovy/Ruby providers.
+this module present, a single application can mix JSR engines and the native Groovy/Ruby providers — with the JSR
+engines owning the shared abbreviations such as `groovy` and `ruby`, while `gv` and `rb` still select the native
+providers.
 
-Thread-safety is inferred per engine (`JSR223Language.isEngineThreadSafe`): Nashorn is treated as safe; **JRuby via
+Thread-safety is inferred per engine (`JSR223Language.isEngineThreadSafe`): an engine declaring the `THREADING`
+parameter and the standalone Nashorn are treated as safe; **JRuby via
 JSR-223 is treated as *not* safe** (it advertises thread isolation it does not reliably honor), so the JSR Ruby
 path synchronizes on the engine for both compile and eval. Some engines need variable-name translation too — the
 JRuby engine again gets the `@name` prefix. Note the two routes to Ruby: the dedicated `tentackle-script-ruby`
 (native embed API) and this JSR path (the `jruby` JSR engine); prefer the dedicated module when you want JRuby.
 
-> **Nashorn caveat.** Nashorn is deprecated since Java 11 and may eventually be replaced by a GraalVM-based
-> engine. `ECMAScriptValidationMessageConverter` registers the message converter under the name `ECMAScript`.
+Message converters are selected by the engine's language name, so the module ships its own for `ECMAScript`,
+`Groovy` and `ruby` (the JRuby engine's name, which differs from the native provider's `Ruby`).
+
+> **Nashorn caveat.** Nashorn was removed from the JDK in Java 15. GraalJS or the standalone OpenJDK Nashorn are the
+> usual replacements; both report the language name `ECMAScript`.
 
 See the **[JSR-223 provider deep-dive](../../../../tentackle-script-jsr/src/main/docs/jsr.md)** for the full details
 of this module.
@@ -264,14 +273,16 @@ of this module.
 `module-info`, so providers are resolvable under JPMS even when they are automatic modules.
 
 The provider jars register their services through the `@Service` / `@MappedService` annotations, which the
-Tentackle annotation processor turns into `META-INF/services/...` descriptors at build time (e.g.
+`analyze` goal of the `tentackle-maven-plugin` turns into `META-INF/services/...` and `META-INF/mapped-services/...`
+descriptors at build time (e.g.
 `META-INF/services/org.tentackle.script.ScriptingLanguage` → `org.tentackle.script.groovy.GroovyLanguage`). This
 keeps the providers usable both on the module path and the plain classpath:
 
 - **`tentackle-script-groovy`** and **`tentackle-script-ruby`** ship without a `module-info` (automatic modules),
   relying on the generated `META-INF/services` descriptors discovered via `ServiceFinder`.
 - **`tentackle-script-jsr`** is fully modularized (`module org.tentackle.script.jsr`, `requires transitive
-  java.scripting`) and additionally provides a `ModuleHook` for resource-bundle access.
+  java.scripting`) and provides a `ModuleHook`, which places it above `tentackle-core` in the module hierarchy, so
+  that its `ScriptFactory` overrides the default one.
 
 To add scripting to an application, declare the desired implementation module(s) as dependencies and, unless
 exactly one language is present, set the default language — via the application's `scripting` property or at
