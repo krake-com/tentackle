@@ -17,7 +17,7 @@
  */
 
 /**
- * tentackle-i18n module.
+ * Resource bundles stored in the database.
  */
 module org.tentackle.i18n {
 

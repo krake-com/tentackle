@@ -18,5 +18,8 @@
 
 /**
  * PDOs for resource bundles stored in the database.
+ * <p>
+ * A {@link org.tentackle.i18n.pdo.StoredBundle} holds the translations of one bundle for one locale,
+ * each translation being a {@link org.tentackle.i18n.pdo.StoredBundleKey} component.
  */
 package org.tentackle.i18n.pdo;

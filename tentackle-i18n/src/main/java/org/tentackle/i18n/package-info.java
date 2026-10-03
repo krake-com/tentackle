@@ -17,6 +17,10 @@
  */
 
 /**
- * Bundle provider using the persistence layer.
+ * Resource bundles loaded from the database via the persistence layer.
+ * <p>
+ * The {@link org.tentackle.i18n.StoredBundleFactory} and {@link org.tentackle.i18n.StoredBundleControl} serve
+ * the translations stored as {@link org.tentackle.i18n.pdo.StoredBundle}s in place of the property files,
+ * and fall back to the latter for anything not stored.
  */
 package org.tentackle.i18n;

@@ -1,6 +1,7 @@
 # Tentackle I18N via persistence layer
 
-Internationalization backed by the persistence layer.
+Resource bundles served from the database: translations stored as `StoredBundle` PDOs
+override the property files at runtime and can be edited live, without redeploying.
 
 ## Documentation & reports
 

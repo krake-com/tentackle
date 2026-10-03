@@ -61,11 +61,13 @@ import java.io.Serializable;
 
 
 /**
- * A resource bundle stored in the database.
+ * A resource bundle for one locale stored in the database.
  * <p>
- * Important: modifications of the bundle should only be done via
- * {@link #setTranslation(java.lang.String, java.lang.String)} and never by adding or modifying a bundle key
- * directly. Bundles are always loaded eagerly, i.e. including all components.
+ * Identified by the bundle's base name and locale suffix, see {@link StoredBundleUDK}.
+ * The locale is {@code null} for the default bundle.
+ * <p>
+ * Important: modify the translations only via {@link #setTranslation(String, String)}, never by adding or
+ * modifying a bundle key directly. Bundles are always loaded eagerly, i.e., including all their keys.
  *
  * @author harald
  */

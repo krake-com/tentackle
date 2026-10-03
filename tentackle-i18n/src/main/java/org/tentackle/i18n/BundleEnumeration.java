@@ -25,7 +25,9 @@ import java.util.Set;
 
 /**
  * Bundle enumeration to implement {@link java.util.ResourceBundle#getKeys()}.
- * 
+ * <p>
+ * Enumerates the bundle's own keys first, followed by the keys of the parent bundle that the bundle does not
+ * define itself. Thus, each key is returned once.
  * @author harald
  */
 public class BundleEnumeration implements Enumeration<String> {

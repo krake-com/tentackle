@@ -23,7 +23,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
+import org.tentackle.session.Session;
 
+import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -57,6 +60,8 @@ public class StoredBundleControlTest {
   @AfterMethod
   public void tearDown() {
     StoredBundleControl.setFallbackToProperties(true);
+    StoredBundleFactory.setEnabled(true);
+    Session.setCurrentSession(null);
     ResourceBundle.clearCache(getClass().getClassLoader());
   }
 
@@ -97,6 +102,38 @@ public class StoredBundleControlTest {
   @Test
   public void testTimeToLiveIsTheStandardOneAfterASuccessfulLoad() throws Exception {
     control.newBundle(BUNDLE, Locale.ROOT, "java.properties", getClass().getClassLoader(), false);
+    assertEquals(control.getTimeToLive(BUNDLE, Locale.ROOT), ResourceBundle.Control.TTL_NO_EXPIRATION_CONTROL);
+  }
+
+  @Test
+  public void testFormatsAreEmptyWithSession() {
+    Session.setCurrentSession(createSessionStub());
+    assertEquals(control.getFormats(BUNDLE), List.of(""));
+  }
+
+  /**
+   * Disabling the {@link StoredBundleFactory} must disable the control as well, since bundles not registered
+   * for a named module are loaded through the control and never reach the factory.
+   */
+  @Test
+  public void testFormatsAreTheStandardOnesIfDisabled() {
+    Session.setCurrentSession(createSessionStub());
+    StoredBundleFactory.setEnabled(false);
+    assertEquals(control.getFormats(BUNDLE), ResourceBundle.Control.FORMAT_DEFAULT);
+  }
+
+  /**
+   * If disabled, the backend must not be accessed at all, even though a session is available.
+   * An attempt would fail with the session stub and mark the load as failed (not cached).
+   */
+  @Test
+  public void testNewBundleDoesNotAccessTheBackendIfDisabled() throws Exception {
+    Session.setCurrentSession(createSessionStub());
+    StoredBundleFactory.setEnabled(false);
+    ResourceBundle bundle = control.newBundle(BUNDLE, Locale.ROOT, "java.properties", getClass().getClassLoader(), false);
+    assertNotNull(bundle);
+    assertEquals(bundle.getString("greeting"), "hello");
+    assertNull(control.getDomainContext());
     assertEquals(control.getTimeToLive(BUNDLE, Locale.ROOT), ResourceBundle.Control.TTL_NO_EXPIRATION_CONTROL);
   }
 
@@ -202,6 +239,19 @@ public class StoredBundleControlTest {
                  () -> control.newBundle(BUNDLE, Locale.ROOT, null, getClass().getClassLoader(), false));
     expectThrows(IllegalArgumentException.class,
                  () -> control.newBundle(BUNDLE, Locale.ROOT, "java.properties", null, false));
+  }
+
+
+  /**
+   * Creates a session stub that throws on every method invoked.
+   *
+   * @return the session
+   */
+  private Session createSessionStub() {
+    return (Session) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { Session.class },
+        (proxy, method, args) -> {
+          throw new UnsupportedOperationException(method.getName());
+        });
   }
 
 }

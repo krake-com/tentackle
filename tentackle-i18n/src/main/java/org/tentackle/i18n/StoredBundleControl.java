@@ -38,8 +38,19 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
- * Bundle control to use stored bundles.<br>
- * Used by {@link StoredBundleFactory} in modular apps as well as by {@link ResourceBundle} in non-modular apps.
+ * Bundle control that loads resource bundles from the database.
+ * <p>
+ * {@link #newBundle} loads the {@link StoredBundle} for the requested base name and locale and wraps it in a
+ * {@link StoredResourceBundle}. If nothing is stored, it falls back to the property file, unless
+ * {@link #setFallbackToProperties(boolean) fallbackToProperties} is turned off. A load that fails, because the
+ * backend is unreachable, for example, falls back to the property file as well, but the result is not cached
+ * (see {@link #getTimeToLive}).<br>
+ * As long as there is no current {@link Session} or {@link StoredBundleFactory#isEnabled() loading from the
+ * backend is disabled}, the control behaves like the standard {@link ResourceBundle.Control}.
+ * <p>
+ * The control is handed out by the {@link StoredBundleControlProvider} for bundles not registered for a
+ * named module. {@link StoredBundleFactory} does not use it as a control, but reuses {@link #createUDK} and
+ * {@link #loadStoredBundle} to load the bundles of named modules.
  *
  * @author harald
  */
@@ -69,18 +80,21 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   private static final ThreadLocal<Boolean> LOAD_FAILED = new ThreadLocal<>();
 
   /**
-   * Returns whether properties should be tried if no stored bundle found.
+   * Returns whether the property files are used if a bundle or key is not stored in the database.
+   * <p>
+   * Applies to the bundles loaded by this control as well as to those loaded by {@link StoredBundleFactory}.
    *
-   * @return true for using resources from properties (default)
+   * @return true if falling back to the property files (default)
    */
   public static boolean isFallbackToProperties() {
     return fallbackToProperties;
   }
 
   /**
-   * Sets whether properties should be tried if no stored bundle found.
+   * Sets whether the property files are used if a bundle or key is not stored in the database.
    *
-   * @param fallbackToProperties true to use resources from properties, false to throw {@link java.util.MissingResourceException}
+   * @param fallbackToProperties true to fall back to the property files, false to throw a
+   *                             {@link java.util.MissingResourceException} instead
    */
   public static void setFallbackToProperties(boolean fallbackToProperties) {
     StoredBundleControl.fallbackToProperties = fallbackToProperties;
@@ -106,7 +120,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   @Override
   public List<String> getFormats(String baseName) {
-    return Session.getCurrentSession() == null ? super.getFormats(baseName) : FORMATS;
+    return isBackendLoadable() ? FORMATS : super.getFormats(baseName);
   }
 
   @Override
@@ -134,8 +148,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
     LOAD_FAILED.remove();   // clear the outcome of an earlier load on this thread
 
-    if (Session.getCurrentSession() != null) {
-      // if loading from backend possible
+    if (isBackendLoadable()) {
       key = createUDK(baseName, locale);
       try {
         bundle = loadStoredBundle(key);
@@ -167,6 +180,19 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
 
   /**
+   * Returns whether bundles can be loaded from the backend.
+   * <p>
+   * Requires a current session and {@link StoredBundleFactory#isEnabled()}. The latter must be checked
+   * here as well, since bundles not registered for a named module are loaded through this control
+   * and never reach the factory's own check.
+   *
+   * @return true if loading from the backend is possible
+   */
+  protected boolean isBackendLoadable() {
+    return StoredBundleFactory.isEnabled() && Session.getCurrentSession() != null;
+  }
+
+  /**
    * Creates the unique domain key to load a stored bundle.
    * <p>
    * The locale suffix is derived from the locale, not by searching the bundle name for an underscore:
@@ -190,13 +216,16 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   /**
    * Loads the bundle from storage.
+   * <p>
+   * A failure the backend reports as temporary (the modification tracker is not running yet, for example)
+   * is treated like a missing bundle, any other exception is thrown.
    *
    * @param key the unique domain key
    * @return the stored resource bundle or null if no such bundle in the database
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
-    if (Session.getCurrentSession() == null) {
-      // nothing can be loaded from the backend yet, try again later...
+    if (!isBackendLoadable()) {
+      // nothing can be loaded from the backend (yet), try again later...
       return null;
     }
 

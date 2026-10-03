@@ -29,7 +29,11 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
- * ResourceBundle loaded from the database.
+ * A {@link ResourceBundle} holding the translations of a {@link StoredBundle}.
+ * <p>
+ * The translations are copied into an immutable map when the bundle is created, so lookups need no locking
+ * and later modifications of the {@link StoredBundle} are not reflected. Bundles of parent locales and the
+ * property-file fallback are chained as parent bundles.
  *
  * @author harald
  */
