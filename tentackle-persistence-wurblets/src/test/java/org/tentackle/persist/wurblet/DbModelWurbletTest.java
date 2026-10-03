@@ -26,7 +26,11 @@ import org.wurbelizer.wurbel.WurbelException;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 
+import java.util.List;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 import static org.tentackle.persist.wurblet.WurbletTestSupport.attribute;
@@ -294,6 +298,63 @@ public class DbModelWurbletTest {
     WurbelException ex = expectThrows(WurbelException.class,
                                       () -> mixed.createRelopCode(parseArgument(entity, "user:ANY")));
     assertTrue(ex.getMessage().contains("MySQL"), ex.getMessage());
+  }
+
+  /**
+   * Creates a wurblet with the given options, as {@code run()} would have parsed them.
+   *
+   * @param options the options without the leading dashes
+   * @return the wurblet
+   */
+  private static DbModelWurblet createWurbletWithOptions(String... options) {
+    return new DbModelWurblet() {
+      @Override
+      public List<String> getOptionArgs() {
+        return List.of(options);
+      }
+    };
+  }
+
+  /**
+   * The tracking options override each other, the last one wins.
+   */
+  @Test
+  public void appliesTheTrackingOptions() throws Exception {
+    DbModelWurblet fullTracked = createWurbletWithOptions("fulltracked");
+    fullTracked.applyTrackingAndContextOptions(entity);
+    assertTrue(fullTracked.isTracked());
+    assertTrue(fullTracked.isAttracked());
+    assertTrue(fullTracked.isFullTracked());
+
+    DbModelWurblet untracked = createWurbletWithOptions("fulltracked", "untracked");
+    untracked.applyTrackingAndContextOptions(entity);
+    assertFalse(untracked.isTracked());
+    assertFalse(untracked.isAttracked());
+    assertFalse(untracked.isFullTracked());
+  }
+
+  /**
+   * {@code --context=<key>} names the context attribute, an empty key turns the context off.
+   */
+  @Test
+  public void appliesTheContextOption() throws Exception {
+    DbModelWurblet withContext = createWurbletWithOptions("context=txId");
+    withContext.applyTrackingAndContextOptions(entity);
+    assertEquals(withContext.getContextAttribute(), attribute(entity, "txId"));
+
+    DbModelWurblet noContext = createWurbletWithOptions("context=");
+    noContext.applyTrackingAndContextOptions(entity);
+    assertNull(noContext.getContextAttribute());
+  }
+
+  /**
+   * A misspelled context attribute must not silently drop the context condition.
+   */
+  @Test
+  public void refusesAnUnknownContextAttribute() {
+    DbModelWurblet typo = createWurbletWithOptions("context=txIdent");
+    WurbelException ex = expectThrows(WurbelException.class, () -> typo.applyTrackingAndContextOptions(entity));
+    assertTrue(ex.getMessage().contains("txIdent"), ex.getMessage());
   }
 
 }

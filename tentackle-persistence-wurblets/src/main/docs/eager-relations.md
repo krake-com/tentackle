@@ -91,7 +91,9 @@ the one being selected. So the emitted join tree is a function of a single numbe
 
 There is one case in which the optimization is abandoned altogether (nothing is joined and every relation falls
 back to a follow-up select): when a **subclass** of the entity declares an eager relation. The joins of a
-polymorphic select cannot depend on the class of the row.
+polymorphic select cannot depend on the class of the row. This applies to the generic selects only: the relation
+finders `PdoRelations` generates keep their load joins, and they include the eager relations inherited from
+super entities as well.
 
 **Why the default is 1.** A transitively-cascading eager strategy is the classic way to destroy a relational
 application: each additional eager level over a *list* relation multiplies into the join, every parent row is
@@ -139,7 +141,7 @@ This is **domain-related, not model-related.** Key differences from model eager:
 | Where declared | In the model (relation line)            | In a finder anchor in the persistence implementation         |
 | Scope          | Global — affects **every** generic read | Local — affects **only that one finder**                     |
 | Cascading      | Capped by `eager:<n>`, **1** by default  | **Explicit** — you chain `*a*b*c` to whatever depth you need |
-| Filtering      | No                                      | Yes — `*lines                                                |no:<:10` loads a subset                    |
+| Filtering      | No                                      | Yes — `*lines\|no:<:10` loads a subset                       |
 | Granularity    | All-or-nothing for the entity           | Tuned per access path                                        |
 
 Because a load join is scoped to a single finder, it lets a particular domain operation say "for *this* use

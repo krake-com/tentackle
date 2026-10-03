@@ -21,7 +21,7 @@ arguments:
 <li><em>--tokenlock:</em> requests a token-lock.</li>
 <li><em>--immutable:</em> the returned PDO is immutable.</li>
 <li><em>--finallyImmutable:</em> the returned PDO is finally immutable.</li>
-<li><em>--mutable:</em> the returned list is mutable (to override automatic immutability if filtered joins are used).</li>
+<li><em>--mutable:</em> the returned PDO is mutable (to override automatic immutability if filtered joins are used).</li>
 <li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.<br>
 Conditions marked with <em>?&lt;boolean&gt;</em> are optional, i.e. become part of the query only if the
 boolean method argument is true. Such finders always create a one-shot prepared statement.</li>

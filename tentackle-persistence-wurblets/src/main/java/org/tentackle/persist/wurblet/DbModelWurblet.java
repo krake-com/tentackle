@@ -108,7 +108,7 @@ public class DbModelWurblet extends ModelWurblet {
       if (wurbletOptions.contains("groupArgs")) {
         argumentGroupingEnabled = true;
       }
-      else if (wurbletOptions.contains("pathAllowed")) {
+      if (wurbletOptions.contains("pathAllowed")) {
         pathAllowed = true;
       }
     }
@@ -118,42 +118,7 @@ public class DbModelWurblet extends ModelWurblet {
     Entity entity = getEntity();
     if (entity != null) {   // null if missingModelOk set and no such entity in model (see ModelWurblet)
 
-      tracked = entity.getOptions().getTrackType().isTracked();
-      attracked = entity.getOptions().getTrackType().isAttracked();
-      fullTracked = entity.getOptions().getTrackType() == TrackType.FULLTRACKED;
-      contextAttribute = entity.getContextIdAttribute();
-
-      for (String arg: getOptionArgs())  {
-        if ("tracked".equals(arg)) {
-          tracked = true;
-          attracked = false;
-          fullTracked = false;
-        }
-        else if ("attracked".equals(arg)) {
-          tracked = true;
-          attracked = true;
-          fullTracked = false;
-        }
-        else if ("fulltracked".equals(arg)) {
-          tracked = true;
-          attracked = true;
-          fullTracked = true;
-        }
-        else if ("untracked".equals(arg)) {
-          tracked = false;
-          attracked = false;
-          fullTracked = false;
-        }
-        else if (arg.startsWith("context="))  {
-          String ctx = arg.substring(8);
-          if (ctx.isEmpty()) {
-            contextAttribute = null;
-          }
-          else {
-            contextAttribute = entity.getAttributeByJavaName(arg.substring(8), false);
-          }
-        }
-      }
+      applyTrackingAndContextOptions(entity);
 
       // analyze the wurblet arguments
       parser = new WurbletArgumentParser(entity, argumentGroupingEnabled, getWurbletArgs());
@@ -200,6 +165,57 @@ public class DbModelWurblet extends ModelWurblet {
 
   }
 
+
+  /**
+   * Applies the tracking and context options.<br>
+   * The defaults are taken from the entity's model and overridden by the options
+   * {@code --tracked}, {@code --attracked}, {@code --fulltracked}, {@code --untracked} and {@code --context=<key>}.
+   *
+   * @param entity the entity
+   * @throws WurbelException if the context attribute does not exist
+   */
+  protected void applyTrackingAndContextOptions(Entity entity) throws WurbelException {
+    tracked = entity.getOptions().getTrackType().isTracked();
+    attracked = entity.getOptions().getTrackType().isAttracked();
+    fullTracked = entity.getOptions().getTrackType() == TrackType.FULLTRACKED;
+    contextAttribute = entity.getContextIdAttribute();
+
+    for (String arg: getOptionArgs())  {
+      if ("tracked".equals(arg)) {
+        tracked = true;
+        attracked = false;
+        fullTracked = false;
+      }
+      else if ("attracked".equals(arg)) {
+        tracked = true;
+        attracked = true;
+        fullTracked = false;
+      }
+      else if ("fulltracked".equals(arg)) {
+        tracked = true;
+        attracked = true;
+        fullTracked = true;
+      }
+      else if ("untracked".equals(arg)) {
+        tracked = false;
+        attracked = false;
+        fullTracked = false;
+      }
+      else if (arg.startsWith("context="))  {
+        String ctx = arg.substring(8);
+        if (ctx.isEmpty()) {
+          contextAttribute = null;
+        }
+        else {
+          // a typo must not silently drop the context condition
+          contextAttribute = entity.getAttributeByJavaName(ctx, true);
+          if (contextAttribute == null) {
+            throw new WurbelException("no such context attribute '" + ctx + "' in " + entity);
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Returns whether the entity is tracked.

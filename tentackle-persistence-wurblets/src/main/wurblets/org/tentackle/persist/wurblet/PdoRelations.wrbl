@@ -7,7 +7,7 @@ usage:<br>
     [--loadcomponents|--noloadcomponents]
     [--insertcomponents|--noinsertcomponents]
     [--deletecomponents|--nodeletecomponents]
-    [--nori] [--noselects] [--nodeletes] [--mock]
+    [--nori] [--noselects] [--nodeletes] [--novalidate] [--mock]
 <p>
 arguments:
 <ul>

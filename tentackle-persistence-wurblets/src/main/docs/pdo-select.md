@@ -349,7 +349,7 @@ it contains more than one):
 > components, the returned PDO/list is automatically made [immutable](../../../../tentackle-pdo/src/main/docs/pdo.md)
 > (it must not be saved back). Pass `--mutable` to override this when you know the partial load is acceptable.
 
-The earlier `findByName … *Keys` example is exactly this: `*Keys` turns the follow-up query for the bundle's keys
+The `findByName … *Keys` example under [Examples](#examples) is exactly this: `*Keys` turns the follow-up query for the bundle's keys
 into a single joined statement, and the generated body therefore returns `executeTrackedListQuery(st, js)` with the
 `JoinedSelect js` carrying the `LEFT JOIN`. Note the cursor constraint from the [options](#pdoselectlist-only):
 `--cursor` combined with joins requires the query to be sorted by `id`.
@@ -376,6 +376,17 @@ into a single joined statement, and the generated body therefore returns `execut
 > **Automatic immutability:** if the query uses filtered joins, the result is forced immutable unless
 > `--mutable` is given, because a filtered eager-load returns only a subset of an aggregate's components and
 > must not be saved back.
+
+The options of the base classes apply as well:
+
+| Option                                                       | Effect                                                                                                                                                      |
+|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--remote` / `--noremote`                                    | Force the remote delegate code on or off. By default it follows the entity's model options.                                                                 |
+| `--tracked` / `--attracked` / `--fulltracked` / `--untracked` | Override the entity's tracking type for this method, e.g. to return a `TrackedList` from an untracked entity.                                              |
+| `--context=<key>`                                            | Restrict by another domain-context attribute than the model's. `--context=` drops the context condition. An attribute that does not exist fails the build. |
+
+See [`DbModelWurblet`](persistence-wurblet-api.md#options) and
+[`ModelWurblet`](../../../../tentackle-wurblets/src/main/docs/wurblet-api.md#options) for details.
 
 ### `PdoSelectList` only
 
