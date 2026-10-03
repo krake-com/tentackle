@@ -106,10 +106,7 @@ singleton resolved through `ServiceFactory.createService(...)`, defaulting to
 (annotated `@Service(NumberSourceFactory.class)`). The default factory caches one
 source per `pool:realm` key, and throws `NumberSourceException` if no such pool
 exists in the database — a missing pool is a configuration error, not an empty
-result. The cache is never invalidated: a source whose pool has been deleted keeps
-failing with "vanished", even if a pool of the same name is created again, until the
-application is restarted. Notice further that the key is built by concatenation: avoid
-colons in pool names, and use either `null` or the empty string for "no realm", not both.
+result.
 
 ---
 
@@ -269,6 +266,10 @@ persisted. For a pool, popping a number changes only a range — bumping the poo
 serial on every single `popNumber()` would invalidate every other tier's cached copy
 of the pool for a change that never touched it. The pool's own attributes are still
 serial-protected; only range churn is exempted.
+
+There is no `NumberSource.invalidate()`, but when a `NumberRange`
+is added to the database, it will be picked up by the default implementation.
+However, the preferred way is to use the API to push numbers to the pool.
 
 ---
 
