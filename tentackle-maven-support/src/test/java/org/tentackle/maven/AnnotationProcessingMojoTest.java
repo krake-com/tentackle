@@ -242,6 +242,50 @@ public class AnnotationProcessingMojoTest {
   }
 
 
+  /**
+   * Without a source encoding, the compiler's default is used.
+   */
+  @Test
+  public void succeedsWithoutEncoding() throws Exception {
+    writeSource("Sample.java", "public class Sample { @Deprecated void x() {} }");
+    mojo.addProcessor(new SilentProcessor());
+    mojo.encoding = null;
+
+    mojo.executeImpl();
+
+    assertEquals(mojo.getTotalErrors(), 0);
+    assertEquals(mojo.getTotalCompileErrors(), 0);
+  }
+
+  /**
+   * A {@code -proc:} option in the compiler args replaces the default {@code -proc:only}.
+   */
+  @Test
+  public void honorsProcOptionInCompilerArgs() throws Exception {
+    writeSource("Sample.java", "public class Sample { @Deprecated void x() {} }");
+    mojo.addProcessor(new FailingProcessor());
+    mojo.compilerArgs = List.of("-proc:none");
+
+    mojo.executeImpl();   // processor not invoked: must not throw
+
+    assertEquals(mojo.getTotalErrors(), 0);
+  }
+
+  /**
+   * ... as does a {@code -proc:} option given as the single compiler argument.
+   */
+  @Test
+  public void honorsProcOptionInCompilerArgument() throws Exception {
+    writeSource("Sample.java", "public class Sample { @Deprecated void x() {} }");
+    mojo.addProcessor(new FailingProcessor());
+    mojo.compilerArgument = "-proc:none";
+
+    mojo.executeImpl();   // processor not invoked: must not throw
+
+    assertEquals(mojo.getTotalErrors(), 0);
+  }
+
+
   private void writeSource(String fileName, String content) throws IOException {
     Files.writeString(sourceDir.toPath().resolve(fileName), content);
   }

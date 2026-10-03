@@ -38,8 +38,9 @@ public final class MavenLogDispatcher extends Handler {
   /**
    * Installs the dispatcher, if not already done, and binds the given handler to the current thread.
    * <p>
-   * On first installation, all handlers of the root logger are removed, such as the default
-   * console handler, except for the dispatchers installed by other plugin class realms.
+   * On first installation within the plugin's class realm, all handlers of the root logger are removed,
+   * such as the default console handler, except for the dispatchers installed by other plugin class realms.
+   * Each realm installs its own dispatcher, which forwards only to the handlers bound by mojos of its realm.
    *
    * @param handler the handler to bind
    */

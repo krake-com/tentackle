@@ -54,13 +54,14 @@ public final class LayerDependencyResolver {
 
   /**
    * Resolves the given dependencies, transitively, independently of any enclosing project's own
-   * dependency graph.
+   * dependency graph.<br>
+   * Each dependency is requested with scope {@code runtime}, regardless of its own scope.
    *
    * @param repositorySystem the repository system
    * @param session the repository system session
    * @param repositories the remote repositories to resolve against
    * @param dependencies the dependencies, each with an explicit groupId, artifactId, and version
-   * @return the resolved artifact files
+   * @return the resolved artifact files, in classpath order
    * @throws DependencyResolutionException if resolution failed
    */
   public static List<File> resolve(RepositorySystem repositorySystem, RepositorySystemSession session,

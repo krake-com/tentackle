@@ -39,8 +39,8 @@ by, the running application — its `package-info` simply reads *"Support for Te
 
 ### Dependencies
 
-It depends on `maven-core`, the Maven Resolver API (`maven-resolver-api`), `maven-plugin-annotations` and the
-Maven Shared `file-management` (filesets), on
+It depends on `maven-core` (which also provides SLF4J), the Maven Resolver API (`maven-resolver-api`),
+`maven-plugin-annotations`, `javax.inject` and the Maven Shared `file-management` (filesets), on
 [Wurbelizer](https://www.wurbelizer.org/) (for `Verbosity`/`Constants`/`Settings`) and on
 [`tentackle-build-support`](../../../../tentackle-build-support/src/main/docs/build-support.md) (which transitively
 pulls in [`tentackle-common`](../../../../tentackle-common/src/main/docs/common.md) for `Settings`, `ToolRunner`
@@ -95,31 +95,36 @@ The execution lock is what makes the plugins safe for parallel builds, see [Para
 
 ### Shared mojo parameters
 
-All are injected by Maven and exposed via getters, so every plugin inherits them for free:
+All are injected by Maven, and the components are exposed via getters, so every plugin inherits them for free:
 
 | Parameter                                      | Purpose                                                           |
 |------------------------------------------------|-------------------------------------------------------------------|
-| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution                    |
-| `${settings}` + `SettingsDecrypter`            | `settings.xml` plus credential decryption (e.g. for servers)      |
-| `jdkToolchain` + `ToolchainManager`            | per-plugin selection (or deselection) of the `"jdk"` toolchain    |
-| `tentackle.verbosity`                          | `default` / `info` / `debug` (debug also implied by Maven's `-X`) |
-| `skip`                                         | skip the goal; defaults to skipping when packaging is `pom`       |
-| `charset` (`${project.build.sourceEncoding}`)  | encoding for reading/writing files                                |
-| `minLogLevel` (default `WARNING`)              | threshold for the JUL→Maven log bridge                            |
+| `${project}`, `${session}`, `${mojoExecution}` | the Maven project, build session and execution                                           |
+| `${settings}` + `SettingsDecrypter`            | `settings.xml` plus credential decryption (e.g. for servers)                             |
+| `jdkToolchain` + `ToolchainManager`            | per-plugin selection (or deselection) of the `"jdk"` toolchain                           |
+| `RepositorySystem`                             | the Maven Resolver, see [`ProjectDependencies`](#projectdependencies-and-layerdependencyresolver) |
+| `tentackle.verbosity`                          | `default` / `info` / `debug` (if unset, `debug` with Maven's `-X`; unknown → `default`)  |
+| `skip`                                         | skip the goal; if unset, skipped for `pom` packaging in recursive executions             |
+| `charset` (`${project.build.sourceEncoding}`)  | encoding for reading/writing files, applied JVM-wide (see [Parallel builds](#parallel-builds)) |
+| `minLogLevel` (default `WARNING`)              | threshold for the JUL→Maven log bridge                                                   |
 
 ### Skip and validation logic
 
-`validate()` runs first: it resolves the encoding and verbosity, requires `project.baseDir`, and applies the
-**skip-by-default** rule — when `skip` is unset and the project is a recursive `pom` packaging (an aggregator
-parent), the goal is skipped. Subclasses override `validate()` to add their own preconditions (calling `super`),
-and return `false` to short-circuit the run.
+`validate()` runs after `prepareExecute()`: it determines the encoding (`determineEncoding()`) and verbosity
+(`determineVerbosity()`), requires the project's base directory (`getBaseDir()`, the directory of the pom file),
+and applies the **skip-by-default** rule (`isSkippedByDefault()`) — when `skip` is unset, a project with `pom`
+packaging is skipped, unless the build is non-recursive (`-N`) or the goal is an aggregator
+(`isExecutionRecursive()`). Subclasses override `validate()` to add their own preconditions (calling `super`
+first), and return `false` to short-circuit the run. Notice that `prepareExecute()` runs even if the goal is
+skipped, while `finishExecute()` only runs after `executeImpl()` succeeded.
 
 ### Toolchain and Java-home resolution
 
-`getToolchain(...)` honours an explicit `<jdkToolchain>` configuration (overriding the maven-toolchain-plugin),
+`getToolchain(...)` honors an explicit `<jdkToolchain>` configuration (overriding the maven-toolchain-plugin),
 an empty `<jdkToolchain/>` to *deselect* a configured toolchain, or otherwise falls back to the toolchain from the
-build context. `getJavaHome(Toolchain)` extracts and validates the `JAVA_HOME` of a `JavaToolchainImpl`. These
-feed `getToolFinder()`, which hands back a toolchain-aware `JavaToolFinder`.
+build context. A configured selector that matches no toolchain fails the goal. `getToolFinder()` hands back a
+`JavaToolFinder` for the `"jdk"` toolchain. `getJavaHome(Toolchain)` derives the java home of a `"jdk"` toolchain
+from the location of its `java` tool and verifies that it is a directory.
 
 ### Utility methods
 
@@ -128,10 +133,11 @@ A grab-bag of helpers the plugins rely on:
 - `determineJavaToolVersion(File)` / `getMajorVersion(String)` — run a tool with `--version` and parse the Java
   version (skipping incubator-module noise), then reduce it to a major number.
 - `getPathRelativeToBasedir(String)` — shorten absolute paths for readable log output.
-- `getResourceDirs(boolean)` / `getResourceDir(File, boolean)` / `getCanonicalPath(File)` — locate (test) resource
-  directories from the project model and test membership.
+- `getResourceDirs(boolean)` / `getResourceDir(File, boolean)` — the (test) resource directories of the project
+  model, and the one a given file resides in. `getCanonicalPath(File)` wraps the `IOException`.
+- `getBaseDir()` — the project's base directory, i.e. the directory of its pom file.
 - `createFileSetManager(boolean)` / `getIncludedFiles(FileSet)` — expand Maven shared filesets.
-- `loadResourceFileIntoString(String)` — read a classpath resource as a string.
+- `loadResourceFileIntoString(String)` — read a UTF-8 classpath resource (relative to the mojo's class) as a string.
 - `toDescriptorName(File)` — derive a clean descriptor/module name from an artifact jar filename (stripping the
   extension, `-SNAPSHOT`, version and platform classifiers).
 - `getHostName()` — best-effort hostname (falls back to the loopback address).
@@ -141,11 +147,13 @@ A grab-bag of helpers the plugins rely on:
 ### Package scanning and split-package detection
 
 `createPackageMap(boolean resourceRoots)` walks the compile-source roots (or non-filtered resource roots) of the
-project — recursively across the reactor's collected projects when run non-recursively — and builds a
-`Map<String, PackageInfo>`. While doing so, it enforces a JPMS rule: **a package containing files must not appear in
-more than one module**. A genuine split (two modules both contributing files to the same package) throws a
-`MojoExecutionException`; empty package directories are tolerated and tracked as "empty duplicates" so a
-non-empty occurrence can win.
+project — or of all the reactor's collected projects when run non-recursively — and builds a
+`Map<String, PackageInfo>`. A package is a directory that contains files (hidden ones don't count) or is empty.
+While scanning, it enforces a JPMS rule: **a package containing files must not appear in more than one module**.
+A genuine split (two modules both contributing files to the same package) throws a `MojoExecutionException`.
+Empty package directories are tolerated: a non-empty occurrence wins, and if all occurrences are empty, the others
+are tracked as "empty duplicates" of the first one. The [wizard](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
+uses the map to locate the target packages of its profiles, the i18n plugin to locate the bundles.
 
 ---
 
@@ -162,22 +170,30 @@ It implements `executeImpl()` to drive the **in-process Java compiler** (`ToolPr
 purely for annotation processing:
 
 1. The set of source files is taken either from explicit `<filesets>` or, by default, from the configured
-   `sourceDir` (`**/*.java`).
+   `sourceDir` (`**/*.java`). The `sourceDir` is required in either case; it is also the default directory of
+   a fileset without one.
 2. For each fileset, the registered
    [`AbstractTentackleProcessor`](../../../../tentackle-build-support/src/main/java/org/tentackle/buildsupport/AbstractTentackleProcessor.java)s
-   are initialized, then a `CompilationTask` is created with `-proc:only` (unless a `proc:` arg is supplied),
-   the project classpath (added to **both** `-classpath` and `--module-path`), the source encoding and
-   `-Averbosity=…` passed through to the processors.
-3. Diagnostics are collected; when `showCompileOutput` is set they are formatted (`file:line:col: message`) into
-   `getCompileErrorLog()`. Analyze and compile errors are counted separately — analyze errors fail the build,
-   while compile errors only warn (the sources have not been wurbeled yet, so some are expected).
+   are initialized, then a `CompilationTask` is created with the source encoding (if set), the project classpath
+   (added to **both** `-classpath` and `--module-path`), `-Averbosity=…` passed through to the processors, the
+   `compilerArgument` and `compilerArgs`, and finally `-proc:only` — unless the arguments already contain a
+   `-proc:` option.
+3. Diagnostics are collected and formatted as `file:line:col: message`. An error is an **analyze error** if it was
+   reported by a processor's `Messager` (javac's diagnostic code `compiler.err.proc.messager`, see
+   `isAnalyzeError`), any other error is a compile error. Both are counted separately — analyze errors are always
+   logged and fail the build, while compile errors only warn (the sources have not been wurbeled yet, so some are
+   expected). With `showCompileOutput`, all diagnostics are logged. The logged messages are available via
+   `getCompileErrorLog()`.
+4. After all filesets, the processors' `cleanup()` is invoked. A failing cleanup counts as an analyze error.
 
 Configuration entry points for subclasses:
 
 - `setMojoParameters(File sourceDir, List<String> classpathElements)` — sets the source directory and creates the
   [`ProjectClassLoader`](#projectclassloader); `addProcessor(...)` registers the processors to run.
-- Overridable hooks: `createMissingDirs()`, `initializeProcessor(...)`, `cleanupProcessors(...)` and
-  `filterFileNames(...)` (to skip files / opt out of processing).
+- Overridable hooks: `createMissingDirs()`, `initializeProcessors(...)` / `initializeProcessor(...)`,
+  `cleanupProcessors(...)` (per fileset), `filterFileNames(...)` (to skip files / opt out of processing),
+  `isAnalyzeError(...)` and `formatDiagnostic(...)`.
+- Results: `getTotalErrors()` (analyze errors) and `getTotalCompileErrors()`.
 - Mojo parameters: `showCompileOutput`, `encoding`, `compilerArgs`, `compilerArgument`, `filesets`.
 
 ---
@@ -255,30 +271,33 @@ elsewhere). This is what lets the jlink plugin reliably find `jlink`, `jpackage`
 forwards records at or above a minimum level to the mojo's SLF4J logger, mapping `SEVERE→error`, `WARNING→warn`,
 `INFO→info` and everything else to `debug`. Because Tentackle's own code logs through `java.util.logging` by
 default, this bridge keeps build-time framework logging visible in the Maven output without flooding it (default
-threshold `WARNING`, configured by the `minLogLevel` parameter).
+threshold `WARNING`, configured by the `minLogLevel` parameter). The raw message of the record is forwarded:
+Tentackle's logger formats the message before it creates the record.
 
 ### `MavenLogDispatcher`
 
-[`MavenLogDispatcher`](../java/org/tentackle/maven/MavenLogDispatcher.java) is the only handler attached to the
+[`MavenLogDispatcher`](../java/org/tentackle/maven/MavenLogDispatcher.java) replaces the handlers of the
 JUL root logger. The root logger is a JVM-wide singleton, so in a parallel build the log records of several
-concurrently running mojos arrive at the same handler. The dispatcher therefore forwards each record to the
+concurrently running mojos arrive at the same handlers. Each plugin's class realm installs its own dispatcher. The dispatcher therefore forwards each record to the
 `MavenLogHandler` bound to the *current thread* (an `InheritableThreadLocal`, so threads started by a mojo log
 to the same mojo), and the output ends up in the log of the project that produced it.
 
-`install(MavenLogHandler)` adds the dispatcher once — removing the default console handler, but keeping the
-dispatchers installed by other plugins' class realms — and binds the handler to the thread; `uninstall()`
-unbinds it. `AbstractTentackleMojo.execute()` does both, so plugins don't have to.
+`install(MavenLogHandler)` adds the dispatcher once per realm — removing the default console handler, but keeping
+the dispatchers installed by other plugins' class realms — and binds the handler to the thread; `uninstall()`
+unbinds it. Records of threads without a binding are discarded. `AbstractTentackleMojo.execute()` does both, so plugins don't have to.
 
 ### `ProjectDependencies` and `LayerDependencyResolver`
 
 [`ProjectDependencies`](../java/org/tentackle/maven/ProjectDependencies.java) is the single place where Tentackle
 plugins talk to the Maven Resolver (`org.eclipse.aether`). It converts POM dependencies to resolver dependencies
-(`toAetherDependency`, honoring type, classifier, scope, exclusions and `system` paths), collects the dependency
-graph of a `MavenProject` (`collect`, including `dependencyManagement` and the project's repositories), resolves it
-(`resolve`, `getClasspathElements`) and offers scope filters (`RUNTIME_SCOPES`, `COMPILE_SCOPES`). It replaces
+(`toAetherDependency`, honoring type, classifier, scope, optional flag, exclusions and `system` paths), collects the
+dependency graph of a `MavenProject` (`collect`, including `dependencyManagement` and the project's repositories),
+resolves it (`resolve`, `getClasspathElements`), restricted to the given scopes (`RUNTIME_SCOPES`, `COMPILE_SCOPES`,
+applied via `scopeFilter`). `toCoordinates` formats an artifact as `groupId:artifactId:version`. It replaces
 `MavenProject.getArtifacts()`, `maven-artifact-transfer` and `maven-dependency-tree`.
 [`LayerDependencyResolver`](../java/org/tentackle/maven/LayerDependencyResolver.java) resolves a plain list of
-coordinates independently of any project, for example the dependencies of a layer of a layered application.
+coordinates independently of any project, all of them with `runtime` scope, for example the dependencies of a layer
+of a layered application.
 The `RepositorySystem` is injected once into `AbstractTentackleMojo` (`getRepositorySystem()`); the session is
 `getMavenSession().getRepositorySession()`.
 
@@ -286,14 +305,15 @@ The `RepositorySystem` is injected once into `AbstractTentackleMojo` (`getReposi
 
 [`ProjectClassLoader`](../java/org/tentackle/maven/ProjectClassLoader.java) is a `URLClassLoader` that adds the
 project's classpath elements on top of the plugin's own classloader, so the analyze processors can load and
-inspect classes from the project being built. It exposes `addURL` publicly.
+inspect classes from the project being built. It delegates parent-first, i.e. the plugin's classes take precedence.
+It exposes `addURL` publicly.
 
 ### `PackageInfo`
 
 [`PackageInfo`](../java/org/tentackle/maven/PackageInfo.java) is the value object produced by the base mojo's
 package scan: the package name, the owning Maven project, and the directory path. `isContainingFiles()` underpins
 split-package detection, and `getEmptyDuplicates()`/`setEmptyDuplicates(...)` track empty package directories that
-occur in several modules (which cannot be used in profiles, since the generator could not decide which to pick).
+occur in several modules (which cannot be used in the wizard's profiles, since the generator could not decide which to pick).
 Hidden files are ignored by both the scan and `isContainingFiles()`, so a leftover directory holding nothing but
 a `.gitignore` stays an empty package. `PackageInfo.isHidden(File)` decides this, treating a leading dot as hidden
 on all platforms, since Windows only knows the DOS hidden attribute.
@@ -332,6 +352,7 @@ drives produce the service descriptors and analyze-info files later consumed by 
 - [SQL Maven Plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) ·
   [i18n Maven Plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackle-i18n-maven-plugin.md) ·
   [Check Maven Plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) ·
+  [JLink Maven Plugin](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md) ·
   [Wizard Maven Plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md) ·
   [MCP Maven Plugin](../../../../tentackle-mcp-maven-plugin/src/main/docs/tentackle-mcp-maven-plugin.md)
 - [Service and Configuration API](../../../../tentackle-common/src/main/docs/services.md)

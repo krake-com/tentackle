@@ -36,8 +36,9 @@ All goals inherit a small set of common parameters:
 
 - `verbosity`: one of `default`, `info` or `debug`. Defaults to maven's global setting; debug is also
   enabled by maven's `-X` switch.
-- `skip`: skips the goal. Defaults to `true` for projects with `pom` packaging, so the plugin can be
-  configured once in a parent pom without acting on aggregator modules.
+- `skip`: skips the goal. Defaults to `true` for projects with `pom` packaging (unless the build is
+  non-recursive or the goal is an aggregator), so the plugin can be configured once in a parent pom
+  without acting on aggregator modules.
 - `charset`: the encoding used to read and write files. Defaults to `${project.build.sourceEncoding}`.
 - `jdkToolchain`: selects a specific `jdk` toolchain, overriding the one chosen by the
   maven-toolchain-plugin (only relevant for goals that run external tools).

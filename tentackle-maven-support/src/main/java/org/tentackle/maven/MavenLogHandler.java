@@ -27,8 +27,14 @@ import java.util.logging.LogRecord;
 
 /**
  * Log handler that redirects java.util logging to the maven logger.<br>
- * By default, all tentackle logging goes to the java util logger, and the logs below WARN level
- * are not of big interest during the build.
+ * By default, all Tentackle logging goes to java.util logging, and logs below the WARNING level
+ * are of little interest during the build. Hence, only records at or above a minimum level are forwarded:
+ * SEVERE as error, WARNING as warn, INFO as info and all other levels as debug.
+ * <p>
+ * The raw message is forwarded, i.e. parameters of the log record are not formatted in.
+ * Tentackle's own logger passes already formatted messages.
+ *
+ * @see MavenLogDispatcher
  */
 public class MavenLogHandler extends Handler {
 
@@ -38,8 +44,8 @@ public class MavenLogHandler extends Handler {
   /**
    * Creates a maven log handler.
    *
-   * @param log the logger
-   * @param minLevel the minimum logging level
+   * @param log the maven logger
+   * @param minLevel the minimum logging level of the records to forward
    */
   public MavenLogHandler(Logger log, Level minLevel) {
     this.log = Objects.requireNonNull(log);

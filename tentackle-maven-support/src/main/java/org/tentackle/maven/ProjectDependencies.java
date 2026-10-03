@@ -74,10 +74,14 @@ public final class ProjectDependencies {
   }
 
   /**
-   * Converts a POM dependency to a resolver dependency.
+   * Converts a POM dependency to a resolver dependency.<br>
+   * Honors the type, classifier, scope, optional flag, exclusions and the {@code systemPath}.
+   * The type is looked up in the registry to determine the extension, the default classifier
+   * (e.g. {@code tests} for {@code test-jar}) and the type's properties. Unknown types are used
+   * as the extension.
    *
    * @param dependency the POM dependency, must have groupId, artifactId and version
-   * @param scope the scope to set, null or empty if use the scope of the given dependency (or "compile" if none)
+   * @param scope the scope to set, null or empty to use the scope of the given dependency (or "compile" if none)
    * @param registry the artifact type registry, null if none
    * @return the resolver dependency
    */
@@ -99,11 +103,9 @@ public final class ProjectDependencies {
       if (classifier.isEmpty() && type.getClassifier() != null) {
         classifier = type.getClassifier();
       }
+      // the properties are merged with the ones of the type (setProperties would replace them)
       artifact = new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(),
-                                     classifier, type.getExtension(), dependency.getVersion(), type);
-      if (properties != null) {
-        artifact = artifact.setProperties(properties);
-      }
+                                     classifier, type.getExtension(), dependency.getVersion(), properties, type);
     }
     String effectiveScope = scope != null && !scope.isEmpty() ? scope :
                             dependency.getScope() == null || dependency.getScope().isBlank() ?
@@ -156,7 +158,7 @@ public final class ProjectDependencies {
 
   /**
    * Collects the dependency graph of a project.<br>
-   * The artifacts in the returned graph are not resolved, i.e. have no files.
+   * The artifacts in the returned graph are not resolved, i.e., have no files.
    *
    * @param repositorySystem the repository system
    * @param session the repository system session
@@ -197,7 +199,7 @@ public final class ProjectDependencies {
    * @param session the repository system session
    * @param project the project
    * @param scopes the scopes to include, see {@link #COMPILE_SCOPES} and {@link #RUNTIME_SCOPES}
-   * @return the project's output directory followed by the paths to the resolved dependencies
+   * @return the project's main output directory followed by the paths to the resolved dependencies
    * @throws DependencyResolutionException if resolving failed
    */
   public static List<String> getClasspathElements(RepositorySystem repositorySystem, RepositorySystemSession session,
