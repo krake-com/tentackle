@@ -41,11 +41,12 @@ final class Native {
   /**
    * Loads a library.
    * <p>
-   * The library is looked up by its name, not by a path, and thus the way the OS does it. On macOS this
-   * is the only way to reach the system frameworks, which live in the dyld shared cache and not in the
-   * file system.
+   * The name is passed as is to the loader of the OS ({@code dlopen} or {@code LoadLibrary}), which resolves
+   * it the usual way: a bare name via the library search path, a path as given. The {@link java.nio.file.Path}
+   * variant of {@code SymbolLookup#libraryLookup} is not used, as it requires the file to exist. On macOS, the
+   * system frameworks live in the dyld shared cache and not in the file system, so only the loader finds them.
    *
-   * @param name the library name, such as {@code "libsecret-1.so.0"}
+   * @param name the library name, such as {@code "libsecret-1.so.0"}, or a path
    * @param arena the arena controlling the library's lifetime
    * @return the lookup
    * @throws KeyringException if the library cannot be loaded

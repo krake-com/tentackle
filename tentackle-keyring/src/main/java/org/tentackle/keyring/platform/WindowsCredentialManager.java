@@ -33,17 +33,20 @@ import java.util.Arrays;
  * <p>
  * The secrets are generic credentials of the user and show up in the Control Panel's Credential Manager
  * under "Windows Credentials". The target name is {@code account@service}, with {@code %}, {@code @} and
- * {@code #} percent-encoded, so that different ids never map to the same target.
+ * {@code #} percent-encoded, so that different ids never map to the same target, and no target collides with
+ * the name of a chunk. Target names are case-insensitive, though: ids that differ only in case share a credential.
  * <p>
  * A credential holds at most {@value Advapi32#CRED_MAX_CREDENTIAL_BLOB_SIZE} bytes, which some tokens exceed.
  * The first byte of the blob is therefore a format tag:
  * <ul>
  *   <li>{@value #FORMAT_INLINE}: the secret follows,</li>
- *   <li>{@value #FORMAT_CHUNKED}: a 4-byte big-endian chunk count follows, and the secret is spread over the
- *   credentials {@code target#1} to {@code target#n}.</li>
+ *   <li>{@value #FORMAT_CHUNKED}: a 4-byte big-endian chunk count {@code n} and a generation {@code g} of 0 or 1
+ *   follow, and the secret is spread over the credentials {@code target#g.1} to {@code target#g.n}.</li>
  * </ul>
- * The chunks are written before the credential referring to them, so a failure leaves the previous secret
- * intact, or at least never one assembled from parts of two.
+ * A chunked secret is written to the generation its predecessor does not use, and the credential referring to
+ * the chunks is written last. Replacing it switches to the new secret in one step, and only then are the old
+ * chunks removed. A store that fails midway therefore leaves the previous secret intact, and a load never
+ * assembles a secret from parts of two.
  */
 public class WindowsCredentialManager extends AbstractKeyring {
 
@@ -64,6 +67,17 @@ public class WindowsCredentialManager extends AbstractKeyring {
 
   private static final int MAX_INLINE_SIZE = Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE - 1;
   private static final int CHUNK_SIZE = Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE;
+  private static final int CHUNKED_SIZE = 6;    // tag, count, generation
+
+  /**
+   * The chunks of a stored secret.
+   *
+   * @param count the number of chunks, 0 if inline or not stored
+   * @param generation the generation of the chunks, 0 or 1
+   */
+  private record Chunks(int count, int generation) {
+    private static final Chunks NONE = new Chunks(0, 0);
+  }
 
   /**
    * Access to the generic credentials.
@@ -164,10 +178,10 @@ public class WindowsCredentialManager extends AbstractKeyring {
   @Override
   protected void doStore(SecretId id, String label, char[] secret) {
     String target = getTargetName(id);
-    int oldChunks = getChunkCount(target);
+    Chunks oldChunks = getChunks(target);
+    Chunks newChunks = Chunks.NONE;
     byte[] bytes = SecretsHelper.encode(secret);
     byte[] blob = null;
-    int newChunks = 0;
     try {
       if (bytes.length <= MAX_INLINE_SIZE) {
         blob = new byte[bytes.length + 1];
@@ -175,26 +189,29 @@ public class WindowsCredentialManager extends AbstractKeyring {
         System.arraycopy(bytes, 0, blob, 1, bytes.length);
       }
       else {
-        newChunks = (bytes.length + CHUNK_SIZE - 1) / CHUNK_SIZE;
-        for (int i = 0; i < newChunks; i++) {
-          byte[] chunk = Arrays.copyOfRange(bytes, i * CHUNK_SIZE, Math.min(bytes.length, (i + 1) * CHUNK_SIZE));
+        // the generation not in use by the current secret, which therefore stays intact until the switch below
+        int count = (bytes.length + CHUNK_SIZE - 1) / CHUNK_SIZE;
+        newChunks = new Chunks(count, oldChunks.count() > 0 ? 1 - oldChunks.generation() : 0);
+        for (int i = 1; i <= count; i++) {
+          byte[] chunk = Arrays.copyOfRange(bytes, (i - 1) * CHUNK_SIZE, Math.min(bytes.length, i * CHUNK_SIZE));
           try {
-            advapi32.write(getChunkName(target, i + 1), id.account(),
-                           label + " (part " + (i + 1) + " of " + newChunks + ")", chunk);
+            advapi32.write(getChunkName(target, newChunks.generation(), i), id.account(),
+                           label + " (part " + i + " of " + count + ")", chunk);
           }
           finally {
             SecretsHelper.wipe(chunk);
           }
         }
-        blob = ByteBuffer.allocate(5).put(FORMAT_CHUNKED).putInt(newChunks).array();
+        blob = ByteBuffer.allocate(CHUNKED_SIZE).put(FORMAT_CHUNKED).putInt(count)
+                         .put((byte) newChunks.generation()).array();
       }
-      advapi32.write(target, id.account(), label, blob);
+      advapi32.write(target, id.account(), label, blob);    // the switch
     }
     finally {
       SecretsHelper.wipe(bytes);
       SecretsHelper.wipe(blob);
     }
-    removeChunks(target, newChunks + 1, oldChunks);
+    removeStaleChunks(target, newChunks, oldChunks);
   }
 
   @Override
@@ -206,18 +223,18 @@ public class WindowsCredentialManager extends AbstractKeyring {
     }
     byte[] bytes = null;
     try {
-      int chunks = getChunkCount(target, blob);
-      if (chunks == 0) {
+      Chunks chunks = getChunks(target, blob);
+      if (chunks.count() == 0) {
         bytes = Arrays.copyOfRange(blob, 1, blob.length);
       }
       else {
-        byte[][] parts = new byte[chunks][];
+        byte[][] parts = new byte[chunks.count()][];
         try {
           int length = 0;
-          for (int i = 0; i < chunks; i++) {
-            parts[i] = advapi32.read(getChunkName(target, i + 1));
+          for (int i = 0; i < parts.length; i++) {
+            parts[i] = advapi32.read(getChunkName(target, chunks.generation(), i + 1));
             if (parts[i] == null) {
-              throw new KeyringException("part " + (i + 1) + " of " + chunks + " of " + id + " is missing");
+              throw new KeyringException("part " + (i + 1) + " of " + parts.length + " of " + id + " is missing");
             }
             length += parts[i].length;
           }
@@ -245,9 +262,9 @@ public class WindowsCredentialManager extends AbstractKeyring {
   @Override
   protected boolean doRemove(SecretId id) {
     String target = getTargetName(id);
-    int chunks = getChunkCount(target);
+    Chunks chunks = getChunks(target);
     boolean removed = advapi32.delete(target);    // the credential first: without it the chunks are unreachable
-    removeChunks(target, 1, chunks);
+    removeStaleChunks(target, Chunks.NONE, chunks);
     return removed;
   }
 
@@ -263,8 +280,8 @@ public class WindowsCredentialManager extends AbstractKeyring {
   }
 
 
-  private static String getChunkName(String target, int chunk) {
-    return target + "#" + chunk;
+  private static String getChunkName(String target, int generation, int chunk) {
+    return target + "#" + generation + "." + chunk;
   }
 
   private static String escape(String str) {
@@ -272,18 +289,18 @@ public class WindowsCredentialManager extends AbstractKeyring {
   }
 
   /**
-   * Gets the number of chunks of the stored secret.
+   * Gets the chunks of the stored secret.
    *
    * @param target the target name
-   * @return the number of chunks, 0 if none or not stored
+   * @return the chunks, {@link Chunks#NONE} if inline, not stored or of an unknown format
    */
-  private int getChunkCount(String target) {
+  private Chunks getChunks(String target) {
     byte[] blob = advapi32.read(target);
     try {
-      return blob == null ? 0 : getChunkCount(target, blob);
+      return blob == null ? Chunks.NONE : getChunks(target, blob);
     }
     catch (KeyringException kex) {
-      return 0;   // replaced or removed anyway
+      return Chunks.NONE;   // replaced or removed anyway
     }
     finally {
       SecretsHelper.wipe(blob);
@@ -291,35 +308,50 @@ public class WindowsCredentialManager extends AbstractKeyring {
   }
 
   /**
-   * Gets the number of chunks from a credential's blob.
+   * Gets the chunks from a credential's blob.
    *
    * @param target the target name
    * @param blob the blob
-   * @return the number of chunks, 0 if inline
+   * @return the chunks, {@link Chunks#NONE} if inline
+   * @throws KeyringException if the blob has an unknown format
    */
-  private int getChunkCount(String target, byte[] blob) {
+  private Chunks getChunks(String target, byte[] blob) {
     if (blob.length >= 1 && blob[0] == FORMAT_INLINE) {
-      return 0;
+      return Chunks.NONE;
     }
-    if (blob.length == 5 && blob[0] == FORMAT_CHUNKED) {
-      int chunks = ByteBuffer.wrap(blob, 1, 4).getInt();
-      if (chunks > 0) {
-        return chunks;
+    if (blob.length == CHUNKED_SIZE && blob[0] == FORMAT_CHUNKED) {
+      int count = ByteBuffer.wrap(blob, 1, 4).getInt();
+      int generation = blob[5];
+      if (count > 0 && (generation == 0 || generation == 1)) {
+        return new Chunks(count, generation);
       }
     }
     throw new KeyringException("credential " + target + " has an unknown format");
   }
 
   /**
-   * Removes chunks.
+   * Removes the chunks no longer referred to.
+   * <p>
+   * Removes the chunks of the previous secret, and the chunks left behind by a store that failed midway.
+   * The latter are found by removing chunks until the first one is missing. Failures are only logged,
+   * since stale chunks are unreachable and do no harm.
    *
    * @param target the target name
-   * @param from the first chunk
-   * @param to the last chunk
+   * @param current the chunks of the current secret, {@link Chunks#NONE} if inline or removed
+   * @param previous the chunks of the previous secret, {@link Chunks#NONE} if inline or not stored
    */
-  private void removeChunks(String target, int from, int to) {
-    for (int i = from; i <= to; i++) {
-      advapi32.delete(getChunkName(target, i));
+  private void removeStaleChunks(String target, Chunks current, Chunks previous) {
+    try {
+      for (int generation = 0; generation <= 1; generation++) {
+        int from = current.count() > 0 && current.generation() == generation ? current.count() + 1 : 1;
+        int to = previous.count() > 0 && previous.generation() == generation ? previous.count() : 0;
+        for (int i = from; advapi32.delete(getChunkName(target, generation, i)) || i < to; i++) {
+          // up to the last chunk of the previous secret at least, then until the first one missing
+        }
+      }
+    }
+    catch (KeyringException kex) {
+      LOGGER.warning("removing stale chunks of " + target + " failed", kex);
     }
   }
 

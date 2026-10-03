@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -42,12 +43,16 @@ import static org.testng.Assert.assertTrue;
 public class WindowsChunkingTest extends AbstractKeyringContractTest {
 
   private final Map<String, byte[]> credentials = new TreeMap<>();
+  private int writesUntilFailure = -1;    // < 0: never fail
 
   @Override
   protected Keyring createKeyring() {
     return new WindowsCredentialManager(new WindowsCredentialManager.CredentialAccess() {
       @Override
       public void write(String targetName, String userName, String comment, byte[] blob) {
+        if (writesUntilFailure >= 0 && writesUntilFailure-- == 0) {
+          throw new KeyringException("simulated failure");
+        }
         if (blob.length > Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE) {
           throw new KeyringException("blob too large");
         }
@@ -92,8 +97,40 @@ public class WindowsChunkingTest extends AbstractKeyringContractTest {
     Reporter.log("a missing chunk is reported, not silently truncated", true);
     SecretId id = id("chunks");
     keyring.store(id, null, secret(2 * Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE));
-    credentials.remove(credentials.keySet().stream().filter(k -> k.endsWith("#2")).findFirst().orElseThrow());
+    credentials.remove(credentials.keySet().stream().filter(k -> k.endsWith("#0.2")).findFirst().orElseThrow());
     keyring.load(id);
+  }
+
+  @Test
+  public void testFailedStoreKeepsPreviousSecret() {
+    Reporter.log("a store failing midway leaves the previous secret intact", true);
+    SecretId id = id("chunks");
+    char[] first = secret(3 * Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE);
+    keyring.store(id, null, first);
+    char[] second = secret(3 * Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE);
+    second[0] = 'X';
+    second[second.length - 1] = 'X';
+    writesUntilFailure = 2;     // the third chunk fails
+    assertThrows(KeyringException.class, () -> keyring.store(id, null, second));
+    assertEquals(keyring.load(id), first);
+    // the next store overwrites the leftovers and removes all stale chunks
+    keyring.store(id, null, secret(Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE + 1));
+    assertEquals(credentials.size(), 3);
+    keyring.store(id, null, second);
+    assertEquals(keyring.load(id), second);
+    assertEquals(credentials.size(), 4);
+  }
+
+  @Test
+  public void testFailedStoreLeftoversAreRemoved() {
+    Reporter.log("chunks left behind by a failed store are removed by the next one", true);
+    SecretId id = id("chunks");
+    writesUntilFailure = 2;     // two chunks are written, the third fails
+    assertThrows(KeyringException.class, () -> keyring.store(id, null, secret(3 * Advapi32.CRED_MAX_CREDENTIAL_BLOB_SIZE)));
+    assertEquals(credentials.size(), 2);
+    keyring.store(id, null, "small".toCharArray());
+    assertEquals(credentials.size(), 1);
+    assertEquals(keyring.load(id), "small".toCharArray());
   }
 
 }

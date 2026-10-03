@@ -52,6 +52,9 @@ them by name:
 | `windows`   | Windows             | Credential Manager, `CredWriteW`/`CredReadW`/`CredDeleteW`    |
 | `libsecret` | Linux, other Unixes | freedesktop.org Secret Service via `libsecret-1.so.0`         |
 
+Forcing is strict: a platform keyring forced on the wrong OS, or one whose store is not usable, makes
+`getKeyring()` throw a `KeyringException` instead of falling back.
+
 The application doesn't need to `requires` the module. `org.tentackle.common` declares `uses ModuleHook`, and
 this module `provides` one, so service binding pulls it into the module graph as soon as it is on the
 module path. On the classpath, it is found through its `META-INF/services` entry.
@@ -74,18 +77,24 @@ access, it throws a `KeyringException`. Sign your application bundles.
 The secrets are generic credentials of the user, persisted with `CRED_PERSIST_LOCAL_MACHINE`. Despite
 its name, that is per user, but the credentials do not roam to other machines with the profile. They appear
 in the Control Panel's Credential Manager under *Windows Credentials*, with the target name
-`account@service`. `%`, `@` and `#` in the parts are percent-encoded, so no two ids share a target.
+`account@service`. `%`, `@` and `#` in the parts are percent-encoded, so no two ids share a target, and no
+target can be mistaken for one of the chunks described below. Windows compares target names case-insensitively,
+however, so ids that differ only in case refer to the same credential.
 
 A credential holds at most 2560 bytes, and access tokens issued by Entra ID can be larger than that. Larger
-secrets are therefore spread over the additional credentials `target#1` … `target#n`, and the main
-credential refers to them. The chunks are written before the credential that refers to them, and stale
-chunks are removed afterward. A failure midway therefore never yields a secret assembled from two
-different writes: a missing chunk is reported as a `KeyringException`, and nothing is silently truncated.
+secrets are therefore spread over the additional credentials `target#g.1` … `target#g.n`, and the main
+credential refers to them. The generation `g` is 0 or 1. A new secret goes to the generation the old one
+does not use, and the main credential is written last. Rewriting it switches from the old secret to the new
+one in a single step, and only then are the old chunks removed. A store that fails midway therefore leaves
+the previous secret intact, and its leftovers are cleaned up by the next store. A load never assembles a
+secret from two different writes: a missing chunk is reported as a `KeyringException`, and nothing is
+silently truncated.
 
 ### Linux and other Unixes
 
 The secrets go to the default collection (usually *login*) of whatever implements the Secret Service
-D-Bus API: GNOME Keyring, KWallet since 5.97, or KeePassXC. They carry the schema `org.tentackle.keyring` and the
+D-Bus API: GNOME Keyring, KWallet since 5.97, or KeePassXC. The bindings load `libsecret-1.so.0` and the
+GLib it depends on (`libglib-2.0.so.0`); if `libsecret` is not installed, the factory falls back as well. They carry the schema `org.tentackle.keyring` and the
 attributes `service` and `account`, so other tools find them, for example
 `secret-tool lookup service <service> account <account>`.
 
@@ -94,6 +103,17 @@ Secret Service. The factory detects this at startup by looking up a secret that 
 lookup fails fast without a provider, and since nothing matches, it never prompts to unlock a
 collection. The factory then falls back to the keyrings of
 [tentackle-core](../../../../tentackle-core/src/main/docs/keyring.md#selection).
+
+## Secrets in memory
+
+The keyrings follow the rules of the [keyring API](../../../../tentackle-core/src/main/docs/keyring.md#the-api):
+a secret travels as a `char[]` and is converted to UTF-8 with `SecretsHelper`, never via a `String`. Every
+Java array and every native buffer that held a secret is wiped before it is released, including the blob
+that Windows returns, before `CredFree`. libsecret's `secret_password_free` wipes the returned password
+itself.
+
+The one copy that cannot be wiped is on macOS: the `SecItem` API takes and returns the secret as a
+`CFData`, which is immutable. It is released right after the call, but its memory is not cleared.
 
 ## Native access and packaging
 
@@ -113,15 +133,20 @@ and not exported.
 
 **`--enable-native-access=org.tentackle.keyring` is required.** Without it, the JVM warns on the
 first restricted call, and a future release will refuse them. On the class path, use
-`--enable-native-access=ALL-UNNAMED`. For a jlink/jpackage image, add the flag to the launcher's JVM
+`--enable-native-access=ALL-UNNAMED`, or, for an executable JAR, the manifest attribute
+`Enable-Native-Access: ALL-UNNAMED`. For a jlink/jpackage image, add the flag to the launcher's JVM
 options, just as for `tentackle-quiche`.
 
 ## Testing
 
 The module's own tests run the same contract (`AbstractKeyringContractTest`) as the keyrings of
-tentackle-core: round trip, replace, independent ids, unicode, a secret larger than a Windows credential,
-and the rejection of empty secrets. The Windows chunking is additionally tested on every platform against a
-fake credential store that enforces the blob limit.
+tentackle-core: round trip, replace, a loaded secret is a copy, independent ids, unicode, a secret larger
+than a Windows credential, and the rejection of empty secrets and of NUL characters. The Windows chunking is
+additionally tested on every platform against a fake credential store that enforces the blob limit and can
+fail on demand: stale chunks are removed, a missing chunk is reported, and a store that fails midway keeps
+the previous secret. `PlatformKeyringFactoryTest` checks that the module replaces the default factory, that
+the keyrings of tentackle-core can still be forced, and that the keyrings of the other platforms fail
+cleanly.
 
 The real credential store of the OS is only tested on request, since that needs an unlocked store:
 

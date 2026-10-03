@@ -55,7 +55,8 @@ public class PlatformKeyringFactory extends DefaultKeyringFactory {
   /**
    * {@inheritDoc}
    * <p>
-   * Returns the credential store of the operating system, if usable.
+   * Returns the credential store of the operating system, if usable. Otherwise, logs a warning and falls back
+   * to the keyrings of the {@link DefaultKeyringFactory}.
    */
   @Override
   protected Keyring selectBestKeyring() {
