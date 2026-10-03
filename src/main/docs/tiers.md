@@ -72,11 +72,14 @@ tiers separate the PDO from the physical database.
 
 ### 1. Leaf client
 
-A desktop ([JavaFX](../../../tentackle-fx/src/main/docs/fx.md)) or [web](../../../tentackle-web/src/main/docs/web.md) application built on
+A desktop ([JavaFX](../../../tentackle-fx/src/main/docs/fx.md)) application built on
 [`AbstractClientApplication`](../../../tentackle-pdo/src/main/java/org/tentackle/app/AbstractClientApplication.java).
 It opens a single remote session upstream and never accepts inbound connections. After login, it copies the
 server-resolved user id back into its own `SessionInfo`
 (`AbstractClientApplication.updateSessionInfoAfterLogin()` via `session.getRemoteSession().getClientSessionInfo()`).
+
+A [web](../../../tentackle-web/src/main/docs/web.md) application is a leaf as well, but toward HTTP: it is built on
+`AbstractServerApplication` and owns a session pool, yet opens no TRIP endpoint.
 
 ### 2. Middle-tier server
 

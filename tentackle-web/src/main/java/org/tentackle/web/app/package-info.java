@@ -17,6 +17,6 @@
  */
 
 /**
- * Application lifecycle.
+ * The bridge between a web framework and a Tentackle tier: the web application and its web session key cache.
  */
 package org.tentackle.web.app;

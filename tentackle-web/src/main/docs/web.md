@@ -2,10 +2,10 @@
 
 ## Overview and Motivation
 
-`tentackle-web` is the thinnest module in the framework. It contains exactly two public classes —
+`tentackle-web` is the thinnest module in the framework. It exports exactly two classes —
 [`WebApplication`](../java/org/tentackle/web/app/WebApplication.java) and
-[`WebSessionKeyCache`](../java/org/tentackle/web/app/WebSessionKeyCache.java) — plus a
-[`ModuleHook`](../java/org/tentackle/web/app/service/Hook.java) for resource-bundle resolution. Its job is
+[`WebSessionKeyCache`](../java/org/tentackle/web/app/WebSessionKeyCache.java) — plus it provides a
+[`ModuleHook`](../java/org/tentackle/web/app/service/Hook.java) for resource-bundle resolution in a non-exported package. Its job is
 narrow but important: **let a foreign web stack (Spring Boot, a servlet container, a JAX-RS runtime, …) run as a
 first-class node in a [Tentackle cascade](../../../../src/main/docs/tiers.md).**
 
@@ -19,7 +19,9 @@ park a long-lived persistence session. `tentackle-web` reconciles the two worlds
 - A [`WebApplication`](../java/org/tentackle/web/app/WebApplication.java) **is** an
   [`AbstractServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/AbstractServerApplication.java)
   — it boots like any Tentackle server, logs into its backend (a database or an upstream server), and owns a
-  session pool. So it is a normal tier in the cascade.
+  session pool. So it is a normal tier in the cascade. Unlike a
+  [`ServerApplication`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/ServerApplication.java),
+  however, it opens no TRIP endpoint: no other Tentackle node connects to it.
 - On top of that it maintains a small **web-session-key cache** mapping the web framework's session identifier to a
   Tentackle [`SessionInfo`](../../../../tentackle-session/src/main/java/org/tentackle/session/SessionInfo.java),
   so that each inbound HTTP request can borrow a pooled persistence session, run as the right user, and return the
@@ -61,7 +63,9 @@ Because `WebApplication` extends `AbstractServerApplication`, **both deployment 
   [`MultiUserSessionPool`](../../../../tentackle-session/src/main/java/org/tentackle/session/MultiUserSessionPool.java)
   (`getRemoteSessionPool()`), one upstream session per user.
 
-`WebApplication.getSession(...)` (below) hides this difference: it picks the pool that exists.
+`WebApplication.getSession(...)` (below) hides this difference: it picks the pool that exists. The pools are created
+by `AbstractServerApplication.finishStartup()` and shut down by `cleanup()`. Outside that window — a web container
+still accepting or already draining requests — `getSession(...)` simply returns `null`.
 
 ---
 
@@ -71,12 +75,17 @@ Because `WebApplication` extends `AbstractServerApplication`, **both deployment 
 parameterized by the **web session key type** `T`. `T` is whatever the web framework uses to identify a client
 session — most commonly a `String` (the servlet session id), but it can be any key you can hand back to the cache.
 
-The key cache itself is created with the application, so it is never null — a web container may still be draining
+Since `T` is used as a map key, it must provide proper `equals` and `hashCode` and must not be `null`.
+
+The key cache itself is created in the constructor, so it is never null — a web container may still be draining
 requests while the node is already shutting down. Only its cleanup thread follows the application's lifecycle and
 slots into the standard startup/shutdown sequence:
 
 ```java
-private final WebSessionKeyCache<T> sessionInfoCache = new WebSessionKeyCache<>();
+public WebApplication(String name, String version) {
+  super(name, version);
+  sessionInfoCache = new WebSessionKeyCache<>();
+}
 
 @Override protected void finishStartup()  { super.finishStartup(); sessionInfoCache.startup(300000); } // 5 min
 @Override protected void cleanup()        {
@@ -96,7 +105,7 @@ the `finally` matter: if the node fails to come up at all — a wrong backend pa
 `AbstractApplication.start()` calls `stop()`, and the cleanup must still shut down the session pool, the connection
 manager and the JDBC drivers rather than abort on a cache that was never started.
 
-The public API is four methods that the web layer calls, plus the inherited server machinery:
+The public API is five methods that the web layer calls, plus the inherited server machinery:
 
 | Method                                   | Called from                       | Purpose                                                                                                                                                                                              |
 |------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -104,7 +113,7 @@ The public API is four methods that the web layer calls, plus the inherited serv
 | `removeWebSession(T key)`                | logout / session-expired listener | Drop the mapping (no-op if absent).                                                                                                                                                                  |
 | `getSession(T key)`                      | per request                       | Borrow a pooled persistence [`Session`](../../../../tentackle-session/src/main/java/org/tentackle/session/Session.java) attached to that user's `SessionInfo`; `null` if the key is unknown/expired. |
 | `putSession(Session)`                    | after the response                | Return the session to its pool.                                                                                                                                                                      |
-| `getSessionKeys(SessionInfo)`            | app code                          | Reverse-lookup all web keys currently bound to a `SessionInfo`.                                                                                                                                      |
+| `getSessionKeys(SessionInfo)`            | app code                          | Reverse-lookup all web keys currently bound to a `SessionInfo` (compared by `equals`, i.e., by username).                                                                                           |
 
 ### How `getSession` resolves a pooled session
 
@@ -131,25 +140,40 @@ public Session getSession(T sessionKey) {
   return null;
 }
 ```
-If the application is a remote client to another Tentackle node, `getSession()` must be overridden to update the
-session's `SessionInfo` before returning it, if it's not already bound to the user identity yet. This happens
-only once per session. Otherwise, the security checks will only be applied in the remote node but not in the 
-local one, and other features such as token locking would not work as expected.
-Another approach would be to get the `name -> id` mapping earlier, so that it's known before `addWebSession()`. 
-Ultimately, it depends on the implementation of the authentication source and is therefore not already 
-implemented in `WebApplication`.
+### Resolving the user id
+
+The `SessionInfo` built from the web framework's principal (`createSessionInfo(username, password, …)`) carries
+only the username and password, but not the user's id and class id. Neither does the borrowed session: the local
+pool of a DB-connected node
+([`AbstractServerApplication.createSessionPool()`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/app/AbstractServerApplication.java))
+deliberately wipes the identity of every session it hands out. Without the user id, the security checks would only
+be applied in an upstream node but not in the local one, and features such as token locking would not work as
+expected.
+
+How to obtain the id depends on the authentication source and is therefore not implemented in `WebApplication`:
+
+- On a **proxy** node, the upstream server resolves the user at login. Copy the id back into the `SessionInfo` the
+  first time the session is used — the same way
+  [`AbstractClientApplication.updateSessionInfoAfterLogin()`](../../../../tentackle-pdo/src/main/java/org/tentackle/app/AbstractClientApplication.java)
+  does for a desktop client. Since the `SessionInfo` is cached, this happens only once per web session.
+- On a **DB-connected** node, the application resolves the `name → id` mapping itself, for example before
+  `addWebSession()`.
+
+A `getSession()` override covering both cases:
 
 ```java
   @Override
   public Session getSession(String sessionKey) {
     Session session = super.getSession(sessionKey);
-    if (session.getSessionInfo().getUserId() == 0) {
+    if (session != null && session.getSessionInfo().getUserId() == 0) {
       if (session.isRemote()) {
-        session.getSessionInfo().setUserId(session.getRemoteSession().getClientSessionInfo().getUserId());
-        session.getSessionInfo().setUserClassId(session.getRemoteSession().getClientSessionInfo().getUserClassId());
+        SessionInfo upstreamInfo = session.getRemoteSession().getClientSessionInfo();
+        session.getSessionInfo().setUserId(upstreamInfo.getUserId());
+        session.getSessionInfo().setUserClassId(upstreamInfo.getUserClassId());
       }
       else {
-        throw new AuthenticationException("cannot determine userId and userClassId");
+        putSession(session);        // don't leak the pooled session
+        throw new AuthenticationException("cannot determine userId and userClassId");  // org.tentackle.session.auth
       }
     }
     return session;
@@ -192,14 +216,16 @@ is kept.
   `null`, so the caller falls back to creating a fresh `SessionInfo`.
 
 - **Background eviction.** A private `CleanupThread` (daemon) wakes on the configured interval (5 minutes, from
-  `WebApplication.finishStartup`) and purges map entries whose soft reference was already cleared:
+  `WebApplication.finishStartup`; it must be positive) and purges map entries whose soft reference was already
+  cleared:
 
   ```java
   sessionInfoMap.values().removeIf(ref -> ref.get() == null);
   ```
 
   `startup(long)` refuses to start a second thread, and `terminate()` interrupts and joins it during application
-  cleanup. This sweeps up keys for sessions the web container forgot to log out (crashes, dropped connections)
+  cleanup. Terminating keeps the mappings, and the cache may be started again. Terminating a cache that was never
+  started — or whose thread died — throws, which is why `WebApplication.cleanup()` asks `isRunning()` first. This sweeps up keys for sessions the web container forgot to log out (crashes, dropped connections)
   without relying on the web framework to always fire a logout event.
 
 All three places that evict a dead entry — the lookup, the reverse scan and the sweeper — remove it **conditionally
@@ -215,8 +241,12 @@ convinced it is logged in while every following request gets `null`. (`Concurren
 already removes value-conditionally, which is why the sweeper needs no extra care.)
 
 `getSessionKeys(SessionInfo)` scans the map for all keys bound to a given identity (removing any dead entries it
-meets along the way). It is the basis for "log this user out everywhere" or "how many web sessions does this user
-hold" features, and works even when one user has several concurrent browser sessions.
+meets along the way) and returns them in a new collection. The identities are compared by `SessionInfo.equals`,
+which for the default implementation means **by username** — so any `SessionInfo` describing the user will do, not
+only the cached instance. It is the basis for "log this user out everywhere" or "how many web sessions does this
+user hold" features, and works even when one user has several concurrent browser sessions.
+
+The cache is thread-safe; the keys must not be `null`.
 
 ---
 
@@ -246,9 +276,9 @@ PDO code (which reaches for the *current* session) run correctly without threadi
 ## Worked Example: a Spring Boot REST Tier
 
 The cleanest way to use `tentackle-web` is to start the Tentackle application first, and once it is fully up,
-launch the web framework *inside* it. Below is a complete Spring Boot REST daemon built this way. 
+launch the web framework *inside* it. Below is a complete Spring Boot REST daemon built this way.
 It authenticates with HTTP Basic against the user table and serves
-REST endpoints that run as the authenticated Tentackle user.
+REST endpoints that run as the authenticated Tentackle user
 (changing to JWT is a matter of a few lines of code and covered by Spring, not Tentackle).
 
 > The example uses Spring Boot + Spring Security, but nothing in `tentackle-web` is Spring-specific. The same five
@@ -288,7 +318,7 @@ public class RestServer extends WebApplication<String> {
 
   @Override
   protected void finishStartup() {
-    super.finishStartup();                              // key cache + server endpoint now live
+    super.finishStartup();                              // session pools + key cache now live
     ModificationTracker.submit(userDetailsService::reload);
     Pdo.listen(userDetailsService::reload, User.class); // rebuild Spring user cache whenever the user table changes
     SpringApplication.run(PlsblRestApplication.class);  // only now start Spring Boot
@@ -299,7 +329,7 @@ public class RestServer extends WebApplication<String> {
 Two Tentackle features earn their keep here. `getUser(...)` is the framework's hook
 ([`Application.getUser`](../../../../tentackle-pdo/src/main/java/org/tentackle/app/Application.java)) for turning a
 resolved user id into a domain object. And `Pdo.listen(..., User.class)` wires the
-[modification tracker](../../../../tentackle-session/src/main/docs/session.md) so that **any change to the user
+[modification tracker](../../../../tentackle-session/src/main/docs/modification-tracking.md) so that **any change to the user
 table — made on any tier of the cascade — automatically refreshes the web layer's authentication cache**, with no
 polling and no restart.
 
@@ -440,7 +470,7 @@ deferring the `UserDetailsService` bean to the running Tentackle application ins
 @Configuration @EnableWebSecurity
 public class WebSecurityConfig {
   @Bean public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    return http.authorizeRequests(a -> a.anyRequest().authenticated())
+    return http.authorizeHttpRequests(a -> a.anyRequest().authenticated())
                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
                .httpBasic(Customizer.withDefaults()).build();
   }
@@ -505,7 +535,7 @@ and satisfies the interface's single abstract method:
 ```java
 public abstract class RestControllerBase implements DomainContextProvider {
 
-  private final DomainContext context = Pdo.createDomainContext();   // thread-local domain context
+  private final DomainContext context = Pdo.createDomainContext();   // uses the thread-local session
 
   @Override
   public DomainContext getDomainContext() {
@@ -601,7 +631,7 @@ the application.
 
 - **Stateless HTTP, stateful persistence.** The web-session-key cache is the only state the bridge adds, and it is
   intentionally *soft* and self-evicting. The web framework remains the source of truth for authentication and
-  session lifetime; Tentackle just memoises the matching `SessionInfo` so most requests skip a re-login.
+  session lifetime; Tentackle just memoizes the matching `SessionInfo` so most requests skip a re-login.
 - **Borrow-per-request, not session-per-user.** Persistence sessions are pooled and bound to the *request*, never
   held open per browser. A logged-in user with an idle browser consumes no session — only an entry in the key
   cache — which is what lets a single web tier serve far more users than it has connections.
@@ -609,8 +639,9 @@ the application.
   on return for DB-connected nodes) is what makes pooled, shared sessions execute as the correct user without any
   per-user connection.
 - **One artifact, any topology.** Because `WebApplication` is an `AbstractServerApplication`, the same web daemon
-  runs DB-connected or as a proxy purely by changing its `url`, and it can itself sit in front of, or behind, other
-  Tentackle servers — see [Multi-Tier Cascade](../../../../src/main/docs/tiers.md).
+  runs DB-connected or as a proxy purely by changing its `url`, and it can sit in front of any chain of Tentackle
+  servers. Since it opens no TRIP endpoint, it is always the last Tentackle node toward the HTTP clients — see
+  [Multi-Tier Cascade](../../../../src/main/docs/tiers.md).
 
 ---
 
@@ -620,7 +651,9 @@ the application.
 - [Multi-Tier Cascade](../../../../src/main/docs/tiers.md) — nodes, roles, pooling and caching across tiers; the
   context a web node lives in.
 - [Tentackle Session](../../../../tentackle-session/src/main/docs/session.md) — the location-transparent `Session`
-  and `SessionInfo` the bridge borrows and binds, and the modification tracking the example uses for live auth.
+  and `SessionInfo` the bridge borrows and binds.
+- [Modification Tracking](../../../../tentackle-session/src/main/docs/modification-tracking.md) — the change
+  notification the example uses to keep its authentication cache up to date.
 - [PDO / Persistent Domain Objects](../../../../tentackle-pdo/src/main/docs/pdo.md) — the objects the REST
   controllers operate on.
 - [tentackle-persistence](../../../../tentackle-persistence/src/main/docs/persistence.md) — the server-application

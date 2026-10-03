@@ -23,7 +23,11 @@ import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
- * Hook for the web module.
+ * Hook for the web module.<br>
+ * Makes the module part of the module hierarchy and provides access to its resource bundles
+ * from within the named module.
+ *
+ * @see ModuleHook
  *
  * @author harald
  */
