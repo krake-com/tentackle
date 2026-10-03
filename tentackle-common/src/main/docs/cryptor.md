@@ -252,7 +252,7 @@ contains only ciphertext. At runtime the session layer loads this file as `Encry
 - **`Secret`** keeps the user's password (in the session info's `PasswordCredentials`) as
   encrypted bytes rather than a clear `char[]`, so a heap dump of a running client doesn't
   surrender it. The same applies on the wire, since the encrypted bytes are what gets serialized.
-- **Login and auto-update** pass the already-encrypted credentials along on restart, which is how
+- **Login and auto-update** pass the credentials, encrypted, along on restart, which is how
   [fx-rdc-update](../../../../tentackle-fx-rdc-update/src/main/docs/fx-rdc-update.md) restarts a
   client seamlessly without re-prompting.
 - **TRIP transports** `tripe` and `tripce` encrypt the connection with the same `Cryptor` as a
