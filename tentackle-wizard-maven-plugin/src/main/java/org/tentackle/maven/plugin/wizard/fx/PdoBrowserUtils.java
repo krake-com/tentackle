@@ -53,6 +53,25 @@ public class PdoBrowserUtils {
   }
 
   /**
+   * Gets the PDO a data node can be browsed for.<br>
+   * For an object node it's the PDO itself, for an attribute holding a non-composite relation the related PDO.
+   *
+   * @param dataNode the data node, null if none
+   * @return the PDO, null if none
+   */
+  public static PersistentDomainObject<?> getBrowsablePdo(DataNode dataNode) {
+    if (dataNode instanceof DataObject dataObject) {
+      if (dataObject.getEntity() == null || !dataObject.getEntity().isEmbedded()) {
+        return dataObject.getPdo();
+      }
+    }
+    else if (dataNode instanceof DataItem dataItem && dataItem.getNonCompositeRelation() != null) {
+      return dataItem.getNonCompositeRelation().getRelatedPdo();
+    }
+    return null;
+  }
+
+  /**
    * Returns whether an SQL {@code SELECT} can be created for a data node.<br>
    * Not possible for embedded objects and for attributes whose data type spans several columns.
    *

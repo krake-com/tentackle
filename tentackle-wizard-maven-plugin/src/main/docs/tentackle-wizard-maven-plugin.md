@@ -317,7 +317,7 @@ The window is organized into two toolbars and three data areas, the latter resiz
 
 | Area                            | Contents                                                                                    |
 |---------------------------------|---------------------------------------------------------------------------------------------|
-| top toolbar                     | *profile*, *only root entities*, *entity*, and the duplicate (**+**) button.                 |
+| top toolbar                     | *profile*, *only root entities*, *entity*, and the **+** button (browse in new tab).          |
 | left table                      | the loaded PDOs, with their object ID and their unique domain key (*UDK*). Multi-selectable. |
 | right tree table                | the object tree of the PDO selected on the left, optionally diffed against a memorized state.|
 | bottom table                    | the row details of the tree node selected above.                                             |
@@ -401,6 +401,8 @@ The context menu offers, depending on the selected node:
   super-entity are included, and references living in an embedded type resolve to the prefixed column
   of the embedding table. The item is only shown for object nodes.
 - **copy class-ID … to clipboard** — the class ID of the selected object.
+- **browse in new tab** — opens the selected object, or the object referenced by the selected
+  attribute, in a new browser tab (see [Working with Several Views](#working-with-several-views)).
 
 Plus the standard table features described above, extended by *expand* and *collapse* for the subtree
 of the selected node.
@@ -445,9 +447,12 @@ show up as gaps on one side rather than shifting everything below them.
 
 ##### Working with Several Views
 
-The **+** button in the top toolbar duplicates the current view — same entity, same selected PDO — into
-a new tab, as does *browse in new tab* in the row details menu. The first duplicate turns the window
-into a tab pane; each tab is titled after its selected object (or its entity, when nothing is selected),
+The **+** button in the top toolbar opens the object selected in the tree table — for an attribute
+holding a relation, the referenced object — in a new tab, as does *browse in new tab* in the context
+menus of the tree and the row details table. If the row details table was focused more recently than
+the tree, **+** opens its selected object instead. If there is no such selection, **+** duplicates the
+current view — same entity, same selected PDO — into a new tab. The first new tab turns the window into
+a tab pane; each tab is titled after its selected object (or its entity, when nothing is selected),
 so several objects can be inspected side by side. Tabs are closable except for the first one, and
 closing them until one is left restores the plain single view.
 

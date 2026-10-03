@@ -148,14 +148,26 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
   private Map<String, Boolean> codePaths;
+  private boolean rowDetailsFocused;    // true if the row details table had the focus more recently than the tree
 
 
   @FXML
   private void initialize() {
     pdoView = Fx.load(PdoView.class);
     pdoView.addSelectedItemListener((_, _, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
+    pdoView.addFocusedListener((_, _, focused) -> {
+      if (focused) {
+        rowDetailsFocused = false;
+      }
+    });
+    pdoView.setBrowseHandler(this::browseInNewTab);
     innerSplitPane.getItems().add(pdoView.getView());
     rowDetailsTable = Fx.create(TableView.class);
+    rowDetailsTable.focusedProperty().addListener((_, _, focused) -> {
+      if (focused) {
+        rowDetailsFocused = true;
+      }
+    });
     MenuItem copyFQCNItem = Fx.create(MenuItem.class);
     copyFQCNItem.setOnAction(_ -> PdoBrowserUtils.copyFQCN(getSelectedDetailDataNode()));
     MenuItem copyTableItem = Fx.create(MenuItem.class);
@@ -176,15 +188,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     genCodeItem.setText("copy Java code to clipboard");
     MenuItem browseItem = Fx.create(MenuItem.class);
     browseItem.setOnAction(_ -> {
-      DataNode node = getSelectedDetailDataNode();
-      if (node instanceof DataObject dataObj) {
-        try {
-          PdoBrowser browser = container.addBrowserView();
-          Platform.runLater(() -> browser.setupForPdo(new PdoWrapper(dataObj.getPdo())));
-        }
-        catch (MojoExecutionException mx) {
-          mojo.getLogger().error(mx.getMessage(), mx);
-        }
+      PersistentDomainObject<?> pdo = PdoBrowserUtils.getBrowsablePdo(getSelectedDetailDataNode());
+      if (pdo != null) {
+        browseInNewTab(pdo);
       }
     });
     browseItem.setText("browse in new tab");
@@ -192,6 +198,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
                                                         copySqlItem, findReferencesItem, genCodeItem, browseItem);
     rowDetailsContextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, _ -> {
       genCodeItem.setVisible(getSelectedDetailDataNode() instanceof DataObject);
+      browseItem.setVisible(PdoBrowserUtils.getBrowsablePdo(getSelectedDetailDataNode()) != null);
       PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
                                            copyTableItem, copyClassIdItem, copySqlItem, findReferencesItem);
     });
@@ -689,16 +696,38 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     return null;
   }
 
+  /**
+   * Opens a new tab.<br>
+   * Shows the PDO selected in the row details table if it had the focus more recently than the tree,
+   * otherwise the PDO selected in the tree. If neither applies, duplicates the current view.
+   */
   private void duplicate() {
     try {
       PdoBrowser browser = container.addBrowserView();
-      PdoWrapper pdo = pdosTableView.getSelectionModel().getSelectedItem();
+      PersistentDomainObject<?> nodePdo = PdoBrowserUtils.getBrowsablePdo(
+          rowDetailsFocused ? getSelectedDetailDataNode() : pdoView.getSelectedDataNode());
+      PdoWrapper pdo = nodePdo != null ? new PdoWrapper(nodePdo) : pdosTableView.getSelectionModel().getSelectedItem();
       if (pdo != null) {
         Platform.runLater(() -> browser.setupForPdo(pdo));
       }
       else if (entity != null) {
         Platform.runLater(() -> browser.setupForType(entity));
       }
+    }
+    catch (MojoExecutionException mx) {
+      mojo.getLogger().error(mx.getMessage(), mx);
+    }
+  }
+
+  /**
+   * Opens a PDO in a new tab.
+   *
+   * @param pdo the PDO to browse
+   */
+  private void browseInNewTab(PersistentDomainObject<?> pdo) {
+    try {
+      PdoBrowser browser = container.addBrowserView();
+      Platform.runLater(() -> browser.setupForPdo(new PdoWrapper(pdo)));
     }
     catch (MojoExecutionException mx) {
       mojo.getLogger().error(mx.getMessage(), mx);
