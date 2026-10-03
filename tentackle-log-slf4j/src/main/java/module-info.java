@@ -17,7 +17,7 @@
  */
 
 /**
- * tentackle-log-slf4j module.
+ * SLF4J provider for the Tentackle logging API.
  */
 module org.tentackle.log.slf4j {
 

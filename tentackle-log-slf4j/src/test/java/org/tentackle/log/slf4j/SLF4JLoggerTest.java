@@ -322,6 +322,32 @@ public class SLF4JLoggerTest {
     assertEquals(capture.singleEvent().getFormattedMessage(), "raw {0} text");
   }
 
+  @Test
+  public void testMessageWithParamsUnescapesQuotes() {
+    logger.info("it''s {0}", "x");
+    assertEquals(capture.singleEvent().getFormattedMessage(), "it's x");
+  }
+
+  @Test
+  public void testEmptyParamSuppliersAreFormatted() {
+    // unlike Object... params, the supplier variants always apply MessageFormat
+    logger.info("it''s", new Supplier<?>[0]);
+    assertEquals(capture.singleEvent().getFormattedMessage(), "it's");
+  }
+
+  @Test
+  public void testSlf4jPlaceholdersAreNotInterpreted() {
+    // the finished message is passed without arguments, so SLF4J leaves {} alone
+    logger.info("raw {} text");
+    assertEquals(capture.singleEvent().getFormattedMessage(), "raw {} text");
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testSlf4jPlaceholdersWithParamsAreRejected() {
+    // {} is not a valid MessageFormat element
+    logger.info("raw {} text", "x");
+  }
+
 
   // ------------------------------------------------------------------ laziness
 

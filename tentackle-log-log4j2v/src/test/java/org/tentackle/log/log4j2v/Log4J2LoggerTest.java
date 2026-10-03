@@ -331,6 +331,19 @@ public class Log4J2LoggerTest {
     assertEquals(capture.singleEvent().getMessage().getFormattedMessage(), "it's");
   }
 
+  @Test
+  public void testLog4JPlaceholdersAreNotInterpreted() {
+    // the finished message is passed as a SimpleMessage, so Log4J leaves {} alone
+    logger.info("raw {} text");
+    assertEquals(capture.singleEvent().getMessage().getFormattedMessage(), "raw {} text");
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testLog4JPlaceholdersWithParamsAreRejected() {
+    // {} is not a valid MessageFormat element
+    logger.info("raw {} text", "x");
+  }
+
 
   // ------------------------------------------------------------------ laziness
 

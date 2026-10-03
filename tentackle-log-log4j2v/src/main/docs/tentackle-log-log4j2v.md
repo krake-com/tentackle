@@ -83,7 +83,7 @@ obtained from the `LogManager`. Both share the same name and configuration.
 ## Message Formatting
 
 Log4J's native `{}` placeholder syntax is **not** used. Tentackle's facade uses `java.text.MessageFormat`
-(`{0}`, `{1}`, …) uniformly across all back-ends, so `Log4J2Logger` formats the message with `MessageFormat` itself
+(`{0}`, `{1}`, …) uniformly across all backends, so `Log4J2Logger` formats the message with `MessageFormat` itself
 and hands Log4J a finished `SimpleMessage`. The message (and any parameter *suppliers*) are wrapped in a
 `Supplier<Message>` passed to `logIfEnabled`, so they are resolved only when the level is actually enabled and
 unused arguments are never computed.
@@ -99,7 +99,9 @@ Whether `MessageFormat` is applied at all depends on the overload:
 | `info(Supplier<String>)` and variants          | none — the supplied string is logged verbatim   |
 
 So `MessageFormat`'s quoting rules (a single quote must be doubled: `''`) apply only to formatted messages: a
-verbatim `"it''s"` is logged with both quotes.
+verbatim `"it''s"` is logged with both quotes. A Log4J-style `{}` in a verbatim message is logged as is (a
+`SimpleMessage` is never parameterized), but in a formatted message it is not a valid `MessageFormat` element:
+`info("value {}", x)` throws an `IllegalArgumentException` in the caller's thread (if the level is enabled).
 
 `logStacktrace(…)` prints the stacktrace through a
 [`LoggerOutputStream`](../../../../tentackle-core/src/main/java/org/tentackle/log/LoggerOutputStream.java), which
@@ -150,5 +152,5 @@ Log4J itself is configured the usual way (e.g., a `log4j2.xml` on the classpath)
 
 ## See Also
 
-- **[Tentackle Logging — the pluggable logging API](../../../../tentackle-core/src/main/docs/logging.md)** — the facade, `@Log`, MDC, statistics and back-end selection.
+- **[Tentackle Logging — the pluggable logging API](../../../../tentackle-core/src/main/docs/logging.md)** — the facade, `@Log`, MDC, statistics and backend selection.
 - The sibling [`tentackle-log-slf4j` provider](../../../../tentackle-log-slf4j/src/main/docs/tentackle-log-slf4j.md) — the same pattern bound to SLF4J.

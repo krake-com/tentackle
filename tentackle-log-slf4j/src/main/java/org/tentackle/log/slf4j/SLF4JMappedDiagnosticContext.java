@@ -27,7 +27,7 @@ import org.tentackle.log.AbstractMappedDiagnosticContext;
 import java.util.HashMap;
 import java.util.Map;
 
-
+// holder idiom: lazy and thread-safe creation of the singleton
 interface SLF4JMappedDiagnosticContextHolder {
   SLF4JMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
                 SLF4JMappedDiagnosticContext.class, SLF4JMappedDiagnosticContext.class);
@@ -35,7 +35,12 @@ interface SLF4JMappedDiagnosticContextHolder {
 
 
 /**
- * The SLF4J mdc implementation.
+ * The mapped diagnostic context for SLF4J.
+ * <p>
+ * Delegates to SLF4J's thread-local {@link MDC}, so the keys can be referenced in the
+ * backend's layout patterns (e.g. {@code %X} in Logback).<br>
+ * The singleton is created via the {@link ServiceFactory} and can thus be replaced by an
+ * application-specific {@code @Service}.
  *
  * @author harald
  */
@@ -43,7 +48,7 @@ interface SLF4JMappedDiagnosticContextHolder {
 public class SLF4JMappedDiagnosticContext extends AbstractMappedDiagnosticContext {
 
   /**
-   * The singleton.
+   * Gets the singleton.
    *
    * @return the singleton
    */
@@ -79,6 +84,12 @@ public class SLF4JMappedDiagnosticContext extends AbstractMappedDiagnosticContex
     MDC.clear();
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * SLF4J returns a copy of the current thread's context.
+   * If there is none, an empty mutable map is returned.
+   */
   @Override
   public Map<String, String> getContext() {
     Map<String, String> map = MDC.getCopyOfContextMap();
