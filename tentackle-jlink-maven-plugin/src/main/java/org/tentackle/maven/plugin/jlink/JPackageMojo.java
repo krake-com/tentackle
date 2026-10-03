@@ -28,6 +28,7 @@ import org.apache.maven.toolchain.Toolchain;
 import org.eclipse.aether.artifact.Artifact;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.LayerBootstrap;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
@@ -90,6 +91,12 @@ import java.util.Map;
  * To install and edit the templates before running jpackage (or jlink, see {@link JLinkMojo}), use {@link InitMojo} first.
  * In addition to the template variables defined by the {@link JLinkMojo}, the variable <code>runtimeDir</code> is provided
  * pointing to the runtime image directory (which is platform specific).
+ * <p>
+ * The application image passes the system properties <code>ROOTDIR</code>, <code>APPDIR</code> and <code>RUNTIMEDIR</code>
+ * to the application. If {@link AbstractJLinkMojo#getLayers()} are configured, the launcher starts
+ * <code>org.tentackle.common.LayerBootstrap</code> instead of the main class and additionally passes
+ * <code>tentackle.layers</code> and <code>tentackle.layers.basedir</code>, since the native launcher's working
+ * directory is not the runtime image.
  * <p>
  * If the application is built with Tentackle's update feature, please keep in mind that
  * applications deployed by an installer are maintained by a platform specific
@@ -161,7 +168,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
   /** config section for the java options. */
   private static final String JAVA_OPTIONS = "[JavaOptions]";
 
-  /** name of the subdir jpackage >= 15 puts the modulpath jars. */
+  /** name of the subdir jpackage >= 15 puts the module path jars into. */
   private static final String MODS_DIR = "mods";
 
   /** config for the module path (>= java 15). */
@@ -372,21 +379,21 @@ public class JPackageMojo extends AbstractJLinkMojo {
     if (result.isModular()) {
       // a layered application is launched via the bootstrap instead of its own main module/class,
       // exactly like the jlink goal's run.ftl - see org.tentackle.common.LayerBootstrap
-      String effectiveMainModule = isLayered() ? "org.tentackle.common" : getMainModule();
-      String effectiveMainClass = isLayered() ? "org.tentackle.common.LayerBootstrap" : getMainClass();
+      String effectiveMainModule = isLayered() ? JLinkResolver.BOOTSTRAP_MODULE_NAME : getMainModule();
+      String effectiveMainClass = isLayered() ? JLinkResolver.BOOTSTRAP_CLASS_NAME : getMainClass();
       ModularArtifact mainArtifact = result.getModuleArtifact(effectiveMainModule);   // just check before
       if (mainArtifact == null) {
         throw new MojoExecutionException("no such main module: " + effectiveMainModule);
       }
       if (result.isModulePathRequired() && jpackageMajorRuntimeVersion >= 15) {
-        // jpackage >= 15 needs a module path if built from with --runtime-image
+        // jpackage >= 15 needs a module path if built with --runtime-image
         // we will remove the artifacts copied to the app directory below...
         jpackageRunner.arg("-p").arg(getImageDirectory() + "/" + DEST_MODULEPATH);
       }
       jpackageRunner.arg("-m").arg(effectiveMainModule + "/" + effectiveMainClass);
     }
     else {
-      mainJarName = StringHelper.isAllWhitespace(mainJar) ? determineMainJar(result) : mainJar;
+      mainJarName = determineMainJar(result);
       cpDir = new File(getImageDirectory(), DEST_CLASSPATH);
       jpackageRunner.arg("--main-jar").arg(mainJarName)
                     .arg("--main-class").arg(getMainClass())
@@ -396,8 +403,11 @@ public class JPackageMojo extends AbstractJLinkMojo {
                   .arg("--java-options").arg("-DAPPDIR=$APPDIR")
                   .arg("--java-options").arg("-DRUNTIMEDIR=" + getImagePathPrefix());
     if (isLayered()) {
-      jpackageRunner.arg("--java-options").arg("-Dtentackle.layers=" +
-              getImagePathPrefix() + "/" + DEST_RESOURCES + "/" + LayerResolver.LAYERS_PROPERTIES);
+      // the native launcher does not run in the runtime image: the relative layer directories of
+      // layers.properties must be resolved against the runtime image explicitly
+      jpackageRunner.arg("--java-options").arg("-D" + LayerBootstrap.LAYERS_PROPERTY + "=" +
+              getImagePathPrefix() + "/" + DEST_RESOURCES + "/" + LayerResolver.LAYERS_PROPERTIES)
+                    .arg("--java-options").arg("-D" + LayerBootstrap.LAYERS_BASEDIR_PROPERTY + "=" + getImagePathPrefix());
     }
     jpackageRunner.arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
     if (verbosityLevel.isDebug()) {
@@ -513,7 +523,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
       if (jpackageTool == null) {
-        throw new MojoExecutionException("jpackageTool tool not found");
+        throw new MojoExecutionException("jpackage tool not found");
       }
       getLogger().debug("using {}", jpackageTool);
       jpackageMajorRuntimeVersion = getMajorVersion(determineJavaToolVersion(jpackageTool));
@@ -609,7 +619,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
             }
             if (jpackageMajorRuntimeVersion >= 15) {
               if (patchClassPath && !classPathPatched) {
-                // missing app.classname (beginning with java 15)
+                // missing app.classpath (beginning with java 15): insert it before the [JavaOptions] section
                 buf.setLength(buf.length() - JAVA_OPTIONS.length() - 2);
                 buf.append('\n').append(APP_CLASSPATH).append(result.generateClassPath())
                    .append("\n\n").append(JAVA_OPTIONS);
@@ -624,7 +634,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
           }
           else if ((line.equals(APPDIR_MODS) || line.equals(APPDIR_MODS_WINDOWS)) && jpackageMajorRuntimeVersion >= 15) {
             if (modulePathPatched) {
-              throw new MojoExecutionException("more than one '" + APPDIR_MODS + "' found in " + configFile);
+              throw new MojoExecutionException("more than one module path option found in " + configFile);
             }
             // java options end with module path: replace it
             buf.setLength(buf.length() - APPDIR_MODS.length());
@@ -663,15 +673,12 @@ public class JPackageMojo extends AbstractJLinkMojo {
    */
   private List<File> loadConfigFiles(File configDir) {
     List<File> configFiles = new ArrayList<>();
-    // the cfg files are located in a subdirectory called "app". Depending on the platform, it can be
-    // found in lib, Contents or without a further subdir.
-
-      String[] configNames = configDir.list((d, n) -> n.toLowerCase(Locale.ROOT).endsWith(CONFIG_EXTENSION));
-      if (configNames != null) {
-        for (String configName : configNames) {
-          configFiles.add(new File(configDir, configName));
-        }
+    String[] configNames = configDir.list((_, n) -> n.toLowerCase(Locale.ROOT).endsWith(CONFIG_EXTENSION));
+    if (configNames != null) {
+      for (String configName : configNames) {
+        configFiles.add(new File(configDir, configName));
       }
+    }
     return configFiles;
   }
 
@@ -716,7 +723,9 @@ public class JPackageMojo extends AbstractJLinkMojo {
   }
 
   /**
-   * Determines the main jar of the application.
+   * Determines the main jar of the application.<br>
+   * This is the first classpath artifact, unless {@link #mainJar} is configured, which may be a unique
+   * substring of the jar's filename.
    *
    * @param result the resolver result
    * @return the name of the main jar, never null
@@ -724,8 +733,8 @@ public class JPackageMojo extends AbstractJLinkMojo {
    */
   private String determineMainJar(JLinkResolver.Result result) throws MojoExecutionException {
     String jarName = null;
-    if (mainJar == null) {
-      jarName = ProjectDependencies.getFile(result.getClassPath().getFirst()).getName();
+    if (StringHelper.isAllWhitespace(mainJar)) {
+      jarName = result.getClassPath().isEmpty() ? null : ProjectDependencies.getFile(result.getClassPath().getFirst()).getName();
     }
     else {
       for (Artifact artifact : result.getClassPath()) {

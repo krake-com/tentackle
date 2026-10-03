@@ -129,6 +129,21 @@ public class InitMojoTest {
   }
 
   /**
+   * The goal needs neither the java tools nor any installed template to validate, and the
+   * templates are installed only once, by the execution itself.
+   */
+  @Test
+  public void validationNeedsNoToolsAndInstallsNothing() throws Exception {
+    assertTrue(JLinkTestSupport.callValidate(mojo));
+    assertEquals(templateDir.exists(), false, "templates installed during validation");
+
+    mojo.executeImpl();
+
+    assertEquals(log.getInfoMessages().stream().filter(m -> m.startsWith("installed template")).count(),
+                 (long) ALL_TEMPLATES.size());
+  }
+
+  /**
    * The goal does not build an image, hence it has no image directory.
    */
   @Test

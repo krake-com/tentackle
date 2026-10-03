@@ -14,6 +14,8 @@ public class Main {
   public static void main(String[] args) throws Exception {
     System.out.println("LIB_V1=" + version("lib-v1"));
     System.out.println("LIB_V2=" + version("lib-v2"));
+    // the launcher must pass the command line arguments through, and nothing else
+    System.out.println("ARGS=" + String.join(",", args));
   }
 
   private static String version(String layerName) throws Exception {

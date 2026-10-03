@@ -27,7 +27,8 @@ import java.io.File;
 
 /**
  * Initializes the templates.<br>
- * Copies the default templates to the project's template directory.
+ * Copies the default templates of the <code>jlink</code> and <code>jpackage</code> goals to the project's
+ * template directory, overwriting existing ones. Needs no jlink, jdeps or jpackage tool.
  */
 @Mojo(name = "init", aggregator = true, threadSafe = true)
 public class InitMojo extends AbstractJLinkMojo {
@@ -56,6 +57,11 @@ public class InitMojo extends AbstractJLinkMojo {
     installTemplates(true);
   }
 
+  @Override
+  protected boolean isBuildingImage() {
+    return false;     // no tools needed, and the templates are installed by executeImpl only
+  }
+
 
   @Override
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
@@ -73,7 +79,7 @@ public class InitMojo extends AbstractJLinkMojo {
           File template = new File(templateDir, name);
           if (template.isFile()) {
             try {
-              installTemplate(name, name,true);
+              installTemplate(name, name, true);
               getLogger().info("template '{}' restored to its default", name);
             }
             catch (MojoExecutionException mx) {

@@ -82,7 +82,10 @@ The rules:
   main class is opened to `tentackle-common`, so that `LayerBootstrap` can invoke `main` reflectively
   even if the application does not export or open that package.
 - Relative directories are resolved against the base directory passed to `parse`. `LayerBootstrap`
-  passes the current working directory, *not* the directory of the properties file.
+  passes the directory given by `-Dtentackle.layers.basedir`, or the current working directory if
+  that property is not set — *never* the directory of the properties file. The jpackage goal
+  of the jlink plugin sets the property, because a native launcher starts in an arbitrary working
+  directory.
 - The values are split via `StringHelper.split`, which treats a backslash as an escape character.
   Use forward slashes in paths, even on Windows.
 

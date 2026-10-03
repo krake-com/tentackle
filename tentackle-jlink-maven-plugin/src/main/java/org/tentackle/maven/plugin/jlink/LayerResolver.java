@@ -26,6 +26,7 @@ import org.tentackle.maven.LayerDependencyResolver;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -128,17 +129,21 @@ public class LayerResolver {
   }
 
   /**
-   * Writes the {@code layers.properties} file describing the whole layer graph.
+   * Writes the {@code layers.properties} file describing the whole layer graph.<br>
+   * Backslashes in the directories are written as forward slashes, since a backslash is an escape
+   * character in the file's values.
    *
    * @param confDir the directory to write the file into
    * @param layerDirPrefix the directory each declared layer's own subfolder is created under
-   *        (relative to wherever {@code org.tentackle.common.LayerBootstrap} resolves paths from
-   *        at runtime, i.e. its current working directory)
+   *        (absolute, or relative to the base directory {@code org.tentackle.common.LayerBootstrap}
+   *        resolves paths against at runtime)
    * @param leafDirValue the leaf layer's own directory, relative the same way (or absolute)
    * @throws MojoExecutionException if writing failed
    */
   public void writeLayersProperties(File confDir, String layerDirPrefix, String leafDirValue) throws MojoExecutionException {
     confDir.mkdirs();
+    layerDirPrefix = layerDirPrefix.replace('\\', '/');    // Windows paths
+    leafDirValue = leafDirValue.replace('\\', '/');
 
     Set<String> leafParents = new LinkedHashSet<>();
     for (Layer layer : mojo.getLayers()) {
@@ -164,7 +169,7 @@ public class LayerResolver {
 
     File file = new File(confDir, LAYERS_PROPERTIES);
     try {
-      java.nio.file.Files.writeString(file.toPath(), buf.toString());
+      Files.writeString(file.toPath(), buf.toString());
     }
     catch (IOException ex) {
       throw new MojoExecutionException("writing " + file + " failed", ex);

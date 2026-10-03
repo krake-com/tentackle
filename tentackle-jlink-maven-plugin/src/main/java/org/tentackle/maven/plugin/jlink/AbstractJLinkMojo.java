@@ -189,7 +189,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Enables the auto-update feature.
    * <p>
-   * For the <code>jlink</code> gaol an extra update script will be generated
+   * For the <code>jlink</code> goal an extra update script will be generated
    * via the {@link JLinkMojo#getUpdateTemplate()}.
    * The update script will be named <code>bin/update.&lt;extension&gt;</code> where
    * the extension is derived from the platform (<code>cmd</code> on Windows,
@@ -218,6 +218,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * <p>
    * Please notice that this workaround is only available for non-required modules, i.e., modules
    * that "plug in" via the ServiceFinder or some other dependency injection mechanism.
+   * <p>
+   * The main module of a layered application (see {@link #layers}) is always module-path-only,
+   * without being listed here.
    * <p>
    * If all modules must be moved to the <code>mp</code> folder, the single values <code>true</code>,
    * <code>all</code> or <code>*</code> can be used as a shortcut.
@@ -253,10 +256,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Compression of resources.<br>
-   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
+   * Corresponds to the <code>jlink</code> option <code>--compress</code>, i.e. <code>zip-0</code> to
+   * <code>zip-9</code> (the legacy values <code>0</code>, <code>1</code> and <code>2</code> are deprecated
+   * since Java 21).
    */
   @Parameter
-  private Integer compress;
+  private String compress;
 
   /**
    * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
@@ -266,7 +271,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private boolean ignoreSigningInformation;
 
   /**
-   * Suppress the <code>includes</code> directory.<br>
+   * Suppress the <code>include</code> directory.<br>
    * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
    */
   @Parameter(defaultValue = "false")
@@ -498,7 +503,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the template directory.
    *
-   * @return the directory holding the wizard templates
+   * @return the directory holding the script and option templates
    */
   public File getTemplateDir() {
     return templateDir;
@@ -552,7 +557,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the jdeps tool.
    *
-   * @return the file, never null
+   * @return the file, never null once {@link #validate()} succeeded
    */
   public File getJdepsTool() {
     return jdepsTool;
@@ -812,7 +817,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     if (stripDebug) {
       jlinkRunner.arg("--strip-debug");
     }
-    if (compress != null) {
+    if (!StringHelper.isAllWhitespace(compress)) {
       jlinkRunner.arg("--compress=" + compress);
     }
     if (ignoreSigningInformation) {
@@ -822,7 +827,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       jlinkRunner.arg("--no-header-files");
     }
     if (noManPages) {
-      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+      jlinkRunner.arg("--no-man-pages");
     }
     if (jlinkOptions != null) {
       jlinkOptions.forEach(jlinkRunner::arg);
@@ -913,42 +918,61 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
   }
 
+  /**
+   * Returns whether this goal builds an image.<br>
+   * Only such goals need the <code>jdeps</code> and <code>jlink</code> tools, the templates and the main class.
+   *
+   * @return true if the tools, templates and main class are validated, false if only the common and layer settings
+   */
+  protected boolean isBuildingImage() {
+    return true;
+  }
+
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
-      if (jdepsTool == null) {
-        throw new MojoExecutionException("jdeps tool not found");
+      if (isBuildingImage()) {
+        validateImageSettings();
       }
-      getLogger().debug("using {}", jdepsTool);
-
-      javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
-      javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
-
-      if (jlinkTool == null) {
-        throw new MojoExecutionException("jlink tool not found");
-      }
-      getLogger().debug("using {}", jlinkTool);
-
-      if (templateDir.exists()) {
-        if (!templateDir.isDirectory()) {
-          throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
-        }
-      }
-      else {
-        getLogger().info("template directory created: {}", templateDir.getPath());
-      }
-      validateTemplates();        // the names must be valid before they are used as filenames
-      installTemplates(false);    // install any missing template
-
-      if (mainClass == null) {
-        throw new MojoExecutionException("mainClass missing");
-      }
-
       validateLayers();
-
       return true;
     }
     return false;
+  }
+
+  /**
+   * Validates the tools, templates and the main class of goals building an image.
+   *
+   * @throws MojoExecutionException if invalid
+   */
+  private void validateImageSettings() throws MojoExecutionException {
+    if (jdepsTool == null) {
+      throw new MojoExecutionException("jdeps tool not found");
+    }
+    getLogger().debug("using {}", jdepsTool);
+
+    javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
+    javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
+
+    if (jlinkTool == null) {
+      throw new MojoExecutionException("jlink tool not found");
+    }
+    getLogger().debug("using {}", jlinkTool);
+
+    if (templateDir.exists()) {
+      if (!templateDir.isDirectory()) {
+        throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+      }
+    }
+    else {
+      getLogger().info("template directory created: {}", templateDir.getPath());
+    }
+    validateTemplates();        // the names must be valid before they are used as filenames
+    installTemplates(false);    // install any missing template
+
+    if (mainClass == null) {
+      throw new MojoExecutionException("mainClass missing");
+    }
   }
 
   /**

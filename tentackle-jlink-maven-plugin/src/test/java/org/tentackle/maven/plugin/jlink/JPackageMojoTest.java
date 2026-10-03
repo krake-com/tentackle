@@ -327,6 +327,17 @@ public class JPackageMojoTest {
   }
 
   /**
+   * A blank main jar is treated as not configured.
+   */
+  @Test
+  public void blankMainJarDefaultsToTheFirstClasspathArtifact() throws Exception {
+    JLinkResolver.Result result = classPathResult("app-1.0.jar", "lib-1.0.jar");
+    JLinkTestSupport.setField(mojo, "mainJar", "  ");
+
+    assertEquals(determineMainJar(result), "app-1.0.jar");
+  }
+
+  /**
    * An explicit main jar is matched as a substring, so the version need not be spelled out.
    */
   @Test

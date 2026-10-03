@@ -8,13 +8,13 @@ cd %script_dir%
 cd ..
   <#if (layered!"false") == "true">
 <#-- layered application: the bootstrap builds the ModuleLayer graph, then hands off to the real main class -->
-bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} -Dtentackle.layers=${layersConfigPath}
+bin\java -Dtentackle.layers=${layersConfigPath}${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} %*
   <#elseif mainModule != "">
 <#-- modular application -->
-bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}
+bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass} %*
   <#else>
 <#-- classpath application -->
-bin\java -cp ${classPath} ${mainClass}
+bin\java -cp ${classPath} ${mainClass} %*
   </#if>
 <#else>
 #!/bin/sh
@@ -28,12 +28,12 @@ cd "$(dirname "$(dirname "$(readlink -f "$0")")")"
   </#if>
   <#if (layered!"false") == "true">
 <#-- layered application: the bootstrap builds the ModuleLayer graph, then hands off to the real main class -->
-bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} -Dtentackle.layers=${layersConfigPath}
+exec bin/java -Dtentackle.layers=${layersConfigPath}${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${bootstrapModule}/${bootstrapClass} "$@"
   <#elseif mainModule != "">
 <#-- modular application -->
-bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}
+exec bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass} "$@"
   <#else>
 <#-- classpath application -->
-bin/java -cp ${classPath} ${mainClass}
+exec bin/java -cp ${classPath} ${mainClass} "$@"
   </#if>
 </#if>

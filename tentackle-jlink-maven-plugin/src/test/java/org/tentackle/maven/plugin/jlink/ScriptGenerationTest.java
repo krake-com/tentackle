@@ -130,6 +130,38 @@ public class ScriptGenerationTest {
   }
 
   /**
+   * A layered application is started via the bootstrap. The layers configuration must be a JVM
+   * option, i.e. precede {@code -m}: anything after the main class is an application argument.
+   */
+  @Test
+  public void layeredRunScriptStartsTheBootstrap() throws Exception {
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+    Layer layer = new Layer();
+    layer.setName("lib");
+    JLinkTestSupport.setField(mojo, "layers", List.of(layer));
+    JLinkTestSupport.setField(mojo, "leafLayer", "app");
+
+    new JLinkGenerator(mojo, result()).generateScripts();
+
+    String script = JLinkTestSupport.readString(runScript());
+    assertTrue(script.contains("java -Dtentackle.layers=conf/layers.properties -m " +
+                               "org.tentackle.common/org.tentackle.common.LayerBootstrap " + argsVariable()), script);
+  }
+
+  /**
+   * The run script passes its arguments to the application.
+   */
+  @Test
+  public void theRunScriptPassesItsArguments() throws Exception {
+    JLinkTestSupport.setField(mojo, "mainModule", "com.example.app");
+
+    new JLinkGenerator(mojo, result()).generateScripts();
+
+    String script = JLinkTestSupport.readString(runScript());
+    assertTrue(script.contains("-m com.example.app/com.example.Main " + argsVariable()), script);
+  }
+
+  /**
    * The update script is generated next to the run script, but only with the updater enabled.
    */
   @Test
@@ -246,6 +278,10 @@ public class ScriptGenerationTest {
 
   private String runScriptName() {
     return StringHelper.getPlatform().contains("win") ? "run.cmd" : "run.sh";
+  }
+
+  private String argsVariable() {
+    return StringHelper.getPlatform().contains("win") ? "%*" : "\"$@\"";
   }
 
   private String updateScriptName() {

@@ -40,8 +40,9 @@ import java.util.Properties;
  * call transparently resolve services from within the leaf layer &mdash; and then reflectively invokes the real
  * application's {@code main(String[])} method.
  * <p>
- * Relative layer directories in the properties file are resolved against the current working directory,
- * not against the directory of the properties file.
+ * Relative layer directories in the properties file are resolved against the directory given by
+ * {@link #LAYERS_BASEDIR_PROPERTY}, or against the current working directory if that property is not set
+ * &mdash; never against the directory of the properties file.
  *
  * @author harald
  */
@@ -57,6 +58,13 @@ public final class LayerBootstrap {
    * Default location of the layers configuration file, relative to the current working directory.
    */
   public static final String DEFAULT_LAYERS_FILE = "conf/layers.properties";
+
+  /**
+   * System property naming the base directory relative layer directories are resolved against.<br>
+   * Defaults to the current working directory. Necessary whenever the launcher cannot change into
+   * the image root first, such as the native launcher of a jpackage installation.
+   */
+  public static final String LAYERS_BASEDIR_PROPERTY = "tentackle.layers.basedir";
 
   private static volatile Map<String, ModuleLayer> layers = Map.of();
 
@@ -101,8 +109,8 @@ public final class LayerBootstrap {
    */
   public static void main(String[] args) throws Exception {
 
-    java.nio.file.Path baseDir = java.nio.file.Path.of("").toAbsolutePath();
-    java.nio.file.Path specFile = baseDir.resolve(System.getProperty(LAYERS_PROPERTY, DEFAULT_LAYERS_FILE));
+    java.nio.file.Path workDir = java.nio.file.Path.of("").toAbsolutePath();
+    java.nio.file.Path specFile = workDir.resolve(System.getProperty(LAYERS_PROPERTY, DEFAULT_LAYERS_FILE));
 
     Properties props = new Properties();
     try (InputStream in = Files.newInputStream(specFile)) {
@@ -112,7 +120,7 @@ public final class LayerBootstrap {
       throw new TentackleRuntimeException("cannot read layers configuration " + specFile, iox);
     }
 
-    LayerGraphSpec spec = LayerGraphSpec.parse(props, baseDir);
+    LayerGraphSpec spec = LayerGraphSpec.parse(props, layersBaseDir(workDir, System.getProperty(LAYERS_BASEDIR_PROPERTY)));
     layers = Map.copyOf(ModuleLayerBuilder.build(spec, ModuleLayer.boot(), LayerBootstrap.class.getClassLoader()));
     ModuleLayer leafLayer = layers.get(spec.leafLayerName());
 
@@ -147,6 +155,17 @@ public final class LayerBootstrap {
     catch (InvocationTargetException ex) {
       throw new TentackleRuntimeException("application main class threw an exception", ex.getCause());
     }
+  }
+
+  /**
+   * Determines the base directory relative layer directories are resolved against.
+   *
+   * @param workDir the absolute current working directory
+   * @param baseDir the value of {@link #LAYERS_BASEDIR_PROPERTY}, null or blank if not set
+   * @return the absolute base directory
+   */
+  static java.nio.file.Path layersBaseDir(java.nio.file.Path workDir, String baseDir) {
+    return StringHelper.isAllWhitespace(baseDir) ? workDir : workDir.resolve(baseDir).toAbsolutePath();
   }
 
 }

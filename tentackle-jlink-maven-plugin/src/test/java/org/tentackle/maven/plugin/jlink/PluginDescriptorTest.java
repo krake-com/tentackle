@@ -176,6 +176,14 @@ public class PluginDescriptorTest {
   }
 
   /**
+   * The compression is a string, since jlink accepts {@code zip-0} to {@code zip-9} since Java 21.
+   */
+  @Test
+  public void theCompressionAcceptsTheZipLevels() {
+    assertEquals(type("jlink", "compress"), "java.lang.String");
+  }
+
+  /**
    * The init goal only installs templates: it must not resolve dependencies for that.
    */
   @Test

@@ -33,7 +33,8 @@ import java.io.File;
  * <p>
  * Writes each declared layer's own dependencies into {@code target/tentackle-layers/mp/<name>/} and
  * a matching {@code target/tentackle-layers/layers.properties}, whose leaf entry points directly at
- * the project's own compiled output ({@code target/classes}) rather than a copy of it. This is what
+ * the project's own compiled output ({@code target/classes}) rather than a copy of it. All paths in the
+ * generated file are absolute, so the working directory of the run configuration does not matter. This is what
  * an IDE run/debug configuration needs to launch {@code org.tentackle.common.LayerBootstrap} locally;
  * see the {@code layers.md} documentation for the exact run-configuration recipe.
  * <p>
@@ -82,7 +83,7 @@ public class LayersMojo extends AbstractJLinkMojo {
   }
 
 
-  // ------------- unused abstract/overridden methods: this goal never runs jlink/jpackage -----------------
+  // ------------- unused abstract methods: this goal never runs jlink/jpackage -----------------
 
   @Override
   public void prepareExecute() {
@@ -90,9 +91,13 @@ public class LayersMojo extends AbstractJLinkMojo {
   }
 
   @Override
-  protected boolean validate() {
-    // skip AbstractJLinkMojo#validate(): no jdeps/jlink tool, no templates needed for this goal
-    return isLayered();
+  protected boolean isBuildingImage() {
+    return false;     // no jdeps/jlink tool, no templates needed for this goal
+  }
+
+  @Override
+  protected boolean validate() throws MojoExecutionException {
+    return super.validate() && isLayered();
   }
 
   @Override

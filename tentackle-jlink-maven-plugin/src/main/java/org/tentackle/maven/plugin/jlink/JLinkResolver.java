@@ -62,7 +62,12 @@ public class JLinkResolver {
    * runs inside Maven's own (non-modular) plugin classloader, where that reflective lookup would not
    * reliably reflect tentackle-common's real module name.
    */
-  private static final String BOOTSTRAP_MODULE_NAME = "org.tentackle.common";
+  static final String BOOTSTRAP_MODULE_NAME = "org.tentackle.common";
+
+  /**
+   * Name of the class launching a layered application.
+   */
+  static final String BOOTSTRAP_CLASS_NAME = LayerBootstrap.class.getName();
 
 
   /**

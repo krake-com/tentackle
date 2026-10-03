@@ -26,6 +26,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.maven.AbstractTentackleMojo;
 
 /**
  * Creates a self-contained java application with the <code>jlink</code> tool.
@@ -80,14 +81,20 @@ import org.tentackle.common.StringHelper;
  *   <li><code>mainModule</code>: the name of the main module. Empty if classpath application.</li>
  *   <li><code>mainClass</code>: the name of the main class.</li>
  *   <li><code>modulePath</code>: the module path.</li>
- *   <li><code>classPath</code>: the class path</li>
- *   <li><code>phase</code>: the mojo lifecycle phase</li>
- *   <li><code>goal</code>: the plugin goal (jlink or jpackage)</li>
- *   <li><code>id</code>: the execution id</li>
- *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
- *   <li>all maven properties (translated to camelCase as well)</li>
- *   <li>the plugin configuration {@link AbstractJLinkMojo#getVariables()}</li>
+ *   <li><code>classPath</code>: the class path.</li>
+ *   <li><code>phase</code>: the mojo lifecycle phase.</li>
+ *   <li><code>goal</code>: the plugin goal (jlink or jpackage).</li>
+ *   <li><code>id</code>: the execution id.</li>
+ *   <li><code>layered</code>: whether isolated module layers are configured (see {@link AbstractJLinkMojo#getLayers()}).
+ *   Only if layered: <code>bootstrapModule</code> and <code>bootstrapClass</code>, the module and class to launch
+ *   instead of the main class, and <code>layersConfigPath</code>, the path of the generated layers configuration.</li>
+ *   <li><code>runScript</code>: the name of the generated run script (update template only).</li>
+ *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName").</li>
+ *   <li>all maven properties (translated to camelCase as well).</li>
+ *   <li>the plugin configuration {@link AbstractJLinkMojo#getVariables()}.</li>
  * </ul>
+ * The order in which the properties and variables override each other is configured via
+ * {@link AbstractJLinkMojo#getVariablesPrecedence()}. The other variables cannot be overridden.
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
  * and added to the <code>modulePath</code> template variable. If no such modules are detected, no folder is created.<br>
@@ -102,7 +109,7 @@ import org.tentackle.common.StringHelper;
  * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
  * <p>
  * Notice that you can create an image for a different java version than the one used for the maven build process
- * by specifying an explicit {@code AbstractJLinkMojo#getToolchain()}.
+ * by selecting a toolchain via <code>&lt;jdkToolchain&gt;</code> (see {@link AbstractTentackleMojo#getToolchain()}).
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
@@ -123,7 +130,7 @@ public class JLinkMojo extends AbstractJLinkMojo {
 
   /**
    * The name of the template to generate the name of the runner script.<br>
-   * For *nixes this is usually {@code run.sh}, for windozes {@code run.cmd} or {@code run.bat}.
+   * The default template yields {@code run.cmd} on Windows and {@code run.sh} on all other platforms.
    */
   @Parameter(defaultValue = NAME_TEMPLATE)
   private String nameTemplate;
