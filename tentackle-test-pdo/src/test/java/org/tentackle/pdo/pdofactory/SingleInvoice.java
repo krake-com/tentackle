@@ -20,7 +20,7 @@
 package org.tentackle.pdo.pdofactory;
 
 /**
- * Collective invoice PDO interface.
+ * Single invoice PDO interface.
  *
  * @author harald
  */

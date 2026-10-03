@@ -55,7 +55,7 @@ import java.util.Set;
 
 
 /**
- * Base class for Junit5 tests on PDO level.
+ * Base class for JUnit 5 tests on PDO level.
  * <p>
  * Works like its TestNG counterpart {@code org.tentackle.pdo.testng.AbstractPdoTest}:
  * <ul>
@@ -124,7 +124,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
             setupFailure = new IllegalStateException("opening the session failed", ex);
             throw setupFailure;
           }
-          // closed by Junit when the test run ends
+          // closed by JUnit when the test run ends
           return (AutoCloseable) test::closeSessionsAndTerminateModificationTracker;
         }, AutoCloseable.class);
       }
@@ -146,7 +146,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   private final TransactionType txType;     // transaction handling
   private final boolean commit;             // true if commit transaction, else rollback (default)
   private boolean rollbackLogged;           // true to log the rollback, even if the test succeeds
-  private long txVoucher;                   // transaction voucher for the current test class
+  private long txVoucher;                   // voucher of the running transaction, 0 if none
 
 
   /**
@@ -200,8 +200,14 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Opens the sessions and starts the modification tracker.<br>
-   * If the database is in-memory, it will be populated before the tracker is started.
+   * Opens the session and starts the modification tracker.<br>
+   * If the database is in-memory, the tables are created before the tracker is started
+   * and populated afterward.
+   * <p>
+   * Invoked only once for all test classes, on the instance of the test class that runs first.
+   * Hence, overrides of {@link #openSession()}, {@link #createDomainContext()},
+   * {@link #createDatabaseTables(Db)} and {@link #populateDatabase()} must be provided by a common
+   * base class of all tests, not by individual test classes.
    * <p>
    * Invoked once before the first test class by the {@link SuiteExtension}.
    *
@@ -240,7 +246,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Terminates the modification tracker and closes the sessions.
+   * Terminates the modification tracker and closes the session.
    * <p>
    * Invoked once when the test run ends.
    *
@@ -331,7 +337,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Runs the given class in another JVM.<br>
+   * Runs the given class in another JVM and waits for its termination.<br>
    * The test class must have a main method.
    *
    * @param testClass the test class
@@ -345,9 +351,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Opens the session.
+   * Opens the session and makes it the current session of the thread.
    *
-   * @return the thread-local session
+   * @return the session
    */
   protected Session openSession() {
     Session s;
@@ -381,7 +387,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Populates the database with test data.
+   * Populates the database with test data.<br>
+   * Invoked once after the tables were created, if the database is in-memory.
+   * The default implementation does nothing.
    */
   protected void populateDatabase() {
     // default does nothing
@@ -439,7 +447,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Invokes the pre-commits, if any.<br>
+   * Invokes the post-commits, if any.<br>
    * Useful for special test scenarios, since tests are usually rolled back.
    * Must be invoked explicitly from within the test.
    */
@@ -451,8 +459,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   /**
-   * Runs the given class in another JVM and waits for termination.<br>
+   * Runs the given class in another JVM.<br>
    * The test class must have a main method.
+   * The other JVM gets the classpath and module path of this JVM as its classpath.
+   * The method does not wait for the process to terminate.
    *
    * @param testClass the test class
    * @param args optional arguments
@@ -460,13 +470,12 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * @throws IOException if some IO operation failed
    */
   public static Process runClass(Class<?> testClass, String... args) throws IOException {
-    // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
     String modulePath = System.getProperty("jdk.module.path");
     if (modulePath != null) {
-      if (!classPath.endsWith(":")) {
-        classPath += ":";
+      if (!classPath.endsWith(File.pathSeparator)) {
+        classPath += File.pathSeparator;
       }
       classPath += modulePath;    // append the module path to the classpath
     }
@@ -486,7 +495,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Waits for the process to terminate and write stdout and stderr to the console.
+   * Waits for the process to terminate and writes its stdout and stderr to the console.<br>
+   * The output is read only after the process has terminated. A process that writes more than
+   * the pipe buffer can hold blocks forever. For such processes, use the {@code ServerProcessWrapper},
+   * which drains the output continuously.
    *
    * @param process the process
    * @throws IOException if some IO failed

@@ -20,4 +20,7 @@ package org.tentackle.test.fx.rdc.junit;
 
 import org.tentackle.fx.rdc.junit.GuiProviderTest;
 
+/**
+ * Tests all GuiProviders with JUnit.
+ */
 public class TestGuiProviders extends GuiProviderTest {}

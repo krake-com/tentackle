@@ -1,6 +1,6 @@
 # Tentackle FX RDC Tests
 
-TestNG support for testing the Rich Desktop Client.
+TestNG and JUnit 5 support for testing the Rich Desktop Client.
 
 ## Documentation & reports
 

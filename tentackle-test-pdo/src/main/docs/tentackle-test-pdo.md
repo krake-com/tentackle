@@ -10,17 +10,19 @@
    in-memory database, manage the per-class/per-method transaction lifecycle, run the
    [modification tracker](../../../../tentackle-session/src/main/docs/session.md) and tear everything down again — so
    a test class only has to write the assertions.
-2. **Provides mock delegates** — lightweight `Mock*` domain/persistence delegates that let you instantiate PDOs and
-   operations in a unit test **without a database**.
+2. **Re-exposes the mock delegates** — the lightweight `Mock*` domain/persistence delegates of `tentackle-pdo-mock`,
+   which let you instantiate PDOs and operations in a unit test **without a database**, arrive transitively.
 3. **Generates the framework's SQL** — at build time it runs the
    [SQL Maven plugin](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md) over the
    framework model (number sources, security, preferences, …) and packages the resulting DDL, model dump and
    `MODEL-INDEX.LIST` into the jar, so downstream tests can create the **TT (Tentackle) tables** in an in-memory
    database from the classpath.
 
-> **Test scope only.** This artifact pulls in TestNG, JUnit, H2 and PostgreSQL and (deliberately, see below) marks
-> the framework layers `optional` to keep the classpath order right. It must be included with
-> `<scope>test</scope>` in downstream projects — never as a compile/runtime dependency.
+> **Test scope only.** This artifact must be included with `<scope>test</scope>` in downstream projects — never as
+> a compile/runtime dependency. None of the test frameworks arrives transitively: TestNG and the Jupiter API are
+> `optional`, and the Jupiter engine and platform launcher are test scope. The downstream project declares the
+> framework it uses itself. The same holds for the JDBC driver (H2 and PostgreSQL are test scope here) and,
+> deliberately (see below), for the framework layers `tentackle-persistence` and `tentackle-domain`.
 
 This module is **not** a JPMS module. It has no `module-info.java`; the jar carries the
 `Automatic-Module-Name: org.tentackle.pdo.test`. It is meant to live on the test classpath, where Tentackle's
@@ -66,14 +68,24 @@ rare scenario that must persist.
 
 **Lifecycle** (TestNG annotations shown; JUnit uses the equivalent `@BeforeAll`/`@AfterAll`/…):
 
-- `@BeforeSuite openSessionsAndStartModificationTracker()` — opens the session (`Pdo.createSession()`), builds the
-  `DomainContext`, and **if the backend is in-memory** creates the database tables and populates them. It also
-  picks a default scripting language if exactly one is available, and starts the `ModificationTracker` (with a fast
-  500 ms poll interval suited to tests).
+- `@BeforeSuite openSessionsAndStartModificationTracker()` — opens the session (`Pdo.createSession()`) and makes it
+  current, builds the `DomainContext`, and **if the backend is in-memory** creates the database tables. It then
+  picks a default scripting language if exactly one is available, starts the `ModificationTracker` on a clone of the
+  session (with a fast 500 ms poll interval suited to tests), and finally — again only for an in-memory backend —
+  invokes `populateDatabase()`.
 - `@BeforeClass`/`@AfterClass` — begin/end the transaction when `TransactionType.CLASS`.
 - `@BeforeMethod`/`@AfterMethod` — begin/end the transaction when `TransactionType.METHOD`; a failed method flips
   `rollbackLogged` so the rolled-back statements are logged for diagnosis.
 - `@AfterSuite closeSessionsAndTerminateModificationTracker()` — terminates the tracker and closes the session.
+
+**Once per suite, not per class.** The session and the domain context are static: every test class of the suite
+shares them. Hence, the suite-level hooks run exactly once, **on the instance of whichever test class runs
+first**. The same applies to the overridable methods they invoke — `openSession()`, `createDomainContext()`,
+`createDatabaseTables(Db)` and `populateDatabase()`. An override in an individual test class takes effect only if
+that class happens to run first. Put such overrides into a **common base class** that all tests of the suite extend.
+Fixtures that only one test class needs belong in a `@BeforeClass` (JUnit: `@BeforeAll`) method of that class. It
+runs after the base class has begun the `CLASS` transaction, so the fixtures are rolled back along with the
+test.
 
 **JUnit lifecycle.** The JUnit variant behaves the same way. JUnit creates a new test instance per method by
 default, so the base class is annotated with `@TestInstance(PER_CLASS)` (inherited by subclasses). That makes
@@ -91,14 +103,17 @@ must not run in parallel.
 | Method                     | Purpose                                                                                                                                                                      |
 |----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `createDatabaseTables(Db)` | Build the schema. The default loads the model from the classpath via `DbTestUtilities` and runs the generated script. Override to add extra model sources.                   |
-| `populateDatabase()`       | Insert test fixtures after the tables exist. Default does nothing.                                                                                                           |
+| `populateDatabase()`       | Insert test fixtures after the tables exist (in-memory backends only). Default does nothing.                                                                                 |
 | `createDomainContext()`    | Supply the (thread-local) `DomainContext`. Default `Pdo.createDomainContext()`.                                                                                              |
 | `openSession()`            | Open the session; default throws TestNG `SkipException` (JUnit: aborts) when no backend is reachable, so the suite is **skipped, not failed**, in an incomplete environment. |
 
 **Helpers** for richer scenarios: `runPreCommits()`/`runPostCommits()` force the pre/post-commit callbacks even
-though the test will roll back; `setRollbackLogged(true)` logs the SQL even on success; `runClass(...)`,
-`runInOtherJVM(...)` and `waitForProcess(...)` spawn a test class in a **separate JVM** (used by the remote/RPC
-tests — see `testng.xml`'s `remote1`/`remote2` groups).
+though the test will roll back; `setRollbackLogged(true)` logs the rolled-back statements even on success (the
+flag is reset when the transaction ends); `runClass(...)`, `runInOtherJVM(...)` and `waitForProcess(...)` spawn a
+class with a `main` method in a **separate JVM** with the same classpath (used by the remote/RPC tests — see
+`testng.xml`'s `remote1`/`remote2` groups). `runClass` returns the `Process` immediately. `waitForProcess` collects the
+output only after the process has terminated, so use it for short-lived processes only. A long-running or chatty
+process (such as a server) needs `ServerProcessWrapper`, which drains its output continuously.
 
 #### Client-server tests across JVMs: `ServerProcessWrapper`
 
@@ -135,10 +150,23 @@ module's tests is a complete example.
 
 The base class for tests that must run as a full
 [`AbstractApplication`](../../../../tentackle-pdo/src/main/docs/pdo.md) — i.e., with the complete application
-bootstrap (`SessionInfo`, property application, registration) rather than just a bare session. Same in-memory
-table creation/population, but driven through the application lifecycle. `setUpClass()` and `tearDownClass()`
-run once per test class: TestNG's `@BeforeClass`/`@AfterClass` there, JUnit's `@BeforeAll`/`@AfterAll` instance
-methods here (via `@TestInstance(PER_CLASS)`).
+bootstrap (`SessionInfo`, property application, registration, scripting) rather than just a bare session. Same
+in-memory table creation/population, but driven through the application lifecycle. `setUpClass()` and
+`tearDownClass()` run once per test class: TestNG's `@BeforeClass`/`@AfterClass` there, JUnit's
+`@BeforeAll`/`@AfterAll` instance methods here (via `@TestInstance(PER_CLASS)`). `startup()` is not invoked, and
+`getUser(...)` returns `null`.
+
+It differs from `AbstractPdoTest` in a few ways:
+
+- **Per class, not per suite.** Each test class opens its own session and, for an in-memory backend, creates the
+  tables again. The in-memory database therefore must not outlive the session. The URL must not carry
+  `DB_CLOSE_DELAY=-1`, and no other session may keep the database open — in particular no `AbstractPdoTest` in the
+  same JVM. Otherwise, the second class fails with the `CREATE SEQUENCE` of the schema script. This is why this
+  module's tests do not include a `TestApplication`. `ApplicationTest` in
+  [`tentackle-test-fx-rdc`](../../../../tentackle-test-fx-rdc/src/main/docs/tentackle-test-fx-rdc.md) covers it.
+- **No transactions.** There is no automatic transaction handling.
+- **Tracker not started.** The `ModificationTracker` is given the session (unless the `notracker` property is set)
+  but is not started.
 
 ---
 
@@ -147,15 +175,21 @@ methods here (via `@TestInstance(PER_CLASS)`).
 `DbTestUtilities` (in `org.tentackle.pdo.test`, an `@Service` defaulting to itself, so it is replaceable) is the
 low-level bridge from the model to a live database used by the base classes:
 
-- `createPopulateScript(Db)` — loads the **default** model from the classpath
+- `createPopulateScript(Db)` — loads the **default** model from every `META-INF/MODEL-INDEX.LIST` on the classpath
   ([`Model.loadFromResources`](../../../../tentackle-model/src/main/docs/tentackle-model.md)) and renders a complete
-  DDL script for the session's [backend](../../../../tentackle-sql/src/main/docs/sql.md): the object-sequence (if
-  the backend supports sequences), every table-providing, non-provided entity's `CREATE TABLE` and indexes, any
-  schemas, and finally the foreign keys.
+  DDL script for the session's [backend](../../../../tentackle-sql/src/main/docs/sql.md). Despite its name, it creates
+  the schema and inserts no data: first the object sequence (if the backend supports sequences), then, for each
+  table-providing entity not marked as `provided`, its database schema (if any and not yet created), its
+  `CREATE TABLE` and its indexes, and finally the foreign keys.
 - `runScript(Db, String)` — executes that script against the low-level session.
 
 Because the script is built from the same `tentackle-model` object graph the code generators use, the in-memory
 test schema can never disagree with the generated persistence layer.
+
+The application's own model is included automatically, provided its PDO module packages the model like this
+module does (the SQL plugin's `dumpModelSource` + `dumpModelIndex`, as the
+[project archetype](../../../../tentackle-project-archetype/src/main/docs/tentackle-project-archetype.md) sets up).
+Override `createDatabaseTables(Db)` only for model sources that are not on the classpath that way.
 
 ---
 
@@ -193,6 +227,9 @@ downstream tests (and this module's tests) can stand up the **TT tables** in mem
 
 - **`tentackle-maven-plugin`** (`analyze`, `test-analyze`) — the standard
   [resource-index / analysis](../../../../tentackle-maven-plugin/src/main/docs/tentackle-maven-plugin.md) step.
+  `test-analyze` generates the service descriptors of the test sources (e.g. the `@Service` of
+  `TestAuthenticationProvider`) into `target/generated-test-resources`. Because the POM overrides `<testResources>`,
+  it lists that directory (`${tentackle.testServiceDir}`) explicitly, just like the parent POM does.
 - **`tentackle-sql-maven-plugin`** (`create`, in `generate-resources`) — runs over the framework model on the
   classpath and writes into `target/generated-resources/META-INF/`:
   - `sql/createttmodel.sql` — the DDL for all framework tables, for **all** backends (`backendNames=all`),
@@ -225,15 +262,16 @@ the framework end-to-end against the in-memory H2 database — including the mul
 lives inside the forked server. They double as worked examples of the base classes above. Coverage spans, among
 others:
 
-| Area                       | Example test(s)                                                                                    |
-|----------------------------|----------------------------------------------------------------------------------------------------|
-| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest`                 |
-| Snapshots                  | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md))            |
-| Model                      | `ModelTest`                                                                                        |
-| Database / DBMS            | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest`                               |
-| Sessions & remoting        | `SessionPoolExecutorTest`, `RemoteTransactionTest`, plus the out-of-JVM server in `persist/server` |
-| Security & number sources  | `SecurityTest`, `NumberSourceTest`                                                                 |
-| Preferences                | `RemotePreferencesTest`                                                                            |
+| Area                       | Example test(s)                                                                                                                                             |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PDO factory & proxy wiring | `PdoFactoryTest`, `PdoInvocationTest`, `PdoUtilitiesTest`, `IllegalModelNamesTest`                                                                          |
+| Snapshots                  | `SnapshotTest` (see [snapshot.md](../../../../tentackle-pdo/src/main/docs/snapshot.md))                                                                     |
+| TRIP serialization         | `PdoComponentTripFilterTest`                                                                                                                                |
+| Model & build support      | `ModelTest`, `AnalyzeClassNamesTest`                                                                                                                        |
+| Database / DBMS            | `BatchingTest`, `ResultSetTest`, `H2ConnectionTest`, `SqlScriptTest`, `PostgresScriptRunnerTest` (`postgres` group)                                         |
+| Sessions & remoting        | `SessionPoolExecutorTest`, `RemoteTransactionTest`, `RemoteDelegatePreloadTest`, `RemoteAuthenticationTest`, plus the out-of-JVM server in `persist/server` |
+| Security & number sources  | `SecurityTest`, `DefaultSecurityManagerDbTest`, `NumberSourceTest`                                                                                          |
+| Preferences                | `RemotePreferencesTest`                                                                                                                                     |
 
 The `pdofactory` test package (`Invoice`/`SingleInvoice`/`CollectiveInvoice` with handwritten domain and
 persistence impls, an `Operation` and a `LogIt` interceptor) is a self-contained miniature PDO model used to test
@@ -261,7 +299,8 @@ by the JUnit platform provider, not by the TestNG suite.
 carries the matching `service=` entry the server listens on.
 
 The forked server JVMs get their *own* empty in-memory database, so `TestServer` and `AddAndRemovePrefsInServer`
-build the schema themselves in `finishStartup()` via `InMemoryServerSchema` — the counterpart of what
+build the schema themselves in `login()` via `InMemoryServerSchema` (before `configure()` initializes the
+modification tracker, which expects the tables) — the counterpart of what
 `AbstractPdoTest` does for the test JVM.
 
 `postgres.properties` (filtered from `dbUrl`/`dbUser`/`dbPasswd`) points at a real PostgreSQL server. Only
@@ -290,17 +329,21 @@ console is contended by parallel processes on Windows.
 A typical TestNG test then looks like:
 
 ```java
-public class CustomerTest extends org.tentackle.pdo.testng.AbstractPdoTest {
+// common base class of all tests in the suite
+public abstract class MyAppTest extends org.tentackle.pdo.testng.AbstractPdoTest {
 
   // default: one rolled-back transaction per class against the in-memory DB
-  public CustomerTest() {
+  public MyAppTest() {
     super();
   }
 
   @Override
   protected void populateDatabase() {
-    // insert fixtures once, after createDatabaseTables() built the schema
+    // shared fixtures, inserted once per suite after createDatabaseTables() built the schema
   }
+}
+
+public class CustomerTest extends MyAppTest {
 
   @Test(groups = "local")
   public void createAndReload() {
@@ -313,13 +356,14 @@ public class CustomerTest extends org.tentackle.pdo.testng.AbstractPdoTest {
 }
 ```
 
-Override `createDatabaseTables(Db)` to add your application's model on top of the framework's TT tables, and choose
-`TransactionType.METHOD` (or `commit = true`) where the default per-class rollback doesn't fit.
+The suite-level hooks such as `populateDatabase()` belong in the common base class (see *Once per suite, not per
+class* above). Choose `TransactionType.METHOD` (or `commit = true`) where the default per-class rollback doesn't
+fit.
 
-The JUnit flavor looks the same, minus the groups:
+The JUnit flavor looks the same, minus the groups (with `MyAppTest` extending `org.tentackle.pdo.junit.AbstractPdoTest`):
 
 ```java
-public class CustomerTest extends org.tentackle.pdo.junit.AbstractPdoTest {
+public class CustomerTest extends MyAppTest {
 
   @Test
   public void createAndReload() {
@@ -331,12 +375,13 @@ public class CustomerTest extends org.tentackle.pdo.junit.AbstractPdoTest {
 }
 ```
 
-> **Align the JUnit platform launcher.** Surefire's JUnit platform provider falls back to its own
-> `junit-platform-launcher`. If that version differs from the Jupiter engine, discovery fails with
-> *"OutputDirectoryCreator not available; probably due to unaligned versions"*. Declare
-> `org.junit.platform:junit-platform-launcher` with the same version as `junit-jupiter-engine` in test scope.
-> Because this artifact carries both TestNG and JUnit, surefire picks the JUnit provider by default. A TestNG
-> project therefore has to pin `surefire-testng` as a plugin dependency.
+> **Align the JUnit platform launcher.** A JUnit project declares `junit-jupiter-api` and `junit-jupiter-engine`
+> in test scope. Surefire's JUnit platform provider falls back to its own `junit-platform-launcher`. If that version
+> differs from the Jupiter engine, discovery fails with *"OutputDirectoryCreator not available; probably due to
+> unaligned versions"*. Declare `org.junit.platform:junit-platform-launcher` with the same version as
+> `junit-jupiter-engine` in test scope, too. A TestNG project declares `testng`. As soon as JUnit is on the test
+> classpath as well, surefire picks only the JUnit provider. Then pin the providers to run as plugin dependencies
+> (`surefire-testng`, `surefire-junit-platform`), as this module's POM does.
 
 ### Generating Fixture Code with the PDO Browser
 
@@ -353,11 +398,11 @@ them. The recipe:
 3. In the table, select the PDOs to generate Java code for.
 4. Click *generate* — the browser builds the Java code (`on(...)`, the attribute setters, the component
    relations, a final `save()`) for the selected objects and copies it to the clipboard.
-5. Paste the code into the test class (see `createDatabaseTables(Db)` above): the `populateDatabase()` override is
-   invoked right after `createDatabaseTables(Db)` has built the in-memory schema, so the pasted code runs against a
-   fresh database.
-6. Repeat for all PDOs that should be available to *all* tests — put those into a common base test class of the
-   suite — and then for the PDOs needed by the individual test classes.
+5. Paste the code into the `populateDatabase()` override of the suite's common base class: it is invoked once,
+   right after `createDatabaseTables(Db)` has built the in-memory schema, so the pasted code runs against a fresh
+   database.
+6. Repeat for all PDOs that should be available to *all* tests, and then for the PDOs needed by individual test
+   classes — those go into a `@BeforeClass` (JUnit: `@BeforeAll`) method of the respective class.
 
 Because the generated code recreates the objects through the plain PDO API, the tests need no backend at run
 time — the fixtures populate the in-memory H2 database like any other test code. This makes creating CI tests

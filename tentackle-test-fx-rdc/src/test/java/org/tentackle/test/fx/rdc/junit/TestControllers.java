@@ -20,4 +20,7 @@ package org.tentackle.test.fx.rdc.junit;
 
 import org.tentackle.fx.rdc.junit.ControllerTest;
 
+/**
+ * Tests all FX controllers with JUnit.
+ */
 public class TestControllers extends ControllerTest {}

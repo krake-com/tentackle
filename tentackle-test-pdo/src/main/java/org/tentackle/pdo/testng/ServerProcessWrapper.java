@@ -38,8 +38,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A wrapper for a server process to orchestrate deterministic startup, hand-shaking, and shutdown orchestration
- * between a client and a server process started in separate JVMs.
+ * Wraps a server process started in a separate JVM to orchestrate deterministic startup, hand-shaking,
+ * and shutdown between the test (the client) and the server.
  * <ul>
  *   <li><b>Startup:</b> the server prints {@link #READY_MARKER} on its standard output once it is
  *       listening. {@link #awaitReady(long)} blocks until that marker appears (or a timeout elapses),
@@ -55,7 +55,8 @@ import java.util.concurrent.TimeUnit;
  * subprocess never blocks on a full pipe) and forwarded to the TestNG {@link Reporter} log from the
  * test thread when the process terminates.
  * <p>
- * Output markers are matched by exact line equality and are treated as one-shot: {@link #awaitOutput}
+ * Output markers are matched by exact line equality against the lines of standard output only
+ * (standard error is captured but not matched). They are treated as one-shot: {@link #awaitOutput}
  * returns immediately if the marker was already seen, so each distinct marker should be emitted once.
  *
  * @author harald
@@ -169,7 +170,7 @@ public class ServerProcessWrapper implements AutoCloseable {
    * @throws InterruptedRuntimeException if interrupted while waiting for termination
    */
   @Override
-  public void close()  {
+  public void close() {
     if (process.isAlive()) {
       try {
         stopAndWait();

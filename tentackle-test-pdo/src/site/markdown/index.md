@@ -1,6 +1,6 @@
 # Tentackle PDO Tests
 
-TestNG support for testing the PDO layer.
+TestNG and JUnit 5 support for testing the PDO layer.
 
 ## Documentation & reports
 

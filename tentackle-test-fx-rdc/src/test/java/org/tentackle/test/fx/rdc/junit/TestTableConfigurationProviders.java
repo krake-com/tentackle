@@ -20,4 +20,7 @@ package org.tentackle.test.fx.rdc.junit;
 
 import org.tentackle.fx.rdc.junit.TableConfigurationProviderTest;
 
+/**
+ * Tests all TableConfigurationProviders with JUnit.
+ */
 public class TestTableConfigurationProviders extends TableConfigurationProviderTest {}

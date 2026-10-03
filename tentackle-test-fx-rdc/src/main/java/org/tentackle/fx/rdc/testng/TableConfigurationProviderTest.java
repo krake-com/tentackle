@@ -29,18 +29,20 @@ import org.tentackle.fx.table.TableConfigurationProviderService;
 import org.tentackle.reflect.ClassMapper;
 
 /**
- * TestNG test to verify that all {@link org.tentackle.fx.table.TableConfigurationProvider}s can be loaded and bound.<br>
+ * TestNG test to verify that all {@link TableConfigurationProvider}s can create their table configuration.<br>
  * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
+ * Providers annotated with {@code test = false} are skipped.
+ * <p>
  * Example:
  * <pre>
-  public class TestTableConfigurationProviders extends TableConfigurationProviderTest {
-    TestTableConfigurationProviders() {
-      super("my.package.name");
-    }
-  }
- </pre>
+ *  public class TestTableConfigurationProviders extends TableConfigurationProviderTest {
+ *    public TestTableConfigurationProviders() {
+ *      super("my.package.name");
+ *    }
+ *  }
+ * </pre>
  *
  * @author harald
  */
@@ -52,7 +54,7 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
   /**
    * Creates the table configuration provider test.
    *
-   * @param packagePrefix optional package prefix, null or empty if all
+   * @param packagePrefix optional prefix of the provider class names, null or empty if all
    */
   public TableConfigurationProviderTest(String packagePrefix) {
     super("fx-rdc-table-config-provider-test", Version.RELEASE);
@@ -67,6 +69,9 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
     this(null);
   }
 
+  /**
+   * Creates the table configurations of all table configuration providers.
+   */
   @Test(alwaysRun = true)
   public void testTableConfigurationProviders() {
     for (String servicedClassName : classMapper.getMap().keySet()) {

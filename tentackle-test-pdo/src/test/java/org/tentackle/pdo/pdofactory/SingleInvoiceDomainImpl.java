@@ -22,7 +22,7 @@ package org.tentackle.pdo.pdofactory;
 import java.io.Serial;
 
 /**
- * Collective invoice domain implementation.
+ * Single invoice domain implementation.
  *
  * @author harald
  */
@@ -32,7 +32,7 @@ public class SingleInvoiceDomainImpl extends InvoiceDomainImpl<SingleInvoice> im
   private static final long serialVersionUID = 1L;
 
   /**
-   * Creates a collective invoice domain object.
+   * Creates a single invoice domain object.
    *
    * @param pdo the invoice
    */

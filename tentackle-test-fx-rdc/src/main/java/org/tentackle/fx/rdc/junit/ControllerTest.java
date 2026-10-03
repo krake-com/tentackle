@@ -26,14 +26,15 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.session.Session;
-
-import javafx.application.Platform;
 
 /**
- * Junit5 test to verify that controllers can be loaded and bound.<br>
+ * JUnit 5 test to verify that all controllers can be loaded and bound.<br>
  * Opens a session in case some controllers need it.<br>
  * Simply extend this class and put that in a test source folder.
+ * <p>
+ * Each controller is loaded and its injections are validated. Unless the controller's
+ * {@link FxControllerService#binding()} is {@code NO}, all its bindable members must be bound.
+ * Controllers annotated with {@code test = false} are skipped.
  * <p>
  * Example:
  * <pre>
@@ -49,7 +50,7 @@ public abstract class ControllerTest extends FxRdcTestApplication {
   /**
    * Creates the controller test.
    *
-   * @param packagePrefix optional package prefix, null or empty if all
+   * @param packagePrefix optional prefix of the controller class names, null or empty if all
    */
   public ControllerTest(String packagePrefix) {
     super("fx-rdc-controller-test", Version.RELEASE);
@@ -63,11 +64,13 @@ public abstract class ControllerTest extends FxRdcTestApplication {
     this(null);
   }
 
+  /**
+   * Loads and verifies all controllers.
+   *
+   * @param reporter the test reporter
+   */
   @Test
   public void testControllers(TestReporter reporter) {
-
-    // set the current session in the FX-thread as well (in case controllers use Platform.runLater)
-    Platform.runLater(() -> Session.setCurrentSession(getSession()));
 
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {

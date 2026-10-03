@@ -13,12 +13,14 @@ Its central idea is the **generic coverage test**. Rather than write one test pe
 abstract base classes and the test automatically discovers *every*
 [`@FxControllerService`](../../../../tentackle-fx/src/main/docs/fx.md) controller,
 [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) or `TableConfigurationProvider` registered via the
-[ServiceFinder SPI](../../../../tentackle-common/src/main/docs/common.md), instantiates each one on the FX thread,
-and asserts it loads, binds, and renders without error. A single one-line subclass thus guards your whole UI against
+[ServiceFinder SPI](../../../../tentackle-common/src/main/docs/common.md), instantiates each one on a running FX
+toolkit, and asserts it loads, binds, and renders without error. A single one-line subclass thus guards your whole UI against
 broken FXML, unbound fields, missing resources, or refactoring drift.
 
-> **Test scope only.** Like its PDO sibling, this artifact pulls in TestNG, JUnit, Groovy, and PostgreSQL and is
-> meant to be declared `<scope>test</scope>` in downstream projects — never as a compile/runtime dependency.
+> **Test scope only.** Like its PDO sibling, this artifact is meant to be declared `<scope>test</scope>` in
+> downstream projects — never as a compile/runtime dependency. It brings `tentackle-fx-rdc` and `tentackle-test-pdo`
+> along. None of the test frameworks arrives transitively (TestNG and the Jupiter API are `optional`), and the
+> scripting language and the JDBC driver are test scope here, so the downstream project declares them itself.
 
 The module is **not** a JPMS module: it has no `module-info.java`; the jar carries
 `Automatic-Module-Name: org.tentackle.fx.rdc.test` and lives on the test classpath, where SPI discovery works
@@ -30,14 +32,14 @@ without an explicit module descriptor.
 
 This module depends on [`tentackle-test-pdo`](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 and [`tentackle-fx-rdc`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md). The base class `FxRdcTestApplication`
-**extends** the PDO module's `TestApplication`, inheriting the entire database/session/transaction lifecycle (open
-session, create & populate the in-memory schema, modification tracker, teardown, skip-when-no-backend) and adding
-only what the UI needs on top:
+**extends** the PDO module's `TestApplication`, inheriting its per-class application lifecycle (open the session,
+create & populate the in-memory schema, register the application, teardown, skip-when-no-backend) and adding only
+what the UI needs on top. Like `TestApplication`, it has no automatic transaction handling:
 
 ```
    org.tentackle.app.AbstractApplication           (tentackle-pdo)
               ▲
-   TestApplication                                  (tentackle-test-pdo)  ── DB session, schema, transactions
+   TestApplication                                  (tentackle-test-pdo)  ── DB session, schema, registration
               ▲
    FxRdcTestApplication                             (tentackle-test-fx-rdc) ── JavaFX toolkit + FX-thread session
               ▲
@@ -65,23 +67,29 @@ names.
 
 The abstract base of all three test types. It adds the JavaFX dimension to the inherited `TestApplication`:
 
-- **`@BeforeSuite startFx()`** — starts the JavaFX toolkit with `Platform.startup(...)`. If the JVM is **headless**
-  (`GraphicsEnvironment.isHeadless()`) or FX is unavailable, it throws TestNG's `SkipException` so the suite is
-  **skipped, not failed** in CI without a display. The JUnit variant cannot use a `@BeforeAll` method here,
+- **`@BeforeSuite startFx()`** — starts the JavaFX toolkit with `Platform.startup(...)`. A toolkit that is already
+  running is accepted. If the JVM is **headless** (`GraphicsEnvironment.isHeadless()`) or FX is unavailable, it
+  throws TestNG's `SkipException` so the suite is **skipped, not failed** in CI without a display. The JUnit variant cannot use a `@BeforeAll` method here,
   because JUnit runs a superclass's `@BeforeAll` methods first. The session would already be open and the
   in-memory database populated, and when the class aborted, that leaked connection would keep the database alive
   for the next class. Instead, the nested `FxExtension` (a `BeforeAllCallback`, which JUnit runs before every
   `@BeforeAll` method) calls the idempotent `startFx()`. A headless JVM or missing FX support raises
-  `TestAbortedException`, and the tests are reported as skipped.
+  `TestAbortedException`, and the tests are reported as skipped. The failure is remembered, so the remaining
+  classes are aborted without trying again.
 - **`setDomainContext(...)` override** — when the inherited context is set, it **clones the session for the FX
   thread** (`context.getSession().clone("FX")`) and makes that clone the current session *inside* `Platform.runLater`,
-  so controllers that touch persistence from the UI thread work correctly. It also installs an uncaught-exception
-  handler on the FX thread so exceptions thrown asynchronously during rendering are captured and reported.
-- **`runFx(name, runnable)`** — the core helper. It runs the test body, then posts a `CountDownLatch` countdown to
-  the FX thread, and **waits** (default 30 s, see `setFxTimeout`) until the FX event queue has drained — guaranteeing
-  all FX processing triggered by the test has completed. Any captured FX-thread exception fails the test. This is
-  how a synchronous TestNG/JUnit assertion can reliably wait for asynchronous FX work.
-- **`unregister()` override** — closes the FX-thread session on teardown.
+  so code that runs on the UI thread uses a session of its own instead of sharing the test thread's. It also
+  installs an uncaught-exception handler on the FX thread, so exceptions thrown asynchronously during rendering are
+  captured and reported.
+- **`runFx(name, runnable)`** — the core helper. It runs the test body **on the calling (test) thread**, then posts
+  a `CountDownLatch` countdown to the FX thread via `Platform.runLater`, and **waits** (default 30 s, see
+  `setFxTimeout`) until it was processed — i.e. until all FX events queued by the test so far have been handled.
+  A runtime exception from the body, a timeout, or a captured FX-thread exception fails the test. This is how a
+  synchronous TestNG/JUnit assertion can reliably wait for asynchronous FX work. Note that a captured FX-thread
+  exception is not cleared, so it fails every subsequent `runFx` of the same test as well.
+- **`unregister()` override** — unregisters the application and closes the FX-thread session on teardown. If the
+  FX thread was never prepared (no FX-thread session), the application was never registered either, and
+  nothing happens.
 
 The FX timeout is configurable per test via `setFxTimeout(seconds)`.
 
@@ -91,6 +99,7 @@ The FX timeout is configurable per test via `setFxTimeout(seconds)`.
 
 Each test iterates the relevant SPI registry, filters by an optional **package prefix** (so a project can restrict
 the run to its own classes), honors a per-service **opt-out**, and exercises each implementation inside `runFx`.
+All checks of a test class run in a single test method, so the first failure ends the run.
 
 ### `ControllerTest`
 
@@ -110,24 +119,24 @@ missing resource bundles, fields bound to non-existent properties — across the
 
 Verifies that every [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) can produce its views. It
 maps each serviced PDO class (via `ClassMapper.create(name, GuiProvider.class)`), creates the PDO, obtains its
-`GuiProvider`, and — honouring `@GuiProviderService(test=…)` — exercises the full set of view factories:
+`GuiProvider`, and — honoring `@GuiProviderService(test=…)` — exercises the full set of view factories:
 `createEditor()` / `createFinder()` (when available), `createGraphic()`, `createTableView()`, `createTreeItem()`.
 A PDO with no provider (`ClassNotFoundException` cause) is reported and skipped rather than failed.
 
 ### `TableConfigurationProviderTest`
 
 Verifies that every `TableConfigurationProvider` can build its table configuration. For each serviced class it
-obtains the provider from `TableConfigurationProviderFactory` and, honouring `@TableConfigurationProviderService(test=…)`,
-calls `createTableConfiguration()` on the FX thread.
+obtains the provider from `TableConfigurationProviderFactory` and, honoring `@TableConfigurationProviderService(test=…)`,
+calls `createTableConfiguration()` inside `runFx`.
 
 ### Common conventions
 
-| Feature            | Behaviour                                                                                                                                       |
-|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Package prefix** | Each base class takes an optional `packagePrefix` constructor argument; only matching classes are tested. `null`/empty = all.                   |
-| **Opt-out**        | The matching `@*Service(test=false)` annotation excludes an implementation; it is logged as "not tested" rather than run.                       |
-| **Discovery**      | Implementations are found through the SPI registries (`FxFactory`, `ClassMapper`, the provider factories), so nothing has to be listed by hand. |
-| **Reporting**      | Every step is written to the TestNG `Reporter` / the JUnit `TestReporter` for a readable per-class trace.                                       |
+| Feature            | Behavior                                                                                                                                           |
+|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Package prefix** | Each base class takes an optional `packagePrefix` constructor argument, matched against the controller or provider class name. `null`/empty = all. |
+| **Opt-out**        | The matching `@*Service(test=false)` annotation excludes an implementation; it is logged as "not tested" rather than run.                          |
+| **Discovery**      | Implementations are found through the SPI registries (`FxFactory`, `ClassMapper`, the provider factories), so nothing has to be listed by hand.    |
+| **Reporting**      | Every step is written to the TestNG `Reporter` / the JUnit `TestReporter` for a readable per-class trace.                                          |
 
 ---
 
@@ -183,9 +192,10 @@ each class starts from an empty one. Keeping the database alive across classes w
 > module reports `Tests run: 0` while the build stays green. The POM therefore declares **both**
 > `surefire-testng` and `surefire-junit-platform` as plugin dependencies, exactly as
 > [test-pdo](../../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md) does. Surefire runs each provider
-> in its own forked JVM. A downstream TestNG project pins `surefire-testng`. A downstream JUnit project needs
-> `junit-jupiter-engine` and a `junit-platform-launcher` of the same version in test scope; otherwise surefire's
-> bundled launcher does not match the engine and test discovery fails.
+> in its own forked JVM, and the POM adds `junit-jupiter-engine` and `junit-platform-launcher` in test scope. A
+> downstream project that has both frameworks on its test classpath has to pin the providers the same way. A
+> downstream JUnit project needs `junit-jupiter-engine` and a `junit-platform-launcher` of the same version in test
+> scope; otherwise surefire's bundled launcher does not match the engine and test discovery fails.
 
 ---
 

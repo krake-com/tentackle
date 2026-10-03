@@ -32,18 +32,22 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassMapper;
 
 /**
- * TestNG test to verify that all whether GUI-providers can be loaded and bound.<br>
+ * TestNG test to verify that all GUI providers can create their views.<br>
  * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
+ * For each PDO class with a GUI provider, the PDO and its provider are created, and the provider's
+ * editor and finder (if available), graphic, table view and tree item are created.
+ * PDOs without a provider are skipped, as are providers annotated with {@code test = false}.
+ * <p>
  * Example:
  * <pre>
-  public class TestGuiProviders extends GuiProviderTest {
-    TestGuiProviders() {
-      super("my.package.name");
-    }
-  }
- </pre>
+ *  public class TestGuiProviders extends GuiProviderTest {
+ *    public TestGuiProviders() {
+ *      super("my.package.name");
+ *    }
+ *  }
+ * </pre>
  *
  * @author harald
  */
@@ -55,7 +59,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
   /**
    * Creates the GUI provider test.
    *
-   * @param packagePrefix optional package prefix, null or empty if all
+   * @param packagePrefix optional prefix of the provider class names, null or empty if all
    */
   public GuiProviderTest(String packagePrefix) {
     super("fx-rdc-provider-test", Version.RELEASE);
@@ -70,6 +74,9 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
     this(null);
   }
 
+  /**
+   * Creates the views of all GUI providers.
+   */
   @Test(alwaysRun = true)
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testGuiProviders() {
