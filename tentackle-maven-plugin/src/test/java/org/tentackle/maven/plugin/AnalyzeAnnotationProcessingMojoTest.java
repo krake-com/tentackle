@@ -113,7 +113,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, mojo::validate);
 
-    assertEquals(ex.getMessage(), "missing tentackle.analyzeDir");
+    assertEquals(ex.getMessage(), "missing analyzeDir");
   }
 
   @Test
@@ -122,7 +122,7 @@ public class AnalyzeAnnotationProcessingMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, mojo::validate);
 
-    assertEquals(ex.getMessage(), "missing tentackle.serviceDir");
+    assertEquals(ex.getMessage(), "missing servicesDir");
   }
 
   /**

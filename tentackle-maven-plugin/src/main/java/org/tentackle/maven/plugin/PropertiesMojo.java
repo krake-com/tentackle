@@ -51,12 +51,16 @@ import java.util.function.Function;
  *   &lt;/propertyDescriptors&gt;
  * </pre>
  * <p>
- * The converter is a FQCN of a singleton with a no-args constructor. Because it must be
- * in the classpath of the {@code tentackle-maven-plugin}, its artifact must be placed
- * within the plugin's {@code <dependencies>}.<br>
+ * The converter is the FQCN of a class implementing {@code Function<String,String>} with a public no-args
+ * constructor. Because it must be in the classpath of the {@code tentackle-maven-plugin}, its artifact must
+ * be placed within the plugin's {@code <dependencies>}.<br>
  * If the FQCN starts with an {@code @}, the converter is looked up via {@code META-INF/services}.
  * <p>
- * Important: the converters must be stateless because their instances are cached!
+ * The generated properties are visible to all plugins executed later in the build of the same module,
+ * for example to resource filtering, but not to values of the pom that have already been interpolated.
+ * <p>
+ * Important: the converters must be stateless because one instance per converter is shared
+ * by all property descriptors of an execution!
  *
  * @author harald
  */
@@ -66,9 +70,15 @@ import java.util.function.Function;
       threadSafe = true)
 public class PropertiesMojo extends AbstractTentackleMojo {
 
+  /**
+   * The descriptors of the properties to generate.
+   */
   @Parameter
   private List<PropertyDescriptor> propertyDescriptors;
 
+  /**
+   * The converters, by name as given in the descriptors.
+   */
   private final Map<String, Function<String,String>> converterMap = new ConcurrentHashMap<>();
 
 
@@ -125,6 +135,9 @@ public class PropertiesMojo extends AbstractTentackleMojo {
         }
 
         String value = function.apply(propertyDescriptor.getInput());
+        if (value == null) {
+          throw new MojoExecutionException("converter " + converter + " returned null for property " + property);
+        }
 
         getMavenProject().getProperties().setProperty(property, value);
 

@@ -18,5 +18,11 @@
 
 /**
  * Tentackle maven plugin.
+ * <p>
+ * The {@code analyze} and {@code test-analyze} goals process the annotations annotated with
+ * {@code @Analyze} and generate the {@code META-INF} service descriptors and the analyze info
+ * for the wurblets. The other goals derive maven properties via converters ({@code properties}),
+ * create a JavaBeans manifest ({@code beaninfo}) and list the versions of the 3rd-party dependencies
+ * ({@code versions}) and maven plugins ({@code plugin-versions}) as pom properties.
  */
 package org.tentackle.maven.plugin;

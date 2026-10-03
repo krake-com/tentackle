@@ -38,7 +38,15 @@ import java.io.PrintStream;
 import java.util.List;
 
 /**
- * Finds all BeanInfo-files and creates a manifest from.
+ * Creates a manifest that marks all classes with a {@code BeanInfo} as JavaBeans.
+ * <p>
+ * For each {@code XxxBeanInfo.java} found in the sources, a matching {@code Xxx.java} must exist,
+ * and an entry {@code Name: path/to/Xxx.class} with {@code Java-Bean: True} is added to
+ * {@code <manifestDirectory>/META-INF/MANIFEST.MF}. Classes whose simple name contains {@code Abstract}
+ * are skipped, because their {@code BeanInfo} only provides settings shared by the concrete beans.
+ * <p>
+ * The manifest is not added to the artifact automatically. Use the {@code manifestFile} option of the
+ * {@code maven-jar-plugin}'s archive configuration to merge it.
  *
  * @author harald
  */
@@ -53,7 +61,8 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
   /**
    * The list of file sets.<br>
-   * If set the source directory is ignored.
+   * If set, the source directory is ignored. A file set without a directory defaults to the source directory.
+   * Every included file must end with {@code BeanInfo.java}.
    */
   @Parameter
   protected List<FileSet> filesets;
@@ -70,7 +79,8 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Directory to write manifest to.
+   * Directory to write the manifest to.<br>
+   * The manifest is created as {@code META-INF/MANIFEST.MF} below this directory.
    */
   @Parameter(defaultValue = "${project.build.directory}/generated-resources/manifest",
              property = "tentackle.manifestDirectory",
@@ -138,9 +148,10 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Process all files in a fileset.
+   * Processes all files in a fileset.
    *
    * @param fileSet the set of files
+   * @param ps the stream to write the manifest entries to
    * @throws MojoExecutionException if failed
    */
   private void processFileSet(FileSet fileSet, PrintStream ps) throws MojoExecutionException {
@@ -176,11 +187,12 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
         errorCount++;
         continue;
       }
-      if (!beanInfoName.contains("Abstract")) {
+      String className = beanInfoName.replace(File.separatorChar, '/');    // manifest names are always slash-separated
+      if (!className.substring(className.lastIndexOf('/') + 1).contains("Abstract")) {
         // don't add abstract classes even if they provide a BeanInfo-file.
         // this is just to provide common settings
         ps.println();
-        ps.println("Name: " + beanInfoName + ".class");
+        ps.println("Name: " + className + ".class");
         ps.println("Java-Bean: True");
       }
     }

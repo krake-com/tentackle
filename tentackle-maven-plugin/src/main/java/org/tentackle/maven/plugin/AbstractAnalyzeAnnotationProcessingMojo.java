@@ -36,12 +36,17 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Generates code and meta-information prior to wurbeling and compiling the sources.
+ * Base class of the {@code analyze} and {@code test-analyze} mojos.
  * <p>
- * Processes up all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
- * Processing results are either written to files in analyzeDir or placed on heap
- * for being picked up by wurblets, depending on the handler implementation for
- * each annotation.
+ * Processes all annotations annotated with {@code @Analyze}, such as {@code @Service}, via the
+ * {@link AnalyzeProcessor}. Depending on the handler of each annotation, the results are either written
+ * as service descriptors to {@code servicesDir}, as analyze info to {@code analyzeDir}, or placed on heap
+ * to be picked up by the wurblets.
+ * <p>
+ * The processing is incremental (see {@link #filterFileNames(String, String[])}). Because a service descriptor
+ * is rewritten from the processed sources only, descriptors shared by several sources (such as the mapped
+ * services) and the optional {@link #index} may be incomplete after an incremental run. A clean build
+ * always produces the complete set.
  *
  * @author harald
  */
@@ -58,20 +63,23 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   private File servicesDir;
 
   /**
-   * Optional generated index holding the generated services.<br>
+   * Optional index of the generated service resources, relative to {@code servicesDir}.<br>
+   * A plain list of resource paths, one per line, as read by
+   * {@code org.tentackle.common.ServiceFactory#applyResourceIndex}, for example in an OSGi activator.
+   * <p>
    * Example: &lt;index&gt;META-INF/RESOURCE-INDEX.LIST&lt;/index&gt;
    */
   @Parameter
   protected String index;
 
   /**
-   * The generated services names.
+   * The names of the generated service resources.
    */
   private Set<String> generatedServices;
 
   /**
-   * Epochal time in ms when mojo was started. Used to detect which of the analyze-directories
-   * are just created within this run.
+   * Epochal time in ms when the mojo was created. Used to detect which of the analyze directories
+   * were created within this run.
    */
   private final long startedMillis;
 
@@ -90,7 +98,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * @param analyzeDir the directory holding the analyze-results
    * @param servicesDir the directory holding the generated services
    * @param classpathElements the mavenProject classpath
-   * @throws MojoFailureException if classloader could not be created
+   * @throws MojoFailureException if the classloader could not be created
    */
   public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements)
          throws MojoFailureException {
@@ -104,13 +112,13 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
       if (analyzeDir == null) {
-        throw new MojoExecutionException("missing tentackle.analyzeDir");
+        throw new MojoExecutionException("missing analyzeDir");
       }
       if (analyzeDir.getPath().contains("${")) {
         throw new MojoExecutionException("undefined variable(s) in analyzeDir: " + analyzeDir.getPath());
       }
       if (servicesDir == null) {
-        throw new MojoExecutionException("missing tentackle.serviceDir");
+        throw new MojoExecutionException("missing servicesDir");
       }
       if (servicesDir.getPath().contains("${")) {
         throw new MojoExecutionException("undefined variable(s) in servicesDir: " + servicesDir.getPath());
@@ -160,6 +168,15 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Each source file has a corresponding directory in {@code analyzeDir}, named after its path without the
+   * extension. A source file is skipped if it is not newer than the oldest timestamp of this directory and its
+   * direct entries. Sources whose directory is missing or was created within this run are always processed.
+   * The latter also solves the problem of case-insensitive file systems, where a subpackage with the same name
+   * as a class in the same package maps to the same directory.
+   */
   @Override
   protected String[] filterFileNames(String dirName, String[] fileNames) {
     List<String> filteredNames = new ArrayList<>();
@@ -210,6 +227,14 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     return filteredNames.toArray(new String[0]);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Writes the optional {@link #index} and, if the sources contained compilation errors, the
+   * {@value AnalyzeProcessor#COMPILE_ERROR_LOG} file in {@code analyzeDir}. The wurblets take its existence
+   * as the signal that the analyze info may be incomplete. The file is not removed by a later run without
+   * errors, only by a clean build.
+   */
   @Override
   public void finishExecute() throws MojoExecutionException, MojoFailureException {
     if (index != null && generatedServices != null && !generatedServices.isEmpty()) {

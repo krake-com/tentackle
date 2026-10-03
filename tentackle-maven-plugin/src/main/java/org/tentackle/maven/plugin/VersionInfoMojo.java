@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
  * Mojo to determine the versions of all 3rd-party dependencies of the current project.<br>
  * It logs the versions in XML-format ready to use within the properties section of a pom file.
  * The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}.<br>
+ * The artifacts of the reactor modules are excluded.
  * If no dependency scope is given, the dependencies of all scopes are listed.
  * <p>
  * Example:
@@ -54,7 +55,8 @@ import java.util.stream.Collectors;
  *   ...
  *   [INFO] 
  *   [INFO] --- tentackle-maven-plugin:11.5.1.0:versions (default-cli) @ myapplic-parent ---
- *   [INFO] versions of 3rd-party dependencies for scope 'compile':
+ *   [INFO]
+ *   &lt;!-- 3rd-party dependencies of project 'myapplic-parent' for scope 'compile' --&gt;
  *   &lt;version.orgCodehausGroovy.groovy&gt;2.5.8&lt;/version.orgCodehausGroovy.groovy&gt;
  *   &lt;version.orgOpenjfx.javafxBase&gt;13.0.1&lt;/version.orgOpenjfx.javafxBase&gt;
  *   &lt;version.orgOpenjfx.javafxControls&gt;13.0.1&lt;/version.orgOpenjfx.javafxControls&gt;
@@ -92,7 +94,9 @@ import java.util.stream.Collectors;
 public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
   /**
-   * Optional dependency scope.
+   * Optional dependency scope, case-insensitive.<br>
+   * If set, only dependencies of that scope are listed. The transitive dependencies of a
+   * dependency with a different scope are not followed.
    */
   @Parameter(property = "scope" )
   private String scope;

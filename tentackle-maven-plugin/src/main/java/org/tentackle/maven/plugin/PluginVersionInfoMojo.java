@@ -35,9 +35,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Mojo to determine the versions of all maven plugins used in the current project.<br>
+ * Mojo to determine the versions of all maven plugins used in the current project and its modules.<br>
  * It logs the versions in XML-format ready to use within the properties section of a pom file.
- * The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}.<br>
+ * The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}.
+ * Missing versions and the meta versions {@code RELEASE} and {@code LATEST} are resolved against
+ * the plugin repositories.
  * <p>
  * Example:
  * <pre>
@@ -45,7 +47,8 @@ import java.util.Set;
  *   ...
  *   [INFO] 
  *   [INFO] --- tentackle-maven-plugin:13.0-SNAPSHOT:plugin-versions (default-cli) @ admin-parent ---
- *   [INFO] versions of plugins:
+ *   [INFO]
+ *   &lt;!-- plugins of project 'admin-parent' --&gt;
  *   &lt;version.orgApacheMavenPlugins.mavenCleanPlugin&gt;3.1.0&lt;/version.orgApacheMavenPlugins.mavenCleanPlugin&gt;
  *   &lt;version.orgApacheMavenPlugins.mavenCompilerPlugin&gt;3.8.1&lt;/version.orgApacheMavenPlugins.mavenCompilerPlugin&gt;
  *   &lt;version.orgApacheMavenPlugins.mavenDependencyPlugin&gt;3.1.1&lt;/version.orgApacheMavenPlugins.mavenDependencyPlugin&gt;

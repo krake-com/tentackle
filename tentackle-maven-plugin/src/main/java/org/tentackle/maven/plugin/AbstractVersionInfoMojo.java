@@ -41,13 +41,18 @@ import java.util.TreeMap;
 
 /**
  * Base class for the version info mojos.
+ * <p>
+ * Logs the versions of a set of artifacts as XML elements, ready to be pasted into the properties section
+ * of a pom. The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}, where
+ * dots, dashes and underscores separate the camel case words. Optionally, the result is written to a file
+ * as well.
  */
 public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
 
   /**
    * Optional output file.<br>
    * If the filename ends with <code>.properties</code>, it will be created in properties file format
-   * instead of xml.
+   * instead of XML. The properties file format does not support group versions.
    */
   @Parameter(property = "outputFile")
   private File outputFile;
@@ -55,6 +60,8 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
 
   /**
    * Controls creation of extra group version properties.<br>
+   * A group property is named {@code version.groupIdInCamelCase}, and the artifact properties of that group
+   * with the same version refer to it via {@code ${...}}.
    * Only the version shared by most of the artifacts of a groupId is ever turned into a group property.
    * <ul>
    *   <li>0: no group versions (default)</li>
@@ -74,6 +81,7 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
    *
    * @param comment the comment/title
    * @param artifacts the artifacts
+   * @throws MojoExecutionException if writing the output file failed
    */
   protected void generateVersionProperties(String comment, Set<Artifact> artifacts) throws MojoExecutionException {
 
@@ -103,7 +111,7 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
     }
 
     if (!groupMap.isEmpty()) {
-      // if more than group with the same groupId: keep only the one with the most artifacts
+      // if more than one group with the same groupId: keep only the one with the most artifacts
       Map<String, Group> reducedGroupMap = new HashMap<>();      // groupId -> group
       for (Map.Entry<Group, List<Artifact>> entry : groupMap.entrySet()) {
         String groupId = entry.getKey().groupId;

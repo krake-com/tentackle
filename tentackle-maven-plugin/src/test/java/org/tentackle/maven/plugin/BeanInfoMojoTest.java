@@ -130,6 +130,19 @@ public class BeanInfoMojoTest {
   }
 
   /**
+   * Only the simple class name decides whether a bean is abstract, not the package it lives in.
+   */
+  @Test
+  public void keepsBeansInAPackageNamedAbstract() throws Exception {
+    writeSource("com/example/Abstracts/Contact.java");
+    writeSource("com/example/Abstracts/ContactBeanInfo.java");
+
+    execute();
+
+    assertTrue(readLines(manifestFile()).contains("Name: " + className("com", "example", "Abstracts", "Contact")));
+  }
+
+  /**
    * A bean info without the class it describes is a leftover of a renamed or deleted class
    * and fails the build.
    */
@@ -272,10 +285,10 @@ public class BeanInfoMojoTest {
   }
 
   /**
-   * The section names are built from the scanner's relative paths, hence the platform's separator.
+   * Manifest names are slash-separated on every platform.
    */
   private String className(String... pathElements) {
-    return String.join(File.separator, pathElements) + ".class";
+    return String.join("/", pathElements) + ".class";
   }
 
 }
