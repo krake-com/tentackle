@@ -1,6 +1,6 @@
 # Tentackle I18N Maven Plugin
 
-Generates internationalization resources during the build.
+Synchronizes an application's resource bundles between its property files and a database backend.
 
 ## Documentation & reports
 

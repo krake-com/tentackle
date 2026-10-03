@@ -31,7 +31,9 @@ import java.util.Properties;
 
 /**
  * Pushes resource bundles to the database backend.<br>
- * Existing translations are left unchanged.
+ * Processes all bundles found on the project's compile classpath, i.e. including those of its dependencies.
+ * Missing stored bundles are created and missing translations added.
+ * Existing translations are left unchanged unless {@link #override} is set.
  */
 @Mojo(name = "push",
       requiresDependencyResolution = ResolutionScope.COMPILE,
@@ -66,9 +68,10 @@ public class PushMojo extends AbstractI18nMojo {
 
 
   /**
-   * Pushes to the backend.
+   * Pushes the properties of a bundle to the backend.
    *
-   * @param bundleName the bundle class name
+   * @param bundleName the bundle name
+   * @param locale the locale suffix, null for the default locale
    * @param props the properties
    */
   private void push(String bundleName, String locale, Properties props) {

@@ -19,13 +19,17 @@
 package org.tentackle.maven.plugin.i18n;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.RecordingLog;
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.TestVerifyMojo;
 
+import java.util.List;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -172,7 +176,7 @@ public class VerifyMojoTest extends AbstractI18nMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> run(mojo));
 
-    assertEquals(ex.getMessage(), "pushing to the database failed");
+    assertEquals(ex.getMessage(), "1 error found");
     assertTrue(RecordingLog.contains(getLog().getErrorMessages(), "1 missing default translation:"),
                getLog().getErrorMessages().toString());
     assertTrue(RecordingLog.contains(getLog().getErrorMessages(), "'farewell'"),
@@ -251,6 +255,70 @@ public class VerifyMojoTest extends AbstractI18nMojoTest {
     assertTrue(RecordingLog.contains(getLog().getWarnMessages(),
                                      "no such properties file: " + resourceName(APP_BUNDLE, "fr")),
                getLog().getWarnMessages().toString());
+  }
+
+  /**
+   * A locale without a property file is reported once as a missing property file, not as a
+   * missing stored bundle on top of it - the bundle may well be stored, e.g. added by a translator.
+   */
+  @Test
+  public void aMissingPropertyFileIsNotAlsoAMissingStoredBundle() throws Exception {
+    bundle(APP_BUNDLE, "greeting=Hello");
+    storeBundle(APP_BUNDLE, null, "greeting", "Hello");
+    storeBundle(APP_BUNDLE, "fr", "greeting", "Bonjour");
+    I18nTestSupport.setField(mojo, "locales", "fr");    // but no AppBundle_fr.properties
+
+    run(mojo);
+
+    assertFalse(RecordingLog.contains(getLog().getWarnMessages(), "missing stored bundle"),
+                getLog().getWarnMessages().toString());
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
+                                     "2 bundles processed, 1 warning, 0 errors, 0 updates"),
+               getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * A bundle of the application whose default locale has not been pushed yet is still a bundle of
+   * the application: the stored bundles of its other locales are not obsolete.
+   */
+  @Test
+  public void aBundleWithoutAStoredDefaultIsNotObsolete() throws Exception {
+    bundle(APP_BUNDLE, "greeting=Hello");               // default never pushed
+    storeBundle(APP_BUNDLE, "de", "greeting", "Hallo");
+
+    run(mojo);
+
+    assertFalse(RecordingLog.contains(getLog().getWarnMessages(), "obsolete bundle"),
+                getLog().getWarnMessages().toString());
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
+                                     "1 bundle processed, 1 warning, 0 errors, 0 updates"),
+               getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * As an aggregator, the goal also verifies the project it is executed on, unless it is a pom.
+   * In a single-module project, there are no other projects at all.
+   */
+  @Test
+  public void aSingleModuleProjectIsVerifiedAsWell() throws Exception {
+    TestVerifyMojo aggregator = configure(new TestVerifyMojo() {
+      @Override
+      protected boolean isExecutionRecursive() {
+        return false;
+      }
+    });
+    MavenProject project = aggregator.getMavenProject();
+    project.setPackaging("jar");
+    project.setCollectedProjects(List.of());          // no modules
+    bundle(APP_BUNDLE, "greeting=Hello");
+    storeBundle(APP_BUNDLE, null, "greeting", "Hello");
+
+    run(aggregator);
+
+    assertTrue(getLog().getWarnMessages().isEmpty(), getLog().getWarnMessages().toString());
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
+                                     "1 bundle processed, 0 warnings, 0 errors, 0 updates"),
+               getLog().getInfoMessages().toString());
   }
 
 }

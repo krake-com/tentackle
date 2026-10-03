@@ -28,11 +28,13 @@ import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.session.Session;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Verifies the bundles stored in the backend against the property resource bundles of the application.<br>
- * The mojo fails if missing translations in the database would raise a {@link java.util.MissingResourceException}.<br>
+ * Reports differing translations (info), obsolete bundles and keys, missing stored bundles, missing
+ * property files and missing translations of non-default locales (warnings).
+ * The mojo fails if missing translations of the default locale would raise a
+ * {@link java.util.MissingResourceException}. The differing translations are counted as updates in the summary.<br>
  * Notice: the application's resource bundles are verified via the <code>tentackle-check-maven-plugin</code> during the build process.
  */
 @Mojo(name = "verify", aggregator = true, threadSafe = true,
@@ -88,7 +90,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       getLogger().warn(buf.toString());
     }
 
-    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList();
+    List<String> resourceNames = getMissingStoredBundles();
     if (!resourceNames.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, resourceNames.size(), " missing stored bundle");

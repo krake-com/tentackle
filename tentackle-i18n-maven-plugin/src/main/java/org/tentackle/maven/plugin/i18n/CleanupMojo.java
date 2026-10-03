@@ -29,13 +29,13 @@ import org.tentackle.session.Session;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
- * Removes obsolete bundles and keys.<br>
- * Does nothing if there are errors or warnings to make sure that there are no pending refactorings to be resolved
- * by the <code>BundleMonkey</code> tool.
+ * Removes obsolete bundles and keys from the backend.<br>
+ * Does nothing if there are errors or warnings other than the obsolete bundles and keys themselves
+ * (missing stored bundles, property files or translations) to make sure that there are no pending refactorings
+ * to be resolved by the <code>BundleMonkey</code> tool. Differing translations don't prevent the cleanup.
  * Consider running <code>verify</code> first to check for such warnings.
  */
 @Mojo(name = "cleanup", aggregator = true, threadSafe = true,
@@ -46,7 +46,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     super.processBundles(session, projects);
 
-    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList().size();
+    warnings += getMissingStoredBundles().size();
     warnings += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList().size();
     errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList().size();
 
@@ -66,7 +66,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
         Set<StoredBundle> bundles = new HashSet<>();    // bundles to update
         for (StoredBundleKey bundleKey : sortBundleKeys(obsoleteKeys)) {
           StoredBundle bundle = bundleKey.getBundle();
-          buf.append("\ntranslation ").append(bundle).append(" '").append(bundleKey.getKey());
+          buf.append("\ntranslation ").append(bundle).append(" '").append(bundleKey.getKey()).append("'");
           bundle.setTranslation(bundleKey.getKey(), null);
           bundles.add(bundle);
         }

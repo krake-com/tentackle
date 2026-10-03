@@ -39,6 +39,8 @@ import java.util.Properties;
 /**
  * Pulls resource bundles from the database backend.<br>
  * If the database contents differ from the resource bundle property files, the property files will be updated.
+ * Only bundles whose package belongs to the project's (non-filtered) resource roots are written.
+ * Missing property files are created. Keys that are not stored in the database are left in place.
  */
 @Mojo(name = "pull",
       requiresDependencyResolution = ResolutionScope.COMPILE,

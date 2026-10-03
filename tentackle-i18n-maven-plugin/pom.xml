@@ -98,7 +98,7 @@
       </plugin>
       <plugin>
         <!--
-          Create the DDL of the tables the mojo tests need, so that AbstractI18nMojoDbTest can
+          Create the DDL of the tables the mojo tests need, so that AbstractI18nMojoTest can
           build the schema of the in-memory H2 from the classpath. The recipe is the one of
           tentackle-persistence: this module sits below tentackle-test-pdo in the reactor and
           cannot use its DbTestUtilities, which would build the same script from the model.

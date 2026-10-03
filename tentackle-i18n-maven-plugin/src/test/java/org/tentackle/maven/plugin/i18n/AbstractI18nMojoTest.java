@@ -303,6 +303,15 @@ public abstract class AbstractI18nMojoTest {
   }
 
   /**
+   * Runs an SQL script against the backend.
+   *
+   * @param sql the SQL statements
+   */
+  protected void runScript(String sql) {
+    ((Db) session).runScript("test", sql);
+  }
+
+  /**
    * Loads a bundle from the backend.
    *
    * @param bundleName the fully qualified bundle name

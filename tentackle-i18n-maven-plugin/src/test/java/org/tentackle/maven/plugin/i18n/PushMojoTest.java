@@ -18,17 +18,23 @@
 
 package org.tentackle.maven.plugin.i18n;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.RecordingLog;
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.TestPushMojo;
 
+import java.net.MalformedURLException;
+import java.util.List;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests the {@code push} goal end to end.
@@ -142,18 +148,32 @@ public class PushMojoTest extends AbstractI18nMojoTest {
   }
 
   /**
-   * The locales are given the way a {@code Locale} is written, with an underscore, but a stored
-   * bundle keeps the language tag.
+   * A locale with a country is processed with the suffix {@code ResourceBundle} uses, i.e. with an
+   * underscore: the property file {@code AppBundle_de_DE.properties} is stored for the locale
+   * {@code de_DE}, which is what the runtime looks up. The language tag notation is accepted as well.
    */
-  @Test
-  public void aLocaleWithACountryIsStoredAsALanguageTag() throws Exception {
+  @Test(dataProvider = "countryLocales")
+  public void aLocaleWithACountryUsesTheResourceBundleSuffix(String locales) throws Exception {
     bundle(APP_BUNDLE, "greeting=Hello");
-    properties(resourceName(APP_BUNDLE, "de-DE"), "greeting=Hallo");
-    I18nTestSupport.setField(mojo, "locales", "de_DE");
+    properties(resourceName(APP_BUNDLE, "de_DE"), "greeting=Hallo");
+    I18nTestSupport.setField(mojo, "locales", locales);
 
     run(mojo);
 
-    assertNotNull(loadBundle(APP_BUNDLE, "de-DE"), "the locale suffix was not transformed");
+    StoredBundle bundle = loadBundle(APP_BUNDLE, "de_DE");
+    assertNotNull(bundle, "not stored for the locale suffix de_DE");
+    assertEquals(bundle.getTranslation("greeting"), "Hallo");
+    assertTrue(getLog().getWarnMessages().isEmpty(), getLog().getWarnMessages().toString());
+  }
+
+  /**
+   * The notations of a locale with a country.
+   *
+   * @return the locales parameters
+   */
+  @DataProvider
+  public Object[][] countryLocales() {
+    return new Object[][] { { "de_DE" }, { "de-DE" } };
   }
 
   /**
@@ -217,6 +237,40 @@ public class PushMojoTest extends AbstractI18nMojoTest {
     assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
                                      "0 bundles processed, 0 warnings, 0 errors, 0 updates"),
                getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * The password is optional: a user without one is connected all the same.
+   */
+  @Test
+  public void thePasswordIsOptional() throws Exception {
+    runScript("CREATE USER IF NOT EXISTS nopassword PASSWORD ''; ALTER USER nopassword ADMIN TRUE;");
+    bundle(APP_BUNDLE, "greeting=Hello");
+    I18nTestSupport.setField(mojo, "user", "nopassword");
+    I18nTestSupport.setField(mojo, "password", null);
+
+    run(mojo);
+
+    assertEquals(loadBundle(APP_BUNDLE, null).getTranslation("greeting"), "Hello");
+  }
+
+  /**
+   * A project whose classloader cannot be created fails the build instead of being skipped silently.
+   */
+  @Test
+  public void anInvalidClasspathFailsTheBuild() {
+    TestPushMojo brokenMojo = configure(new TestPushMojo() {
+      @Override
+      protected ClassLoader createProjectClassLoader(List<String> classpathElements) throws MalformedURLException {
+        throw new MalformedURLException("invalid classpath element");
+      }
+    });
+    bundle(APP_BUNDLE, "greeting=Hello");
+
+    MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> run(brokenMojo));
+
+    assertEquals(ex.getMessage(), "cannot create project classloader");
+    assertTrue(loadBundles().isEmpty());
   }
 
 }

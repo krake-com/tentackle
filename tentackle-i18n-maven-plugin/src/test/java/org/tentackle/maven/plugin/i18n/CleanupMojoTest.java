@@ -26,6 +26,8 @@ import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.RecordingLog;
 import org.tentackle.maven.plugin.i18n.I18nTestSupport.TestCleanupMojo;
 
+import java.util.List;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
@@ -124,7 +126,7 @@ public class CleanupMojoTest extends AbstractI18nMojoTest {
 
     MojoExecutionException ex = expectThrows(MojoExecutionException.class, () -> run(mojo));
 
-    assertEquals(ex.getMessage(), "pushing to the database failed");
+    assertEquals(ex.getMessage(), "1 error found");
     assertNotNull(loadBundle(PACKAGE + ".GoneBundle", null), "cleaned up despite the error");
     assertTrue(RecordingLog.contains(getLog().getErrorMessages(),
                                      "1 error found -> please run tentackle-i18n:verify and fix the errors"),
@@ -162,6 +164,49 @@ public class CleanupMojoTest extends AbstractI18nMojoTest {
     assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
                                      "1 bundle processed, 0 warnings, 0 errors, 0 updates"),
                getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * As an aggregator, the goal also processes the project it is executed on, unless it is a pom.
+   * Otherwise, every stored bundle of a single-module project would look obsolete and be deleted.
+   */
+  @Test
+  public void keepsTheBundlesOfASingleModuleProject() throws Exception {
+    TestCleanupMojo aggregator = configure(new TestCleanupMojo() {
+      @Override
+      protected boolean isExecutionRecursive() {
+        return false;
+      }
+    });
+    aggregator.getMavenProject().setPackaging("jar");
+    aggregator.getMavenProject().setCollectedProjects(List.of());     // no modules
+    bundle(APP_BUNDLE, "greeting=Hello");
+    storeBundle(APP_BUNDLE, null, "greeting", "Hello");
+
+    run(aggregator);
+
+    assertNotNull(loadBundle(APP_BUNDLE, null), "the bundle in use was removed");
+    assertTrue(RecordingLog.contains(getLog().getInfoMessages(),
+                                     "1 bundle processed, 0 warnings, 0 errors, 0 updates"),
+               getLog().getInfoMessages().toString());
+  }
+
+  /**
+   * A locale without a property file is a single warning, which blocks the cleanup.
+   */
+  @Test
+  public void aMissingPropertyFileIsASingleWarning() throws Exception {
+    bundle(APP_BUNDLE, "greeting=Hello");
+    storeBundle(APP_BUNDLE, null, "greeting", "Hello");
+    storeBundle(APP_BUNDLE, "fr", "greeting", "Bonjour", "gone", "Obsolete");
+    I18nTestSupport.setField(mojo, "locales", "fr");    // but no AppBundle_fr.properties
+
+    run(mojo);
+
+    assertEquals(loadBundle(APP_BUNDLE, "fr").getTranslation("gone"), "Obsolete", "cleaned up despite the warning");
+    assertTrue(RecordingLog.contains(getLog().getWarnMessages(),
+                                     "1 warning found -> please run tentackle-i18n:verify and fix the warnings"),
+               getLog().getWarnMessages().toString());
   }
 
 }

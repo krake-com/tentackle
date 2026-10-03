@@ -35,7 +35,7 @@ the [i18n plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackl
 
 | Stage       | Performed by                    | Purpose                                                              |
 |-------------|---------------------------------|---------------------------------------------------------------------|
-| **push**    | `mvn tentackle-i18n:push`       | Seed the database from the property files (adds new keys only; never overwrites translator edits). |
+| **push**    | `mvn tentackle-i18n:push`       | Seed the database from the property files (adds new keys only; overwrites translator edits only with `override`). |
 | **edit**    | **BundleMonkey**                | Translators maintain the stored texts and extra locales at runtime. |
 | **pull**    | `mvn tentackle-i18n:pull`       | Copy edits back into the property files so they enter the VCS changelog (shipped locales only). |
 | **verify**  | `mvn tentackle-i18n:verify`     | Ensure no stored bundle is missing keys before deployment (guards against `MissingResourceException`). |
