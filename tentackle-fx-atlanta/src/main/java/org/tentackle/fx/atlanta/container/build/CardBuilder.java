@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.container.FxCard;
 
 /**
- * Builder to create a {@link Card}.
+ * Builder to create an {@link FxCard} whenever the FXML references a {@link Card}.
  *
  * @author harald
  */

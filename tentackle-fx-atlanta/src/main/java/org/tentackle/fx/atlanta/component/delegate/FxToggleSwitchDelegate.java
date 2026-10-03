@@ -26,7 +26,7 @@ import org.tentackle.fx.atlanta.component.FxToggleSwitch;
 import javafx.scene.Parent;
 
 /**
- * Delegate for FxToggleSwitch.
+ * Delegate for {@link FxToggleSwitch}.
  *
  * @author harald
  */

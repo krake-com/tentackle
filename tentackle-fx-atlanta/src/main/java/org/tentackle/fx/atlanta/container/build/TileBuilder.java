@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.container.FxTile;
 
 /**
- * Builder to create a {@link Tile}.
+ * Builder to create an {@link FxTile} whenever the FXML references a {@link Tile}.
  *
  * @author harald
  */

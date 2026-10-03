@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.component.FxCalendar;
 
 /**
- * Builder to create a Calendar.
+ * Builder to create an {@link FxCalendar} whenever the FXML references a {@link Calendar}.
  *
  * @author harald
  */

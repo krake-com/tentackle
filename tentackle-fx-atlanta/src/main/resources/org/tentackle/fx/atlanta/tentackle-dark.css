@@ -6,12 +6,12 @@
 .root {
 
   /**
-   * light yellow components indicate a mandatory field.
+   * dark yellow components indicate a mandatory field.
    */
   -tt-mandatory-color: -color-warning-7;
 
   /**
-   * light red components indicate an error.
+   * dark red components indicate an error.
    */
   -tt-error-color: -color-danger-7;
 
@@ -21,7 +21,7 @@
   -tt-alert-color: -color-danger-5;
 
   /**
-   * light green components indicate an info/hint.
+   * dark green components indicate an info/hint.
    */
   -tt-info-color: -color-success-7;
 

@@ -25,7 +25,7 @@ import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.container.config.PaneConfigurator;
 
 /**
- * Configures a {@link InputGroup}.
+ * Configures an {@link InputGroup}.
  *
  * @author harald
  * @param <T> the container type

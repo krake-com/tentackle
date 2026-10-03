@@ -25,7 +25,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 
 /**
- * Delegate for FxInputGroup.
+ * Delegate for {@link FxInputGroup}.
  *
  * @author harald
  */

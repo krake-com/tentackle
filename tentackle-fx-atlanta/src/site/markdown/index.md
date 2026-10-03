@@ -1,6 +1,6 @@
 # Tentackle FX Atlanta Theme
 
-AtlantaFX theme integration for Tentackle FX clients.
+AtlantaFX themes, plus AtlantaFX controls and containers as bindable Tentackle FX components.
 
 ## Documentation & reports
 

@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the atlanta-fx module.
+ * Hook for the tentackle-fx-atlanta module.
  *
  * @author harald
  */

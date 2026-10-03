@@ -34,7 +34,7 @@ import java.time.LocalDate;
 public class LocalDateLocalDateTranslator extends IdentityTranslator<LocalDate> {
 
   /**
-   * Creates an enum translator.
+   * Creates an identity translator for {@link LocalDate}.
    *
    * @param component the component
    */

@@ -21,7 +21,7 @@ package org.tentackle.fx.atlanta.container.delegate;
 import org.tentackle.fx.FxContainerDelegate;
 import org.tentackle.fx.atlanta.container.FxTile;
 
-import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 
@@ -41,8 +41,6 @@ public class FxTileDelegate extends FxContainerDelegate {
    */
   public FxTileDelegate(FxTile container) {
     this.container = container;
-    this.container.graphicProperty().addListener(this::changed);
-    this.container.actionProperty().addListener(this::changed);
   }
 
 
@@ -51,18 +49,24 @@ public class FxTileDelegate extends FxContainerDelegate {
     return container;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Returns the graphic and action nodes, if set.<br>
+   * The children of the control itself are the nodes of the skin and not the components.
+   */
   @Override
   public ObservableList<Node> getComponents() {
-    return container.getChildren();
+    ObservableList<Node> components = FXCollections.observableArrayList();
+    addIfNotNull(components, container.getGraphic());
+    addIfNotNull(components, container.getAction());
+    return components;
   }
 
 
-  private void changed(ObservableValue<? extends Node> observableValue, Node oldValue, Node newValue) {
-    if (oldValue != null) {
-      getComponents().remove(oldValue);
-    }
-    if (newValue != null) {
-      getComponents().add(newValue);
+  private void addIfNotNull(ObservableList<Node> components, Node node) {
+    if (node != null) {
+      components.add(node);
     }
   }
 

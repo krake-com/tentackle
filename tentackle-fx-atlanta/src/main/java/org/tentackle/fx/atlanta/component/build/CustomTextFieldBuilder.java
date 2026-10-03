@@ -26,7 +26,7 @@ import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.atlanta.component.FxCustomTextField;
 
 /**
- * Builder to create a CustomTextField.
+ * Builder to create an {@link FxCustomTextField} whenever the FXML references a {@link CustomTextField}.
  *
  * @author harald
  */

@@ -28,7 +28,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 /**
- * Delegate for FxCalendar.
+ * Delegate for {@link FxCalendar}.
  *
  * @author harald
  */

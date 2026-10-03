@@ -17,6 +17,6 @@
  */
 
 /**
- * Builder for AtlantaFX containers.
+ * Builders for AtlantaFX containers.
  */
 package org.tentackle.fx.atlanta.container.build;

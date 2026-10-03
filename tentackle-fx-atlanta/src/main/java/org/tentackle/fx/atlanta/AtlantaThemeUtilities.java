@@ -33,6 +33,11 @@ import java.util.List;
 
 /**
  * {@link ThemeUtilities} for AtlantaFX.
+ * <p>
+ * Supports the AtlantaFX themes Primer, Cupertino and Nord, each in a light and a dark variant.
+ * The default theme is Cupertino on macOS and Primer on all other platforms.<br>
+ * Overrides the {@link RdcThemeUtilities} because the dependent module takes precedence
+ * for the same service.
  */
 @Service(ThemeUtilities.class)
 public class AtlantaThemeUtilities extends RdcThemeUtilities {
@@ -57,6 +62,11 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
     return SUPPORTED_THEMES;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Sets the AtlantaFX user-agent stylesheet of the current theme in its light or dark variant.
+   */
   @Override
   public void applyUserAgentStylesheet() {
     String modePart = isDarkMode() ? "-dark.css" : "-light.css";
@@ -67,12 +77,24 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
     });
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Replaces the stylesheets set by {@link RdcThemeUtilities} with the AtlantaFX-tuned
+   * {@code tentackle.css} (or {@code tentackle-dark.css} in dark mode) and {@code pdo-style.css}.
+   */
   @Override
   public void applyStylesheets(Scene scene) {
     scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/atlanta/tentackle-dark.css" : "/org/tentackle/fx/atlanta/tentackle.css");
     scene.getStylesheets().add("/org/tentackle/fx/atlanta/pdo-style.css");
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Redirects the CSS files of {@link NotificationBuilder}, {@link Note} and {@link TotalsTableView}
+   * to the AtlantaFX-tuned variants in this package.
+   */
   @Override
   public URL getResourceURL(Class<?> clazz, String name) {
     if (clazz == NotificationBuilder.class ||

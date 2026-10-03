@@ -34,7 +34,7 @@ import org.tentackle.fx.ConfiguratorService;
 public class TileConfigurator<T extends Tile> implements Configurator<T> {
 
   /**
-   * Creates the configurator for an {@link Tile}.
+   * Creates the configurator for a {@link Tile}.
    */
   public TileConfigurator() {
     // see -Xlint:missing-explicit-ctor since Java 16
