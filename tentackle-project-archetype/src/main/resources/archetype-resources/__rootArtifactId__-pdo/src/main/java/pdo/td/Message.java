@@ -94,7 +94,7 @@ public interface Message extends TransactionData<Message>, MessagePersistence, M
    * @param messageType the message type
    * @param refersTo the object the message refers to
    * @param text the message text
-   * @param owner the optional owner, null if determine from context
+   * @param owner the responsible organizational unit, null for the current user
    * @return the created message
    */
   static Message log(MessageType messageType, Object refersTo, String text, OrgUnit<?> owner) {

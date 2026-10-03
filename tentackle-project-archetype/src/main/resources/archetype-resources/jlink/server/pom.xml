@@ -92,7 +92,7 @@
           <keystore>${symbol_dollar}{cert.dir}/keystore.p12</keystore>
           <file>${symbol_dollar}{cert.file}</file>
           <storepass>${symbol_dollar}{cert.password}</storepass>
-          <keypass>${cert.password}</keypass>
+          <keypass>${symbol_dollar}{cert.password}</keypass>
           <alias>${symbol_dollar}{cert.alias}</alias>
           <dname>${symbol_dollar}{cert.dname}</dname>
           <keyalg>RSA</keyalg>

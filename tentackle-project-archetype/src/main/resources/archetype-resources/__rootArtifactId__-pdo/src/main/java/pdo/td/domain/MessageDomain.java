@@ -27,7 +27,7 @@ public interface MessageDomain extends DomainObject<Message> {
    * @param messageType the message type
    * @param refersTo the object the message refers to
    * @param text the message text
-   * @param owner the optional owner, null if determine from context
+   * @param owner the responsible organizational unit, null for the current user
    * @return the persisted message
    */
   @Transaction

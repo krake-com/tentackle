@@ -28,8 +28,6 @@ import java.util.ResourceBundle;
 
 /**
  * Controller for changing the user's theme.
- *
- * @author harald
  */
 @FxControllerService
 public class ChangeThemeView extends AbstractFxController {

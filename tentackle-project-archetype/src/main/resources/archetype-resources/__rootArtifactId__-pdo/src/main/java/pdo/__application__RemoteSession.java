@@ -8,7 +8,8 @@
 package ${package}.pdo;
 
 /**
- * Application-specific remote session.
+ * Application-specific client-side remote session.<br>
+ * Implemented by the {@code ${application}RemoteSessionAdapter} in the persistence module.
  */
 public interface ${application}RemoteSession {
 

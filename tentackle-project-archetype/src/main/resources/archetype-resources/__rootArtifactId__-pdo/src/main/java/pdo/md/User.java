@@ -60,7 +60,7 @@ import org.tentackle.session.TableName;
  * <p>
  * For security reasons, the password hash is stored in the user table, but is not part of the User PDO.
  */
-@TableName(value =/*@*/"md.user"/*@*/, // @wurblet < Inject --string ${symbol_dollar}tablename
+@TableName(value =/*@*/"md.users"/*@*/, // @wurblet < Inject --string ${symbol_dollar}tablename
            mapSchema =/*@*/false/*@*/, // @wurblet < Inject ${symbol_dollar}mapSchema
            prefix =/*@*/""/*@*/)       // @wurblet < Inject --string ${symbol_dollar}tablePrefix
 @ClassId(/*@*/1001/*@*/)               // @wurblet < Inject ${symbol_dollar}classid

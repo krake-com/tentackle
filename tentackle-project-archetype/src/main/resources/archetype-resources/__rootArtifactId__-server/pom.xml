@@ -70,6 +70,10 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <groups>initdb</groups>
+              <includes>
+                <!-- FillDatabase does not match surefire's default includes -->
+                <include>**/FillDatabase.java</include>
+              </includes>
             </configuration>
           </plugin>
         </plugins>

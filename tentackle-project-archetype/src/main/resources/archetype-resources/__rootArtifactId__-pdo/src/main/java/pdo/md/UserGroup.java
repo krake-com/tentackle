@@ -53,9 +53,9 @@ import org.tentackle.session.TableName;
 /**
  * User Group.
  * <p>
- * Group of users to define security roles
+ * Group of users to define security roles.
  */
-@TableName(value =/*@*/"md.usergroup"/*@*/, // @wurblet < Inject --string ${symbol_dollar}tablename
+@TableName(value =/*@*/"md.usergroups"/*@*/, // @wurblet < Inject --string ${symbol_dollar}tablename
            mapSchema =/*@*/false/*@*/,      // @wurblet < Inject ${symbol_dollar}mapSchema
            prefix =/*@*/""/*@*/)            // @wurblet < Inject --string ${symbol_dollar}tablePrefix
 @ClassId(/*@*/1002/*@*/)                    // @wurblet < Inject ${symbol_dollar}classid

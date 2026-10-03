@@ -15,8 +15,8 @@ import org.tentackle.persist.trip.AbstractPersistentObjectRemoteDelegate;
 /**
  * Base interface for transaction data remote delegates.
  *
- * @param <T> the {@code PersistentDomainObject} class
- * @param <P> the {@code AbstractPersistenObject} class (persistence implementation)
+ * @param <T> the PDO type
+ * @param <P> the persistence implementation type
  */
 public interface AbstractPersistentTransactionDataRemoteDelegate<T extends TransactionData<T>,
                                                                  P extends AbstractPersistentTransactionData<T,P>>

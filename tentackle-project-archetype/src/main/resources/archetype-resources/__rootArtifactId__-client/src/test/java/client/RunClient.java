@@ -9,6 +9,11 @@ package ${package}.client;
 
 import org.testng.annotations.Test;
 
+/**
+ * Launches the FX client from within the IDE or via {@code mvn -Dtest=RunClient test}.<br>
+ * Connects to the server configured in {@code backend.properties}.
+ * Not a regular test: the class name doesn't match surefire's default includes.
+ */
 public class RunClient {
 
   @Test

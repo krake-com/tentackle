@@ -25,14 +25,14 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
 public class ${application}Daemon extends ConsoleApplication {
 
   /**
-   * the logger for this class.
+   * The logger for this class.
    */
   private static final Logger LOGGER = Logger.get();
 
   private long latestMessageId;
 
   /**
-   * Creates the server.
+   * Creates the daemon.
    */
   public ${application}Daemon() {
     super("${application}Daemon", Version.RELEASE);

@@ -12,7 +12,7 @@ import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.validate.validator.ValidationScriptConverter;
 
 /**
- * Adds imports to groovy scripts in validators.
+ * Prepends an import of the PDO package to Groovy validation scripts.
  */
 @ValidationScriptConverter("Groovy")
 public class GroovyValidationConverter implements ScriptConverter {
