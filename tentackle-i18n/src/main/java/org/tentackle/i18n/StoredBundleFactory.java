@@ -41,8 +41,8 @@ import java.util.function.Function;
  * {@link StoredResourceBundle}s and appends the property-file bundle as the last resort, unless
  * {@link StoredBundleControl#setFallbackToProperties(boolean) fallbackToProperties} is turned off.
  * The resulting chains are cached until a {@link StoredBundle} is modified.<br>
- * All other bundles are loaded through the {@link StoredBundleControl} handed out by the
- * {@link StoredBundleControlProvider}.
+ * In non-modular applications, all bundles are loaded through the {@link StoredBundleControl} handed out by the
+ * {@link StoredBundleControlProvider} instead.
  * <p>
  * Without a current {@link Session}, or if {@link #setEnabled(boolean) disabled}, the factory behaves like
  * the {@link DefaultBundleFactory}. Bundles loaded before the first session became available are discarded

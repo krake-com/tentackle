@@ -48,8 +48,7 @@ import java.util.ResourceBundle;
  * As long as there is no current {@link Session} or {@link StoredBundleFactory#isEnabled() loading from the
  * backend is disabled}, the control behaves like the standard {@link ResourceBundle.Control}.
  * <p>
- * The control is handed out by the {@link StoredBundleControlProvider} for bundles not registered for a
- * named module. {@link StoredBundleFactory} does not use it as a control, but reuses {@link #createUDK} and
+ * The control is handed out by the {@link StoredBundleControlProvider} in non-modular applications. {@link StoredBundleFactory} does not use it as a control, but reuses {@link #createUDK} and
  * {@link #loadStoredBundle} to load the bundles of named modules.
  *
  * @author harald
@@ -183,7 +182,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    * Returns whether bundles can be loaded from the backend.
    * <p>
    * Requires a current session and {@link StoredBundleFactory#isEnabled()}. The latter must be checked
-   * here as well, since bundles not registered for a named module are loaded through this control
+   * here as well, since in non-modular applications, bundles are loaded through this control
    * and never reach the factory's own check.
    *
    * @return true if loading from the backend is possible

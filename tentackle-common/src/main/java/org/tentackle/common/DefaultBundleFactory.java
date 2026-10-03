@@ -21,12 +21,10 @@ package org.tentackle.common;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.ResourceBundleControlProvider;
 
@@ -35,8 +33,9 @@ import java.util.spi.ResourceBundleControlProvider;
  * <p>
  * Works for modular and non-modular applications.
  * Bundles registered via {@link BundleSupport} for named modules are loaded through the module's {@link ModuleHook}.
- * In modular applications, bundles registered for automatic or unnamed modules are loaded without a
- * {@link ResourceBundle.Control}, since controls are not supported for them.
+ * All other bundles are loaded via {@link ResourceBundle#getBundle}, with the {@link ResourceBundle.Control}
+ * of the first {@link ResourceBundleControlProvider} returning one. Controls are used only if this factory runs
+ * in an unnamed module, i.e. in a non-modular application: the JDK rejects them for callers in named modules.
  *
  * @author harald
  */
@@ -48,7 +47,7 @@ public class DefaultBundleFactory implements BundleFactory {
   private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
   private final Map<String, BundleSupport> moduleBundlesMap;      // map of basenames to annotated bundles in modules
-  private final Set<String> noControlBundles;                     // set of basenames with annotated bundles in automatic or unnamed modules
+  private final boolean controlsSupported;                        // true if ResourceBundle.getBundle accepts a control from us
   private ClassLoader classLoader;                                // another classloader, null for default loader
 
   /**
@@ -58,20 +57,13 @@ public class DefaultBundleFactory implements BundleFactory {
     providers = createProviders();
     controlMap = new ConcurrentHashMap<>();
     moduleBundlesMap = new HashMap<>();
-    noControlBundles = new HashSet<>();
-    boolean modular = ModuleSorter.INSTANCE.isModular();
+    // ResourceBundle.getBundle throws an UnsupportedOperationException if invoked with a control from a named module.
+    // The caller is always this class, also for subclasses in other modules, so its module decides.
+    controlsSupported = !getClass().getModule().isNamed();
     for (BundleSupport support : BundleSupport.getBundles(getClass().getClassLoader())) {
       if (support.getModuleInfo() != null) {
         moduleBundlesMap.put(support.getBundleName(), support);
         moduleBundlesMap.put(support.getClassName(), support);
-      }
-      else if (modular) {
-        // Found a bundle support in an automatic or unnamed module, which is not recommended but sometimes necessary
-        // if the artifact cannot be made fully modular for some reason (e.g., legacy modules).
-        // Since controls (see i18n module) are not supported for automatic or unnamed modules,
-        // they must be ignored for those bundles to prevent exceptions.
-        noControlBundles.add(support.getBundleName());
-        noControlBundles.add(support.getClassName());
       }
     }
   }
@@ -96,9 +88,15 @@ public class DefaultBundleFactory implements BundleFactory {
     return providers;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Always null if this factory runs in a named module, since the JDK supports controls only for callers in
+   * unnamed modules.
+   */
   @Override
   public ResourceBundle.Control getControl(String baseName) {
-    if (providers != null && !noControlBundles.contains(baseName)) {
+    if (providers != null && controlsSupported) {
       ResourceBundle.Control control = controlMap.get(baseName);
       if (control != null) {
         return control;

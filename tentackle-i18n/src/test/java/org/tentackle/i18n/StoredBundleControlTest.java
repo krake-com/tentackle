@@ -112,8 +112,8 @@ public class StoredBundleControlTest {
   }
 
   /**
-   * Disabling the {@link StoredBundleFactory} must disable the control as well, since bundles not registered
-   * for a named module are loaded through the control and never reach the factory.
+   * Disabling the {@link StoredBundleFactory} must disable the control as well, since bundles in non-modular
+   * applications are loaded through the control and never reach the factory's own check.
    */
   @Test
   public void testFormatsAreTheStandardOnesIfDisabled() {

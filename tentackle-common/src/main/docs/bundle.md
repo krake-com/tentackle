@@ -118,16 +118,17 @@ the default implementation (registered via the [service SPI](services.md)):
 
 - It builds a map of bundle base names → [`BundleSupport`](../java/org/tentackle/common/BundleSupport.java)
   for every `@Bundle` (or bundle-providing annotation such as `@FxControllerService`)
-  found through the service finder **in a named module**. In modular mode, bundles
-  registered in automatic or unnamed modules are remembered as well, but only to load
-  them without a `ResourceBundle.Control`, since controls are not supported for them.
+  found through the service finder **in a named module**.
 - `findBundle(baseName, locale)` routes a **named-module** bundle through that
   module's `ModuleHook.getBundle(...)`, and everything else through the standard
   `ResourceBundle.getBundle(...)` — with the classloader set via `setClassLoader(...)`,
   if any, and optionally with a `ResourceBundle.Control` contributed by a registered
   provider (this is the hook the
   [database-backed module](../../../../tentackle-i18n/src/main/docs/i18n.md) plugs
-  into for classpath applications).
+  into for classpath applications). Controls are used only in non-modular applications:
+  the JDK rejects them when `ResourceBundle.getBundle(...)` is invoked from a named
+  module, so in a modular application, `getControl(...)` returns `null` and the bundle is
+  loaded the standard way.
 - Leading slashes are stripped from base names, so `/org/example/Texts` and
   `org/example/Texts` denote the same bundle.
 - `clearCache()` flushes the JDK bundle cache of the factory's classloader — used to

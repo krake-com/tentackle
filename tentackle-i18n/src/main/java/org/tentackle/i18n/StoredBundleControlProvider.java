@@ -26,11 +26,11 @@ import java.util.spi.ResourceBundleControlProvider;
 /**
  * Provides the {@link StoredBundleControl} for all bundles.
  * <p>
- * The provider is picked up twice: by the {@link org.tentackle.common.DefaultBundleFactory}, which passes
- * the control to {@link ResourceBundle#getBundle(String, java.util.Locale, ResourceBundle.Control)} for all
- * bundles not registered for a named module, and by the JDK for plain {@link ResourceBundle} lookups.
- * The JDK, however, ignores {@code ResourceBundleControlProvider}s in named modules, so in a modular
- * application, the bundles of named modules are loaded by the {@link StoredBundleFactory} instead.
+ * Used in non-modular applications only, where the provider is picked up twice: by the
+ * {@link org.tentackle.common.DefaultBundleFactory}, which passes the control to
+ * {@link ResourceBundle#getBundle(String, java.util.Locale, ResourceBundle.Control)}, and by the JDK for plain
+ * {@link ResourceBundle} lookups. The JDK supports controls in unnamed modules only, so in a modular application,
+ * the bundles of named modules are loaded by the {@link StoredBundleFactory} instead.
  *
  * @author harald
  */
