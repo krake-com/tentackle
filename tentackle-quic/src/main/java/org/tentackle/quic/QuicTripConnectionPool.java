@@ -51,14 +51,19 @@ import java.util.concurrent.TimeoutException;
  * <p>
  * All pooled connections are streams multiplexed over a single QUIC connection. Since that
  * connection is discarded silently by both peers as soon as it stays idle for longer than the QUIC
- * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is way shorter than
+ * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is much shorter than
  * the pool's idle timeout, it is kept alive by sending PING frames. Otherwise, the pool would hand
- * out connections belonging to a QUIC connection that is long gone.
+ * out connections belonging to a QUIC connection that is long gone. Should it be lost nevertheless,
+ * it is re-established when the next slot is created.
  * <p>
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is
  * in the pool, the pool's maximum size defaults to {@link QuicTripTransport#getMaxStreams()} instead
- * of being unlimited. Running into the peer's stream limit does not fail an individual request. It
- * blocks the requesting thread indefinitely, and with it every other thread using this transport.
+ * of being unlimited. Should the peer nevertheless grant fewer streams, opening another one is bounded
+ * by {@code streamtimeout} and fails with a <em>temporary</em> {@link TripRuntimeException}, see
+ * {@link #createQuicStream(QuicClientConnection)}.
+ * <p>
+ * The QUIC connection is established right away when the pool is created, which in turn happens
+ * when the transport hands out its first client connection.
  */
 public class QuicTripConnectionPool extends AbstractConnectionPool {
 
@@ -106,10 +111,13 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   private volatile CertificateException certificateFailure;
 
   /**
-   * Creates a QUIC connection pool.
+   * Creates a QUIC connection pool and establishes the QUIC connection.
    *
    * @param transport     the transport associated with this pool
    * @param dictionary    the dictionary associated with this pool
+   * @throws IllegalArgumentException if the URI has no port &gt; 0, or {@code connecttimeout} or
+   *         {@code streamtimeout} is not &gt; 0
+   * @throws TripRuntimeException if the QUIC connection cannot be established
    */
   public QuicTripConnectionPool(QuicTripTransport transport, Dictionary dictionary) {
     super(transport, dictionary);
@@ -200,10 +208,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Creates a new client quic stream.<br>
+   * Creates a new client QUIC stream.<br>
    * Re-establishes the QUIC connection if it has been terminated meanwhile.
    *
-   * @return the quic stream
+   * @return the QUIC stream
    */
   protected QuicStream createQuicStream() {
     QuicClientConnection quicConnection = connection;
@@ -237,7 +245,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * deadline is absolute, so no number of interrupts can stretch the wait beyond {@code streamtimeout}.
    *
    * @param quicConnection the established QUIC connection
-   * @return the quic stream
+   * @return the QUIC stream
    */
   protected QuicStream createQuicStream(QuicClientConnection quicConnection) {
     CompletableFuture<QuicStream> future = new CompletableFuture<>();
@@ -449,7 +457,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Closes a quic connection, ignoring any errors.
+   * Closes a QUIC connection, logging instead of propagating a failure.
    *
    * @param quicConnection the connection to close
    */
@@ -463,7 +471,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Closes a quic stream, ignoring any errors.
+   * Closes a QUIC stream, logging instead of propagating a failure.
    *
    * @param quicStream the stream to close
    */

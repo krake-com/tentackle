@@ -29,7 +29,8 @@ import java.net.InetSocketAddress;
  * <p>
  * It carries the addresses the packet belongs to &mdash; which is what makes connection migration work,
  * since the destination is not necessarily the one the connection started with &mdash; and the time the
- * packet should go out at, which is quiche's pacing decision.
+ * packet should go out at, which is quiche's pacing decision. Pacing is not implemented: packets are sent
+ * as soon as quiche produces them, which is allowed and merely forgoes the smoothing.
  * <p>
  * Unlike {@link RecvInfo} the addresses are embedded, not referenced, so no extra buffers are needed.
  * An instance is reused for every packet of a connection.
@@ -37,7 +38,11 @@ import java.net.InetSocketAddress;
 public final class SendInfo {
 
   /**
-   * The layout of {@code struct timespec} on a 64-bit platform.
+   * The layout of {@code struct timespec}, 16 bytes on every supported platform.
+   * <p>
+   * Modeled after LP64 (Linux, macOS). On Windows, {@code tv_nsec} is a 32-bit {@code long} followed by
+   * 4 bytes of padding, which makes no difference to the size and alignment this layout is needed for.
+   * The field itself is never read, see the class comment.
    */
   public static final MemoryLayout TIMESPEC = MemoryLayout.structLayout(
     ValueLayout.JAVA_LONG.withName("tv_sec"),
@@ -56,7 +61,6 @@ public final class SendInfo {
     TIMESPEC.withName("at"));
 
   private static final long TO_OFFSET = SockAddr.STORAGE_SIZE + 8;
-  private static final long AT_OFFSET = 2 * (SockAddr.STORAGE_SIZE + 8);
 
 
   private final MemorySegment segment;
@@ -92,20 +96,6 @@ public final class SendInfo {
    */
   public InetSocketAddress getTo() {
     return SockAddr.decode(segment.asSlice(TO_OFFSET, SockAddr.STORAGE_SIZE));
-  }
-
-  /**
-   * Gets the time the packet should be sent at, as a monotonic timestamp in nanoseconds.
-   * <p>
-   * This is quiche's pacing decision, taken from the same clock as {@link System#nanoTime()} on Linux and
-   * macOS. Sending earlier is allowed and merely defeats pacing; it is not a protocol violation.
-   *
-   * @return the timestamp in nanoseconds
-   */
-  public long getAtNanos() {
-    long seconds = segment.get(ValueLayout.JAVA_LONG, AT_OFFSET);
-    long nanos = segment.get(ValueLayout.JAVA_LONG, AT_OFFSET + 8);
-    return seconds * 1_000_000_000L + nanos;
   }
 
   /**

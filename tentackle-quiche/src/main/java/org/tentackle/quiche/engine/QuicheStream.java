@@ -50,12 +50,13 @@ public class QuicheStream {
    * <p>
    * The event loop signals the condition whenever anything moves, so this is not how progress is
    * noticed &mdash; it is the upper bound on how long a thread can stay parked on a connection that
-   * silently died without anybody signalling.
+   * silently died without anybody signaling.
    */
   public static final long POLL_INTERVAL_MILLIS = 250;
 
   /**
-   * The application error code sent when a half of the stream is closed in an orderly fashion.
+   * The application error code of the {@code STOP_SENDING} frame sent when the reading half is closed.<br>
+   * Closing the writing half needs no code: it ends the stream with a {@code FIN}.
    */
   private static final long STREAM_CLOSED = QuicheConnection.STREAM_CLOSED_ERROR_CODE;
 
@@ -329,7 +330,7 @@ public class QuicheStream {
       try {
         QuicheConn conn = connection.getConn();
         // quiche does not report how much is buffered, only whether there is anything at all
-        return !conn.isFreed() && conn.isReadable() ? 1 : 0;
+        return !inputClosed && !conn.isFreed() && conn.streamReadable(streamId) ? 1 : 0;
       }
       catch (RuntimeException e) {
         return 0;
@@ -424,7 +425,7 @@ public class QuicheStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
       if (outputClosed) {
         return;
       }

@@ -307,6 +307,7 @@ public final class Quiche {
    * @param out the buffer to write the packet to
    * @param length the capacity of the buffer
    * @return the number of bytes written
+   * @throws QuicheException if the packet cannot be written
    */
   public static long negotiateVersion(byte[] scid, byte[] dcid, MemorySegment out, long length) {
     try (Arena arena = Arena.ofConfined()) {
@@ -339,6 +340,7 @@ public final class Quiche {
    * @param out the buffer to write the packet to
    * @param length the capacity of the buffer
    * @return the number of bytes written
+   * @throws QuicheException if the packet cannot be written
    */
   public static long retry(byte[] scid, byte[] dcid, byte[] newScid, byte[] token,
                            int version, MemorySegment out, long length) {

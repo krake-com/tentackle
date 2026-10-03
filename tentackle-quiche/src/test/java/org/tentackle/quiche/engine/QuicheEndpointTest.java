@@ -20,6 +20,7 @@ package org.tentackle.quiche.engine;
 
 import org.tentackle.quiche.QuicheTestSupport;
 import org.tentackle.quiche.ffm.QuicheConfig;
+import org.tentackle.quiche.ffm.RecvInfo;
 
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
@@ -29,8 +30,12 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.foreign.MemorySegment;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -192,6 +197,30 @@ public class QuicheEndpointTest {
     assertEquals(failures.get(), 0, "some streams did not echo correctly");
   }
 
+  @Test(timeOut = 60000)
+  public void testAvailableIsPerStream() throws Exception {
+    Reporter.log("available() reports the data of its own stream, not of any stream of the connection", true);
+    startServer(this::echo);
+    QuicheConnection connection = connect();
+    assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+
+    QuicheStream withData = connection.openStream();
+    QuicheStream withoutData = connection.openStream();
+    withoutData.getOutputStream().write(new byte[0]);
+    withoutData.getOutputStream().flush();
+    OutputStream out = withData.getOutputStream();
+    out.write("x".getBytes(StandardCharsets.UTF_8));
+    out.flush();
+
+    long deadline = System.currentTimeMillis() + TIMEOUT_MILLIS;
+    while (withData.getInputStream().available() == 0 && System.currentTimeMillis() < deadline) {
+      Thread.sleep(20);
+    }
+    assertEquals(withData.getInputStream().available(), 1, "the echo was not reported as available");
+    assertEquals(withoutData.getInputStream().available(), 0, "data of another stream was reported");
+    assertEquals(withData.getInputStream().read(), 'x');
+  }
+
   /**
    * A blocked read must not give up when its thread is interrupted, and must not swallow the interrupt
    * either &mdash; the blocking socket streams the TCP transports use behave exactly that way, and the
@@ -297,6 +326,36 @@ public class QuicheEndpointTest {
     Thread.sleep(200);
     assertFalse(clientEndpoint.isClosed(), "the endpoint must survive a stray datagram");
     assertEquals(clientEndpoint.getConnectionCount(), 0);
+  }
+
+  @Test(timeOut = 60000)
+  public void testFailingEventLoopClosesTheEndpoint() throws Exception {
+    Reporter.log("an endpoint whose event loop dies closes itself instead of holding on to its port", true);
+    serverEndpoint = new QuicheEndpoint(loopback(0));
+    int port = serverEndpoint.getLocalAddress().getPort();
+    server = new QuicheServer(serverEndpoint, serverConfig, stream -> { }) {
+      @Override
+      public void accept(InetSocketAddress peer, MemorySegment buffer, int length, RecvInfo recvInfo) {
+        throw new IllegalStateException("injected failure");
+      }
+    };
+    serverEndpoint.setServer(server);
+
+    byte[] datagram = new byte[1200];
+    datagram[0] = 0x40;   // a short header packet for an unknown connection is handed to the server
+    try (DatagramSocket socket = new DatagramSocket()) {
+      socket.send(new DatagramPacket(datagram, datagram.length, InetAddress.getLoopbackAddress(), port));
+    }
+
+    long deadline = System.currentTimeMillis() + TIMEOUT_MILLIS;
+    while (!serverEndpoint.isClosed() && System.currentTimeMillis() < deadline) {
+      Thread.sleep(20);
+    }
+    assertTrue(serverEndpoint.isClosed(), "the endpoint survived the death of its event loop");
+    assertEquals(serverEndpoint.getChannelCount(), 0, "the socket was not closed");
+    try (DatagramChannel rebound = DatagramChannel.open()) {
+      rebound.bind(loopback(port));    // throws if the port is still taken
+    }
   }
 
 

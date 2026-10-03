@@ -32,7 +32,8 @@ import java.io.OutputStream;
 import java.net.URI;
 
 /**
- * Transport implementation for QUIC with compression.
+ * Transport implementation for QUIC with compression, scheme {@value #PROTOCOL}.<br>
+ * Inserts the deflate compression streams between TRIP and every QUIC stream, on the server and on the client.
  */
 @TransportService(CompressedQuicTripTransport.PROTOCOL)
 public class CompressedQuicTripTransport extends QuicTripTransport {
@@ -71,7 +72,7 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   /**
    * Creates the compressed output stream.
    *
-   * @param outputStream the uncompressed output stream from the socket
+   * @param outputStream the uncompressed output stream of the QUIC stream
    * @return the compressed output stream
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
@@ -82,7 +83,7 @@ public class CompressedQuicTripTransport extends QuicTripTransport {
   /**
    * Creates the compressed input stream.
    *
-   * @param inputStream the uncompressed input stream from the socket
+   * @param inputStream the uncompressed input stream of the QUIC stream
    * @return the compressed input stream
    */
   protected InputStream createCompressedInputStream(InputStream inputStream) {

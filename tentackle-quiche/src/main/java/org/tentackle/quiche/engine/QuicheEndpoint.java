@@ -53,18 +53,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * This is the part quiche does not provide: the library processes packets and keeps connection state, but
  * it owns no socket, runs no loop, and arms no timer. An endpoint supplies all three.
  * <p>
- * One thread &mdash; a virtual one, named after the socket &mdash; does everything the protocol needs:
+ * One daemon platform thread, named {@code "QUIC endpoint <address>"}, does everything the protocol needs:
  * <ol>
  *   <li>receive a datagram, find the connection it belongs to by its destination connection ID, and hand
  *       it over;</li>
  *   <li>let a {@link QuicheServer}, if there is one, decide what to do with a datagram that belongs to no
  *       connection yet;</li>
- *   <li>run the timeouts, computing how long it may sleep from the earliest deadline of all
+ *   <li>run the timeouts and keep-alives, computing how long it may sleep from the earliest deadline of all
  *       connections;</li>
  *   <li>reap connections that quiche reports as closed.</li>
  * </ol>
  * Application threads never enter the loop. They interact with a connection directly, under its lock, and
  * {@link #wakeup()} the loop whenever they may have moved a timer.
+ * <p>
+ * Should the loop itself fail &mdash; an I/O error of the selector, an unexpected exception &mdash; every
+ * connection on the endpoint is failed and the endpoint closes itself, giving its port back.
  * <p>
  * Connections are keyed by the connection IDs <em>this</em> side issued, which is what the peer puts into
  * the destination field of every packet it sends here. That is what lets one UDP port serve any number of
@@ -92,7 +95,7 @@ public class QuicheEndpoint implements Closeable {
   public static final int CONNECTION_ID_LENGTH = 16;
 
   /**
-   * The longest the event loop sleeps when no connection has a timer armed.
+   * The longest the event loop sleeps at a time, whatever the connections' timers say.
    */
   public static final long MAX_SLEEP_MILLIS = 1000;
 
@@ -119,7 +122,7 @@ public class QuicheEndpoint implements Closeable {
   /**
    * Creates an endpoint bound to the given address.
    *
-   * @param bindAddress the address to bind to; a port of 0 letting the system choose one
+   * @param bindAddress the address to bind to; a port of 0 lets the system choose one
    * @throws IOException if the socket cannot be bound
    */
   public QuicheEndpoint(InetSocketAddress bindAddress) throws IOException {
@@ -204,9 +207,9 @@ public class QuicheEndpoint implements Closeable {
   }
 
   /**
-   * Tells whether the endpoint has been closed.
+   * Tells whether the endpoint has been closed, or is being closed.
    *
-   * @return true if closed
+   * @return true if closing or closed
    */
   public boolean isClosed() {
     return closing.get();
@@ -231,6 +234,7 @@ public class QuicheEndpoint implements Closeable {
    * @param serverName the name verified against the server's certificate, null to skip that check
    * @param config the configuration, which must outlive the connection
    * @return the connection
+   * @throws org.tentackle.quiche.ffm.QuicheException if quiche refuses to create the connection
    */
   public QuicheConnection connect(InetSocketAddress peer, String serverName, QuicheConfig config) {
     byte[] scid = newConnectionId();
@@ -354,6 +358,8 @@ public class QuicheEndpoint implements Closeable {
 
   /**
    * Sends a datagram through the endpoint's own socket.
+   * <p>
+   * Used by the {@link QuicheServer} for the packets it answers on behalf of no connection.
    *
    * @param buffer the datagram
    * @param length the number of bytes
@@ -366,8 +372,9 @@ public class QuicheEndpoint implements Closeable {
   /**
    * Sends a datagram through the socket bound to a given local port.
    * <p>
-   * Called with a connection's lock held, from whichever thread is flushing it. A UDP send does not
-   * block in any way that matters, so holding the lock across it is not a problem.
+   * Usually called with a connection's lock held, from whichever thread is flushing it. A UDP send does
+   * not block in any way that matters, so holding the lock across it is not a problem. A datagram that
+   * cannot be sent is dropped: to QUIC it is a lost packet.
    *
    * @param buffer the datagram
    * @param length the number of bytes
@@ -394,7 +401,7 @@ public class QuicheEndpoint implements Closeable {
       sendChannel.send(byteBuffer, target);
     }
     catch (IOException e) {
-      // an unreachable peer or a full send buffer must not take the connection down: QUIC treats a
+      // an unreachable peer or a network error must not take the connection down: QUIC treats a
       // lost packet as exactly that and retransmits it
       LOGGER.fine("cannot send {0} bytes to {1}: {2}", length, target, e.getMessage());
     }
@@ -411,7 +418,9 @@ public class QuicheEndpoint implements Closeable {
    * Closes the endpoint, terminating every connection on it.
    * <p>
    * The connections are closed gracefully first, so the peers learn about it instead of waiting for their
-   * idle timeout, and the loop is given a moment to put those frames on the wire.
+   * idle timeout: each sends its {@code CONNECTION_CLOSE} frame right away, on the calling thread. The event
+   * loop is then given up to a second to stop before the connections are freed and the sockets closed.
+   * Waiting for the peers to acknowledge the close is not worth delaying a shutdown for.
    */
   @Override
   public void close() {
@@ -428,12 +437,14 @@ public class QuicheEndpoint implements Closeable {
 
     closed = true;
     selector.wakeup();
-    try {
-      // long enough for the CONNECTION_CLOSE frames to go out, short enough not to hang a shutdown
-      eventLoop.join(1000);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
+    if (Thread.currentThread() != eventLoop) {    // the loop closes its endpoint itself if it fails
+      try {
+        // a loop that is inside a call into quiche must leave it before the connections are freed
+        eventLoop.join(1000);
+      }
+      catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
     }
 
     for (QuicheConnection connection : connections) {
@@ -487,12 +498,15 @@ public class QuicheEndpoint implements Closeable {
     catch (IOException e) {
       if (!closed) {
         LOGGER.severe("the QUIC endpoint on " + localAddress + " failed", e);
-        failAll("the endpoint failed: " + e.getMessage());
+        failEndpoint("the endpoint failed: " + e.getMessage());
       }
     }
     catch (RuntimeException e) {
-      LOGGER.severe("unexpected error in the QUIC endpoint on " + localAddress, e);
-      failAll("the endpoint failed: " + e.getMessage());
+      // a selector closed by close() while the loop overran its grace period is no error
+      if (!closed) {
+        LOGGER.severe("unexpected error in the QUIC endpoint on " + localAddress, e);
+        failEndpoint("the endpoint failed: " + e.getMessage());
+      }
     }
     finally {
       LOGGER.fine("QUIC endpoint on {0} stopped", localAddress);
@@ -541,7 +555,7 @@ public class QuicheEndpoint implements Closeable {
         // datagram that provoked it has nothing to do with whatever is received next - so it is exactly
         // as harmless as the same condition already is in send(). Not catching it here would kill this
         // whole endpoint's event loop over a single stray packet.
-        LOGGER.fine("ignoring a port-unreachable notification on {0}: {1}", localAddress, e.getMessage());
+        LOGGER.fine("ignoring a port-unreachable notification on {0}: {1}", local, e.getMessage());
         continue;
       }
       if (source == null) {
@@ -665,14 +679,18 @@ public class QuicheEndpoint implements Closeable {
   }
 
   /**
-   * Marks every connection unusable, after the endpoint itself failed.
+   * Marks every connection unusable and closes the endpoint, after its event loop failed.
+   * <p>
+   * Without the loop nothing is received anymore, so an endpoint left open would hold on to its port
+   * without serving it.
    *
-   * @param reason why they are unusable
+   * @param reason why the connections are unusable
    */
-  private void failAll(String reason) {
+  private void failEndpoint(String reason) {
     for (QuicheConnection connection : connections) {
       connection.fail(reason);
     }
+    close();
   }
 
   /**

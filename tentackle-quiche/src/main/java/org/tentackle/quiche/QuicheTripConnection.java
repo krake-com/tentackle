@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.function.BooleanSupplier;
 
 /**
- * QUIC connection.
+ * A pooled TRIP connection on a single bidirectional QUIC stream.
  */
 public class QuicheTripConnection extends AbstractConnection {
 
@@ -36,7 +36,7 @@ public class QuicheTripConnection extends AbstractConnection {
   private volatile boolean closed;    // volatile: closed by the pool's closing thread, read by the pool
 
   /**
-   * Creates a new QUIC connection.
+   * Creates a TRIP connection on a QUIC stream.
    * <p>
    * Notice: the constructor sends the TRIP preamble, so it may well fail. The stream is only owned by the
    * connection once the constructor returned; until then, closing it is up to the caller.

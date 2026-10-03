@@ -22,10 +22,19 @@ import tech.kwik.core.QuicConnection;
 import tech.kwik.core.server.ApplicationProtocolConnection;
 import tech.kwik.core.server.ApplicationProtocolConnectionFactory;
 
+/**
+ * The factory KWIK's server connector uses to create a {@link QuicProtocolConnection} for each incoming
+ * QUIC connection negotiating the transport's ALPN id.
+ */
 public class QuicProtocolConnectionFactory implements ApplicationProtocolConnectionFactory {
 
   private final QuicTripTransport transport;
 
+  /**
+   * Creates a factory.
+   *
+   * @param transport the transport the incoming streams are dispatched to
+   */
   public QuicProtocolConnectionFactory(QuicTripTransport transport) {
     this.transport = transport;
   }
@@ -35,11 +44,22 @@ public class QuicProtocolConnectionFactory implements ApplicationProtocolConnect
     return new QuicProtocolConnection(transport);
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * TRIP is request/response over bidirectional streams, so unidirectional streams are not used at all.
+   */
   @Override
   public int maxConcurrentPeerInitiatedUnidirectionalStreams() {
-    return 0;  // Because unidirectional streams are not used
+    return 0;
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Unlimited here: the effective limit is the {@code maxstreams} parameter, which
+   * {@link QuicTripTransport#accept()} configures in the server's connection config.
+   */
   @Override
   public int maxConcurrentPeerInitiatedBidirectionalStreams() {
     return Integer.MAX_VALUE;

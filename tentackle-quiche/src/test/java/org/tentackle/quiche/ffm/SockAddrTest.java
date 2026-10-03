@@ -69,6 +69,23 @@ public class SockAddrTest {
   }
 
   @Test(timeOut = 30000)
+  public void testPlatformValues() {
+    Reporter.log("AF_INET6 and the length byte follow the operating system", true);
+    assertEquals(SockAddr.afInet6("Linux"), 10);
+    assertEquals(SockAddr.afInet6("Mac OS X"), 30);
+    assertEquals(SockAddr.afInet6("Windows 11"), 23);
+    assertEquals(SockAddr.afInet6("FreeBSD"), 28);
+    assertEquals(SockAddr.afInet6("DragonFly"), 28);
+    assertEquals(SockAddr.afInet6("OpenBSD"), 24);
+    assertEquals(SockAddr.afInet6("NetBSD"), 24);
+    assertTrue(SockAddr.hasSaLen("Mac OS X"));
+    assertTrue(SockAddr.hasSaLen("FreeBSD"));
+    assertTrue(SockAddr.hasSaLen("DragonFly"));
+    assertTrue(!SockAddr.hasSaLen("Linux"));
+    assertTrue(!SockAddr.hasSaLen("Windows 11"));
+  }
+
+  @Test(timeOut = 30000)
   public void testPortIsBigEndian() {
     Reporter.log("the port is in network byte order, regardless of the platform", true);
     try (Arena arena = Arena.ofConfined()) {

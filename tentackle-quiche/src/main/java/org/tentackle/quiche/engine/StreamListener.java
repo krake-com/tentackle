@@ -27,9 +27,10 @@ public interface StreamListener {
   /**
    * Invoked once per stream the peer opens, as soon as its first data arrives.
    * <p>
-   * <strong>Runs on the endpoint's event loop thread.</strong> Everything else on this endpoint waits
-   * while it runs, so an implementation must hand the stream to another thread and return, never read
-   * from it here.
+   * <strong>Runs on the endpoint's event loop thread</strong> (or on the thread installing the listener, for
+   * the streams that were already open by then). Everything else on this endpoint waits while it runs, so an
+   * implementation must hand the stream to another thread and return, never read from it here. Nor must it
+   * throw: an exception escaping into the event loop fails the whole endpoint.
    *
    * @param stream the new stream
    */

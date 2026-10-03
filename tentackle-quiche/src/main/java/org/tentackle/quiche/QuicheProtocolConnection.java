@@ -72,9 +72,10 @@ class QuicheProtocolConnection implements StreamListener {
     }
     catch (RuntimeException e) {
       /*
-       * This runs on the endpoint's event loop, which discards whatever it throws, so an unhandled
-       * failure - the transport being closed concurrently, the thread pool rejecting the task - would
-       * leave the stream open with nobody handling it: the client would wait for an answer forever.
+       * This runs on the endpoint's event loop, which an exception must not escape into: it would fail the
+       * whole endpoint. Swallowing the failure - the transport being closed concurrently, the thread pool
+       * rejecting the task - is not enough either, since the stream would stay open with nobody handling
+       * it, and the client would wait for an answer forever.
        */
       LOGGER.warning("cannot dispatch QUIC stream: " + quicStream, e);
       closeStream(quicStream);

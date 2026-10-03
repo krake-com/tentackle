@@ -74,8 +74,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <!-- Repeats the parent's argLine because it is replaced, not appended to.
-               Loading libquiche and calling into it are restricted operations: without the flag every
-               run is drowned in warnings, and a future JDK will refuse them outright. The tests are
+               Loading libquiche and calling into it are restricted operations: without the flag the JVM
+               warns about them, and a future JDK will refuse them outright. The tests are
                patched into the module, so the calling module is org.tentackle.quiche - not ALL-UNNAMED. -->
           <!-- -da:tech.kwik.core.recovery... is for QuicheKwikInteropTest and nothing else.
                KWIK's LossDetector asserts that kTimeThreshold * max(smoothedRtt, latestRtt) is > 0.

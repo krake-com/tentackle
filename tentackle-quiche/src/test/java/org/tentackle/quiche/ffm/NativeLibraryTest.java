@@ -25,6 +25,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
  * Tests loading the native quiche library and the plain functions that need nothing else.
@@ -39,6 +40,22 @@ public class NativeLibraryTest {
     Reporter.log("platform is one of the directories in the quiche binary artifact", true);
     String platform = NativeLibrary.getPlatform();
     assertTrue(platform.matches("(darwin|linux|win32)-(x86-64|aarch64)"), "unexpected platform " + platform);
+  }
+
+  @Test(timeOut = 30000)
+  public void testPlatformMapping() {
+    Reporter.log("os.name and os.arch map to the directories of the binary artifact, if there is one", true);
+    assertEquals(NativeLibrary.getPlatform("Linux", "amd64"), "linux-x86-64");
+    assertEquals(NativeLibrary.getPlatform("Linux", "aarch64"), "linux-aarch64");
+    assertEquals(NativeLibrary.getPlatform("Mac OS X", "aarch64"), "darwin-aarch64");
+    assertEquals(NativeLibrary.getPlatform("Mac OS X", "x86_64"), "darwin-x86-64");
+    assertEquals(NativeLibrary.getPlatform("Windows 11", "amd64"), "win32-x86-64");
+    // the artifact has no binary for Windows on ARM
+    UnsupportedOperationException e = expectThrows(UnsupportedOperationException.class,
+                                                   () -> NativeLibrary.getPlatform("Windows 11", "aarch64"));
+    assertTrue(e.getMessage().contains(NativeLibrary.LIBRARY_PROPERTY), e.getMessage());
+    expectThrows(UnsupportedOperationException.class, () -> NativeLibrary.getPlatform("FreeBSD", "amd64"));
+    expectThrows(UnsupportedOperationException.class, () -> NativeLibrary.getPlatform("Linux", "riscv64"));
   }
 
   @Test(timeOut = 30000)

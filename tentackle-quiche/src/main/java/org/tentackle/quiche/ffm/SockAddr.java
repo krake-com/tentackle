@@ -30,7 +30,7 @@ import java.util.Locale;
 /**
  * Conversion between {@link InetSocketAddress} and the C {@code sockaddr} structures quiche expects.
  * <p>
- * quiche needs the local and the peer address for every packet it processes, so this sits in the hot path
+ * Quiche needs the local and the peer address for every packet it processes, so this sits in the hot path
  * of both directions.
  * <p>
  * The layout is <em>not</em> the same everywhere, which is the reason this class exists rather than a
@@ -38,8 +38,8 @@ import java.util.Locale;
  * <ul>
  *   <li>The BSDs, and with them macOS, begin the structure with a one-byte length followed by a one-byte
  *       address family. Linux and Windows have no length byte and a two-byte family instead.</li>
- *   <li>{@code AF_INET6} is 10 on Linux, 30 on macOS, and 23 on Windows. Only {@code AF_INET} happens to be
- *       2 everywhere.</li>
+ *   <li>{@code AF_INET6} is 10 on Linux, 30 on macOS, 23 on Windows, 28 on FreeBSD and DragonFly BSD, and 24
+ *       on OpenBSD and NetBSD. Only {@code AF_INET} happens to be 2 everywhere.</li>
  *   <li>The family is in host byte order, while the port and the address bytes are in network byte order.
  *       Mixing those up yields an address that looks plausible and is wrong.</li>
  * </ul>
@@ -90,19 +90,43 @@ public final class SockAddr {
   private static final int AF_INET6;
 
   static {
-    String osName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
-    if (osName.startsWith("mac") || osName.startsWith("darwin") || osName.contains("bsd")) {
-      HAS_SA_LEN = true;
-      AF_INET6 = 30;
+    String osName = System.getProperty("os.name", "");
+    HAS_SA_LEN = hasSaLen(osName);
+    AF_INET6 = afInet6(osName);
+  }
+
+  /**
+   * Tells whether the {@code sockaddr} of an operating system starts with a length byte.
+   *
+   * @param osName the value of the system property {@code os.name}
+   * @return true for macOS and the BSDs
+   */
+  static boolean hasSaLen(String osName) {
+    String name = osName.toLowerCase(Locale.ROOT);
+    return name.startsWith("mac") || name.startsWith("darwin") || name.contains("bsd") || name.contains("dragonfly");
+  }
+
+  /**
+   * Gets the value of {@code AF_INET6} for an operating system.
+   *
+   * @param osName the value of the system property {@code os.name}
+   * @return the address family
+   */
+  static int afInet6(String osName) {
+    String name = osName.toLowerCase(Locale.ROOT);
+    if (name.startsWith("mac") || name.startsWith("darwin")) {
+      return 30;
     }
-    else if (osName.startsWith("windows")) {
-      HAS_SA_LEN = false;
-      AF_INET6 = 23;
+    if (name.startsWith("windows")) {
+      return 23;
     }
-    else {
-      HAS_SA_LEN = false;
-      AF_INET6 = 10;
+    if (name.contains("freebsd") || name.contains("dragonfly")) {
+      return 28;
     }
+    if (name.contains("openbsd") || name.contains("netbsd")) {
+      return 24;
+    }
+    return 10;    // Linux
   }
 
 
@@ -133,6 +157,7 @@ public final class SockAddr {
    * @param target the segment to write to, at least {@link #STORAGE_SIZE} bytes long
    * @param address the address to write
    * @return the length of the written structure, i.e., the {@code socklen_t} that goes with it
+   * @throws IllegalArgumentException if the address is unresolved
    */
   public static int encode(MemorySegment target, InetSocketAddress address) {
     InetAddress inetAddress = address.getAddress();

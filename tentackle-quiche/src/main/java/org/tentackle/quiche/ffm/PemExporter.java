@@ -44,9 +44,11 @@ import java.util.Enumeration;
  * gap is bridged here rather than by making the QUIC transports configured differently from every other
  * transport.
  * <p>
- * The files are written to the temporary directory with owner-only permissions and deleted when the JVM
- * exits. This is the one place where a private key leaves the keystore, so the permissions are set when
- * the file is <em>created</em>, not afterward: a key that is briefly world-readable is a leaked key.
+ * The files are written to the temporary directory with owner-only permissions. Quiche reads them while
+ * loading them into its configuration, so the caller {@link #delete}s them right afterward; deletion when
+ * the JVM exits is merely the backstop. This is the one place where a private key leaves the keystore, so
+ * the permissions are set when the file is <em>created</em>, not afterward: a key that is briefly
+ * world-readable is a leaked key.
  */
 public final class PemExporter {
 
@@ -59,11 +61,28 @@ public final class PemExporter {
 
 
   /**
+   * Deletes a file written by this class, as soon as it is no longer needed.<br>
+   * A failure is ignored: the file is deleted when the JVM exits anyway.
+   *
+   * @param file the file
+   */
+  public static void delete(Path file) {
+    try {
+      Files.deleteIfExists(file);
+    }
+    catch (IOException e) {
+      // deleteOnExit is the backstop
+    }
+  }
+
+  /**
    * Writes the certificate chain of a keystore entry to a PEM file.
    *
    * @param keyStore the keystore
    * @param alias the alias of the entry
-   * @return the file, deleted when the JVM exits
+   * @return the file, to be {@link #delete}d once loaded
+   * @throws QuicheException if the keystore does not provide what is to be written
+   * @throws UncheckedIOException if the file cannot be written
    */
   public static Path writeCertificateChain(KeyStore keyStore, String alias) {
     Certificate[] chain;
@@ -89,7 +108,9 @@ public final class PemExporter {
    * @param keyStore the keystore
    * @param alias the alias of the entry
    * @param password the password protecting the key; may be null
-   * @return the file, deleted when the JVM exits
+   * @return the file, to be {@link #delete}d once loaded
+   * @throws QuicheException if the keystore does not provide what is to be written
+   * @throws UncheckedIOException if the file cannot be written
    */
   public static Path writePrivateKey(KeyStore keyStore, String alias, char[] password) {
     Key key;
@@ -117,7 +138,9 @@ public final class PemExporter {
    * Writes all certificates of a truststore to a PEM file.
    *
    * @param trustStore the truststore
-   * @return the file, deleted when the JVM exits
+   * @return the file, to be {@link #delete}d once loaded
+   * @throws QuicheException if the keystore does not provide what is to be written
+   * @throws UncheckedIOException if the file cannot be written
    */
   public static Path writeTrustedCertificates(KeyStore trustStore) {
     StringBuilder pem = new StringBuilder();

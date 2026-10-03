@@ -37,12 +37,17 @@ import org.tentackle.trip.transport.AbstractConnectionPool;
 import org.tentackle.trip.transport.ConnectionPoolSlot;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,13 +56,18 @@ import java.util.Set;
  * <p>
  * All pooled connections are streams multiplexed over a single QUIC connection. Since that connection is
  * discarded silently by both peers as soon as it stays idle for longer than the QUIC max idle timeout
- * (see {@link QuicheTripTransport#getMaxIdleSeconds()}), which is way shorter than the pool's idle
+ * (see {@link QuicheTripTransport#getMaxIdleSeconds()}), which is much shorter than the pool's idle
  * timeout, it is kept alive by sending ack-eliciting packets. Otherwise, the pool would hand out
  * connections belonging to a QUIC connection that is long gone.
  * <p>
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is in the
  * pool, the pool's maximum size defaults to {@link QuicheTripTransport#getMaxStreams()} instead of being
- * unlimited.
+ * unlimited. Should the peer nevertheless grant fewer streams, opening another one fails at once with a
+ * <em>temporary</em> {@link TripRuntimeException}.
+ * <p>
+ * The QUIC connection is established right away when the pool is created, which in turn happens when the
+ * transport hands out its first client connection. The server's host name is resolved only then, once
+ * for the lifetime of the pool.
  * <p>
  * The QUIC connection migrates to a new source port when its path stalls (see
  * {@link QuicheTripTransport#getMigrationProbeTimeouts()}). If it is lost anyway, it is re-established on
@@ -96,10 +106,12 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   private QuicheConnection connection;
 
   /**
-   * Creates a QUIC connection pool.
+   * Creates a QUIC connection pool and establishes the QUIC connection.
    *
    * @param transport the transport associated with this pool
    * @param dictionary the dictionary associated with this pool
+   * @throws IllegalArgumentException if the URI has no port &gt; 0, or {@code connecttimeout} is not &gt; 0
+   * @throws TripRuntimeException if a URI parameter is invalid or the QUIC connection cannot be established
    */
   public QuicheTripConnectionPool(QuicheTripTransport transport, Dictionary dictionary) {
     super(transport, dictionary);
@@ -127,7 +139,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
-    keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
+    keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);   // negative: derived
     migrationProbeTimeouts = transport.getMigrationProbeTimeouts();
     serverName = uri.getHost();
     try {
@@ -140,18 +152,23 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     QuicheConfig newConfig = transport.createConfig(alpnId);
     try {
       /*
-       * Like the TCP transports, a QUIC client checks the server's certificate by default, against a
-       * truststore (tsfile) holding the server's CA, because BoringSSL will not know it otherwise. A
-       * Tentackle server that presents a self-signed certificate and relies on the TRIP handshake to
-       * authenticate the peers instead can opt out with certcheck=false.
+       * Like the TCP transports, a QUIC client checks the server's certificate by default, against the
+       * truststore (tsfile), or the JVM's default CAs if none is configured. BoringSSL knows neither, so
+       * the certificates are handed over explicitly. A Tentackle server that presents a self-signed
+       * certificate and relies on the TRIP handshake to authenticate the peers instead can opt out with
+       * certcheck=false.
        */
       if (Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"))) {
         newConfig.verifyPeer(true);
-        SslParameters sslParameters = new SslParameters(uri);
-        KeyStore trustStore = sslParameters.getTrustStore();
+        KeyStore trustStore = trustStore(new SslParameters(uri));
         if (trustStore != null) {
           Path trusted = PemExporter.writeTrustedCertificates(trustStore);
-          newConfig.loadVerifyLocations(trusted);
+          try {
+            newConfig.loadVerifyLocations(trusted);
+          }
+          finally {
+            PemExporter.delete(trusted);    // read by quiche right away
+          }
         }
       }
       else {
@@ -222,10 +239,11 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Creates a new client quic stream.<br>
+   * Creates a new client QUIC stream.<br>
    * Re-establishes the QUIC connection if it has been terminated meanwhile.
    *
-   * @return the quic stream
+   * @return the QUIC stream
+   * @throws TripRuntimeException if no stream can be opened, temporary if the peer grants no further one
    */
   QuicheStream createQuicStream() {
     QuicheConnection quicConnection = connection;
@@ -342,13 +360,15 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   /**
    * Determines how often a keep-alive packet is to be sent.
    * <p>
-   * An explicitly configured {@code keepalive} is taken as it is. Otherwise the interval is a third of the
-   * QUIC max idle timeout, so that two keep-alives in a row may be lost before the connection is at risk,
-   * but never more than half of it: the keep-alive must fall due safely <em>before</em> the idle timeout,
-   * never together with it. {@link QuicheConnection#runDueWork()} processes the timeout first, on purpose,
-   * so a keep-alive that is due at the same moment comes too late and the connection is torn down instead
-   * of being kept alive. The margin has to be large enough to absorb the drift of the idle timer, which
-   * every packet the connection sends on its own &mdash; a loss probe, an ack &mdash; re-bases.
+   * A positive {@code keepalive} is taken as it is, with a warning if it is not safely below the idle
+   * timeout. Otherwise (negative, the default) the interval is a third of the QUIC max idle timeout, so that
+   * two keep-alives in a row may be lost before the connection is at risk, and at least
+   * {@link #MIN_KEEP_ALIVE_MILLIS} &mdash; but never more than half of the idle timeout: the keep-alive must
+   * fall due safely <em>before</em> the idle timeout, never together with it.
+   * {@link QuicheConnection#runDueWork()} processes the timeout first, on purpose, so a keep-alive that is
+   * due at the same moment comes too late and the connection is torn down instead of being kept alive. The
+   * margin has to be large enough to absorb the drift of the idle timer, which the packets the connection
+   * exchanges on its own &mdash; a loss probe and the acknowledgment answering it &mdash; restart.
    *
    * @return the interval in milliseconds, 0 to send no keep-alive packets
    */
@@ -365,6 +385,40 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     }
     // derived: no idle timeout at all (quicidle=0) means there is nothing to keep alive
     return Math.min(Math.max(idleMillis / 3, MIN_KEEP_ALIVE_MILLIS), idleMillis / 2);
+  }
+
+  /**
+   * Gets the certificates the server's certificate is verified against.
+   *
+   * @param sslParameters the SSL parameters of the transport's URI
+   * @return the configured truststore ({@code tsfile}), or the JVM's default CAs if none is configured,
+   *         null if there are none at all
+   * @throws TripRuntimeException if the default CAs cannot be determined
+   */
+  static KeyStore trustStore(SslParameters sslParameters) {
+    KeyStore trustStore = sslParameters.getTrustStore();
+    if (trustStore != null) {
+      return trustStore;
+    }
+    // the very CAs a JSSE trust manager uses by default, i.e., what tripq and the TCP transports check against
+    try {
+      TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      factory.init((KeyStore) null);
+      KeyStore defaultCAs = KeyStore.getInstance(KeyStore.getDefaultType());
+      defaultCAs.load(null, null);
+      int index = 0;
+      for (TrustManager trustManager : factory.getTrustManagers()) {
+        if (trustManager instanceof X509TrustManager x509TrustManager) {
+          for (X509Certificate issuer : x509TrustManager.getAcceptedIssuers()) {
+            defaultCAs.setCertificateEntry("ca-" + index++, issuer);
+          }
+        }
+      }
+      return defaultCAs.size() > 0 ? defaultCAs : null;
+    }
+    catch (GeneralSecurityException | IOException e) {
+      throw new TripRuntimeException("cannot determine the JVM's default trusted certificates", e);
+    }
   }
 
   /**
@@ -385,7 +439,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Closes a quic stream, ignoring any errors.
+   * Closes a QUIC stream, logging instead of propagating a failure.
    *
    * @param quicStream the stream to close
    */

@@ -51,10 +51,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * <strong>Why the flow control still works:</strong> received data is deliberately <em>not</em> drained
  * into Java buffers when it arrives. It stays inside quiche until an application thread reads it, which
  * is what makes quiche stop granting credits when nobody reads &mdash; buffering it here would advertise
- * a window this side cannot honor and turn flow control into unbounded memory-growth.
+ * a window this side cannot honor and turn flow control into unbounded memory growth.
  * <p>
  * Threads waiting for a stream to become readable or writable park on {@link #getCondition()}, which the
- * event loop signals after every packet and every timeout. There is one condition per connection rather
+ * event loop signals after every received datagram and every timeout. There is one condition per connection rather
  * than one per stream: with the handful of streams a TRIP connection pool holds, waking all of them and
  * letting most go back to sleep costs less than the bookkeeping the finer granularity would need.
  * <p>
@@ -65,16 +65,18 @@ import java.util.concurrent.locks.ReentrantLock;
  * stall is detected by the probe timeout firing repeatedly with not a single byte acknowledged in between
  * (see {@link #setMigrationProbeTimeouts(int)}), which scales with the round trip time by itself. The
  * client then opens a new socket and probes the path from it; only once the server answered the probe
- * does the connection switch over, retire the connection ID of the old path and close the old socket. A
- * probe that fails leaves the connection where it was. The server follows a migration by itself.
+ * does the connection switch over, retire the connection ID of the old path and close the old socket,
+ * unless that is the endpoint's own one. A probe that fails leaves the connection where it was. The server
+ * follows a migration by itself.
  */
 public class QuicheConnection implements AutoCloseable {
 
   /**
    * The size of the buffer a single outgoing datagram is built in.
    * <p>
-   * Larger than the largest UDP payload quiche is configured to send, so that a packet is never
-   * truncated by this buffer rather than by the path MTU.
+   * Larger than the largest UDP payload quiche sends &mdash; its default {@code max_send_udp_payload_size}
+   * of 1200 bytes, which the transports do not change &mdash; so that a packet is never truncated by this
+   * buffer.
    */
   public static final int SEND_BUFFER_SIZE = 1500;
 
@@ -115,7 +117,7 @@ public class QuicheConnection implements AutoCloseable {
   private volatile InetSocketAddress peer;
   private volatile boolean failed;                  // true once the connection is unusable
   private volatile String failure;                  // why it became unusable, null if it did not
-  private volatile ConnectionError localError;      // the structured reason, set only on a handshake failure
+  private volatile ConnectionError localError;      // the error this side closed with, see captureLocalError()
   private volatile StreamListener streamListener;   // null on a client connection
   private volatile long keepAliveMillis;            // 0 to send no keep-alive packets
   private volatile long nextKeepAliveNanos;         // when the next one is due
@@ -136,7 +138,8 @@ public class QuicheConnection implements AutoCloseable {
    * @param conn the native connection
    * @param connectionId the connection ID this side issued, i.e., the key the endpoint routes by
    * @param peer the peer's address
-   * @param client true if this is the client side, which decides how stream ids are allocated
+   * @param client true if this is the client side, which decides how stream ids are allocated and whether
+   *               the connection migrates when its path stalls
    */
   public QuicheConnection(QuicheEndpoint endpoint, QuicheConn conn,
                           byte[] connectionId, InetSocketAddress peer, boolean client) {
@@ -218,16 +221,6 @@ public class QuicheConnection implements AutoCloseable {
    */
   public InetSocketAddress getPeer() {
     return peer;
-  }
-
-  /**
-   * Sets the peer's address.<br>
-   * Invoked after the peer migrated to another one.
-   *
-   * @param peer the address
-   */
-  public void setPeer(InetSocketAddress peer) {
-    this.peer = peer;
   }
 
   /**
@@ -313,10 +306,13 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
-   * Gets the structured QUIC error a rejected packet during the handshake was reported with, in
-   * particular a rejected server certificate (see {@link QuicheConn#getLocalError()}).
+   * Gets the structured QUIC error this side closed the connection with, as quiche reports it (see
+   * {@link QuicheConn#getLocalError()}).
+   * <p>
+   * Captured for every connection that is closing, but of interest only when the handshake fails: it is
+   * what tells a rejected server certificate apart from any other failure.
    *
-   * @return the error, or null if the connection did not fail during the handshake this way
+   * @return the error, or null if none has been captured
    */
   public ConnectionError getLocalError() {
     return localError;
@@ -326,7 +322,7 @@ public class QuicheConnection implements AutoCloseable {
    * Waits until the handshake completed or the deadline passed.
    * <p>
    * Like a read or a write on a {@link QuicheStream}, this does not give up when the waiting thread is
-   * interrupted: connecting is what an interrupt-agnostic blocking socket does too, and a thread that
+   * interrupted. A blocking socket does not abort a connect on an interrupt either, and a thread that
    * carries an interrupt for entirely unrelated reasons must still be able to establish a connection.
    * The interrupt is re-asserted before returning, so nothing is swallowed. Only the deadline, a failure,
    * or the connection itself ends the wait.
@@ -403,16 +399,6 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
-   * Gets a stream the peer opened, creating the bookkeeping for it if this is the first time it is seen.
-   *
-   * @param streamId the stream id
-   * @return the stream
-   */
-  public QuicheStream peerStream(long streamId) {
-    return streams.computeIfAbsent(streamId, id -> new QuicheStream(this, id));
-  }
-
-  /**
    * Forgets a stream that has been closed.
    *
    * @param streamId the stream id
@@ -421,23 +407,6 @@ public class QuicheConnection implements AutoCloseable {
     streams.remove(streamId);
   }
 
-  /**
-   * Gets the number of bidirectional streams this side may still open.
-   *
-   * @return the number of streams, 0 if the connection is not usable
-   */
-  public long getStreamsLeft() {
-    lock.lock();
-    try {
-      return conn.isFreed() ? 0 : conn.peerStreamsLeftBidi();
-    }
-    catch (RuntimeException e) {
-      return 0;
-    }
-    finally {
-      lock.unlock();
-    }
-  }
 
   /**
    * Feeds a received datagram to the connection.
@@ -503,16 +472,16 @@ public class QuicheConnection implements AutoCloseable {
   /**
    * Captures the structured local error, if any, while the connection can still be queried.
    * <p>
-   * Must be called while holding {@link #getLock()}, with {@code conn} confirmed neither freed nor
-   * un-closed. This is what tells a rejected certificate (see {@link QuicheConn#getLocalError()}) apart
-   * from any other handshake failure - the plain string {@link #fail}'s caller passes never does.
+   * Must be called while holding {@link #getLock()}, with {@code conn} not freed. The structured error is
+   * what tells a rejected certificate (see {@link QuicheConn#getLocalError()}) apart from any other
+   * handshake failure &mdash; the reason string passed to {@link #fail} cannot. Only the first error is kept.
    * <p>
    * In practice, the handshake does not always fail where {@link #receive} would notice it: quiche
    * sometimes closes the connection without {@code conn.recv()} ever throwing (rejecting the peer's
-   * certificate is reported this way), and the closure only becomes externally visible - {@code is_closed()}
-   * turning true - some time later, by which point nothing may ever call {@link #receive} again to see
-   * it. {@code QuicheEndpoint#reap()} is the backstop for that case, which is why this is package-visible
-   * rather than private to {@link #receive}.
+   * certificate is reported this way), and the closure only becomes externally visible &mdash;
+   * {@code is_closed()} turning true &mdash; some time later, by which point nothing may ever call
+   * {@link #receive} again to see it. {@code QuicheEndpoint#reap()} is the backstop for that case, which is
+   * why this is package-visible rather than private to {@link #receive}.
    */
   void captureLocalError() {
     if (localError == null) {
@@ -695,6 +664,11 @@ public class QuicheConnection implements AutoCloseable {
 
   /**
    * Throws if the connection cannot be used.
+   * <p>
+   * A connection that is closing gracefully still counts as usable until quiche reports it closed, which
+   * {@link #receive} and the endpoint's reaping turn into a failure.
+   *
+   * @throws QuicheException if the connection failed or has been freed
    */
   public void checkUsable() {
     if (failed) {
@@ -734,8 +708,9 @@ public class QuicheConnection implements AutoCloseable {
   /**
    * Frees the native connection and releases everyone waiting on it.
    * <p>
-   * Invoked by the endpoint once the connection is done, never by an application thread: a connection
-   * freed while a reader is inside quiche would be a use-after-free.
+   * Invoked by the endpoint, when it reaps the connection or when it is closed itself, never by an
+   * application thread using the connection. Freeing happens under the lock, so no reader or writer can be
+   * inside quiche at that moment; afterward, they find the connection failed.
    */
   @Override
   public void close() {
@@ -815,7 +790,7 @@ public class QuicheConnection implements AutoCloseable {
    * Keeps the peer supplied with spare connection IDs and handles what happened to the network paths.
    * <p>
    * Must be called while holding {@link #getLock()}, with {@code conn} not freed. Cheap when there is
-   * nothing to do, which is almost always: two counters are read.
+   * nothing to do, which is almost always: a few native calls that find nothing to report.
    */
   private void maintainPaths() {
     if (!conn.isEstablished() || conn.isClosed()) {
@@ -859,8 +834,14 @@ public class QuicheConnection implements AutoCloseable {
   /**
    * Checks whether the active path stopped delivering and starts migrating away from it if so.
    * <p>
-   * Invoked after every timeout, which is when a probe timeout fires. Must be called while holding
-   * {@link #getLock()}, with {@code conn} not freed.
+   * Invoked after every expiry of quiche's timer, which is when a probe timeout fires, but not on a
+   * keep-alive. Only a client connection that is established, neither closing nor draining, and not
+   * already probing a path is checked. Must be called while holding {@link #getLock()}, with {@code conn}
+   * not freed.
+   * <p>
+   * The acknowledged bytes are sampled only here, so an acknowledgment that arrived after the last check
+   * makes the next one take a new baseline: in the worst case, a stall is detected only after
+   * {@code migrate} further probe timeouts.
    */
   private void detectStall() {
     int threshold = migrationProbeTimeouts;

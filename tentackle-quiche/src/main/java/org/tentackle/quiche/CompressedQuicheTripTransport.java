@@ -70,7 +70,7 @@ public class CompressedQuicheTripTransport extends QuicheTripTransport {
   /**
    * Creates the compressed output stream.
    *
-   * @param outputStream the uncompressed output stream from the socket
+   * @param outputStream the uncompressed output stream of the QUIC stream
    * @return the compressed output stream
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
@@ -81,7 +81,7 @@ public class CompressedQuicheTripTransport extends QuicheTripTransport {
   /**
    * Creates the compressed input stream.
    *
-   * @param inputStream the uncompressed input stream from the socket
+   * @param inputStream the uncompressed input stream of the QUIC stream
    * @return the compressed input stream
    */
   protected InputStream createCompressedInputStream(InputStream inputStream) {

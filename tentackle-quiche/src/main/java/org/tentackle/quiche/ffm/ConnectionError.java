@@ -19,8 +19,7 @@
 package org.tentackle.quiche.ffm;
 
 /**
- * A QUIC {@code CONNECTION_CLOSE} error, as reported by {@code quiche_conn_local_error} /
- * {@code quiche_conn_peer_error}.
+ * A QUIC {@code CONNECTION_CLOSE} error, as reported by {@code quiche_conn_local_error}.
  *
  * @param isApp true if {@code errorCode} is an application-defined error code, false if it is a QUIC
  *        transport error code (which is where TLS alerts, including a rejected certificate, show up)

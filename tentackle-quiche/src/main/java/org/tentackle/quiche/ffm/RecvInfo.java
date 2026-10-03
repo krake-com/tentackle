@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
  * them alive for as long as quiche may look at them.
  * <p>
  * An instance is reused for every packet of a connection: the addresses are rewritten in place, which
- * avoids an allocation per datagram in the receive-path.
+ * avoids an allocation per datagram in the receive path.
  */
 public final class RecvInfo {
 

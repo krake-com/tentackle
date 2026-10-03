@@ -25,8 +25,9 @@ import java.lang.foreign.ValueLayout;
  * The C types of the quiche API, named as they appear in {@code quiche.h}.
  * <p>
  * Spelling them out keeps the function descriptors readable and puts the platform assumptions in one
- * place. The only assumption made is a 64-bit data model &mdash; {@code size_t} and {@code ssize_t} are
+ * place. The assumption made is a 64-bit platform &mdash; {@code size_t}, {@code ssize_t} and pointers are
  * eight bytes wide. All platforms the {@code jetty-quiche-native} artifact ships binaries for are 64-bit.
+ * Note that C {@code long} is not: it is 32-bit on Windows, which is why no descriptor uses it.
  */
 public final class ValueLayouts {
 

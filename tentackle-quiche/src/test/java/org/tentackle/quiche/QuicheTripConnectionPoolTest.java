@@ -21,22 +21,33 @@ package org.tentackle.quiche;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+import org.tentackle.io.SslParameters;
+import org.tentackle.quiche.ffm.PemExporter;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 
 import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyStore;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
 /**
- * Tests for the certificate-failure path of {@link QuicheTripConnectionPool}: connecting with
- * {@code certcheck=true} to a server whose certificate is not trusted.<br>
+ * Tests for the certificate handling of {@link QuicheTripConnectionPool}: connecting with
+ * {@code certcheck=true} to a server whose certificate is or is not trusted, the trusted certificates, and
+ * the PEM files they are handed to quiche with.<br>
  * The successful paths are covered end-to-end by {@link QuicheRemoteInvocationTest}, and the raw binding
  * this relies on ({@code quiche_conn_local_error}) is covered by
  * {@code org.tentackle.quiche.ffm.HandshakeTest#testCertificateRejectionReportsTheAlertAsLocalError}.
@@ -199,6 +210,93 @@ public class QuicheTripConnectionPoolTest {
     }
     finally {
       Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Without {@code tsfile}, the server's certificate is checked against the JVM's default CAs, just like
+   * {@code tripq} and the TCP transports do &mdash; not against no CAs at all.
+   */
+  @Test(timeOut = 60000)
+  public void trustStoreFallsBackToTheJvmDefaults() throws Exception {
+    Reporter.log("trustStoreFallsBackToTheJvmDefaults", true);
+    KeyStore trustStore = QuicheTripConnectionPool.trustStore(new SslParameters(URI.create("tripj://localhost:4711")));
+    assertNotNull(trustStore, "no default CAs");
+    assertTrue(trustStore.size() > 0, "no default CAs");
+
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      Path configured = QuicheTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        KeyStore explicit = QuicheTripConnectionPool.trustStore(new SslParameters(URI.create(
+          "tripj://localhost:4711?" + QuicheTestSupport.trustStoreParameters(configured))));
+        assertEquals(explicit.size(), 1, "the configured truststore was not used");
+      }
+      finally {
+        Files.deleteIfExists(configured);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Quiche reads the PEM files the keystore and truststore are exported to as soon as they are loaded, so
+   * they must not linger in the temporary directory &mdash; least of all the one holding the private key.
+   */
+  @Test(timeOut = 60000)
+  public void pemFilesAreDeletedOnceLoaded() throws Exception {
+    Reporter.log("pemFilesAreDeletedOnceLoaded", true);
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicheTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        Set<Path> before = pemFiles();
+        int port = QuicheTestSupport.freeUdpPort();
+        QuicheTripTransport server = new QuicheTripTransport(URI.create(
+          "tripj://localhost:" + port + "?" + QuicheTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          QuicheTripTransport client = new QuicheTripTransport(URI.create(
+            "tripj://localhost:" + port + "?certcheck=true&" + QuicheTestSupport.trustStoreParameters(trustStore)));
+          try {
+            QuicheTripConnectionPool pool = new QuicheTripConnectionPool(client, dictionary());
+            Set<Path> left = pemFiles();
+            left.removeAll(before);
+            assertTrue(left.isEmpty(), "PEM files left behind: " + left);
+            pool.shutdown();
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Gets the PEM files exported by this module that currently exist in the temporary directory.
+   *
+   * @return the files
+   * @throws IOException if the directory cannot be listed
+   */
+  private static Set<Path> pemFiles() throws IOException {
+    try (Stream<Path> files = Files.list(Path.of(System.getProperty("java.io.tmpdir")))) {
+      return files.filter(file -> {
+                    String name = file.getFileName().toString();
+                    return name.startsWith(PemExporter.TEMPFILE_PREFIX) && name.endsWith(".pem");
+                  })
+                  .collect(Collectors.toCollection(HashSet::new));
     }
   }
 

@@ -111,6 +111,10 @@ public class QuicheConn implements AutoCloseable {
     Quiche.downcall("quiche_conn_stream_finished",
                     FunctionDescriptor.of(ValueLayouts.BOOL, ValueLayouts.POINTER, ValueLayouts.UINT64));
 
+  private static final MethodHandle STREAM_READABLE =
+    Quiche.downcall("quiche_conn_stream_readable",
+                    FunctionDescriptor.of(ValueLayouts.BOOL, ValueLayouts.POINTER, ValueLayouts.UINT64));
+
   private static final MethodHandle STREAM_READABLE_NEXT =
     Quiche.downcall("quiche_conn_stream_readable_next",
                     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayouts.POINTER));
@@ -255,7 +259,7 @@ public class QuicheConn implements AutoCloseable {
   /**
    * The size of the buffers the statistics are written to.
    * <p>
-   * quiche fills in the whole structure, not just the prefix read here, and a later quiche version may
+   * Quiche fills in the whole structure, not just the prefix read here, and a later quiche version may
    * append fields. Too small a buffer would be a silent heap overflow, so it is sized well beyond both
    * structures (208 and 448 bytes as of quiche 0.29).
    */
@@ -270,7 +274,6 @@ public class QuicheConn implements AutoCloseable {
   private static final MethodHandle IS_CLOSED = predicate("quiche_conn_is_closed");
   private static final MethodHandle IS_DRAINING = predicate("quiche_conn_is_draining");
   private static final MethodHandle IS_TIMED_OUT = predicate("quiche_conn_is_timed_out");
-  private static final MethodHandle IS_READABLE = predicate("quiche_conn_is_readable");
 
   private static final MethodHandle TRACE_ID = accessor("quiche_conn_trace_id");
   private static final MethodHandle SOURCE_ID = accessor("quiche_conn_source_id");
@@ -305,7 +308,8 @@ public class QuicheConn implements AutoCloseable {
 
 
   /**
-   * Creates a client connection and produces its initial packet.
+   * Creates a client connection.<br>
+   * Its initial packet is produced by the first {@link #send}.
    *
    * @param serverName the name verified against the server's certificate, null to skip that check
    * @param scid this side's connection ID, at most {@link Quiche#MAX_CONN_ID_LEN} bytes
@@ -313,6 +317,8 @@ public class QuicheConn implements AutoCloseable {
    * @param peer the server's address
    * @param config the configuration, which must outlive the connection
    * @return the connection
+   * @throws QuicheException if quiche refuses to create the connection
+   * @throws IllegalArgumentException if an address is unresolved
    */
   public static QuicheConn connect(String serverName, byte[] scid,
                                    InetSocketAddress local, InetSocketAddress peer, QuicheConfig config) {
@@ -346,6 +352,8 @@ public class QuicheConn implements AutoCloseable {
    * @param peer the client's address
    * @param config the configuration, which must outlive the connection
    * @return the connection
+   * @throws QuicheException if quiche refuses to create the connection
+   * @throws IllegalArgumentException if an address is unresolved
    */
   public static QuicheConn accept(byte[] scid, byte[] odcid,
                                   InetSocketAddress local, InetSocketAddress peer, QuicheConfig config) {
@@ -375,7 +383,7 @@ public class QuicheConn implements AutoCloseable {
   /**
    * Feeds a received datagram to the connection.
    * <p>
-   * quiche decrypts in place, so the buffer is modified.
+   * Quiche decrypts in place, so the buffer is modified.
    *
    * @param buffer the datagram
    * @param length the number of bytes in the buffer
@@ -426,7 +434,8 @@ public class QuicheConn implements AutoCloseable {
    * @param streamId the stream
    * @param buffer the buffer to fill
    * @param length the capacity of the buffer
-   * @param fin a one-element array, set to true if this read consumed the end of the stream
+   * @param fin a one-element array, set to true if this read consumed the end of the stream; left
+   *            untouched if nothing was read
    * @return the number of bytes read, or {@link Quiche#ERR_DONE} if there is nothing to read
    * @throws QuicheException if the stream failed, in particular when the peer reset or stopped it
    */
@@ -452,7 +461,7 @@ public class QuicheConn implements AutoCloseable {
   /**
    * Writes to a stream.
    * <p>
-   * quiche accepts as much as the flow control window and the send buffer allow and reports how much that
+   * Quiche accepts as much as the flow control window and the send buffer allow and reports how much that
    * was: a short write is normal and not an error.
    *
    * @param streamId the stream
@@ -534,6 +543,22 @@ public class QuicheConn implements AutoCloseable {
   }
 
   /**
+   * Tells whether a stream can be read without blocking.<br>
+   * This is the case if it holds data, its end has been received, or the peer reset it.
+   *
+   * @param streamId the stream
+   * @return true if readable
+   */
+  public boolean streamReadable(long streamId) {
+    try {
+      return (boolean) STREAM_READABLE.invokeExact(getSegment(), streamId);
+    }
+    catch (Throwable t) {
+      throw new QuicheException("quiche_conn_stream_readable failed for stream " + streamId, t);
+    }
+  }
+
+  /**
    * Gets the next stream with data to read, removing it from the readable set.
    *
    * @return the stream id, or -1 if no stream is readable
@@ -607,7 +632,8 @@ public class QuicheConn implements AutoCloseable {
   /**
    * Schedules an ack-eliciting packet, which is how a connection is kept from timing out while idle.
    *
-   * @return the {@code ERR_} code, {@link Quiche#ERR_DONE} if nothing was scheduled
+   * @return 0 if scheduled, {@link Quiche#ERR_DONE} if there was nothing to schedule it on, or another
+   *         negative {@code ERR_} code
    */
   public long sendAckEliciting() {
     try {
@@ -656,6 +682,7 @@ public class QuicheConn implements AutoCloseable {
    * @param resetToken the stateless reset token that goes with it, 16 bytes
    * @return the sequence number quiche assigned
    * @throws QuicheException if the peer's limit is reached ({@link Quiche#ERR_ID_LIMIT}) or the ID is invalid
+   * @throws IllegalArgumentException if the reset token is not 16 bytes
    */
   public long newScid(byte[] scid, byte[] resetToken) {
     if (resetToken.length != RESET_TOKEN_LENGTH) {
@@ -888,18 +915,9 @@ public class QuicheConn implements AutoCloseable {
   }
 
   /**
-   * Tells whether any stream has data to read.
-   *
-   * @return true if readable
-   */
-  public boolean isReadable() {
-    return predicate(IS_READABLE, "quiche_conn_is_readable");
-  }
-
-  /**
    * Gets the QUIC {@code CONNECTION_CLOSE} error this side queued or sent, if any.
    * <p>
-   * quiche reports handshake failures - including a rejected server certificate - through this call
+   * Quiche reports handshake failures &mdash; including a rejected server certificate &mdash; through this call
    * rather than through the coarse, unstructured {@code ERR_TLS_FAIL} return code that
    * {@link #recv(MemorySegment, long, RecvInfo)} throws as a {@link QuicheException}: a locally detected
    * TLS alert is encoded as error code {@code 0x100 + alert-number} per
@@ -975,6 +993,7 @@ public class QuicheConn implements AutoCloseable {
    * @param errorCode the error code
    * @param reason the reason phrase; may be empty
    * @return true if a close was initiated, false if the connection was closing already
+   * @throws QuicheException if quiche refuses to close the connection
    */
   public boolean closeConnection(boolean app, long errorCode, String reason) {
     byte[] bytes = reason.getBytes(StandardCharsets.UTF_8);
@@ -1023,8 +1042,10 @@ public class QuicheConn implements AutoCloseable {
   /**
    * Frees the native connection.
    * <p>
-   * Idempotent. Every other method throws afterward, which is deliberate: reaching a freed connection
-   * through a stale reference would otherwise be a use-after-free in native memory.
+   * Idempotent. Every other method but {@link #isFreed()} throws afterward, which is deliberate: reaching a
+   * freed connection through a stale reference would otherwise be a use-after-free in native memory. Most
+   * methods report this as a {@link QuicheException} wrapping the {@link IllegalStateException} of
+   * {@link #getSegment()}.
    */
   @Override
   public void close() {
