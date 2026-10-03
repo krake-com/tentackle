@@ -24,7 +24,11 @@ import org.tentackle.prefs.DefaultPreferencesFactory;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
 /**
- * Preferences factory to redirect persisted preferences back to {@code java.util.Preferences} default store.
+ * Preferences factory to redirect the persisted preferences back to the default store of {@code java.util.prefs}.<br>
+ * Tentackle applications usually persist their preferences in the database. The wizard stores the user
+ * preferences, such as the table layouts of the PDO browser, below the node {@code PdoBrowser} of the
+ * user root instead, separately from the application's own preferences.
+ * System preferences are redirected to the user preferences as well.
  */
 @Service(PersistedPreferencesFactory.class)
 public class WizardPreferencesFactory extends DefaultPreferencesFactory {

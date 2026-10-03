@@ -26,7 +26,7 @@ import org.tentackle.pdo.DomainContext;
  * Remote delegate interface for {@link ${persistenceImplementation}}.
 <#if abstractOperation == "true">
  *
- * @param <T> the pdo interface
+ * @param <T> the operation interface
  * @param <P> the persistence implementation
 </#if>
  */

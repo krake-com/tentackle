@@ -24,7 +24,7 @@ import org.tentackle.common.NamingRules;
 import java.io.Serial;
 
 /**
- * Freemarker model for the PDO templates.
+ * FreeMarker model for the PDO templates.
  */
 public class PdoTemplateModel extends TemplateModel {
 

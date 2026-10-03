@@ -56,10 +56,10 @@ on(Order.class).selectAll().each { order ->
 mvn tentackle-wizard:script -Dscript=src/scripts/list-open-orders.groovy
 ```
 
-- `-Dscript=<file>` — the fragment file. **Supplying it is what selects batch mode**; without it the
-  interactive editor opens, which is useless to you.
+- `-Dscript=<file>` — the fragment file, relative to the project base directory. **Supplying it is
+  what selects batch mode**; without it the interactive editor opens, which is useless to you.
 - `-Dharness=<filename>` — the harness to weave into, filename only, no directory. Required when the
-  project configures more than one.
+  project configures more than one; an unknown name fails the goal.
 
 `println` output lands in the Maven log. Write the fragment to a file under a scratch or scripts
 directory, not to the module sources — it is not part of the build.

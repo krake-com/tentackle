@@ -41,8 +41,14 @@ public class PdoType {
     this.clazz = clazz;
   }
 
+  /**
+   * Creates a PDO type from a PDO.<br>
+   * The name is the simple name of the PDO interface, as in the entity combobox.
+   *
+   * @param pdo the PDO
+   */
   public PdoType(PersistentDomainObject<?> pdo) {
-    this(pdo.getSingular(), pdo.getEffectiveClass());
+    this(pdo.getEffectiveClass().getSimpleName(), pdo.getEffectiveClass());
   }
 
   /**
@@ -69,10 +75,10 @@ public class PdoType {
   }
 
   /**
-   * The camel case letters derived from the displayed name.<br>
-   * Used for keyboard navigation.
+   * The camel-case letters derived from the displayed name.<br>
+   * Used for sorting and rendering in the combobox.
    *
-   * @return the camelcase letters
+   * @return the camel-case letters
    */
   public String getCamelCaseLetters() {
     if (camelCase == null) {

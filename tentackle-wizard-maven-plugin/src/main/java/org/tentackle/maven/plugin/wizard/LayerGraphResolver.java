@@ -131,7 +131,12 @@ public class LayerGraphResolver {
     }
 
     LayerGraphSpec spec = new LayerGraphSpec(layerSpecs, mojo.getLeafLayer(), null, "");
-    return ModuleLayerBuilder.build(spec, ModuleLayer.boot(), AbstractWizardMojo.class.getClassLoader());
+    try {
+      return ModuleLayerBuilder.build(spec, ModuleLayer.boot(), AbstractWizardMojo.class.getClassLoader());
+    }
+    catch (RuntimeException ex) {   // TentackleRuntimeException, LayerInstantiationException, etc...
+      throw new MojoExecutionException("building the module layer graph failed: " + ex.getMessage(), ex);
+    }
   }
 
   /**

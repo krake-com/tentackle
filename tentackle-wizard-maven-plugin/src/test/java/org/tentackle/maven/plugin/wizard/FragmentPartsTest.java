@@ -25,7 +25,7 @@ import static org.testng.Assert.assertEquals;
 /**
  * Tests the extraction of {@code ^}-marked import lines from a script fragment.
  */
-public class ScriptMojoTest {
+public class FragmentPartsTest {
 
   @Test
   public void testExtractImports() {

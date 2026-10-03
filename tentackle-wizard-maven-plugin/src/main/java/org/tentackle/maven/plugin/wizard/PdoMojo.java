@@ -25,7 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.PdoWizard;
@@ -39,7 +38,6 @@ import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -47,20 +45,27 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
-import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 
 /**
  * Wizard to create PDO files.<br>
  * Brings up an FX UI to create the PDO-related Java files.
  * <p>
- * Best invoked from within the directory of the maven parent of the project.
+ * In batch mode, enabled by {@link #batchFilesets} or {@link #batchDir}, the files are generated
+ * headless for every entity of a secondary model that does not exist in the project model yet.
+ * <p>
+ * Best invoked from within the directory of the Maven parent of the project.
  */
 @Mojo(name = "pdo", aggregator = true, threadSafe = true)
 public class PdoMojo extends AbstractWizardMojo {
@@ -69,28 +74,31 @@ public class PdoMojo extends AbstractWizardMojo {
    * Filesets to read a secondary model from.<br>
    * If set, the PDO wizard works in batch mode, and for each input file (i.e., entity)
    * the corresponding Java code is generated.<br>
-   * The files must be in model-format, i.e., similar to the here-docs read by the wurbelizer or if dumped
-   * by the tentackle-sql plugin with {@code dumpAsComment} and {@code dumpVariables} both set to {@code false}.
+   * The files must be in model format, i.e., similar to the here-docs read by the wurbelizer or if dumped
+   * by the tentackle-sql plugin with {@code dumpAsComment} and {@code dumpVariables} both set to {@code false}.<br>
+   * The whole directory of a fileset is loaded to resolve the relations, but code is generated
+   * only for the included files. A fileset without a directory defaults to the project's base directory.
    * <p>
    * If there is more than one {@link PdoProfile}, the name of the profile must be given
    * as an entity stereotype (case-insensitive), for example {@code #MASTERDATA}.
+   * With only one profile, entities without such a stereotype use that profile.
    */
   @Parameter
   private List<FileSet> batchFilesets;
 
   /**
    * Alternative way to specify batch mode from the command line.<br>
-   * Notice that in this case, all files in that directory are considered as input files,
-   * and there is only one such directory configurable.
+   * All files in that single directory are considered as input files.
+   * A relative path is resolved against the project's base directory.
    */
   @Parameter(property = "batchDir")
   private String batchDir;
 
   /**
-   * The model defaults to use in batch mode.<br>
+   * The model defaults applied when printing the model source of the generated PDO interfaces in batch mode.<br>
    * Since the model to load is usually dumped with model defaults applied,
    * we cannot apply them here again. However, some options such as {@code !ROOT},
-   * {@code !ROOTID}, {@code !ROOTCLASSID} or {@code UNTRACKED} should be set to
+   * {@code !ROOTID}, {@code !ROOTCLASSID}, {@code !BIND} or {@code UNTRACKED} should be set to
    * avoid unwanted entity options.
    */
   @Parameter(defaultValue = "!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED", property = "batchDefaults")
@@ -128,6 +136,11 @@ public class PdoMojo extends AbstractWizardMojo {
     return stage;
   }
 
+  /**
+   * Gets the configured PDO profiles.
+   *
+   * @return the profiles, at least one
+   */
   public List<PdoProfile> getPdoProfiles() {
     return pdoProfiles;
   }
@@ -146,7 +159,7 @@ public class PdoMojo extends AbstractWizardMojo {
 
     if (batchDir != null) {
       FileSet fileSet = new FileSet();
-      fileSet.setDirectory(batchDir);
+      fileSet.setDirectory(resolveFile(batchDir).getPath());
       if (batchFilesets == null) {
         batchFilesets = new ArrayList<>();
       }
@@ -154,108 +167,119 @@ public class PdoMojo extends AbstractWizardMojo {
     }
 
     if (batchFilesets != null) {
-      Model batchModel = ModelManager.getInstance().getModel("batch");
-      getLogger().info("batch mode: {} filesets to process", batchFilesets.size());
-      for (FileSet fileSet: batchFilesets) {
-        if (fileSet.getDirectory() == null) {
-          // relative to basedir if not given
-          fileSet.setDirectory(getBaseDir().getAbsolutePath());
-        }
-        getLogger().info("loading model from {}", fileSet.getDirectory());
-        try {
-          batchModel.loadFromDirectory(fileSet.getDirectory(), true);
-        }
-        catch (ModelException e) {
-          throw new MojoFailureException("could not load model from " + fileSet.getDirectory(), e);
-        }
-      }
-
-      Map<String, PdoProfile> profileMap = new HashMap<>(); // stereotype -> profile
-      for (PdoProfile profile: pdoProfiles) {
-        profileMap.put(profile.getName().toUpperCase(), profile);
-      }
-
-      List<String> optionAnnotations = new ArrayList<>();
-      if (dumpAnnotationsAsOptions != null) {
-        StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
-        while (stok.hasMoreTokens()) {
-          optionAnnotations.add(stok.nextToken());
-        }
-      }
-
-      ModelDefaults projectModelDefaults = getModelDefaults();
-
-      ModelDefaults genModelDefaults = null;
-      if (batchModelDefaults != null) {
-        try {
-          genModelDefaults = new ModelDefaults(batchModelDefaults);
-        }
-        catch (ModelException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      PrintConfiguration sourceConfig = new PrintConfiguration(true, true, true,
-                                                               genModelDefaults, optionAnnotations, dumpColumnGap);
-
-      try {
-        for (Entity entity : batchModel.getAllEntities()) {
-          Entity existingEntity = getModel().getByEntityName(entity.getName());
-          if (existingEntity != null) {
-            getLogger().warn("entity {} already exists in model -> skipped", entity);
-          }
-          else {
-            PdoProfile pdoProfile = null;
-            for (String stereotype : new ArrayList<>(entity.getOptions().getStereotypes())) {
-              PdoProfile profile = profileMap.get(stereotype.toUpperCase(Locale.ROOT));
-              if (profile != null) {
-                pdoProfile = profile;
-                break;
-              }
-            }
-            if (pdoProfile == null) {
-              getLogger().error("no profile for entity {} -> skipped", entity);
-            }
-            else {
-              generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print(), projectModelDefaults);
-            }
-          }
-        }
-      }
-      catch (ModelException mx) {
-        throw new MojoFailureException("generating code from model failed", mx);
-      }
+      executeBatch();
     }
     else {
       // interactive mode
-      CountDownLatch latch = new CountDownLatch(1);
-
-      Platform.startup(() -> {
-        try {
-          configureFx();
-          registerUncaughtExceptionHandler();
-          PdoWizard wizard = Fx.load(PdoWizard.class);
-          wizard.applyMojo(this);
-          stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
-          Scene scene = Fx.createScene(wizard.getView());
-          stage.setScene(scene);
-          stage.setTitle("PDO Wizard");
-          wizard.getContainer().updateView();
-          stage.setOnHidden(_ -> latch.countDown());
-          Fx.show(stage);
-        }
-        catch (Throwable t) {
-          getLogger().error(t.getMessage(), t);
-          latch.countDown();
-        }
+      runInteractive(() -> {
+        PdoWizard wizard = Fx.load(PdoWizard.class);
+        wizard.applyMojo(this);
+        stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
+        Scene scene = Fx.createScene(wizard.getView());
+        stage.setScene(scene);
+        stage.setTitle("PDO Wizard");
+        wizard.getContainer().updateView();
+        return stage;
       });
+    }
+  }
 
-      try {
-        latch.await();
+  private void executeBatch() throws MojoExecutionException, MojoFailureException {
+    Model batchModel = ModelManager.getInstance().getModel("batch");
+    getLogger().info("batch mode: {} filesets to process", batchFilesets.size());
+    Set<Entity> includedEntities = new HashSet<>();
+    for (FileSet fileSet: batchFilesets) {
+      if (fileSet.getDirectory() == null) {
+        // defaults to basedir if not given
+        fileSet.setDirectory(getBaseDir().getAbsolutePath());
       }
-      catch (InterruptedException e) {
-        throw new InterruptedRuntimeException(e);
+      getLogger().info("loading model from {}", fileSet.getDirectory());
+      try {
+        batchModel.loadFromDirectory(fileSet.getDirectory(), true);
+        for (String fileName : getIncludedFiles(fileSet)) {
+          Entity entity = batchModel.getByURL(new File(fileSet.getDirectory(), fileName).toURI().toURL());
+          if (entity != null) {
+            includedEntities.add(entity);
+          }
+        }
+      }
+      catch (ModelException | MalformedURLException e) {
+        throw new MojoFailureException("could not load model from " + fileSet.getDirectory(), e);
       }
     }
+
+    Map<String, PdoProfile> profileMap = new HashMap<>(); // stereotype -> profile
+    for (PdoProfile profile: pdoProfiles) {
+      profileMap.put(profile.getName().toUpperCase(Locale.ROOT), profile);
+    }
+
+    List<String> optionAnnotations = new ArrayList<>();
+    if (dumpAnnotationsAsOptions != null) {
+      StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
+      while (stok.hasMoreTokens()) {
+        optionAnnotations.add(stok.nextToken());
+      }
+    }
+
+    ModelDefaults genModelDefaults = null;
+    if (batchModelDefaults != null) {
+      try {
+        genModelDefaults = new ModelDefaults(batchModelDefaults);
+      }
+      catch (ModelException e) {
+        throw new MojoExecutionException("invalid batchDefaults: " + e.getMessage(), e);
+      }
+    }
+    PrintConfiguration sourceConfig = new PrintConfiguration(true, true, true,
+                                                             genModelDefaults, optionAnnotations, dumpColumnGap);
+
+    List<String> failedEntities = new ArrayList<>();
+    try {
+      for (Entity entity : batchModel.getAllEntities()) {
+        if (!includedEntities.contains(entity)) {
+          continue;   // excluded or loaded only to resolve relations
+        }
+        Entity existingEntity = getModel().getByEntityName(entity.getName());
+        if (existingEntity != null) {
+          getLogger().warn("entity {} already exists in model -> skipped", entity);
+        }
+        else {
+          PdoProfile pdoProfile = selectProfile(entity, profileMap);
+          if (pdoProfile == null) {
+            getLogger().error("no profile for entity {} -> skipped", entity);
+            failedEntities.add(entity.getName());
+          }
+          else if (!generateFromBatch(entity, pdoProfile, new EntityPrinter(entity, sourceConfig).print())) {
+            failedEntities.add(entity.getName());
+          }
+        }
+      }
+    }
+    catch (ModelException mx) {
+      throw new MojoFailureException("generating code from model failed", mx);
+    }
+
+    if (!failedEntities.isEmpty()) {
+      throw new MojoFailureException("no code generated for " + failedEntities.size() + " entities: " +
+                                     String.join(", ", failedEntities));
+    }
+  }
+
+  /**
+   * Selects the profile for an entity in batch mode.
+   *
+   * @param entity the entity
+   * @param profileMap the profiles mapped by their uppercase names
+   * @return the profile, null if none
+   */
+  private PdoProfile selectProfile(Entity entity, Map<String, PdoProfile> profileMap) {
+    for (String stereotype : entity.getOptions().getStereotypes()) {
+      PdoProfile profile = profileMap.get(stereotype.toUpperCase(Locale.ROOT));
+      if (profile != null) {
+        return profile;
+      }
+    }
+    return pdoProfiles.size() == 1 ? pdoProfiles.getFirst() : null;
   }
 
   @Override
@@ -281,15 +305,10 @@ public class PdoMojo extends AbstractWizardMojo {
    * @param entity the entity
    * @param pdoProfile the PDO profile
    * @param modelSource the model source
-   * @param projectModelDefaults the model defaults of the project (not the batch model defaults)
+   * @return true if generated, false if failed
    */
-  private void generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource, ModelDefaults projectModelDefaults) {
-    if (pdoProfile == null) {
-      getLogger().info("generating code for entity {}", entity);
-    }
-    else {
-      getLogger().info("generating code for entity {} using profile {}", entity, pdoProfile);
-    }
+  private boolean generateFromBatch(Entity entity, PdoProfile pdoProfile, String modelSource) {
+    getLogger().info("generating code for entity {} using profile {}", entity, pdoProfile);
     PdoGenerator gen = new PdoGenerator(getModel());
     gen.setProfile(pdoProfile);
     gen.setTemplateDirectory(new File(getTemplateDir(), Constants.CATEGORY_PDO));
@@ -302,90 +321,46 @@ public class PdoMojo extends AbstractWizardMojo {
     gen.setClassId(entity.getClassId() != 0 ? entity.getClassId() : null);
     gen.setCacheEnabled(entity.getOptions().isCached());
     gen.setTableName(entity.getTableName());
-    gen.setRemoteEnabled(projectModelDefaults.getRemote()); // this a project setting, not copied from the entity
+    gen.setRemoteEnabled(gen.isRemoteDefault()); // this is a project setting, not copied from the entity
 
     try {
       List<ValidationResult> results = gen.generate();
       if (!results.isEmpty()) {
-        getLogger().error(ValidationUtilities.getInstance().resultsToMessage(results));
+        getLogger().error("entity {}: {}", entity, ValidationUtilities.getInstance().resultsToMessage(results));
+        return false;
       }
+      return true;
     }
     catch (IOException | TemplateException ex) {
       getLogger().error("code generation failed for entity {}", entity, ex);
+      return false;
     }
   }
 
   /**
-   * Updates the classIds in the profiles.
+   * Updates the class IDs in the profiles.
    *
-   * @throws MojoExecutionException if class ids overlap or model insane
+   * @throws MojoExecutionException if class IDs overlap or model insane
    */
   private void updateClassIDs() throws MojoExecutionException {
-
-    // profiles sorted by classid, the highest first
-    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>((o1, o2) -> o2.getMinClassId() - o1.getMinClassId());
-
-    // map of profiles to next free classid
-    Map<PdoProfile, Integer> inUseIds = new HashMap<>();
-
-    for (PdoProfile profile: pdoProfiles) {
-      sortedProfiles.add(profile);
-      inUseIds.put(profile, profile.getMinClassId());
-    }
-
-    // update maxClassId
-    int maxClassId = 0;
-    int diff = 0;
-    for (PdoProfile profile: sortedProfiles) {
-      if (maxClassId > 0) {
-        diff = maxClassId - profile.getMinClassId();
-      }
-      if (profile.getMaxClassId() == 0) {
-        profile.setMaxClassId(maxClassId);
-      }
-      else if (profile.getMaxClassId() > maxClassId) {
-        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile + " maxClassId <= " + maxClassId);
-      }
-      maxClassId = profile.getMinClassId() - 1;
-    }
-
-    // set max ID in last profile according to the last difference guess
-    PdoProfile lastProfile = sortedProfiles.first();
-    if (lastProfile.getMaxClassId() == 0) {
-      lastProfile.setMaxClassId(lastProfile.getMinClassId() + diff);
-    }
-
-    // determine consumed class IDs
+    List<Integer> usedClassIds = new ArrayList<>();
     try {
       for (Entity entity: getModel().getAllEntities()) {
-        int classId = entity.getClassId();
-        if (classId > 0) {
-          for (PdoProfile profile: sortedProfiles) {
-            if (classId >= profile.getMinClassId() && classId <= profile.getMaxClassId()) {
-              if (inUseIds.get(profile) < classId) {    // must exist...
-                inUseIds.put(profile, classId);
-              }
-              break;
-            }
-          }
-        }
+        usedClassIds.add(entity.getClassId());
       }
     }
     catch (ModelException e) {
       throw new MojoExecutionException("cannot determine class IDs", e);
     }
 
-    // update next free class ID in profiles
-    for (Map.Entry<PdoProfile,Integer> entry: inUseIds.entrySet()) {
-      PdoProfile profile = entry.getKey();
-      int classId = entry.getValue() + 1;
-      Integer statusClassId = loadClassIdFromStatus(profile.getName());
-      if (statusClassId != null && statusClassId > classId) {
-        classId = statusClassId;
-      }
-      profile.setMinClassId(classId);
-      if (classId > profile.getMaxClassId()) {
+    updateClassIDs(pdoProfiles, usedClassIds, profile -> loadClassIdFromStatus(profile.getName()));
+
+    for (PdoProfile profile : pdoProfiles) {
+      if (profile.getMinClassId() > profile.getMaxClassId()) {
         getLogger().warn("no more free class-IDs for {}", profile);
+      }
+      else if (profile.getMaxClassId() == Integer.MAX_VALUE) {
+        getLogger().info("next free class-ID for {} is {}", profile, profile.getMinClassId());
       }
       else {
         getLogger().info("next free class-ID for {} is {}, max. {}",
@@ -394,12 +369,81 @@ public class PdoMojo extends AbstractWizardMojo {
     }
   }
 
+  /**
+   * Determines the class ID ranges of the profiles and the next free class ID within each range.
+   * <p>
+   * A profile without a {@code maxClassId} ends right below the {@code minClassId} of the next higher profile.
+   * The highest profile without a {@code maxClassId} is unbounded ({@link Integer#MAX_VALUE}).
+   * Afterward, {@link PdoProfile#getMinClassId()} is the next free class ID: the configured {@code minClassId}
+   * if the range is still unused, otherwise the highest used class ID plus one, or the class ID of the status
+   * file, if higher.
+   *
+   * @param profiles the PDO profiles
+   * @param usedClassIds the class IDs used in the model
+   * @param statusClassIdProvider provides the next free class ID from the status file, null if none
+   * @throws MojoExecutionException if the class ID ranges overlap
+   */
+  static void updateClassIDs(List<PdoProfile> profiles, Collection<Integer> usedClassIds,
+                             Function<PdoProfile, Integer> statusClassIdProvider) throws MojoExecutionException {
+
+    // profiles sorted by min class ID, the highest first
+    List<PdoProfile> sortedProfiles = new ArrayList<>(profiles);
+    sortedProfiles.sort(Comparator.comparingInt(PdoProfile::getMinClassId).reversed());
+
+    // determine the max class IDs
+    int upperBound = 0;   // 0 = unbounded
+    for (PdoProfile profile: sortedProfiles) {
+      if (upperBound > 0 && profile.getMinClassId() > upperBound) {
+        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile +
+                                         " minClassId " + profile.getMinClassId() + " > " + upperBound);
+      }
+      if (profile.getMaxClassId() == 0) {
+        profile.setMaxClassId(upperBound > 0 ? upperBound : Integer.MAX_VALUE);
+      }
+      else if (profile.getMaxClassId() < profile.getMinClassId()) {
+        throw new MojoExecutionException("maxClassId " + profile.getMaxClassId() + " of profile " + profile +
+                                         " is lower than its minClassId " + profile.getMinClassId());
+      }
+      else if (upperBound > 0 && profile.getMaxClassId() > upperBound) {
+        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile +
+                                         " maxClassId " + profile.getMaxClassId() + " > " + upperBound);
+      }
+      upperBound = profile.getMinClassId() - 1;
+    }
+
+    // determine the highest consumed class IDs
+    Map<PdoProfile, Integer> inUseIds = new HashMap<>();   // profile -> highest used class ID
+    for (PdoProfile profile: sortedProfiles) {
+      inUseIds.put(profile, profile.getMinClassId() - 1);
+    }
+    for (int classId : usedClassIds) {
+      if (classId > 0) {
+        for (PdoProfile profile: sortedProfiles) {
+          if (classId >= profile.getMinClassId() && classId <= profile.getMaxClassId()) {
+            inUseIds.merge(profile, classId, Math::max);
+            break;
+          }
+        }
+      }
+    }
+
+    // update next free class ID in profiles
+    for (PdoProfile profile: sortedProfiles) {
+      int classId = inUseIds.get(profile) + 1;
+      Integer statusClassId = statusClassIdProvider.apply(profile);
+      if (statusClassId != null && statusClassId > classId) {
+        classId = statusClassId;
+      }
+      profile.setMinClassId(classId);
+    }
+  }
+
 
   /**
-   * Loads the class id from the status file if exists.
+   * Loads the next free class ID from the status file, if it exists.
    *
    * @param profileName the name of the profile
-   * @return the classid, null if missing or empty or does not contain a number
+   * @return the class ID, null if the file is missing, empty or does not contain a number
    */
   private Integer loadClassIdFromStatus(String profileName) {
     Integer classId = null;

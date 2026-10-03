@@ -24,7 +24,9 @@ import org.tentackle.model.Entity;
 import java.util.List;
 
 /**
- * A node in a PDO data structure.
+ * A node in a PDO data structure.<br>
+ * Implemented by {@link DataObject}, {@link DataList} and {@link DataItem} for the data of a PDO,
+ * and by {@link DataDiff} for the comparison of two such structures.
  */
 public interface DataNode {
 
@@ -33,7 +35,7 @@ public interface DataNode {
    * Can be any Java type, classname (w/o package) including optional generics.<br>
    * Example: <pre>List&lt;Message&gt;</pre>
    *
-   * @return the type, never null and never empty
+   * @return the type, null only for a reference without PDO and entity
    */
   @Bindable
   String getType();
@@ -42,23 +44,23 @@ public interface DataNode {
    * Returns the name of the node.<br>
    * Can be the name of a property, an entity, class, interface, whatever.
    *
-   * @return the name, never null and never empty
+   * @return the name, null for the root object
    */
   @Bindable
   String getName();
 
   /**
    * Returns the value of the node.<br>
-   * This is usually the <code>toString</code> value.
+   * This is usually the {@code toString} value.
    * For collections, it's the size.
    *
-   * @return the value, null if it's java value is null
+   * @return the value, the representation of a null value is implementation-specific
    */
   @Bindable
   String getValue();
 
   /**
-   * The optional comment.
+   * Gets the optional comment.
    *
    * @return the comment, null if none
    */
@@ -89,9 +91,11 @@ public interface DataNode {
   }
 
   /**
-   * Sets the optional configuration path.
+   * Sets the optional configuration path.<br>
+   * The path identifies the node in the code configuration, see {@link CodeConfigurationFactory}.
    *
    * @param configurationPath the path
+   * @throws UnsupportedOperationException if not applicable, such as for a {@link DataDiff}
    */
   void setConfigurationPath(String configurationPath);
 
@@ -105,14 +109,14 @@ public interface DataNode {
   /**
    * Returns the SQL select configuration for the where clause.
    *
-   * @return the sql config
+   * @return the SQL condition, null if none
    */
   SqlCondition getSqlCondition();
 
   /**
    * Gets the entity this node belongs to.
    *
-   * @return the entity
+   * @return the entity, null if unknown
    */
   Entity getEntity();
 

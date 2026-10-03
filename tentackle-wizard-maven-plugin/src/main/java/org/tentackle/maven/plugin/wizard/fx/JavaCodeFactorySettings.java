@@ -32,6 +32,11 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.stage.Popup;
 
+/**
+ * Popup to configure the variable names of the generated Java code.<br>
+ * Edits the static settings {@link JavaCodeFactory#distinctVariables} and {@link JavaCodeFactory#variableOffset},
+ * which last for the rest of the goal's execution.
+ */
 @FxControllerService(resources = FxControllerService.RESOURCES_NONE)
 public class JavaCodeFactorySettings extends AbstractFxController {
 
@@ -46,7 +51,6 @@ public class JavaCodeFactorySettings extends AbstractFxController {
     distinctVariables = JavaCodeFactory.distinctVariables;
     variableOffset = JavaCodeFactory.variableOffset;
     distinctVariablesField.addViewToModelListener(this::distinctVariableUpdated);
-
   }
 
   @Override
@@ -69,6 +73,19 @@ public class JavaCodeFactorySettings extends AbstractFxController {
   }
 
 
+  /**
+   * Creates the controller.
+   */
+  public JavaCodeFactorySettings() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
+   * Shows the settings popup.<br>
+   * The settings are applied when the popup is hidden.
+   *
+   * @param owner the owner node
+   */
   public static void show(Object owner) {
     JavaCodeFactorySettings controller = Fx.load(JavaCodeFactorySettings.class);
 

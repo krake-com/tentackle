@@ -23,18 +23,19 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * Info for a non-composite object relation.<br>
- * Used for members such as blahId or nm-relations.<br>
+ * Used for members such as blahId or N:M relations.<br>
  * The related PDOs must provide a unique domain key.
  */
 public class NonCompositeRelation {
 
-  private final Relation relation;                        // non composite object relation
+  private final Relation relation;                        // the 1:1 object relation or the composite list relation for N:M links
   private final PersistentDomainObject<?> relatedPdo;     // the related PDO
 
   /**
-   * Create item relation info.
-   * @param relation the model relation
-   * @param relatedPdo the unique domain key to load the relation
+   * Creates the relation info.
+   *
+   * @param relation the 1:1 object relation, or the composite list relation for N:M links
+   * @param relatedPdo the related PDO, must provide a unique domain key
    */
   public NonCompositeRelation(Relation relation, PersistentDomainObject<?> relatedPdo) {
     this.relation = relation;
@@ -42,9 +43,9 @@ public class NonCompositeRelation {
   }
 
   /**
-   * Gets the non-composite object relation.
+   * Gets the relation.
    *
-   * @return the relation, never null
+   * @return the 1:1 object relation, or the composite list relation for N:M links
    */
   public Relation getRelation() {
     return relation;

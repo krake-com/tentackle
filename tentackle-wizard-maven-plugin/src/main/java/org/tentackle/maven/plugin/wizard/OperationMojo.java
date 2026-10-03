@@ -24,14 +24,12 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.OperationWizard;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
-import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -41,7 +39,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Wizard to create operation files.<br>
@@ -54,7 +51,7 @@ import java.util.concurrent.CountDownLatch;
  * mvn tentackle-wizard:operation -DoperationName=SendInvoice -Dcomment="sends an invoice"
  * </pre>
  * <p>
- * Best invoked from within the directory of the maven parent of the project.
+ * Best invoked from within the directory of the Maven parent of the project.
  */
 @Mojo(name = "operation", aggregator = true, threadSafe = true)
 public class OperationMojo extends AbstractWizardMojo {
@@ -94,7 +91,9 @@ public class OperationMojo extends AbstractWizardMojo {
 
   /**
    * Whether remoting is supported.<br>
-   * Defaults to the {@code remote} option of the project's model defaults.
+   * Defaults to true if the project has no model defaults, otherwise to the {@code remote} option of the
+   * project's model defaults.<br>
+   * Only tailors the generated persistence implementation; the remote delegate is created by the wurblets.
    */
   @Parameter(property = "remote")
   private Boolean remoteEnabled;
@@ -134,6 +133,7 @@ public class OperationMojo extends AbstractWizardMojo {
    * The name of the domain implementation.<br>
    * Defaults to the name derived from the operation name.
    * An empty value or {@value #NONE} generates the domain interface only.
+   * Ignored if the domain interface is dropped.
    */
   @Parameter(property = "domainImplementation")
   private String domainImplementation;
@@ -142,6 +142,7 @@ public class OperationMojo extends AbstractWizardMojo {
    * The name of the persistence implementation.<br>
    * Defaults to the name derived from the operation name.
    * An empty value or {@value #NONE} generates the persistence interface only.
+   * Ignored if the persistence interface is dropped.
    */
   @Parameter(property = "persistenceImplementation")
   private String persistenceImplementation;
@@ -164,6 +165,11 @@ public class OperationMojo extends AbstractWizardMojo {
     return stage;
   }
 
+  /**
+   * Gets the configured operation profiles.
+   *
+   * @return the profiles, at least one
+   */
   public List<OperationProfile> getOperationProfiles() {
     return operationProfiles;
   }
@@ -179,34 +185,16 @@ public class OperationMojo extends AbstractWizardMojo {
       }
       else {
         // interactive mode
-        CountDownLatch latch = new CountDownLatch(1);
-
-        Platform.startup(() -> {
-          try {
-            configureFx();
-            registerUncaughtExceptionHandler();
-            OperationWizard wizard = Fx.load(OperationWizard.class);
-            wizard.applyMojo(this);
-            stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
-            Scene scene = Fx.createScene(wizard.getView());
-            stage.setScene(scene);
-            stage.setTitle("Operation Wizard");
-            wizard.getContainer().updateView();
-            stage.setOnHidden(event -> latch.countDown());
-            Fx.show(stage);
-          }
-          catch (Throwable t) {
-            getLogger().error(t.getMessage(), t);
-            latch.countDown();
-          }
+        runInteractive(() -> {
+          OperationWizard wizard = Fx.load(OperationWizard.class);
+          wizard.applyMojo(this);
+          stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
+          Scene scene = Fx.createScene(wizard.getView());
+          stage.setScene(scene);
+          stage.setTitle("Operation Wizard");
+          wizard.getContainer().updateView();
+          return stage;
         });
-
-        try {
-          latch.await();
-        }
-        catch (InterruptedException e) {
-          throw new InterruptedRuntimeException(e);
-        }
       }
     }
   }
@@ -251,19 +239,7 @@ public class OperationMojo extends AbstractWizardMojo {
     gen.setAbstractOperation(abstractOperation);
     gen.setShortDescription(blankToNull(shortDescription));
     gen.setLongDescription(blankToNull(longDescription));
-    // the interfaces first: dropping an interface drops its implementation as well
-    if (domainInterface != null) {
-      gen.setDomainInterface(noneToNull(domainInterface));
-    }
-    if (persistenceInterface != null) {
-      gen.setPersistenceInterface(noneToNull(persistenceInterface));
-    }
-    if (domainImplementation != null) {
-      gen.setDomainImplementation(noneToNull(domainImplementation));
-    }
-    if (persistenceImplementation != null) {
-      gen.setPersistenceImplementation(noneToNull(persistenceImplementation));
-    }
+    applyNames(gen, domainInterface, persistenceInterface, domainImplementation, persistenceImplementation);
     if (remoteEnabled != null) {
       // last, since dropping the persistence interface disables remoting
       gen.setRemoteEnabled(remoteEnabled);
@@ -304,6 +280,35 @@ public class OperationMojo extends AbstractWizardMojo {
     }
   }
 
+
+  /**
+   * Applies the explicitly given names of the interfaces and implementations.<br>
+   * A null name keeps the derived name, an empty name or {@value #NONE} drops the type.
+   * Dropping an interface drops its implementation as well, even if an implementation name is given.
+   *
+   * @param gen the generator with the derived names already set
+   * @param domainInterface the domain interface name, null to keep the derived name
+   * @param persistenceInterface the persistence interface name, null to keep the derived name
+   * @param domainImplementation the domain implementation name, null to keep the derived name
+   * @param persistenceImplementation the persistence implementation name, null to keep the derived name
+   */
+  static void applyNames(OperationGenerator gen, String domainInterface, String persistenceInterface,
+                         String domainImplementation, String persistenceImplementation) {
+    // the interfaces first: dropping an interface drops its implementation as well
+    if (domainInterface != null) {
+      gen.setDomainInterface(noneToNull(domainInterface));
+    }
+    if (persistenceInterface != null) {
+      gen.setPersistenceInterface(noneToNull(persistenceInterface));
+    }
+    // an implementation requires its interface
+    if (domainImplementation != null && gen.getDomainInterface() != null) {
+      gen.setDomainImplementation(noneToNull(domainImplementation));
+    }
+    if (persistenceImplementation != null && gen.getPersistenceInterface() != null) {
+      gen.setPersistenceImplementation(noneToNull(persistenceImplementation));
+    }
+  }
 
   /**
    * Selects the profile by its name.

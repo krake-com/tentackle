@@ -32,10 +32,16 @@ import javafx.event.EventHandler;
 import javafx.scene.control.MenuItem;
 
 /**
- * Some common UI methods to reduce code duplication.
+ * Common methods of the PDO browser's context menus.
  */
 public class PdoBrowserUtils {
 
+  /**
+   * Gets the type info of a data node.
+   *
+   * @param dataNode the data node
+   * @return the type info, null if the node is not a non-null PDO
+   */
   public static TypeInfo getTypeInfo(DataNode dataNode) {
     if (dataNode instanceof DataObject object) {
       PersistentDomainObject<?> pdo = object.getPdo();
@@ -46,6 +52,13 @@ public class PdoBrowserUtils {
     return null;
   }
 
+  /**
+   * Returns whether an SQL {@code SELECT} can be created for a data node.<br>
+   * Not possible for embedded objects and for attributes whose data type spans several columns.
+   *
+   * @param dataNode the data node, null if none
+   * @return true if possible
+   */
   public static boolean isCreatingSqlPossible(DataNode dataNode) {
     if (dataNode != null) {
       if (dataNode instanceof DataItem dataItem) {
@@ -67,11 +80,24 @@ public class PdoBrowserUtils {
     return false;
   }
 
+  /**
+   * Returns whether the SQL {@code SELECT}s of the PDOs referencing a data node can be created.<br>
+   * Only possible for non-embedded objects.
+   *
+   * @param dataNode the data node, null if none
+   * @return true if possible
+   */
   public static boolean isFindingReferencesPossible(DataNode dataNode) {
     return dataNode instanceof DataObject dataObject && dataObject.getPdo() != null &&
            dataObject.getEntity() != null && !dataObject.getEntity().isEmbedded();
   }
 
+  /**
+   * Creates the menu item to copy the SQL {@code SELECT} of a node.
+   *
+   * @param handler the action handler
+   * @return the menu item
+   */
   public static MenuItem createCopySqlItem(EventHandler<ActionEvent> handler) {
     MenuItem copySqlItem = Fx.create(MenuItem.class);
     copySqlItem.setOnAction(handler);
@@ -79,6 +105,12 @@ public class PdoBrowserUtils {
     return copySqlItem;
   }
 
+  /**
+   * Creates the menu item to copy the SQL {@code SELECT}s of the PDOs referencing a node.
+   *
+   * @param handler the action handler
+   * @return the menu item
+   */
   public static MenuItem createFindReferencesItem(EventHandler<ActionEvent> handler) {
     MenuItem findReferencesItem = Fx.create(MenuItem.class);
     findReferencesItem.setOnAction(handler);
@@ -86,6 +118,16 @@ public class PdoBrowserUtils {
     return findReferencesItem;
   }
 
+  /**
+   * Configures the visibility and texts of the context menu items for a data node.
+   *
+   * @param dataNode the selected data node, null if none
+   * @param copyFQCNItem the item to copy the fully qualified class name
+   * @param copyTableItem the item to copy the table name
+   * @param copyClassIdItem the item to copy the class ID
+   * @param copySqlItem the item to copy the SQL {@code SELECT}
+   * @param findReferencesItem the item to copy the SQL {@code SELECT}s of the referencing PDOs
+   */
   public static void configureContextMenu(DataNode dataNode, MenuItem copyFQCNItem, MenuItem copyTableItem,
                                           MenuItem copyClassIdItem, MenuItem copySqlItem, MenuItem findReferencesItem) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
@@ -100,7 +142,7 @@ public class PdoBrowserUtils {
         copyFQCNItem.setVisible(true);
       }
       if (typeInfo.tableName() != null) {
-        // replace _ by __ to avoid misinterpretation as a mnemonic (even if setMnemonicParsing=false!)
+        // replace _ by __: items of a context menu parse mnemonics even with setMnemonicParsing(false)
         copyTableItem.setText("copy table name \"" + typeInfo.tableName().replace("_", "__") + "\" to clipboard");
         copyTableItem.setMnemonicParsing(false);    // table names often contain underscores
         copyTableItem.setVisible(true);
@@ -112,6 +154,11 @@ public class PdoBrowserUtils {
     }
   }
 
+  /**
+   * Copies the fully qualified class name of a data node to the clipboard.
+   *
+   * @param dataNode the data node
+   */
   public static void copyFQCN(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
@@ -119,6 +166,11 @@ public class PdoBrowserUtils {
     }
   }
 
+  /**
+   * Copies the table name of a data node to the clipboard.
+   *
+   * @param dataNode the data node
+   */
   public static void copyTableName(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
@@ -126,6 +178,11 @@ public class PdoBrowserUtils {
     }
   }
 
+  /**
+   * Copies the class ID of a data node to the clipboard.
+   *
+   * @param dataNode the data node
+   */
   public static void copyClassId(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
@@ -133,12 +190,24 @@ public class PdoBrowserUtils {
     }
   }
 
+  /**
+   * Copies the SQL {@code SELECT} of a data node to the clipboard.
+   *
+   * @param dataNode the data node, null if none
+   * @see SqlCodeFactory#createSelect(DataNode)
+   */
   public static void copySql(DataNode dataNode) {
     if (dataNode != null) {
       Fx.copyToClipboard(SqlCodeFactory.createSelect(dataNode));
     }
   }
 
+  /**
+   * Copies the SQL {@code SELECT}s of the PDOs referencing a data node to the clipboard.
+   *
+   * @param dataNode the data node, null if none
+   * @see SqlCodeFactory#createReferencingSelects(DataNode)
+   */
   public static void copyReferencingSql(DataNode dataNode) {
     if (dataNode != null) {
       Fx.copyToClipboard(SqlCodeFactory.createReferencingSelects(dataNode));

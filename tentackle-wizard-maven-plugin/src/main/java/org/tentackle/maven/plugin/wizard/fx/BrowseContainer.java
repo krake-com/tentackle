@@ -34,7 +34,7 @@ import javafx.stage.Stage;
 
 /**
  * Container dialog for the browse mojo.<br>
- * Allows adding views and dynamically manages the tab pane if more than one view.
+ * Allows adding views and creates the tab pane dynamically as soon as there is more than one view.
  */
 public class BrowseContainer {
 
@@ -79,6 +79,9 @@ public class BrowseContainer {
 
   /**
    * Shows the initial browser dialog.
+   *
+   * @return the stage
+   * @throws MojoExecutionException if the browser view could not be created
    */
   public Stage show() throws MojoExecutionException {
     stage = Fx.createStage(Modality.NONE, null);
@@ -112,7 +115,7 @@ public class BrowseContainer {
       tabPane.getTabs().addListener((ListChangeListener<? super Tab>) c -> {
         while (c.next()) {
           if (c.wasRemoved()) {
-            c.getRemoved().forEach(this::removeTab);
+            c.getRemoved().forEach(_ -> tabRemoved());
           }
         }
       });
@@ -129,14 +132,11 @@ public class BrowseContainer {
   }
 
   /**
-   * Removes the given tab from the tab pane.
-   * If the tab pane is empty, the initial browser view is shown.
-   *
-   * @param tab the tab to remove
+   * Invoked after a tab was closed.<br>
+   * If only the initial tab is left, the tab pane is removed and the initial browser view is shown without tabs.
    */
-  public void removeTab(Tab tab) {
-    tabPane.getTabs().remove(tab);
-    if (tabPane.getTabs().size() <= 1) {
+  private void tabRemoved() {
+    if (tabPane != null && tabPane.getTabs().size() <= 1) {
       hBox = Fx.create(HBox.class);
       initialBrowser.setContainerTab(null);
       hBox.getChildren().add(initialBrowser.getView());

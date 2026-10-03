@@ -18,15 +18,17 @@
 package org.tentackle.maven.plugin.wizard;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import javafx.stage.Stage;
 
 /**
  * Initializes the templates.<br>
- * Copies the default templates to the configured templateDir.<br>
- * Needs to be executed only to restore the templates to their defaults.
+ * Copies the default templates to the configured {@code templateDir}, overwriting existing ones.<br>
+ * Needs to be executed only to restore the templates to their defaults, since the other goals
+ * install them automatically if the template directory does not exist.
+ * <p>
+ * Runs headless and does not load the model.
  */
 @Mojo(name = "init", aggregator = true, threadSafe = true)
 public class InitMojo extends AbstractWizardMojo {
@@ -37,9 +39,10 @@ public class InitMojo extends AbstractWizardMojo {
   }
 
   @Override
-  public void executeImpl() throws MojoExecutionException, MojoFailureException {
-    super.executeImpl();
-    installTemplates();
+  public void executeImpl() throws MojoExecutionException {
+    if (!isTemplatesInstalled()) {    // not already installed by validate()
+      installTemplates();
+    }
   }
 
 }

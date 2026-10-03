@@ -27,15 +27,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Creates the default configuration to control code generation.
+ * Creates the default configuration to control code generation.<br>
+ * The configuration maps the configuration paths of the nodes, i.e. the dotted paths of the attributes and
+ * relations, to a flag whether code is generated for them. Only configurable nodes are included:
+ * <ul>
+ *   <li>attributes and relations with the stereotype {@value JavaCodeFactory#NOTEST_STEREOTYPE}:
+ *   {@code false} by default</li>
+ *   <li>multi-line string attributes and N:M relation lists: {@code true} by default</li>
+ * </ul>
  */
 public class CodeConfigurationFactory {
 
   /**
-   * Generates a config property map from a data object template.
+   * Generates a configuration map from data object trees.<br>
+   * Sets the configuration path of every node in the trees as a side effect.
    *
    * @param dataObjects the data objects
-   * @return the Java code
+   * @return the configuration map, empty if nothing is configurable
    */
   public static Map<String, Boolean> createConfig(DataObject... dataObjects) {
     return new CodeConfigurationFactory(dataObjects).create();

@@ -91,6 +91,9 @@ public class OperationWizard extends AbstractFxController {
   private FxButton generate;
 
 
+  /**
+   * Creates the operation wizard controller.
+   */
   public OperationWizard() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
@@ -98,7 +101,7 @@ public class OperationWizard extends AbstractFxController {
   /**
    * Configures the wizard with mojo's properties.
    *
-   * @param mojo the PDO mojo
+   * @param mojo the operation mojo
    */
   public void applyMojo(OperationMojo mojo) {
     gen = new OperationGenerator(mojo.getModel());
@@ -137,10 +140,10 @@ public class OperationWizard extends AbstractFxController {
 
     generate.setOnAction(_ -> {
       if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null) {
-        Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
+        Fx.yes(getView(), "do you really want to generate without a domain implementation?", false, this::generateIt);
       }
       else if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null) {
-        Fx.yes(getView(), "do you really don't want a persistence implementation?",false, this::generateIt);
+        Fx.yes(getView(), "do you really want to generate without a persistence implementation?", false, this::generateIt);
       }
       else {
         generateIt();

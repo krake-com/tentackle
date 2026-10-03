@@ -41,7 +41,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Factory generating SQL code to select PDOs.
+ * Factory generating SQL code to select PDOs.<br>
+ * Creates the {@code SELECT} of a single data node and the script of {@code SELECT}s finding
+ * all PDOs referencing a given PDO.
  */
 public class SqlCodeFactory {
 
@@ -81,22 +83,50 @@ public class SqlCodeFactory {
     }
   }
 
+  /**
+   * Creates the SQL {@code SELECT} fetching exactly the given node from the database.<br>
+   * For an object or list node, the select fetches its row(s), for an attribute node all rows
+   * carrying that value. The inheritance mapping of the entity is taken into account.
+   * The backend is determined from the session of the {@link ModificationTracker}.
+   *
+   * @param dataNode the data node
+   * @return the SQL statement; a comment if the statement cannot be created
+   */
   public static String createSelect(DataNode dataNode) {
     try {
       Backend backend = BackendFactory.getInstance().getBackendByUrl(
         ModificationTracker.getInstance().getSession().getSessionInfo().getProperties()
                            .getPropertyIgnoreCase(Constants.BACKEND_URL));
+      return createSelect(dataNode, backend);
+    }
+    catch (RuntimeException ex) {
+      return COMMENT + ex.getMessage();
+    }
+  }
+
+  /**
+   * Creates the SQL {@code SELECT} fetching exactly the given node from the database.
+   *
+   * @param dataNode the data node
+   * @param backend the backend
+   * @return the SQL statement; a comment if the statement cannot be created
+   */
+  static String createSelect(DataNode dataNode, Backend backend) {
+    try {
+      SqlCondition condition = dataNode.getSqlCondition();
+      Entity entity = dataNode.getEntity();
+      if (condition == null || condition.attribute() == null || entity == null) {
+        return COMMENT + "no SQL condition for " + dataNode.getName();
+      }
       DataItem dataItem = null;
       boolean selectAllForItem = false;
       if (dataNode instanceof DataItem item) {
         dataItem = item;
         selectAllForItem = true;
       }
-      SqlCondition condition = dataNode.getSqlCondition();
-      Entity entity = dataNode.getEntity();
       InheritanceType inheritanceType = entity.getHierarchyInheritanceType();
-      String tableName = condition.getTableName() == null ? entity.getTableName() : condition.getTableName();
-      String tableAlias = condition.getTableAlias() == null ? entity.getTableAlias() : condition.getTableAlias();
+      String tableName = condition.getTableName();
+      String tableAlias = condition.getTableAlias();
 
       StringBuilder sql = new StringBuilder();
       sql.append(Backend.SQL_SELECT);
@@ -105,9 +135,16 @@ public class SqlCodeFactory {
         entity = dataItem.getAttribute().getEntity();
       }
 
+      List<Entity> superEntities = new ArrayList<>();   // the MULTI tables joined between the top table and the entity
+      List<Entity> subEntities = new ArrayList<>();     // the MULTI tables of all sub entities
+      if (inheritanceType == InheritanceType.MULTI) {
+        superEntities.addAll(condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).toList());
+        subEntities.addAll(entity.getAllSubEntities());
+      }
+
       if (inheritanceType == InheritanceType.SINGLE) {
         if (entity.getSuperEntity() == null) {
-          // attribute in top class -> need all columns anyway
+          // entity is the top class -> need all columns anyway
           sql.append(tableAlias).append(Backend.SQL_DOT_STAR);
         }
         else {
@@ -126,25 +163,15 @@ public class SqlCodeFactory {
       }
       else {
         sql.append(tableAlias).append(Backend.SQL_DOT_STAR);
-        if (inheritanceType == InheritanceType.MULTI) {
-          List<Entity> entities = new ArrayList<>();
-          entities.addAll(condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).toList());
-          entities.addAll(entity.getSubEntities());
-          entities.forEach(e -> sql.append(',').append(e.getTableAlias()).append(Backend.SQL_DOT_STAR));
-        }
+        superEntities.forEach(e -> sql.append(',').append(e.getTableAlias()).append(Backend.SQL_DOT_STAR));
+        subEntities.forEach(e -> sql.append(',').append(e.getTableAlias()).append(Backend.SQL_DOT_STAR));
       }
 
       sql.append(Backend.SQL_FROM).append(tableName).append(backend.sqlAsBeforeTableAlias()).append(tableAlias);
 
-      if (inheritanceType == InheritanceType.MULTI) {
-        condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).
-                  forEach(subEntity -> sql.append(", ").append(subEntity.getTableName()).
-                                           append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()));
-        entity.getSubEntities().forEach(subEntity -> sql.append(' ').append(JoinType.LEFT).append(' ').append(subEntity.getTableName())
-                                                        .append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()).append(" ON ")
-                                                        .append(subEntity.getTableAlias()).append('.').append(Constants.CN_ID).append('=')
-                                                        .append(tableAlias).append('.').append(Constants.CN_ID));
-      }
+      // MULTI: explicit joins, since mixing comma joins with an explicit LEFT JOIN is not valid SQL
+      superEntities.forEach(e -> appendJoin(sql, backend, JoinType.INNER, e, tableAlias));
+      subEntities.forEach(e -> appendJoin(sql, backend, JoinType.LEFT, e, tableAlias));
 
       sql.append(Backend.SQL_WHERE);
 
@@ -158,14 +185,13 @@ public class SqlCodeFactory {
         sql.append('.').append(dataItem.getAttribute().getColumnName());
         Object orgValue = dataItem.getOrgValue();
         if (orgValue == null && dataItem.getAttribute().getOptions().isMapNull()) {
-
           orgValue = dataItem.getAttribute().getDataType().getMappedNullValue(backend, 0);
         }
         if (orgValue == null) {
           sql.append(Backend.SQL_ISNULL);
         }
         else {
-          String value = orgValue instanceof Convertible<?> convertible ? convertible.toExternal().toString() : orgValue.toString();
+          String value = orgValue instanceof Convertible<?> convertible ? String.valueOf(convertible.toExternal()) : orgValue.toString();
           sql.append('=').append(dataItem.getAttribute().getEffectiveDataType().toLiteral(value, null));
         }
       }
@@ -174,41 +200,31 @@ public class SqlCodeFactory {
         append('=').append(condition.id());
       }
 
-      if (entity.getSuperEntity() != null) {
-        if (inheritanceType == InheritanceType.MULTI) {
-          condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).
-                    forEach(subEntity -> sql.append(Backend.SQL_AND).append(subEntity.getTableAlias()).
-                                         append('.').append(Constants.CN_ID).append('=').append(tableAlias).
-                                         append('.').append(Constants.CN_ID));
+      if (inheritanceType == InheritanceType.SINGLE && entity.getSuperEntity() != null) {
+        // restrict to the concrete classes of the entity
+        Set<Integer> classIds = new TreeSet<>();    // we want that sorted by classId
+        for (Entity leafEntity : entity.getLeafEntities()) {
+          if (leafEntity.getClassId() != 0) {
+            classIds.add(leafEntity.getClassId());
+          }
         }
-        else if (inheritanceType == InheritanceType.SINGLE) {
-          Set<Integer> classIds = new TreeSet<>();    // we want that sorted by classId
-          if (selectAllForItem && entity.getClassId() != 0) {
-            classIds.add(entity.getClassId());
-          }
-          for (Entity subEntity : entity.getSubEntities()) {
-            if (entity.getClassId() != 0) {
-              classIds.add(subEntity.getClassId());
+        if (classIds.size() == 1) {
+          sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).
+          append('=').append(classIds.iterator().next());
+        }
+        else if (classIds.size() > 1) {
+          sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).append(" IN(");
+          boolean needComma = false;
+          for (Integer classId : classIds) {
+            if (needComma) {
+              sql.append(',');
             }
-          }
-          if (classIds.size() == 1) {
-            sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).
-            append('=').append(entity.getClassId());
-          }
-          else if (classIds.size() > 1) {
-            sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).append(" IN(");
-            boolean needComma = false;
-            for (Integer classId : classIds) {
-              if (needComma) {
-                sql.append(',');
-              }
-              else {
-                needComma = true;
-              }
-              sql.append(classId);
+            else {
+              needComma = true;
             }
-            sql.append(')');
+            sql.append(classId);
           }
+          sql.append(')');
         }
       }
 
@@ -216,8 +232,24 @@ public class SqlCodeFactory {
       return sql.toString();
     }
     catch (RuntimeException | ModelException ex) {
-      return "-- " + ex.getMessage();
+      return COMMENT + ex.getMessage();
     }
+  }
+
+  /**
+   * Appends a join of the table of a MULTI-inheritance entity via the object ID.
+   *
+   * @param sql the SQL builder
+   * @param backend the backend
+   * @param joinType the join type
+   * @param entity the entity to join
+   * @param tableAlias the alias of the top table
+   */
+  private static void appendJoin(StringBuilder sql, Backend backend, JoinType joinType, Entity entity, String tableAlias) {
+    sql.append(' ').append(joinType).append(' ').append(entity.getTableName())
+       .append(backend.sqlAsBeforeTableAlias()).append(entity.getTableAlias()).append(" ON ")
+       .append(entity.getTableAlias()).append('.').append(Constants.CN_ID).append('=')
+       .append(tableAlias).append('.').append(Constants.CN_ID);
   }
 
 

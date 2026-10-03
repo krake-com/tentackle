@@ -25,19 +25,19 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.util.List;
 
 /**
- * A PDO object.<br>
+ * A PDO.<br>
  * Such as <pre>Message blah = [1256668/1]</pre>
  */
 public class DataObject implements DataNode {
 
   private final PersistentDomainObject<?> pdo;          // the PDO
   private final String type;                            // the object type basename
-  private final String name;                            // the object name, null if root entity or list member
+  private final String name;                            // the object name, null if root
   private final List<DataNode> nodes;                   // the items of the object, null if reference is null
   private final String comment;                         // the optional comment
   private final Entity entity;                          // the entity of this object
-  private final Relation relation;                      // composite object 1:1 relation
-  private final NonCompositeRelation nmRelation;        // the optional N:M relation
+  private final Relation relation;                      // the composite relation this object belongs to, null if root
+  private final NonCompositeRelation nmRelation;        // the optional N:M-related PDO
   private final boolean hidden;                         // true if object is hidden (no public method available)
   private final SqlCondition sqlCondition;              // the SQL where condition
 
@@ -50,12 +50,12 @@ public class DataObject implements DataNode {
    * Creates a DataObject.
    *
    * @param pdo the PDO
-   * @param name the object name, null if root entity or list member
+   * @param name the object name, null if root
    * @param comment the optional comment
    * @param nodes the items of the object, null if reference is null
    * @param entity the entity of this object
-   * @param relation the composite object 1:1 relation
-   * @param nmRelation optional N:M relation
+   * @param relation the composite relation this object belongs to, null if root
+   * @param nmRelation optional N:M-related PDO, null if none
    * @param hidden true if object is hidden (no public method available)
    * @param sqlCondition the SQL where condition
    */
@@ -94,9 +94,11 @@ public class DataObject implements DataNode {
   }
 
   /**
-   * Gets the object name, null if root entity.
+   * Gets the object name.<br>
+   * For list elements, the name is followed by the index, for example {@code lines[2]}.
+   * Elements of N:M relations are named after the N:M method.
    *
-   * @return the object name, null if root entity
+   * @return the object name, null if root
    */
   @Override
   public String getName() {
@@ -167,21 +169,24 @@ public class DataObject implements DataNode {
    *
    * @return the entity
    */
+  @Override
   public Entity getEntity() {
     return entity;
   }
 
   /**
-   * Gets the 1:1 composite object relation.
+   * Gets the composite relation this object belongs to.<br>
+   * This is the 1:1 object relation of a component or the list relation of a list element.
    *
-   * @return the relation
+   * @return the relation, null if root or unknown
    */
   public Relation getRelation() {
     return relation;
   }
 
   /**
-   * Gets the optional N:M relation.
+   * Gets the optional N:M relation.<br>
+   * Holds the composite list relation and the PDO the N:M link points to.
    *
    * @return the relation, null if none
    */
@@ -220,7 +225,7 @@ public class DataObject implements DataNode {
   }
 
   /**
-   * Sets the parent datalist and the index if this is a list element.
+   * Sets the parent data list and the index if this is a list element.
    *
    * @param dataList the data list
    * @param listIndex the list index

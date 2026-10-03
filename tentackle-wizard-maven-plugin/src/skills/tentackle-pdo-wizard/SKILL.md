@@ -35,8 +35,10 @@ Write one file per entity, then run the goal:
 mvn tentackle-wizard:pdo -DbatchDir=src/model/new
 ```
 
-`-DbatchDir` takes a single directory; every file in it is an input file. The POM parameter
-`batchFilesets` is the same thing with several file sets and include/exclude patterns.
+`-DbatchDir` takes a single directory, relative to the project base directory; every file in it is an
+input file. The POM parameter `batchFilesets` is the same thing with several file sets and
+include/exclude patterns (the whole directory is still loaded to resolve relations, but only the
+included files are generated).
 
 ### The input format
 
@@ -75,24 +77,28 @@ and it is not a sign that something was lost.
 1. **Look at a comparable entity first** and match its conventions — naming, options, integrity —
    rather than inventing new ones.
 2. **Pick a free class id inside the profile's range.** A duplicate class id is the single most common
-   mistake, and batch mode has none of the live validation the dialog does.
+   mistake. The goal rejects an entity whose name, class id or table name is already used in the
+   *project* model, but it cannot see what you are about to add elsewhere. A class id outside the
+   profile's range is silently replaced by the next free one; leave `id :=` out to get exactly that.
 3. **Validate the definition before generating.** If the `tentackle-model` MCP server is available, call
    `model_validate` with the definition as `source`; it parses and relation-resolves the candidate
    against the whole model in under a second. Otherwise the first feedback you get is a
    `WurbelTerminationException` after a full reactor build.
 4. **Select the profile by stereotype.** With more than one `PdoProfile` configured, each entity must
    name its profile in the global options line, case-insensitively: `[#TRANSACTIONDATA]` selects the
-   profile named `transactiondata`. Entities matching no profile are skipped.
+   profile named `transactiondata`. With a single profile, the stereotype may be omitted. An entity
+   matching no profile fails the goal.
 5. Run the goal, then **read the log** (see below).
 6. Fill in the business logic, run `mvn install` so the wurblets generate the persistence and domain
    layers and the SQL plugin the DDL, then call `model_reload` if an MCP server is running.
 
 ## Things that will trip you up
 
-- **The goal succeeds even when it generates nothing.** An entity that already exists is skipped with a
-  *warning*, an entity matching no profile with an *error*, and a failing template with an *error* — the
-  build stays green in all three cases. Never assume it worked: check the log for `generating code for
-  entity …` and check that the files exist.
+- **An existing entity is only a warning.** An entity that already exists in the project model is
+  skipped with a *warning* and the build stays green. Everything else — no matching profile, a validation
+  error, a failing template — is logged per entity, the remaining entities are still generated, and the
+  goal fails at the end with `no code generated for N entities: …`. Read the log either way: it prints
+  `generating code for entity …` for every entity it attempts.
 - **Re-running overwrites without asking.** An entity counts as "already in the model" only after a
   build has regenerated the `.map` files. Between generation and that build, running the goal again on
   the same input regenerates the same files from the templates and destroys any business logic written
@@ -106,7 +112,7 @@ and it is not a sign that something was lost.
   options nobody wants. Options implied by the project defaults do not belong in the definition either.
 - **Profile packages must already exist** and each must map to exactly one module of the reactor, or the
   goal fails outright. Do not invent a new package in a profile.
-- **Class ids are tracked under `target`.** The last id allocated per profile is remembered in
+- **Class ids are tracked under `target`.** The next free id per profile is remembered in
   `target/wizard/<profile>.classid` so several entities generated before a rebuild do not collide.
   `mvn clean` drops it — after a clean, re-check the ids yourself.
 - **This goal never touches a database.** It reads model text and writes Java files. If the task needs

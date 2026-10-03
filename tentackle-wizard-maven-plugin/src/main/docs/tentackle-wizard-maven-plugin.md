@@ -21,10 +21,10 @@ e.g. `mvn tentackle-wizard:pdo`.
 
 The plugin requires the same JDK and Maven versions as the rest of the framework
 (JDK >= 25, Maven >= 3.9.10, Maven 4 is supported as well). Because the wizards are JavaFX applications, the interactive goals
-(`pdo`, `operation`, `browse`, `script`) need a graphical desktop; the `browse` and `script` goals
-additionally need a reachable Tentackle backend (database or remote server). The `init` goal and the
-batch variants of `pdo`, `operation`, `browse`, and `script` run headless (the batch variant of
-`browse` still needs a reachable backend).
+(`pdo`, `operation`, `browse`, `script`) need a graphical desktop; if the UI cannot be started, the goal
+fails. The `browse` and `script` goals additionally need a reachable Tentackle backend (database or
+remote server). The `init` goal and the batch variants of `pdo`, `operation`, `browse`, and `script` run
+headless (the batch variants of `browse` and `script` still need a reachable backend).
 
 All goals are **aggregator goals** and operate on the whole reactor. They are therefore best invoked
 from the directory of the project's maven parent (the aggregator pom), so that the wizard sees every
@@ -48,14 +48,17 @@ Like all Tentackle mojos, the goals inherit the common parameters `verbosity`, `
 In addition to the model and profile parameters described below, all goals share:
 
 - `templateDir`: the directory holding the code-generation templates. Defaults to
-  `${project.basedir}/templates`; see [Templates](#templates).
-- `statusDir`: the directory for the wizard's status files, such as the last allocated class ID per
-  profile (see [Class IDs](#class-ids)). Defaults to `${project.build.directory}/wizard`. It must be
+  `${project.basedir}/templates`. If it does not exist, it is created and the default templates are
+  installed; see [Templates](#templates).
+- `statusDir`: the directory for the wizard's status files, such as the next free class ID per
+  profile (see [Class IDs](#class-ids)). Defaults to `${project.build.directory}/wizard`. It should be
   located below the target directory, so that `mvn clean` removes it.
 - `darkMode`: `true` or `false` forces the dark or light variant of the UI theme. If unset, the mode
   follows the desktop setting and changes along with it.
 - `themeName`: the [AtlantaFX](../../../../tentackle-fx-atlanta/src/main/docs/atlanta.md) theme of the
-  wizard dialogs: `Primer` (default), `Cupertino` or `Nord`.
+  wizard dialogs: `Primer`, `Cupertino` or `Nord`. Defaults to `Cupertino` on macOS and `Primer` elsewhere.
+- `profiles`: the profiles described below. Required by the `pdo` and `operation` goals; the `browse`
+  goal uses the configured `PdoProfile`s, if any, to filter its entity list.
 
 All goals are thread-safe. They share the loaded model, the code factory settings and the JavaFX
 platform, however, so in a parallel build (`mvn -T …`) concurrent executions are serialized; see
@@ -65,7 +68,7 @@ platform, however, so in a parallel build (`mvn -T …`) concurrent executions a
 
 To know *where* a generated file belongs, the plugin needs two kinds of information.
 
-**The model.** All goals load the application's
+**The model.** All goals except `init` load the application's
 [model](../../../../tentackle-model/src/main/docs/model-definition.md) so the wizard knows which
 entities, class IDs, and table names already exist (and can prevent collisions). By default, the model
 is read from the dependencies on the plugin classpath (`loadModelFromDependencies = true`) and from
@@ -75,9 +78,12 @@ common base, are:
 - `modelName` (`tentackle.modelName`): the model to load. Defaults to the standard model name.
 - `modelDir` (`tentackle.modelDir`): directory holding the model files. Defaults to
   `${project.build.directory}/wurbel/model`. Ignored if `filesets` is given.
-- `filesets`: explicit file sets holding the model, overriding `modelDir`.
+- `filesets`: explicit file sets holding the model, overriding `modelDir`. Each file set is loaded as a
+  whole directory (includes and excludes are not applied); a file set without a directory defaults to
+  `modelDir`.
 - `modelDefaults` (`tentackle.modelDefaults`) and `entityAliases` (`tentackle.entityAliases`):
-  model defaults and entity aliases to apply while loading, in the same syntax as in the model source.
+  model defaults and entity aliases to apply to all model sources while loading, in the same syntax as
+  in the model source.
 - `loadModelFromDependencies`: also load the model from the resources of the plugin's dependencies
   (default `true`).
 - `layers` / `leafLayer`: an alternative to declaring the application's PDO/domain/persistence
@@ -116,7 +122,7 @@ All profiles (for both `pdo` and `operation`) share these elements:
 - `pdoPackage` (required): the package of the PDO interface.
 - `pdoInterface` (optional): the super PDO interface, defaults to `PersistentDomainObject`.
 - `minClassId` (required) / `maxClassId` (optional): the range of class IDs reserved for this
-  profile. IDs below 100 are reserved for Tentackle and rejected. See *Class IDs* below.
+  profile. IDs below 100 are reserved for Tentackle and rejected. See [Class IDs](#class-ids) below.
 - `tablePrefix` (optional): a prefix prepended to table names entered in the wizard, typically a schema
   such as `md.`. This ends up in the model and is **not** the same as `@TableName.prefix` (see
   [Table Names](../../../../tentackle-session/src/main/docs/table-names.md)).
@@ -150,8 +156,8 @@ For a PDO this is automatic: the generated persistence implementation carries th
 wurblet anchor, so the delegates appear on the next build.
 
 **Interactive mode** (the default) opens the *PDO Wizard*, a JavaFX dialog. You pick a profile,
-enter the entity name, choose the inheritance type and the super entity (if any), the table name, whether caching and remoting are
-enabled, and a description. The wizard validates the input live against the model — it refuses entity
+enter the entity name, choose the inheritance type and the super entity (if any), the table name (pre-filled
+with the profile's `tablePrefix`), whether caching and remoting are enabled, and a description. The wizard validates the input live against the model — it refuses entity
 names, class IDs, and table names that already exist, and enforces the rules that follow from the
 chosen inheritance type (for example, an embedded entity gets no class ID and no caching). The next
 free class ID is pre-filled from the profile's range.
@@ -160,7 +166,10 @@ free class ID is pre-filled from the profile's range.
 
 **Batch mode** is enabled by configuring `batchFilesets` or `batchDir`. Instead of opening the UI, the goal reads a
 secondary model from those file sets and generates the code for every entity it contains that does not
-yet exist in the project model. This is handy for bootstrapping a project from an existing schema
+yet exist in the project model. Entities that already exist are skipped with a warning. All other
+entities are processed, and if any of them could not be generated — no matching profile, a validation
+error (for example, a class ID or table name already in use), or a failing template — the goal fails at
+the end with the list of these entities. This is handy for bootstrapping a project from an existing schema
 (e.g., a model dumped by the `tentackle-sql-maven-plugin`, or reverse-engineered from a *live* database
 by that same plugin's
 [`reveng` goal](../../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-reveng-goal)).
@@ -168,19 +177,27 @@ Batch parameters:
 
 - `batchFilesets`: the file sets holding the secondary model, in plain model format (as used in the
   wurbelizer here-docs, or as dumped with `dumpAsComment` and `dumpVariables` both `false`).
-  Directories default to the project base directory.
+  Directories default to the project base directory. The whole directory is loaded to resolve the
+  relations, but code is only generated for the entities of the included files.
 - `batchDir` (`-DbatchDir`): the command-line alternative to `batchFilesets`. All files in that
-  single directory are read as model input, e.g. the output of `tentackle-sql:reveng`.
+  single directory are read as model input, e.g. the output of `tentackle-sql:reveng`. A relative path
+  is resolved against the project base directory.
 - If more than one `PdoProfile` is configured, each entity must select its profile via a stereotype
-  matching the profile name (case-insensitive), e.g. `#MASTERDATA`.
-- `batchModelDefaults` (`-DbatchDefaults`): model defaults applied to the batch model. Defaults to
-  `!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED` to suppress unwanted entity options, since the
-  dumped model usually already has the project defaults baked in.
+  matching the profile name (case-insensitive), e.g. `#MASTERDATA`. With a single profile, entities
+  without such a stereotype use that profile.
+- `batchModelDefaults` (`-DbatchDefaults`): model defaults applied when printing the model source into
+  the generated PDO interfaces. Defaults to `!ROOT, !ROOTID, !ROOTCLASSID, !BIND, UNTRACKED` to suppress
+  unwanted entity options, since the dumped model usually already has the project defaults baked in.
 - `dumpColumnGap` (default `2`): minimum number of spaces between columns in the generated attribute
   section of the model source.
 - `dumpAnnotationsAsOptions`: which annotations to render as attribute options in the generated model
   source (e.g. `@NotNull|, @NotZero`; `@*` matches all, a trailing `|` matches only parameterless
   annotations).
+
+The class ID of an entity is taken from the batch model if it lies within the profile's range;
+otherwise, the entity gets the next free class ID of the profile. The table name is taken verbatim —
+unlike the interactive wizard, batch mode does not prepend the profile's `tablePrefix`. Remoting follows
+the project's model defaults.
 
 At least one `PdoProfile` must be configured or the goal fails.
 
@@ -231,12 +248,12 @@ mvn tentackle-wizard:operation \
 | `profile`                   | The `OperationProfile` to use, matched case-insensitively. Optional if only one is configured.      |
 | `comment`                   | The short description. Mandatory — the generator rejects an operation without one.                  |
 | `longComment`               | The long description.                                                                               |
-| `remote`                    | Whether remoting is supported. Only tailors the generated persistence implementation (delegate import and `getRemoteDelegate()`); it does not generate the delegate. Defaults to the `remote` option of the project's model defaults. |
+| `remote`                    | Whether remoting is supported. Only tailors the generated persistence implementation (delegate import and `getRemoteDelegate()`); it does not generate the delegate. Defaults to `true` if the project has no model defaults, otherwise to their `remote` option. |
 | `superOperation`            | The super operation, determining all five super types. Defaults to the profile / framework types.   |
 | `abstract`                  | Generate an abstract operation (default `false`).                                                   |
 | `domainInterface`           | Override the derived name. An empty value or `-` generates no domain interface and no domain implementation. |
 | `persistenceInterface`      | Likewise for the persistence side. Suppressing it also disables remoting.                           |
-| `domainImplementation`      | Override the derived name; an empty value or `-` generates the interface without an implementation. |
+| `domainImplementation`      | Override the derived name; an empty value or `-` generates the interface without an implementation. Ignored if the domain interface is suppressed. |
 | `persistenceImplementation` | Likewise for the persistence implementation.                                                        |
 | `overwrite`                 | Allow regenerating over existing files (default `false`).                                           |
 
@@ -267,7 +284,7 @@ Common parameters (valid in both modes):
 - `url` (required): the backend URL.
 - `user` (required) / `password`: the backend credentials.
 - `maxLinesInStringLiteral` (`-DmaxLines`): caps the number of lines emitted in generated multi-line
-  string literals.
+  string literals. 0 (the default) means unlimited.
 - `mapSchemas` (`tentackle.mapSchemas`): map schema names to flat table names in the generated SQL
   `SELECT` statements. Set it to the same value as everywhere else in the project — see
   [Table Names](../../../../tentackle-session/src/main/docs/table-names.md).
@@ -292,7 +309,7 @@ not a foreign key. Node names are Java property names, and the `Type` column sho
 Outgoing relations are followed for you: the referenced object is rendered by its unique domain key,
 and its full data is one click away in the details table at the bottom. In other words, you are
 browsing objects, not rows — the database columns only surface where you explicitly ask for them, via
-*copy table name*, *copy SQL SELECT…* and *copy SQL SELECTs of referencing PDOs…* in the context menus.
+*copy table name*, *copy SQL SELECT…* and *copy SQL SELECT statements of referencing PDOs…* in the context menus.
 
 ![The PDO Browser](../../../../src/main/docs/assets/pdo-browser.png)
 
@@ -322,11 +339,12 @@ prefix — entering `CO` jumps to `CustomerOrder`. Selecting an entity immediate
   the count reloads immediately; *load* re-runs the query.
 - **find by ID** — opens a popup to enter one or more object IDs, separated by whitespace, commas,
   colons, semicolons, or slashes. The objects found are inserted at the top of the table and *added* to
-  what is already loaded; entering `0` as the first ID clears the table first. IDs that do not exist are
-  skipped, non-numeric input is rejected with a warning, and a short note reports how many PDOs were
-  loaded.
-- **use finder** — opens the application's own search dialog for that entity and lists its result. The
-  button is only enabled if the application provides a
+  what is already loaded; entering `0` as the first ID clears the table first. IDs that do not exist or
+  are already loaded are skipped, non-numeric input is rejected with a warning, and a short note reports
+  how many PDOs were added. Input without any valid ID leaves the table unchanged.
+- **use finder** — opens the application's own search dialog for that entity and lists its result.
+  Cancelling or closing the dialog returns to the latest PDOs. The button is only enabled if the
+  application provides a
   [`GuiProvider`](../../../../tentackle-fx-rdc/src/main/docs/gui-provider.md) with a finder for the
   entity, which requires the application's [RDC](../../../../tentackle-fx-rdc/src/main/docs/rdc.md)
   layer on the plugin classpath.
@@ -370,9 +388,10 @@ The context menu offers, depending on the selected node:
 - **copy SQL SELECT… to clipboard** — a ready-to-run `SELECT` that fetches exactly this node: for an
   object node the row itself, for an attribute node all rows carrying that value. Inheritance is taken
   into account (single-table and joined-table hierarchies produce the appropriate column lists and
-  joins), and `mapSchemas` controls whether schema names are mapped to flat table names. The item is
-  hidden for embedded objects and for attributes whose data type spans several columns.
-- **copy SQL SELECTs of referencing PDOs to clipboard** — the opposite direction: a script answering
+  joins), so that an attribute declared in an abstract entity only matches the rows of its concrete
+  sub entities, and `mapSchemas` controls whether schema names are mapped to flat table names. The item
+  is hidden for embedded objects and for attributes whose data type spans several columns.
+- **copy SQL SELECT statements of referencing PDOs to clipboard** — the opposite direction: a script answering
   *who points at this object?*, derived from the model. It holds one `SELECT` per referencing table
   and column, each preceded by a comment naming the referencing entity and attribute, grouped into
   three sections: *references* (the non-composite relations — the ones that keep the object from being
@@ -400,7 +419,7 @@ attributes as columns — the compact, tabular counterpart to the tree:
   tab* below if you want to keep it.
 
 Its context menu repeats *copy FQCN*, *copy table name*, *copy class-ID*, *copy SQL SELECT…* and
-*copy SQL SELECTs of referencing PDOs…*, and adds two items of its own:
+*copy SQL SELECT statements of referencing PDOs…*, and adds two items of its own:
 
 - **copy Java code to clipboard** — generates the fixture code for that single object. There is no
   path configuration here, but it is the quickest way to create the referenced master data an object
@@ -420,7 +439,8 @@ survives a reload, but is dropped when a different entity is selected.
 
 Differences are determined by value as well as by object ID and `serial`, so an object replaced by
 another one is detected too. Implicit attributes and the IDs of composite relations are ignored, since
-they carry no domain information. Collections are matched up by ID, so inserted and deleted elements
+they carry no domain information. Collections are matched up by ID, regardless of the order in which
+they were loaded, and N:M collections by the object the link points to, so inserted and deleted elements
 show up as gaps on one side rather than shifting everything below them.
 
 ##### Working with Several Views
@@ -443,7 +463,8 @@ Two buttons configure the result:
 - **code** — the code settings popup, holding the same two options as the batch parameters
   `-Ddistinct` and `-Doffset`: whether each generated instance gets its own numbered variable name, and
   which number to start at. With distinct variables, the generated code ends in `persist()` rather than
-  `save()`, so each object stays available under its own name.
+  `save()`, so each object stays available under its own name. The settings are applied when the popup
+  closes and last until the goal ends.
 - **paths** — a list of check boxes for the *code paths* of the current selection, i.e. the dotted paths
   of the attributes and relations that may be included or excluded. The list is derived from the model
   and only offers what is actually configurable: attributes and relations carrying the `NOTEST`
@@ -451,34 +472,37 @@ Two buttons configure the result:
   by default). The button stays disabled when the selection has nothing to configure.
 
 The `maxLinesInStringLiteral` parameter (`-DmaxLines`) additionally caps how much of a long text ends
-up in the generated string literals.
+up in the generated string literals. Hidden components — those without a public accessor — are
+generated as comments, since the generated code could not call them.
 
 ##### Preferences
 
 *save user preferences* in the context menu of either table stores its column layout (order, widths,
 visibility, sorting) under the `PdoBrowser` node of `java.util.prefs`, separately from the
-application's own preferences. Both tables load their preferences on startup, and the initial divider
+application's own preferences. *save system preferences* ends up in the same user node. Both tables load their preferences on startup, and the initial divider
 positions of the split panes follow the stored table widths — so arranging the browser once makes it
 come up that way from then on.
 
 #### Batch Mode
 
 Batch mode runs headless and writes the Java fixture code for a known set of objects straight to a
-file, without opening the UI. It is enabled by supplying both the `pdo` and the `output` parameters.
-This is handy for regenerating fixtures in a scripted or CI setting once you know which records you
-want. The objects are selected by entity name and object ID; if any ID cannot be found in the
-database, the goal fails.
+file, without opening the UI. It is enabled by supplying both the `pdo` and the `output` parameters;
+supplying only one of them fails the goal. This is handy for regenerating fixtures in a scripted or CI
+setting once you know which records you want. The objects are selected by entity name and object ID;
+if the entity is unknown or any ID cannot be found in the database, the goal fails.
 
 Batch parameters (supplying both `pdo` and `output` switches the goal into batch mode):
 
-- `pdo` (`-Dpdo`): the objects to generate code for, in the form `<entity>[<id>[,<id>,...]]`, where
-  `entity` is the entity name and each `id` is an object ID. Example: `-Dpdo=Customer[17878,221221,333]`.
+- `pdo` (`-Dpdo`): the objects to generate code for, in the form `<entity>[<id>,<id>,...]`, where
+  the square brackets are literal, `entity` is the entity name (the simple name of the PDO interface)
+  and each `id` is an object ID, separated by commas or spaces. At least one ID is required.
+  Example: `-Dpdo=Customer[17878,221221,333]`.
 - `output` (`-Doutput`): the file the generated Java code is written to (parent directories are
   created as needed).
 - `distinct` (`-Ddistinct`): by default the variable names of the created entities are reused for the
   2nd, 3rd, … instance. When `true`, the variable names are numbered instead.
 - `offset` (`-Doffset`): when `distinct` is `true`, the number the variable names start at. If unset,
-  the first instance is left unnumbered.
+  the first instance is left unnumbered. Ignored without `distinct`.
 
 In the POM, these parameters are named `pdoConfig`, `outputFile`, `distinctVariables` and
 `variableOffset`; the short names above are their user properties.
@@ -496,8 +520,9 @@ use `on()` and `op()` exactly like application code.
 The key concept is the **harness**. The code you write is only a *fragment*; it is woven into a
 harness, a FreeMarker template that owns the boilerplate: it implements a
 `DomainContextProvider` (so `on()`/`op()` resolve), and defines the `run()` method your fragment is
-inserted into. Harnesses are supplied by the developer. The **first
-line of a harness is a she-bang** selecting the scripting language (`#!groovy`, `#!gv`, `#!ruby`, …);
+inserted into. The script runs within the session opened by the goal. Harnesses are supplied by the
+developer. The **first line of a harness is a she-bang** selecting the scripting language (`#!groovy`,
+`#!gv`, `#!ruby`, …);
 it is stripped and does not land in the generated script. The scripting language provider (e.g.
 `tentackle-script-groovy`) must be on the plugin classpath, added as a `<dependency>` of the plugin
 (this is unaffected by `layers` below — only the *application's own* dependencies typically need
@@ -534,10 +559,10 @@ Parameters:
   Harness filenames must be unique across all filesets.
 - `harness` (`-Dharness`): pre-selects a harness by filename (without a directory). In batch mode it
   selects which harness to weave into; it may be omitted if exactly one harness is configured. In
-  interactive mode it pre-selects the combo box entry.
-- `script` (`-Dscript`): the path to a file holding the fragment. **If given, the goal runs headless
-  in batch mode**, weaves the fragment into the selected harness, and runs it. If omitted, the
-  interactive editor opens instead.
+  interactive mode it pre-selects the combo box entry. An unknown harness fails the goal in both modes.
+- `script` (`-Dscript`): the path to a file holding the fragment, relative to the project base
+  directory. **If given, the goal runs headless in batch mode**, weaves the fragment into the selected
+  harness, and runs it. If omitted, the interactive editor opens instead.
 
 **Interactive mode** opens a window with a combo box to choose the harness, a text area to edit the
 fragment, and the buttons *Load*, *Save*, *Save as*, *copy*, *Run*, *Interrupt* and *Close*. *Run*
@@ -549,7 +574,8 @@ on the clipboard.
 The fragment can be kept on disk: *Load* reads it from a file, *Save* writes it back to the file it
 came from (asking for one if there is none), and *Save as* always asks. Files are read and written as
 UTF-8. The name of the current file is shown next to the harness combo box, followed by an asterisk
-while there are unsaved changes; closing the editor with unsaved changes asks for confirmation. The
+while there are unsaved changes; closing the editor with unsaved changes or while a script is still
+running asks for confirmation (a running script is interrupted). The
 file used last is remembered per user and project and is reloaded the next time the editor comes up,
 so a session can be continued where it left off. A saved fragment is exactly what batch mode expects,
 which makes for a natural round trip: develop the fragment interactively, save it, then run it
@@ -610,7 +636,7 @@ it existed.
 Copies the bundled default templates into the template directory, **overwriting** any existing files
 there. The wizard installs the templates automatically the first time it runs (when the template
 directory does not yet exist), so you normally only need `init` to reset customized templates back to
-their defaults.
+their defaults. The goal neither loads the model nor needs any profile.
 
 ### Templates
 
@@ -639,14 +665,16 @@ follow your conventions. Run `tentackle-wizard:init` to restore the originals.
 Every root PDO needs a unique, stable class ID used by the persistence layer. The `pdo` goal manages these automatically:
 
 - Each `PdoProfile` declares a `minClassId` (and optionally a `maxClassId`). When `maxClassId` is
-  omitted, the plugin derives the boundaries from the other profiles' ranges, ensuring they do not
-  overlap.
+  omitted, the range ends right below the `minClassId` of the next higher profile; the profile with the
+  highest `minClassId` is unbounded. Ranges must not overlap — two profiles with the same `minClassId`,
+  or a `maxClassId` reaching into the next profile's range, fail the goal.
 - Before each run, the wizard scans the model for the highest class ID already used per profile and
-  pre-selects the next free one.
+  pre-selects the next free one. In an unused range, this is the `minClassId` itself.
 - To stay consistent across several PDOs generated without an intermediate `mvn clean`/wurbel run,
-  the last allocated ID per profile is recorded in a status file `<profile>.classid` in the
+  the next free ID per profile is recorded in a status file `<profile>.classid` in the
   `statusDir` (default `${project.build.directory}/wizard`). Because this lives under `target`, it is
-  cleaned by `mvn clean`.
+  cleaned by `mvn clean`. Within a single batch run, the entities without a class ID of their own get
+  consecutive IDs.
 
 If a profile runs out of free class IDs, the goal warns; reserved IDs below 100 are rejected.
 

@@ -30,7 +30,7 @@ public interface ${operationInterface}
 <#elseif domainInterface != "">
   <#if abstractOperation == "true">
 public interface ${operationInterface}<T extends ${operationInterface}<T>>
-       extends ${superOperationInterface}<T> ${domainInterface}<T> {
+       extends ${superOperationInterface}<T>, ${domainInterface}<T> {
   <#else>
 public interface ${operationInterface}
        extends ${superOperationInterface}<${operationInterface}>, ${domainInterface} {

@@ -21,17 +21,27 @@ package org.tentackle.maven.plugin.wizard.pdodata;
 import org.tentackle.model.Attribute;
 
 /**
- * Creates the where condition to select the row(s) of a {@link DataNode} from the database.
+ * Holds the data for the where condition to select the row(s) of a {@link DataNode} from the database.
  *
  * @param id the ID number to use in the where condition
- * @param attribute the attribute to use in the where condition
+ * @param attribute the attribute to use in the where condition, null if unknown
  */
 public record SqlCondition(long id, Attribute attribute) {
 
+  /**
+   * Gets the name of the table holding the attribute.
+   *
+   * @return the table name, null if no attribute
+   */
   public String getTableName() {
     return attribute == null ? null : attribute.getEntity().getTableName();
   }
 
+  /**
+   * Gets the alias of the table holding the attribute.
+   *
+   * @return the table alias, null if no attribute
+   */
   public String getTableAlias() {
     return attribute == null ? null : attribute.getEntity().getTableAlias();
   }

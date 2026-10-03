@@ -25,12 +25,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
-import org.tentackle.common.Constants;
-import org.tentackle.common.EncryptedProperties;
-import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.maven.plugin.wizard.fx.ScriptEditor;
-import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptRuntimeException;
@@ -39,7 +35,6 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
-import javafx.application.Platform;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.io.File;
@@ -51,7 +46,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.prefs.Preferences;
 
 /**
@@ -59,10 +53,11 @@ import java.util.prefs.Preferences;
  * Brings up an FX UI to edit and run a script or runs it in batch mode.
  * <p>
  * The code a developer writes is only a <em>fragment</em>. It is woven into a
- * <em>harness</em>: a freemarker template (provided via the {@link #harnesses}
- * filesets) that owns the boilerplate &mdash; it connects to the database,
- * implements a {@code DomainContextProvider} so that {@code on()} and {@code op()}
- * can be used, and defines the {@code run()} method the fragment is inserted into.
+ * <em>harness</em>: a FreeMarker template (provided via the {@link #harnesses}
+ * filesets) that owns the boilerplate &mdash; it implements a {@code DomainContextProvider}
+ * so that {@code on()} and {@code op()} can be used, and defines the {@code run()} method
+ * the fragment is inserted into. The script runs within the session opened by the goal,
+ * which is made current before the script is executed.
  * The first line of a harness is a she-bang selecting the scripting language
  * (for example {@code #!groovy}); it does not land in the generated script.
  * <p>
@@ -74,7 +69,7 @@ import java.util.prefs.Preferences;
  * and provided to the harness via the {@code imports} model variable, which
  * places it at the top level of the generated script.
  * <p>
- * The freemarker model provides four variables: {@code content} (the fragment),
+ * The FreeMarker model provides four variables: {@code content} (the fragment),
  * {@code imports} (the import statements extracted from the fragment),
  * {@code language} (the language name) and {@code harness} (the harness filename).
  */
@@ -116,6 +111,7 @@ public class ScriptMojo extends AbstractWizardMojo {
    * In interactive mode, the selected harness is shown in the editor.
    * In batch mode, the fragment is run with the selected harness.
    * If there is only one harness, it is selected automatically.
+   * An unknown harness fails the goal in both modes.
    */
   @Parameter(property = "harness")
   public String harness;
@@ -123,7 +119,7 @@ public class ScriptMojo extends AbstractWizardMojo {
   /**
    * The script fragment to run.<br>
    * If given, enters batch mode and runs the fragment with the selected harness.
-   * This is the path to a file holding the fragment.
+   * This is the path to a file holding the fragment, relative to the project's base directory if not absolute.
    */
   @Parameter(property = "script")
   public String script;
@@ -144,72 +140,53 @@ public class ScriptMojo extends AbstractWizardMojo {
 
   private void executeLayered() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
-    EncryptedProperties props = PropertiesUtilities.getInstance().create();
-    props.setProperty(Constants.BACKEND_URL, url);
-    props.setProperty(Constants.BACKEND_USER, user);
-    props.setProperty(Constants.BACKEND_PASSWORD, password);
-    SessionInfo sessionInfo = Pdo.createSessionInfo(props);
+    SessionInfo sessionInfo = createSessionInfo(url, user, password);
+
+    Session session;
     try {
-      Session session = Pdo.createSession(sessionInfo);
-      try {
-        ModificationTracker pdoTracker = ModificationTracker.getInstance();
-        pdoTracker.setSession(session.clone("MT"));
-        pdoTracker.start();   // update caches in background
-
-        harnessMap = loadHarnesses();
-
-        if (script != null) {
-          // batch mode
-          ScriptHarness scriptHarness = selectHarness();
-          String fragment;
-          try {
-            fragment = Files.readString(new File(script).toPath(), StandardCharsets.UTF_8);
-          }
-          catch (IOException e) {
-            throw new MojoExecutionException("cannot read script " + script, e);
-          }
-          session.makeCurrent();
-          runFragment(scriptHarness, fragment);
-        }
-        else {
-          // interactive mode
-          CountDownLatch latch = new CountDownLatch(1);
-
-          Platform.startup(() -> {
-            try {
-              configureFx();
-              registerUncaughtExceptionHandler();
-              session.makeCurrent();
-              stage = showScriptEditor(session, harnessMap.values(), harness == null ? null : harnessMap.get(harness));
-              stage.setOnHidden(_ -> latch.countDown());
-            }
-            catch (Throwable t) {
-              getLogger().error(t.getMessage(), t);
-              latch.countDown();
-            }
-          });
-
-          try {
-            latch.await();
-          }
-          catch (InterruptedException e) {
-            throw new InterruptedRuntimeException(e);
-          }
-        }
-      }
-      catch (PersistenceException ex) {
-        // no database? wrong database? whatever: testing environment incomplete
-        throw new MojoExecutionException("no backend found", ex);
-      }
-      finally {
-        if (session != null) {
-          ModificationTracker.getInstance().terminate();
-          session.close();
-        }
-      }
+      session = Pdo.createSession(sessionInfo);
     }
     catch (PersistenceException ex) {
       throw new MojoExecutionException("failed to connect to the backend", ex);
+    }
+
+    try {
+      ModificationTracker pdoTracker = ModificationTracker.getInstance();
+      pdoTracker.setSession(session.clone("MT"));
+      pdoTracker.start();   // caches need a running tracker
+
+      harnessMap = loadHarnesses();
+
+      if (script != null) {
+        // batch mode
+        ScriptHarness scriptHarness = selectHarness();
+        File scriptFile = resolveFile(script);
+        String fragment;
+        try {
+          fragment = Files.readString(scriptFile.toPath(), StandardCharsets.UTF_8);
+        }
+        catch (IOException e) {
+          throw new MojoExecutionException("cannot read script " + scriptFile, e);
+        }
+        session.makeCurrent();
+        runFragment(scriptHarness, fragment);
+      }
+      else {
+        // interactive mode
+        ScriptHarness preselectedHarness = harness == null ? null : selectHarness();
+        runInteractive(() -> {
+          session.makeCurrent();
+          stage = showScriptEditor(session, harnessMap.values(), preselectedHarness);
+          return stage;
+        });
+      }
+    }
+    catch (PersistenceException ex) {
+      throw new MojoExecutionException("backend access failed: " + ex.getMessage(), ex);
+    }
+    finally {
+      ModificationTracker.getInstance().terminate();
+      session.close();
     }
   }
 

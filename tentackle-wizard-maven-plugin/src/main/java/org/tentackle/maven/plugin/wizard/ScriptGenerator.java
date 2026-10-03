@@ -29,7 +29,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 /**
- * Generates a script.
+ * Generates a script by weaving a fragment into a harness template.
  */
 public class ScriptGenerator extends AbstractGenerator {
 
@@ -41,8 +41,8 @@ public class ScriptGenerator extends AbstractGenerator {
    * Creates a new generator.
    *
    * @param model the model
-   * @param name the script name
-   * @param content the script content
+   * @param name the harness name
+   * @param content the harness template
    */
   public ScriptGenerator(ScriptTemplateModel model, String name, String content) {
     this.model = model;
@@ -53,9 +53,9 @@ public class ScriptGenerator extends AbstractGenerator {
   /**
    * Creates the script.
    *
-   * @return the validation results, empty if okay, never null
-   * @throws IOException if file creation failed
-   * @throws TemplateException if code generation failed
+   * @return the generated script source
+   * @throws IOException if parsing the harness template failed
+   * @throws TemplateException if processing the harness template failed
    */
   public String generate() throws IOException, TemplateException {
     // configure freemarker

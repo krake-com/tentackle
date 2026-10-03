@@ -27,7 +27,7 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 
 /**
- * Base class for generators.<br>
+ * Base class for validateable generators.<br>
  * Holds common methods for {@link PdoGenerator} and {@link OperationGenerator}.
  */
 public abstract class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
@@ -52,6 +52,15 @@ public abstract class AbstractValidateableGenerator extends AbstractGenerator im
    */
   public Model getModel() {
     return model;
+  }
+
+  /**
+   * Determines the default for remoting from the project's model defaults.
+   *
+   * @return true if there are no model defaults or they enable the {@code remote} option explicitly
+   */
+  public boolean isRemoteDefault() {
+    return model.getModelDefaults() == null || Boolean.TRUE.equals(model.getModelDefaults().getRemote());
   }
 
   @Override

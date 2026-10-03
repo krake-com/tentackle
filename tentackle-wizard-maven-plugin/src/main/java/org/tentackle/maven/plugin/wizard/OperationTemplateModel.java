@@ -24,7 +24,7 @@ import org.tentackle.common.NamingRules;
 import java.io.Serial;
 
 /**
- * Freemarker model for the operation templates.
+ * FreeMarker model for the operation templates.
  */
 public class OperationTemplateModel extends TemplateModel {
 
@@ -59,8 +59,8 @@ public class OperationTemplateModel extends TemplateModel {
     putValue("superPersistenceInterface", generator.getSuperPersistenceInterface());
     putValue("superDomainImplementation", generator.getSuperDomainImplementation());
     putValue("superPersistenceImplementation", generator.getSuperPersistenceImplementation());
-    putValue("remoteInterface", namingRules.getPdoRemoteInterface(generator.getOperationName()));
-    putValue("remoteImplementation", namingRules.getPdoRemoteImplementation(generator.getOperationName()));
+    putValue("remoteInterface", namingRules.getOperationRemoteInterface(generator.getOperationName()));
+    putValue("remoteImplementation", namingRules.getOperationRemoteImplementation(generator.getOperationName()));
 
     putValue("shortDescription", generator.getShortDescription());
     putValue("longDescription", generator.getLongDescription());

@@ -33,8 +33,8 @@ public class DataList implements DataNode {
   private final String genericType;         // the inner generic type
   private final String name;                // the name of the list property
   private final String comment;             // the optional comment
-  private final List<DataObject> nodes;     // the items of the list
-  private final Relation relation;          // composite list relation
+  private final List<DataObject> nodes;     // the items of the list, null if the list is null
+  private final Relation relation;          // composite list relation, null if not in model
   private final SqlCondition sqlCondition;  // the SQL where condition
   private String configurationPath;         // the optional configuration path
 
@@ -44,8 +44,8 @@ public class DataList implements DataNode {
    * @param genericType the inner generic type
    * @param name the name of the list property
    * @param comment the optional comment
-   * @param nodes the items of the list
-   * @param relation the composite list relation
+   * @param nodes the items of the list, null if the list is null
+   * @param relation the composite list relation, null if not in model
    * @param sqlCondition the SQL where condition
    */
   public DataList(String genericType, String name, String comment, List<DataObject> nodes, Relation relation, SqlCondition sqlCondition) {
@@ -56,9 +56,11 @@ public class DataList implements DataNode {
     this.relation = relation;
     this.sqlCondition = sqlCondition;
 
-    int ndx = 0;
-    for (DataObject node : nodes) {
-      node.setDataList(this, ndx++);
+    if (nodes != null) {
+      int ndx = 0;
+      for (DataObject node : nodes) {
+        node.setDataList(this, ndx++);
+      }
     }
   }
 
@@ -88,16 +90,16 @@ public class DataList implements DataNode {
 
   @Override
   public boolean isHidden() {
-    return relation.getAccessScope() != AccessScope.PUBLIC;
+    return relation != null && relation.getAccessScope() != AccessScope.PUBLIC;
   }
 
   /**
    * Gets the items of the list.<br>
    * For 1:N relations, the elements come in the same order as returned by the PDO's select method.
-   * For N:M relations, the elements are sorted by the toString-representation,
+   * For N:M relations, the elements are sorted by the type and unique domain key of the related PDO,
    * since the N:M-link itself is just a technical detail.
    *
-   * @return the items of the list
+   * @return the items of the list, null if the list is null
    */
   @Override
   public List<DataObject> getNodes() {
@@ -112,7 +114,7 @@ public class DataList implements DataNode {
   /**
    * Gets the composite list relation.
    *
-   * @return the relation
+   * @return the relation, null if not in model
    */
   public Relation getRelation() {
     return relation;
@@ -120,7 +122,7 @@ public class DataList implements DataNode {
 
   @Override
   public Entity getEntity() {
-    return relation.getForeignEntity();
+    return relation == null ? null : relation.getForeignEntity();
   }
 
   @Override

@@ -97,9 +97,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Dialog to browse PDOs and generate test code.
+ * Controller to browse PDOs, compare them with a memorized state, and generate Java code or SQL from them.<br>
+ * Embedded in the stage or a tab of the {@link BrowseContainer}.
  */
 @FxControllerService(resources = FxControllerService.RESOURCES_NONE)
 public class PdoBrowser extends AbstractFxController implements DomainContextProvider {
@@ -226,7 +228,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           memorizedDataObject = dataObject;
           memorizeTime = new Timestamp();
         }
-        // else: temporarily deselected, e.g., after reload
+        // else: no PDO selected (e.g., table selection cleared during reload), memorized object is restored by run()
       }
       else {
         memorizedDataObject = null;
@@ -293,10 +295,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   /**
-   * Sets the context.
+   * Attaches the browser to its container and initializes it from the container's mojo and domain context.
    *
    * @param container the browse container
-   *
    * @throws MojoExecutionException if loading the profiles failed
    */
   public void setContext(BrowseContainer container) throws MojoExecutionException {
@@ -450,7 +451,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     PdoWrapper selectedItem = pdosTableView.getSelectionModel().getSelectedItem();
     DataObject savedMemorizedDataObject;
     Timestamp savedMemorizedTime;
-    if (entity == null || (memorizedDataObject != null && !entity.getName().equals(memorizedDataObject.getEntity().getName()))) {
+    if (entity == null || (memorizedDataObject != null && memorizedDataObject.getPdo() != null &&
+                           entity.getClazz() != memorizedDataObject.getPdo().getEffectiveClass())) {
       savedMemorizedDataObject = null;
       savedMemorizedTime = null;
     }
@@ -510,15 +512,20 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           FxButton cancelButton = Fx.create(Button.class);
           cancelButton.setText("cancel");
           cancelButton.setGraphic(Fx.createGraphic("cancel"));
-          cancelButton.setOnAction(_ -> {
-            stage.close();
-            finder = null;
-            run();
+          AtomicBoolean found = new AtomicBoolean();
+          cancelButton.setOnAction(_ -> stage.close());
+          stage.setOnHidden(_ -> {
+            if (!found.get()) {
+              // cancel button or window closed: back to the latest PDOs
+              finder = null;
+              run();
+            }
           });
           FxButton findButton = Fx.create(Button.class);
           findButton.setText("find");
           findButton.setGraphic(Fx.createGraphic("search"));
           findButton.setOnAction(_ -> {
+            found.set(true);
             pdos = finder.runSearch().stream().map(pdo -> new PdoWrapper((PersistentDomainObject<?>) pdo)).toList();
             pdosTableView.updateView();
             stage.close();
@@ -601,12 +608,14 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         Fx.warning(getView(), idStr + " is not a number");
       }
     }
-    long[] idArgs = new long[idList.size()];
-    int i = 0;
-    for (Long id : idList) {
-      idArgs[i++] = id;
+    if (!idList.isEmpty()) {
+      long[] idArgs = new long[idList.size()];
+      int i = 0;
+      for (Long id : idList) {
+        idArgs[i++] = id;
+      }
+      run(idArgs);
     }
-    run(idArgs);
   }
 
   private void editCodePaths() {

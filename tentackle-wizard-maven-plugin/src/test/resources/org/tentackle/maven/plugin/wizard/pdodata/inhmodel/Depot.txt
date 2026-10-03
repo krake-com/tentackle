@@ -1,0 +1,9 @@
+## a depot
+name := Depot
+id := 32
+table := depot
+extends := Hub
+
+## attributes
+
+Integer         docks           docks           the number of docks

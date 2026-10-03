@@ -108,12 +108,15 @@ public class PdoWizard extends AbstractFxController {
   private FxButton generate;
 
 
+  /**
+   * Creates the PDO wizard controller.
+   */
   public PdoWizard() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   @FXML
-  public void initialize() {
+  private void initialize() {
     cancel.setGraphic(Fx.createGraphic("cancel"));
     generate.setGraphic(Fx.createGraphic("generate"));
   }
@@ -134,8 +137,7 @@ public class PdoWizard extends AbstractFxController {
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_PDO));
     gen.setStatusDir(mojo.getStatusDir());
-    gen.setRemoteEnabled(mojo.getModel().getModelDefaults() == null ||
-                         Boolean.TRUE.equals(mojo.getModel().getModelDefaults().getRemote()));
+    gen.setRemoteEnabled(gen.isRemoteDefault());
 
     try {
       for (Entity entity: gen.getModel().getAllEntities()) {
@@ -177,13 +179,13 @@ public class PdoWizard extends AbstractFxController {
 
     generate.setOnAction(_ -> {
       if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() != null) {
-        Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
+        Fx.yes(getView(), "do you really want to generate without a domain implementation?", false, this::generateIt);
       }
       else if (gen.getPersistenceImplementation() == null && gen.getDomainImplementation() != null) {
-        Fx.yes(getView(), "do you really don't want a persistence implementation?",false, this::generateIt);
+        Fx.yes(getView(), "do you really want to generate without a persistence implementation?", false, this::generateIt);
       }
       else if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() == null) {
-        Fx.yes(getView(), "do you really don't want the implementation files?",false, this::generateIt);
+        Fx.yes(getView(), "do you really want to generate without the implementation files?", false, this::generateIt);
       }
       else {
         generateIt();
@@ -214,6 +216,7 @@ public class PdoWizard extends AbstractFxController {
     genClassId.updateView();
     genTableName.updateView();
 
+    // a new cell factory forces the cells to be recreated, which disables the types not matching the super entity
     genInheritanceType.setCellFactory(new Callback<>() {
       @Override
       public ListCell<InheritanceType> call(ListView<InheritanceType> param) {
@@ -228,6 +231,10 @@ public class PdoWizard extends AbstractFxController {
               }
               setDisable(itemInvalid);    // see PdoWizard.css
               setText(item.toString());
+            }
+            else {
+              setDisable(false);
+              setText(null);
             }
           }
         };
