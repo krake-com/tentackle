@@ -209,6 +209,7 @@ public class TableFilterPopupSkin<S,T> implements Skin<TableFilterPopup<S,T>> {
    * @param action the action to run
    * @return the button
    */
+  @SuppressWarnings("bundle")
   protected Button createButton(String bundleKey, String graphicName, Runnable action) {
     Button button = new Button(FxFxBundle.getString(bundleKey));
     if (graphicName != null) {

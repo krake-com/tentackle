@@ -121,6 +121,7 @@ public enum TableFilterOperator {
    *
    * @return the displayed text, never null
    */
+  @SuppressWarnings("bundle")
   public String getDisplayedText() {
     return FxFxBundle.getString(bundleKey);
   }

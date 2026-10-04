@@ -47,6 +47,7 @@ public class RdcFxRdcBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }

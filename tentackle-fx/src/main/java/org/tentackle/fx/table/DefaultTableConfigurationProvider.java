@@ -219,6 +219,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
    * @param clazz the class to analyze for bindable elements
    * @param components the binding paths of components that should in turn be analyzed for bindables
    */
+  @SuppressWarnings("bundle")
   protected void addBindableColumns(TableConfiguration<T> configuration, String columnPrefix, String displayPrefix,
                                     Class<?> clazz, String... components) {
 

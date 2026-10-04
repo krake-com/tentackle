@@ -329,7 +329,7 @@ public class CheckBundlesScannerTest {
 
   /**
    * A class annotated with {@code @NoBundle} only looks like a bundle: its invocations are skipped,
-   * including those of nested classes and those with non-constant keys.
+   * including those in constructors, in nested classes, and those with non-constant keys.
    */
   @Test
   public void skipsNoBundleClasses() throws Exception {
@@ -344,6 +344,13 @@ public class CheckBundlesScannerTest {
 
           public static final String RELEASE = getBundle().getString(VERSION_STR);
 
+          private final String name;
+
+          public Version(String type) {
+            ResourceBundle bundle = ResourceBundle.getBundle(type);
+            name = bundle.getString("NAME");
+          }
+
           public static ResourceBundle getBundle() {
             return ResourceBundle.getBundle(Version.class.getName());
           }
@@ -357,7 +364,8 @@ public class CheckBundlesScannerTest {
         """);
 
     assertEquals(scan(), List.of());
-    assertEquals(skipped(), List.of("com.example.app.Version: com.example.app.getBundle() -> 'version'"));
+    assertEquals(skipped(), List.of("com.example.app.Version: com.example.app.getBundle() -> 'version'",
+                                    "com.example.app.Version: com.example.app.bundle -> 'NAME'"));
     assertEquals(unverified(), List.of());
   }
 

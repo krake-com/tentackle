@@ -19,10 +19,6 @@
 
 package org.tentackle.fx.table.type;
 
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.CheckBox;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFxBundle;
@@ -30,6 +26,10 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.TableColumnConfiguration;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
 
 /**
  * A {@link Boolean} cell type.
@@ -53,6 +53,7 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
    * for the column filters and the exports.
    */
   @Override
+  @SuppressWarnings("bundle")
   public String getText(TableColumnConfiguration<?, Boolean> columnConfiguration, Boolean item) {
     return FxFxBundle.getString(item ? "YES" : "NO");
   }

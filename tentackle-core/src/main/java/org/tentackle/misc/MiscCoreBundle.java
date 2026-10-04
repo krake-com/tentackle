@@ -18,11 +18,12 @@
 
 package org.tentackle.misc;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
+
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Bundle for the misc package in tentackle-core.
@@ -59,6 +60,7 @@ public class MiscCoreBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }
@@ -70,6 +72,7 @@ public class MiscCoreBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(Locale locale, String key) {
     return getBundle(locale).getString(key);
   }

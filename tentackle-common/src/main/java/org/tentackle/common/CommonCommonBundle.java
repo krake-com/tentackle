@@ -45,6 +45,7 @@ public class CommonCommonBundle {   // not annotated with @Bundle but configured
    * @return the string from the bundle
    * @throws java.util.MissingResourceException if no such key
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }

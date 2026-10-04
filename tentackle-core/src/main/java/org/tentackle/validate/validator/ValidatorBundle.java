@@ -59,6 +59,7 @@ public class ValidatorBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }
@@ -70,6 +71,7 @@ public class ValidatorBundle {
    * @param key the key
    * @return the string from the bundle
    */
+  @SuppressWarnings("bundle")
   public static String getString(Locale locale, String key) {
     return getBundle(locale).getString(key);
   }

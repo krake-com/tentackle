@@ -527,6 +527,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Runs the search and displays the results.<br>
    * The search runs in the background if {@link PdoFinder#isSearchRunningInBackground()}.
    */
+  @SuppressWarnings("bundle")
   public void find() {
     if (finder.validateForm()) {
       filterField.clear();

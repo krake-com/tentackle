@@ -485,6 +485,7 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
+  @SuppressWarnings("bundle")
   public StackPane createButton(String styleClass, String graphicName, String bundleKey, Runnable action) {
     StackPane button = new StackPane(Fx.createGraphic(graphicName));
     button.getStyleClass().add(styleClass);

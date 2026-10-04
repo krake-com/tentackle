@@ -130,6 +130,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
 
 
   @Override
+  @SuppressWarnings("bundle")
   public void finishExecute() throws MojoExecutionException {
 
     for (BundleKey key: bundleScanner.getUnresolvedKeys()) {

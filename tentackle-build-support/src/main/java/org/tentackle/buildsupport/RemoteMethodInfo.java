@@ -18,6 +18,7 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.NoBundle;
 import org.tentackle.common.Settings;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -53,6 +54,7 @@ import java.util.regex.Pattern;
  *
  * @author harald
  */
+@NoBundle
 public class RemoteMethodInfo {
 
   /**

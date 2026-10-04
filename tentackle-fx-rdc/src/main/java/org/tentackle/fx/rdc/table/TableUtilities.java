@@ -126,6 +126,7 @@ public class TableUtilities {
    * @param <T> the PDO type
    * @return the table configuration
    */
+  @SuppressWarnings("bundle")
   public <T extends PersistentDomainObject<T>> TableConfiguration<T> createTableConfiguration(Class<T> pdoClass, ResourceBundle bundle) {
 
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);

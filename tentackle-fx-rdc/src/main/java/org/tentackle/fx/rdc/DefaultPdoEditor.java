@@ -317,6 +317,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @param attribute the PDO member
    * @return the label node
    */
+  @SuppressWarnings("bundle")
   protected Label createLabel(PdoMember attribute) {
     String text;
     if (getBundle() != null) {
