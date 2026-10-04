@@ -197,24 +197,153 @@ public class CheckBundlesScannerTest {
   }
 
   /**
-   * Only string literals can be checked - anything else is silently ignored, which the mojo's
-   * javadoc calls out as needing an explicit unit test.
+   * Compile-time constants are checked as well: constant variables of the same or another class,
+   * final locals, concatenations and parentheses.
    */
   @Test
-  public void ignoresNonLiteralKeys() throws Exception {
+  public void resolvesConstantKeys() throws Exception {
+    source("com/example/app/Keys.java", """
+        package com.example.app;
+
+        public class Keys {
+          public static final String GREETING = "greeting";
+        }
+        """);
     source("com/example/app/Client.java", """
         package com.example.app;
 
         public class Client {
-          private static final String KEY = "greeting";
+          private static final String KEY = "hello";
+          private static final String PREFIX = "client.";
 
-          public String hello(String key) {
-            return getBundle().getString(key) + getBundle().getString(KEY);
+          public String hello(java.util.ResourceBundle bundle) {
+            final String local = "local";
+            return bundle.getString(KEY) + bundle.getString(Keys.GREETING) + bundle.getString(local) +
+                   bundle.getString(PREFIX + "title") + bundle.getString((PREFIX + KEY));
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Client: com.example.app.bundle -> 'hello'",
+                                 "com.example.app.Client: com.example.app.bundle -> 'greeting'",
+                                 "com.example.app.Client: com.example.app.bundle -> 'local'",
+                                 "com.example.app.Client: com.example.app.bundle -> 'client.title'",
+                                 "com.example.app.Client: com.example.app.bundle -> 'client.hello'"));
+    assertEquals(unverified(), List.of());
+  }
+
+  /**
+   * Keys that are not compile-time constants cannot be checked and are reported as unverified.
+   */
+  @Test
+  public void reportsNonConstantKeys() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          private static final String COMPUTED = String.valueOf("computed");
+          private String field = "field";
+
+          public String hello(java.util.ResourceBundle bundle, String key) {
+            return bundle.getString(key) + bundle.getString(field) + bundle.getString(COMPUTED) +
+                   bundle.getString("prefix." + key);
           }
         }
         """);
 
     assertEquals(scan(), List.of());
+    assertEquals(unverified(), List.of("com.example.app.Client: com.example.app.bundle -> 'key'",
+                                       "com.example.app.Client: com.example.app.bundle -> 'field'",
+                                       "com.example.app.Client: com.example.app.bundle -> 'COMPUTED'",
+                                       "com.example.app.Client: com.example.app.bundle -> '\"prefix.\" + key'"));
+  }
+
+  /**
+   * {@code @SuppressWarnings("bundle")} on the invoking code or any enclosing declaration suppresses
+   * the unverified keys. Other tokens don't.
+   */
+  @Test
+  public void suppressesUnverifiedKeys() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        import java.util.ResourceBundle;
+
+        public class Client {
+          @SuppressWarnings("bundle")
+          public String method(ResourceBundle bundle, String key) {
+            return bundle.getString(key);
+          }
+
+          public String local(ResourceBundle bundle, String key) {
+            @SuppressWarnings({ "unused", "bundle" })
+            String text = bundle.getString(key);
+            return text;
+          }
+
+          @SuppressWarnings("unchecked")
+          public String other(ResourceBundle bundle, String key) {
+            return bundle.getString(key);
+          }
+        }
+        """);
+    source("com/example/app/Outer.java", """
+        package com.example.app;
+
+        @SuppressWarnings("bundle")
+        public class Outer {
+          static class Inner {
+            String hello(java.util.ResourceBundle bundle, String key) {
+              return bundle.getString(key);
+            }
+          }
+        }
+        """);
+
+    scan();
+
+    assertEquals(unverified(), List.of("com.example.app.Client: com.example.app.bundle -> 'key'"));
+    assertTrue(bundleScanner().getUnverifiedKeys().getFirst().getLocation().endsWith("Client.java:[19,29]"),
+               bundleScanner().getUnverifiedKeys().getFirst().getLocation());
+  }
+
+  /**
+   * An unresolved invocation is still checked if suppressed, just not reported as unresolved.
+   */
+  @Test
+  public void suppressesUnresolvedInvocations() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          @SuppressWarnings("bundle")
+          public String hello() {
+            return unknown.getString("greeting");
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Client: com.example.app.unknown -> 'greeting'"));
+    assertEquals(unresolved(), List.of());
+  }
+
+  /**
+   * A non-constant argument of a {@code getString} that is not a bundle lookup is not reported.
+   */
+  @Test
+  public void ignoresNonConstantKeysOfNonBundles() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          public String name(java.sql.ResultSet rs, String column) throws java.sql.SQLException {
+            return rs.getString(column);
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of());
+    assertEquals(unverified(), List.of());
   }
 
   /**
@@ -462,8 +591,11 @@ public class CheckBundlesScannerTest {
   }
 
   private List<BundleKey> bundleKeys() {
-    CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
-    return scanner.getBundleKeys();
+    return bundleScanner().getBundleKeys();
+  }
+
+  private CheckBundlesScanner bundleScanner() {
+    return CheckTestSupport.getField(mojo, "bundleScanner");
   }
 
   /**
@@ -489,6 +621,20 @@ public class CheckBundlesScannerTest {
     CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
     List<String> keys = new ArrayList<>();
     for (BundleKey bundleKey : scanner.getUnresolvedKeys()) {
+      keys.add(bundleKey.toString());
+    }
+    return keys;
+  }
+
+  /**
+   * Gets the bundle invocations whose key is not a compile-time constant.
+   *
+   * @return the unverified keys
+   */
+  private List<String> unverified() {
+    CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
+    List<String> keys = new ArrayList<>();
+    for (BundleKey bundleKey : scanner.getUnverifiedKeys()) {
       keys.add(bundleKey.toString());
     }
     return keys;

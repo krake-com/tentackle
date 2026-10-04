@@ -30,6 +30,7 @@ public enum MessageType implements Convertible<String>{
 
 
   @Override
+  @SuppressWarnings("bundle")
   public String toString() {
     return PdoBundle.getString(name());
   }

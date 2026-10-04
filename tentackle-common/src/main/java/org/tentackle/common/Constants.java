@@ -43,6 +43,9 @@ public final class Constants {
   /** suppress warnings for suspicious stateful domain logic. */
   public static final String SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC = "stateful-domain-logic";
 
+  /** suppress warnings for bundle getString invocations (see tentackle-check:bundles goal). */
+  public static final String SUPPRESS_WARNINGS_BUNDLE = "bundle";
+
   /** name for "none". */
   public static final String NAME_NONE = "NONE";
 

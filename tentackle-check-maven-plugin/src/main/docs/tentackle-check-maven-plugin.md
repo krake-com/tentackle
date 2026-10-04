@@ -120,9 +120,12 @@ with Groovy as the language of the validator scripts:
 
 ### The `bundles` Goal
 
-Scans the sources for every invocation of `<reference>.getString("<string-literal>")` and checks that
-the referenced key exists in the matching bundle, loaded for each configured locale. The bundle a
-reference belongs to is derived from the `<reference>`:
+Scans the sources for every invocation of `<reference>.getString(<key>)` and checks that
+the referenced key exists in the matching bundle, loaded for each configured locale. The `<key>` must
+be a compile-time constant: a string literal such as `"foo"`, a constant variable such as
+`static final String FOO = "foo"` (of any class, including those on the classpath), or a
+concatenation of those, such as `PREFIX + "title"`. The bundle a reference belongs to is derived
+from the `<reference>`:
 
 - a **bundle class name**, e.g. `BlahBundle.getString("foo")`, is checked against the `BlahBundle`
   properties. The class is resolved via a single-type import or, if there is none, the package of the
@@ -143,7 +146,7 @@ another annotation that registers bundles, such as `@FxControllerService` (any a
 `@Analyze` handler is a `BundleAnalyzeHandler`). Other calls, such as `ResultSet.getString("name")` or
 the static `getString` of a class without such an annotation, are ignored and listed with `verbosity` set to `debug`. If the invoked method
 or the type of the reference cannot be determined, for example because of compile errors, the
-invocation is checked anyway and logged as a warning.
+invocation is checked anyway and logged as a warning, unless suppressed with `@SuppressWarnings("bundle")`.
 
 To narrow down the checked sources, use `filesets`. Unlike `sourceDir`, a file set is not limited to
 Java sources, so the include is required:
@@ -182,10 +185,13 @@ mvn tentackle-check:bundles
 
 #### What is not covered
 
-The check is deliberately limited to string *literals*, because only those can be resolved
+The check is deliberately limited to compile-time constant keys, because only those can be resolved
 statically. The following must be covered by ordinary unit tests instead:
 
-- non-literal keys, e.g. `getBundle().getString(text)`, as frequently found in enums;
+- non-constant keys, e.g. `getBundle().getString(text)`, as frequently found in enums. Each such
+  bundle invocation is logged as a warning (`cannot verify getString() argument, not a constant`),
+  prefixed with its source location. Once a unit test covers the keys, annotate the method, the class,
+  or any other enclosing declaration with `@SuppressWarnings("bundle")` to silence the warning;
 - `PdoBundles`, i.e., translations for `@Singular`/`@Plural` (see `PdoUtilitiesTest`);
 - `ValidationBundles`, i.e., translations inside validators — those are covered by the
   `validations` goal instead.

@@ -7,14 +7,16 @@
 
 package ${package}.common;
 
+import org.tentackle.common.Bundle;
+
 import java.util.ResourceBundle;
 
 /**
  * Holds versioning information.
  */
+@Bundle
 public class Version {
 
-  // to avoid i18n test errors (not annotated with @Bundle)
   private static final String VERSION_STR = "version";
   private static final String DATE_STR = "date";
 

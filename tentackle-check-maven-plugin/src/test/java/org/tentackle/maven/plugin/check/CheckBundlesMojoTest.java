@@ -252,7 +252,9 @@ public class CheckBundlesMojoTest {
 
     run();
 
+    String location = new File(sourceDir, "com/example/app/Client.java").toPath().toAbsolutePath() + ":[6,31]";
     assertTrue(RecordingLog.contains(log.getWarnMessages(),
+                                     location + ": cannot determine whether getString() refers to a bundle, " +
                                      "checked anyway: com.example.app.Client: com.example.app.AppBundle -> 'greeting'"),
                log.getWarnMessages().toString());
     assertTrue(RecordingLog.contains(log.getInfoMessages(), "1 key checked for en_US in 1 bundle, no errors"),
@@ -282,6 +284,55 @@ public class CheckBundlesMojoTest {
     assertTrue(RecordingLog.contains(log.getInfoMessages(), "1 key checked for en_US in 1 bundle, no errors"),
                log.getInfoMessages().toString());
     assertFalse(RecordingLog.contains(log.getWarnMessages(), "checked anyway"), log.getWarnMessages().toString());
+  }
+
+  /**
+   * A key given by a constant is checked like a literal.
+   */
+  @Test
+  public void checksAConstantKey() throws Exception {
+    CheckTestSupport.writeFile(sourceDir, "com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          private static final String KEY = "greeting";
+
+          public String hello(java.util.ResourceBundle bundle) {
+            return bundle.getString(KEY);
+          }
+        }
+        """);
+    bundle("com.example.app.Client", "greeting=Hello");
+
+    run();
+
+    assertTrue(RecordingLog.contains(log.getInfoMessages(), "1 key checked for en_US in 1 bundle, no errors"),
+               log.getInfoMessages().toString());
+    assertFalse(RecordingLog.contains(log.getWarnMessages(), "cannot verify"), log.getWarnMessages().toString());
+  }
+
+  /**
+   * A key that is not a constant cannot be checked and is logged as a warning.
+   */
+  @Test
+  public void warnsAboutANonConstantKey() throws Exception {
+    CheckTestSupport.writeFile(sourceDir, "com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          public String hello(java.util.ResourceBundle bundle, String key) {
+            return bundle.getString(key);
+          }
+        }
+        """);
+
+    run();
+
+    String location = new File(sourceDir, "com/example/app/Client.java").toPath().toAbsolutePath() + ":[5,29]";
+    assertTrue(RecordingLog.contains(log.getWarnMessages(),
+                                     location + ": cannot verify getString() argument, not a constant: " +
+                                     "com.example.app.Client: com.example.app.bundle -> 'key'"),
+               log.getWarnMessages().toString());
   }
 
 

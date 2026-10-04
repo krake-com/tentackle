@@ -45,8 +45,10 @@ import java.util.Set;
 /**
  * Verifies all bundle getString() invocations.
  * <p>
- * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>,
- * where <code>&lt;reference&gt;</code> is:
+ * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;key&gt;)</code>,
+ * where <code>&lt;key&gt;</code> is a compile-time constant, i.e. a string literal, a constant variable
+ * such as {@code static final String KEY = "foo"}, or a concatenation of those,
+ * and <code>&lt;reference&gt;</code> is:
  * <ul>
  * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.
  * The class is resolved via a single-type import or the package of the invoking class.</li>
@@ -69,7 +71,10 @@ import java.util.Set;
  * <p>
  * The following cases are not covered by this mojo:
  * <ul>
- * <li>all non-literals, e.g. getBundle().getString(text) as often found in enums. Needs explicit tests.</li>
+ * <li>all non-constant keys, e.g. getBundle().getString(text) as often found in enums.
+ * They are logged as warnings and need explicit tests.
+ * The warnings can be suppressed by annotating the invoking code or any enclosing declaration
+ * with {@code @SuppressWarnings("bundle")}.</li>
  * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
  * <li>ValidationBundles, i.e. translations in validators, are covered by the mojo tentackle-check:validations.</li>
  * </ul>
@@ -127,7 +132,11 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
   public void finishExecute() throws MojoExecutionException {
 
     for (BundleKey key: bundleScanner.getUnresolvedKeys()) {
-      getLogger().warn("cannot determine whether getString() refers to a bundle, checked anyway: {}", key);
+      getLogger().warn("{}: cannot determine whether getString() refers to a bundle, checked anyway: {}",
+                       key.getLocation(), key);
+    }
+    for (BundleKey key: bundleScanner.getUnverifiedKeys()) {
+      getLogger().warn("{}: cannot verify getString() argument, not a constant: {}", key.getLocation(), key);
     }
     if (verbosityLevel.isDebug()) {
       for (BundleKey key: bundleScanner.getSkippedKeys()) {

@@ -21,7 +21,8 @@ package org.tentackle.maven.plugin.check;
 import java.util.Locale;
 
 /**
- * A bundle key referenced in the sources via {@code <reference>.getString("<key>")}.
+ * A bundle key referenced in the sources via {@code <reference>.getString("<key>")}.<br>
+ * The key may also be given by a constant, such as {@code <reference>.getString(KEY)}.
  *
  * @author harald
  */
@@ -30,6 +31,7 @@ public class BundleKey {
   private final String path;          // the class containing the method invocation
   private final String name;          // the reference, qualified by its import or package
   private final String key;           // the bundle key
+  private final String location;      // the source location of the method invocation, null if unknown
 
   /**
    * Creates a bundle key.
@@ -37,11 +39,24 @@ public class BundleKey {
    * @param path the name of the class containing the method invocation, nested classes separated by a dot
    * @param name the reference {@code getString} is invoked on, qualified by its import or package
    * @param key the bundle key
+   * @param location the source location of the method invocation, null if unknown
    */
-  public BundleKey(String path, String name, String key) {
+  public BundleKey(String path, String name, String key, String location) {
     this.path = path;
     this.name = name;
     this.key = key;
+    this.location = location;
+  }
+
+  /**
+   * Creates a bundle key without a source location.
+   *
+   * @param path the name of the class containing the method invocation, nested classes separated by a dot
+   * @param name the reference {@code getString} is invoked on, qualified by its import or package
+   * @param key the bundle key
+   */
+  public BundleKey(String path, String name, String key) {
+    this(path, name, key, null);
   }
 
   /**
@@ -70,6 +85,16 @@ public class BundleKey {
    */
   public String getKey() {
     return key;
+  }
+
+  /**
+   * Gets the source location of the method invocation.<br>
+   * Formatted as {@code <file>:[<line>,<column>]}, like the messages of the maven compiler.
+   *
+   * @return the location, null if unknown
+   */
+  public String getLocation() {
+    return location;
   }
 
   /**

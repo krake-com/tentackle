@@ -36,12 +36,19 @@ public class FxFxBundle {
     return BundleFactory.getBundle(FxFxBundle.class.getName(),
                                    LocaleProvider.getInstance().getLocale());
   }
+  @SuppressWarnings("bundle")
   public static String getString(String key) {
     return getBundle().getString(key);
   }
   private FxFxBundle() { }
 }
 ```
+
+> Note: the static `getString(key)` must be annotated with `@SuppressWarnings("bundle")`.
+> Its key is a parameter, not a compile-time constant, so the
+> [`tentackle-check:bundles`](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md#what-is-not-covered)
+> goal cannot verify it and would issue a warning otherwise. The keys passed by the call sites
+> are verified instead.
 
 Call sites read as plain, legible text:
 
