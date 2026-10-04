@@ -18,11 +18,12 @@ e.g., `mvn tentackle-check:bundles`.
 
 ### How It Works
 
-Both goals are annotation-processing mojos: they pass the project's sources to the in-process Java
-compiler with `-proc:only` and let an annotation processor collect what to check. The `bundles` goal
-scans the syntax trees for `getString` invocations, while the `validations` goal inspects the
-annotations of the elements. Errors reported by the processors fail the build. Compilation errors
-in the sources are only logged as warnings (see `showCompileOutput`).
+Both goals pass the project's sources to the in-process Java compiler. The `validations` goal runs
+it with `-proc:only` and lets an annotation processor inspect the annotations of the elements. Errors
+reported by the processor fail the build. The `bundles` goal runs it with `-proc:none`, attributes
+the sources (`JavacTask.analyze()`, no class files are written), and scans the attributed syntax
+trees for `getString` invocations. Compilation errors in the sources are only logged as warnings
+(see `showCompileOutput`).
 
 The checks themselves load the project's *compiled* output: the annotation and validator classes,
 the `*.properties` bundles copied to `target/classes`, and the `META-INF/bundles` files written by the
@@ -135,10 +136,17 @@ A reference whose last name starts lowercase or is all uppercase counts as a var
 Any other name is taken as a bundle class. Nested, local, and anonymous classes use the bundle of
 their outermost class.
 
-The scanner does not know the type of the reference: **every** single-argument `getString` call with
-a string literal is checked, including, for example, `ResultSet.getString("name")`. Classes making
-such calls must be excluded from the check via `filesets`. Unlike `sourceDir`, a file set is not
-limited to Java sources, so the include is required:
+Since the sources are attributed, only invocations that really refer to a bundle are checked: a
+**static** `getString(String)` of a bundle class, such as `BlahBundle.getString("foo")`, or a `getString`
+invoked on a `java.util.ResourceBundle` (or a subclass). A bundle class is annotated with `@Bundle` or
+another annotation that registers bundles, such as `@FxControllerService` (any annotation whose
+`@Analyze` handler is a `BundleAnalyzeHandler`). Other calls, such as `ResultSet.getString("name")` or
+the static `getString` of a class without such an annotation, are ignored and listed with `verbosity` set to `debug`. If the invoked method
+or the type of the reference cannot be determined, for example because of compile errors, the
+invocation is checked anyway and logged as a warning.
+
+To narrow down the checked sources, use `filesets`. Unlike `sourceDir`, a file set is not limited to
+Java sources, so the include is required:
 
 ```xml
 <configuration>
@@ -148,7 +156,7 @@ limited to Java sources, so the include is required:
         <include>**/*.java</include>
       </includes>
       <excludes>
-        <exclude>**/persist/**</exclude>
+        <exclude>**/noi18n/**</exclude>
       </excludes>
     </fileset>
   </filesets>

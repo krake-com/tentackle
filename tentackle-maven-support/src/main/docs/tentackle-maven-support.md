@@ -177,7 +177,10 @@ purely for annotation processing:
    are initialized, then a `CompilationTask` is created with the source encoding (if set), the project classpath
    (added to **both** `-classpath` and `--module-path`), `-Averbosity=…` passed through to the processors, the
    `compilerArgument` and `compilerArgs`, and finally `-proc:only` — unless the arguments already contain a
-   `-proc:` option.
+   `-proc:` option. Subclasses may change that default via `getDefaultProcOption()` and how the task is run via
+   `runCompilationTask(...)`: the `bundles` goal of the
+   [check plugin](../../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md) uses
+   `-proc:none` and attributes the sources with `JavacTask.analyze()` to learn the types of the expressions.
 3. Diagnostics are collected and formatted as `file:line:col: message`. An error is an **analyze error** if it was
    reported by a processor's `Messager` (javac's diagnostic code `compiler.err.proc.messager`, see
    `isAnalyzeError`), any other error is a compile error. Both are counted separately — analyze errors are always
