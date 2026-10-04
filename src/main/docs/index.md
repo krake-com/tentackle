@@ -279,6 +279,7 @@ topic-grouped listing of every document, see the
 - **Technical & scientific applications** — [Why Tentackle Fits Technical and Scientific Applications](./technical-scientific.md)
 - **Temporary exceptions (the retry classifier)** — [Exceptions and Error Handling](./exceptions.md#the-temporary-flag), [Transactions and Transparent Retry](../../../tentackle-pdo/src/main/docs/transaction.md#what-is-retried--temporary-exceptions)
 - **Tables / tree-tables (configuration, cell types, layouts)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
+- **Table aliases (`alias`, automatic generation)** — [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md#table-aliases), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Table names (`@TableName`, schemas, prefixes)** — [Table Names](../../../tentackle-session/src/main/docs/table-names.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Table popup (column chooser, CSV/XML export, table preferences)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#table-popup-export-and-printing)
 - **Tasks / task dispatcher (background execution)** — [Tasks and Daemons](../../../tentackle-core/src/main/docs/tasks-daemon.md)

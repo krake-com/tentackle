@@ -62,6 +62,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -71,6 +72,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -1225,73 +1227,7 @@ public class ModelImpl implements Model {
     }
 
     // generate automatic alias if not specified in model
-
-    // prio 1: apply camelcase letters and digits if possible
-    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      Entity entity = entityInfo.getEntity();
-      if (entity.getTableName() != null && entity.getTableAlias() == null) {
-        // determine the meaningful letters: the start of each camel-case word and all digits
-        StringBuilder letters = new StringBuilder();
-        for (int i = 0; i < entity.getName().length(); i++) {
-          char currentChar = entity.getName().charAt(i);
-          // each uppercase letter and digit (2=to, 4=for, etc...)
-          if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
-            letters.append(currentChar);
-          }
-        }
-        applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT));
-      }
-    }
-
-    // for all others still unnamed
-    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      Entity entity = entityInfo.getEntity();
-      if (entity.getTableName() != null && entity.getTableAlias() == null) {
-        StringBuilder letters = new StringBuilder();
-        boolean aliasFound = false;
-
-        // try syllables
-        List<String> syllables = ModelUtilities.getInstance().extractSyllables(entity.getName());
-        if (!syllables.isEmpty()) {
-          for (String syllable : syllables) {
-            letters.append(syllable.charAt(0));
-            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
-              aliasFound = true;
-              break;
-            }
-          }
-        }
-
-        if (!aliasFound) {
-          // try the first syllable's letter, if any, followed by the consonants of the next 5 characters,
-          // starting at an alias length of 3
-          if (letters.length() > 1) {
-            letters.setLength(1);
-          }
-          for (int i = 1; i < entity.getName().length() && i < 6; i++) {
-            char c = Character.toLowerCase(entity.getName().charAt(i));
-            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
-              letters.append(c);
-              if (letters.length() >= 3) {
-                if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
-                  aliasFound = true;
-                  break;
-                }
-              }
-            }
-          }
-
-          if (!aliasFound) {
-            // just take the first letter and count. This will always work
-            String aliasPrefix = entity.getName().substring(0, 1).toLowerCase(Locale.ROOT);
-            int count = 1;
-            while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
-              count++;
-            }
-          }
-        }
-      }
-    }
+    generateTableAliases(aliasMap);
 
     // sets the inheritance level (ordinal)
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
@@ -1380,6 +1316,203 @@ public class ModelImpl implements Model {
       current = current.getSuperEntity();
     }
     return false;
+  }
+
+  /**
+   * Generates the table aliases for all entities providing a table but without an alias.
+   * <p>
+   * The entities at the core of a domain model are usually the ones with the most relations, and they
+   * show up in most of the joins. Hence, the shorter aliases go to the more central entities:
+   * <ol>
+   *   <li>the entities are ranked by {@link #rankByCentrality(Collection)},</li>
+   *   <li>the prefixes of the camel-case initials ({@link #createPrimaryTableAliasCandidates(Entity)}) are assigned
+   *   in rounds of increasing alias length: in each round, the entities in ranking order take the first free
+   *   candidate of that length,</li>
+   *   <li>the entities still without an alias get the less obvious candidates
+   *   ({@link #createSecondaryTableAliasCandidates(Entity)}) the same way,</li>
+   *   <li>all entities still without an alias get the first letter of their name followed by a counter.</li>
+   * </ol>
+   * Within each step, an entity can only end up with a longer alias than a less central one, if all its shorter
+   * candidates were already taken by more central entities or defined explicitly in the model.
+   *
+   * @param aliasMap the map holding the aliases already assigned mapped to entities
+   */
+  protected void generateTableAliases(Map<String,Entity> aliasMap) {
+    List<Entity> entities = new ArrayList<>();
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      Entity entity = entityInfo.getEntity();
+      if (entity.getTableName() != null && entity.getTableAlias() == null) {
+        entities.add(entity);
+      }
+    }
+
+    if (!entities.isEmpty()) {
+      List<Entity> rankedEntities = rankByCentrality(entities);
+      applyTableAliasCandidates(aliasMap, rankedEntities, this::createPrimaryTableAliasCandidates);
+      applyTableAliasCandidates(aliasMap, rankedEntities, this::createSecondaryTableAliasCandidates);
+
+      // for all others still unnamed: just take the first letter and count. This will always work
+      for (Entity entity : rankedEntities) {
+        if (entity.getTableAlias() == null) {
+          String aliasPrefix = entity.getName().substring(0, 1).toLowerCase(Locale.ROOT);
+          int count = 1;
+          while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Applies alias candidates to the entities without an alias in rounds of increasing alias length.<br>
+   * In each round, the entities in ranking order take their first free candidate of that length.
+   *
+   * @param aliasMap the map holding the aliases already assigned mapped to entities
+   * @param rankedEntities the entities ranked by centrality, most central first
+   * @param candidateFactory creates the candidates of an entity
+   */
+  protected void applyTableAliasCandidates(Map<String,Entity> aliasMap, List<Entity> rankedEntities,
+                                           Function<Entity,List<String>> candidateFactory) {
+    Map<Entity,List<String>> candidateMap = new HashMap<>();
+    int maxLength = 0;
+    for (Entity entity : rankedEntities) {
+      if (entity.getTableAlias() == null) {
+        List<String> candidates = candidateFactory.apply(entity);
+        candidateMap.put(entity, candidates);
+        for (String candidate : candidates) {
+          maxLength = Math.max(maxLength, candidate.length());
+        }
+      }
+    }
+
+    for (int length = 1; length <= maxLength; length++) {
+      for (Entity entity : rankedEntities) {
+        if (entity.getTableAlias() == null) {
+          for (String candidate : candidateMap.get(entity)) {
+            if (candidate.length() == length && applyTableAlias(aliasMap, entity, candidate)) {
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Ranks the entities by their centrality within the model, most central first.
+   * <p>
+   * The primary criterion is the number of related entities (see {@link #getRelatedEntities(Entity)}),
+   * the secondary the sum of the related entities' number of related entities, i.e. an entity related to the
+   * core of the model ranks higher than an entity related to its periphery. Ties are resolved by the entity name.
+   *
+   * @param entities the entities to rank
+   * @return the ranked entities
+   */
+  protected List<Entity> rankByCentrality(Collection<Entity> entities) {
+    Map<Entity,Set<Entity>> relatedMap = new HashMap<>();
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      Entity entity = entityInfo.getEntity();
+      relatedMap.put(entity, getRelatedEntities(entity));
+    }
+
+    Map<Entity,Integer> degreeMap = new HashMap<>();
+    Map<Entity,Integer> weightMap = new HashMap<>();
+    for (Entity entity : entities) {
+      Set<Entity> relatedEntities = relatedMap.computeIfAbsent(entity, this::getRelatedEntities);
+      int weight = 0;
+      for (Entity relatedEntity : relatedEntities) {
+        weight += relatedMap.computeIfAbsent(relatedEntity, this::getRelatedEntities).size();
+      }
+      degreeMap.put(entity, relatedEntities.size());
+      weightMap.put(entity, weight);
+    }
+
+    List<Entity> rankedEntities = new ArrayList<>(entities);
+    rankedEntities.sort(Comparator.<Entity>comparingInt(degreeMap::get).reversed()
+                                  .thenComparing(Comparator.<Entity>comparingInt(weightMap::get).reversed())
+                                  .thenComparing(Entity::getName));
+    return rankedEntities;
+  }
+
+  /**
+   * Gets the entities related to the given entity.<br>
+   * Includes the relations in both directions, components as well as non-composite references.
+   * Inheritance hierarchies count as a single entity represented by their top super entity.
+   *
+   * @param entity the entity
+   * @return the top super entities of the related entities, never containing the entity's own hierarchy
+   */
+  protected Set<Entity> getRelatedEntities(Entity entity) {
+    Set<Entity> relatedEntities = new HashSet<>();
+    for (Relation relation : entity.getAllRelations()) {
+      if (relation.getForeignEntity() != null) {
+        relatedEntities.add(relation.getForeignEntity().getTopSuperEntity());
+      }
+    }
+    for (Relation relation : entity.getAllReferencingRelations()) {
+      if (relation.getEntity() != null) {
+        relatedEntities.add(relation.getEntity().getTopSuperEntity());
+      }
+    }
+    relatedEntities.remove(entity.getTopSuperEntity());
+    return relatedEntities;
+  }
+
+  /**
+   * Creates the primary table alias candidates for an entity.<br>
+   * These are the prefixes of the camel-case initials and digits (2=to, 4=for, etc...).
+   * For example, {@code CustomerOrder} yields {@code c} and {@code co}.
+   *
+   * @param entity the entity
+   * @return the distinct candidates in lowercase
+   */
+  protected List<String> createPrimaryTableAliasCandidates(Entity entity) {
+    Set<String> candidates = new LinkedHashSet<>();
+    String name = entity.getName();
+    StringBuilder letters = new StringBuilder();
+    for (int i = 0; i < name.length(); i++) {
+      char currentChar = name.charAt(i);
+      if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
+        letters.append(Character.toLowerCase(currentChar));
+        candidates.add(letters.toString());
+      }
+    }
+    return new ArrayList<>(candidates);
+  }
+
+  /**
+   * Creates the secondary table alias candidates for an entity.<br>
+   * Used if all primary candidates are already taken.
+   * <ol>
+   *   <li>the prefixes of the first letters of the syllables</li>
+   *   <li>the first letter followed by the consonants of the next 5 characters, starting at an alias length of 3</li>
+   * </ol>
+   *
+   * @param entity the entity
+   * @return the distinct candidates in lowercase
+   */
+  protected List<String> createSecondaryTableAliasCandidates(Entity entity) {
+    Set<String> candidates = new LinkedHashSet<>();
+    String name = entity.getName();
+    StringBuilder letters = new StringBuilder();
+    for (String syllable : ModelUtilities.getInstance().extractSyllables(name)) {
+      letters.append(Character.toLowerCase(syllable.charAt(0)));
+      candidates.add(letters.toString());
+    }
+
+    letters.setLength(0);
+    letters.append(Character.toLowerCase(name.charAt(0)));
+    for (int i = 1; i < name.length() && i < 6; i++) {
+      char c = Character.toLowerCase(name.charAt(i));
+      if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
+        letters.append(c);
+        if (letters.length() >= 3) {
+          candidates.add(letters.toString());
+        }
+      }
+    }
+    return new ArrayList<>(candidates);
   }
 
   /**
