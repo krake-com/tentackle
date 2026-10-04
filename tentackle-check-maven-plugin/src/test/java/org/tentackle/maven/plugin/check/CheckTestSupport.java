@@ -61,7 +61,7 @@ import java.util.List;
  * log handlers of the whole test JVM.
  * <p>
  * The annotation processing itself is <em>not</em> stubbed: the tests compile real java sources
- * with the real {@code javac} and the mojo's own processors, since the scanning of the syntax
+ * with the real {@code javac} and the mojo's own processors or scanner, since the scanning of the syntax
  * tree is what these mojos are about. The sources are written to a temporary directory per test.
  * <p>
  * The only thing that has to be replaced is {@code setMojoParameters()}, which casts

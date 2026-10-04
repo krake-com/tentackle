@@ -30,6 +30,7 @@ import org.tentackle.maven.plugin.check.CheckTestSupport.TestBundlesMojo;
 import java.io.File;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -238,6 +239,49 @@ public class CheckBundlesMojoTest {
                log.getInfoMessages().toString());
     assertTrue(RecordingLog.contains(log.getInfoMessages(), "loaded bundle com.example.app.AppBundle, locale en_US"),
                log.getInfoMessages().toString());
+  }
+
+
+  /**
+   * An invocation that cannot be resolved is checked anyway, but logged as a warning.
+   */
+  @Test
+  public void warnsAboutAnUnresolvedInvocation() throws Exception {
+    client("greeting");     // AppBundle is not part of the sources
+    bundle("com.example.app.AppBundle", "greeting=Hello");
+
+    run();
+
+    assertTrue(RecordingLog.contains(log.getWarnMessages(),
+                                     "checked anyway: com.example.app.Client: com.example.app.AppBundle -> 'greeting'"),
+               log.getWarnMessages().toString());
+    assertTrue(RecordingLog.contains(log.getInfoMessages(), "1 key checked for en_US in 1 bundle, no errors"),
+               log.getInfoMessages().toString());
+  }
+
+  /**
+   * A resolved invocation is not warned about.
+   */
+  @Test
+  public void doesNotWarnAboutAResolvedInvocation() throws Exception {
+    client("greeting");
+    CheckTestSupport.writeFile(sourceDir, "com/example/app/AppBundle.java", """
+        package com.example.app;
+
+        @org.tentackle.common.Bundle
+        public class AppBundle {
+          public static String getString(String key) {
+            return key;
+          }
+        }
+        """);
+    bundle("com.example.app.AppBundle", "greeting=Hello");
+
+    run();
+
+    assertTrue(RecordingLog.contains(log.getInfoMessages(), "1 key checked for en_US in 1 bundle, no errors"),
+               log.getInfoMessages().toString());
+    assertFalse(RecordingLog.contains(log.getWarnMessages(), "checked anyway"), log.getWarnMessages().toString());
   }
 
 

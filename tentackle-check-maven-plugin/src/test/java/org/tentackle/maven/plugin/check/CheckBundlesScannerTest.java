@@ -35,9 +35,9 @@ import static org.testng.Assert.assertTrue;
 /**
  * Tests what the scanner picks up from the syntax tree.
  * <p>
- * The scanner works on the parsed sources only - it never resolves a symbol - which is why the
- * bundle a {@code getString()} call refers to has to be derived from the imports, the package and
- * the shape of the expression. These rules are what the tests below pin down; the sources are
+ * The bundle a {@code getString()} call refers to is derived from the imports, the package and
+ * the shape of the expression. The attributed types only decide whether the call refers to a
+ * bundle at all. These rules are what the tests below pin down; the sources are
  * compiled by the real {@code javac} through the mojo, so the trees are the ones the plugin
  * really sees.
  */
@@ -263,6 +263,180 @@ public class CheckBundlesScannerTest {
   }
 
 
+  /**
+   * A {@code getString} of something that is not a bundle, such as a {@code ResultSet}, is ignored.
+   */
+  @Test
+  public void ignoresNonBundleReceivers() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          public String name(java.sql.ResultSet rs) throws java.sql.SQLException {
+            return rs.getString("name");
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of());
+    assertEquals(skipped(), List.of("com.example.app.Client: com.example.app.rs -> 'name'"));
+  }
+
+  /**
+   * So is the {@code getString} of an object returned by a method, if that is not a bundle.
+   */
+  @Test
+  public void ignoresAMethodReturningANonBundle() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          public String hello() {
+            return getOther().getString("greeting");
+          }
+
+          private Other getOther() {
+            return new Other();
+          }
+
+          static class Other {
+            String getString(String key) { return key; }
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of());
+  }
+
+  /**
+   * Subclasses of {@code ResourceBundle} are bundles as well.
+   */
+  @Test
+  public void acceptsAResourceBundleSubclass() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          private java.util.PropertyResourceBundle bundle;
+
+          public String hello() {
+            return bundle.getString("greeting");
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Client: com.example.app.bundle -> 'greeting'"));
+    assertEquals(unresolved(), List.of());
+  }
+
+  /**
+   * The static {@code getString} of a bundle class is a bundle lookup.
+   */
+  @Test
+  public void acceptsAStaticBundleClass() throws Exception {
+    source("com/example/i18n/AppBundle.java", """
+        package com.example.i18n;
+
+        @org.tentackle.common.Bundle
+        public class AppBundle {
+          public static String getString(String key) {
+            return key;
+          }
+        }
+        """);
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        import com.example.i18n.AppBundle;
+
+        public class Client {
+          public String hello() {
+            return AppBundle.getString("greeting");
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Client: com.example.i18n.AppBundle -> 'greeting'"));
+    assertEquals(unresolved(), List.of());
+  }
+
+  /**
+   * The static {@code getString} of a class that is not a bundle class is ignored.
+   */
+  @Test
+  public void ignoresAStaticNonBundleClass() throws Exception {
+    source("com/example/app/Helper.java", """
+        package com.example.app;
+
+        public class Helper {
+          public String hello() {
+            return Helper.getString("blah");
+          }
+
+          public static String getString(String dummy) {
+            return dummy;
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of());
+    assertEquals(skipped(), List.of("com.example.app.Helper: com.example.app.Helper -> 'blah'"));
+    assertEquals(unresolved(), List.of());
+  }
+
+  /**
+   * A bundle registered by another annotation of the bundle analyze handler, such as
+   * {@code @FxControllerService}, counts as well.
+   */
+  @Test
+  public void acceptsAnotherBundleAnnotation() throws Exception {
+    source("com/example/app/MyBundleAnnotation.java", """
+        package com.example.app;
+
+        @org.tentackle.common.Analyze("org.tentackle.buildsupport.FxControllerBundleAnalyzeHandler")
+        @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+        public @interface MyBundleAnnotation {
+        }
+        """);
+    source("com/example/app/Helper.java", """
+        package com.example.app;
+
+        @MyBundleAnnotation
+        public class Helper {
+          public String hello() {
+            return Helper.getString("blah");
+          }
+
+          public static String getString(String dummy) {
+            return dummy;
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Helper: com.example.app.Helper -> 'blah'"));
+  }
+
+  /**
+   * If the type of the reference cannot be determined, the key is checked nevertheless.
+   */
+  @Test
+  public void collectsAnUnresolvedReceiver() throws Exception {
+    source("com/example/app/Client.java", """
+        package com.example.app;
+
+        public class Client {
+          public String hello() {
+            return unknown.getString("greeting");
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of("com.example.app.Client: com.example.app.unknown -> 'greeting'"));
+    assertEquals(skipped(), List.of());
+    assertEquals(unresolved(), List.of("com.example.app.Client: com.example.app.unknown -> 'greeting'"));
+  }
+
+
   // ---------------- fixture ----------------
 
   private void source(String path, String contents) {
@@ -290,6 +464,34 @@ public class CheckBundlesScannerTest {
   private List<BundleKey> bundleKeys() {
     CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
     return scanner.getBundleKeys();
+  }
+
+  /**
+   * Gets the ignored {@code getString} invocations.
+   *
+   * @return the ignored keys
+   */
+  private List<String> skipped() {
+    CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
+    List<String> keys = new ArrayList<>();
+    for (BundleKey bundleKey : scanner.getSkippedKeys()) {
+      keys.add(bundleKey.toString());
+    }
+    return keys;
+  }
+
+  /**
+   * Gets the collected keys whose invocation could not be resolved.
+   *
+   * @return the unresolved keys
+   */
+  private List<String> unresolved() {
+    CheckBundlesScanner scanner = CheckTestSupport.getField(mojo, "bundleScanner");
+    List<String> keys = new ArrayList<>();
+    for (BundleKey bundleKey : scanner.getUnresolvedKeys()) {
+      keys.add(bundleKey.toString());
+    }
+    return keys;
   }
 
   /**

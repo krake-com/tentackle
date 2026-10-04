@@ -19,6 +19,9 @@
 
 package org.tentackle.maven.plugin.check;
 
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.util.JavacTask;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -27,6 +30,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.common.BundleSupport;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javax.tools.JavaCompiler.CompilationTask;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -54,9 +60,12 @@ import java.util.Set;
  * &#64;FxControllerService (see {@link BundleSupport}), and is loaded for each configured locale.
  * Furthermore, the key sets of each referenced bundle are compared across all locales.
  * <p>
- * Any single-argument {@code getString} invocation with a string literal counts, regardless of the type
- * it is invoked on. Classes that must not be checked, for example because they invoke
- * {@code ResultSet.getString("column")}, need to be excluded from the fileset.
+ * The sources are attributed by the compiler, so only invocations that really refer to a bundle count:
+ * a static {@code getString(String)} of a bundle class, i.e. annotated with &#64;Bundle or another annotation
+ * that registers bundles, or one invoked on a {@link ResourceBundle}.
+ * Other invocations, such as {@code ResultSet.getString("column")}, are ignored.
+ * If the invoked method or the type of the reference cannot be determined, for example due to compile
+ * errors, the invocation is checked nevertheless and logged as a warning.
  * <p>
  * The following cases are not covered by this mojo:
  * <ul>
@@ -81,12 +90,50 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
    */
   public CheckBundlesMojo() {
     bundleScanner = new CheckBundlesScanner();
-    addProcessor(new CheckBundlesProcessor(bundleScanner));
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * No annotation processors are needed, since the sources are attributed and scanned
+   * by {@link #runCompilationTask(CompilationTask)}.
+   */
+  @Override
+  protected String getDefaultProcOption() {
+    return "-proc:none";
+  }
+
+  /**
+   * Attributes the sources and scans them for {@code getString} invocations.
+   *
+   * @param task the compilation task
+   */
+  @Override
+  protected void runCompilationTask(CompilationTask task) {
+    JavacTask javacTask = (JavacTask) task;
+    try {
+      Iterable<? extends CompilationUnitTree> units = javacTask.parse();
+      javacTask.analyze();    // errors are reported as diagnostics
+      bundleScanner.scan(javacTask, units);
+    }
+    catch (IOException iox) {
+      throw new UncheckedIOException(iox);
+    }
   }
 
 
   @Override
   public void finishExecute() throws MojoExecutionException {
+
+    for (BundleKey key: bundleScanner.getUnresolvedKeys()) {
+      getLogger().warn("cannot determine whether getString() refers to a bundle, checked anyway: {}", key);
+    }
+    if (verbosityLevel.isDebug()) {
+      for (BundleKey key: bundleScanner.getSkippedKeys()) {
+        getLogger().info("ignored getString() invocation, not a bundle: {}", key);
+      }
+    }
 
     // find referenced bundle names (avoids unnecessary loading of all bundles in the classpath)
     Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application

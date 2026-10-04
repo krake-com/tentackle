@@ -336,6 +336,30 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
+   * Gets the {@code -proc:} option added to the compiler arguments if none is configured.<br>
+   * The default is {@code -proc:only}, i.e. the processors run, but nothing is compiled.
+   * Subclasses scanning attributed syntax trees instead of running processors return {@code -proc:none}
+   * and override {@link #runCompilationTask(CompilationTask)}.
+   *
+   * @return the default {@code -proc:} option, never null
+   */
+  protected String getDefaultProcOption() {
+    return "-proc:only";
+  }
+
+
+  /**
+   * Runs the compilation task.<br>
+   * The default invokes {@link CompilationTask#call()}.
+   *
+   * @param task the task with the processors set, if any
+   */
+  protected void runCompilationTask(CompilationTask task) {
+    task.call();
+  }
+
+
+  /**
    * Returns whether a diagnostic is an error reported by one of the annotation processors.
    * <p>
    * Analyze errors fail the build, whereas errors in the sources are reported as a warning only,
@@ -472,7 +496,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
 
       if (!procFound) {
-        options.add("-proc:only");    // run only the annotation processing
+        options.add(getDefaultProcOption());    // usually run only the annotation processing
       }
 
       CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null,
@@ -481,11 +505,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       if (processors != null) {
         task.setProcessors(processors);
       }
-      else  {
+      else if (!options.contains("-proc:none")) {
         getLogger().warn("no annotation processors defined");
       }
 
-      task.call();
+      runCompilationTask(task);
 
       // extract errors
       for (Diagnostic<? extends JavaFileObject> diag: diagnosticCollector.getDiagnostics()) {
