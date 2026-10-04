@@ -180,6 +180,7 @@ topic-grouped listing of every document, see the
 ## N
 
 - **Naming rules (derived class names, `NamingRules`)** — [Naming Rules](../../../tentackle-common/src/main/docs/naming-rules.md)
+- **NoBundle (bundle look-alikes, excluded from `tentackle-check:bundles`)** — [Resource Bundles and Internationalization](../../../tentackle-common/src/main/docs/bundle.md#the-bundle-convention), [Checker Maven Plugin](../../../tentackle-check-maven-plugin/src/main/docs/tentackle-check-maven-plugin.md#the-bundles-goal)
 - **N:M relations** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Normtext (phonetically normalized search, `NormText`)** — [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#normtext), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Number pools / ranges** — [Number Sources](../../../tentackle-pdo/src/main/docs/ns.md), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#built-in-persistence-implementations)

@@ -7,14 +7,14 @@
 
 package ${package}.common;
 
-import org.tentackle.common.Bundle;
+import org.tentackle.common.NoBundle;
 
 import java.util.ResourceBundle;
 
 /**
  * Holds versioning information.
  */
-@Bundle
+@NoBundle
 public class Version {
 
   private static final String VERSION_STR = "version";

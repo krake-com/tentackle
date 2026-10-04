@@ -336,6 +336,34 @@ public class CheckBundlesMojoTest {
   }
 
 
+  /**
+   * A class annotated with {@code @NoBundle}, such as the archetype's {@code Version}, needs no registered bundle.
+   */
+  @Test
+  public void ignoresANoBundleClass() throws Exception {
+    CheckTestSupport.writeFile(sourceDir, "com/example/app/Version.java", """
+        package com.example.app;
+
+        import java.util.ResourceBundle;
+
+        @org.tentackle.common.NoBundle
+        public class Version {
+          public static final String RELEASE = getBundle().getString("version");
+
+          public static ResourceBundle getBundle() {
+            return ResourceBundle.getBundle(Version.class.getName());
+          }
+        }
+        """);
+
+    run();
+
+    assertTrue(RecordingLog.contains(log.getInfoMessages(), "0 keys checked for en_US in 0 bundles, no errors"),
+               log.getInfoMessages().toString());
+    assertTrue(log.getErrorMessages().isEmpty(), log.getErrorMessages().toString());
+  }
+
+
   // ---------------- fixture ----------------
 
   /**

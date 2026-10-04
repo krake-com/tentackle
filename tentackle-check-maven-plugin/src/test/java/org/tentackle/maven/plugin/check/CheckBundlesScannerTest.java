@@ -328,6 +328,40 @@ public class CheckBundlesScannerTest {
   }
 
   /**
+   * A class annotated with {@code @NoBundle} only looks like a bundle: its invocations are skipped,
+   * including those of nested classes and those with non-constant keys.
+   */
+  @Test
+  public void skipsNoBundleClasses() throws Exception {
+    source("com/example/app/Version.java", """
+        package com.example.app;
+
+        import java.util.ResourceBundle;
+
+        @org.tentackle.common.NoBundle
+        public class Version {
+          private static final String VERSION_STR = "version";
+
+          public static final String RELEASE = getBundle().getString(VERSION_STR);
+
+          public static ResourceBundle getBundle() {
+            return ResourceBundle.getBundle(Version.class.getName());
+          }
+
+          static class Inner {
+            String get(String key) {
+              return getBundle().getString(key);
+            }
+          }
+        }
+        """);
+
+    assertEquals(scan(), List.of());
+    assertEquals(skipped(), List.of("com.example.app.Version: com.example.app.getBundle() -> 'version'"));
+    assertEquals(unverified(), List.of());
+  }
+
+  /**
    * A non-constant argument of a {@code getString} that is not a bundle lookup is not reported.
    */
   @Test

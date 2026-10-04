@@ -41,7 +41,6 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-
 /**
  * Verifies all bundle getString() invocations.
  * <p>
@@ -66,17 +65,19 @@ import java.util.Set;
  * a static {@code getString(String)} of a bundle class, i.e. annotated with &#64;Bundle or another annotation
  * that registers bundles, or one invoked on a {@link ResourceBundle}.
  * Other invocations, such as {@code ResultSet.getString("column")}, are ignored.
- * If the invoked method or the type of the reference cannot be determined, for example due to compile
+ * So are invocations that refer to the bundle of a class annotated with {@link org.tentackle.common.NoBundle},
+ * i.e. a class that looks like a bundle but is not registered as one.
+ * If the invoked method or the type of the reference cannot be determined, for example, due to compile
  * errors, the invocation is checked nevertheless and logged as a warning.
  * <p>
  * The following cases are not covered by this mojo:
  * <ul>
- * <li>all non-constant keys, e.g. getBundle().getString(text) as often found in enums.
+ * <li>All non-constant keys, e.g., getBundle().getString(text) as often found in enums.
  * They are logged as warnings and need explicit tests.
  * The warnings can be suppressed by annotating the invoking code or any enclosing declaration
  * with {@code @SuppressWarnings("bundle")}.</li>
- * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
- * <li>ValidationBundles, i.e. translations in validators, are covered by the mojo tentackle-check:validations.</li>
+ * <li>PdoBundles, i.e., translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
+ * <li>ValidationBundles, i.e., translations in validators, are covered by the mojo tentackle-check:validations.</li>
  * </ul>
  *
  * @author harald
@@ -244,7 +245,6 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
         }
       }
     }
-
 
     // show results
     StringBuilder localestr = new StringBuilder();

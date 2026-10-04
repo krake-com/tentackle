@@ -40,6 +40,8 @@ import com.sun.source.util.Trees;
 import org.tentackle.buildsupport.BundleAnalyzeHandler;
 import org.tentackle.common.Analyze;
 import org.tentackle.common.Constants;
+import org.tentackle.common.NoBundle;
+import org.tentackle.reflect.ReflectionHelper;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -51,6 +53,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -61,7 +64,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Tree path scanner for bundle getString() method invocations.<br>
  * Collects the invocations of {@code getString} with a single argument that refer to a bundle,
@@ -70,6 +72,7 @@ import java.util.Map;
  * The key must be a compile-time constant expression of string literals and constant variables,
  * such as {@code "key"}, {@code KEY}, {@code Keys.GREETING} or {@code PREFIX + "title"}.
  * Invocations with other keys cannot be verified and are listed in {@link #getUnverifiedKeys()}.<br>
+ * Invocations referring to the bundle of a class annotated with {@link NoBundle} are skipped.<br>
  * Invocations within a declaration annotated with {@code @SuppressWarnings("bundle")}
  * (see {@link Constants#SUPPRESS_WARNINGS_BUNDLE}) are neither listed as unverified nor as unresolved.<br>
  * A bundle class is annotated with an annotation that registers bundles, such as {@code @Bundle},
@@ -88,6 +91,8 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
   private final List<BundleKey> unresolvedKeys = new ArrayList<>(); // checked keys of unresolved invocations
   private final List<BundleKey> unverifiedKeys = new ArrayList<>(); // bundle invocations with a non-constant key
   private Types types;                                            // type utilities of the current task
+  private Elements elements;                                      // element utilities of the current task
+  private final Map<String, Boolean> noBundles = new HashMap<>(); // bundle name : annotated with @NoBundle
   private TypeMirror bundleType;                                  // java.util.ResourceBundle, null if unknown
   private final Map<String, Boolean> bundleHandlers = new HashMap<>(); // analyze handler name : is bundle handler
 
@@ -100,6 +105,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
    */
   public void scan(JavacTask task, Iterable<? extends CompilationUnitTree> units) {
     types = task.getTypes();
+    elements = task.getElements();
     TypeElement bundleElement = task.getElements().getTypeElement("java.util.ResourceBundle");
     bundleType = bundleElement == null ? null : bundleElement.asType();
     Trees trees = Trees.instance(task);
@@ -144,6 +150,10 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
 
           String usingClassName = buildUsingClassName(currentPath);
           Resolution resolution = resolveInvocation(currentPath, classExpr, trees);
+          if (resolution != Resolution.OTHER &&
+              isNoBundle(new BundleKey(usingClassName, bundleName, null).getBundleName())) {
+            resolution = Resolution.OTHER;    // looks like a bundle, but is not
+          }
           String key = determineBundleKey(new TreePath(currentPath, stringExpr), trees);
           if (key != null) {  // method getString("....") or getString(CONSTANT) called
             BundleKey bundleKey = new BundleKey(usingClassName, bundleName, key, buildLocation(stringExpr, trees));
@@ -169,7 +179,6 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     return super.visitMethodInvocation(mit, trees);
   }
 
-
   /**
    * Gets the collected bundle keys.
    *
@@ -179,16 +188,15 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     return bundleKeys;
   }
 
-
   /**
-   * Gets the {@code getString} invocations that were ignored because they don't refer to a bundle.
+   * Gets the {@code getString} invocations that were ignored because they don't refer to a bundle.<br>
+   * This includes the invocations referring to the bundle of a class annotated with {@link NoBundle}.
    *
    * @return the ignored keys, never null
    */
   public List<BundleKey> getSkippedKeys() {
     return skippedKeys;
   }
-
 
   /**
    * Gets the collected bundle keys whose invocation could not be resolved, unless suppressed.<br>
@@ -199,7 +207,6 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
   public List<BundleKey> getUnresolvedKeys() {
     return unresolvedKeys;
   }
-
 
   /**
    * Gets the {@code getString} invocations that refer to a bundle or could not be resolved, but whose argument
@@ -224,7 +231,6 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     /** the method or the type of the reference could not be determined. */
     UNRESOLVED
   }
-
 
   /**
    * Determines whether a {@code getString} invocation refers to a bundle.
@@ -253,7 +259,6 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     }
     return types.isAssignable(type, bundleType) ? Resolution.BUNDLE : Resolution.OTHER;
   }
-
 
   /**
    * Determines whether a class is a bundle class.
@@ -284,6 +289,25 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     return resolution;
   }
 
+  /**
+   * Determines whether the class of a bundle is annotated with {@link NoBundle}.
+   *
+   * @param bundleName the bundle name, may contain nested class names
+   * @return true if annotated, false if not or the class is unknown
+   */
+  private boolean isNoBundle(String bundleName) {
+    return noBundles.computeIfAbsent(ReflectionHelper.getOutermostClassName(bundleName), name -> {
+      TypeElement clazz = elements == null ? null : elements.getTypeElement(name);
+      if (clazz != null) {
+        for (AnnotationMirror annotation : clazz.getAnnotationMirrors()) {
+          if (annotation.getAnnotationType().toString().equals(NoBundle.class.getName())) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+  }
 
   /**
    * Determines whether an analyze handler registers bundles.
@@ -302,7 +326,6 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
       }
     });
   }
-
 
   /**
    * Extracts the bundle key from a string expression.<br>
