@@ -22,7 +22,6 @@ import org.testng.annotations.Test;
 
 import java.io.Serial;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
 import static org.testng.Assert.assertEquals;
 
@@ -33,12 +32,33 @@ import static org.testng.Assert.assertEquals;
 public class InvokeInBuddyDelegateInterceptorTest {
 
   /**
-   * The domain side.
+   * The domain side, redirecting the method to its buddy.
    */
-  public interface Greeter {
+  public static class GreeterDomain implements DomainDelegate<Object> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private final PersistenceDelegate<Object> buddy;
+
+    public GreeterDomain(PersistenceDelegate<Object> buddy) {
+      this.buddy = buddy;
+    }
+
+    @Override
+    public PersistenceDelegate<Object> getPersistenceDelegate() {
+      return buddy;
+    }
+
+    @Override
+    public Object me() {
+      return this;
+    }
 
     @InvokeInBuddyDelegate
-    String greet(String name);
+    public String greet(String name) {
+      throw new AssertionError("not redirected to the buddy");
+    }
   }
 
   /**
@@ -83,18 +103,8 @@ public class InvokeInBuddyDelegateInterceptorTest {
    */
   @Test
   public void testInheritedBuddyMethodIsFound() throws Throwable {
-    Buddy buddy = new Buddy();
-    Object domainDelegate = Proxy.newProxyInstance(
-        DomainDelegate.class.getClassLoader(), new Class<?>[] { DomainDelegate.class },
-        (proxy, m, args) -> switch (m.getName()) {
-          case "getPersistenceDelegate" -> buddy;
-          case "hashCode"   -> System.identityHashCode(proxy);
-          case "equals"     -> proxy == args[0];
-          case "toString"   -> "domain-stub";
-          default -> throw new UnsupportedOperationException(m.getName());
-        });
-
-    Method method = Greeter.class.getMethod("greet", String.class);
+    GreeterDomain domainDelegate = new GreeterDomain(new Buddy());
+    Method method = GreeterDomain.class.getMethod("greet", String.class);
     InvokeInBuddyDelegateInterceptor interceptor = new InvokeInBuddyDelegateInterceptor();
     interceptor.setAnnotation(method.getAnnotation(InvokeInBuddyDelegate.class));
     Object[] args = { "world" };
