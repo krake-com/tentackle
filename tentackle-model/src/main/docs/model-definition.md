@@ -641,7 +641,16 @@ warning is logged, but the build does not fail. This is what lets `deferred`/`de
 in the project-wide model defaults even for projects whose CI runs against H2.
 
 The project-wide `deferred`/`deferrable` model default is applied to unique indexes without a filter
-condition and without functions only. It does not apply to entities with the `nodefaults` option for foreign keys,
+condition and without functions only. The reason is the DDL: deferrability is a property of a
+*constraint*, not of an index, so a deferrable unique index is created as a table constraint
+(`ALTER TABLE ... ADD CONSTRAINT ... UNIQUE (...)`). The SQL standard and the backends allow only a plain
+column list in a `UNIQUE` constraint — no `WHERE` clause and no expressions. A filtered or function-based
+unique index can only be expressed as `CREATE UNIQUE INDEX`, which can never be deferred.
+Declaring such an index explicitly `deferred` or `deferrable` is therefore rejected at build time,
+because the explicit request cannot be met. The project-wide default, however, is a blanket setting:
+rejecting every filtered or function-based unique index in the model would make the default unusable for
+most projects, so these indexes are silently left non-deferrable instead.
+The project-wide default does not apply to entities with the `nodefaults` option for foreign keys,
 but it does apply to their unique indexes.
 
 Foreign keys are never declared explicitly (they're derived from `integrity`/relations), so their
