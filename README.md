@@ -1,11 +1,12 @@
 ![Tentackle](./src/main/docs/assets/tentackle_Logo_V6.png)
 
-> **Tentackle lets you build a JavaFX desktop app and its multi-tier backend as one
-> domain model — call any entity method in any JVM, with no REST plumbing between
-> your tiers.**
+> **Tentackle is a Java framework for building multi-tier applications around a single
+> domain model — call any entity method in any JVM, on any tier, with no REST plumbing
+> between them.**
 
-Write `invoice.approve()` once, in the domain layer. Call it from a desktop client
-three tiers away from the database, and it works: the object arrives fully alive,
+Write `invoice.approve()` once, in the domain layer. Call it from any JVM — a server,
+an edge node next to the machine, a web node, or a JavaFX desktop client — three tiers
+away from the database, and it works: the object arrives fully alive,
 navigates its relations on demand, and opens a real transaction on the tier that
 owns the connection. There is no DTO layer, no endpoint, no fetch plan, and no
 `LazyInitializationException` — the exception type does not exist here.
@@ -22,7 +23,7 @@ public void approve() {
   me().persist();                                       // validates the whole aggregate, then writes
 }
 
-// JavaFX client, three tiers from the database — the entire call site
+// any client JVM, three tiers from the database — the entire call site
 invoice.approve();
 ```
 
