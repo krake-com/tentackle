@@ -81,6 +81,8 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   /**
    * Gets the {@link GuiProvider}'s constructor for a PDO class.
    * <p>
+   * The provider may be mapped to a super type of the PDO class, so the constructor's parameter
+   * must accept the PDO class. If more than one constructor accepts it, the most specific one is used.
    * Throws {@link RdcRuntimeException} if no matching constructor was found.
    *
    * @param pdoClass the PDO class
@@ -91,11 +93,16 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   protected <T extends PersistentDomainObject<T>> Optional<Constructor> getConstructor(Class<T> pdoClass) {
     try {
       Class serviceClass = guiClassMapper.mapLenient(pdoClass);
+      Constructor<GuiProvider<T>> match = null;
       for (Constructor<GuiProvider<T>> con : serviceClass.getConstructors()) {
         Class<?>[] params = con.getParameterTypes();
-        if (params.length == 1 && pdoClass.isAssignableFrom(params[0])) {
-          return Optional.of(con);
+        if (params.length == 1 && params[0].isAssignableFrom(pdoClass) &&
+            (match == null || match.getParameterTypes()[0].isAssignableFrom(params[0]))) {
+          match = con;
         }
+      }
+      if (match != null) {
+        return Optional.of(match);
       }
       throw new RdcRuntimeException("no matching constructor found for " + serviceClass.getName() +
                                     "(" + pdoClass.getName() + ")");
