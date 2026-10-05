@@ -925,12 +925,34 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       synchronized (this) {
         id = remoteDelegateId;
         if (id == 0) {
-          id = Db.prepareRemoteDelegate(getClass());
+          id = prepareRemoteDelegate();
           remoteDelegateId = id;
         }
       }
     }
     return id;
+  }
+
+  /**
+   * Prepares the remote delegate.
+   * <p>
+   * This method is called by {@link #getRemoteDelegateId()} if the delegate ID is not yet set.
+   * It is overridable to allow clients to use a ModificationTracker
+   * that is not known to the server.
+   * <p>
+   * Example:
+   * <pre>
+   *   &#64;Override
+   *   protected int prepareRemoteDelegate() {
+   *     // necessary since the server does not know RestModificationTracker.class
+   *     return Db.prepareRemoteDelegate(getClass().getSuperclass());
+   *   }
+   * </pre>
+   *
+   * @return the delegate ID
+   */
+  protected int prepareRemoteDelegate() {
+    return Db.prepareRemoteDelegate(getClass());
   }
 
   /**
