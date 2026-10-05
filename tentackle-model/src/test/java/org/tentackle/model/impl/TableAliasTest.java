@@ -42,7 +42,7 @@ import static org.testng.Assert.assertTrue;
  * <p>
  * The entities at the core of the model, i.e. the ones with the most relations, get the shortest aliases.
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class TableAliasTest {
 
   /** the temporary model directories created by the tests. */
