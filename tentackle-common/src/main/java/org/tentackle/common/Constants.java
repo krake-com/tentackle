@@ -70,6 +70,9 @@ public final class Constants {
   /** send a keep-alive select every BACKEND_TIMEOUT minutes. */
   public static final String BACKEND_KEEP_ALIVE = "jdbcKeepAlive";
 
+  /** optional backend identity to link different URLs to the same physical backend. */
+  public static final String BACKEND_IDENTITY = "identity";
+
   /** property key for the optional schemas. */
   public static final String BACKEND_SCHEMAS = "schemas";
 

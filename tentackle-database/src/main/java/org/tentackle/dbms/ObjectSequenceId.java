@@ -20,9 +20,6 @@ package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
 
-import org.tentackle.sql.BackendInfo;
-
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -125,25 +122,10 @@ public class ObjectSequenceId extends AbstractIdSource {
    * The ranges taken from the sequence, one per database.<br>
    * Guarded by this instance's monitor.
    */
-  private final Map<DatabaseKey, Range> ranges = new HashMap<>();
+  private final Map<Integer, Range> ranges = new HashMap<>();
 
 
-  /**
-   * Identifies the database a sequence belongs to.<br>
-   * The user and the schemas are part of the key, since they may determine the schema
-   * the unqualified sequence name is resolved in.
-   *
-   * @param url the connection url
-   * @param user the username
-   * @param schemas the schemas, null if none
-   */
-  private record DatabaseKey(String url, String user, String schemas) {
 
-    private DatabaseKey(BackendInfo backendInfo) {
-      this(backendInfo.getUrl(), backendInfo.getUser(),
-           backendInfo.getSchemas() == null ? null : Arrays.toString(backendInfo.getSchemas()));
-    }
-  }
 
   /**
    * The range taken from the sequence of a database.
@@ -190,7 +172,7 @@ public class ObjectSequenceId extends AbstractIdSource {
 
     assertDbNotRemote(db);
 
-    Range range = ranges.computeIfAbsent(new DatabaseKey(db.getBackendInfo()), _ -> new Range(sequenceMultiplier));
+    Range range = ranges.computeIfAbsent(db.getBackendIdentity(), _ -> new Range(sequenceMultiplier));
     if (range.idCount >= sequenceMultiplier) {
       // get the new offset from the sequence
       try {

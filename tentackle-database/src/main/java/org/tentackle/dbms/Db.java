@@ -597,6 +597,7 @@ public class Db implements Session, Cloneable {
   }
 
   private final BackendInfo backendInfo;                      // the backend information
+  private final int backendIdentity;                          // identity of the physical backend
   private Resources resources;                                // resources to be cleaned up (not final due to reopen)
   private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
   private int instanceNumber;                                 // each session gets a unique instance number
@@ -701,6 +702,7 @@ public class Db implements Session, Cloneable {
 
       try {
         backendInfo = BackendInfoFactory.getInstance().create(backendProperties);
+        backendIdentity = DbUtilities.getInstance().getBackendIdentity(backendInfo);
       }
       catch (BackendException bex) {
         throw new PersistenceException(this, "invalid configuration in " + sessionInfo.getPropertiesName(), bex);
@@ -2999,6 +3001,21 @@ public class Db implements Session, Cloneable {
     return backendInfo;
   }
 
+  /**
+   * Gets the backend identity.
+   * <p>
+   * This is an integer denoting the physical backend.<br>
+   * It is unique only within the current JVM!
+   * It is primarily used to make sure that the object sequences and modification log dictionaries
+   * can be distinguished from each other if an application connects to more than
+   * one database simultaneously.
+   *
+   * @return the backend identity
+   * @see DbUtilities#getBackendIdentity(BackendInfo)
+   */
+  public int getBackendIdentity() {
+    return backendIdentity;
+  }
 
   @Override
   public String getUrl() {

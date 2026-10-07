@@ -58,6 +58,7 @@ public class BackendInfo {
   private final char[] password;                // the password
   private final String[] schemas;               // schemas (only for migration)
 
+  private int backendIdentity;                  // optional backend identity number to link different urls of the same backend
   private int backendTimeout;                   // optional database idle session timeout in minutes, 0 if default or remote
   private boolean backendKeepAliveEnabled;      // if backendTimeout set: send a keep alive SELECT every backendTimeout interval,
                                                 // otherwise the SELECT will only be sent before an idle connection is used again
@@ -192,6 +193,10 @@ public class BackendInfo {
     propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_KEEP_ALIVE);
     if (propVal != null) {
       backendKeepAliveEnabled = Boolean.parseBoolean(propVal);
+    }
+    propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_IDENTITY);
+    if (propVal != null) {
+      backendIdentity = Integer.parseInt(propVal);
     }
   }
 
@@ -339,6 +344,24 @@ public class BackendInfo {
    */
   public void setBackendKeepAliveEnabled(boolean backendKeepAliveEnabled) {
     this.backendKeepAliveEnabled = backendKeepAliveEnabled;
+  }
+
+  /**
+   * Gets the optional fixed identity to link different URLs to the same physical backend.
+   *
+   * @return the backend identity, or 0 if not set
+   */
+  public int getBackendIdentity() {
+    return backendIdentity;
+  }
+
+  /**
+   * Sets the optional fixed identity to link different URLs to the same physical backend.
+   *
+   * @param backendIdentity the backend identity, or 0 to unset
+   */
+  public void setBackendIdentity(int backendIdentity) {
+    this.backendIdentity = backendIdentity;
   }
 
   /**

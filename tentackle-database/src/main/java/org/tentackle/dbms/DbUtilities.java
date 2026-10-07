@@ -31,6 +31,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
@@ -43,7 +44,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 interface DbUtilitiesHolder {
@@ -73,6 +77,41 @@ public class DbUtilities {
   }
 
 
+  private static class BackendKey {
+    private volatile int fastHash;
+    private final Backend backend;
+    private final String url;
+
+    private BackendKey(BackendInfo backendInfo) {
+      this.backend = backendInfo.getBackend();
+      this.url = backendInfo.getUrl();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) return false;
+
+      BackendKey that = (BackendKey) o;
+      return Objects.equals(backend, that.backend) && Objects.equals(url, that.url);
+    }
+
+    @Override
+    public int hashCode() {
+      if (fastHash != 0) {
+        return fastHash;
+      }
+      int result = 31 * Objects.hashCode(backend);
+      result = 31 * result + Objects.hashCode(url);
+      if (result == 0) {
+        result++;
+      }
+      fastHash = result;
+      return result;
+    }
+  }
+
+  private final Map<BackendKey, Integer> backendIdentityMap = new ConcurrentHashMap<>();
+
   private ConnectionManager connectionManager;
   private volatile String[] preloadDelegateClassNames;   // cached names of the preload candidates
 
@@ -81,6 +120,26 @@ public class DbUtilities {
    */
   public DbUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
+   * Gets the physical backend identity to speed up lookups.
+   * <p>
+   * The default implementation returns a unique integer for the same backend and url.
+   * <p>
+   * Important: if the application connects more than once to the same backend with effectively the same
+   * URL, but different connection options (for example, readonly), different IDs will be returned.
+   * In this case, the backend identity of BackendInfo is used if set, otherwise a unique integer is returned.
+   * Use high or negative values for backend identities to avoid conflicts. Created numbers start at 1.
+   *
+   * @param backendInfo the backend info
+   * @return the backend identity
+   */
+  public int getBackendIdentity(BackendInfo backendInfo) {
+    return backendIdentityMap.computeIfAbsent(new BackendKey(backendInfo),
+                                              _ -> backendInfo.getBackendIdentity() != 0 ?
+                                                     backendInfo.getBackendIdentity() :
+                                                     backendIdentityMap.size() + 1);
   }
 
   /**
