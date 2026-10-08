@@ -56,59 +56,51 @@ public final class ShortPrimitiveArrayTripType extends AbstractPredefinedArrayTr
     else {
       TripType<Short> shortTripType = ShortPrimitiveTypeHolder.INSTANCE;
       if (writeArrayHeader(value, stream)) {
-        int skip = 0;
+        int length = value.length;
         int ndx = 0;
-        int blockStart = -1;
-        for (short shortValue : value) {
-          int blockLen = blockStart == -1 ? 0 : ndx - blockStart;
-          if (shortValue != 0) {
-            if (skip > 0) {
-              writeSkip(skip, serializer);    // skip 1 and short1 0 occupy 2 bytes both the same
-              skip = 0;
+        while (ndx < length) {
+          if (value[ndx] == 0) {
+            int end = ndx + 1;
+            while (end < length && value[end] == 0) {
+              end++;
             }
-            if (shortValue >= Byte.MIN_VALUE && shortValue <= Byte.MAX_VALUE) {
-              if (blockStart == -1) {
-                blockStart = ndx;
-              }
-              else if (blockLen == 255) {
-                flushBlock(serializer, value, blockStart, blockLen);
-                blockStart = ndx;
-              }
-              // add small characterValue to the block
-            }
-            else {
-              if (blockStart != -1) {
-                flushBlock(serializer, value, blockStart, blockLen);
-                blockStart = -1;
-              }
-              shortTripType.write(shortValue, stream);
-            }
+            writeSkip(end - ndx, serializer);
+            ndx = end;
+          }
+          else if (value[ndx] < Byte.MIN_VALUE || value[ndx] > Byte.MAX_VALUE) {
+            shortTripType.write(value[ndx], stream);
+            ndx++;
           }
           else {
-            skip++;
-            if (blockStart != -1) {
-              if (blockLen > 1) {
-                flushBlock(serializer, value, blockStart, blockLen);
+            // the block always ends behind a non-zero value that fits into the block,
+            // short zero runs in between are kept
+            int blockEnd = ndx + 1;
+            int maxEnd = Math.min(length, ndx + MAX_BLOCK_LENGTH);
+            int pos = blockEnd;
+            while (pos < maxEnd) {
+              short v = value[pos];
+              if (v != 0) {
+                if (v < Byte.MIN_VALUE || v > Byte.MAX_VALUE) {
+                  break;    // sent as a single value
+                }
+                blockEnd = ++pos;
+              }
+              else if (pos - blockEnd < MAX_INNER_ZEROS) {
+                pos++;
               }
               else {
-                shortTripType.write(value[blockStart], stream);
+                break;
               }
-              blockStart = -1;
             }
+            int blockLen = blockEnd - ndx;
+            if (blockLen > 1) {
+              flushBlock(serializer, value, ndx, blockLen);
+            }
+            else {
+              shortTripType.write(value[ndx], stream);
+            }
+            ndx = blockEnd;
           }
-          ndx++;
-        }
-        if (blockStart != -1) {
-          int blockLen = ndx - blockStart;
-          if (blockLen > 1) {
-            flushBlock(serializer, value, blockStart, blockLen);
-          }
-          else {
-            shortTripType.write(value[blockStart], stream);
-          }
-        }
-        else if (skip > 0) {
-          writeSkip(skip, serializer);
         }
       }
     }

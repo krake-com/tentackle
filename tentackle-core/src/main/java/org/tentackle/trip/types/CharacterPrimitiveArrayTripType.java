@@ -56,64 +56,51 @@ public final class CharacterPrimitiveArrayTripType extends AbstractPredefinedArr
     else {
       TripType<Character> charTripType = CharacterPrimitiveTypeHolder.INSTANCE;
       if (writeArrayHeader(value, stream)) {
-        int skip = 0;
+        int length = value.length;
         int ndx = 0;
-        int blockStart = -1;
-        for (char charValue : value) {
-          int blockLen = blockStart == -1 ? 0 : ndx - blockStart;
-          if (charValue != 0) {
-            if (skip > 0) {
-              if (skip == 1) {
-                blockStart = ndx - 1;
+        while (ndx < length) {
+          if (value[ndx] == 0) {
+            int end = ndx + 1;
+            while (end < length && value[end] == 0) {
+              end++;
+            }
+            writeSkip(end - ndx, serializer);
+            ndx = end;
+          }
+          else if (value[ndx] >>> 8 != 0) {
+            charTripType.write(value[ndx], stream);
+            ndx++;
+          }
+          else {
+            // the block always ends behind a non-zero value that fits into the block,
+            // short zero runs in between are kept
+            int blockEnd = ndx + 1;
+            int maxEnd = Math.min(length, ndx + MAX_BLOCK_LENGTH);
+            int pos = blockEnd;
+            while (pos < maxEnd) {
+              char v = value[pos];
+              if (v != 0) {
+                if (v >>> 8 != 0) {
+                  break;    // sent as a single value
+                }
+                blockEnd = ++pos;
+              }
+              else if (pos - blockEnd < MAX_INNER_ZEROS) {
+                pos++;
               }
               else {
-                writeSkip(skip, serializer);
+                break;
               }
-              skip = 0;
             }
-            if (charValue >>> 8 == 0) {
-              if (blockStart == -1) {
-                blockStart = ndx;
-              }
-              else if (blockLen == 255) {
-                flushBlock(serializer, value, blockStart, blockLen);
-                blockStart = ndx;
-              }
-              // add small characterValue to the block
+            int blockLen = blockEnd - ndx;
+            if (blockLen > 1) {
+              flushBlock(serializer, value, ndx, blockLen);
             }
             else {
-              if (blockStart != -1) {
-                flushBlock(serializer, value, blockStart, blockLen);
-                blockStart = -1;
-              }
-              charTripType.write(charValue, stream);
+              charTripType.write(value[ndx], stream);
             }
+            ndx = blockEnd;
           }
-          else {
-            skip++;
-            if (blockStart != -1) {
-              if (blockLen > 1) {
-                flushBlock(serializer, value, blockStart, blockLen);
-              }
-              else {
-                charTripType.write(value[blockStart], stream);
-              }
-              blockStart = -1;
-            }
-          }
-          ndx++;
-        }
-        if (blockStart != -1) {
-          int blockLen = ndx - blockStart;
-          if (blockLen > 1) {
-            flushBlock(serializer, value, blockStart, blockLen);
-          }
-          else {
-            charTripType.write(value[blockStart], stream);
-          }
-        }
-        else if (skip > 0) {
-          writeSkip(skip, serializer);
         }
       }
     }

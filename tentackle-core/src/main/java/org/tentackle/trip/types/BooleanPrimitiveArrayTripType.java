@@ -56,54 +56,42 @@ public final class BooleanPrimitiveArrayTripType extends AbstractPredefinedArray
     else {
       TripType<Boolean> booleanTripType = BooleanPrimitiveTypeHolder.INSTANCE;
       if (writeArrayHeader(value, stream)) {
-        int skip = 0;
+        int length = value.length;
         int ndx = 0;
-        int blockStart = -1;
-        for (boolean booleanValue : value) {
-          int blockLen = blockStart == -1 ? 0 : ndx - blockStart;
-          if (booleanValue) {
-            if (skip > 0) {
-              if (skip == 1) {
-                blockStart = ndx - 1;
-              }
-              else {
-                writeSkip(skip, serializer);
-              }
-              skip = 0;
+        while (ndx < length) {
+          if (!value[ndx]) {
+            int end = ndx + 1;
+            while (end < length && !value[end]) {
+              end++;
             }
-            if (blockStart == -1) {
-              blockStart = ndx;
-            }
-            else if (blockLen == 255) {
-              flushBlock(serializer, value, blockStart, blockLen);
-              blockStart = ndx;
-            }
+            writeSkip(end - ndx, serializer);
+            ndx = end;
           }
           else {
-            skip++;
-            if (blockStart != -1) {
-              if (blockLen > 1) {
-                flushBlock(serializer, value, blockStart, blockLen);
+            // the block always ends behind a true value, short runs of false values in between are kept
+            int blockEnd = ndx + 1;
+            int maxEnd = Math.min(length, ndx + MAX_BLOCK_LENGTH);
+            int pos = blockEnd;
+            while (pos < maxEnd) {
+              if (value[pos]) {
+                blockEnd = ++pos;
+              }
+              else if (pos - blockEnd < MAX_INNER_ZEROS) {
+                pos++;
               }
               else {
-                booleanTripType.write(value[blockStart], stream);
+                break;
               }
-              blockStart = -1;
             }
+            int blockLen = blockEnd - ndx;
+            if (blockLen > 1) {
+              flushBlock(serializer, value, ndx, blockLen);
+            }
+            else {
+              booleanTripType.write(value[ndx], stream);
+            }
+            ndx = blockEnd;
           }
-          ndx++;
-        }
-        if (blockStart != -1) {
-          int blockLen = ndx - blockStart;
-          if (blockLen > 1) {
-            flushBlock(serializer, value, blockStart, blockLen);
-          }
-          else {
-            booleanTripType.write(value[blockStart], stream);
-          }
-        }
-        else if (skip > 0) {
-          writeSkip(skip, serializer);
         }
       }
     }

@@ -43,6 +43,16 @@ public abstract class AbstractPredefinedArrayTripType<T> extends AbstractTripTyp
    */
   protected static final int NO_SKIP = -1;
 
+  /** Maximum number of elements in a block, such as {@link DefaultOpCode#BYTEN}. */
+  protected static final int MAX_BLOCK_LENGTH = 255;
+
+  /**
+   * Maximum length of a run of default values kept within a block.<br>
+   * Inside a block, each default value costs one byte. Ending the block costs a skip and a new
+   * block header (or the opcode of a single value), 2 bytes each.
+   */
+  protected static final int MAX_INNER_ZEROS = 3;
+
   private final PredefinedArrayType subType;
 
   /**
