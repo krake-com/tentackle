@@ -779,12 +779,12 @@ public class Db implements Session, Cloneable {
         // direct connection to the database
         sessionId = conMgr.login(this);
         transaction = null;
+        setupIdSource(idConfig);
       }
 
       // fresh connections are always in autoCommit mode
       autoCommit = true;
 
-      setupIdSource();
       if (!sessionInfo.isImmutable()) {
         sessionInfo.setSince(System.currentTimeMillis());
       }
@@ -1352,11 +1352,13 @@ public class Db implements Session, Cloneable {
 
   /**
    * Configures the ID source if not remote.
+   *
+   * @param idConfig the ID configuration, null for default by backend
    */
-  private void setupIdSource() {
-    if (!isRemote()) {
-      setDefaultIdSource(IdSourceConfigurator.getInstance().configure(this, idConfig));   // null = backend's default
-    }
+  protected void setupIdSource(String idConfig) {
+    setDefaultIdSource(idConfig == null ?
+                         IdSourceConfigurator.getInstance().configure(getBackend()) :
+                         IdSourceConfigurator.getInstance().configure(idConfig));
   }
 
 
@@ -3497,7 +3499,6 @@ public class Db implements Session, Cloneable {
   public void setDefaultIdSource(IdSource idSource) {
     this.defaultIdSource = idSource;
   }
-
 
 
   /**

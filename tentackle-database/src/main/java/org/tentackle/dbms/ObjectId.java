@@ -21,6 +21,9 @@ package org.tentackle.dbms;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.tentackle.common.Constants.CN_ID;
 
 /**
@@ -32,8 +35,7 @@ import static org.tentackle.common.Constants.CN_ID;
  * The first ID requested within a transaction increments the counter in the database, which locks the
  * row until the end of the transaction. Further IDs of the same transaction are counted in memory only, and
  * the final value is written once at the end of the transaction (via a pre-commit).
- * As a consequence, the transactions of all sessions allocating IDs from the same table are serialized
- * by the database.
+ * As a consequence, the database serializes the transactions of all sessions allocating IDs from the same table.
  * <p>
  * The counting state belongs to the transaction (it is kept as a transaction property of the session),
  * so a single instance can safely be shared by all sessions.
@@ -58,6 +60,22 @@ public class ObjectId extends AbstractIdSource {
     private TxCounter(long lastId) {
       this.lastId = lastId;
     }
+  }
+
+  /**
+   * Sequences mapped by unique name.
+   */
+  private static final Map<String, ObjectId> SEQUENCES = new ConcurrentHashMap<>();
+
+  /**
+   * Gets a sequence id source.<br>
+   * ID sources are unique by name.
+   *
+   * @param name the unique sequence name
+   * @return the ID source
+   */
+  public static ObjectId get(String name) {
+    return SEQUENCES.computeIfAbsent(name, ObjectId::new);
   }
 
 

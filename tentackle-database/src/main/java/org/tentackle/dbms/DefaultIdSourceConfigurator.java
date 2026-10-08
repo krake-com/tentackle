@@ -56,18 +56,7 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
   }
 
   @Override
-  public IdSource configure(Db db, String idConfig) {
-    if (idConfig == null) {
-      // default from backend
-      Backend backend = db.getBackend();
-      if (backend.isSequenceSupported()) {
-        idConfig = SEQUENCE_BASED + ":object_sequence_id";
-      }
-      else  {
-        idConfig = TABLE_BASED + ":object_id";
-      }
-    }
-
+  public IdSource configure(String idConfig) {
     // parse
     String type = null;
     String name = null;
@@ -108,9 +97,19 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
         }
         throw new PersistenceException("sequenceMultiplier and globalMultiplier must be defined both or not at all");
       }
-      case TABLE_BASED -> new ObjectId(name);
+      case TABLE_BASED -> ObjectId.get(name);
       default -> throw new PersistenceException("unsupported idSource type: " + type);
     };
+  }
+
+  @Override
+  public IdSource configure(Backend backend) {
+    if (backend.isSequenceSupported()) {
+      return configure(SEQUENCE_BASED + ":object_sequence_id");
+    }
+    else  {
+      return configure(TABLE_BASED + ":object_id");
+    }
   }
 
 }

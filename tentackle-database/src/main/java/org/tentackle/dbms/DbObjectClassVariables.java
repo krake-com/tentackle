@@ -22,7 +22,6 @@ import org.tentackle.dbms.trip.AbstractDbObjectRemoteDelegate;
 import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
-import org.tentackle.sql.Backend;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -294,20 +293,22 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * The {@code idsource} configuration of this class.<br>
-   * Lazily loaded by {@link #getIdSource(Db)} and guarded by this instance's monitor.
+   * Lazily loaded by {@link #getIdSource(Db)}.<br>
+   * Not volatile: written before and read after the volatile {@link #idConfigLoaded}, which publishes it.
+   * Concurrent loads are benign, since they all write the same immutable value.
    */
   private String idConfig;
 
   /**
    * true if {@link #idConfig} is loaded.
    */
-  private boolean idConfigLoaded;
+  private volatile boolean idConfigLoaded;
 
   /**
-   * The class-specific id sources, one per backend.<br>
-   * Guarded by this instance's monitor.
+   * The class-specific id source.<br>
+   * Lazily created by {@link #getIdSource(Db)} via double-checked locking on this instance's monitor.
    */
-  private Map<Backend, IdSource> idSources;
+  private volatile IdSource idSource;
 
   /**
    * ID for the remote delegate for this class.<br>
@@ -391,31 +392,38 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Gets the IdSource.<br>
    * The method looks for a property file or resource named after the class (classname + ".properties").
    * If it contains an {@code idsource} line in the same syntax as the backend properties,
-   * an id source of its own is configured for this class, once per backend.
+   * an id source of its own is configured for this class, once and shared by all sessions.
    * Otherwise, the session's default id source is used.
    * <p>
-   * Sessions on different backends or with a different {@code idsource} configuration thus get
-   * the id source that fits the session.
+   * A shared id source keeps the ids unique per physical backend, see {@link IdSource}.
+   * Notice that the {@code idsource} property is read only once: changing it later
+   * via {@link #putProperty(String, String)} has no effect.
    *
-   * @param db the session
+   * @param db the session used to determine the default id source if no {@code idsource} property is found
    * @return the idSource
    */
-  public synchronized IdSource getIdSource(Db db) {
+  public IdSource getIdSource(Db db) {
     if (!idConfigLoaded) {
       idConfig = getProperty(Db.IDSOURCE);
       idConfigLoaded = true;
     }
     if (idConfig == null) {
-      // no such property: use the default id source from Db
       return db.getDefaultIdSource();
     }
-    // create the class-specific source from the property
-    if (idSources == null) {
-      idSources = new HashMap<>();
-    }
-    return idSources.computeIfAbsent(db.getBackend(), _ -> IdSourceConfigurator.getInstance().configure(db, idConfig));
-  }
 
+    IdSource ids = idSource;
+    if (ids == null) {
+      synchronized (this) {
+        ids = idSource;
+        if (ids == null) {
+          // create configurator and source from property
+          ids = IdSourceConfigurator.getInstance().configure(idConfig);
+          idSource = ids;
+        }
+      }
+    }
+    return ids;
+  }
 
 
   /**

@@ -30,16 +30,17 @@ import java.util.Map;
  * counter just incremented within that range.
  * <p>
  * There is one instance per sequence name, shared by all sessions. The range taken from the sequence
- * is kept per database, i.e. per connection URL, user and schemas, so an application connected to
+ * is kept per database, i.e., per backend identity, so an application connected to
  * several databases never hands out ids reserved in the sequence of another database.
  * <p>
- * The creation of the sequence is backend-specific. For example, postgres expects:
+ * The creation of the sequence is backend-specific. For example, Postgres expects:
  * <pre>
  * CREATE SEQUENCE object_sequence_id;
  * </pre>
  *
  * @author harald
  * @see ObjectId
+ * @see Db#getBackendIdentity()
  */
 public class ObjectSequenceId extends AbstractIdSource {
 
@@ -61,7 +62,7 @@ public class ObjectSequenceId extends AbstractIdSource {
   /**
    * Sequences mapped by unique name.
    */
-  private static final Map<String,ObjectSequenceId> SEQUENCES = new HashMap<>();
+  private static final Map<String, ObjectSequenceId> SEQUENCES = new HashMap<>();
 
   /**
    * select statement id.
