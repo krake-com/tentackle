@@ -55,8 +55,8 @@ import java.util.List;
  * ## attributes
  * long                     objectId            objid         object id
  * int                      objectClassId       objcid        object class id
- * Long                     rootObjectId        robjid        root object id (optional)
- * Integer                  rootObjectClassId   robjcid       root object class id (optional)
+ * Long                     rootObjectId        robjid        root object id (if component)
+ * Integer                  rootObjectClassId   robjcid       root object class id (if component)
  * Long                     txId                txid          transaction id (optional)
  * String(128)              txName              txname        transaction name (optional) [TRIMWRITE]
  * ModificationType<char>   modType             modtype       modification type
@@ -83,7 +83,7 @@ import java.util.List;
  * Such modlogs can be used for asynchronous database coupling, higher level replication, etc...
  * <p>
  * Note: the txId is only valid (&gt; 0) if the session has {@link Db#isLogModificationTxEnabled},
- * i.e. begin and commit transaction events are logged as well. If the {@link IdSource} of the modlog is
+ * i.e., begin and commit transaction events are logged as well. If the {@link IdSource} of the modlog is
  * transaction-based, transactions will not overlap in the table because obtaining
  * the id for the modlog is part of the transaction. However, if the idSource is
  * remote, transactions may overlap!
@@ -186,10 +186,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /** object class id. */
   private int objectClassId;
 
-  /** root object id (optional). */
+  /** root object id (if component). */
   private Long rootObjectId;
 
-  /** root object class id (optional). */
+  /** root object class id (if component). */
   private Integer rootObjectClassId;
 
   /** transaction id (optional). */
@@ -430,9 +430,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute rootObjectId.
    *
-   * @return the root object id (optional)
+   * @return the root object id (if component)
    */
-  @Persistent(ordinal=2, comment="the root object id (optional)")
+  @Persistent(ordinal=2, comment="the root object id (if component)")
   public Long getRootObjectId()    {
     return rootObjectId;
   }
@@ -440,7 +440,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute rootObjectId.
    *
-   * @param rootObjectId the root object id (optional)
+   * @param rootObjectId the root object id (if component)
    */
   public void setRootObjectId(Long rootObjectId) {
     assertMutable();
@@ -450,9 +450,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute rootObjectClassId.
    *
-   * @return the root object class id (optional)
+   * @return the root object class id (if component)
    */
-  @Persistent(ordinal=3, comment="the root object class id (optional)")
+  @Persistent(ordinal=3, comment="the root object class id (if component)")
   public Integer getRootObjectClassId()    {
     return rootObjectClassId;
   }
@@ -460,7 +460,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute rootObjectClassId.
    *
-   * @param rootObjectClassId the root object class id (optional)
+   * @param rootObjectClassId the root object class id (if component)
    */
   public void setRootObjectClassId(Integer rootObjectClassId) {
     assertMutable();

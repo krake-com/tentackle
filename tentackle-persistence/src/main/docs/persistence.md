@@ -205,6 +205,11 @@ security checks.
 serializes PDOs without their related objects (except embedded ones), so they are loaded lazily on the receiving
 side — see [Filtering components with TripFilter](../../../../tentackle-core/src/main/docs/trip.md#filtering-components-with-tripfilter).
 
+[`TripModificationLogSerializer`](../java/org/tentackle/persist/trip/TripModificationLogSerializer.java) uses that
+filter to store the state of modified PDOs in the modification log, with a TRIP dictionary that spans several
+modlogs and is reset by count or time — see
+[Modification logging](../../../../tentackle-database/src/main/docs/database.md#modification-logging).
+
 [`PdoRemoteDelegateLocator`](../java/org/tentackle/persist/trip/PdoRemoteDelegateLocator.java)
 (`@Service(RemoteDbDelegateLocator.class)`) locates the right delegate for a PDO. On the client, a PDO method call
 is routed to the matching delegate; on the server, the `…Impl` runs the real `AbstractPersistentObject` logic

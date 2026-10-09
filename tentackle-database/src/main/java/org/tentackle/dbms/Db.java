@@ -1724,7 +1724,7 @@ public class Db implements Session, Cloneable {
    * <p>
    * The session is attached until the global transaction completes, see {@link GlobalCompletion}.
    * If the session joins, level 1 of the transaction belongs to the owner of the global transaction,
-   * and the session continues at level 2, as if nested. Hence, no voucher is returned and the session
+   * and the session continues at level 2, as if nested. Hence, no voucher is returned, and the session
    * never commits or rolls back the global transaction on its own.
    *
    * @param support the global transaction support
@@ -1983,6 +1983,7 @@ public class Db implements Session, Cloneable {
         throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
       }
       connection().rollback(savepoint);
+      DbUtilities.getInstance().notifySavepointRollback(this);
     }
   }
 

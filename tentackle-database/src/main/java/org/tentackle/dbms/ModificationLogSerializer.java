@@ -29,13 +29,30 @@ public interface ModificationLogSerializer {
   /**
    * Resets the serializer.
    * <p>
-   * If the serializer uses TRIP, it must reset its internal {@link org.tentackle.trip.Dictionary}
-   * after a certain number of serialized objects or when some time has passed
-   * and write a {@link DbModificationType#RESET} modlog. This allows the
-   * replication to detect that the dictionary was reset and to pick up the dictionary contents
-   * from the modlogs before the processing can continue.
+   * If the serializer uses TRIP, it maintains a {@link org.tentackle.trip.Dictionary} that spans
+   * several modlogs, i.e., a type definition is only sent along with the first serialized object of that type.
+   * The serializing side must reset its dictionary after a certain number of serialized objects or
+   * when some time has passed and write a {@link DbModificationType#RESET} modlog before the next serialized
+   * object. Since {@link #serialize} gets the session from the object, it writes the RESET modlog itself.
+   * <p>
+   * The deserializing side, usually a replication processing the modlogs in order, invokes this method
+   * when it encounters a {@link DbModificationType#RESET} modlog. Its dictionary is then in sync again with
+   * the one used to serialize the following modlogs.
    */
   void reset();
+
+  /**
+   * Invoked when a transaction is rolled back in which this serializer registered itself as the
+   * transaction property {@code ModificationLogSerializer.class}.
+   * <p>
+   * A rolled-back transaction discards the modlogs written within it. If those carried
+   * dictionary entries, the serializer must not refer to them anymore and has to reset
+   * before serializing the next object.
+   *
+   * @param session the session
+   * @see Db#setTransactionProperty(Object, Object)
+   */
+  void rollback(Db session);
 
   /**
    * Serializes an object.

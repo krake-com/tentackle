@@ -257,16 +257,37 @@ This layer implements the change-tracking contracts from `tentackle-session`:
   database; intermediate servers and clients fetch their expiration sets remotely.
 - [`DbModificationType`](../java/org/tentackle/dbms/DbModificationType.java) /
   [`ModificationType`](../java/org/tentackle/dbms/ModificationType.java) / [`ModificationTypeFactory`](../java/org/tentackle/dbms/ModificationTypeFactory.java)
-  — enumerate INSERT/UPDATE/DELETE plus BEGIN/COMMIT for transaction logging; applications may add their own
+  — enumerate INSERT/UPDATE/DELETE plus BEGIN/COMMIT for transaction logging and RESET for the serializer
+  (see [Modification logging](#modification-logging)); applications may add their own
   types via a replaced `ModificationTypeFactory`.
 
 ### Modification logging
 
 [`ModificationLog`](../java/org/tentackle/dbms/ModificationLog.java) (table `modlog`) records object modifications
-for asynchronous database coupling, higher-level replication, audit, etc. Objects opt in via
-[`ModificationLoggable`](../java/org/tentackle/dbms/ModificationLoggable.java); logs are produced through
+for asynchronous database coupling, higher-level replication, audit, etc. Logs are produced through
 [`ModificationLogFactory`](../java/org/tentackle/dbms/ModificationLogFactory.java) /
 [`DefaultModificationLogFactory`](../java/org/tentackle/dbms/DefaultModificationLogFactory.java).
+
+Optionally, the state of an inserted or updated object is stored in the modlog's `objdata` column as well, so
+the receiver does not have to load the object from the database. Serialization is enabled per physical backend by
+registering a [`ModificationLogSerializer`](../java/org/tentackle/dbms/ModificationLogSerializer.java) via
+`ModificationLogFactory.setSerializer(backendIdentity, serializer)`. The PDO-aware implementation is
+[`TripModificationLogSerializer`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/trip/TripModificationLogSerializer.java)
+in `tentackle-persistence`:
+
+- It uses [TRIP](../../../../tentackle-core/src/main/docs/trip.md) and serializes only the PDO itself. The relations
+  are skipped, except embedded ones, and loaded lazily on the receiving side.
+- The TRIP dictionary spans several modlogs: a type definition is written only along with the first object of that
+  type. The dictionary is reset after a configurable number of objects or time span, which writes a `RESET` modlog
+  before the next serialized object. The first object serialized after startup is preceded by a `RESET` as well.
+- The receiver processes the modlogs in id order with its own serializer instance and invokes `reset()` on each
+  `RESET` modlog.
+- If a transaction or savepoint is rolled back after it wrote a modlog with new dictionary entries, the serializer
+  is notified (it registers itself as the transaction property `ModificationLogSerializer.class`) and resets
+  before the next object.
+- Since the dictionary is shared by all sessions of a backend, the modlog-writing transactions must not overlap,
+  e.g. by using a transaction-based `IdSource` for the modlog. Otherwise, a modlog referring to a dictionary
+  entry could be committed before the modlog defining it.
 
 ### Persistence visitors
 

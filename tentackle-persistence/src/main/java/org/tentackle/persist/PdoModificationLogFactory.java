@@ -37,9 +37,13 @@ public class PdoModificationLogFactory extends DefaultModificationLogFactory {
     ModificationLog modlog;
     if (object instanceof AbstractPersistentObject<?,?> po) {
       modlog = super.createModificationLog(po.getPdo(), modType);
-      modlog.setClassId(po.getClassId());
-      modlog.setRootObjectId(po.getRootId());
-      modlog.setRootObjectClassId(po.getRootClassId());
+      modlog.setObjectClassId(po.getClassId());
+      long rootId = po.getRootId();
+      if (rootId != 0) {
+        // component
+        modlog.setRootObjectId(rootId);
+        modlog.setRootObjectClassId(po.getRootClassId());
+      }
     }
     else {
       modlog = super.createModificationLog(object, modType);

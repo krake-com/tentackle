@@ -390,6 +390,16 @@ public class DbUtilities {
       // may be costly if a lot of counters are registered
       ModificationTracker.getInstance().rollbackModification(session, txNumber);
     }
+    notifyModificationLogSerializer(session);
+  }
+
+  /**
+   * Notifies interested parties that a rollback to a savepoint has happened.
+   *
+   * @param session the session
+   */
+  public void notifySavepointRollback(Db session) {
+    notifyModificationLogSerializer(session);
   }
 
   /**
@@ -400,6 +410,19 @@ public class DbUtilities {
    */
   public void notifyCommit(Db session, long txNumber) {
     // nothing to do
+  }
+
+
+  /**
+   * Notifies the {@link ModificationLogSerializer} about a rollback if it registered
+   * itself as a transaction property.
+   *
+   * @param session the session
+   */
+  protected void notifyModificationLogSerializer(Db session) {
+    if (session.getTransactionProperty(ModificationLogSerializer.class) instanceof ModificationLogSerializer serializer) {
+      serializer.rollback(session);
+    }
   }
 
 
