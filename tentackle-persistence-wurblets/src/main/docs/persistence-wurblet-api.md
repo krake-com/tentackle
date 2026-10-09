@@ -230,7 +230,7 @@ list, `aas(str)` prefixes a non-empty string with `", "`, and `as(str)` maps `nu
 | `createJdbcSetterName(DataType)`  | The `PreparedStatementWrapper` setter: `set` + the Java type, with `setLargeString`, `setSqlxml` and `setJson` for the large, XML and JSON `String` variants.                                                                                                                           |
 | `createJdbcGetterName(Attribute)` | The `ResultSetWrapper` getter. Nullable wrapper types get an **`A` prefix** — `getABoolean`, `getAByte`, `getAShort`, `getALong`, `getAFloat`, `getADouble` — to distinguish them from the primitive getters; the `String` variants become `getLargeString`, `getSqlxml` and `getJson`. |
 | `getModelCode(attr, jdbcCode)`    | Wraps JDBC-side code in `<Type>.toInternal(…)` for a convertible attribute; returns it unchanged otherwise.                                                                                                                                                                             |
-| `getJdbcCode(attr, modelCode)`    | The inverse: appends `.toExternal()`. An enum-style constant is converted directly; otherwise a null guard is generated — falling back to `getDefault().toExternal()` when the inner type is primitive, and to `null` when it is nullable.                                              |
+| `getJdbcCode(attr, modelCode)`    | The inverse: appends `.toExternal()`. A constant — by Java naming conventions `[<class>.]<VALUE_IN_UPPERCASE>`, see `isConstant(code)` — is assumed non-null and converted directly; otherwise a null guard is generated — falling back to `getDefault().toExternal()` when the inner type is primitive, and to `null` when it is nullable. |
 
 ### Relation navigation code
 

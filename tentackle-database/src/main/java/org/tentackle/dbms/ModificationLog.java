@@ -945,7 +945,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = getBackend().setLeadingSelectParameters(st, limit, 0);
-    st.setChar(ndx++, DbModificationType.COMMIT == null ? ModificationType.getDefault().toExternal() : DbModificationType.COMMIT.toExternal());
+    st.setChar(ndx++, DbModificationType.COMMIT.toExternal());
     getBackend().setTrailingSelectParameters(st, ndx, limit, 0);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
@@ -1007,7 +1007,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     );
     int ndx = getBackend().setLeadingSelectParameters(st, limit, 0);
     st.setLong(ndx++, id);
-    st.setChar(ndx++, DbModificationType.COMMIT == null ? ModificationType.getDefault().toExternal() : DbModificationType.COMMIT.toExternal());
+    st.setChar(ndx++, DbModificationType.COMMIT.toExternal());
     getBackend().setTrailingSelectParameters(st, ndx, limit, 0);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();

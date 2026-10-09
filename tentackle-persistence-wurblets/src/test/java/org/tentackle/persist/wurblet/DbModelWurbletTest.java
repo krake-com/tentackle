@@ -169,6 +169,65 @@ public class DbModelWurbletTest {
     assertEquals(wurblet.getJdbcCode(user, "getUser()"), "getUser()");
   }
 
+  /**
+   * The wurblet cannot resolve the java type of an argument, so whether it is a constant is
+   * derived from the Java naming conventions alone.
+   *
+   * @return code and whether it is a constant
+   */
+  @DataProvider(name = "constants")
+  public Object[][] constants() {
+    return new Object[][] {
+      { "COMMIT",                         true },
+      { "MAX_VALUE2",                     true },
+      { "DbModificationType.COMMIT",      true },
+      { "org.tentackle.dbms.Foo.COMMIT",  true },
+      { "modType",                        false },
+      { "this.modType",                   false },
+      { "Foo.commit",                     false },
+      { "getModType()",                   false },
+      { "FOO.getX()",                     false },
+      { "Foo.COMMIT.name()",              false },
+      { "",                               false },
+    };
+  }
+
+  @Test(dataProvider = "constants")
+  public void detectsConstantsByNamingConvention(String code, boolean constant) {
+    assertEquals(wurblet.isConstant(code), constant);
+  }
+
+  /**
+   * A constant needs no null guard, even if declared in a subclass of the application type,
+   * such as {@code DbModificationType.COMMIT} for a {@code ModificationType}.
+   */
+  @Test
+  public void convertsConvertiblesToJdbc() throws Exception {
+    Entity convEntity = createEntity("""
+        name := Conv
+        id := 3
+        table := conv
+
+        ModificationType<char>       modType  modtype  the modification type
+        ModificationType<Character>  optType  opttype  the optional modification type
+        """);
+    Attribute modType = attribute(convEntity, "modType");
+    assertEquals(wurblet.getJdbcCode(modType, "DbModificationType.COMMIT"),
+                 "DbModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "ModificationType.COMMIT"),
+                 "ModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "modType"),
+                 "modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal()");
+    assertEquals(wurblet.getJdbcCode(modType, "getModType()"),
+                 "getModType() == null ? ModificationType.getDefault().toExternal() : getModType().toExternal()");
+
+    Attribute optType = attribute(convEntity, "optType");
+    assertEquals(wurblet.getJdbcCode(optType, "DbModificationType.COMMIT"),
+                 "DbModificationType.COMMIT.toExternal()");
+    assertEquals(wurblet.getJdbcCode(optType, "optType"),
+                 "optType == null ? null : optType.toExternal()");
+  }
+
 
   /**
    * Every relational operator the argument syntax offers, in the java form appended to the

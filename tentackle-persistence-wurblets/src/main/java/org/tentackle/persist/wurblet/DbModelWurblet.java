@@ -48,6 +48,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 
 /**
@@ -66,6 +67,11 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public class DbModelWurblet extends ModelWurblet {
+
+  /**
+   * Java code conventions for constants: an optionally qualified name with the last segment in uppercase.
+   */
+  private static final Pattern CONSTANT_PATTERN = Pattern.compile("(?:[A-Za-z_$][A-Za-z0-9_$]*\\.)*[A-Z][A-Z0-9_]*");
 
   private boolean argumentGroupingEnabled;
   private boolean pathAllowed;
@@ -1537,8 +1543,8 @@ public class DbModelWurblet extends ModelWurblet {
     if (attribute.isConvertible()) {
       try {
         String applicationType = attribute.getApplicationTypeName();
-        if (modelCode.startsWith(applicationType + ".")) {
-          // (Enum) constant
+        if (isConstant(modelCode)) {
+          // (Enum) constant, never null
           jdbcCode = modelCode + ".toExternal()";
         }
         else {
@@ -1557,6 +1563,20 @@ public class DbModelWurblet extends ModelWurblet {
       }
     }
     return jdbcCode;
+  }
+
+
+  /**
+   * Returns whether the given java code refers to a constant.<br>
+   * Since the wurblet cannot determine the java type of the code, the decision is made
+   * according to the Java code conventions: {@code [<class>.]<VALUE_IN_UPPERCASE>}
+   * is a constant and assumed to be not null.
+   *
+   * @param code the java code
+   * @return true if constant
+   */
+  public boolean isConstant(String code) {
+    return code != null && CONSTANT_PATTERN.matcher(code).matches();
   }
 
 
