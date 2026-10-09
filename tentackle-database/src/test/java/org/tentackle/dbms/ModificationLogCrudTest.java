@@ -55,7 +55,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog log = new ModificationLog(db);
     log.setModType(DbModificationType.INSERT);
-    log.setUserId(4711);
+    log.setUserId(4711L);
     log.setTxName("insert");
     log.newId();
     log.insertObject();
@@ -65,10 +65,10 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog selected = new ModificationLog(db).selectObject(id);
     assertNotNull(selected, "the inserted row must be selectable");
-    assertEquals(selected.getUserId(), 4711);
+    assertEquals(selected.getUserId(), 4711L);
     assertEquals(selected.getTxName(), "insert");
 
-    selected.setUserId(4712);
+    selected.setUserId(4712L);
     selected.updateObject();
 
     ModificationLog updated = new ModificationLog(db).selectObject(id);
@@ -86,13 +86,13 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog log = new ModificationLog(db);
     log.setModType(DbModificationType.INSERT);
-    log.setUserId(1);
+    log.setUserId(1L);
     log.newId();
     log.insertObject();
 
     long serialAfterInsert = log.getSerial();
 
-    log.setUserId(2);
+    log.setUserId(2L);
     log.updateObject();
 
     assertEquals(log.getSerial(), serialAfterInsert + 1, "updateObject() must advance the serial by exactly 1");
@@ -130,7 +130,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog log = new ModificationLog(db);
     log.setModType(DbModificationType.INSERT);
-    log.setUserId(1);
+    log.setUserId(1L);
     log.newId();
     log.insertObject();
     long serial = log.getSerial();
@@ -159,7 +159,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog log = new ModificationLog(db);
     log.setModType(DbModificationType.INSERT);
-    log.setUserId(1);
+    log.setUserId(1L);
     log.newId();
     log.insertObject();
     long id = log.getId();
@@ -168,10 +168,10 @@ public class ModificationLogCrudTest extends AbstractDbTest {
     ModificationLog editor1 = new ModificationLog(db).selectObject(id);
     ModificationLog editor2 = new ModificationLog(db).selectObject(id);
 
-    editor1.setUserId(2);
+    editor1.setUserId(2L);
     editor1.updateObject();   // wins the race, serial advances
 
-    editor2.setUserId(3);
+    editor2.setUserId(3L);
     NotFoundException nfx = expectThrows(NotFoundException.class, editor2::updateObject);
     assertTrue(nfx.isTemporary(), "a stale-serial conflict must be reported as a temporary failure");
   }
@@ -183,7 +183,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
     ModificationLog log = new ModificationLog(db);
     log.setModType(DbModificationType.INSERT);
-    log.setUserId(1);
+    log.setUserId(1L);
     log.newId();
     log.insertObject();
     long id = log.getId();
@@ -191,7 +191,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
     ModificationLog editor1 = new ModificationLog(db).selectObject(id);
     ModificationLog editor2 = new ModificationLog(db).selectObject(id);
 
-    editor1.setUserId(2);
+    editor1.setUserId(2L);
     editor1.updateObject();
 
     expectThrows(NotFoundException.class, editor2::deleteObject);
@@ -206,7 +206,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
     try {
       ModificationLog log = new ModificationLog(db);
       log.setModType(DbModificationType.INSERT);
-      log.setUserId(1);
+      log.setUserId(1L);
       log.newId();
       log.insertObject();          // the visitor sees this object for the first time -> allowed
       long id = log.getId();
@@ -218,7 +218,7 @@ public class ModificationLogCrudTest extends AbstractDbTest {
 
       ModificationLog other = new ModificationLog(db);
       other.setModType(DbModificationType.INSERT);
-      other.setUserId(2);
+      other.setUserId(2L);
       other.newId();
       other.insertObject();        // a distinct object must still be inserted normally
       assertNotEquals(id, other.getId(), "a distinct object must get its own id");

@@ -34,7 +34,7 @@ import static org.testng.Assert.assertTrue;
  * for runs of default values and with one-byte-per-element blocks for the other values.
  * {@code char[]} and {@code short[]} values that don't fit into a byte are sent as single values.
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class SparseBlockArrayTest {
 
   private static final int LENGTH = 10_000;

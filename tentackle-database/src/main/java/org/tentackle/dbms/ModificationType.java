@@ -58,4 +58,12 @@ public interface ModificationType extends Convertible<Character>, Serializable {
     throw new PersistenceException("there is no default modification type");
   }
 
+  /**
+   * Returns whether the type refers to an object state that
+   * benefits from serialization via the {@link ModificationLog}'s {@code objectData} field.
+   *
+   * @return true if serializable
+   */
+  boolean isSerializable();
+
 }

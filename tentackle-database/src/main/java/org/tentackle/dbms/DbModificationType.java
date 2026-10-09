@@ -25,24 +25,35 @@ package org.tentackle.dbms;
 public enum DbModificationType implements ModificationType {
 
   /** begin transaction. */
-  BEGIN('B'),
+  BEGIN('B', false),
 
   /** commit transaction. */
-  COMMIT('C'),
+  COMMIT('C', false),
 
   /** insert object. */
-  INSERT('I'),
+  INSERT('I', true),
 
   /** update object. */
-  UPDATE('U'),
+  UPDATE('U', true),
 
   /** delete object. */
-  DELETE('D');
+  DELETE('D', false),
+
+  /** reset the (de)serializer. */
+  RESET('Z', false);
+
 
   private final Character modType;
+  private final boolean serializable;
 
-  DbModificationType(Character modType) {
+  DbModificationType(Character modType, boolean serializable) {
     this.modType = modType;
+    this.serializable = serializable;
+  }
+
+  @Override
+  public boolean isSerializable() {
+    return serializable;
   }
 
   @Override

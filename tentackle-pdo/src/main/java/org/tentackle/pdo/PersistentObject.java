@@ -175,6 +175,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the root id
    */
   @Persistent(comment = "root id")
+  @NotInterceptable
   @Bindable
   long getRootId();
 
@@ -192,6 +193,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the root class id
    */
   @Persistent(comment = "root class id")
+  @NotInterceptable
   @Bindable
   int getRootClassId();
 

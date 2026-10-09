@@ -16,16 +16,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.misc.SerialNumbered;
+import org.tentackle.session.SessionDependable;
 
 
 interface ModificationLogFactoryHolder {
   ModificationLogFactory INSTANCE = ServiceFactory.createService(
               ModificationLogFactory.class, DefaultModificationLogFactory.class);
 }
+
 
 /**
  * The {@link ModificationLog} factory.
@@ -44,6 +46,24 @@ public interface ModificationLogFactory {
   }
 
 
+  /**
+   * Sets the serializer for a physical database backend.<br>
+   * If enabled, the modification log's {@code objectData} field will be used
+   * to store serialized object states.
+   *
+   * @param backendIdentity the backend identity
+   * @param serializer the serializer to use, null to disable serialization
+   * @see Db#getBackendIdentity()
+   */
+  void setSerializer(int backendIdentity, ModificationLogSerializer serializer);
+
+  /**
+   * Returns the serializer if serialization is enabled for a physical database backend.
+   *
+   * @param backendIdentity the backend identity
+   * @return the serializer, null if serialization is disabled
+   */
+  ModificationLogSerializer getSerializer(int backendIdentity);
 
   /**
    * Creates a modlog.
@@ -51,7 +71,6 @@ public interface ModificationLogFactory {
    * @return the created modlog
    */
   ModificationLog createModificationLog();
-
 
   /**
    * Creates an empty modification log for a given session.<br>
@@ -62,7 +81,6 @@ public interface ModificationLogFactory {
    */
   ModificationLog createModificationLog(Db db);
 
-
   /**
    * Creates a modification log for a given session and modification type.
    *
@@ -72,7 +90,6 @@ public interface ModificationLogFactory {
    */
   ModificationLog createModificationLog(Db db, ModificationType modType);
 
-
   /**
    * Creates a modification log from an object.
    *
@@ -80,8 +97,7 @@ public interface ModificationLogFactory {
    * @param modType is the modification type (INSERT, UPDATE...)
    * @return the created modlog
    */
-  ModificationLog createModificationLog(ModificationLoggable object, ModificationType modType);
-
+  <T extends SessionDependable & SerialNumbered> ModificationLog createModificationLog(T object, ModificationType modType);
 
   /**
    * Creates a modlog from another modlog, but a different type.

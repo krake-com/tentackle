@@ -311,11 +311,13 @@ public class WurbletArgument implements WurbletArgumentOperand {
       else {
         switch (ucRelop) {
           case "NULL":
+          case "ISNULL":
             relop = Backend.SQL_ISNULL;
             value = "";
             literally = true;
             break;
           case "NOTNULL":
+          case "ISNOTNULL":
             relop = Backend.SQL_ISNOTNULL;
             value = "";
             literally = true;

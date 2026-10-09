@@ -27,10 +27,12 @@ import org.tentackle.misc.Immutable;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertyListener;
 import org.tentackle.misc.PropertySupport;
+import org.tentackle.misc.SerialNumbered;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 import org.tentackle.trip.TripSerializable;
@@ -70,7 +72,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  */
 @TripSerializable(validate = "clearFromThisJVM")
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
-       implements Immutable, ModificationLoggable, Comparable<P> {
+       implements Immutable, SerialNumbered, SessionDependable, Comparable<P> {
 
   /**
    * Instantiates a new db object for a given class without a session.
@@ -2217,7 +2219,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     db.assertNotRemote();   // don't log locally if db is remote
     if (db.isLogModificationAllowed()) {
       db.logBeginTx();      // optionally create the BEGIN-log
-      createModificationLog(modType).saveObject();
+      ModificationLogFactory.getInstance().createModificationLog(this, modType).saveObject();
     }
   }
 

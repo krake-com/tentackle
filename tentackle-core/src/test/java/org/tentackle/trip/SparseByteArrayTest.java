@@ -36,7 +36,7 @@ import static org.testng.Assert.assertTrue;
  * </pre>
  * A negative reduction is an overhead, as for dense arrays without any zeros.
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "missing-explicit-ctor", "exports" })
 public class SparseByteArrayTest {
 
   private static final int[] SIZES = { 200, 10_000, 1 << 20 };

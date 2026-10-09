@@ -40,6 +40,7 @@ public class DbModificationTypeTest {
     assertEquals(DbModificationType.INSERT.toExternal(), Character.valueOf('I'));
     assertEquals(DbModificationType.UPDATE.toExternal(), Character.valueOf('U'));
     assertEquals(DbModificationType.DELETE.toExternal(), Character.valueOf('D'));
+    assertEquals(DbModificationType.RESET.toExternal(), Character.valueOf('Z'));
   }
 
   @Test
@@ -53,7 +54,7 @@ public class DbModificationTypeTest {
   @Test
   public void testToInternalImplReturnsNullForUnknownChar() {
     // deliberately no exception, see ModificationTypeFactory
-    assertNull(DbModificationType.toInternalImpl('Z'));
+    assertNull(DbModificationType.toInternalImpl('?'));
     assertNull(DbModificationType.toInternalImpl('b'), "matching is case sensitive");
   }
 
@@ -64,7 +65,7 @@ public class DbModificationTypeTest {
 
   @Test
   public void testToInternalThrowsForUnknownChar() {
-    assertThrows(PersistenceException.class, () -> ModificationType.toInternal('Z'));
+    assertThrows(PersistenceException.class, () -> ModificationType.toInternal('?'));
   }
 
   @Test

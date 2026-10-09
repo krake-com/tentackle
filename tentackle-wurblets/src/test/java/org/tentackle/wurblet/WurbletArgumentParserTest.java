@@ -173,6 +173,35 @@ public class WurbletArgumentParserTest {
 
 
   /**
+   * Tests explicit operators following the second operand.
+   */
+  @Test
+  public void testExplicitOperatorsAfterSecondOperand() {
+    try {
+      WurbletArgumentParser parser = new WurbletArgumentParser(entity, false,
+              Arrays.asList("id:>", "AND", "processed:=:null", "AND", "(", "modType", "OR", "txId:null", ")", "|", "+id"));
+      assertEquals(parser.getExpression().getOperands().size(), 3);
+      assertEquals(parser.getExpression().toString(), "id:> AND processed:=:null AND (modType OR txId:null)");
+      assertEquals(parser.getSortingArguments().size(), 1);
+
+      parser = new WurbletArgumentParser(entity, false, Arrays.asList("user", "OR", "modType", "OR", "txId"));
+      assertEquals(parser.getExpression().toString(), "user OR modType OR txId");
+
+      // the implicit operator must not inherit the previous explicit one
+      parser = new WurbletArgumentParser(entity, false, Arrays.asList("user", "OR", "modType", "txId"));
+      assertEquals(parser.getExpression().toString(), "user OR modType AND txId");
+
+      parser = new WurbletArgumentParser(entity, false,
+              Arrays.asList("user", "AND", "modType", "AND", "NOT", "(", "txId", "OR", "processed:null", ")"));
+      assertEquals(parser.getExpression().toString(), "user AND modType AND NOT (txId OR processed:null)");
+    }
+    catch(WurbelException wx) {
+      fail(wx.getMessage(), wx);
+    }
+  }
+
+
+  /**
    * Tests the optional conditions, i.e. arguments with a "?boolean" suffix.
    */
   @Test

@@ -19,6 +19,11 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
+import org.tentackle.misc.SerialNumbered;
+import org.tentackle.session.SessionDependable;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Default implementation of a modification log factory.
@@ -28,11 +33,24 @@ import org.tentackle.common.Service;
 @Service(ModificationLogFactory.class)
 public class DefaultModificationLogFactory implements ModificationLogFactory {
 
+  // holds the serialization-enabled flag for each backend identity
+  private final ConcurrentMap<Integer, ModificationLogSerializer> serializationEnabled = new ConcurrentHashMap<>();
+
   /**
    * Creates the modification log factory.
    */
   public DefaultModificationLogFactory() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public void setSerializer(int backendIdentity, ModificationLogSerializer serializer) {
+    serializationEnabled.put(backendIdentity, serializer);
+  }
+
+  @Override
+  public ModificationLogSerializer getSerializer(int backendIdentity) {
+    return serializationEnabled.get(backendIdentity);
   }
 
   @Override
@@ -51,8 +69,17 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
   }
 
   @Override
-  public ModificationLog createModificationLog(ModificationLoggable object, ModificationType modType) {
-    return new ModificationLog(object, modType);
+  public <T extends SessionDependable & SerialNumbered> ModificationLog createModificationLog(T object, ModificationType modType) {
+    Db db = (Db) object.getSession();
+    ModificationLog modlog = new ModificationLog(db, modType);
+    modlog.setObject(object);
+    if (modType.isSerializable()) {
+      ModificationLogSerializer serializer = getSerializer(db.getBackendIdentity());
+      if (serializer != null) {
+        modlog.setObjectData(serializer.serialize(object));
+      }
+    }
+    return modlog;
   }
 
   @Override
