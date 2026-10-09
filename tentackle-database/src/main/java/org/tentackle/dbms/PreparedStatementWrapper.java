@@ -1293,14 +1293,12 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
-   * @param b the parameter value, null if the value should be set to SQL NULL
+   * @param b the parameter value, null if the value should be set to SQL NULL (an empty binary is stored as is)
    */
   public void setBinary(int p, Binary<?> b) {
     try {
       int ep = effectivePosition(p);
-      if (b == null || b.getLength() == 0) {
-        // "empty" binaries are treated as null
-        b = null;
+      if (b == null) {
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {
@@ -1346,14 +1344,12 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
-   * @param b the parameter value, null if the value should be set to SQL NULL
+   * @param b the parameter value, null if the value should be set to SQL NULL (an empty binary is stored as is)
    */
   public void setTBinary(int p, TBinary<?> b) {
     try {
       int ep = effectivePosition(p);
-      if (b == null || b.getLength() == 0) {
-        // "empty" binaries are treated as null
-        b = null;
+      if (b == null) {
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {

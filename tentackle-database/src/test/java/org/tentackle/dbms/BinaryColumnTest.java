@@ -31,6 +31,9 @@ import org.tentackle.sql.SqlType;
 import java.io.IOException;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests reading and writing {@link Binary}, {@link TBinary} and raw {@code byte[]} columns.
@@ -108,6 +111,45 @@ public class BinaryColumnTest extends AbstractDbTest {
     }
 
     assertBinaries();
+  }
+
+
+  /**
+   * Empty binaries are stored as is and come back as empty binaries, not as null.
+   */
+  @Test(dependsOnMethods = "testApplyBySetter")
+  public void testEmptyBinaries() throws IOException, ClassNotFoundException {
+    Db db = getSession();
+
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> insertSql())) {
+      st.setBinary(1, new Binary<>());
+      st.setTBinary(2, new TBinary<>());
+      st.setBytes(3, new byte[0]);
+      assertEquals(st.executeUpdate(), 1);
+    }
+
+    int rows = 0;
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> "SELECT bin, tbin, raw FROM " + TABLE_NAME);
+         ResultSetWrapper rs = st.executeQuery()) {
+      while (rs.next()) {
+        Binary<String> binary = rs.getBinary(1, 0);
+        TBinary<String> tbinary = rs.getTBinary(2, 0);
+        byte[] bytes = rs.getBytes(3);
+        if (bytes.length == 0) {
+          assertNotNull(binary, "empty binary read back as null");
+          assertNotNull(tbinary, "empty tbinary read back as null");
+          assertTrue(binary.isEmpty());
+          assertTrue(tbinary.isEmpty());
+          assertNull(binary.getObject());
+          assertNull(tbinary.getObject());
+          assertEquals(binary, new Binary<>());
+          assertEquals(tbinary, new TBinary<>());
+          rows++;
+        }
+      }
+    }
+
+    assertEquals(rows, 1);
   }
 
 

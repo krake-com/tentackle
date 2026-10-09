@@ -194,6 +194,17 @@ public abstract sealed class AbstractBinary<T> implements Serializable, Cloneabl
   }
 
   /**
+   * Returns whether this binary is empty.<br>
+   * A binary is empty if it holds no object, i.e. its length is 0.
+   * Notice that an empty binary is stored as an empty value, not as SQL NULL.
+   *
+   * @return true if empty
+   */
+  public boolean isEmpty() {
+    return length == 0;
+  }
+
+  /**
    * Gets the internal byte array of this binary.<br>
    * Only provided for serialization purposes.
    * Don't mess around with it! Notice that the array is not a copy, i.e., changing it

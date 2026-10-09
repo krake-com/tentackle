@@ -27,6 +27,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -45,11 +46,13 @@ public class BinaryTest {
     String value = "hello world";
     Binary<String> binary = new Binary<>(value);
     assertTrue(binary.getLength() > 0);
+    assertFalse(binary.isEmpty());
     assertEquals(binary.getObject(), value);
 
     // read back from the stored bytes as the database would
     Binary<String> restored = Binary.create(
         new ByteArrayInputStream(binary.getData(), 0, binary.getLength()), 0, false);
+    assertFalse(restored.isEmpty());
     assertEquals(restored.getObject(), value);
   }
 
@@ -57,13 +60,39 @@ public class BinaryTest {
   public void testNullObject() throws IOException, ClassNotFoundException {
     Binary<String> binary = new Binary<>(null);
     assertEquals(binary.getLength(), 0);
+    assertTrue(binary.isEmpty());
     assertNull(binary.getObject());
+    assertTrue(new Binary<>().isEmpty());
   }
 
   @Test
-  public void testCreateFromNullOrEmptyStream() throws IOException {
+  public void testIsEmptyAfterClearing() throws IOException {
+    Binary<String> binary = new Binary<>("value");
+    assertFalse(binary.isEmpty());
+    binary.setObject(null);
+    assertTrue(binary.isEmpty());
+
+    TBinary<String> tbinary = new TBinary<>("value");
+    assertFalse(tbinary.isEmpty());
+    tbinary.setObject(null);
+    assertTrue(tbinary.isEmpty());
+  }
+
+  @Test
+  public void testCreateFromNullOrEmptyStream() throws IOException, ClassNotFoundException {
     assertNull(Binary.create(null, 0, false));
-    assertNull(Binary.create(new ByteArrayInputStream(new byte[0]), 0, false));
+    assertNull(TBinary.create(null, 0, false));
+    // an empty stream is an empty binary, not null
+    Binary<String> binary = Binary.create(new ByteArrayInputStream(new byte[0]), 0, false);
+    assertNotNull(binary);
+    assertTrue(binary.isEmpty());
+    assertNull(binary.getObject());
+    assertEquals(binary, new Binary<>());
+    TBinary<String> tbinary = TBinary.create(new ByteArrayInputStream(new byte[0]), 0, false);
+    assertNotNull(tbinary);
+    assertTrue(tbinary.isEmpty());
+    assertNull(tbinary.getObject());
+    assertEquals(tbinary, new TBinary<>());
   }
 
   @Test
@@ -140,6 +169,7 @@ public class BinaryTest {
     String value = "tbinary value";
     TBinary<String> binary = new TBinary<>(value);
     assertTrue(binary.getLength() > 0);
+    assertFalse(binary.isEmpty());
     assertEquals(binary.getObject(), value);
 
     TBinary<String> restored = TBinary.create(
@@ -151,6 +181,8 @@ public class BinaryTest {
   public void testTBinaryNullAndFreeze() throws IOException, ClassNotFoundException {
     TBinary<String> binary = new TBinary<>(null);
     assertEquals(binary.getLength(), 0);
+    assertTrue(binary.isEmpty());
+    assertTrue(new TBinary<>().isEmpty());
     assertNull(binary.getObject());
 
     TBinary<String> frozen = new TBinary<>("x");

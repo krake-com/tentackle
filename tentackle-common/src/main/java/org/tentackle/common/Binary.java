@@ -57,7 +57,7 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
    * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if {@code Binary} is frozen
    *
-   * @return the new {@code Binary} or null if the stream is null or empty.
+   * @return the new {@code Binary} or null if the stream is null
    * @throws java.io.IOException if reading from the input stream failed
    * @param <T> the serializable type
    */
@@ -65,8 +65,7 @@ public final class Binary<T extends Serializable> extends AbstractBinary<T> impl
     if (stream == null) {
       return null;
     }
-    Binary<T> binary = new Binary<>(stream, bufSize, frozen);
-    return binary.length == 0 ? null : binary;
+    return new Binary<>(stream, bufSize, frozen);
   }
 
 

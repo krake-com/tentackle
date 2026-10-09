@@ -53,6 +53,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -317,7 +318,7 @@ public class SpecialDataTypeTest {
   }
 
   /**
-   * An empty binary is indistinguishable from none, so it is stored as NULL and comes back as null.
+   * A binary is stored as is and comes back with the same contents.
    *
    * @throws SQLException if the test failed
    * @throws IOException if the test failed
@@ -339,17 +340,45 @@ public class SpecialDataTypeTest {
     }
   }
 
+  /**
+   * Only null is stored as NULL. An empty binary is stored as is and comes back as an empty binary.
+   *
+   * @throws SQLException if the test failed
+   */
   @Test
-  public void testEmptyBinaryIsNull() throws SQLException, IOException {
-    TBinaryType type = new TBinaryType();
-    TBinary<?> empty = new TBinary<>(new ByteArrayInputStream(new byte[0]), 0, true);
+  public void testEmptyBinaryIsStoredAsIs() throws SQLException {
+    TBinaryType ttype = new TBinaryType();
+    TBinary<?> tempty = new TBinary<>();
+    try (PreparedStatement stmt = table("emptytbinary", "c0 BLOB")) {
+      assertSame(ttype.set(h2, stmt, 1, tempty, false, null)[0], tempty, "an empty tbinary is stored as is");
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("emptytbinary")) {
+      TBinary<?> read = ttype.get(h2, rs, new int[] { 1 }, false, null);
+      assertNotNull(read, "an empty tbinary is not null");
+      assertTrue(read.isEmpty());
+      assertEquals(read, tempty);
+    }
 
+    BinaryType type = new BinaryType();
+    Binary<?> empty = new Binary<>();
     try (PreparedStatement stmt = table("emptybinary", "c0 BLOB")) {
-      assertNull(type.set(h2, stmt, 1, empty, false, null)[0], "an empty binary is stored as null");
+      assertSame(type.set(h2, stmt, 1, empty, false, null)[0], empty, "an empty binary is stored as is");
       stmt.executeUpdate();
     }
     try (ResultSet rs = select("emptybinary")) {
-      assertNull(type.get(h2, rs, new int[] { 1 }, false, null));
+      Binary<?> read = type.get(h2, rs, new int[] { 1 }, false, null);
+      assertNotNull(read, "an empty binary is not null");
+      assertTrue(read.isEmpty());
+      assertEquals(read, empty);
+    }
+
+    try (PreparedStatement stmt = table("nullbinary", "c0 BLOB")) {
+      assertNull(type.set(h2, stmt, 1, null, false, null)[0]);
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("nullbinary")) {
+      assertNull(type.get(h2, rs, new int[] { 1 }, false, null), "null is stored as NULL");
     }
   }
 

@@ -323,8 +323,11 @@ and the parentheses is allowed.
 `String(0)` selects a large string (a string variant), that is mapped to a `CLOB` in the database, if supported by the database.
 
 `byte[]` stores raw binary data "as is" in a `BLOB`, without the serialization overhead of `Binary` or `TBinary`.
-Unlike those, an empty array is not treated as `null`. Notice that an array cannot be frozen, so the
-application must not modify the contents of an array once it has been set.
+Notice that an array cannot be frozen, so the application must not modify the contents of an array once it has been set.
+
+For `Binary`, `TBinary` and `byte[]` alike, only `null` is stored as SQL `NULL`. An empty value (an empty
+array or a binary without an object) is stored as is and comes back as an empty value, not as `null`. Use `isEmpty()` to tell an empty `Binary` or `TBinary` apart from `null`.
+Notice that some backends, such as Oracle, cannot tell a zero-length binary from `NULL`.
 
 ### Inner/generic type
 

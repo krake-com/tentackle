@@ -51,7 +51,7 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
    * @param bufSize the initial buffer size, values below 128 select the default size of 1024
    * @param frozen true if {@code TBinary} is frozen
    *
-   * @return the new {@code TBinary} or null if the stream is null or empty.
+   * @return the new {@code TBinary} or null if the stream is null
    * @throws IOException if reading from the input stream failed
    * @param <T> the object type
    */
@@ -59,8 +59,7 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
     if (stream == null) {
       return null;
     }
-    TBinary<T> binary = new TBinary<>(stream, bufSize, frozen);
-    return binary.length == 0 ? null : binary;
+    return new TBinary<>(stream, bufSize, frozen);
   }
 
 

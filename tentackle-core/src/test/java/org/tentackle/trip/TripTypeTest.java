@@ -473,6 +473,16 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
+  void testEmptyBinary() {
+    // empty binaries travel as they are and don't become null
+    TripType<Binary> binaryType = TripFactory.getInstance().getType(Binary.class);
+    assertNotNull(tunnel(new Binary<>(), binaryType));
+    TripType<TBinary> tbinaryType = TripFactory.getInstance().getType(TBinary.class);
+    assertNotNull(tunnel(new TBinary<>(), tbinaryType));
+  }
+
+  @Test
   void testI18NText() {
     TripType<I18NText> tripType = TripFactory.getInstance().getType(I18NText.class);
     I18NText i18NText = new I18NText(Locale.ENGLISH, "Hello, World!");
