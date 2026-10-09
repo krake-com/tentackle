@@ -530,6 +530,9 @@ public class Query {
           else if (data instanceof TBinary<?>) {
             st.setTBinary(ndx++, (TBinary<?>) data);
           }
+          else if (data instanceof byte[] bytes) {
+            st.setBytes(ndx++, bytes);
+          }
           else if (data instanceof UUID) {
             // no dedicated setter: the mapping is backend-specific (native UUID or VARCHAR)
             ndx = applyByDataType(st, item, dataIndex, UUID.class, data, ndx);

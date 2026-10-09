@@ -73,7 +73,7 @@ public class DataTypeContractTest {
   public Object[][] allDataTypes() {
     return List.of("boolean", "Boolean", "byte", "Byte", "char", "Character", "short", "Short",
                    "int", "Integer", "long", "Long", "float", "Float", "double", "Double",
-                   "BigDecimal", "String", "Binary", "TBinary", "UUID",
+                   "BigDecimal", "String", "Binary", "TBinary", "byte[]", "UUID",
                    "BMoney", "DMoney", "I18NText",
                    "Date", "Time", "Timestamp",
                    "LocalDate", "LocalTime", "LocalDateTime",
@@ -114,6 +114,14 @@ public class DataTypeContractTest {
     String constant = dataType.getDataTypeConstant();
     assertTrue(constant.startsWith("DT_"), constant);
     assertEquals(constant, constant.toUpperCase(java.util.Locale.ROOT), "constants are upper case");
+  }
+
+  @Test(dataProvider = "allDataTypes")
+  public void testMethodTypeNameIsIdentifier(DataType<?> dataType) {
+    String name = dataType.getMethodTypeName();
+    assertFalse(name.isEmpty(), dataType + " has no method type name");
+    assertTrue(Character.isJavaIdentifierStart(name.charAt(0)), name);
+    assertTrue(name.chars().allMatch(Character::isJavaIdentifierPart), name + " is not a valid part of a method name");
   }
 
   @Test(dataProvider = "allDataTypes")

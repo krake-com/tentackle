@@ -64,6 +64,11 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public String getMethodTypeName() {
+    return getJavaType();
+  }
+
+  @Override
   public boolean isPredefined() {
     return true;
   }
@@ -296,7 +301,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   @Override
   public String getDataTypeConstant() {
     StringBuilder buf = new StringBuilder();
-    buf.append("DT_").append(getJavaType().toUpperCase(Locale.ROOT));
+    buf.append("DT_").append(getMethodTypeName().toUpperCase(Locale.ROOT));
     if (!getVariant().isEmpty()) {
       buf.append('_').append(getVariant().toUpperCase(Locale.ROOT));
     }

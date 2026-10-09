@@ -1453,7 +1453,7 @@ public class DbModelWurblet extends ModelWurblet {
     else  {
       String variant = dataType.getVariant();
       if (variant.isEmpty()) {
-        buf.append(dataType.getJavaType());
+        buf.append(dataType.getMethodTypeName());
       }
       else {
         buf.append(variant);
@@ -1488,7 +1488,7 @@ public class DbModelWurblet extends ModelWurblet {
       }
       String variant = dataType.getVariant();
       if (variant.isEmpty()) {
-        buf.append(dataType.getJavaType());
+        buf.append(dataType.getMethodTypeName());
       }
       else {
         buf.append(variant);

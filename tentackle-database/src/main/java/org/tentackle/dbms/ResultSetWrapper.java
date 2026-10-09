@@ -2008,6 +2008,23 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes(String name)  {
+    try {
+      return resources.rs.getBytes(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * an <code>int</code> in the Java programming language.
    *
@@ -3016,6 +3033,22 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @param pos the parameter index in the result set
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes(int pos)  {
+    try {
+      return resources.rs.getBytes(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * an <code>Object</code> of given type <code>T</code>.
    *
@@ -3901,6 +3934,21 @@ public class ResultSetWrapper implements AutoCloseable {
       return TBinary.create(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
     }
     catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a {@code byte[]}.
+   *
+   * @return the bytes read from db, null if the value is SQL <code>NULL</code>
+   */
+  public byte[] getBytes()  {
+    try {
+      return resources.rs.getBytes(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
     }
   }

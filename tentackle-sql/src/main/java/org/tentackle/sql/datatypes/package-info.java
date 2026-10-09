@@ -20,7 +20,7 @@
  * The predefined {@link org.tentackle.sql.DataType} implementations.
  * <p>
  * Covers the primitives and their wrappers, {@code String} and {@code Character}, the {@code java.time} and
- * legacy {@code java.sql} date and time types, {@code BigDecimal}, {@code UUID},
+ * legacy {@code java.sql} date and time types, {@code BigDecimal}, {@code UUID}, raw {@code byte[]},
  * and the Tentackle types {@code BMoney}, {@code DMoney}, {@code I18NText}, {@code Binary} and {@code TBinary}.
  * The {@code String} type comes in the variants {@code LargeString} (CLOB), {@code Sqlxml} (XML) and {@code Json}.
  * Some types map to more than one column, such as the money types and the zoned or offset date and time types.

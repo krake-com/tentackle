@@ -91,6 +91,7 @@ public class DataTypeFactoryTest {
     assertEquals(factory.get(BMoney.class).getJavaType(), "BMoney");
     assertEquals(factory.get(DMoney.class).getJavaType(), "DMoney");
     assertEquals(factory.get(Binary.class).getJavaType(), "Binary");
+    assertEquals(factory.get(byte[].class).getJavaType(), "byte[]");
     assertEquals(factory.get(I18NText.class).getJavaType(), "I18NText");
     assertEquals(factory.get(Instant.class).getJavaType(), "Instant");
     assertEquals(factory.get(LocalDate.class).getJavaType(), "LocalDate");
@@ -188,7 +189,7 @@ public class DataTypeFactoryTest {
     for (String javaType : new String[] {
         "boolean", "Boolean", "byte", "Byte", "char", "Character", "short", "Short",
         "int", "Integer", "long", "Long", "float", "Float", "double", "Double",
-        "BigDecimal", "String", "Binary", "TBinary", "UUID",
+        "BigDecimal", "String", "Binary", "TBinary", "byte[]", "UUID",
         "BMoney", "DMoney", "I18NText",
         "Date", "Time", "Timestamp",
         "LocalDate", "LocalTime", "LocalDateTime", "OffsetTime", "OffsetDateTime", "ZonedDateTime", "Instant" }) {

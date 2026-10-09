@@ -1316,6 +1316,29 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   /**
+   * Sets the designated parameter to the given {@code byte[]} value.
+   * The bytes are stored "as is", i.e. an empty array is not treated as null.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param b the parameter value, null if the value should be set to SQL NULL
+   */
+  public void setBytes(int p, byte[] b) {
+    try {
+      int ep = effectivePosition(p);
+      if (b == null) {
+        getStatement().setNull(ep, Types.LONGVARBINARY);
+      }
+      else {
+        getStatement().setBytes(ep, b);
+      }
+      rememberParameter(ep, b);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  /**
    * Sets the designated parameter to the given {@link TBinary} value.
    * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.

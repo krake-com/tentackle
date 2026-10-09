@@ -117,7 +117,8 @@ public class QueryParameterTest extends AbstractDbTest {
         ZonedDateTime.of(LOCAL_DATE_TIME, ZONE_ID),
         Instant.ofEpochSecond(1785000000L, 123456789),
         createBinary("some binary"),
-        createTBinary("some other binary")
+        createTBinary("some other binary"),
+        new byte[] { 0, 1, -1, 127, -128 }
     };
   }
 

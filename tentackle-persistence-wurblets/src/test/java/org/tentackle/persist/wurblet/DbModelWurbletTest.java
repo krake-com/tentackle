@@ -126,6 +126,25 @@ public class DbModelWurbletTest {
   }
 
   /**
+   * {@code byte[]} is not a valid part of a method name, so the accessors are named after
+   * the JDBC methods {@code getBytes}/{@code setBytes}.
+   */
+  @Test
+  public void derivesTheByteArrayAccessorNames() throws Exception {
+    Entity bytesEntity = createEntity("""
+        name := RawData
+        id := 3
+        table := rawdata
+
+        byte[]  someRawData  raw_data  some raw binary data
+        """);
+    Attribute rawData = attribute(bytesEntity, "someRawData");
+    assertEquals(rawData.getJavaType(), "byte[]");
+    assertEquals(wurblet.createJdbcGetterName(rawData), "getBytes");
+    assertEquals(wurblet.createJdbcSetterName(rawData.getEffectiveDataType()), "setBytes");
+  }
+
+  /**
    * Column-name constants are what the generated SQL refers to; the suffix disambiguates the
    * columns of a multi-column type.
    */

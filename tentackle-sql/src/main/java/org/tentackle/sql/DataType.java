@@ -79,6 +79,14 @@ public interface DataType<T> {
   String getModelType();
 
   /**
+   * Gets the type name used to build method names, such as the getters and setters of the JDBC wrappers.<br>
+   * Usually the java type, but must be a valid java identifier (e.g. {@code Bytes} for {@code byte[]}).
+   *
+   * @return the method type name
+   */
+  String getMethodTypeName();
+
+  /**
    * Gets the optional variant of the type.<br>
    * If a variant is not empty, it replaces the java type suffix for setters and getters.
    *

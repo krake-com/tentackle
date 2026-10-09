@@ -301,13 +301,13 @@ allowed for `provided` entities.
 
 ### Java types
 
-| Category   | Types                                                                                                                                                                                                |
-|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                                 |
-| Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                                        |
-| Numeric    | `BigDecimal`, `BMoney`, `DMoney`                                                                                                                                                                     |
-| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `XML`, `JSON` |
-| Custom     | Any other class name (application-specific type)                                                                                                                                                     |
+| Category   | Types                                                                                                                                                                                                          |
+|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Primitives | `boolean`, `byte`, `char`, `short`, `int`, `long`, `float`, `double`                                                                                                                                           |
+| Wrappers   | `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`                                                                                                                                  |
+| Numeric    | `BigDecimal`, `BMoney`, `DMoney`                                                                                                                                                                               |
+| Other      | `String`, `I18NText`, `Date`, `Time`, `Timestamp`, `LocalDate`, `LocalTime`, `LocalDateTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Instant`, `UUID`, `Binary`, `TBinary`, `byte[]`, `XML`, `JSON` |
+| Custom     | Any other class name (application-specific type)                                                                                                                                                               |
 
 `JSON` and `XML` are string variants and affect the database's column type only, i.e., the Java type 
 seen by the application is `String`. Postgres, for example, provides a special query syntax for those types.
@@ -321,6 +321,10 @@ See the concrete backends for what is supported and how it is mapped.
 Appended to the type: `String(128)`, `Double(10,2)`, `BigDecimal(15,4)`. Whitespace between the type
 and the parentheses is allowed.
 `String(0)` selects a large string (a string variant), that is mapped to a `CLOB` in the database, if supported by the database.
+
+`byte[]` stores raw binary data "as is" in a `BLOB`, without the serialization overhead of `Binary` or `TBinary`.
+Unlike those, an empty array is not treated as `null`. Notice that an array cannot be frozen, so the
+application must not modify the contents of an array once it has been set.
 
 ### Inner/generic type
 

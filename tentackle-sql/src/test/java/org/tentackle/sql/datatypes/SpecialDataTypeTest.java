@@ -354,6 +354,46 @@ public class SpecialDataTypeTest {
   }
 
 
+
+  // ---- the raw byte array --------------------------------------------------
+
+  @Test
+  public void testByteArrayFlags() {
+    ByteArrayType type = new ByteArrayType();
+    assertEquals(type.getJavaType(), "byte[]");
+    assertEquals(type.getMethodTypeName(), "Bytes", "byte[] is not a valid identifier");
+    assertEquals(type.getDataTypeConstant(), "DT_BYTES");
+    assertEquals(type.getSqlType(h2, 0), SqlType.BLOB);
+    assertTrue(type.isPredefined());
+    assertFalse(type.isMutable(), "arrays cannot be frozen");
+    assertFalse(type.isJavaTypeGenerified());
+    expectThrows(IndexOutOfBoundsException.class, () -> type.getSqlType(h2, 1));
+    expectThrows(BackendException.class, () -> type.valueOf("anything"));
+  }
+
+  /**
+   * The bytes are stored as is: an empty array stays empty and only null is NULL.
+   *
+   * @throws SQLException if the test failed
+   */
+  @Test
+  public void testByteArrayRoundTrip() throws SQLException {
+    ByteArrayType type = new ByteArrayType();
+    byte[] bytes = { 0, 1, -1, 127, -128 };
+
+    try (PreparedStatement stmt = table("bytesroundtrip", "c0 BLOB", "c1 BLOB", "c2 BLOB")) {
+      type.set(h2, stmt, 1, bytes, false, null);
+      type.set(h2, stmt, 2, new byte[0], false, null);
+      assertNull(type.set(h2, stmt, 3, null, false, null)[0]);
+      stmt.executeUpdate();
+    }
+    try (ResultSet rs = select("bytesroundtrip")) {
+      assertEquals(type.get(h2, rs, new int[] { 1 }, false, null), bytes);
+      assertEquals(type.get(h2, rs, new int[] { 2 }, false, null), new byte[0]);
+      assertNull(type.get(h2, rs, new int[] { 3 }, false, null));
+    }
+  }
+
   // ---- the large string ----------------------------------------------------
 
   /**

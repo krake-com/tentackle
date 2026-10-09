@@ -122,8 +122,8 @@ The module ships ~38 predefined implementations under
 [`org.tentackle.sql.datatypes`](../java/org/tentackle/sql/datatypes) covering the primitive wrappers and their
 primitives (including `Boolean`), `String`/`Character`, the `java.time` types (`LocalDate`, `LocalTime`,
 `LocalDateTime`, `Instant`, `OffsetTime`, `OffsetDateTime`, `ZonedDateTime`), the legacy `java.sql` date/time types,
-`BigDecimal`, `UUID`, the Tentackle types `BMoney`/`DMoney`, `I18NText` and `Binary`/`TBinary`, and the pseudo
-type for application-specific `Convertible` wrappers. Notice that "predefined" means shipped with the module:
+`BigDecimal`, `UUID`, raw `byte[]`, the Tentackle types `BMoney`/`DMoney`, `I18NText` and `Binary`/`TBinary`,
+and the pseudo type for application-specific `Convertible` wrappers. Notice that "predefined" means shipped with the module:
 `I18NTextType` and `UUIDType` nevertheless return `isPredefined() == false`, because they are persisted via the
 generic accessors.
 
