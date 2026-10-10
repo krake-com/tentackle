@@ -121,7 +121,7 @@ with a multiplexing manager) supplies the default connection manager for new ses
   default connection manager each pooled `Db` is one physical connection; with the multiplexing manager pooled
   `Db`s are virtual connections attached only during operations — the preferred server configuration.
 - [`MultiUserDbPool`](../java/org/tentackle/dbms/MultiUserDbPool.java) — a pool of `DbPool`s, one per
-  `SessionInfo`, for multi-user servers.
+  `SessionInfo`, used by cascaded remote servers.
 - [`DbPoolFactory`](../java/org/tentackle/dbms/DbPoolFactory.java) (`@Service(SessionPoolFactory.class)`) creates
   both kinds of pools; each pooled session lives in a [`DbPoolSlot`](../java/org/tentackle/dbms/DbPoolSlot.java),
   which removes closed sessions from the pool and keeps idle remote sessions alive.
