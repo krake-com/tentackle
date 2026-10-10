@@ -18,7 +18,6 @@
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
-    <timestamp>${symbol_dollar}{maven.build.timestamp}</timestamp>
   </properties>
 
   <dependencies>
