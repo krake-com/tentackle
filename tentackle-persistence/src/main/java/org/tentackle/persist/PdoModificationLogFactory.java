@@ -32,6 +32,13 @@ import org.tentackle.session.SessionDependable;
 @Service(ModificationLogFactory.class)
 public class PdoModificationLogFactory extends DefaultModificationLogFactory {
 
+  /**
+   * Creates the factory.
+   */
+  public PdoModificationLogFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public <T extends SessionDependable & SerialNumbered> ModificationLog createModificationLog(T object, ModificationType modType) {
     ModificationLog modlog;
