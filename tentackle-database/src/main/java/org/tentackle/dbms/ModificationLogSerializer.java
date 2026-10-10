@@ -23,6 +23,16 @@ import org.tentackle.session.SessionDependable;
 
 /**
  * Serializer for the {@link ModificationLog}'s {@code objectData} field.
+ * <p>
+ * If a serializer is registered for a backend via {@link ModificationLogFactory#setSerializer}, the state of an
+ * inserted or updated object is stored along with its modlog, so that the receiver does not have to load
+ * the object from the database.
+ * <p>
+ * Notice that the serializer, like the modlogs themselves, is only one of the fundamental building blocks to
+ * implement asynchronous coupling. The coupling itself is out of Tentackle's scope, since there are too many
+ * different scenarios to cover them with a single generic solution. Reading the modlogs, transferring them,
+ * and applying them on the receiving side, which includes invoking {@link #deserialize} and {@link #reset},
+ * must be implemented at the application level.
  */
 public interface ModificationLogSerializer {
 

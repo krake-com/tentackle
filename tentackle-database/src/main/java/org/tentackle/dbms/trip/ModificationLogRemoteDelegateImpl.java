@@ -65,13 +65,13 @@ public class ModificationLogRemoteDelegateImpl
 
 
   @Override
-  public List<? extends ModificationLog> selectFirstUnprocessed(int limit) {
-    return dbObject.selectFirstUnprocessed(limit);
+  public ModificationLog selectFirstUnprocessed() {
+    return newInstance().selectFirstUnprocessed();
   }
 
   @Override
-  public List<? extends ModificationLog> selectFirstUnprocessedGreater(int limit, long id) {
-    return dbObject.selectFirstUnprocessedGreater(limit, id);
+  public ModificationLog selectLatestReset() {
+    return newInstance().selectLatestReset();
   }
 
   @Override

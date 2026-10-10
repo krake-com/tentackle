@@ -273,21 +273,13 @@ the receiver does not have to load the object from the database. Serialization i
 registering a [`ModificationLogSerializer`](../java/org/tentackle/dbms/ModificationLogSerializer.java) via
 `ModificationLogFactory.setSerializer(backendIdentity, serializer)`. The PDO-aware implementation is
 [`TripModificationLogSerializer`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/trip/TripModificationLogSerializer.java)
-in `tentackle-persistence`:
+in `tentackle-persistence`.
 
-- It uses [TRIP](../../../../tentackle-core/src/main/docs/trip.md) and serializes only the PDO itself. The relations
-  are skipped, except embedded ones, and loaded lazily on the receiving side.
-- The TRIP dictionary spans several modlogs: a type definition is written only along with the first object of that
-  type. The dictionary is reset after a configurable number of objects or time span, which writes a `RESET` modlog
-  before the next serialized object. The first object serialized after startup is preceded by a `RESET` as well.
-- The receiver processes the modlogs in id order with its own serializer instance and invokes `reset()` on each
-  `RESET` modlog.
-- If a transaction or savepoint is rolled back after it wrote a modlog with new dictionary entries, the serializer
-  is notified (it registers itself as the transaction property `ModificationLogSerializer.class`) and resets
-  before the next object.
-- Since the dictionary is shared by all sessions of a backend, the modlog-writing transactions must not overlap,
-  e.g. by using a transaction-based `IdSource` for the modlog. Otherwise, a modlog referring to a dictionary
-  entry could be committed before the modlog defining it.
+> **Note:** asynchronous coupling itself is out of scope. There are too many different scenarios — topology,
+> transport, ordering, conflict resolution, error handling and recovery, to name a few — to cover them with a
+> single generic solution. Tentackle therefore only provides the fundamental building blocks: the modlogs, their
+> optional object data and the serializer SPI. Reading the modlogs, shipping them and applying them on the
+> receiving side must be implemented at the application level.
 
 ### Persistence visitors
 

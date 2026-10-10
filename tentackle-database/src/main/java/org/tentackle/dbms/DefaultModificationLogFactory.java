@@ -76,7 +76,10 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
     if (modType.isSerializable()) {
       ModificationLogSerializer serializer = getSerializer(db.getBackendIdentity());
       if (serializer != null) {
-        modlog.setObjectData(serializer.serialize(object));
+        synchronized (serializer) {
+          modlog.reserveId();   // the order of IDs and serialization must be in sync!
+          modlog.setObjectData(serializer.serialize(object));
+        }
       }
     }
     return modlog;
