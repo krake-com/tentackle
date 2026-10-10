@@ -74,6 +74,7 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
     ModificationLog modlog = new ModificationLog(db, modType);
     modlog.setObject(object);
     if (modType.isSerializable()) {
+      db.assertNotRemote();
       ModificationLogSerializer serializer = getSerializer(db.getBackendIdentity());
       if (serializer != null) {
         synchronized (serializer) {

@@ -862,6 +862,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
 
     if (objectData != null) {
+      session.assertNotRemote();
       ModificationLogSerializer serializer = ModificationLogFactory.getInstance().getSerializer(session.getBackendIdentity());
       if (serializer != null) {
         try {

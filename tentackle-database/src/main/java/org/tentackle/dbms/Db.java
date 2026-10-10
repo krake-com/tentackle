@@ -597,7 +597,7 @@ public class Db implements Session, Cloneable {
   }
 
   private final BackendInfo backendInfo;                      // the backend information
-  private final int backendIdentity;                          // identity of the physical backend
+  private final int backendIdentity;                          // identity of the physical backend (0 if remote)
   private Resources resources;                                // resources to be cleaned up (not final due to reopen)
   private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
   private int instanceNumber;                                 // each session gets a unique instance number
@@ -702,7 +702,6 @@ public class Db implements Session, Cloneable {
 
       try {
         backendInfo = BackendInfoFactory.getInstance().create(backendProperties);
-        backendIdentity = DbUtilities.getInstance().getBackendIdentity(backendInfo);
       }
       catch (BackendException bex) {
         throw new PersistenceException(this, "invalid configuration in " + sessionInfo.getPropertiesName(), bex);
@@ -710,6 +709,7 @@ public class Db implements Session, Cloneable {
 
       if (backendInfo.isRemote()) {
         conMgr = null;  // no connection manager for remote connections
+        backendIdentity = 0;
       }
       else  {
         if (conMgr == null) {
@@ -720,6 +720,7 @@ public class Db implements Session, Cloneable {
           batchSize = Integer.parseInt(val);
         }
         globalTransactionMode = GlobalTransactionMode.parse(backendProperties.getPropertyIgnoreCase(JTA));
+        backendIdentity = DbUtilities.getInstance().getBackendIdentity(backendInfo);
       }
 
       String val = sessionProperties.getPropertyIgnoreCase(IDSOURCE);
@@ -845,6 +846,10 @@ public class Db implements Session, Cloneable {
     StringBuilder buf = new StringBuilder();
     buf.append("Db");
     buf.append(instanceNumber);
+    if (backendIdentity != 0) {
+      buf.append('i');
+      buf.append(backendIdentity);
+    }
     if (resources != null) {
       buf.append('c').append(resources.sessionId);
     }
@@ -3007,8 +3012,8 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the backend identity.
    * <p>
-   * This is an integer denoting the physical backend.<br>
-   * It is unique only within the current JVM!
+   * This is an integer denoting the physical backend and unique within the current JVM.
+   * For remote sessions, the identity is 0.<br>
    * It is primarily used to make sure that the object sequences and modification log dictionaries
    * can be distinguished from each other if an application connects to more than
    * one database simultaneously.
