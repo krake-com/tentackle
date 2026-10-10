@@ -1,34 +1,56 @@
 ![Tentackle](./src/main/docs/assets/tentackle_Logo_V6.png)
 
 > **Tentackle is a Java framework for building multi-tier applications around a single
-> domain model — call any entity method in any JVM, on any tier, with no REST plumbing
-> between them.**
+> domain model. Its entities are Persistent Domain Objects — persistence and domain
+> logic in separate classes, united behind one interface. They travel between JVMs as
+> real objects, so any of their methods can be called in any JVM, on any tier, with
+> no REST plumbing in between.**
 
-Write `invoice.approve()` once, in the domain layer. Call it from any JVM — a server,
-an edge node next to the machine, a web node, or a JavaFX desktop client — three tiers
-away from the database, and it works: the object arrives fully alive,
-navigates its relations on demand, and opens a real transaction on the tier that
-owns the connection. There is no DTO layer, no endpoint, no fetch plan, and no
+Two ideas carry the framework, and each makes the other possible.
+
+**Persistent Domain Objects.** An `Invoice` is one interface backed by two
+independent implementations: the persistence side — attributes, relations, finders,
+`persist()` — generated from the model, and the domain side — `approve()` — written
+by hand. Neither class knows the other. They are woven together at runtime into a
+single object behind a dynamic proxy that behaves as if it inherited from both:
+multiple inheritance, emulated. Business rules never touch SQL or a wire format,
+and the generated persistence code never depends on a business rule.
+
+**Location transparency.** This is not about invoking methods on objects that stay
+on a server. The PDO itself travels between JVMs — physically, serialized by
+[TRIP](tentackle-core/src/main/docs/trip.md), Tentackle's compact binary protocol —
+and arrives with its state and its domain logic. It is no stub and no DTO: its
+methods run in the JVM that currently holds it, and because the persistence side is
+remoting-capable, only what needs the database goes over the wire. Write
+`invoice.approve()` once, in the domain layer, and call it from a server, an edge
+node next to the machine, a web node, or a JavaFX desktop client — three tiers away
+from the database, and it works: the object arrives fully alive, navigates its
+relations on demand, and opens a real transaction on the tier that owns the
+connection. There is no DTO layer, no endpoint, no fetch plan, and no
 `LazyInitializationException` — the exception type does not exist here.
 
 ```java
-// domain layer — written once, deployed everywhere
+// domain side of the Invoice PDO — written once, deployed everywhere
 @Transaction
 public void approve() {
-  Customer customer = getCustomer();                    // fetched on demand, locally or over the wire
+  Customer customer = getCustomer();                    // persistence side: fetched on demand, locally or over the wire
   if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {
     throw new DomainException("credit limit exceeded");
   }
   setState(InvoiceState.APPROVED);
-  me().persist();                                       // validates the whole aggregate, then writes
+  me().persist();                                       // me() is the whole PDO: validates the aggregate, then writes
 }
 
 // any client JVM, three tiers from the database — the entire call site
 invoice.approve();
 ```
 
-Which tier that code runs on is a connection URL in a properties file, not a
-decision baked into the source. Tentackle is Open Source (LGPL 2.1), available from
+The domain code reaches the persistence side only through the PDO's interfaces, so
+which implementation answers — JDBC or a remote delegate — is not its concern. Which
+tier that code runs on is a connection URL in a properties file, not a decision
+baked into the source.
+
+Tentackle is Open Source (LGPL 2.1), available from
 [Maven Central](https://search.maven.org/search?q=org.tentackle), and requires
 Java 25 or later (older LTS lines are maintained on the `java21`, `java17`,
 `java11` and `java8` branches).
