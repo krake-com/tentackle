@@ -23,6 +23,7 @@ topic-grouped listing of every document, see the
 
 ## B
 
+- **Backend identity (`Db#getBackendIdentity`, `identity`, several databases in one JVM)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#backend-identity), [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md#connection-keys)
 - **Backend properties (`backend.properties`, connection/server/client keys)** — [Backend Properties](../../../tentackle-session/src/main/docs/backend-properties.md), [Tentackle Session](../../../tentackle-session/src/main/docs/session.md)
 - **Background execution (`Rdc.bg`, session pool)** — [Background Execution](../../../tentackle-fx-rdc/src/main/docs/background-execution.md), [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md)
 - **Batch mode (headless wizard goals: `pdo`, `browse`, `script`)** — [AI Agent Tooling Support](./ai-agents.md), [Wizard Maven Plugin](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)

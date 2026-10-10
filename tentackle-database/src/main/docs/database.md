@@ -130,6 +130,112 @@ with a multiplexing manager) supplies the default connection manager for new ses
   (`@Service(RemoteSessionFactory.class)`), and [`RemoteSessionAdapter`](../java/org/tentackle/dbms/RemoteSessionAdapter.java)
   provide the remote-session side.
 
+### Backend identity
+
+An application may be connected to **more than one database at the same time** — a replication or migration tool,
+a server that reads from one database and writes to another, a test that compares two of them. Some state of
+this layer is shared by all sessions of the JVM, but belongs to exactly one *physical* database. That state needs
+a key telling the databases apart, and comparing a `BackendInfo` on every access would be too slow for it.
+
+That key is the **backend identity**: an `int` returned by `Db#getBackendIdentity()` that denotes the physical
+backend the session is connected to. It is resolved once, when the `Db` is created, by
+[`DbUtilities#getBackendIdentity(BackendInfo)`](../java/org/tentackle/dbms/DbUtilities.java):
+
+- By default, every distinct combination of **backend type and URL** gets the next free number, starting at 1 in
+  the order of first use.
+- Remote sessions have the identity `0`: there is no physical backend on their side of the wire.
+- The identity is part of the session name (`Db7i2c41`: instance 7, backend identity 2, connection 41), so it
+  shows up in logs and exceptions.
+
+The identity is only meaningful **within the running JVM**. The numbers depend on the order in which the backends
+are opened, so they must not be persisted or sent to another JVM.
+
+Two things are keyed by it:
+
+- [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) keeps the id range it took from the
+  sequence per backend identity (see [Id sources](#id-sources)).
+- [`ModificationLogFactory`](../java/org/tentackle/dbms/ModificationLogFactory.java) keeps one
+  `ModificationLogSerializer` per backend identity (see [Modification logging](#modification-logging)).
+
+#### Why it matters
+
+The identity can be wrong in two directions, and they are not equally bad:
+
+- **Two databases, one identity.** `ObjectSequenceId` would hand out ids in database B from a range it reserved
+  in the sequence of database A. Sooner or later B's own sequence reaches that range and the ids collide.
+  This must never happen.
+- **One database, two identities.** The id ranges are merely kept twice, which wastes a few ids but is safe. The
+  modification logs, however, break: a serializer such as `TripModificationLogSerializer` spans its dictionary
+  over many modlogs of *one* backend. If the sessions of the second identity have no serializer, their modlogs
+  carry no object data; if they have their own, two independent dictionaries are interleaved in the same `modlog`
+  table and the receiver cannot decode them.
+
+#### Setting it manually
+
+The default cannot know that two different URLs lead to the same database. That is the case whenever the
+application reaches one database in more than one way, for example:
+
+- with different URL options (a read-only connection next to the regular one, another `ApplicationName`,
+  different timeouts or SSL settings),
+- via a host name in one configuration and an IP address or alias in the other,
+- directly and through a connection pooler or proxy,
+- via a JNDI `DataSource` and a JDBC URL, or two JNDI names.
+
+In these cases assign the same identity to all of them, either with the `identity`
+[backend property](../../../../tentackle-session/src/main/docs/backend-properties.md) or programmatically via
+`BackendInfo#setBackendIdentity(int)`:
+
+```properties
+# backend.properties
+url=jdbc:postgresql://db.example.com/erp
+identity=1001
+
+# readonly.properties: the same database
+url=jdbc:postgresql://db.example.com/erp?readOnly=true
+identity=1001
+```
+
+Rules:
+
+- Use **high or negative** numbers. The generated identities count up from 1, so a low number may collide with
+  one that was assigned automatically to a *different* database. `0` means "not set".
+- Set it **before the first session** of that URL is created. The identity is cached per backend type and URL,
+  so the first session decides and later changes of the `BackendInfo` are ignored.
+- Give the same identity only to URLs that really are the same database. If in doubt, leave it unset: two
+  identities for one database are the harmless mistake as long as no modlog serializer is involved.
+- An explicit identity can *join* URLs, but it cannot *split* one: sessions with the same backend type and URL
+  always share an identity, even if they log in as different database users. Where the user decides in which
+  schema the unqualified sequence name is resolved (as in Oracle), such sessions need URLs that differ.
+
+#### Why it cannot be detected automatically
+
+It is tempting to let the framework find out by itself whether two connections end up in the same database. There
+is no way to do that reliably, and a wrong "yes, the same" is exactly the dangerous direction described above:
+
+- **A value stored in the database is copied along with the database.** A marker row with a UUID, the current
+  value of the object sequence, the highest object id, the contents of some table, the catalog's object ids, even
+  the vendor's own system identifier: all of it is data, and all of it survives a backup that is restored
+  somewhere else, a file-system snapshot, a cloned cloud instance or a promoted standby. The original and its copy
+  then report the same value, although they are two physical databases with independent sequences. This is not an
+  exotic case: applications that connect to two databases at once are typically the very ones that deal with a
+  database and its copy — production and the restored test system, the old and the new side of a migration,
+  the source and the target of a replication.
+- **What the server reports about itself depends on the path.** Host, address and port differ behind proxies,
+  poolers, load balancers, NAT and after a failover, they are backend-specific, and one server hosts many
+  databases anyway.
+- **A probe lock is not safe either.** Taking a lock through one connection and testing it through the other
+  only shows that *somebody* holds that lock right now. A second JVM running the same probe with the same
+  well-known lock key against the copy yields a false positive. A read-only connection or a standby cannot take
+  the lock at all, and a pooler in transaction mode does not keep session-level locks. The probe needs write
+  privileges and backend-specific SQL, has to be repeated against every backend already known, and its lock
+  waits and timeouts would make opening a session slow and flaky.
+- **There may be no connection to ask.** The identity is needed when the `Db` is created. With a multiplexing
+  connection manager, a connection is attached only later, and not necessarily the same one each time.
+
+Which URLs denote the same database is a fact of the **deployment topology**, known to whoever configures the
+application and to nobody else. Tentackle therefore derives the identity from the only thing that is
+deterministic — the configuration — and lets the configuration override it.
+
 ### Id sources
 
 [`IdSource`](../java/org/tentackle/dbms/IdSource.java) supplies unique object IDs. Two implementations ship:
@@ -140,8 +246,9 @@ with a multiplexing manager) supplies the default connection manager for new ses
   the database. The counting state belongs to the transaction, so one instance can be shared by all sessions.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
   by a configurable factor with an in-range counter to cut round-trips. There is one instance per sequence name,
-  shared by all sessions. The range taken from the sequence is kept per database (connection URL, user and
-  schemas), so applications connected to several databases never mix up their ranges.
+  shared by all sessions. The range taken from the sequence is kept per database, i.e., per
+  [backend identity](#backend-identity), so applications connected to several databases never mix up their
+  ranges.
 
 [`AbstractIdSource`](../java/org/tentackle/dbms/AbstractIdSource.java) is the shared base; selection/configuration
 goes through [`IdSourceConfigurator`](../java/org/tentackle/dbms/IdSourceConfigurator.java) /
@@ -271,7 +378,8 @@ for asynchronous database coupling, higher-level replication, audit, etc. Logs a
 Optionally, the state of an inserted or updated object is stored in the modlog's `objdata` column as well, so
 the receiver does not have to load the object from the database. Serialization is enabled per physical backend by
 registering a [`ModificationLogSerializer`](../java/org/tentackle/dbms/ModificationLogSerializer.java) via
-`ModificationLogFactory.setSerializer(backendIdentity, serializer)`. The PDO-aware implementation is
+`ModificationLogFactory.setSerializer(backendIdentity, serializer)`, where `backendIdentity` is the session's
+[backend identity](#backend-identity). The PDO-aware implementation is
 [`TripModificationLogSerializer`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/trip/TripModificationLogSerializer.java)
 in `tentackle-persistence`.
 
