@@ -90,11 +90,11 @@
     <javac.lint>all,-processing,-this-escape,-module</javac.lint>
     <javac.version>25</javac.version>
 
-    <asm.version>9.10.1</asm.version>
+    <asm.version>9.11</asm.version>
     <atlantafx.version>3.0.0</atlantafx.version>
     <freemarker.version>2.3.35</freemarker.version>
     <groovy.version>6.0.0</groovy.version>
-    <h2.version>2.5.250</h2.version>
+    <h2.version>2.5.252</h2.version>
     <helidon.mcp.version>1.2.0</helidon.mcp.version>
     <helidon.version>4.5.0</helidon.version>
     <ikonli.version>12.4.0</ikonli.version>
@@ -104,15 +104,15 @@
     <javafx.version>27</javafx.version>
     <jruby.version>10.1.2.0</jruby.version>
     <junit.version>6.1.3</junit.version>
-    <kwik.version>0.11</kwik.version>
+    <kwik.version>0.12</kwik.version>
     <log4j2.version>2.26.1</log4j2.version>
-    <logback.version>1.6.3</logback.version>
+    <logback.version>1.6.5</logback.version>
     <narayana.version>7.2.2.Final</narayana.version>
     <jboss.logging.version>3.6.1.Final</jboss.logging.version>
     <plexus.archiver.version>4.14.0</plexus.archiver.version>
     <plexus.java.version>1.6.0</plexus.java.version>
     <poi.version>5.5.1</poi.version>
-    <postgresql.version>42.7.13</postgresql.version>
+    <postgresql.version>42.7.14</postgresql.version>
     <quiche.native.version>0.29.3</quiche.native.version>
     <slf4j.version>2.0.19</slf4j.version>
     <testng.version>7.12.0</testng.version>
