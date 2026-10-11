@@ -109,11 +109,16 @@ def readme_to_index(text: str, src_file: Path) -> str:
     - promote the leading logo image to the page H1 (so it becomes the hero and
       MkDocs does not inject the nav title "Home" as a heading);
     - drop the "Table of Contents" bullet (Material's nav replaces it);
+    - drop the Maven Central version badge (a third-party image that would be
+      frozen at build time);
     - rewrite all links for the flat layout (the Index bullet then points at
       concept-index.md, feature links at their basenames, the logo at assets/).
     """
-    # Drop the toc.md helper line — the nav supersedes a table of contents.
-    lines = [ln for ln in text.splitlines() if "toc.md" not in ln]
+    # Drop the toc.md helper line — the nav supersedes a table of contents —
+    # and the version badge: it is a third-party image that the privacy plugin
+    # would freeze at build time, so it would show a stale version.
+    lines = [ln for ln in text.splitlines()
+             if "toc.md" not in ln and "img.shields.io" not in ln]
     text = "\n".join(lines)
 
     # Promote the leading logo image to the page H1 (the title).

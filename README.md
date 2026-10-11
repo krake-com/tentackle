@@ -1,5 +1,7 @@
 ![Tentackle](./src/main/docs/assets/tentackle_Logo_V6.png)
 
+[![Maven Central](https://img.shields.io/maven-central/v/org.tentackle/tentackle-core?label=Maven%20Central)](https://central.sonatype.com/namespace/org.tentackle)
+
 > **Tentackle is a Java framework for building multi-tier applications around a single
 > domain model. Its entities are Persistent Domain Objects — persistence and domain
 > logic in separate classes, united behind one interface. They travel between JVMs as
