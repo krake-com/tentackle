@@ -459,6 +459,12 @@ public class QuicheConnection implements AutoCloseable {
           fail(rejectionMessage != null ? rejectionMessage : "the connection was closed");
         }
         maintainPaths();
+        // what the datagram provoked has to be on the wire before the lock is released. Otherwise a
+        // thread waiting in awaitEstablished() can get in between, see the handshake completed and close
+        // the connection while this side's Finished is still unsent: a closing connection sends nothing
+        // but its CONNECTION_CLOSE, which the peer, its handshake incomplete, cannot decrypt - and so
+        // it holds on to the connection until its idle timeout.
+        flushLocked();
       }
     }
     finally {
@@ -508,6 +514,7 @@ public class QuicheConnection implements AutoCloseable {
         maintainPaths();
         detectStall();
       }
+      flushLocked();    // before the lock is released, as in receive()
     }
     catch (QuicheException e) {
       fail(e.getMessage());
