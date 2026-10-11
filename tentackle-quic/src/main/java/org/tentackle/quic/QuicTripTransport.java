@@ -373,7 +373,7 @@ public class QuicTripTransport extends AbstractTransport {
    * Gets the stream to write a QUIC stream's data to.
    * <p>
    * Wrapped so that the interrupt status of the writing thread does not reach KWIK, which would otherwise
-   * fail a write that has to wait for flow control credits &mdash; see {@link InterruptAgnosticStreams}.
+   * fail a write that has to wait for room in the send buffer &mdash; see {@link InterruptAgnosticStreams}.
    *
    * @param quicStream the QUIC stream
    * @return the output stream

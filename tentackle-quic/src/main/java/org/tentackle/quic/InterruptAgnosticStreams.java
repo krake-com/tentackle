@@ -29,8 +29,8 @@ import java.io.OutputStream;
  * the TCP transports use.
  * <p>
  * KWIK does not tolerate the interrupt status of the thread reading or writing one of its streams: a write
- * that has to wait for flow control credits fails with an {@code InterruptedIOException}, and a blocked
- * read consumes the interrupt without ever restoring it. Neither is acceptable here. Tentackle's task
+ * that has to wait for room in the stream's send buffer fails with an {@code InterruptedIOException}, and a
+ * read clears the interrupt status without ever restoring it. Neither is acceptable here. Tentackle's task
  * dispatchers interrupt their own thread whenever work is queued, to cut a pending sleep short,
  * and such an interrupt regularly lands while that thread is inside a remote invocation
  * ({@code DbModificationTracker} polls from its dispatcher thread): failing the call would tear down a
@@ -38,8 +38,19 @@ import java.io.OutputStream;
  * the work that was just queued for it.
  * <p>
  * The interrupt status is therefore withheld from KWIK for the duration of each operation and restored
- * afterward. An interrupt that arrives <em>while</em> KWIK is already blocked is still handled by KWIK,
- * which no wrapper can change.
+ * afterward.
+ * <p>
+ * This covers an interrupt that is <em>pending when the operation starts</em>, but not one that arrives
+ * while the thread is inside KWIK, since the operation runs on the calling thread (as of KWIK 0.12):
+ * <ul>
+ *   <li>during a read, it is swallowed: the read goes on and returns normally, but the interrupt is lost.
+ *   This is the common case, because a remote invocation spends nearly all of its time waiting for the
+ *   response. Nothing can be done about it here: once KWIK has cleared the interrupt status, nothing tells
+ *   that there ever was an interrupt.</li>
+ *   <li>during a write waiting for room in the send buffer (50 kB per stream), the write fails with an
+ *   {@code InterruptedIOException}, which breaks the TRIP connection. A write that does not have to wait
+ *   is not affected, and the interrupt stays pending.</li>
+ * </ul>
  */
 final class InterruptAgnosticStreams {
 

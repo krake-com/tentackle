@@ -226,10 +226,12 @@ the interrupt status of the calling thread does not reach KWIK, see
 ### Interrupts
 
 Everything a client's remote invocation blocks on — the handshake, opening a pooled
-stream, and the stream reads and writes — is **interrupt-agnostic**, exactly like
-the blocking socket streams of the TCP transports: an interrupt of the calling
-thread neither aborts the operation nor gets lost. It is withheld for the duration
-of the call and re-asserted before returning.
+stream, and the stream reads and writes — is meant to be **interrupt-agnostic**,
+exactly like the blocking socket streams of the TCP transports: an interrupt of the
+calling thread should neither abort the operation nor get lost. For the handshake and
+for opening a stream that holds without exception. For the stream reads and writes it
+holds only for an interrupt that is pending when the operation starts, see
+[the remaining gap](#the-remaining-gap).
 
 This is not a detail. Tentackle's [task dispatchers](../../../../tentackle-core/src/main/docs/tasks-daemon.md)
 interrupt their own thread whenever work is queued, to cut a pending sleep
@@ -240,8 +242,8 @@ down a perfectly healthy TRIP connection.
 
 KWIK itself does not cooperate: its `connect()` aborts the handshake and throws a
 bare `RuntimeException`, `createStream` reports a `TimeoutException`, a write waiting
-for flow control credits fails with an `InterruptedIOException`, and a blocked read
-consumes the interrupt without restoring it. Hence
+for room in the stream's send buffer fails with an `InterruptedIOException`, and a
+read clears the interrupt status without restoring it. Hence
 
 - `connect()` runs KWIK's handshake on a thread of its own and waits for it with an
   absolute deadline (`connecttimeout` plus `CONNECT_TIMEOUT_GRACE`),
@@ -250,10 +252,34 @@ consumes the interrupt without restoring it. Hence
 - and `InterruptAgnosticStreams` keeps the interrupt status away from KWIK's stream
   operations, restoring it once they return.
 
-An interrupt that arrives *while* KWIK is already blocked is still KWIK's to handle,
-which no wrapper can change. The server's connection handlers work on KWIK's streams
-directly: nothing interrupts them but the shutdown of the transport. The [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
-transport does not have that limitation because it implements the blocking streams itself.
+The first two are complete: KWIK runs on another thread and never sees the caller's
+interrupt, which is remembered and re-asserted before returning.
+
+#### The remaining gap
+
+`InterruptAgnosticStreams` runs KWIK's stream operations on the calling thread. It
+can withhold an interrupt that is already pending, but not one that arrives *while*
+the thread is inside KWIK (as of KWIK 0.12):
+
+| Operation | Interrupt arriving during the operation | Consequence |
+|-----------|------------------------------------------|-------------|
+| read      | Swallowed: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
+| write that does not have to wait | Left alone. | None, the interrupt stays pending. |
+| write waiting for room in the send buffer | The write **fails** with an `InterruptedIOException`, the interrupt status is cleared. | The remote call fails and the TRIP connection is unusable. The pool replaces it. |
+
+The read is the common case, not the exception: a remote invocation spends nearly all
+of its time waiting for the response. The failing write is rare. KWIK buffers 50 kB
+per stream, so only a call that does not fit into what is left of that buffer waits at
+all, namely until the flow control and congestion windows let the buffered data go.
+
+The wrappers cannot close the gap for reads: once KWIK has cleared the interrupt
+status, nothing tells that there ever was an interrupt. Threads that depend on their
+interrupts, or that send large calls and must not fail on one, are better served by
+the [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
+transport, which implements the blocking streams itself and has no such gap.
+
+The server's connection handlers work on KWIK's streams directly: nothing interrupts
+them but the shutdown of the transport.
 
 ---
 
