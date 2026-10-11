@@ -32,8 +32,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -297,6 +300,43 @@ public class QuicTripConnectionPoolTest {
     assertTrue(cause instanceof SSLHandshakeException,
                "expected the cause to be an SSLHandshakeException, got " + cause);
     return (SSLHandshakeException) cause;
+  }
+
+  /**
+   * The thread providing a stream or a connection may complete the future right after the wait for it
+   * timed out. It then assumes its result was taken and does not release it, so reporting the timeout
+   * nevertheless would leak the result: it must be returned as if it had arrived in time.
+   */
+  @Test(timeOut = 30000)
+  public void awaitReturnsResultThatArrivesWhileTimingOut() throws Exception {
+    Reporter.log("awaitReturnsResultThatArrivesWhileTimingOut", true);
+    CompletableFuture<String> future = new CompletableFuture<>() {
+      @Override
+      public String get(long timeout, TimeUnit unit) throws TimeoutException {
+        if (complete("late")) {
+          // the provider won the race between the wait timing out and the waiter abandoning the future
+          throw new TimeoutException();
+        }
+        return join();
+      }
+    };
+
+    assertEquals(QuicTripConnectionPool.await(future, System.nanoTime()), "late");
+  }
+
+  /**
+   * Giving up must abandon the future, so that the providing thread releases a result showing up later
+   * instead of leaking it.
+   */
+  @Test(timeOut = 30000)
+  public void awaitAbandonsTheFutureOnTimeout() {
+    Reporter.log("awaitAbandonsTheFutureOnTimeout", true);
+    CompletableFuture<String> future = new CompletableFuture<>();
+
+    expectThrows(TimeoutException.class, () -> QuicTripConnectionPool.await(future, System.nanoTime()));
+
+    assertTrue(future.isCompletedExceptionally(), "future was not abandoned");
+    assertTrue(!future.complete("too late"), "a late result must be rejected");
   }
 
   private static Dictionary dictionary() {

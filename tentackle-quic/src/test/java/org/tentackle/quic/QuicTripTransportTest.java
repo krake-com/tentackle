@@ -18,6 +18,8 @@
 
 package org.tentackle.quic;
 
+import tech.kwik.core.server.ServerConnector;
+
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -34,6 +36,7 @@ import java.nio.file.Path;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -235,6 +238,44 @@ public class QuicTripTransportTest {
     finally {
       transport.close();
     }
+  }
+
+  /**
+   * {@code close()} shuts down the connector outside the transport's monitor and marks the transport
+   * closed only afterward. An {@code accept()} getting in between must be refused, or it would start a
+   * connector on a transport that is closed right after: nobody would ever release its UDP port.
+   */
+  @Test(timeOut = 60000)
+  public void refusesToAcceptWhileClosing() throws Exception {
+    Reporter.log("refusesToAcceptWhileClosing", true);
+    int port = QuicTestSupport.freeUdpPort();
+    AtomicReference<Throwable> acceptFailure = new AtomicReference<>();
+    QuicTripTransport transport = new QuicTripTransport(URI.create(
+      "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(keyStore))) {
+
+      @Override
+      protected synchronized ServerConnector stopAccepting() {
+        ServerConnector connector = super.stopAccepting();
+        // exactly the window another thread could get the monitor in
+        try {
+          accept();
+        }
+        catch (RuntimeException e) {
+          acceptFailure.set(e);
+        }
+        return connector;
+      }
+    };
+
+    transport.close();
+
+    assertTrue(acceptFailure.get() instanceof TripRuntimeException,
+               "accept() was not refused: " + acceptFailure.get());
+    assertTrue(acceptFailure.get().getMessage().contains("is closed"),
+               "unexpected message: " + acceptFailure.get().getMessage());
+    assertTrue(transport.isClosed());
+    assertFalse(transport.isAccepting());
+    QuicTestSupport.assertPortIsFree(port);
   }
 
   /**

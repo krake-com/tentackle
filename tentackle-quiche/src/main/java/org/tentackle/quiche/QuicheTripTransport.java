@@ -123,6 +123,7 @@ public class QuicheTripTransport extends AbstractTransport {
   private QuicheServer server;              // the accept policy of that endpoint
   private QuicheConfig serverConfig;        // outlives every connection created from it
   private volatile boolean accepting;       // volatile: isAccepting() is not synchronized
+  private boolean closing;                  // true once close() was invoked
 
   /**
    * Creates a new QUIC transport.
@@ -136,6 +137,10 @@ public class QuicheTripTransport extends AbstractTransport {
 
   @Override
   public synchronized void accept() {
+    if (closing) {
+      // close() released the monitor to shut down the endpoint, but did not mark the transport closed yet
+      throw new TripRuntimeException("transport " + this + " is closed");
+    }
     super.accept();
 
     QuicheLogger.install();
@@ -349,29 +354,40 @@ public class QuicheTripTransport extends AbstractTransport {
    */
   @Override
   public void close() {
-    QuicheEndpoint currentEndpoint;
-    QuicheServer currentServer;
-    QuicheConfig currentConfig;
-    synchronized (this) {
-      currentEndpoint = endpoint;
-      currentServer = server;
-      currentConfig = serverConfig;
-      endpoint = null;
-      server = null;
-      serverConfig = null;
-      accepting = false;
-    }
-    if (currentEndpoint != null) {
-      currentEndpoint.close();
-    }
-    if (currentServer != null) {
-      currentServer.close();
-    }
-    // the configuration must outlive the connections created from it, hence last
-    if (currentConfig != null) {
-      currentConfig.close();
-    }
+    stopAccepting().run();
     super.close();
+  }
+
+  /**
+   * Detaches the QUIC endpoint from this transport, the first step of {@link #close()}.
+   * <p>
+   * From then on {@link #accept()} fails. Since the endpoint is closed outside the transport's monitor and
+   * the transport is marked closed only afterward, an {@code accept()} getting in between would otherwise
+   * start an endpoint that nobody closes anymore.
+   *
+   * @return the action closing what was detached, to be run without holding the transport's monitor
+   */
+  protected synchronized Runnable stopAccepting() {
+    closing = true;
+    QuicheEndpoint currentEndpoint = endpoint;
+    QuicheServer currentServer = server;
+    QuicheConfig currentConfig = serverConfig;
+    endpoint = null;
+    server = null;
+    serverConfig = null;
+    accepting = false;
+    return () -> {
+      if (currentEndpoint != null) {
+        currentEndpoint.close();
+      }
+      if (currentServer != null) {
+        currentServer.close();
+      }
+      // the configuration must outlive the connections created from it, hence last
+      if (currentConfig != null) {
+        currentConfig.close();
+      }
+    };
   }
 
   /**

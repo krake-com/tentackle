@@ -262,19 +262,10 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
       }
     });
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(streamTimeoutSeconds);
-    boolean interrupted = false;
     try {
-      for (;;) {
-        try {
-          return future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
-        }
-        catch (InterruptedException e) {
-          interrupted = true;   // keep waiting, see above
-        }
-      }
+      return await(future, deadline);
     }
     catch (TimeoutException e) {
-      future.completeExceptionally(e);    // marks the stream abandoned, should it still show up
       creator.interrupt();                // KWIK aborts a blocked createStream when interrupted
       TripRuntimeException tex = new TripRuntimeException(
         "no QUIC stream available on " + getTransport().getUri() + " within " + streamTimeoutSeconds +
@@ -284,11 +275,6 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC stream failed", e.getCause());
-    }
-    finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
-      }
     }
   }
 
@@ -334,32 +320,60 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
 
     // KWIK bounds the handshake itself, this is the outer bound in case its wait does not return at all
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(connectTimeoutSeconds + CONNECT_TIMEOUT_GRACE);
-    boolean interrupted = false;
     try {
-      for (;;) {
-        try {
-          QuicClientConnection quicConnection =
-            future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
-          if (keepAliveSeconds != 0) {
-            // negative means: as long as this pool lives
-            quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
-          }
-          connection = quicConnection;
-          return;
-        }
-        catch (InterruptedException e) {
-          interrupted = true;   // keep waiting, see above
-        }
+      QuicClientConnection quicConnection = await(future, deadline);
+      if (keepAliveSeconds != 0) {
+        // negative means: as long as this pool lives
+        quicConnection.keepAlive(keepAliveSeconds < 0 ? Integer.MAX_VALUE : keepAliveSeconds);
       }
+      connection = quicConnection;
     }
     catch (TimeoutException e) {
-      future.completeExceptionally(e);    // marks the connection abandoned, should it still show up
       connector.interrupt();
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed", e);
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed",
                                       wrapCertificateFailure(e.getCause()));
+    }
+  }
+
+  /**
+   * Waits for a result provided by another thread, up to an absolute deadline.
+   * <p>
+   * Waiting is interrupt-agnostic, see {@link #createQuicStream(QuicClientConnection)}: an interrupt of the
+   * calling thread is only remembered and re-asserted before returning.
+   * <p>
+   * Giving up <em>abandons</em> the future by completing it exceptionally, which tells the providing thread
+   * that its result is not wanted anymore and must be released. That thread may well complete the future
+   * just after the wait timed out, though, in which case it rightly assumes the result was taken. Hence
+   * the timeout is only reported if abandoning succeeded. Otherwise, the result is returned as if it had
+   * arrived in time, or it would be owned by nobody and leak.
+   *
+   * @param future the future the other thread completes
+   * @param deadline the deadline in terms of {@link System#nanoTime()}
+   * @param <T> the result type
+   * @return the result
+   * @throws TimeoutException if there was no result until the deadline; the future is abandoned
+   * @throws ExecutionException if the other thread failed
+   */
+  static <T> T await(CompletableFuture<T> future, long deadline) throws TimeoutException, ExecutionException {
+    boolean interrupted = false;
+    try {
+      for (;;) {
+        try {
+          return future.get(Math.max(deadline - System.nanoTime(), 0), TimeUnit.NANOSECONDS);
+        }
+        catch (InterruptedException e) {
+          interrupted = true;   // keep waiting, see above
+        }
+        catch (TimeoutException e) {
+          if (future.completeExceptionally(e)) {
+            throw e;
+          }
+          // completed meanwhile: the next turn gets the result without waiting
+        }
+      }
     }
     finally {
       if (interrupted) {

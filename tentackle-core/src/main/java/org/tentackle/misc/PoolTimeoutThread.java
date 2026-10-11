@@ -122,7 +122,12 @@ public class PoolTimeoutThread extends Thread implements Scavenger {
              * for its resources to be closed. Holding it would also invert the locking order
              * against register(), which is invoked while holding the pool's monitor.
              */
-            pool.monitor();   // bring down timed out unused instances
+            try {
+              pool.monitor();   // bring down timed out unused instances
+            }
+            catch (RuntimeException ex) {
+              LOGGER.severe("monitoring pool " + pool + " failed", ex);
+            }
           }
         }
       }

@@ -109,6 +109,7 @@ public class QuicTripTransport extends AbstractTransport {
 
   private ServerConnector serverConnector;      // the running KWIK server connector, null if not accepting
   private volatile boolean accepting;           // volatile: isAccepting() is not synchronized
+  private boolean closing;                      // true once close() was invoked
 
   /**
    * Creates a new QUIC transport.
@@ -122,6 +123,10 @@ public class QuicTripTransport extends AbstractTransport {
 
   @Override
   public synchronized void accept() {
+    if (closing) {
+      // close() released the monitor to shut down the connector, but did not mark the transport closed yet
+      throw new TripRuntimeException("transport " + this + " is closed");
+    }
     super.accept();
 
     Logger log = new QuicLogger();
@@ -279,16 +284,28 @@ public class QuicTripTransport extends AbstractTransport {
    */
   @Override
   public void close() {
-    ServerConnector connector;
-    synchronized (this) {
-      connector = serverConnector;
-      serverConnector = null;
-      accepting = false;
-    }
+    ServerConnector connector = stopAccepting();
     if (connector != null) {
       connector.close();
     }
     super.close();
+  }
+
+  /**
+   * Detaches the KWIK server connector from this transport, the first step of {@link #close()}.
+   * <p>
+   * From then on {@link #accept()} fails. Since the connector is closed outside the transport's monitor and
+   * the transport is marked closed only afterward, an {@code accept()} getting in between would otherwise
+   * start a connector that nobody closes anymore.
+   *
+   * @return the connector to close, null if the transport was not accepting
+   */
+  protected synchronized ServerConnector stopAccepting() {
+    closing = true;
+    ServerConnector connector = serverConnector;
+    serverConnector = null;
+    accepting = false;
+    return connector;
   }
 
   /**
