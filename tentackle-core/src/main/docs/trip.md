@@ -104,17 +104,23 @@ URI, e.g. `trips://myserver:18000/MyApp?idle=10&backlog=100`. The QUIC transport
 see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
 [quiche](../../../../tentackle-quiche/src/main/docs/quiche.md).
 
-| Parameter     | Side   | Default | Meaning                                                                                                  |
-|---------------|--------|---------|----------------------------------------------------------------------------------------------------------|
-| `initial`     | client | `1`     | The initial number of pooled connections to the server.                                                  |
-| `increment`   | client | `1`     | The number of connections opened at once when all pooled connections are in use.                        |
-| `minimum`     | client | `1`     | The number of connections kept open even when idle.                                                      |
-| `maximum`     | client | `0`     | The maximum number of connections, `0` = unlimited.                                                      |
-| `idle`        | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                  |
-| `usage`       | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                           |
-| `idle`        | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                        |
-| `backlog`     | server | `50`    | The listen backlog of the server socket.                                                                 |
-| `mincompress` | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                 |
+| Parameter        | Side   | Default | Meaning                                                                                                                           |
+|------------------|--------|---------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `initial`        | client | `1`     | The initial number of pooled connections to the server.                                                                           |
+| `increment`      | client | `1`     | The number of connections opened at once when all pooled connections are in use.                                                  |
+| `minimum`        | client | `1`     | The number of connections kept open even when idle.                                                                               |
+| `maximum`        | client | `0`     | The maximum number of connections, `0` = unlimited.                                                                               |
+| `idle`           | client | `10`    | Minutes after which an unused pooled connection is closed, `0` = never.                                                           |
+| `usage`          | client | `0`     | Minutes after which a connection is replaced, no matter how busy, `0` = never.                                                    |
+| `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0. |
+| `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                 |
+| `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                          |
+| `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                                          |
+
+Connections are created with the pool locked, by the thread requesting one and by the timeout thread
+that all pools share to restore the `minimum`. `connecttimeout` therefore bounds how long a server that
+does not answer at all — as opposed to one refusing the connection — can hold up both. Without it, that
+would be up to the operating system, which typically keeps retrying for minutes.
 
 Since the query string is part of the transport's identity, two URIs that differ only in their
 parameters get separate transports (and connection pools).
