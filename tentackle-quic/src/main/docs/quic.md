@@ -229,9 +229,9 @@ Everything a client's remote invocation blocks on — the handshake, opening a p
 stream, and the stream reads and writes — is meant to be **interrupt-agnostic**,
 exactly like the blocking socket streams of the TCP transports: an interrupt of the
 calling thread should neither abort the operation nor get lost. For the handshake and
-for opening a stream that holds without exception. For the stream reads and writes it
-holds only for an interrupt that is pending when the operation starts, see
-[the remaining gap](#the-remaining-gap).
+for opening a stream that holds without exception, and for the stream writes as well.
+For the stream reads it holds only for an interrupt that is pending when the read
+starts, see [the remaining gap](#the-remaining-gap).
 
 This is not a detail. Tentackle's [task dispatchers](../../../../tentackle-core/src/main/docs/tasks-daemon.md)
 interrupt their own thread whenever work is queued, to cut a pending sleep
@@ -250,7 +250,8 @@ read clears the interrupt status without restoring it. Hence
 - `createQuicStream` does the same for `createStream` (which it has to do anyway to
   bound the wait for stream credits, see [Stream limit](#stream-limit)),
 - and `InterruptAgnosticStreams` keeps the interrupt status away from KWIK's stream
-  operations, restoring it once they return.
+  operations, restoring it once they return, and repeats a write that KWIK gave up on
+  because of an interrupt.
 
 The first two are complete: KWIK runs on another thread and never sees the caller's
 interrupt, which is remembered and re-asserted before returning.
@@ -263,20 +264,24 @@ the thread is inside KWIK (as of KWIK 0.12):
 
 | Operation | Interrupt arriving during the operation | Consequence |
 |-----------|------------------------------------------|-------------|
-| read      | Swallowed: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
-| write that does not have to wait | Left alone. | None, the interrupt stays pending. |
-| write waiting for room in the send buffer | The write **fails** with an `InterruptedIOException`, the interrupt status is cleared. | The remote call fails and the TRIP connection is unusable. The pool replaces it. |
+| write that does not have to wait | Left alone by KWIK. | None, the interrupt stays pending. |
+| write waiting for room in the send buffer | KWIK fails the write with an `InterruptedIOException`. The wrapper repeats it. | None, the interrupt is re-asserted when the write returns. |
+| read      | Swallowed by KWIK: the read goes on and returns normally, the interrupt status is cleared. | The call succeeds, but the interrupt is **lost**. A dispatcher misses its wakeup and notices the queued work only when its sleep interval ends. |
 
-The read is the common case, not the exception: a remote invocation spends nearly all
-of its time waiting for the response. The failing write is rare. KWIK buffers 50 kB
-per stream, so only a call that does not fit into what is left of that buffer waits at
-all, namely until the flow control and congestion windows let the buffered data go.
+Repeating a write is safe because KWIK takes its data all or nothing as long as it
+fits into the stream's send buffer of 50 kB: the interrupted wait for room in that
+buffer ends before anything is queued. A larger write would be split by KWIK itself
+and could fail halfway, so the wrapper hands the data over in chunks of 16 kB. KWIK
+also interrupts a waiting writer on its own when the stream is reset or the
+connection is gone; it marks the stream first, so the repeated write fails right away
+for that reason instead of being repeated forever.
 
-The wrappers cannot close the gap for reads: once KWIK has cleared the interrupt
-status, nothing tells that there ever was an interrupt. Threads that depend on their
-interrupts, or that send large calls and must not fail on one, are better served by
-the [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md)
-transport, which implements the blocking streams itself and has no such gap.
+The lost interrupt of a read is the one gap left, and it is the common case: a remote
+invocation spends nearly all of its time waiting for the response. The wrappers cannot
+close it. Once KWIK has cleared the interrupt status, nothing tells that there ever
+was an interrupt. Threads that depend on their interrupts are better served by the
+[`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) transport,
+which implements the blocking streams itself and has no such gap.
 
 The server's connection handlers work on KWIK's streams directly: nothing interrupts
 them but the shutdown of the transport.

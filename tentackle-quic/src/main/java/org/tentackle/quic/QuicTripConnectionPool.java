@@ -45,6 +45,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The QUIC client connection pool.
@@ -95,20 +96,14 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
 
 
   private final QuicTripTransport transport;
-  private final QuicClientConnection.Builder connectionBuilder;
+  private final String alpnId;
+  private final int maxIdleSeconds;
+  private final int streamWindow;
   private final int keepAliveSeconds;
   private final int connectTimeoutSeconds;
   private final int streamTimeoutSeconds;
+  private final X509TrustManager trustManager;    // checks the server certificate, null if certcheck is disabled
   private QuicClientConnection connection;
-
-  /**
-   * The certificate exception the trust manager installed by {@link #createCertificateCheckingTrustManager}
-   * saw during the handshake started by the current or most recent {@link #connect()}, null if there was
-   * none (or {@code certcheck} is disabled). KWIK discards the original exception once it converts it
-   * into its own {@code BadCertificateAlert}, so this is the only way to recover it for
-   * {@link #wrapCertificateFailure}.
-   */
-  private volatile CertificateException certificateFailure;
 
   /**
    * Creates a QUIC connection pool and establishes the QUIC connection.
@@ -148,22 +143,12 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
-    String alpnId = queryParameters.getOrDefault("alpnid", scheme);
+    alpnId = queryParameters.getOrDefault("alpnid", scheme);
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);
-    connectionBuilder = QuicClientConnection.newBuilder()
-                                            .uri(uri)  // only host and port are used
-                                            .applicationProtocol(alpnId)
-                                            .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
-                                            .maxIdleTimeout(Duration.ofSeconds(transport.getMaxIdleSeconds()))
-                                            // the window the server may use for its responses, configured
-                                            // explicitly so that both directions are symmetric
-                                            .defaultStreamReceiveBufferSize((long) transport.getStreamWindow());
-    if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"))) {
-      connectionBuilder.noServerCertificateCheck();
-    }
-    else {
-      connectionBuilder.customTrustManager(createCertificateCheckingTrustManager(uri));
-    }
+    maxIdleSeconds = transport.getMaxIdleSeconds();
+    streamWindow = transport.getStreamWindow();   // validated here rather than by every connect attempt
+    trustManager = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true")) ?
+                   createTrustManager(uri) : null;
 
     connect();
   }
@@ -297,23 +282,25 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
      */
     closeConnection();
     URI uri = getTransport().getUri();
-    certificateFailure = null;   // stale value of a previous attempt must not be misattributed
+    /*
+     * What the trust manager rejected the server certificate for, if it did. Deliberately local to this
+     * attempt: the connector of an attempt given up on may still be at work when the next one is started,
+     * and its certificate failure must not be taken for the reason the next one failed for.
+     */
+    AtomicReference<CertificateException> certificateFailure = new AtomicReference<>();
+    X509TrustManager attemptTrustManager =
+      trustManager == null ? null : createRecordingTrustManager(trustManager, certificateFailure);
 
     CompletableFuture<QuicClientConnection> future = new CompletableFuture<>();
     Thread connector = Thread.ofVirtual().name("QUIC connector " + uri).start(() -> {
-      QuicClientConnection quicConnection = null;
       try {
-        quicConnection = connectionBuilder.build();
-        quicConnection.connect();
+        QuicClientConnection quicConnection = establishConnection(attemptTrustManager);
         if (!future.complete(quicConnection)) {
           // we were too late: close it instead of leaking the connection and its threads
           closeQuietly(quicConnection);
         }
       }
       catch (Throwable t) {
-        if (quicConnection != null) {
-          closeQuietly(quicConnection);
-        }
         future.completeExceptionally(t);
       }
     });
@@ -334,7 +321,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
     catch (ExecutionException e) {
       throw new TripRuntimeException("creating QUIC connection to " + uri + " failed",
-                                      wrapCertificateFailure(e.getCause()));
+                                      wrapCertificateFailure(e.getCause(), certificateFailure.get()));
     }
   }
 
@@ -383,15 +370,46 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
   }
 
   /**
-   * Creates the {@link X509TrustManager} installed on {@link #connectionBuilder} when {@code certcheck} is
-   * enabled.<br>
-   * KWIK converts any {@link CertificateException} thrown by the trust manager into its own
-   * {@code BadCertificateAlert}, which is in turn downgraded to a plain, causeless {@link java.net.ConnectException}
-   * by the time {@link #connect()} sees it (see {@link #wrapCertificateFailure}). Delegating to a trust
-   * manager of our own, rather than leaving KWIK to build its default one internally, is the only way to
-   * recover the original exception describing <em>why</em> the certificate was rejected.
+   * Builds a QUIC connection and performs the handshake with the server.
    * <p>
-   * The delegate itself is built exactly the way KWIK's own default trust manager is: a {@code PKIX}
+   * Invoked by {@link #connect()} on a thread of its own, once per connect attempt.
+   *
+   * @param attemptTrustManager the trust manager checking the server certificate for this attempt,
+   *        null if {@code certcheck} is disabled
+   * @return the established connection
+   * @throws IOException if the connection could not be established
+   */
+  protected QuicClientConnection establishConnection(X509TrustManager attemptTrustManager) throws IOException {
+    QuicClientConnection.Builder builder =
+      QuicClientConnection.newBuilder()
+                          .uri(getTransport().getUri())  // only host and port are used
+                          .applicationProtocol(alpnId)
+                          .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
+                          .maxIdleTimeout(Duration.ofSeconds(maxIdleSeconds))
+                          // the window the server may use for its responses, configured
+                          // explicitly so that both directions are symmetric
+                          .defaultStreamReceiveBufferSize((long) streamWindow);
+    if (attemptTrustManager == null) {
+      builder.noServerCertificateCheck();
+    }
+    else {
+      builder.customTrustManager(attemptTrustManager);
+    }
+    QuicClientConnection quicConnection = builder.build();
+    try {
+      quicConnection.connect();
+      return quicConnection;
+    }
+    catch (IOException | RuntimeException e) {
+      closeQuietly(quicConnection);
+      throw e;
+    }
+  }
+
+  /**
+   * Creates the {@link X509TrustManager} checking the server certificate when {@code certcheck} is enabled.
+   * <p>
+   * It is built exactly the way KWIK's own default trust manager is: a {@code PKIX}
    * {@link TrustManagerFactory} initialized with the truststore configured via {@code tsfile}/{@code tspass}
    * ({@link SslParameters#getTrustStore()}), or the JVM's default cacerts if none is configured - so
    * behavior is unchanged for callers that do not set a truststore.
@@ -399,16 +417,32 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * @param uri the transport URI
    * @return the trust manager
    */
-  private X509TrustManager createCertificateCheckingTrustManager(URI uri) {
-    X509TrustManager delegate;
+  private static X509TrustManager createTrustManager(URI uri) {
     try {
       TrustManagerFactory factory = TrustManagerFactory.getInstance("PKIX");
       factory.init(new SslParameters(uri).getTrustStore());
-      delegate = (X509TrustManager) factory.getTrustManagers()[0];
+      return (X509TrustManager) factory.getTrustManagers()[0];
     }
     catch (GeneralSecurityException e) {
       throw new TripRuntimeException("cannot create the trust manager for " + uri, e);
     }
+  }
+
+  /**
+   * Creates the {@link X509TrustManager} installed for a single connect attempt.<br>
+   * KWIK converts any {@link CertificateException} thrown by the trust manager into its own
+   * {@code BadCertificateAlert}, which is in turn downgraded to a plain, causeless {@link java.net.ConnectException}
+   * by the time {@link #connect()} sees it (see {@link #wrapCertificateFailure}). Delegating to a trust
+   * manager of our own, rather than leaving KWIK to build its default one internally, is the only way to
+   * recover the original exception describing <em>why</em> the certificate was rejected.
+   *
+   * @param delegate the trust manager deciding whether the certificate is trusted
+   * @param certificateFailure where to record the exception the delegate rejected the server certificate with
+   * @return the trust manager
+   */
+  private static X509TrustManager createRecordingTrustManager(
+      X509TrustManager delegate, AtomicReference<CertificateException> certificateFailure) {
+
     return new X509TrustManager() {
       @Override
       public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
@@ -421,7 +455,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
           delegate.checkServerTrusted(chain, authType);
         }
         catch (CertificateException e) {
-          certificateFailure = e;
+          certificateFailure.set(e);
           throw e;
         }
       }
@@ -439,12 +473,11 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * failure (such as {@code LoginFailedWithUpdateHandler}) does not need to know which transport is in use.
    *
    * @param cause the exception KWIK threw, typically a causeless {@code ConnectException}
-   * @return an {@code SSLHandshakeException} wrapping the certificate failure seen by the trust manager
-   *         installed in {@link #createCertificateCheckingTrustManager}, or {@code cause} unchanged if
+   * @param certEx the certificate failure seen by the trust manager of the same connect attempt, null if none
+   * @return an {@code SSLHandshakeException} wrapping the certificate failure, or {@code cause} unchanged if
    *         there was none
    */
-  private Throwable wrapCertificateFailure(Throwable cause) {
-    CertificateException certEx = certificateFailure;
+  private static Throwable wrapCertificateFailure(Throwable cause, CertificateException certEx) {
     if (certEx == null) {
       return cause;
     }

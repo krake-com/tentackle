@@ -18,6 +18,8 @@
 
 package org.tentackle.quic;
 
+import tech.kwik.core.QuicClientConnection;
+
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
@@ -26,18 +28,26 @@ import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyStore;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -303,6 +313,103 @@ public class QuicTripConnectionPoolTest {
   }
 
   /**
+   * A connect attempt that was given up on may still be at work when the next one is started. If the
+   * server certificate is rejected in that old attempt only then, this must not be taken for the reason
+   * the next attempt failed for: a failure that has nothing to do with certificates would be reported as
+   * an {@link SSLHandshakeException}, which {@code LoginFailedWithUpdateHandler} reacts to.
+   */
+  @Test(timeOut = 120000)
+  public void doesNotBlameAnAttemptForTheCertificateFailureOfAnEarlierOne() throws Exception {
+    Reporter.log("doesNotBlameAnAttemptForTheCertificateFailureOfAnEarlierOne", true);
+    Path serverKeyStore = QuicTestSupport.createKeyStore();
+    Path otherKeyStore = QuicTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        X509Certificate untrusted = certificate(otherKeyStore);
+        int port = QuicTestSupport.freeUdpPort();
+        QuicTripTransport server = new QuicTripTransport(URI.create(
+          "tripq://localhost:" + port + "?" + QuicTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          Thread.sleep(1000);   // let the server start accepting connections
+
+          // the outer bound of a connect attempt is connecttimeout + CONNECT_TIMEOUT_GRACE
+          QuicTripTransport client = new QuicTripTransport(URI.create(
+            "tripq://localhost:" + port + "?certcheck=true&connecttimeout=1&" +
+            QuicTestSupport.trustStoreParameters(trustStore)));
+          try {
+            AtomicInteger attempts = new AtomicInteger();
+            CountDownLatch secondAttemptGivenUp = new CountDownLatch(1);
+            CountDownLatch secondAttemptDone = new CountDownLatch(1);
+            AtomicReference<Throwable> secondAttemptFailure = new AtomicReference<>();
+            ConnectException refused = new ConnectException("connection refused");
+
+            QuicTripConnectionPool pool = new QuicTripConnectionPool(client, dictionary()) {
+              @Override
+              protected QuicClientConnection establishConnection(X509TrustManager attemptTrustManager)
+                  throws IOException {
+                switch (attempts.incrementAndGet()) {
+                  case 1:
+                    // the pool's constructor: a regular connection
+                    return super.establishConnection(attemptTrustManager);
+
+                  case 2:
+                    // hangs until the pool gave up on it, and only then gets to see the certificate
+                    try {
+                      awaitIgnoringInterrupts(secondAttemptGivenUp);
+                      attemptTrustManager.checkServerTrusted(new X509Certificate[] { untrusted }, "RSA");
+                    }
+                    catch (CertificateException e) {
+                      secondAttemptFailure.set(e);
+                    }
+                    finally {
+                      secondAttemptDone.countDown();
+                    }
+                    throw new ConnectException("handshake failed");
+
+                  default:
+                    // fails for a reason of its own, after the second attempt has rejected the certificate
+                    secondAttemptGivenUp.countDown();
+                    awaitIgnoringInterrupts(secondAttemptDone);
+                    throw refused;
+                }
+              }
+            };
+            try {
+              TripRuntimeException timedOut = expectThrows(TripRuntimeException.class, pool::connect);
+              assertTrue(timedOut.getCause() instanceof TimeoutException, "unexpected cause: " + timedOut.getCause());
+
+              TripRuntimeException failed = expectThrows(TripRuntimeException.class, pool::connect);
+
+              assertTrue(secondAttemptFailure.get() instanceof CertificateException,
+                         "the certificate was not rejected in the second attempt: " + secondAttemptFailure.get());
+              assertSame(failed.getCause(), refused, "the third attempt was blamed for something else");
+            }
+            finally {
+              secondAttemptGivenUp.countDown();
+              pool.shutdown();
+            }
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+      Files.deleteIfExists(otherKeyStore);
+    }
+  }
+
+  /**
    * The thread providing a stream or a connection may complete the future right after the wait for it
    * timed out. It then assumes its result was taken and does not release it, so reporting the timeout
    * nevertheless would leak the result: it must be returned as if it had arrived in time.
@@ -337,6 +444,38 @@ public class QuicTripConnectionPoolTest {
 
     assertTrue(future.isCompletedExceptionally(), "future was not abandoned");
     assertTrue(!future.complete("too late"), "a late result must be rejected");
+  }
+
+  /**
+   * Loads the certificate of a keystore generated by {@link QuicTestSupport#createKeyStore()}.
+   *
+   * @param keyStore the keystore file
+   * @return the certificate
+   * @throws Exception if loading failed
+   */
+  private static X509Certificate certificate(Path keyStore) throws Exception {
+    KeyStore store = KeyStore.getInstance("PKCS12");
+    try (var in = Files.newInputStream(keyStore)) {
+      store.load(in, QuicTestSupport.STORE_PASSWORD.toCharArray());
+    }
+    return (X509Certificate) store.getCertificate(QuicTestSupport.CERTIFICATE_ALIAS);
+  }
+
+  /**
+   * Waits for a latch the way a hung handshake would: not even an interrupt ends it.
+   *
+   * @param latch the latch
+   */
+  private static void awaitIgnoringInterrupts(CountDownLatch latch) {
+    for (;;) {
+      try {
+        latch.await();
+        return;
+      }
+      catch (InterruptedException e) {
+        // keep waiting
+      }
+    }
   }
 
   private static Dictionary dictionary() {
