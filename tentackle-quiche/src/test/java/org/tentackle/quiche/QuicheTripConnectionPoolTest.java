@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.io.SslParameters;
 import org.tentackle.quiche.ffm.PemExporter;
+import org.tentackle.trip.Connection;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
@@ -36,6 +37,7 @@ import java.security.KeyStore;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -277,6 +279,70 @@ public class QuicheTripConnectionPoolTest {
       }
       finally {
         Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * Monitoring the pool must not re-establish a lost QUIC connection.
+   * <p>
+   * {@code monitor()} runs on the thread that monitors all pools, with the pool's monitor held. If the
+   * server is not reachable, re-establishing the connection waits for the handshake for as long as
+   * {@code connecttimeout} allows, round after round. The dead connections are only removed, and the
+   * QUIC connection is re-established when the next connection is requested.
+   */
+  @Test(timeOut = 120000)
+  public void monitoringDoesNotReconnect() throws Exception {
+    Reporter.log("monitoringDoesNotReconnect", true);
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      int port = QuicheTestSupport.freeUdpPort();
+      QuicheTripTransport server = new QuicheTripTransport(URI.create(
+        "tripj://localhost:" + port + "?" + QuicheTestSupport.keyStoreParameters(serverKeyStore)));
+      QuicheTripTransport client = new QuicheTripTransport(URI.create(
+        "tripj://localhost:" + port + "?certcheck=false&connecttimeout=2"));
+      try {
+        server.accept();
+        Thread.sleep(1000);   // let the server start accepting connections
+
+        AtomicInteger connects = new AtomicInteger();
+        QuicheTripConnectionPool pool = new QuicheTripConnectionPool(client, dictionary()) {
+          @Override
+          protected void connect() {
+            connects.incrementAndGet();
+            super.connect();
+          }
+        };
+        try {
+          Connection connection = pool.get();
+          pool.put(connection);
+          assertEquals(connects.get(), 1);
+
+          // take the server down for good: the client's QUIC connection dies with it
+          server.close();
+          while (connection.isOpen()) {
+            Thread.sleep(100);
+          }
+
+          pool.monitor();
+
+          assertEquals(connects.get(), 1, "monitoring the pool tried to re-establish the QUIC connection");
+          assertEquals(pool.getSize(), 0, "the dead connection was not removed");
+
+          // the next request does, and fails because there is no server anymore
+          expectThrows(TripRuntimeException.class, pool::get);
+          assertEquals(connects.get(), 2, "requesting a connection did not try to re-establish the QUIC connection");
+        }
+        finally {
+          pool.shutdown();
+        }
+      }
+      finally {
+        client.close();
+        server.close();
       }
     }
     finally {

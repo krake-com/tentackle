@@ -55,7 +55,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * max idle timeout (see {@link QuicTripTransport#getMaxIdleSeconds()}), which is much shorter than
  * the pool's idle timeout, it is kept alive by sending PING frames. Otherwise, the pool would hand
  * out connections belonging to a QUIC connection that is long gone. Should it be lost nevertheless,
- * it is re-established when the next slot is created.
+ * it is re-established when the next connection is requested from the pool, see
+ * {@link #restoreMinimumSize(int)}.
  * <p>
  * Because each pooled connection holds one of the streams the peer allows for the whole time it is
  * in the pool, the pool's maximum size defaults to {@link QuicTripTransport#getMaxStreams()} instead
@@ -173,6 +174,23 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     }
   }
 
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to do nothing while the QUIC connection is gone. Creating a slot would re-establish it
+   * first, which waits for the handshake for as long as {@code connecttimeout} allows if the server is
+   * not reachable &mdash; with the pool's monitor held, on the thread that monitors all pools, and again
+   * with every round. The connection is re-established by the next {@link #get()} instead, i.e., when it
+   * is needed.
+   */
+  @Override
+  protected void restoreMinimumSize(int num) {
+    QuicClientConnection quicConnection = connection;
+    if (quicConnection != null && quicConnection.isConnected()) {
+      super.restoreMinimumSize(num);
+    }
+  }
 
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {

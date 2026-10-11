@@ -368,10 +368,13 @@ is short-lived anyway, or `keepalive=<seconds>` to limit it. Note that `keepaliv
 here, handed to KWIK's `keepAlive(seconds)`, whereas `tentackle-quiche` interprets the same parameter
 as the *interval* between keep-alive packets. Should the QUIC connection be lost
 nevertheless (network loss, peer restart, `keepalive=0`), the pool drops the dead connections and
-re-establishes the QUIC connection on the next request. The connection it replaces is closed
-explicitly: KWIK stops a connection's keep-alive actor when the connection is closed, but not when it
-is terminated silently, and that actor runs on a non-daemon thread that would otherwise keep the JVM
-from terminating.
+re-establishes the QUIC connection on the next request. Only then: the periodic monitoring of the
+pool removes the dead connections, but does not bring the pool back to its `minimum` size while the
+QUIC connection is gone. Doing so would block the thread that monitors all pools for up to
+`connecttimeout`, round after round, for as long as the server is unreachable. The connection it
+replaces is closed explicitly: KWIK stops a connection's keep-alive actor when the connection is
+closed, but not when it is terminated silently, and that actor runs on a non-daemon thread that
+would otherwise keep the JVM from terminating.
 
 The corresponding pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`)
 are described in [trip.md](../../../../tentackle-core/src/main/docs/trip.md).

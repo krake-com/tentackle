@@ -72,7 +72,8 @@ import java.util.Set;
  * The QUIC connection migrates to a new source port when its path stalls (see
  * {@link QuicheTripTransport#getMigrationProbeTimeouts()}). If it is lost anyway, it is re-established on
  * a new endpoint, i.e., from a fresh source port as well: the one the lost connection used may well be
- * what got it stuck.
+ * what got it stuck. That happens when the next connection is requested from the pool, see
+ * {@link #restoreMinimumSize(int)}.
  */
 public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
@@ -219,6 +220,23 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     }
   }
 
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to do nothing while the QUIC connection is gone. Creating a slot would re-establish it
+   * first, which waits for the handshake for as long as {@code connecttimeout} allows if the server is
+   * not reachable &mdash; with the pool's monitor held, on the thread that monitors all pools, and again
+   * with every round. The connection is re-established by the next {@link #get()} instead, i.e., when it
+   * is needed.
+   */
+  @Override
+  protected void restoreMinimumSize(int num) {
+    QuicheConnection quicConnection = connection;
+    if (quicConnection != null && quicConnection.isConnected()) {
+      super.restoreMinimumSize(num);
+    }
+  }
 
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {

@@ -455,6 +455,21 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   }
 
   /**
+   * Brings the pool back to its minimum size.
+   * <p>
+   * Invoked by {@link #monitor()} with the pool's monitor held, i.e., usually from the
+   * {@link PoolTimeoutThread} all pools share. The default implementation creates the missing slots.
+   * A pool whose resources cannot be created without blocking for long &mdash; because they depend on
+   * something that is gone and has to be re-established first &mdash; should override this and leave the
+   * pool below its minimum size instead: {@link #get()} creates the resources as soon as they are needed.
+   *
+   * @param num the number of slots missing
+   */
+  protected void restoreMinimumSize(int num) {
+    createSlots(num);
+  }
+
+  /**
    * Closes a poolable and removes it from the pool.<br>
    * Since the closing operation is executed asynchronously,
    * there is no guarantee that the resource is really closed.
@@ -565,7 +580,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     // check if we need to bring up some resources to keep the minimum size
     int size = getSize();
     if (minimumSize > 0 && size < minimumSize) {
-      createSlots(minimumSize - size);
+      restoreMinimumSize(minimumSize - size);
       return false;
     }
     // minimum size < 0, and all resources closed -> shut down pool

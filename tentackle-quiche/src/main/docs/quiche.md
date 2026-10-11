@@ -195,6 +195,9 @@ never comes cannot park it for good.
 4. The connection is kept alive with ack-eliciting packets, see below.
 5. A connection whose path stalls moves to a new source port, see [Connection migration](#connection-migration).
    One that is lost anyway is re-established on a new endpoint, i.e., from a fresh source port too.
+   That happens when the next connection is requested from the pool, not by the periodic monitoring
+   of the pool: the monitoring only removes the dead connections and leaves the pool below its
+   `minimum` size, because waiting for a handshake there would block the thread that monitors all pools.
 
 ## Stream-to-TripStream bridging
 

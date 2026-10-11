@@ -114,6 +114,44 @@ public class AbstractPoolTest {
 
 
   /**
+   * {@code monitor()} replaces the resources that died while unused, up to the minimum size.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorRestoresTheMinimumSize() {
+    TestPool pool = new TestPool();
+    TestResource resource = pool.get();
+    pool.put(resource);
+    resource.open = false;   // died silently while sitting in the pool
+
+    pool.monitor();
+
+    assertEquals(pool.getSize(), 1);
+    assertEquals(pool.getCreatedCount(), 2);
+  }
+
+  /**
+   * {@link AbstractPool#restoreMinimumSize} may be overridden by pools that cannot create a resource
+   * without blocking the shared {@link PoolTimeoutThread} for long. The pool then stays below its
+   * minimum size until a resource is requested.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorLeavesRestoringTheMinimumSizeToThePool() {
+    TestPool pool = new TestPool();
+    TestResource resource = pool.get();
+    pool.put(resource);
+    resource.open = false;
+    pool.restoringMinimumSize = false;
+
+    pool.monitor();
+
+    assertEquals(pool.getSize(), 0, "the dead resource was not removed");
+    assertEquals(pool.getCreatedCount(), 1, "the minimum size was restored nevertheless");
+
+    assertTrue(pool.get().isOpen());    // created on demand
+    assertEquals(pool.getCreatedCount(), 2);
+  }
+
+  /**
    * {@link AbstractPool#isSlotRemovable} may be overridden to veto the removal of a slot.
    * Such a slot must be skipped: {@code monitor()} runs in the shared {@link PoolTimeoutThread}
    * and holds the pool's monitor, so looping on it would block the pool forever.
@@ -389,6 +427,7 @@ public class AbstractPoolTest {
     private int createdCount;
     private boolean createOpen = true;
     private boolean slotsRemovable = true;
+    private boolean restoringMinimumSize = true;
     private volatile boolean reenterOnClose;    // resources re-enter the pool while closing
 
     private TestPool() {
@@ -419,6 +458,13 @@ public class AbstractPoolTest {
       // without holding the pool's monitor
       monitorCount.incrementAndGet();
       super.monitor();
+    }
+
+    @Override
+    protected void restoreMinimumSize(int num) {
+      if (restoringMinimumSize) {
+        super.restoreMinimumSize(num);
+      }
     }
 
     @Override

@@ -146,7 +146,10 @@ A poolable's `poolId` doubles as its state: 0 when idle in the pool, greater tha
 -1 once removed. Resources are created lazily on the first `get()`, which also registers the pool
 with the timeout thread. A resource that died while idle in the pool (closed by the peer, for
 example) is dropped and replaced instead of being handed out, and returning a closed resource
-removes it from the pool.
+removes it from the pool. The monitor replaces dead idle resources as well, up to the minimum size.
+A pool that cannot create a resource without blocking for long overrides
+`AbstractPool.restoreMinimumSize()` to leave that to the next `get()`, since the monitor runs on the
+one thread all pools share.
 
 While a resource is lent, its slot holds only a weak reference to it. A resource that was lent but
 never returned and has been garbage collected is thus detected by the monitor and removed from the
