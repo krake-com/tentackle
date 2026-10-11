@@ -30,6 +30,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Tests for {@link PoolTimeoutThread}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class PoolTimeoutThreadTest {
 
   /** Longer than two rounds of the timeout thread, which sleeps 10 seconds in between. */
