@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.transport;
 
+import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Transport;
 
 import java.util.UUID;
@@ -25,13 +26,14 @@ import java.util.UUID;
 /**
  * The client information.
  * <p>
- * Exposed by thread local variable for diagnostic and logging purposes.
+ * Used in servers only and exposed by thread local variable.
  *
  * @param transport the server transport
+ * @param dictionary the client's dictionary
  * @param connectionName the client's connection name
  * @param clientId the client's transport UUID
  */
-public record TransportClientInfo(Transport transport, String connectionName, UUID clientId) {
+public record TransportClientInfo(Transport transport, Dictionary dictionary, String connectionName, UUID clientId) {
 
   private static final ThreadLocal<TransportClientInfo> TL_CLIENT_INFO = new ThreadLocal<>();
 
@@ -58,16 +60,6 @@ public record TransportClientInfo(Transport transport, String connectionName, UU
     }
   }
 
-
-  /**
-   * Creates a new client-info w/o a client UUID.
-   *
-   * @param transport the transport
-   * @param connectionName the connection name
-   */
-  public TransportClientInfo(Transport transport, String connectionName) {
-    this(transport, connectionName, null);
-  }
 
   /**
    * Gets the client host address.<br>

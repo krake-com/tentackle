@@ -38,6 +38,7 @@ import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.session.auth.Authentication;
 import org.tentackle.session.auth.AuthenticationManager;
 import org.tentackle.session.auth.AuthenticationProvider;
+import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteRoot;
@@ -190,13 +191,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   private static class Resources implements Runnable {
 
-    private final RemoteDbConnectionImpl con;       // the connection object
-    private final SessionInfo serverInfo;             // the server info (to restore after close)
-    private final MethodStatistics methodStats;       // method statistics (managed by invocation handler, null if no stats)
-    private RemoteDbSessionImpl me;                 // != null if programmatic close
-    private String name;                              // the session name
-    private Db db;                                    // the local session
-    private String mdcInfo;                           // the cached MDC info
+    private final RemoteDbConnectionImpl con;   // the connection object
+    private final SessionInfo serverInfo;       // the server info (to restore after close)
+    private final MethodStatistics methodStats; // method statistics (managed by invocation handler, null if no stats)
+    private RemoteDbSessionImpl me;             // != null if programmatic close
+    private String name;                        // the session name
+    private Db db;                              // the local session
+    private String mdcInfo;                     // the cached MDC info
 
     Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
       this.db = db;
@@ -293,6 +294,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final SessionInfo serverInfo;                       // the server info for creating a new session
   private final long sessionNumber;                           // unique session number
   private final String clientHost;                            // the client host string
+  private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
   private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
   private int timeoutCount;                                   // consecutive timeouts
@@ -334,9 +336,22 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     Db db = null;
     try {
       TransportClientInfo transportInfo = TransportClientInfo.get();
-      // use only the host address since the port-number is the one at this moment
-      // and is not fixed for further invocations for this session
-      clientHost = transportInfo == null ? "?" : transportInfo.getHost();
+      if (transportInfo != null) {
+        // use only the host address since the port-number is the one at this moment
+        // and is not fixed for further invocations for this session
+        clientHost = transportInfo.getHost();
+        // Since the dictionary is shared among all TRIP connections of the same client,
+        // it must not be GC'd as long as a single session for this client is still open.
+        // TCP connections remain open until explicitly closed.
+        // QUIC streams, however, are only virtual connections, and they can be closed
+        // and opened by the protocol at any time. So it could well be that there
+        // is no stream at all temporarily.
+        dictionary = transportInfo.dictionary();
+      }
+      else {
+        clientHost = "?";
+        dictionary = null;
+      }
       db = openDb();
       resources = new Resources(db, con, this.serverInfo);
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
@@ -345,6 +360,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
         verifySessionInfo(this.clientInfo);
         db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
+      }
+      if (dictionary == null) {
+        LOGGER.warning("no dictionary assigned to {0}", this);
       }
     }
     catch (RuntimeException ex) {

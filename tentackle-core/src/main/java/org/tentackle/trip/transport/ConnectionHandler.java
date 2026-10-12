@@ -133,14 +133,14 @@ public class ConnectionHandler implements Runnable {
         // For an auto-updatable client, this will happen only once per client with the update URL endpoint.
         // The client then updates itself and automatically uses the latest protocol.
         LOGGER.warning("client connection {0} uses an outdated version of TRIP, version skew = {1}",
-                       new TransportClientInfo(transport, connectionName), versionSkew);
+                       new TransportClientInfo(transport, null, connectionName, null), versionSkew);
       }
     }
     catch (TripRuntimeException e) {
       if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
         // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
         LOGGER.warning("connection {0} aborted: {1}",
-                       new TransportClientInfo(transport, connectionName),
+                       new TransportClientInfo(transport, null, connectionName, null),
                        ExceptionHelper.concatenateMessages(e));
         return;
       }
@@ -153,7 +153,7 @@ public class ConnectionHandler implements Runnable {
       clientDictionaryEmpty = readDictionaryFlag();
     }
     TripStream stream = createStream(id, clientDictionaryEmpty);
-    TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
+    TransportClientInfo transportClientInfo = new TransportClientInfo(transport, stream.getDictionary(), connectionName, id);
     boolean closedByClient = false;
     LOGGER.info("connection " + transportClientInfo + " opened");
 
