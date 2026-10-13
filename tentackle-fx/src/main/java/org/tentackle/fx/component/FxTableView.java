@@ -32,6 +32,8 @@ import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.FxTableEditContext;
+import org.tentackle.fx.table.edit.TableEditContext;
 import org.tentackle.fx.table.filter.TableFilter;
 import org.tentackle.fx.table.filter.TableFilterSupport;
 import org.tentackle.misc.CsvConverter;
@@ -80,6 +82,11 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   private TableFilterSupport<S> filterSupport;
 
+  /**
+   * The edit context, created on demand.
+   */
+  private TableEditContext<S> editContext;
+
 
   /**
    * Gets the table configuration.
@@ -88,6 +95,29 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   public TableConfiguration<S> getConfiguration() {
     return configuration;
+  }
+
+  /**
+   * Gets the edit context.<br>
+   * The context is passed to the {@link org.tentackle.fx.table.edit.TableEditHandler} of the table configuration.
+   * It can also be used by the application to modify the rows and to start editing a cell.
+   *
+   * @return the edit context, never null
+   */
+  public TableEditContext<S> getEditContext() {
+    if (editContext == null) {
+      editContext = createEditContext();
+    }
+    return editContext;
+  }
+
+  /**
+   * Creates the edit context.
+   *
+   * @return the edit context
+   */
+  protected TableEditContext<S> createEditContext() {
+    return new FxTableEditContext<>(this);
   }
 
   /**

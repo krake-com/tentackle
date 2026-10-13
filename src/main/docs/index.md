@@ -83,6 +83,7 @@ topic-grouped listing of every document, see the
 ## E
 
 - **Eager relations** — [Eager Relations](../../../tentackle-persistence-wurblets/src/main/docs/eager-relations.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
+- **Editable tables / edit handlers (`TableEditHandler`, navigation, adding rows)** — [Tables and Trees](../../../tentackle-fx/src/main/docs/tables.md#edit-handlers)
 - **Effective class (`getClass()` vs `instanceof` on a PDO proxy)** — [Reflection](../../../tentackle-core/src/main/docs/reflect.md#getclass-geteffectiveclass-and-instanceof)
 - **Embedded entities** — [Embedded vs. DataType](./embedded-vs-datatype.md), [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md)
 - **Entity aliases (`entityAliases`)** — [Model Definition](../../../tentackle-model/src/main/docs/model-definition.md#inheritance-mapping-strategies), [Tentackle Model](../../../tentackle-model/src/main/docs/tentackle-model.md#modeldefaults-and-entityaliases)

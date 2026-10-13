@@ -21,6 +21,10 @@ package org.tentackle.fx;
 
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.ColumnWiseEditHandler;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.RuleBasedEditHandler;
+import org.tentackle.fx.table.edit.SimpleEditHandler;
 
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -44,8 +48,8 @@ interface FxFactoryHolder {
 
 /**
  * A factory for FX-related objects.<br>
- * Creates controllers, stages, scenes, value translators, graphics, notifications, and
- * table configurations, and provides the configurators and the FXML builder factory.
+ * Creates controllers, stages, scenes, value translators, graphics, notifications,
+ * table configurations, and table edit handlers, and provides the configurators and the FXML builder factory.
  *
  * @author harald
  */
@@ -197,5 +201,38 @@ public interface FxFactory {
    * @return the table configuration
    */
   <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name);
+
+  /**
+   * Creates a table edit handler that ends editing when a value is committed.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  <S> SimpleEditHandler<S> simpleTableEditHandler();
+
+  /**
+   * Creates a table edit handler that continues with the next or previous editable cell in the row,
+   * wrapping to the next or previous row.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  <S> RowWiseEditHandler<S> rowWiseTableEditHandler();
+
+  /**
+   * Creates a table edit handler that continues with the editable cell below or above in the same column.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  <S> ColumnWiseEditHandler<S> columnWiseTableEditHandler();
+
+  /**
+   * Creates a table edit handler that is configured by rules per column and navigates row-wise.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  <S> RuleBasedEditHandler<S> ruleBasedTableEditHandler();
 
 }

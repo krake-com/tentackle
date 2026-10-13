@@ -367,22 +367,25 @@ public interface TableColumnConfiguration<S, T> {
   /**
    * Returns whether the column is editable.
    *
-   * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on the table configuration's edit handler
    */
   Boolean getEditable();
 
   /**
    * Sets whether the column is editable.
    *
-   * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on the table configuration's edit handler
    * @return this configuration
    */
   TableColumnConfiguration<S, T> setEditable(Boolean editable);
 
   /**
-   * Returns whether the column is editable.
+   * Returns whether the column is editable.<br>
+   * A column is editable if configured as such. If the table configuration provides an edit handler,
+   * the column is editable unless configured as not editable.
    *
    * @return true if editable, the default is false
+   * @see TableConfiguration#setEditHandler
    */
   boolean isEditable();
 

@@ -32,6 +32,8 @@ import org.tentackle.fx.component.delegate.FxTreeTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.FxTreeTableEditContext;
+import org.tentackle.fx.table.edit.TreeTableEditContext;
 import org.tentackle.fx.table.filter.TableFilter;
 import org.tentackle.fx.table.filter.TableFilterSupport;
 import org.tentackle.misc.CsvConverter;
@@ -81,6 +83,11 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    * The column filter support.
    */
   private TableFilterSupport<S> filterSupport;
+
+  /**
+   * The edit context, created on demand.
+   */
+  private TreeTableEditContext<S> editContext;
 
 
   /**
@@ -139,6 +146,29 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    */
   public TableConfiguration<S> getConfiguration() {
     return configuration;
+  }
+
+  /**
+   * Gets the edit context.<br>
+   * The context is passed to the {@link org.tentackle.fx.table.edit.TableEditHandler} of the treetable configuration.
+   * It can also be used by the application to modify the rows and to start editing a cell.
+   *
+   * @return the edit context, never null
+   */
+  public TreeTableEditContext<S> getEditContext() {
+    if (editContext == null) {
+      editContext = createEditContext();
+    }
+    return editContext;
+  }
+
+  /**
+   * Creates the edit context.
+   *
+   * @return the edit context
+   */
+  protected TreeTableEditContext<S> createEditContext() {
+    return new FxTreeTableEditContext<>(this);
   }
 
   /**

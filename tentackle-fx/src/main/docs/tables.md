@@ -64,7 +64,7 @@ added by binding path:
 TableConfiguration<Invoice> config = FxFactory.getInstance().createTableConfiguration(Invoice.class, null);
 config.addColumn("invoiceNumber", bundle.getString("invoiceNumber"));
 config.addColumn("total", bundle.getString("total"));
-config.setEditMode(TableConfiguration.EDITMODE.ROW);
+config.setEditHandler(Fx.rowWiseTableEditHandler());   // optional: makes the table editable
 config.configure(tableView);      // creates the columns with their cells and editors
 tableView.loadPreferences(null, false);   // optional: restores the saved layout
 ```
@@ -72,15 +72,14 @@ tableView.loadPreferences(null, false);   // optional: restores the saved layout
 `configure(...)` accepts either an `FxTableView` or an `FxTreeTableView` — the configuration is
 view-type agnostic (for tree-tables, the value translators create the `TreeItem`s via `createTreeItem`).
 
-Two enums control the overall behavior:
+The `BINDING` enum controls whether the cells are bound to the row object's members: `YES` (the
+default, binds all `@Bindable` members), `INHERITED` (includes bindables inherited from
+superclasses) or `NO`.
 
-- `BINDING` — whether the cells are bound to the row object's members: `YES` (the default,
-  binds all `@Bindable` members), `INHERITED` (includes bindables inherited from superclasses)
-  or `NO`.
-- `EDITMODE` — `NO` (read-only, the default), `SIMPLE` (edit the current cell only), `ROW`
-  (commit moves to the next/previous cell in the row) or `COLUMN` (commit moves to the cell
-  below/above). Any mode other than `NO` makes all columns editable; in mode `NO`, a column is
-  editable only if its `editable` property is `TRUE`.
+A table is read-only unless its configuration provides an [edit handler](#edit-handlers), which
+controls everything that happens when a value is entered in a cell. With a handler, all columns
+are editable, except those whose `editable` property is `FALSE`. Without a handler, a column is
+editable only if its `editable` property is `TRUE`; committing a value then simply ends editing.
 
 The configuration owns an [`FxTableBinder`](../java/org/tentackle/fx/bind/FxTableBinder.java) that
 binds the *cells* to the row objects. Don't confuse it with the controller's binder, which binds a
@@ -251,6 +250,127 @@ Which columns show a total is controlled by the column configuration's `summable
 defaulting to true for numeric column types.
 
 
+### Edit handlers
+
+An editable grid is rarely just a grid of independent input fields. Entering a product in an order
+line fills in the price, changing a quantity recalculates the row, leaving the last cell appends
+the next line, and the cell the user continues in depends on what was entered. A
+[`TableEditHandler<S>`](../java/org/tentackle/fx/table/edit/TableEditHandler.java) covers all of
+that in one place. It is set on the table configuration, *before* the view is configured, and
+works the same way for tables and tree-tables:
+
+```java
+config.setEditHandler(handler);
+config.configure(tableView);
+```
+
+The handler is consulted at each step of editing a cell:
+
+| Method                | When                                           | Purpose                                                                                           |
+|-----------------------|------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `isCellEditable`      | before editing starts, and during navigation   | Editability per *cell*, on top of the column's — a price that is locked once the line is invoiced. |
+| `isCommitOnFocusLost` | when editing starts                            | Whether the value is committed if the editor loses the focus. By default, it is not.              |
+| `verify`              | `ENTER` / `TAB`, before the model is touched   | Veto: a returned message keeps the editor open and is shown as its error.                         |
+| `committed`           | after the value was applied to the row object  | Modify other cells, add or remove rows, and return the cell to edit next (`null` ends editing).   |
+| `canceled`            | after `ESC`, or when the edit was abandoned    | Clean up, for example, remove a row that was appended but never filled in.                        |
+
+The entered value arrives as a
+[`TableCellEdit`](../java/org/tentackle/fx/table/edit/TableCellEdit.java): the cell, the old and
+the new value, and the
+[`TableEditTrigger`](../java/org/tentackle/fx/table/edit/TableEditTrigger.java) telling whether
+the user moved forward (`NEXT`), backward (`PREVIOUS`, with `Shift`) or away (`FOCUS_LOST`). Cells
+are addressed by a [`TableCellRef`](../java/org/tentackle/fx/table/edit/TableCellRef.java) — the
+*row object* and the column — rather than by indexes, which change as soon as rows are added,
+removed or sorted.
+
+**Values are modified directly in the row objects**; the view is refreshed when the handler
+returns. Everything that concerns the view goes through the
+[`TableEditContext`](../java/org/tentackle/fx/table/edit/TableEditContext.java) passed to each
+method:
+
+- **rows** — `getRows()`, `indexOf(row)`, `addRow(row)`, `insertRowAfter(sibling, row)`,
+  `insertRowBefore(sibling, row)`, `removeRow(row)`. The rows are added to the root source of the
+  table's items, so this works for sorted and [filtered](#column-filters-autofilter) tables as
+  well — where the sort order and the filter decide where, and whether, the new row is displayed.
+- **navigation** — `next(cell)` / `previous(cell)` within the row, `below(cell)` / `above(cell)`
+  within the column, `firstEditable(row)` / `lastEditable(row)`, `firstEditableBelow(row)` /
+  `lastEditableAbove(row)`. All of them skip cells that are not editable.
+- **actions** — `cell(row, "columnName")`, `select(cell)`, `edit(cell)`.
+
+For tree-tables, the context is a
+[`TreeTableEditContext`](../java/org/tentackle/fx/table/edit/TreeTableEditContext.java), which
+adds `getParent(row)`, `getChildren(row)`, `addChild(parent, row)` and `setExpanded(row, expanded)`.
+The rows are the displayed ones, i.e. those whose parents are expanded; `edit(cell)` expands the
+parents of the row as necessary.
+
+The context is also available from the view (`tableView.getEditContext()`), so that a controller
+uses the very same operations, for example for an *add line* button:
+
+```java
+TableEditContext<InvoiceLine> ctx = tableView.getEditContext();
+InvoiceLine line = invoice.addLine();
+ctx.addRow(line);
+ctx.edit(ctx.firstEditable(line));
+```
+
+#### Provided handlers
+
+[`FxFactory`](../java/org/tentackle/fx/FxFactory.java) creates the handlers for the common
+cases. [`Fx`](../java/org/tentackle/fx/Fx.java) provides shortcuts, so the code reads
+`Fx.rowWiseTableEditHandler()`:
+
+| Factory method                 | Handler                 | Behavior                                                                                                      |
+|--------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------------|
+| `simpleTableEditHandler()`     | `SimpleEditHandler`     | A commit ends editing.                                                                                        |
+| `rowWiseTableEditHandler()`    | `RowWiseEditHandler`    | Continues with the next/previous editable cell, wrapping to the next/previous row.                            |
+| `columnWiseTableEditHandler()` | `ColumnWiseEditHandler` | Continues with the editable cell below/above.                                                                 |
+| `ruleBasedTableEditHandler()`  | `RuleBasedEditHandler`  | Rules per column, on top of the row-wise handler; its constructor takes any other handler to decorate.        |
+
+Because the handlers are created by the factory, an application can replace their implementations
+by providing its own `FxFactory` (annotated with `@Service(FxFactory.class)`) that overrides the
+factory methods.
+
+At either end of the table, the row-wise and column-wise handlers keep the cell in edit mode. The
+row-wise handler has two options: `setWrapping(false)` ends editing at the end of the row instead
+of continuing in the next one, and `setRowFactory(supplier)` appends a new row when the last cell
+of the last row is left — the classic way to enter order lines:
+
+```java
+config.setEditHandler(Fx.<InvoiceLine>rowWiseTableEditHandler().setRowFactory(invoice::addLine));
+```
+
+The [`RuleBasedEditHandler`](../java/org/tentackle/fx/table/edit/RuleBasedEditHandler.java) is
+the shortest path to "entering X changes Y": it takes lambdas per column name and leaves the rest
+to the handler it decorates.
+
+```java
+config.setEditHandler(Fx.<InvoiceLine>ruleBasedTableEditHandler()
+    .editable("price", (ctx, cell) -> !cell.row().isInvoiced())
+    .commitOnFocusLost("quantity")
+    .verify("quantity", (ctx, edit) -> edit.newValue(Integer.class) < 0 ? "must not be negative" : null)
+    .onCommit("product", (ctx, edit) -> edit.row().applyProductDefaults())
+    .onCommit((ctx, edit) -> edit.row().recalculate())                           // any column
+    .navigate("product", (ctx, edit) -> ctx.cell(edit.row(), "quantity")));     // skip the rest
+```
+
+Commit rules only *do* something, `navigate` rules decide where to continue. A column without a
+`navigate` rule is navigated by the decorated handler. For anything beyond that, implement
+`TableEditHandler` directly — only `committed` is mandatory — or extend one of the provided
+handlers.
+
+A few rules of the game:
+
+- A value committed by a lost focus has left the cell for good: `committed` is invoked, but the
+  cell it returns is ignored, since the user already moved on. A value that fails to `verify`
+  cannot be committed that way; the edit is canceled instead.
+- While another cell is already being edited — the user clicked into it — the view is not
+  refreshed, because that would cancel the edit. Changed values of other cells show up as soon as
+  that edit ends.
+- The handler does not replace [validation](../../../../tentackle-core/src/main/docs/validation.md):
+  `verify` is for the immediate feedback on a single input, the validators of the model still apply
+  when the data is saved.
+
+
 ## The RDC Layer: PDO-Aware Tables
 
 The [rich desktop client](../../../../tentackle-fx-rdc/src/main/docs/rdc.md) builds on this
@@ -340,6 +460,7 @@ A controller displaying a list of invoices in an editable table:
 | Package                                        | Content                                                                | Module            |
 |------------------------------------------------|------------------------------------------------------------------------|-------------------|
 | `org.tentackle.fx.table`                       | Configurations, providers, cell/column classes, `TotalsTableView`      | tentackle-fx      |
+| `org.tentackle.fx.table.edit`                  | Edit handlers: handler, edit context, provided handlers                | tentackle-fx      |
 | `org.tentackle.fx.table.filter`                | Column filters (autofilter): filter model, support, popup              | tentackle-fx      |
 | `org.tentackle.fx.table.type`                  | Built-in `TableCellType`s (strings, numbers, money, date/time, …)      | tentackle-fx      |
 | `org.tentackle.fx.rdc.table`                   | PDO-aware configuration, `TablePopup`, `TablePrinter`, `TableUtilities` | tentackle-fx-rdc  |

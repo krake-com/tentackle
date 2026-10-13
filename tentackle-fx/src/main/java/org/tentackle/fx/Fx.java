@@ -19,6 +19,11 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.fx.table.edit.ColumnWiseEditHandler;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.RuleBasedEditHandler;
+import org.tentackle.fx.table.edit.SimpleEditHandler;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -325,6 +330,47 @@ public class Fx {
    */
   public static Node createGraphic(String name) {
     return createGraphic("", name);
+  }
+
+  /**
+   * Creates a table edit handler that ends editing when a value is committed.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> SimpleEditHandler<S> simpleTableEditHandler() {
+    return FxFactory.getInstance().simpleTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that continues with the next or previous editable cell in the row,
+   * wrapping to the next or previous row.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> RowWiseEditHandler<S> rowWiseTableEditHandler() {
+    return FxFactory.getInstance().rowWiseTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that continues with the editable cell below or above in the same column.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> ColumnWiseEditHandler<S> columnWiseTableEditHandler() {
+    return FxFactory.getInstance().columnWiseTableEditHandler();
+  }
+
+  /**
+   * Creates a table edit handler that is configured by rules per column and navigates row-wise.
+   *
+   * @param <S> type of the objects contained within the table's item list
+   * @return the handler
+   */
+  public static <S> RuleBasedEditHandler<S> ruleBasedTableEditHandler() {
+    return FxFactory.getInstance().ruleBasedTableEditHandler();
   }
 
 

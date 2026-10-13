@@ -27,6 +27,10 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.nofxml.NoFXMLLinker;
 import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.edit.ColumnWiseEditHandler;
+import org.tentackle.fx.table.edit.RowWiseEditHandler;
+import org.tentackle.fx.table.edit.RuleBasedEditHandler;
+import org.tentackle.fx.table.edit.SimpleEditHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.DefaultClassMapper;
@@ -509,6 +513,26 @@ public class DefaultFxFactory implements FxFactory {
   @Override
   public <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name) {
     return new DefaultTableConfiguration<>(objectClass, name);
+  }
+
+  @Override
+  public <S> SimpleEditHandler<S> simpleTableEditHandler() {
+    return new SimpleEditHandler<>();
+  }
+
+  @Override
+  public <S> RowWiseEditHandler<S> rowWiseTableEditHandler() {
+    return new RowWiseEditHandler<>();
+  }
+
+  @Override
+  public <S> ColumnWiseEditHandler<S> columnWiseTableEditHandler() {
+    return new ColumnWiseEditHandler<>();
+  }
+
+  @Override
+  public <S> RuleBasedEditHandler<S> ruleBasedTableEditHandler() {
+    return new RuleBasedEditHandler<>(rowWiseTableEditHandler());
   }
 
   /**

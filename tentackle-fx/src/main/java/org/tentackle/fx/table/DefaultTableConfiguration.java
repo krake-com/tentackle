@@ -25,6 +25,7 @@ import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.edit.TableEditHandler;
 import org.tentackle.fx.table.filter.TableColumnFilter;
 import org.tentackle.fx.table.filter.TableFilter;
 import org.tentackle.fx.table.filter.TableFilterSupport;
@@ -140,9 +141,9 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private boolean filterIncluded;
 
   /**
-   * The edit mode.
+   * The edit handler.
    */
-  private EDITMODE editMode = EDITMODE.NO;
+  private TableEditHandler<S> editHandler;
 
   /**
    * The binding type.
@@ -605,13 +606,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public EDITMODE getEditMode() {
-    return editMode;
+  public TableEditHandler<S> getEditHandler() {
+    return editHandler;
   }
 
   @Override
-  public void setEditMode(EDITMODE editMode) {
-    this.editMode = editMode == null ? EDITMODE.NO : editMode;
+  public void setEditHandler(TableEditHandler<S> editHandler) {
+    this.editHandler = editHandler;
   }
 
   @Override

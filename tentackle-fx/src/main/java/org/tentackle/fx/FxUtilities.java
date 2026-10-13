@@ -1566,6 +1566,25 @@ public class FxUtilities {
   }
 
   /**
+   * Returns whether a row is currently displayed in the viewport.
+   *
+   * @param control the control, usually a table- or tree-view
+   * @param row the row index
+   * @return true if visible, false if not visible or the viewport is not known yet
+   */
+  @SuppressWarnings("rawtypes")
+  public boolean isRowVisible(Skinnable control, int row) {
+    VirtualFlow flow = getVirtualFlow(control);
+    if (flow != null) {
+      IndexedCell firstVisibleCell = flow.getFirstVisibleCell();
+      IndexedCell lastVisibleCell = flow.getLastVisibleCell();
+      return firstVisibleCell != null && lastVisibleCell != null &&
+             row >= firstVisibleCell.getIndex() && row <= lastVisibleCell.getIndex();
+    }
+    return false;
+  }
+
+  /**
    * Creates an auto-completion controller for a text component.
    *
    * @param component the component

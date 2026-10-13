@@ -454,7 +454,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public boolean isEditable() {
     return Boolean.TRUE.equals(editable) ||
-           tableConfiguration != null && tableConfiguration.getEditMode() != TableConfiguration.EDITMODE.NO;
+           editable == null && tableConfiguration != null && tableConfiguration.getEditHandler() != null;
   }
 
   @Override
