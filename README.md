@@ -166,6 +166,8 @@ detailed argument — with code on both sides — is in
 - 🤖 **[AI Agent Tooling](src/main/docs/ai-agents.md)** — the MCP model server, the
   headless wizard batch modes, and the bundled agent skills.
 - 🧾 **[Java site docs](https://tentackle.org/tentackle/)** — as a reference.
+- 🏛️ **[Architecture](https://github.com/krake-com/tentackle/blob/develop/ARCHITECTURE.md)** — the
+  design overview: the central ideas and how they depend on each other.
 - 🤝 **[Contributing](https://github.com/krake-com/tentackle/blob/develop/CONTRIBUTING.md)** — how
   to report issues and submit changes.
 

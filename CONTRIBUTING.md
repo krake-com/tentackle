@@ -35,7 +35,8 @@ Please do **not** open a public issue for a suspected vulnerability. Send the de
 Tentackle makes deliberate trade-offs. A change has to fit them, so it helps to know the
 stance described in
 [When to use Tentackle — and when not to](README.md#when-to-use-tentackle--and-when-not-to)
-and [Correctness First](src/main/docs/correctness-first.md). The
+and [Correctness First](src/main/docs/correctness-first.md).
+[ARCHITECTURE.md](ARCHITECTURE.md) gives the design overview, and the
 [Table of Contents](src/main/docs/toc.md) lists every document, grouped by topic.
 
 ## Building
