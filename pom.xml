@@ -180,14 +180,14 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://bitbucket.org/krake-oss/tentackle.git</connection>
-    <developerConnection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</developerConnection>
-    <url>https://bitbucket.org/krake-oss/tentackle/</url>
+    <connection>scm:git:https://github.com/krake-com/tentackle.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/krake-com/tentackle.git</developerConnection>
+    <url>https://github.com/krake-com/tentackle</url>
   </scm>
 
   <issueManagement>
-    <system>Bitbucket</system>
-    <url>https://bitbucket.org/krake-oss/tentackle/</url>
+    <system>GitHub</system>
+    <url>https://github.com/krake-com/tentackle/issues</url>
   </issueManagement>
 
   <distributionManagement>

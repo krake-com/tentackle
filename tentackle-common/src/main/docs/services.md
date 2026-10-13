@@ -510,7 +510,7 @@ publishes, which is the useful test of whether one is real.
 ## OSGi Bundles
 
 The artifacts on Maven Central are not OSGi bundles, but you can build them: clone the
-[tentackle repo](https://bitbucket.org/krake-oss/tentackle/src/master/), build it, then run a second
+[tentackle repo](https://github.com/krake-com/tentackle), build it, then run a second
 build in the `tentackle-osgi` subfolder. That produces the bundles with their activators and sources
 (the latter are handy in the Eclipse IDE). See [OSGi Bundles](../../../../tentackle-osgi/src/main/docs/osgi.md)
 for the build, the bundle list and how to prepare your own bundles.

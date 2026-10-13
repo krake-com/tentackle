@@ -37,7 +37,7 @@ When adding or changing a concept, keep the relevant module doc, `toc.md`, and `
 
 - The page content is **generated**, never stored: `prepare.py` stages the repo `README.md` (as the site home page) plus every `src/main/docs/*.md` across the reactor into a flat `src/mkdocs/docs/` tree. Both `docs/` and the built `site/` are git-ignored — never edit them, they are overwritten on every build.
 - Because the tree is flattened, **every doc basename must be unique across the whole reactor**. Check for a collision before adding a doc.
-- `prepare.py` rewrites cross-document links to the flat layout, and rewrites links to Java sources (`../java/.../Foo.java`) to Bitbucket source URLs. Relative links between docs are therefore fine to write naturally.
+- `prepare.py` rewrites cross-document links to the flat layout, and rewrites links to Java sources (`../java/.../Foo.java`) to GitHub source URLs. Relative links between docs are therefore fine to write naturally.
 - The `nav` in `src/mkdocs/mkdocs.yml` mirrors `src/main/docs/toc.md` — when adding a doc, update both.
 - Build: `make install` (once: pip-installs `requirements.txt`), `make serve` (live preview), `make build` (strict — fails on broken links), `make clean`. The first build needs network access (the privacy plugin localizes the Roboto font). The site is deliberately GDPR-compliant: no third-party requests, no tracking — don't introduce external assets, CDN links, or analytics.
 

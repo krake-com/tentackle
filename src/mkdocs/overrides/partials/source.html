@@ -1,0 +1,18 @@
+{#
+  Repository link without the live repository facts.
+
+  Material's JavaScript bundle looks for `data-md-component="source"` and, for a
+  github.com repo_url, fetches the stars/forks/latest release from
+  `https://api.github.com/repos/...` in the visitor's browser. To avoid that
+  third-party request this copy of Material's partial omits the attribute, so
+  the script never mounts the component. The link and the icon stay as they are.
+#}
+<a href="{{ config.repo_url }}" title="{{ lang.t('source') }}" class="md-source">
+  <div class="md-source__icon md-icon">
+    {% set icon = config.theme.icon.repo or "fontawesome/brands/git-alt" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </div>
+  <div class="md-source__repository">
+    {{ config.repo_name }}
+  </div>
+</a>

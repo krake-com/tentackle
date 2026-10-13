@@ -175,7 +175,7 @@ run with limited database privileges. It deliberately stores its *own* settings 
 
 Like [BundleMonkey](../../../../tentackle-i18n/src/main/docs/bundlemonkey.md), it is developed as a
 separate open-source project at
-[bitbucket.org/krake-oss/preferenzr](https://bitbucket.org/krake-oss/preferenzr) and distributed as
+[github.com/krake-com/preferenzr](https://github.com/krake-com/preferenzr) and distributed as
 a self-contained [jlink](../../../../tentackle-jlink-maven-plugin/src/main/docs/jlinkpackage.md)
 image; to build it yourself, clone the repository and run `mvn -Pjlink clean install`.
 

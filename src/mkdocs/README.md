@@ -19,7 +19,7 @@ real documentation by [`prepare.py`](prepare.py):
   every doc basename must be unique across the whole reactor),
 - cross-document links are rewritten to the flat layout; links to Java source
   files (`../java/.../Foo.java`) are rewritten to the corresponding
-  [Bitbucket](https://bitbucket.org/krake-oss/tentackle) source URL,
+  [GitHub](https://github.com/krake-com/tentackle) source URL,
 - the brand stylesheet, favicon and the bilingual legal pages under
   [`theme/`](theme) are copied in.
 
@@ -77,6 +77,11 @@ repo `README.md` or anything under `theme/` are always picked up.
   choice + consent), disclosed in the bilingual consent banner and the privacy page.
 - The **ResizeObserver polyfill is self-hosted** (see below) — no `unpkg.com`
   request is ever made.
+- The **repository facts are not fetched**: for a github.com `repo_url`, Material
+  would load the stars/forks from `api.github.com` in the visitor's browser. The
+  override [`overrides/partials/source.html`](overrides/partials/source.html)
+  keeps the repository link but not the fetch, and `extra.consent.cookies.github`
+  is off in `mkdocs.yml`.
 - An Impressum and a Datenschutzerklärung (both German/English) are linked from
   the navigation and the footer.
 

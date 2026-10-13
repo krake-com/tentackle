@@ -44,7 +44,7 @@ the [i18n plugin](../../../../tentackle-i18n-maven-plugin/src/main/docs/tentackl
 ## Obtaining It
 
 BundleMonkey is developed as a **separate open-source project** at
-[bitbucket.org/krake-oss/bundlemonkey](https://bitbucket.org/krake-oss/bundlemonkey). It is an
+[github.com/krake-com/bundlemonkey](https://github.com/krake-com/bundlemonkey). It is an
 application, not a library or a Maven plugin, so it is **not published to Maven Central**.
 
 It is distributed as a self-contained, platform-specific
