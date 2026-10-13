@@ -447,6 +447,10 @@ server's update service on startup.
 switcher, password change, the security-administration dialog, and a server-sessions view. `on(clazz)` is the controller
 helper that creates a PDO bound to the controller's domain context.
 
+The theme switcher also toggles the visual and audible
+[input alerts](../../../../tentackle-fx/src/main/docs/fx.md#input-alerts). `GuiHelper` keeps both flags in the local
+Java user preferences, next to the theme, and `MyAppLoginApplication` applies them at startup.
+
 ### 8.2 Middle-tier server — `MyAppServer`
 
 `myapp-server/.../server/MyAppServer.java` extends `ServerApplication`. Its constructor names the service
