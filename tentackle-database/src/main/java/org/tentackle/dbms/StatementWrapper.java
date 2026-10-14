@@ -43,7 +43,7 @@ public class StatementWrapper implements AutoCloseable {
   protected final ManagedConnection con;
 
   /** the sql statement, null if closed. */
-  protected Statement stmt;
+  protected volatile Statement stmt;
 
   /** the SQL string. */
   protected String sql;
@@ -492,9 +492,11 @@ public class StatementWrapper implements AutoCloseable {
     final Statement st = stmt;    // local copy in case of race-condition
     if (st != null) {
       try {
-        if (isMarkedReady()) {
-          LOGGER.warning("statement " + this + " not consumed -> cleanup");
-          ready = false;
+        synchronized (this) {
+          if (ready) {
+            LOGGER.warning("statement " + this + " not consumed -> cleanup");
+            ready = false;
+          }
         }
         st.close();   // closing an already closed statement is ok
       }
