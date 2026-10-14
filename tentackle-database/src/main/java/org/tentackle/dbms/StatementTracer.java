@@ -58,10 +58,9 @@ public class StatementTracer {
 
   private final Set<String> sqlSet = ConcurrentHashMap.newKeySet();           // SQL statements to trace
   private final Map<String, Pattern> regexSet = new ConcurrentHashMap<>();    // regexes for SQLs to trace
-
-  private transient boolean regexPresent;       // to speed up
-  private boolean enabled;                      // tracer is disabled by default
-  private Logger.Level logLevel;                // log level, if the traced statements should be immediately logged
+  private volatile boolean regexPresent;        // to speed up
+  private volatile boolean enabled;             // tracer is disabled by default
+  private volatile Logger.Level logLevel;       // log level, if the traced statements should be immediately logged
 
   /**
    * Creates the tracer.
@@ -130,9 +129,9 @@ public class StatementTracer {
    *
    * @param regex the regular expression
    */
-  public void addRegex(String regex) {
+  public synchronized void addRegex(String regex) {
     regexSet.computeIfAbsent(regex, Pattern::compile);
-    regexPresent = !regexSet.isEmpty();
+    regexPresent = true;
   }
 
   /**
@@ -140,7 +139,7 @@ public class StatementTracer {
    *
    * @param regex the regular expression
    */
-  public void removeRegex(String regex) {
+  public synchronized void removeRegex(String regex) {
     regexSet.remove(regex);
     regexPresent = !regexSet.isEmpty();
   }
@@ -155,10 +154,11 @@ public class StatementTracer {
    */
   public void trace(StatementWrapper statement) {
     if (enabled && isTraceable(statement)) {
+      Logger.Level level = logLevel;
       statement.setStackTrace("\n[" + Thread.currentThread() + "] @ " + new Timestamp() + ": " +
                               ExceptionHelper.getStackTraceAsString(new StatementTraceException(statement.getSession())));
-      if (logLevel != null) {
-        LOGGER.log(logLevel, statement.toString());
+      if (level != null) {
+        LOGGER.log(level, statement.toString());
       }
     }
     else {
