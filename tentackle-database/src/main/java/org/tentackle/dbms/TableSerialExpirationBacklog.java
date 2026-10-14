@@ -207,9 +207,12 @@ public class TableSerialExpirationBacklog {
             // enlarge, if possible
             int newSize = enlargeSize(size);
             if (newSize > size) {
+              // copy in chronological order (oldest first), since the walk in the ring stops at the first null slot
               ExpirationList[] newExpirations = new ExpirationList[newSize];
-              System.arraycopy(expirations, 0, newExpirations, 0, size);
+              System.arraycopy(expirations, nextNdx, newExpirations, 0, size - nextNdx);
+              System.arraycopy(expirations, 0, newExpirations, size - nextNdx, nextNdx);
               expirations = newExpirations;
+              nextNdx = size;
               LOGGER.info("expiration backlog {0} enlarged to {1} entries", this, newSize);
             }
           }

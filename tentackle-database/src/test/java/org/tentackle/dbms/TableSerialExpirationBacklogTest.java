@@ -130,6 +130,30 @@ public class TableSerialExpirationBacklogTest {
   }
 
   @Test
+  public void testEnlargeKeepsChronologicalOrder() {
+    TableSerialExpirationBacklog backlog = new TableSerialExpirationBacklog("test", 4);
+    // 6 sets (s-1, s] with a single tuple at serial s: the ring wraps, the oldest kept set is (2, 3]
+    for (long s = 1; s <= 6; s++) {
+      backlog.addExpiration(s - 1, s, List.of(tuple(s, s)), false);
+    }
+    assertEquals(backlog.toString(), "test[2-6]");
+
+    // outdated query enlarges the ring while it is wrapped
+    assertNull(backlog.getExpiration(0, 6));
+
+    // all sets still in the backlog must be found, not only those up to the wrap position
+    TreeSet<IdSerialTuple> result = backlog.getExpiration(2, 6);
+    assertNotNull(result);
+    assertEquals(result.stream().map(IdSerialTuple::getId).toList(), List.of(3L, 4L, 5L, 6L));
+
+    // adding after the enlargement continues in chronological order
+    backlog.addExpiration(6, 7, List.of(tuple(7, 7)), false);
+    result = backlog.getExpiration(2, 7);
+    assertNotNull(result);
+    assertEquals(result.stream().map(IdSerialTuple::getId).toList(), List.of(3L, 4L, 5L, 6L, 7L));
+  }
+
+  @Test
   public void testToString() {
     assertEquals(newBacklog().toString(), "test[2-5]");
     assertEquals(new TableSerialExpirationBacklog("empty").toString(), "empty[0-0]");
