@@ -83,7 +83,14 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
   @Override
   public synchronized void put(Session session) {
-    getPool(session.getSessionInfo()).put(session);
+    if (session.getPool() instanceof MultiPoolImpl pool && pool.getOwner() == this) {
+      // return to the sub-pool that lent the session, even if it has been replaced in the meantime
+      assertNotShutdown();
+      pool.put(session);
+    }
+    else {
+      getPool(session.getSessionInfo()).put(session);   // not lent by this pool -> fails in DbPool.put
+    }
   }
 
   @Override
@@ -176,7 +183,8 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private SessionPool getPool(SessionInfo sessionInfo) {
     assertNotShutdown();
     MultiPoolImpl pool = poolMap.get(sessionInfo);
-    if (pool == null) {
+    if (pool == null || pool.isShutdown()) {
+      // missing or shut down concurrently by the pool's timeout thread (minimum size < 0) -> replace it
       pool = new MultiPoolImpl(sessionInfo.getUserName() + "@" + name + "(" + count.incrementAndGet() + ")",
                                conMgr, sessionInfo.clone(), sessionGroupId);
       poolMap.put(sessionInfo, pool);
@@ -233,6 +241,10 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, idleMinutes, usageMinutes);
     }
 
+    private MultiUserDbPool getOwner() {
+      return MultiUserDbPool.this;
+    }
+
     @Override
     public boolean isSlotRemovable(PoolSlot<Session> poolSlot) {
       return MultiUserDbPool.this.isSlotRemovable(poolSlot) && super.isSlotRemovable(poolSlot);
@@ -246,7 +258,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       size.addAndGet(-sz);
       // notice that the map is thread-safe: acquiring the monitor of MultiUserDbPool.this here
       // would invert the locking order (MultiUserDbPool -> sub-pool) and could deadlock
-      poolMap.remove(sessionInfo);
+      poolMap.remove(sessionInfo, this);    // only if not already replaced by a new sub-pool, see getPool
     }
 
     @Override
