@@ -23,11 +23,19 @@ import org.testng.annotations.Test;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendVersionInfo;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -137,6 +145,72 @@ public class DefaultConnectionManagerTest {
     assertTrue(conMgr.getNumConnections() > 0, "logging in must have created physical connections");
     conMgr.shutdown();
     assertEquals(conMgr.getNumConnections(), 0, "shutdown must close every managed connection");
+  }
+
+
+  @Test
+  public void testShutdownWhileReopeningDeadConnection() throws Exception {
+    CountDownLatch connecting = new CountDownLatch(1);
+    CountDownLatch proceed = new CountDownLatch(1);
+    AtomicReference<ManagedConnection> reopened = new AtomicReference<>();
+    DefaultConnectionManager conMgr = new DefaultConnectionManager("reopen-shutdown-test", 2, 8, 1, 720, 2160) {
+      private volatile boolean block;
+
+      @Override
+      public void attach(Db session) {
+        block = true;   // only the reopen within attach blocks, not the login
+        super.attach(session);
+      }
+
+      @Override
+      protected Connection connect(BackendInfo backendInfo) throws SQLException {
+        if (block) {
+          connecting.countDown();
+          try {
+            proceed.await();
+          }
+          catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+          }
+        }
+        return super.connect(backendInfo);
+      }
+
+      @Override
+      protected ManagedConnection createManagedConnection(Backend backend, BackendVersionInfo versionInfo, Connection connection) {
+        ManagedConnection mc = super.createManagedConnection(backend, versionInfo, connection);
+        if (block) {
+          reopened.set(mc);
+        }
+        return mc;
+      }
+    };
+
+    Db db = new Db(conMgr, new DefaultSessionInfo());
+    db.attach();
+    db.connection().setDead(true);   // force a reopen on the next attach
+    db.detach();
+
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    Thread attacher = new Thread(() -> {
+      try {
+        db.attach();
+      }
+      catch (Throwable t) {
+        failure.set(t);
+      }
+    });
+    attacher.start();
+    assertTrue(connecting.await(10, TimeUnit.SECONDS), "reopen did not start");
+
+    conMgr.shutdown();    // releases the slot while the connection is being reopened
+    proceed.countDown();
+    attacher.join(10000);
+
+    assertTrue(failure.get() instanceof PersistenceException, "attach must fail after shutdown, got " + failure.get());
+    assertEquals(conMgr.getNumConnections(), 0, "the reopened connection must not be stored in a released slot");
+    assertNotNull(reopened.get());
+    assertTrue(reopened.get().isClosed(), "the reopened connection must be closed");
   }
 
 }

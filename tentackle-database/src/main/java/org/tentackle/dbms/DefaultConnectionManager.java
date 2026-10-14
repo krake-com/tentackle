@@ -104,7 +104,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   protected int freeConCount;
 
 
-  private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
+  private volatile int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
 
   private volatile long attachTimeout;          // max. attach timeout, 0 to disable check (default)
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
@@ -376,24 +376,40 @@ public class DefaultConnectionManager implements ConnectionManager {
      * However, the lengthy close and reopen are not synchronized and therefore will not block other
      * threads from using the connection manager.
      */
-    ManagedConnection con = attachImpl(session);    // <<-- synchronized
+    ManagedConnection oldCon = attachImpl(session);    // <<-- synchronized
 
-    if (con != null) {    // need re-open
+    if (oldCon != null) {    // need re-open
       // not synchronized -> does not block the connection manager
       try {
-        con.close();
+        oldCon.close();
       }
       catch (RuntimeException ex) {
         LOGGER.warning("closing connection failed -> ignored", ex);
       }
       // reopen the connection
-      con = createConnection(session.getBackendInfo());
+      ManagedConnection con = createConnection(session.getBackendInfo());
 
-      synchronized(this) {
-        int index = getIndexFromSession(session);
-        conList[index] = con;
-        LOGGER.info("{0}: connection {1} reopened", this, con);
-        con.attachSession(session);
+      try {
+        synchronized(this) {
+          // the slot may have been released while unsynchronized (shutdown, logout, cleanup)
+          if (shutdownRequested) {
+            throw new PersistenceException(session, this + ": connection manager has been shut down");
+          }
+          int index = getIndexFromSession(session);
+          if (conList[index] != oldCon) {
+            throw new PersistenceException(session, this + ": connection " + oldCon + " released while being reopened");
+          }
+          conList[index] = con;
+          con.setIndex(index);
+          LOGGER.info("{0}: connection {1} reopened", this, con);
+          con.attachSession(session);
+        }
+      }
+      catch (RuntimeException rx) {
+        if (con.getIndex() < 0) {   // not stored in the connection list
+          con.close();
+        }
+        throw rx;
       }
     }
   }
