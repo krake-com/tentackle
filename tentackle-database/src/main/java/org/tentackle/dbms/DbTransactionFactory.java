@@ -75,10 +75,10 @@ public class DbTransactionFactory {
   private final TransactionStatistics statistics;
 
   private TransactionSupervisor transactionSupervisor;
-  private long txIdleInterval = DEFAULT_TX_IDLE_INTERVAL;
-  private int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
+  private volatile long txIdleInterval = DEFAULT_TX_IDLE_INTERVAL;
+  private volatile int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
   private volatile boolean configChanged;
-  private boolean collectingStatistics;
+  private volatile boolean collectingStatistics;
 
   // the transaction counter
   private static final AtomicLong TX_COUNT = new AtomicLong();
@@ -186,8 +186,10 @@ public class DbTransactionFactory {
    * @param txIdleInterval the check interval
    */
   public void setTxIdleInterval(long txIdleInterval) {
-    configChanged = this.txIdleInterval != txIdleInterval;
-    this.txIdleInterval = txIdleInterval;
+    if (this.txIdleInterval != txIdleInterval) {
+      this.txIdleInterval = txIdleInterval;
+      configChanged = true;   // after the assignment: the volatile write publishes the new value
+    }
   }
 
   /**
@@ -205,8 +207,10 @@ public class DbTransactionFactory {
    * @param txIdleTimeout the idle count, &le; 0 to disable
    */
   public void setTxIdleTimeout(int txIdleTimeout) {
-    configChanged = this.txIdleTimeout != txIdleTimeout;
-    this.txIdleTimeout = txIdleTimeout;
+    if (this.txIdleTimeout != txIdleTimeout) {
+      this.txIdleTimeout = txIdleTimeout;
+      configChanged = true;   // after the assignment: the volatile write publishes the new value
+    }
   }
 
   /**
