@@ -287,6 +287,9 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   @Override
   public int login(Db session) {
+    if (shutdownRequested) {
+      throw new PersistenceException(this + ": connection manager has been shut down");
+    }
     session.assertNotRemote();
     BackendInfo backendInfo = session.getBackendInfo();
     if (backendInfo.getUser() == null && backendInfo.getPassword() == null) {

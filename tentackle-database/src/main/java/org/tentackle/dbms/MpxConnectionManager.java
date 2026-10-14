@@ -283,6 +283,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   @Override
   public synchronized int login(Db session) {
+    if (shutdownRequested) {
+      throw new PersistenceException(this + ": connection manager has been shut down");
+    }
     session.assertNotRemote();
     if (!initialized) {
       createConnections(iniSize);
