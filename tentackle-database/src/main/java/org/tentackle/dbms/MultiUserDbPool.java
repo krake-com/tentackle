@@ -77,38 +77,51 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
 
   @Override
-  public synchronized Session get(SessionInfo sessionInfo) {
+  public Session get(SessionInfo sessionInfo) {
     for (;;) {
-      SessionPool pool = getPool(sessionInfo);
-      try {
-        return pool.get();
+      MultiPoolImpl pool;
+      synchronized (this) {
+        pool = getPool(sessionInfo);
       }
-      catch (RuntimeException rx) {
-        if (!pool.isShutdown()) {
-          throw rx;
+      // Not within the monitor of this pool: creating a session may take a while, and other users must not wait.
+      // Within the monitor of the sub-pool instead (the one of AbstractPool#get), since the next session name
+      // must be applied to the session created by get().
+      synchronized (pool) {
+        pool.setNextSessionName(sessionInfo.getSessionName(), determineSessionCloned(sessionInfo, pool));
+        try {
+          return pool.get();
         }
-        // shut down concurrently by the timeout thread, since it was empty -> retry with a new sub-pool
+        catch (RuntimeException rx) {
+          if (!pool.isShutdown()) {
+            throw rx;
+          }
+          // shut down concurrently by the timeout thread, since it was empty -> retry with a new sub-pool
+        }
       }
     }
   }
 
   @Override
-  public synchronized void put(Session session) {
+  public void put(Session session) {
     if (session.getPool() instanceof MultiPoolImpl pool && pool.getOwner() == this) {
       // return to the sub-pool that lent the session, even if it has been replaced in the meantime
       assertNotShutdown();
-      pool.put(session);
+      pool.put(session);    // not within the monitor of this pool: may roll back a pending transaction
     }
     else {
-      getPool(session.getSessionInfo()).put(session);   // not lent by this pool -> fails in DbPool.put
+      SessionPool pool;
+      synchronized (this) {
+        pool = getPool(session.getSessionInfo());
+      }
+      pool.put(session);    // not lent by this pool -> fails in DbPool.put
     }
   }
 
   @Override
   public synchronized void close(SessionInfo sessionInfo) {
-    SessionPool pool = poolMap.get(sessionInfo);
+    MultiPoolImpl pool = poolMap.get(sessionInfo);
     if (pool != null) {
-      pool.shutdown();
+      shutdownSubPool(pool);
     }
   }
 
@@ -136,11 +149,26 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   public synchronized void shutdown() {
     assertNotShutdown();
     shutdown = true;
+    RuntimeException failure = null;
     // iterate a copy: the sub-pools remove themselves from the map while being shut down
-    for (SessionPool pool : new ArrayList<>(poolMap.values())) {
-      pool.shutdown();
+    for (MultiPoolImpl pool : new ArrayList<>(poolMap.values())) {
+      try {
+        shutdownSubPool(pool);
+      }
+      catch (RuntimeException rx) {
+        // shut down the remaining sub-pools anyway, otherwise their sessions would never be closed
+        if (failure == null) {
+          failure = rx;
+        }
+        else {
+          failure.addSuppressed(rx);
+        }
+      }
     }
     poolMap.clear();
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   @Override
@@ -183,6 +211,26 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   }
 
   /**
+   * Shuts down a sub-pool.<br>
+   * The pool's timeout thread shuts down an empty sub-pool on its own (see {@link MultiPoolImpl}),
+   * which may happen concurrently. Since the sub-pool is removed from the pool map only after it has been shut down,
+   * it may still be found in the map. This is not an error.
+   *
+   * @param pool the sub-pool
+   */
+  private void shutdownSubPool(MultiPoolImpl pool) {
+    try {
+      pool.shutdown();
+    }
+    catch (RuntimeException rx) {
+      if (!pool.isShutdown()) {
+        throw rx;
+      }
+      // else: shut down concurrently by the timeout thread
+    }
+  }
+
+  /**
    * Gets the pool for given session info.<br>
    * The pool will be created if missing.
    * <p>
@@ -191,7 +239,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * @param sessionInfo the session info
    * @return the pool, never null
    */
-  private SessionPool getPool(SessionInfo sessionInfo) {
+  private MultiPoolImpl getPool(SessionInfo sessionInfo) {
     assertNotShutdown();
     MultiPoolImpl pool = poolMap.get(sessionInfo);
     if (pool == null || pool.isShutdown()) {
@@ -199,23 +247,8 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       pool = new MultiPoolImpl(sessionInfo.getUserName() + "@" + name + "(" + count.incrementAndGet() + ")",
                                conMgr, sessionInfo.clone(), sessionGroupId);
       poolMap.put(sessionInfo, pool);
-      determineSize();
     }
-    pool.setNextSessionName(sessionInfo.getSessionName(), determineSessionCloned(sessionInfo, pool));
     return pool;
-  }
-
-  /**
-   * Re-calculates the total number of sessions of all sub pools.
-   * <p>
-   * Notice: the method is invoked synchronized for <code>this</code>.{@link MultiUserSessionPool}!
-   */
-  private void determineSize() {
-    int sz = 0;
-    for (SessionPool pool : poolMap.values()) {
-      sz += pool.getSize();
-    }
-    size.set(sz);
   }
 
 
@@ -245,6 +278,12 @@ public class MultiUserDbPool implements MultiUserSessionPool {
      */
     private final Map<String, Integer> nameCounterMap = new HashMap<>();
 
+    /**
+     * Number of sessions of this sub-pool counted in the total size of the multi-user pool.<br>
+     * Guarded by the monitor of this sub-pool.
+     */
+    private int contributed;
+
     private MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
       // iniSize 0 -> make sure that createSessionInfo uses nextSessionName
       // minSize -1 -> shutdown sub-pool when all sessions closed
@@ -263,9 +302,14 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
     @Override
     public void shutdown() {
-      int sz = getSize();
       SessionInfo sessionInfo = getSessionInfo();
       super.shutdown();
+      int sz;
+      synchronized (this) {
+        // no more sessions created or removed once shut down
+        sz = contributed;
+        contributed = 0;
+      }
       size.addAndGet(-sz);
       // notice that the map is thread-safe: acquiring the monitor of MultiUserDbPool.this here
       // would invert the locking order (MultiUserDbPool -> sub-pool) and could deadlock
@@ -295,17 +339,6 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
     @Override
     protected int createSlots(int num) {
-      if (maximumTotalSize > 0) {
-        int sz = size.get();
-        if (sz + num > maximumTotalSize) {
-          num = maximumTotalSize - sz;
-          if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maximumTotalSize + " reached");
-            pex.setTemporary(true);
-            throw pex;
-          }
-        }
-      }
       if (maximumSize > 0) {
         int sz = getSize();
         if (sz + num > maximumSize) {
@@ -317,14 +350,39 @@ public class MultiUserDbPool implements MultiUserSessionPool {
           }
         }
       }
-      int created = super.createSlots(num);
-      size.addAndGet(created);
+      int reserved = 0;
+      if (maximumTotalSize > 0 && num > 0) {
+        // reserve atomically: the sub-pools create their sessions concurrently
+        for (;;) {
+          int sz = size.get();
+          int n = Math.min(num, maximumTotalSize - sz);
+          if (n <= 0) {
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maximumTotalSize + " reached");
+            pex.setTemporary(true);
+            throw pex;
+          }
+          if (size.compareAndSet(sz, sz + n)) {
+            reserved = n;
+            num = n;
+            break;
+          }
+        }
+      }
+      int created = 0;
+      try {
+        created = super.createSlots(num);
+      }
+      finally {
+        size.addAndGet(created - reserved);   // release the reservation, count the created sessions
+        contributed += created;
+      }
       return created;
     }
 
     @Override
     protected void removeSlotIndex(int index) {
       super.removeSlotIndex(index);
+      contributed--;
       size.decrementAndGet();
     }
 

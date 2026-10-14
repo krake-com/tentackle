@@ -118,7 +118,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    *
    * @param session the session persisting the modification, null if thread-local session (never remote)
    * @param name a unique name to track modifications
-   * @return the modification serial, could be higher already
+   * @return the modification serial assigned to this modification, unique per name (the counter could be higher already)
    */
   long countModification(Session session, String name);
 

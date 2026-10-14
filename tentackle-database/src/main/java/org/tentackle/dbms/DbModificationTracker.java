@@ -307,9 +307,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private volatile int remoteDelegateId;                            // the delegate ID
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
   private final Object shutdownRunnablesLock;                       // guards shutdownRunnables
-  private final Object configurationLock;                           // serializes configuration tasks if the tracker isn't running
+  private final Object configurationLock;                           // serializes the configuration tasks
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
+  private final Set<ModificationTally> retiredCounters;             // replaced counters with pending counts left
   private final Set<ListenerEntry> listenerEntries;                 // modification listeners, sorted by priority
   private final Map<String, TableEntry> tableEntriesByName;         // the table entries mapped by (table)name
   private final Map<Long, TableEntry> tableEntriesById;             // the table entries mapped by ID
@@ -344,6 +345,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
     countersByName = new ConcurrentHashMap<>();
     countersById = new ConcurrentHashMap<>();
+    retiredCounters = ConcurrentHashMap.newKeySet();
     listenerEntries = new ConcurrentSkipListSet<>();    // sorted like a TreeSet, but iterable while being modified
     delayedListeners = new HashMap<>();
     delayedEvents = new TreeSet<>();
@@ -392,8 +394,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       remoteConfigPending = true;
     }
     // clear counters
-    countersById.clear();
-    countersByName.clear();
+    retireCounters();
     // check if the modification table is initialized
     try {
       masterModification = new DbModification((Db) session);
@@ -510,8 +511,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public void setLocalClientMode(boolean localClientMode) {
     if (this.localClientMode != localClientMode) {
       this.localClientMode = localClientMode;
-      countersByName.clear();
-      countersById.clear();
+      synchronized (configurationLock) {    // must not run concurrently to configureCounter
+        retireCounters();
+      }
       LOGGER.info(getName() + " running in {0} mode", localClientMode ? "local-client" : "optimized");
     }
   }
@@ -612,20 +614,34 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    *
    * @param session the session persisting the modification, null if thread-local session
    * @param tableName the table name
-   * @return the table serial (guessed lowest, could be higher already)
+   * @return the table serial assigned to the modification (the counter could be higher already)
    */
   @Override
   public long countModification(Session session, String tableName) {
-    ModificationTally counter = getCounter(tableName);
-    // put pending count
-    counter.countPending(session);
-    if (localClientMode || !isAlive()) {
-      // immediate mode or no poll() because not alive -> persist now
+    ModificationTally counter;
+    long serial;
+    do {
+      counter = getCounter(tableName);
+      // put pending count
+      serial = counter.countPending(session);
+    } while (serial == 0);   // retired concurrently: count by its successor
+    if (localClientMode) {
+      // immediate mode -> persist now
       counter.performPendingCount();
     }
-    // else optimize:
-    // return the guessed minimum table serial (pending count is done in next poll())
-    return counter.getLatestSerial();
+    else if (!isAlive()) {
+      // no poll() because not alive -> persist now, unless the tracker thread has been started meanwhile.
+      // The tracker thread owns the session from then on, see start().
+      synchronized (configurationLock) {
+        if (!isAlive()) {
+          counter.performPendingCount();
+        }
+      }
+    }
+    // else optimize: pending count is done in next poll()
+    // Notice: the serial must be the one assigned by countPending, not the counter's latest serial,
+    // which may include counts of concurrent modifications already, resulting in duplicate tableserials.
+    return serial;
   }
 
   @Override
@@ -647,6 +663,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     for (ModificationTally counter : countersByName.values()) {
       counter.rollbackPending(session, txNumber);
     }
+    for (ModificationTally counter : retiredCounters) {
+      counter.rollbackPending(session, txNumber);
+    }
   }
 
   /**
@@ -654,29 +673,21 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   @Override
   public void invalidate() {
-    AbstractSessionTask task = new AbstractSessionTask() {
+    // a configuration task: it replaces the counters and uses the tracker's session
+    runConfigurationTask(new ConfigurationTask() {
       @Override
-      public void run() {
-        countersByName.clear();
-        countersById.clear();
+      protected void configure() {
+        retireCounters();
         if (masterEntry != null) {
           masterEntry.serial = 1;
         }
-        Session session = getSession();
-        if (session instanceof Db db && !db.isRemote()) {
+        Db db = DbModificationTracker.this.getSession();
+        if (!db.isRemote()) {
           DbModification.initializeModificationTable(db);
         }
         refreshTableEntries();
       }
-    };
-
-    if (isTaskDispatcherThread() || !isAlive()) {
-      task.setSession(getSession());
-      task.run();
-    }
-    else  {
-      addTaskAndWait(task);
-    }
+    });
   }
 
 
@@ -972,6 +983,28 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     for (ModificationTally counter: countersByName.values()) {
       counter.performPendingCount();
     }
+    for (Iterator<ModificationTally> iter = retiredCounters.iterator(); iter.hasNext(); ) {
+      ModificationTally counter = iter.next();
+      counter.performPendingCount();
+      if (counter.isRetiredAndDone()) {
+        iter.remove();
+      }
+    }
+  }
+
+  /**
+   * Removes all counters.<br>
+   * Other threads may still be counting on them, so they are retired rather than dropped:
+   * the pending counts are performed until none are left, and new counts go to their successors.
+   */
+  private void retireCounters() {
+    for (Iterator<ModificationTally> iter = countersByName.values().iterator(); iter.hasNext(); ) {
+      ModificationTally counter = iter.next();
+      retiredCounters.add(counter);   // before retiring: counts accepted until then must not get lost
+      iter.remove();
+      counter.retire();
+    }
+    countersById.clear();
   }
 
   /**
@@ -1122,15 +1155,31 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   private void refreshTableEntries() {
     remoteSerials = null;
+    boolean isLocalSession = !getSession().isRemote();
+    List<TableEntry> rekeyedEntries = new ArrayList<>();
     for (TableEntry entry: tableEntriesByName.values()) {
-      if (!getSession().isRemote()) {
+      if (isLocalSession) {
         getCounter(entry.tableName);
       }
       IdSerialTuple idSer = selectIdSerialForName(entry.tableName);
+      if (idSer == null && isLocalSession) {
+        // deleted by the re-initialization: create it now to get its new id, like configureName does
+        addToModificationTable(entry.tableName);
+        idSer = selectIdSerialForName(entry.tableName);
+      }
       if (idSer != null) {
+        if (entry.id != idSer.getId()) {
+          // the modification table was re-initialized: the entry got a new id
+          tableEntriesById.remove(entry.id, entry);
+          rekeyedEntries.add(entry);
+        }
         entry.id = idSer.getId();
         entry.serial = idSer.getSerial();
       }
+    }
+    // not before all stale ids are removed: the new id of an entry may be the old id of another one
+    for (TableEntry entry : rekeyedEntries) {
+      tableEntriesById.put(entry.id, entry);
     }
   }
 
@@ -1156,9 +1205,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return the counter
    */
   private ModificationTally configureCounter(String tableName) {
-    Task task = new AbstractSessionTask() {
+    Task task = new ConfigurationTask() {
       @Override
-      public void run() {
+      protected void configure() {
         if (countersByName.get(tableName) == null) {   // another task may have configured it in the meantime
           ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
           IdSerialTuple idSer = selectIdSerialForName(tableName);
@@ -1178,14 +1227,28 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
+   * Adds a missing row for a name to the modification table.<br>
+   * The counter was registered by its id before the row existed, i.e., with id 0,
+   * so it is registered again by the id of the new row.
+   *
+   * @param name the name
+   */
+  private void addToModificationTable(String name) {
+    ModificationTally counter = getCounter(name);
+    counter.addToModificationTable();
+    countersById.remove(0L, counter);
+    countersById.put(counter.getId(), counter);
+  }
+
+  /**
    * Configures the master entry.
    *
    * @return the master entry, never null
    */
   private TableEntry configureMaster() {
-    Task task = new AbstractSessionTask() {
+    Task task = new ConfigurationTask() {
       @Override
-      public void run() {
+      protected void configure() {
         if (masterEntry == null) {   // another task may have configured it in the meantime
           long serial = selectMasterSerial();
           masterEntry = new TableEntry(null, 0, serial);
@@ -1208,14 +1271,14 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return the table entry, never null
    */
   private TableEntry configureName(String name) {
-    Task task = new AbstractSessionTask() {
+    Task task = new ConfigurationTask() {
       @Override
-      public void run() {
+      protected void configure() {
         if (tableEntriesByName.get(name) == null) {   // another task may have configured it in the meantime
           IdSerialTuple idSer = selectIdSerialForName(name);
           if (idSer == null) {
             // missing: create it
-            getCounter(name).addToModificationTable();
+            addToModificationTable(name);
             idSer = selectIdSerialForName(name);
           }
           TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
@@ -1243,25 +1306,70 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * {@link ListenerEntry} created for it. Its serial would never be updated again by {@link #poll()},
    * so the listener would fire on every poll from then on.
    * <p>
-   * Tasks are serialized by the tracker thread, which executes them one after the other.
-   * Only if the tracker is not running, they are executed by the invoking thread and must be
-   * serialized explicitly. Notice that the tracker thread never acquires that lock (it always
-   * takes the first branch below), so waiting for a task cannot deadlock against it.
+   * Tasks are executed by the tracker thread, if it is running, or by the invoking thread otherwise.
+   * The tracker thread owns the tracker's session, so it must not be started while another thread
+   * executes a task: {@link #start()} acquires the configuration lock as well.
+   * The tasks are serialized by the configuration lock, see {@link ConfigurationTask}.
+   * A thread holding the lock already executes nested tasks itself: waiting for the tracker thread
+   * would deadlock, since the tracker thread waits for the lock as well.
    *
    * @param task the configuration task
    */
   private void runConfigurationTask(Task task) {
-    if (isTaskDispatcherThread()) {
-      task.run();               // we are the tracker thread: already serialized
+    if (isTaskDispatcherThread() || Thread.holdsLock(configurationLock)) {
+      task.run();               // already serialized or nested
+      return;
     }
-    else if (isAlive()) {
-      addTaskAndWait(task);     // serialized by the tracker thread
-    }
-    else {
-      synchronized (configurationLock) {
-        task.run();             // no tracker thread to serialize us
+    synchronized (configurationLock) {
+      if (!isAlive()) {
+        task.run();             // no tracker thread to run it, and it cannot be started meanwhile
+        return;
       }
     }
+    addTaskAndWait(task);       // executed by the tracker thread
+  }
+
+  /**
+   * Starts the tracker thread.<br>
+   * Waits for configuration tasks executed by other threads, since the tracker thread
+   * takes over the session they are using.
+   */
+  @Override
+  public void start() {
+    synchronized (configurationLock) {
+      super.start();
+    }
+  }
+
+  /**
+   * Gets the lock serializing the use of the tracker's session by threads other than the tracker thread.<br>
+   * The session is not thread-safe. While the tracker thread is not running, the configuration tasks
+   * and the flushes of the pending counts (see {@link ModificationTally#performPendingCount()})
+   * are executed by the invoking threads, all using the tracker's session.
+   *
+   * @return the lock
+   */
+  Object getSessionLock() {
+    return configurationLock;
+  }
+
+  /**
+   * A configuration task.<br>
+   * Serialized by the configuration lock, no matter which thread executes it.
+   */
+  private abstract class ConfigurationTask extends AbstractSessionTask {
+
+    @Override
+    public void run() {
+      synchronized (configurationLock) {
+        configure();
+      }
+    }
+
+    /**
+     * Performs the configuration.
+     */
+    protected abstract void configure();
   }
 
   /**

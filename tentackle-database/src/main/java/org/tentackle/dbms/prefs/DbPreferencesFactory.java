@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
@@ -130,10 +131,10 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   private static class Root {
 
-    private static long lastSerial;     // last serial
+    private static final AtomicLong LAST_SERIAL = new AtomicLong();   // last serial, shared by all roots
 
     private final DbPreferences node;   // the root node holding the whole tree
-    private long serial;                // the serial version of the whole tree
+    private long serial;                // the serial version of the whole tree (guarded by the factory)
 
     /**
      * Creates a root node.
@@ -145,8 +146,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       countUpdate();
     }
 
-    private synchronized void countUpdate() {
-      serial = ++lastSerial;
+    private void countUpdate() {
+      serial = LAST_SERIAL.incrementAndGet();
     }
   }
 
@@ -160,8 +161,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private final Map<ListenerKey,Set<NodeChangeListener>> nodeListeners;       // listeners for added/removed nodes
   private final Map<ListenerKey,Set<PreferenceChangeListener>> prefListeners; // listeners for changed keys
 
+  private List<Runnable> pendingEvents = new ArrayList<>();   // listener invocations to fire once the monitor is released
+
   private long nodeTableSerial;             // highest tableSerial of _all_ DbPreferencesNodes or remote repo
   private long keyTableSerial;              // highest tableSerial of _all_ DbPreferencesKeys
+
+  private Db fallbackDb;                    // session used if there is no thread-local session (guarded by this factory)
 
 
   /**
@@ -369,24 +374,23 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param node the added or removed node
    */
   public void nodeChanged(DbPreferences node) {
-    DbPreferences parent = node.parent();
-    if (parent != null) {
-      Set<NodeChangeListener> listeners = nodeListeners.get(new ListenerKey(parent));
-      if (listeners != null) {
-        NodeChangeEvent ev = new NodeChangeEvent(node.parent(), node);
-        for (NodeChangeListener listener: listeners) {
-          if (node.getPersistentNode().isRemoved()) {
-            listener.childRemoved(ev);
-          }
-          else {
-            listener.childAdded(ev);
+    synchronized (this) {
+      DbPreferences parent = node.parent();
+      if (parent != null) {
+        Set<NodeChangeListener> listeners = nodeListeners.get(new ListenerKey(parent));
+        if (listeners != null) {
+          NodeChangeEvent ev = new NodeChangeEvent(parent, node);
+          boolean removed = node.getPersistentNode().isRemoved();
+          for (NodeChangeListener listener : listeners) {
+            pendingEvents.add(removed ? () -> listener.childRemoved(ev) : () -> listener.childAdded(ev));
           }
         }
       }
+      if (node.isRootNode() && node.getPersistentNode().isRemoved()) {
+        removeRoot(node);
+      }
     }
-    if (node.isRootNode() && node.getPersistentNode().isRemoved()) {
-      removeRoot(node);
-    }
+    firePendingEvents();
   }
 
   /**
@@ -396,23 +400,94 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param key the changed key
    */
   public void keyChanged(DbPreferences node, DbPreferencesKey key) {
-    Set<PreferenceChangeListener> listeners = prefListeners.get(new ListenerKey(node));
-    if (listeners != null) {
-      PreferenceChangeEvent ev = new PreferenceChangeEvent(node, key.getKey(), key.isRemoved() ? null : key.getValue());
-      for (PreferenceChangeListener listener: listeners) {
-        listener.preferenceChange(ev);
+    synchronized (this) {
+      Set<PreferenceChangeListener> listeners = prefListeners.get(new ListenerKey(node));
+      if (listeners != null) {
+        PreferenceChangeEvent ev = new PreferenceChangeEvent(node, key.getKey(), key.isRemoved() ? null : key.getValue());
+        for (PreferenceChangeListener listener : listeners) {
+          pendingEvents.add(() -> listener.preferenceChange(ev));
+        }
+      }
+    }
+    firePendingEvents();
+  }
+
+  /**
+   * Fires the listener invocations queued by {@link #nodeChanged} and {@link #keyChanged}.<br>
+   * The listeners are invoked without holding the monitor of this factory, since they are application code.
+   * A listener waiting for another thread that accesses the preferences would deadlock otherwise.
+   * If the monitor is held by the current thread, the invocations stay queued until the outermost
+   * synchronized operation completes.
+   */
+  private void firePendingEvents() {
+    if (Thread.holdsLock(this)) {
+      return;   // fired by the outermost operation, once the monitor is released
+    }
+    List<Runnable> events;
+    synchronized (this) {
+      if (pendingEvents.isEmpty()) {
+        return;
+      }
+      events = pendingEvents;
+      pendingEvents = new ArrayList<>();
+    }
+    for (Runnable event : events) {
+      try {
+        event.run();
+      }
+      catch (RuntimeException rex) {
+        LOGGER.severe("preferences listener failed", rex);
       }
     }
   }
 
   /**
+   * Discards the listener invocations queued since the given mark.<br>
+   * Used if the operation that queued them failed, i.e., the changes were not persisted.
+   * Must be invoked with the monitor of this factory held.
+   *
+   * @param mark the number of pending invocations before the operation
+   */
+  private void discardPendingEvents(int mark) {
+    if (pendingEvents.size() > mark) {
+      pendingEvents.subList(mark, pendingEvents.size()).clear();
+    }
+  }
+
+  /**
    * Flushes a node and all of its sub-nodes to the backing store.
+   * <p>
+   * The change listeners are invoked once the flush completed, without holding the monitor of this factory.
+   * If the flush fails, they are not invoked at all.
    *
    * @param node the preferences node
    * @param sync true if load modifications from storage before flush
    * @throws BackingStoreException if failed
    */
-  public synchronized void flush(DbPreferences node, boolean sync) throws BackingStoreException {
+  public void flush(DbPreferences node, boolean sync) throws BackingStoreException {
+    try {
+      flushSynchronized(node, sync);
+    }
+    finally {
+      firePendingEvents();
+    }
+  }
+
+  private synchronized void flushSynchronized(DbPreferences node, boolean sync) throws BackingStoreException {
+    int eventMark = pendingEvents.size();
+    boolean flushed = false;
+    try {
+      flushImpl(node, sync);
+      flushed = true;
+    }
+    finally {
+      if (!flushed) {
+        discardPendingEvents(eventMark);
+      }
+    }
+  }
+
+  private void flushImpl(DbPreferences node, boolean sync) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
     try {
       boolean updated = db.transaction(() -> {
@@ -529,12 +604,35 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Updates the repository.<br>
    * Invoked whenever the data in prefnode or prefkey has changed.
+   * <p>
+   * The change listeners are invoked once the repository is updated, without holding the monitor of this factory.
    *
    * @param db the session
    * @param nodeMaxSerial the new table serial for prefnodes
    * @param keyMaxSerial the new table serial for prefkeys
    */
-  protected synchronized void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
+  protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
+    try {
+      synchronized (this) {
+        int eventMark = pendingEvents.size();
+        boolean updated = false;
+        try {
+          updateRepositoryImpl(db, nodeMaxSerial, keyMaxSerial);
+          updated = true;
+        }
+        finally {
+          if (!updated) {
+            discardPendingEvents(eventMark);
+          }
+        }
+      }
+    }
+    finally {
+      firePendingEvents();
+    }
+  }
+
+  private void updateRepositoryImpl(Db db, long nodeMaxSerial, long keyMaxSerial) {
     if (nodeMaxSerial != nodeTableSerial || keyMaxSerial != keyTableSerial) {
       if (db.isRemote()) {
         // rebuild all roots if serials don't match with the ones in the remote repository
@@ -641,7 +739,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Requests for a session to work with.<br>
    * By default, the thread-local session is used.
-   * If there is no default session, the modification tracker's session is used.
+   * If there is no thread-local session, a session cloned from the modification tracker's session is used,
+   * see {@link #getFallbackDb()}.
    * <p>
    * In preparation for replication layers, a requested session must be released after use.
    *
@@ -655,11 +754,34 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       if (forUser) {
         throw new PersistenceException("no thread-local session for " + Thread.currentThread());
       }
-      // no thread-local session: use the one from the mod tracker
-      db = (Db) ModificationTracker.getInstance().getSession();
-      if (db == null) {
-        throw new PersistenceException("no session for " + ModificationTracker.getInstance());
+      db = getFallbackDb();
+    }
+    return db;
+  }
+
+  /**
+   * Gets the session used if there is no thread-local session.
+   * <p>
+   * The modification tracker's session cannot be used directly, since it is owned by the tracker thread.
+   * Borrowing it via {@link ModificationTracker#requestSession()} would deadlock: the tracker thread invokes
+   * the modification listener of this factory, which needs the monitor of this factory, while the borrowing
+   * thread holds the monitor and waits for the tracker. Instead, a dedicated session is cloned from the
+   * tracker's session. It is used with the monitor of this factory held only (or by the constructor,
+   * before the factory is published), and closed when the tracker terminates.
+   *
+   * @return the session, never null
+   */
+  private synchronized Db getFallbackDb() {
+    Db db = fallbackDb;
+    if (db == null || !db.isOpen()) {
+      ModificationTracker tracker = ModificationTracker.getInstance();
+      Db trackerDb = (Db) tracker.getSession();
+      if (trackerDb == null) {
+        throw new PersistenceException("no session for " + tracker);
       }
+      Db clonedDb = trackerDb.clone("preferences");
+      tracker.addShutdownRunnable(clonedDb::close);
+      fallbackDb = db = clonedDb;
     }
     return db;
   }

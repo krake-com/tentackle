@@ -27,6 +27,8 @@ import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Local transaction status.
@@ -39,14 +41,28 @@ public class DbTransaction extends AbstractTransaction {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * The completion state.
+   */
+  private enum Completion {
+    /** neither completed nor timed out. */
+    RUNNING,
+    /** completed by the session (committed or rolled back). */
+    COMPLETED,
+    /** timed out by the transaction supervisor. */
+    TIMED_OUT
+  }
+
   private transient final Db session;             // the session
   private transient final DbBatch batch;          // statement batch, null if no batching (default)
   private transient final long creationTime;      // epochal time in ms when started/created
   private transient final TimeKeeper timeKeeper;  // to measure the exact duration
   private transient int handleCount;              // the last handle number
-  private transient volatile boolean alive;       // the alive-flag to detect idle transactions
+  private transient int savepointRollbackCount;   // number of rollbacks to savepoints
+  private transient final AtomicBoolean alive;    // the alive-flag to detect idle transactions
   private transient boolean global;               // true if part of a global transaction
   private transient boolean globalOwner;          // true if this transaction started the global transaction
+  private transient final AtomicReference<Completion> completion;   // completed by the session or timed out by the supervisor
 
   private transient Map<DbTransactionHandle, PersistenceVisitor> visitors;  // the visitors
   private transient Map<SavepointHandle, Savepoint> savepoints;             // the savepoints
@@ -67,6 +83,8 @@ public class DbTransaction extends AbstractTransaction {
     batch = createBatch();    // null if no batching
     creationTime = System.currentTimeMillis();
     timeKeeper = new TimeKeeper();
+    completion = new AtomicReference<>(Completion.RUNNING);
+    alive = new AtomicBoolean();
   }
 
 
@@ -169,6 +187,23 @@ public class DbTransaction extends AbstractTransaction {
   }
 
   /**
+   * Counts a rollback to a savepoint.
+   */
+  public void countSavepointRollback() {
+    savepointRollbackCount++;
+  }
+
+  /**
+   * Gets the number of rollbacks to savepoints.<br>
+   * Allows detecting whether a savepoint has been rolled back since a given point in time.
+   *
+   * @return the number of savepoint rollbacks within this transaction
+   */
+  public int getSavepointRollbackCount() {
+    return savepointRollbackCount;
+  }
+
+  /**
    * Registers a {@link PersistenceVisitor} to be invoked just before
    * performing a persistence operation.
    *
@@ -213,7 +248,39 @@ public class DbTransaction extends AbstractTransaction {
    */
   public void commit() {
     executeBatch();
+    if (!complete()) {
+      throw new PersistenceException(session, this + " timed out and has been rolled back by the transaction supervisor");
+    }
     finishCommit();
+  }
+
+  /**
+   * Marks this transaction as completed by its session.<br>
+   * From now on, the transaction supervisor will not time it out anymore.
+   *
+   * @return true if completed, false if already timed out by the transaction supervisor
+   */
+  public boolean complete() {
+    return completion.compareAndSet(Completion.RUNNING, Completion.COMPLETED) || completion.get() == Completion.COMPLETED;
+  }
+
+  /**
+   * Marks this transaction as timed out by the transaction supervisor.<br>
+   * From now on, the transaction cannot be committed anymore.
+   *
+   * @return true if timed out, false if already completed by its session
+   */
+  public boolean timeOut() {
+    return completion.compareAndSet(Completion.RUNNING, Completion.TIMED_OUT);
+  }
+
+  /**
+   * Returns whether this transaction has been timed out by the transaction supervisor.
+   *
+   * @return true if timed out
+   */
+  public boolean isTimedOut() {
+    return completion.get() == Completion.TIMED_OUT;
   }
 
   /**
@@ -273,7 +340,7 @@ public class DbTransaction extends AbstractTransaction {
    * @param alive true if alive, false if reset after polling
    */
   public void setAlive(boolean alive) {
-    this.alive = alive;
+    this.alive.set(alive);
   }
 
   /**
@@ -282,7 +349,18 @@ public class DbTransaction extends AbstractTransaction {
    * @return true if alive, false if reset after polling and not marked alive since then
    */
   public boolean isAlive() {
-    return alive;
+    return alive.get();
+  }
+
+  /**
+   * Gets and resets the alive-flag atomically.<br>
+   * Used by the transaction supervisor, so that the transaction cannot be marked alive
+   * in between and the mark gets lost.
+   *
+   * @return true if the transaction was alive since the last poll
+   */
+  public boolean pollAlive() {
+    return alive.getAndSet(false);
   }
 
 

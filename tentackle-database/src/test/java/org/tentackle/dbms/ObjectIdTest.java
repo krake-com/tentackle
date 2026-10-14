@@ -23,6 +23,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SavepointHandle;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlType;
 
@@ -132,6 +133,68 @@ public class ObjectIdTest extends AbstractDbTest {
     db.commit(voucher);
     assertEquals(selectPersistedValue(db, TABLE_NAME), third,
                  "commit must flush the final counter value via the registered pre-commit hook");
+  }
+
+
+  @Test
+  public void testNextIdFromPreCommitAfterFlushIsPersisted() {
+    Db db = getSession();
+    ObjectId source = new ObjectId(TABLE_NAME);
+    long voucher = db.begin("nextIdPreCommitAfterFlushTest");
+
+    source.nextId(db);
+    source.nextId(db);    // registers the final update at the nested tx level of nextId()
+
+    // registered at the outer tx level: runs after the final update of the deeper level
+    long[] fromPreCommit = new long[1];
+    db.preCommit(_ -> fromPreCommit[0] = source.nextId(db));
+
+    db.commit(voucher);
+    assertEquals(selectPersistedValue(db, TABLE_NAME), fromPreCommit[0],
+                 "an id handed out after the final update must be persisted, or the next transaction would get it again");
+    assertEquals(source.nextId(db), fromPreCommit[0] + 1, "the next transaction must continue after the last id");
+  }
+
+
+  @Test
+  public void testNextIdFromPreCommitWithoutFlushIsPersisted() {
+    Db db = getSession();
+    ObjectId source = new ObjectId(TABLE_NAME);
+    long voucher = db.begin("nextIdPreCommitWithoutFlushTest");
+
+    long first = source.nextId(db);   // updates the database directly, no final update registered yet
+
+    // the final update cannot be registered from within a pre-commit anymore
+    long[] fromPreCommit = new long[1];
+    db.preCommit(_ -> fromPreCommit[0] = source.nextId(db));
+
+    db.commit(voucher);
+    assertEquals(fromPreCommit[0], first + 1);
+    assertEquals(selectPersistedValue(db, TABLE_NAME), fromPreCommit[0],
+                 "an id handed out from within a pre-commit must be persisted");
+  }
+
+
+  @Test
+  public void testNextIdAfterSavepointRollbackKeepsEarlierIds() {
+    Db db = getSession();
+    ObjectId source = new ObjectId(TABLE_NAME);
+    long voucher = db.begin("savepointKeepsEarlierIdsTest");
+
+    source.nextId(db);
+    long beforeSavepoint = source.nextId(db);   // counted in memory, still valid after the rollback below
+    SavepointHandle savepoint = db.setSavepoint();
+    source.nextId(db);
+    db.rollback(savepoint);
+
+    // the counter is synchronized with the database, which still holds the value before the in-memory counting
+    long afterRollback = source.nextId(db);
+    assertTrue(afterRollback > beforeSavepoint,
+               "id " + afterRollback + " was already returned before the savepoint (" + beforeSavepoint + ")");
+
+    db.commit(voucher);
+    assertEquals(selectPersistedValue(db, TABLE_NAME), afterRollback,
+                 "after commit the persisted counter must match the last id returned");
   }
 
 

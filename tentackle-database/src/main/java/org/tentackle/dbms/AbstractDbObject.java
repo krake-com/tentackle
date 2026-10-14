@@ -2169,7 +2169,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       if (getSession().isRemote()) {
         // remote apps always use the backlog
         TreeSet<IdSerialTuple> expSet = getClassVariables().expirationBacklog.getExpiration(oldSerial, maxSerial);
-        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getId()) < maxSerial) {
+        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getSerial()) < maxSerial) {
           // no backlog info or backlog info is outdated (or there is a gap...)
           exp = getRemoteDelegate().getExpiredTableSerials(oldSerial, maxSerial);
           // exp is always != null and already contains the merged history from the local server
@@ -2185,7 +2185,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       else {
         boolean useBacklog = !ModificationTracker.getInstance().isLocalClientMode();
         TreeSet<IdSerialTuple> expSet = useBacklog ? getClassVariables().expirationBacklog.getExpiration(oldSerial, maxSerial) : null;
-        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getId()) < maxSerial) {
+        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getSerial()) < maxSerial) {
           // no backlog info or backlog info is outdated (or there is a gap...)
           exp = selectExpiredTableSerials(oldSerial, maxSerial);
           if (useBacklog) {

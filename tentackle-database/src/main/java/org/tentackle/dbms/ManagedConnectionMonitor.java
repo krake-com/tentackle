@@ -197,7 +197,9 @@ public class ManagedConnectionMonitor extends Thread {
         managedConnection.isConnectionVerificationNecessary(currentTimeMillis) &&
         currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
 
-      if (managedConnection.verifyConnection()) {
+      // the connection manager makes sure that the connection isn't attached while being verified
+      managedConnection.getManager().verifyIdleConnection(managedConnection);
+      if (!managedConnection.isDead()) {
         LOGGER.fine("{0} verified", managedConnection);
       }
       // else marked DEAD! -> will be cleaned up when used again

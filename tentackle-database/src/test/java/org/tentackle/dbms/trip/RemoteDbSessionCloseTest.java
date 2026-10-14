@@ -18,6 +18,8 @@
 
 package org.tentackle.dbms.trip;
 
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import org.tentackle.dbms.ConnectionManager;
@@ -27,11 +29,7 @@ import org.tentackle.dbms.DefaultConnectionManager;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.trip.Registry;
-import org.tentackle.trip.Transport;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Proxy;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +57,18 @@ public class RemoteDbSessionCloseTest {
    * before the fields of the subclass are initialized.
    */
   private static volatile Db nextDb;
+
+  private Session previousSession;    // the thread's current session, replaced by the constructor of RemoteDbSessionImpl
+
+  @BeforeMethod
+  public void saveCurrentSession() {
+    previousSession = Session.getCurrentSession();
+  }
+
+  @AfterMethod(alwaysRun = true)
+  public void restoreCurrentSession() {
+    Session.setCurrentSession(previousSession);   // don't leave the closed session for the other tests
+  }
 
 
   /**
@@ -114,12 +124,7 @@ public class RemoteDbSessionCloseTest {
 
     try {
       nextDb = (Db) pool.get();
-      TestSession session = new TestSession(new RemoteDbConnectionImpl(null, createTransport()) {
-        @Override
-        public RemoteDbSession createSession(SessionInfo clientInfo) {
-          throw new UnsupportedOperationException();
-        }
-      }, sessionInfo);
+      TestSession session = new TestSession(RemoteSessionTestSupport.createConnection(), sessionInfo);
       assertTrue(session.isOpen());
 
       AtomicReference<Throwable> failure = new AtomicReference<>();
@@ -167,33 +172,6 @@ public class RemoteDbSessionCloseTest {
       pool.shutdown();
       conMgr.shutdown();
     }
-  }
-
-
-  /**
-   * Creates a transport whose registry knows no delegates.
-   *
-   * @return the transport
-   */
-  private static Transport createTransport() {
-    Registry registry = createStub(Registry.class);
-    return (Transport) Proxy.newProxyInstance(Transport.class.getClassLoader(), new Class<?>[] { Transport.class },
-                                               (_, method, _) -> method.getName().equals("getRegistry") ?
-                                                                 registry : defaultValue(method.getReturnType()));
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> T createStub(Class<T> clazz) {
-    return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz },
-                                      (_, method, _) -> defaultValue(method.getReturnType()));
-  }
-
-  private static Object defaultValue(Class<?> type) {
-    if (!type.isPrimitive() || type == void.class) {
-      return null;
-    }
-    // the zero value of the primitive type, i.e. the default of a one-element array
-    return Array.get(Array.newInstance(type, 1), 0);
   }
 
 }

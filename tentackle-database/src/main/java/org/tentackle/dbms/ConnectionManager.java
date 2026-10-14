@@ -29,6 +29,11 @@ import java.util.Collection;
  * The connection manager as a broker in between the session and a connection gives the opportunity to
  * multiplex connections. This is especially useful in application servers.
  * Note that connection managers are not used in remote sessions.
+ * <p>
+ * Implementations must hold the monitor of the connection manager while changing the attachment of a connection,
+ * i.e., while attaching, detaching or force-detaching a session.
+ * Others, such as the transaction supervisor of the {@link DbTransactionFactory}, synchronize on the manager
+ * to inspect the connection of a session, without the connection being handed over to another session meanwhile.
  *
  * @author harald
  */
@@ -146,6 +151,21 @@ public interface ConnectionManager {
    * @param session the session
    */
   void forceDetach(Db session);
+
+  /**
+   * Verifies an unattached connection to keep it alive.<br>
+   * Invoked periodically by the {@link ManagedConnectionMonitor} for connections with keep-alive enabled.
+   * If the verification fails, the connection is marked dead.
+   * <p>
+   * Implementations must ensure that the connection is not attached to a session while being verified,
+   * and skip the verification if it is attached already.
+   * The default implementation just verifies the connection, without any coordination with {@link #attach(Db)}.
+   *
+   * @param connection the connection managed by this manager
+   */
+  default void verifyIdleConnection(ManagedConnection connection) {
+    connection.verifyConnection();
+  }
 
   /**
    * Gets the maximum number of connections.

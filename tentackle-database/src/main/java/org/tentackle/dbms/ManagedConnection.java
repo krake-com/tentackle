@@ -123,6 +123,13 @@ public class ManagedConnection {
    */
   private static int maxStatementsPerTransaction;
 
+  /**
+   * Maximum milliseconds to wait for the statements still executing on behalf of a force-detached session
+   * to terminate after being canceled.<br>
+   * If exceeded, the connection is closed. The default is 10 seconds.
+   */
+  private static long maxCancelWaitMillis = 10000;
+
 
   /**
    * Gets the minimum milliseconds a connection remains attached before being logged.
@@ -277,6 +284,25 @@ public class ManagedConnection {
     return maxStatementsPerTransaction;
   }
 
+  /**
+   * Gets the maximum milliseconds to wait for canceled statements of a force-detached session to terminate.
+   *
+   * @return the milliseconds
+   */
+  public static long getMaxCancelWaitMillis() {
+    return maxCancelWaitMillis;
+  }
+
+  /**
+   * Sets the maximum milliseconds to wait for canceled statements of a force-detached session to terminate.<br>
+   * If exceeded, the connection is closed.
+   *
+   * @param millis the milliseconds
+   */
+  public static void setMaxCancelWaitMillis(long millis) {
+    maxCancelWaitMillis = millis;
+  }
+
 
   private static final Logger LOGGER = Logger.get(ManagedConnection.class);
 
@@ -347,11 +373,14 @@ public class ManagedConnection {
   private volatile long lastVerified;                     // last connection verification
   private int index;                                      // connection index given by connection manager, -1 not used
   private int attachCount;                                // 0 = not attached, else number of times db is attached
+  private boolean reserved;                               // reserved by the connection manager (guarded by its monitor)
+  private final Object executionLock = new Object();      // serializes the start of statement executions with releaseSession
+  private int executionCount;                             // number of statements being executed (guarded by executionLock)
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
   private int counterForClearWarnings;                    // current counter
   private StatementHistory currentStatement;              // statement history while not in transaction
-  private long connectionInactivityTimeoutMs;             // optional database connection inactivity timeout
-  private boolean connectionKeepAliveEnabled;             // optional periodical fake-select to prevent premature close of idle connection
+  private volatile long connectionInactivityTimeoutMs;    // optional database connection inactivity timeout (read by the monitor thread)
+  private volatile boolean connectionKeepAliveEnabled;    // optional periodical fake-select to prevent premature close of idle connection (read by the monitor thread)
 
   private final List<StatementHistory> statementHistory;                        // statement history while in transaction
   private final Map<StatementKey,PreparedStatementWrapper> preparedStatements;  // all prepared statements for this connection (stmtId:statement)
@@ -665,7 +694,8 @@ public class ManagedConnection {
    * @return true if the connection is attached to a session in transaction
    */
   public boolean isTxRunning() {
-    return isAttached() && db.isTxRunning();
+    Db d = db;    // local copy: may be detached concurrently
+    return d != null && d.isTxRunning();
   }
 
   /**
@@ -1113,6 +1143,15 @@ public class ManagedConnection {
    */
   public void rollback(boolean withLog) {
     assertAttached();
+    rollbackImpl(withLog);
+  }
+
+  /**
+   * Performs a rollback, even if not attached.
+   *
+   * @param withLog true if log via INFO
+   */
+  private void rollbackImpl(boolean withLog) {
     try {
       if (withLog) {
         LOGGER.info(this::toDiagnosticString);
@@ -1181,7 +1220,7 @@ public class ManagedConnection {
    */
   public void releaseSavepoint(Savepoint savepoint) {
     assertAttached();
-    if (db.getBackend().isReleaseSavepointSupported()) {
+    if (backend.isReleaseSavepointSupported()) {
       try {
         getConnection().releaseSavepoint(savepoint);
       }
@@ -1515,16 +1554,32 @@ public class ManagedConnection {
    * @return the persistence exception
    */
   public PersistenceException createFromSqlException(String message, SQLException sx) {
+    return createFromSqlException(db, message, sx);
+  }
+
+  /**
+   * Creates a {@link PersistenceException} or {@link SessionClosedException} depending on the SQL error.<br>
+   * If the session was reconnected, a {@link ReconnectedException} is thrown.
+   * <p>
+   * Used by statements, which must refer to the session that executed them.
+   * The session currently attached to this connection may differ, if the connection was force-detached
+   * meanwhile and attached to another session.
+   *
+   * @param session the session the error belongs to, null if unknown
+   * @param message the message
+   * @param sx the SQL exception
+   * @return the persistence exception
+   */
+  public PersistenceException createFromSqlException(Db session, String message, SQLException sx) {
     PersistenceException persistenceException;
     if (checkForDeadLink(sx)) {
-      persistenceException = new SessionClosedException(db, message, sx);
-      Db ldb = db;
-      if (ldb != null && ldb.optionallyReconnect()) {
+      persistenceException = new SessionClosedException(session, message, sx);
+      if (session != null && session.optionallyReconnect()) {
         throw new ReconnectedException(persistenceException);
       }
     }
     else {
-      persistenceException = new PersistenceException(db, message, sx);
+      persistenceException = new PersistenceException(session, message, sx);
     }
     return persistenceException;
   }
@@ -1561,39 +1616,170 @@ public class ManagedConnection {
    * The method is used from connection managers only, hence package scope.
    */
   void forceDetached() {
-    if (isAttached()) {
-      // the database is still attached
-      LOGGER.warning("forcing detach of connection {0}, attached to {1}", this, db);
-      cancelRunningStatements();
-      // close pending statements
-      closePreparedStatements(true);
-      if (!isClosed()) {
-        try {
-          if (!getAutoCommit()) {
-            // in transaction!!! rollback
-            LOGGER.severe("rolling back pending transaction for {0}", db);
-            rollback(true);
-          }
-        }
-        catch (PersistenceException pex) {
-          if (!resources.dead) {
-            LOGGER.severe("connection is broken", pex);
-          }
-          closeImpl();
-        }
-      }
-      if (db != null) {
-        // if not already detached via closePreparedStatements(true)
-        db.setConnection(null);
-        db = null;
-      }
-      attachCount = 0;
-      statementHistory.clear();
-      currentStatement = null;
-      openResultSets.clear();
-      restoreTransactionDefaults();
+    Db releasedDb = releaseSession(null);
+    if (releasedDb != null) {
+      cleanupReleased(releasedDb);
     }
     // else already detached
+  }
+
+  /**
+   * Releases the attached session without cleaning up the connection.<br>
+   * This is the first part of {@link #forceDetached()}, which connection managers may invoke with their
+   * monitor held, while invoking {@link #cleanupReleased(Db)} without. In between, the connection is not attached
+   * to any session, and it's up to the connection manager not to hand it over to another session.
+   * The method is used from connection managers only, hence package scope.
+   *
+   * @param session the session expected to be attached, null for any
+   * @return the released session, null if no session or not the expected one was attached
+   */
+  Db releaseSession(Db session) {
+    Db releasedDb;
+    synchronized (executionLock) {    // no statement may start executing on behalf of the released session from now on
+      releasedDb = db;
+      if (releasedDb == null || (session != null && releasedDb != session)) {
+        return null;
+      }
+      db = null;
+    }
+    LOGGER.warning("forcing detach of connection {0}, attached to {1}", this, releasedDb);
+    releasedDb.setConnection(null);
+    attachCount = 0;
+    return releasedDb;
+  }
+
+  /**
+   * Enters the execution of a statement on behalf of a session.<br>
+   * Must be paired with {@link #exitExecution()} and must enclose the low-level JDBC execution only.
+   * <p>
+   * The check whether the connection is still attached to the session and the registration of the execution
+   * are atomic with respect to {@link #releaseSession(Db)}. Hence, either the execution is rejected or
+   * {@link #cleanupReleased(Db)} waits for it to terminate before the connection is cleaned up and
+   * handed over to another session.
+   *
+   * @param session the session executing the statement
+   * @param statement the statement (for diagnostics only)
+   * @throws PersistenceException if the connection has been force-detached from the session
+   */
+  void enterExecution(Db session, StatementWrapper statement) {
+    synchronized (executionLock) {
+      if (db != session) {
+        throw new PersistenceException(session, "connection " + this + " has been force-detached from statement " + statement);
+      }
+      executionCount++;
+    }
+  }
+
+  /**
+   * Exits the execution of a statement entered by {@link #enterExecution(Db, StatementWrapper)}.
+   */
+  void exitExecution() {
+    synchronized (executionLock) {
+      if (--executionCount == 0) {
+        executionLock.notifyAll();
+      }
+    }
+  }
+
+  /**
+   * Waits until no statement is executing anymore.
+   *
+   * @param timeoutMillis the maximum milliseconds to wait
+   * @return true if no statement is executing, false if timed out or interrupted
+   */
+  private boolean awaitExecutionsTerminated(long timeoutMillis) {
+    long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+    synchronized (executionLock) {
+      while (executionCount > 0) {
+        long remainingMillis = (deadline - System.nanoTime()) / 1_000_000L;
+        if (remainingMillis <= 0) {
+          return false;
+        }
+        try {
+          executionLock.wait(remainingMillis);
+        }
+        catch (InterruptedException ix) {
+          Thread.currentThread().interrupt();
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  /**
+   * Cleans up the connection after its session has been released.<br>
+   * Cancels running statements, closes pending ones and rolls back a pending transaction.
+   * This is the second part of {@link #forceDetached()}, see {@link #releaseSession(Db)}.
+   * The method is used from connection managers only, hence package scope.
+   *
+   * @param releasedDb the released session
+   */
+  void cleanupReleased(Db releasedDb) {
+    cancelRunningStatements();
+    // statements that started executing before the release must terminate before the rollback,
+    // and before the connection is handed over to another session
+    if (!awaitExecutionsTerminated(maxCancelWaitMillis)) {
+      LOGGER.severe("statements of {0} still executing on {1} -> closing the connection", releasedDb, this);
+      setDead(true);
+      closeImpl();    // aborts the statements and the transaction
+    }
+    // close pending statements
+    closePreparedStatements(true);
+    if (!isClosed()) {
+      try {
+        if (!getAutoCommit()) {
+          // in transaction!!! rollback
+          LOGGER.severe("rolling back pending transaction for {0}", releasedDb);
+          rollbackImpl(true);
+          restoreAutoCommit();
+        }
+      }
+      catch (PersistenceException pex) {
+        if (!resources.dead) {
+          LOGGER.severe("connection is broken", pex);
+        }
+        closeImpl();
+      }
+    }
+    statementHistory.clear();
+    currentStatement = null;
+    openResultSets.clear();
+    if (!isClosed()) {
+      restoreTransactionDefaults();
+    }
+  }
+
+  /**
+   * Switches the connection back to autocommit mode, even if not attached.
+   */
+  private void restoreAutoCommit() {
+    try {
+      getConnection().setAutoCommit(true);
+    }
+    catch (SQLException ex) {
+      throw createFromSqlException("restoring autocommit failed", ex);
+    }
+  }
+
+  /**
+   * Sets whether the connection is reserved by its connection manager.<br>
+   * A reserved connection must not be attached.
+   * The flag is guarded by the monitor of the connection manager.
+   *
+   * @param reserved true if reserved, false if released
+   */
+  void setReserved(boolean reserved) {
+    this.reserved = reserved;
+  }
+
+  /**
+   * Returns whether the connection is reserved by its connection manager.
+   *
+   * @return true if reserved and must not be attached
+   */
+  boolean isReserved() {
+    return reserved;
   }
 
 

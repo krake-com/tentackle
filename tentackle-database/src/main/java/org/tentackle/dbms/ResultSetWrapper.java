@@ -173,6 +173,7 @@ public class ResultSetWrapper implements AutoCloseable {
             }
           }
           finally {
+            final Db session = db;
             db = null;
             rs = null;
             backend = null;
@@ -180,7 +181,7 @@ public class ResultSetWrapper implements AutoCloseable {
             skipBlocks = null;
             final StatementWrapper st = stmt;
             if (st != null) {
-              st.detachSession();
+              st.detachSession(session);
               if (closeStatementOnClose) {
                 st.close();
               }

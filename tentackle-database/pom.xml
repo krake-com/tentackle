@@ -52,6 +52,8 @@
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>
+    <!-- the tests that need a real PostgreSQL server, see the postgres profile -->
+    <excludedTestGroups>postgres</excludedTestGroups>
   </properties>
 
   <build>
@@ -236,8 +238,30 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludedGroups>${excludedTestGroups}</excludedGroups>
+        </configuration>
+      </plugin>
+
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Additionally run the tests that need a real PostgreSQL server.
+        The database is configured by the dbUrl/dbUser/dbPasswd properties,
+        filtered into src/test/filtered-resources/postgres.properties.
+      -->
+      <id>postgres</id>
+      <properties>
+        <excludedTestGroups/>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>

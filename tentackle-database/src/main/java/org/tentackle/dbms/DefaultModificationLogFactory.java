@@ -77,9 +77,28 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
       db.assertNotRemote();
       ModificationLogSerializer serializer = getSerializer(db.getBackendIdentity());
       if (serializer != null) {
-        synchronized (serializer) {
-          modlog.reserveId();   // the order of IDs and serialization must be in sync!
-          modlog.setObjectData(serializer.serialize(object));
+        if (modlog.getIdSource().isLockFree()) {
+          synchronized (serializer) {
+            modlog.reserveId();   // the order of IDs and serialization must be in sync!
+            modlog.setObjectData(serializer.serialize(object));
+          }
+        }
+        else {
+          /*
+           * A transactional ID source locks its counter until the end of the transaction.
+           * Reserving the ID with the monitor held would deadlock: a thread waiting for the lock would hold the monitor,
+           * which the lock owner needs for its next modlog. Hence, the ID is reserved before acquiring the monitor.
+           * The order is still in sync, since the lock keeps all other transactions from reserving an ID until
+           * this one has ended. The transaction makes sure that the lock is held while serializing, even if
+           * the session is not within a transaction yet.
+           */
+          db.transaction(() -> {
+            modlog.reserveId();
+            synchronized (serializer) {
+              modlog.setObjectData(serializer.serialize(object));
+            }
+            return null;
+          });
         }
       }
     }

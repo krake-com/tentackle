@@ -35,7 +35,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -211,6 +213,119 @@ public class DefaultConnectionManagerTest {
     assertEquals(conMgr.getNumConnections(), 0, "the reopened connection must not be stored in a released slot");
     assertNotNull(reopened.get());
     assertTrue(reopened.get().isClosed(), "the reopened connection must be closed");
+  }
+
+
+  @Test
+  public void testShutdownWhileLoggingIn() throws Exception {
+    CountDownLatch connecting = new CountDownLatch(1);
+    CountDownLatch proceed = new CountDownLatch(1);
+    AtomicReference<ManagedConnection> created = new AtomicReference<>();
+    DefaultConnectionManager conMgr = new DefaultConnectionManager("login-shutdown-test", 2, 8, 1, 720, 2160) {
+      @Override
+      protected Connection connect(BackendInfo backendInfo) throws SQLException {
+        connecting.countDown();
+        try {
+          proceed.await();
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        return super.connect(backendInfo);
+      }
+
+      @Override
+      protected ManagedConnection createManagedConnection(Backend backend, BackendVersionInfo versionInfo, Connection connection) {
+        ManagedConnection mc = super.createManagedConnection(backend, versionInfo, connection);
+        created.set(mc);
+        return mc;
+      }
+    };
+
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    Thread loginThread = new Thread(() -> {
+      try {
+        new Db(conMgr, new DefaultSessionInfo());
+      }
+      catch (Throwable t) {
+        failure.set(t);
+      }
+    });
+    loginThread.start();
+    assertTrue(connecting.await(10, TimeUnit.SECONDS), "login did not start");
+
+    conMgr.shutdown();    // closes all connections while the login is still connecting
+    proceed.countDown();
+    loginThread.join(10000);
+
+    assertTrue(failure.get() instanceof PersistenceException, "login must fail after shutdown, got " + failure.get());
+    assertEquals(conMgr.getNumConnections(), 0, "the new connection must not be stored after shutdown");
+    assertEquals(conMgr.getNumSessions(), 0, "the session slot must be released");
+    assertNotNull(created.get());
+    assertTrue(created.get().isClosed(), "the new connection must be closed");
+  }
+
+
+  /**
+   * Sessions may still be attached, detached and logged out after the connection manager has been shut down,
+   * for example, if a server shuts down while its sessions are still in use.
+   */
+  @Test
+  public void testSessionAfterShutdown() {
+    DefaultConnectionManager conMgr = new DefaultConnectionManager("after-shutdown-test", 2, 8, 1, 720, 2160);
+    Db db = new Db(conMgr, new DefaultSessionInfo());
+    Db db2 = new Db(conMgr, new DefaultSessionInfo());
+    db.attach();
+    ManagedConnection con = db.getConnection();
+    assertNotNull(con);
+
+    conMgr.shutdown();    // closes all connections, detaching their sessions
+    assertTrue(con.isClosed());
+    assertNull(db.getConnection());
+
+    assertThrows(PersistenceException.class, db::detach);
+    db.forceDetached();   // nothing to clean up
+
+    conMgr.logout(db);
+    assertEquals(db.getSessionId(), 0, "the session must be logged out");
+    // cleanup is meant for unreferenced sessions: their cleaner must not clean up the session once more
+    conMgr.cleanup(db2.getSessionId(), null);
+    db2.clearSessionId();
+    assertEquals(conMgr.getNumSessions(), 0, "the session slots must be released");
+    assertEquals(conMgr.getNumConnections(), 0);
+  }
+
+  /**
+   * Releasing a session slot twice must be rejected.
+   * Otherwise, the slot would be handed out to two sessions.
+   */
+  @Test
+  public void testSessionSlotReleasedTwice() {
+    DefaultConnectionManager conMgr = new DefaultConnectionManager("released-twice-test", 2, 8, 1, 720, 2160);
+    try {
+      Db db = new Db(conMgr, new DefaultSessionInfo());
+      int sessionId = db.getSessionId();
+      conMgr.cleanup(sessionId, null);
+      db.clearSessionId();    // as if unreferenced
+      assertEquals(conMgr.getNumSessions(), 0);
+
+      assertThrows(PersistenceException.class, () -> conMgr.cleanup(sessionId, null));
+      assertEquals(conMgr.getNumSessions(), 0, "the slot must not be released twice");
+
+      Db db1 = new Db(conMgr, new DefaultSessionInfo());
+      Db db2 = new Db(conMgr, new DefaultSessionInfo());
+      try {
+        assertNotEquals(db1.getSessionId(), db2.getSessionId(), "the same slot was handed out to two sessions");
+        assertEquals(conMgr.getNumSessions(), 2);
+      }
+      finally {
+        db2.close();
+        db1.close();
+      }
+    }
+    finally {
+      conMgr.shutdown();
+    }
   }
 
 }

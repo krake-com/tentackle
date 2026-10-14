@@ -125,9 +125,12 @@ the time anyone is notified, **the data is there**.
 It is also a batching win: a loop saving five hundred rows produces five hundred `pendingCount` increments and
 exactly one `UPDATE` on the modification table, flushed by the next poll.
 
-The price is that `countModification()` cannot return the definitive serial. It returns
-`lastSerial + pendingCount` — the *guessed lowest* value, documented as "could be higher already". Callers
-that need certainty read the serial after the fact via [`getIdSerialForName(...)`](#reading-serials-directly).
+The price is that the serial in the modification table lags behind until the flush. `countModification()`
+returns the serial reserved for *this* modification, `lastSerial + pendingCount`, determined atomically with
+the increment. It is unique per name, since it becomes the `tableserial` of the modified row, and the
+`TableSerialHistory` and the expiration backlog are keyed by tableserial: a duplicate would make the caches
+miss an expiration. The counter itself may be higher already due to concurrent modifications. Callers that
+need the current serial read it after the fact via [`getIdSerialForName(...)`](#reading-serials-directly).
 
 ### Rollback correction
 
@@ -179,7 +182,10 @@ very few parallel users, but as the interface documentation says plainly, it "is
 [`tiers.md`](../../../../src/main/docs/tiers.md) explains why the middle tier is worth having.
 
 Note also that `countModification()` falls back to immediate counting when the tracker thread is not alive
-(`!isAlive()`), because nothing would ever flush the pending count otherwise.
+(`!isAlive()`), because nothing would ever flush the pending count otherwise. The invoking threads then share the
+tracker's session, which is not thread-safe: these flushes, the lazy configuration of entries and counters, and
+`invalidate()` are serialized by a single lock, which `start()` acquires as well. Once the tracker thread runs,
+it owns the session, and the pending counts are left to its next poll.
 
 ---
 

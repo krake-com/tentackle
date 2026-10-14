@@ -135,6 +135,7 @@ public class DbTransactionFactory {
    * @param rolledBack true if transaction was rolled back, false if committed
    */
   public void finish(DbTransaction transaction, boolean rolledBack) {
+    transaction.complete();     // not supervised anymore (a commit of a timed out transaction is refused before)
     long txId = transaction.getTxNumber();
     transactions.remove(txId);
     if (collectingStatistics) {
@@ -367,8 +368,7 @@ public class DbTransactionFactory {
               iter.remove();
             }
             else {
-              if (transaction.isAlive()) {
-                transaction.setAlive(false);  // polled (will be setAlive as soon as some I/O happens again)
+              if (transaction.pollAlive()) {   // reset: will be set alive as soon as some I/O happens again
                 idleMap.remove(transaction.getTxNumber());
               }
               else {
@@ -379,10 +379,23 @@ public class DbTransactionFactory {
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
                   Db session = transaction.getSession();
-                  ManagedConnection mc = session.getConnection();
+                  ManagedConnection mc;
+                  Connection con = null;
+                  // strictly serialized with attach and detach, which the connection managers synchronize on themselves
+                  synchronized (session.getConnectionManager()) {
+                    if (!transaction.timeOut()) {
+                      continue;   // completed by the session in the meantime
+                    }
+                    mc = session.getConnection();
+                    if (mc != null) {
+                      mc.setDead(true);
+                      if (!mc.isClosed()) {
+                        con = mc.getConnection();
+                      }
+                    }
+                  }
                   if (mc != null) {
                     LOGGER.warning(msg + ":\n" + mc.toDiagnosticString());  // with statements!
-                    Connection con = mc.getConnection();
                     if (con != null) {
                       // do that in a separate thread (if it gets stuck, the supervisor still keeps running!)
                       createTxCleanupThread(mc, con).start();

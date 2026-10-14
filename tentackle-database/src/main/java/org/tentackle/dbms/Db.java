@@ -601,8 +601,8 @@ public class Db implements Session, Cloneable {
   private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
   private int instanceNumber;                                 // each session gets a unique instance number
   private String idConfig;                                    // configuration of IdSource
-  private int sessionGroupId;                                 // ID of the session group, 0 = none
-  private int exportedSessionGroupId;                         // session group exported to the remote client, 0 = none
+  private volatile int sessionGroupId;                        // ID of the session group, 0 = none (read by other threads)
+  private volatile int exportedSessionGroupId;                // session group exported to the remote client, 0 = none (read by the cleanup thread)
   private Pool<Session> dbPool;                               // != null if this Db is managed by a SessionPool
   private int poolId;                                         // the pool id if dbPool != null
   private SessionInfo sessionInfo;                            // session information
@@ -619,7 +619,7 @@ public class Db implements Session, Cloneable {
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private boolean constraintsDeferred;                        // true if deferrable constraints are deferred for the current tx
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
-  private DbTransaction transaction;                          // the running transaction (only for local sessions)
+  private volatile DbTransaction transaction;                 // the running transaction (only for local sessions, read by the modification tracker)
   private RemoteTransaction remoteTransaction;                // the running transaction (only for remote sessions)
   private Map<Object, Object> transactionProperties;          // application-specific properties
   private Map<CommitKey, Consumer<Session>> postCommits;      // post commits
@@ -1489,7 +1489,8 @@ public class Db implements Session, Cloneable {
     if (isRemote()) {
       return remoteTransaction == null ? 0 : remoteTransaction.getTxNumber();
     }
-    return transaction == null ? 0 : transaction.getTxNumber();
+    DbTransaction tx = transaction;   // local copy: may be read by another thread, e.g., the modification tracker
+    return tx == null ? 0 : tx.getTxNumber();
   }
 
   @Override
@@ -1874,6 +1875,7 @@ public class Db implements Session, Cloneable {
       }
       long txNo = tx.getTxNumber();
       ManagedConnection c = resources.con;
+      RuntimeException notifyFailure = committed ? null : notifyRollback(txNo);   // while the transaction is still running!
       transaction = null;
       autoCommit = true;
       logModificationDeferred = false;
@@ -1918,8 +1920,8 @@ public class Db implements Session, Cloneable {
         DbUtilities.getInstance().notifyCommit(Db.this, txNo);
         runPostCommits();
       }
-      else {
-        DbUtilities.getInstance().notifyRollback(Db.this, txNo);
+      else if (notifyFailure != null) {
+        throw notifyFailure;
       }
     }
   }
@@ -1987,8 +1989,21 @@ public class Db implements Session, Cloneable {
         throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
       }
       connection().rollback(savepoint);
+      transaction.countSavepointRollback();
       DbUtilities.getInstance().notifySavepointRollback(this);
     }
+  }
+
+  /**
+   * Gets the number of rollbacks to savepoints within the current transaction.<br>
+   * Allows detecting whether a savepoint has been rolled back since a given point in time.
+   * Notice that some backends, such as PostgreSQL, release the locks acquired after a savepoint
+   * when the savepoint is rolled back.
+   *
+   * @return the number of savepoint rollbacks, 0 if no transaction running or not a local session
+   */
+  public int getSavepointRollbackCount() {
+    return transaction == null ? 0 : transaction.getSavepointRollbackCount();
   }
 
   /**
@@ -2188,6 +2203,16 @@ public class Db implements Session, Cloneable {
   }
 
   /**
+   * Returns whether the pre-commits are currently being executed.<br>
+   * While running, no more pre-commits can be registered, and those already executed won't run again.
+   *
+   * @return true if invoked from within a pre-commit
+   */
+  public boolean isPreCommitsRunning() {
+    return preCommitsRunning;
+  }
+
+  /**
    * Runs the pre-commits.<br>
    * Pre-commits registered at a deeper transaction level run first.
    * Within the same level, they run in the order of their registration.
@@ -2368,8 +2393,12 @@ public class Db implements Session, Cloneable {
             transaction.rollback();
             ManagedConnection c = resources.con;
             if (c != null) {
-              c.rollback(withLog);  // avoid a commit ...
-              setAutoCommit(null);    // ... in setAutoCommit
+              c.rollback(withLog);  // avoid a commit in setAutoCommit below
+            }
+            long txNo = getTxNumber();
+            RuntimeException notifyFailure = notifyRollback(txNo);   // while the transaction is still running!
+            if (c != null) {
+              setAutoCommit(null);
             }
             else {
               LOGGER.warning("rollback too late: connection already detached");
@@ -2379,12 +2408,13 @@ public class Db implements Session, Cloneable {
             constraintsDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
-            long txNo = getTxNumber();
             transaction = null;
             postCommits = null;
             preCommits = null;
             rolledBack = true;
-            DbUtilities.getInstance().notifyRollback(this, txNo);
+            if (notifyFailure != null) {
+              throw notifyFailure;
+            }
           }
           else {
             throw new PersistenceException(this, "transaction ended unexpectedly before rollback (valid voucher)");
@@ -2401,6 +2431,26 @@ public class Db implements Session, Cloneable {
     return rolledBack;
   }
 
+
+  /**
+   * Notifies the rollback of the current transaction.<br>
+   * Must be invoked while the session is still running the transaction, i.e., before the autocommit mode is
+   * restored and the transaction is cleared. Otherwise, the modification tracker could take the
+   * pending modification counts as committed (see {@link ModificationTally#performPendingCount()})
+   * before they are rolled back.
+   *
+   * @param txNo the transaction number
+   * @return the failure to be thrown once the transaction is cleared, null if none
+   */
+  private RuntimeException notifyRollback(long txNo) {
+    try {
+      DbUtilities.getInstance().notifyRollback(this, txNo);
+      return null;
+    }
+    catch (RuntimeException rx) {
+      return rx;
+    }
+  }
 
   /**
    * Rolls back the current transaction, if pending.<br>
@@ -2677,6 +2727,9 @@ public class Db implements Session, Cloneable {
     assertRequestedIfPooled();
     if (resources.conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
+    }
+    if (!autoCommit && resources.con == null) {
+      throw new PersistenceException(this, "connection lost within transaction (force-detached and rolled back)");
     }
     resources.conMgr.attach(this);
   }

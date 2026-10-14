@@ -177,8 +177,9 @@ FXML, CSS, and `.properties` files are co-located with their Controller classes 
     needs `-Dh2.bindAddress=localhost`, which `AbstractDbTest` sets and passes on to the
     children it spawns.
 - **PostgreSQL is opt-in** via `mvn -Ppostgres test`, which adds the `postgres` TestNG group.
-  Only `PostgresScriptRunnerTest` is in it — cancelling a statement needs a server that can
-  sleep. That run needs a `tentackle` database created from the generated DDL beforehand; its
+  It holds `PostgresScriptRunnerTest` in `tentackle-test-pdo` (cancelling a statement needs a
+  server that can sleep) and `PostgresObjectIdSavepointTest` in `tentackle-database` (PostgreSQL
+  releases row locks on a rollback to a savepoint). That run needs a `tentackle` database created from the generated DDL beforehand; its
   credentials come from the `dbUrl`/`dbUser`/`dbPasswd` properties, filtered into the test
   modules' `postgres.properties`.
 - `tentackle-test-pdo` and `tentackle-test-fx-rdc` provide TestNG support for the PDO layer and the rich desktop client respectively.

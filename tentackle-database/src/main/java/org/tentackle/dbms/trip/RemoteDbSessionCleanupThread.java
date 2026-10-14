@@ -27,6 +27,7 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -151,9 +152,12 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
   protected void verifySessions() {
 
     Set<Integer> deadTxGroups = new HashSet<>(); // numbers of db groups that are dead while in a transaction
+    // the grouped sessions verified below with their group at that time.
+    Map<WeakReference<RemoteDbSessionImpl>, Integer> groupedSessions = new LinkedHashMap<>();
 
     for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = sessions.iterator(); iter.hasNext(); ) {
-      RemoteDbSessionImpl session = iter.next().get();
+      WeakReference<RemoteDbSessionImpl> sessionRef = iter.next();
+      RemoteDbSessionImpl session = sessionRef.get();
       if (session == null) {
         iter.remove();    // was removed by GC: remove it from set too
       }
@@ -166,7 +170,9 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
                 LOGGER.warning("Db {0} already closed in {1} -> force cleanup", db, session);
                 // we came too late or not MT-visible.
                 // db is already closed (cleanup in parallel?)
-                session.forceCleanup();   // works in parallel
+                if (!forceCleanupIfNotInUse(session)) {
+                  continue;   // verify again in the next run
+                }
               } // else: already closed
               iter.remove();
               continue;
@@ -181,9 +187,11 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
               if (groupId == 0) {
                 // database without a group: close session immediately
                 LOGGER.info("disconnect dead " + session + ", ungrouped");
-                cleanupSession(session);
-                iter.remove();
-                continue; // don't run into polled() below (would cause a NPE)
+                if (cleanupSession(session)) {
+                  iter.remove();
+                  continue; // don't run into polled() below (would cause a NPE)
+                }
+                // else: an invocation started meanwhile -> verify again in the next run
               }
               else {
                 if (inTransaction) {
@@ -199,13 +207,19 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
               groupTimeoutInfo.update(session.getTimeout(), session.getTimeoutCount());
             }
 
+            if (groupId != 0) {
+              groupedSessions.put(sessionRef, groupId);
+            }
+
             session.polled();   // reset alive flag
           }
         }
         catch (RuntimeException rx) {
           LOGGER.warning("verifying " + session + " failed -> force cleanup", rx);
-          session.forceCleanup();
-          iter.remove();
+          if (forceCleanupIfNotInUse(session)) {
+            iter.remove();
+          }
+          // else: verify again in the next run
         }
       }
     }
@@ -214,17 +228,19 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     activeGroups.entrySet().removeIf(entry -> entry.getValue().hasTimedOut());
 
     // close all grouped sessions not belonging to alive groups
-    for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = sessions.iterator(); iter.hasNext(); ) {
-      RemoteDbSessionImpl session = iter.next().get();
+    for (Map.Entry<WeakReference<RemoteDbSessionImpl>, Integer> entry : groupedSessions.entrySet()) {
+      WeakReference<RemoteDbSessionImpl> sessionRef = entry.getKey();
+      RemoteDbSessionImpl session = sessionRef.get();
       if (session == null) {
-        iter.remove();    // was removed by GC: remove it from set too
+        sessions.remove(sessionRef);    // was removed by GC: remove it from set too
       }
       else  {
         try {
           Db db = session.getSession();   // local copy: the client may close the session concurrently
           if (db != null) {
-            int groupId = db.getExportedSessionGroupId();
-            if (groupId != 0) {
+            int groupId = entry.getValue();
+            // skip if regrouped in the meantime: will be verified in the next run
+            if (groupId == db.getExportedSessionGroupId()) {
               boolean deadInTransaction = deadTxGroups.contains(groupId);
               if (deadInTransaction || !activeGroups.containsKey(groupId)) {
                 if (deadInTransaction) {
@@ -234,16 +250,20 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
                 else  {
                   LOGGER.info("disconnect dead {0}, group={1}", session, groupId);
                 }
-                cleanupSession(session);
-                iter.remove();
+                if (cleanupSession(session)) {
+                  sessions.remove(sessionRef);
+                }
+                // else: an invocation started meanwhile -> verify again in the next run
               }
             }
           }
         }
         catch (RuntimeException rx) {
           LOGGER.warning("verifying " + session + " failed -> force cleanup", rx);
-          session.forceCleanup();
-          iter.remove();
+          if (forceCleanupIfNotInUse(session)) {
+            sessions.remove(sessionRef);
+          }
+          // else: verify again in the next run
         }
       }
     }
@@ -251,11 +271,18 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
 
 
   /**
-   * Cleans up a session.
+   * Cleans up a session.<br>
+   * The session is not cleaned up while a client's invocation is in progress, since the local session is not thread-safe.
+   * Invocations arriving during the cleanup are rejected.
    *
    * @param session the session
+   * @return true if cleaned up or moved to the zombie sessions, false if in use and still to be verified
    */
-  protected void cleanupSession(RemoteDbSessionImpl session) {
+  protected boolean cleanupSession(RemoteDbSessionImpl session) {
+    if (!session.enterInvocation()) {
+      LOGGER.info("{0} in use by {1} -> not cleaned up", session, session.getInvokingThread());
+      return false;
+    }
     try {
       session.cleanup(true);
       session.closeDb(true);
@@ -264,6 +291,10 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       LOGGER.severe("session cleanup failed for " + session + "\n    -> moved to zombie sessions!", ex);
       zombieSessions.put(session, 1);
     }
+    finally {
+      session.exitInvocation();
+    }
+    return true;
   }
 
 
@@ -274,22 +305,54 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     for (Iterator<Map.Entry<RemoteDbSessionImpl,Integer>> iter = zombieSessions.entrySet().iterator(); iter.hasNext(); ) {
       Map.Entry<RemoteDbSessionImpl,Integer> entry = iter.next();
       RemoteDbSessionImpl session = entry.getKey();
-      if (cleanupZombieSession(session)) {
-        iter.remove();
+      if (!session.enterInvocation()) {
+        // in use: not a failed attempt, and the session must not be forced to clean up under the invocation's hands
+        LOGGER.info("zombie {0} in use by {1} -> not cleaned up", session, session.getInvokingThread());
+        continue;
       }
-      else {
-        // failed
-        int cleanupCount = entry.getValue();
-        if (cleanupCount >= cleanupRetryMax) {
-          LOGGER.severe("zombie session refused to cleanup " + cleanupCount + " times -> to GC: " + session);
-          session.forceCleanup();
+      try {
+        if (cleanupZombieSession(session)) {
           iter.remove();
         }
-        else  {
-          entry.setValue(cleanupCount + 1);
+        else {
+          // failed
+          int cleanupCount = entry.getValue();
+          if (cleanupCount >= cleanupRetryMax) {
+            LOGGER.severe("zombie session refused to cleanup " + cleanupCount + " times -> to GC: " + session);
+            session.forceCleanup();
+            iter.remove();
+          }
+          else  {
+            entry.setValue(cleanupCount + 1);
+          }
         }
       }
+      finally {
+        session.exitInvocation();
+      }
     }
+  }
+
+
+  /**
+   * Forces the cleanup of a session, unless a client's invocation is in progress.<br>
+   * The local session is not thread-safe, hence it must not be closed under the invocation's hands.
+   *
+   * @param session the session
+   * @return true if cleaned up, false if in use and still to be verified
+   */
+  private boolean forceCleanupIfNotInUse(RemoteDbSessionImpl session) {
+    if (!session.enterInvocation()) {
+      LOGGER.info("{0} in use by {1} -> no forced cleanup", session, session.getInvokingThread());
+      return false;
+    }
+    try {
+      session.forceCleanup();
+    }
+    finally {
+      session.exitInvocation();
+    }
+    return true;
   }
 
 
@@ -300,6 +363,10 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
    * @return true if cleaned up, false if failed
    */
   protected boolean cleanupZombieSession(RemoteDbSessionImpl session) {
+    if (!session.enterInvocation()) {
+      LOGGER.info("zombie {0} in use by {1} -> not cleaned up", session, session.getInvokingThread());
+      return false;
+    }
     try {
       LOGGER.info("cleaning up zombie " + session);
       session.cleanup(true);
@@ -309,6 +376,9 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     catch (RuntimeException ex) {
       LOGGER.severe("zombie session cleanup failed for " + session, ex);
       return false;
+    }
+    finally {
+      session.exitInvocation();
     }
   }
 

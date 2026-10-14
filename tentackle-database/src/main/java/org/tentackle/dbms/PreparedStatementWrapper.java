@@ -198,18 +198,17 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   @Override
-  protected void detachSession() {
-    super.detachSession();
+  protected void detachSession(Db db) {
+    super.detachSession(db);
     // new map because the old reference is held in StatementHistory
     clearParametersImpl();
   }
 
 
   @Override
-  public synchronized void markReady() {
-    if (!isMarkedReady() || !isBatched()) {
-      super.markReady();
-    }
+  protected boolean isMarkReadyAgainAllowed() {
+    // batched statements are marked ready for each batch entry until the batch is executed
+    return isBatched();
   }
 
   /**
@@ -312,7 +311,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       batch.batch(this);
       return 1;                       // batched statements always affect a single row
     }
-    getSession().executeBatch();      // not a batchable statement -> flush batch
+    getExecutingSession().executeBatch();      // not a batchable statement -> flush batch
     return super.executeUpdate(null);
   }
 
@@ -378,7 +377,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         return super.executeBatch(finish);
       }
       else if (finish) {
-        detachSession();
+        detachSession(getUsingSession());
       }
       return new int[0];
     }

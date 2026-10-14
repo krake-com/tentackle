@@ -244,6 +244,9 @@ deterministic — the configuration — and lets the configuration override it.
   counter table, optimized to write only once at the end of transaction. The first id of a transaction locks the
   counter row until the transaction ends, so transactions allocating ids from the same table are serialized by
   the database. The counting state belongs to the transaction, so one instance can be shared by all sessions.
+  A rollback to a savepoint may undo the increment and release the row lock; the next id
+  or the final write then increments the counter again and continues after whatever other sessions allocated
+  in the meantime.
 - [`ObjectSequenceId`](../java/org/tentackle/dbms/ObjectSequenceId.java) — uses a **database sequence**, multiplied
   by a configurable factor with an in-range counter to cut round-trips. There is one instance per sequence name,
   shared by all sessions. The range taken from the sequence is kept per database, i.e., per

@@ -62,6 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User session within the application server.
@@ -297,7 +298,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final String clientHost;                            // the client host string
   private final Dictionary dictionary;                        // to prevent GC as long as this session is open
   private final Map<String, Logger> loggers;                  // logger-name :: logger
-  private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
+  private volatile int timeout;                               // timeout in polling intervals of the RemoteDbSessionCleanupThread (read by that thread)
   private int timeoutCount;                                   // consecutive timeouts
   private volatile long closedSince;                          // session closed since, 0 if still open
   private final Object closeLock = new Object();              // serializes closing by the client and the cleanup thread
@@ -307,6 +308,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private Authentication authentication;                      // the proven identity, null if not authenticated yet
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
+  private final AtomicReference<Thread> invokingThread;       // the thread invoking a delegate method, null if none
+  private int invocationDepth;                                // nested invocations (accessed by the invoking thread only)
 
 
   /**
@@ -334,6 +337,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     }
 
     sessionNumber = LAST_SESSION_NUMBER.incrementAndGet();
+    loggers = new ConcurrentHashMap<>();
+    modificationTrackerSession = new AtomicBoolean();
+    masterSerialEvents = new ConcurrentLinkedQueue<>();
+    invokingThread = new AtomicReference<>();
 
     Db db = null;
     try {
@@ -356,6 +363,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       }
       db = openDb();
       resources = new Resources(db, con, this.serverInfo);
+      // before SESSIONS.add: from then on, the cleanup thread checks this session for timeouts
+      timeout = determineTimeout(db, clientInfo, serverInfo);
+      resources.name = toString();    // chicken egg...
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
         this.clientInfo.setSince(System.currentTimeMillis());
         db.makeCurrent();   // authentication providers may need the persistence layer to look up the user
@@ -384,13 +394,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
       throw new PersistenceException("could not setup remote session", ex);
     }
 
-    timeout = determineTimeout(db, clientInfo, serverInfo);
-    loggers = new ConcurrentHashMap<>();
-
-    modificationTrackerSession = new AtomicBoolean();
-    masterSerialEvents = new ConcurrentLinkedQueue<>();
-
-    resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
   }
 
@@ -598,6 +601,41 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
   /**
+   * Enters the invocation of a delegate method by the current thread.<br>
+   * The local session is not thread-safe, hence only one thread at a time may invoke methods
+   * of this session's delegates. Nested invocations by the same thread are allowed.
+   *
+   * @return true if entered, false if another thread is invoking a delegate method of this session
+   * @see #exitInvocation()
+   */
+  boolean enterInvocation() {
+    Thread currentThread = Thread.currentThread();
+    if (invokingThread.get() != currentThread && !invokingThread.compareAndSet(null, currentThread)) {
+      return false;
+    }
+    invocationDepth++;
+    return true;
+  }
+
+  /**
+   * Exits the invocation of a delegate method entered by {@link #enterInvocation()}.
+   */
+  void exitInvocation() {
+    if (--invocationDepth == 0) {
+      invokingThread.set(null);
+    }
+  }
+
+  /**
+   * Gets the thread invoking a delegate method of this session.
+   *
+   * @return the thread, null if none
+   */
+  public Thread getInvokingThread() {
+    return invokingThread.get();
+  }
+
+  /**
    * Returns whether this is the remote session of the modification tracker.
    *
    * @return true if tracker's session
@@ -683,10 +721,28 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The local session is not thread-safe, hence the session is not closed while an invocation
+   * of one of its delegates is in progress. Otherwise, the pending transaction would be rolled back
+   * from another thread, and a pooled local session would be returned to the pool while still in use.
+   *
+   * @throws PersistenceException if another thread is invoking a delegate method of this session
+   */
   @Override
   public void close() {
-    cleanup(false);
-    closeDb(false);
+    if (!enterInvocation()) {
+      throw new PersistenceException(getSession(), "close rejected: " + this + " is in use by " +
+                                     getInvokingThread() + " -> client misbehaving?");
+    }
+    try {
+      cleanup(false);
+      closeDb(false);
+    }
+    finally {
+      exitInvocation();
+    }
   }
 
   @Override
@@ -1021,7 +1077,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    */
   protected boolean hasTimedOut() {
     Db ldb = resources.db;    // local copy in case of race cond avoids NPE
-    if (ldb == null || ldb.isAlive()) {
+    if (ldb == null || ldb.isAlive() || invokingThread.get() != null) {   // an invocation in progress is alive as well
       timeoutCount = 0;
     }
     else  {
