@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -406,9 +405,9 @@ public class Db implements Session, Cloneable {
     private DbRemoteDelegate rdel;                          // remote database delegate
     private RemoteDbConnection rcon;                        // != null if remote connection established to TRIP-server
     private RemoteDbSession rses;                           // remote database session if logged in to TRIP-server
-    private int sessionId;                                  // the session ID
+    private volatile int sessionId;                         // the session ID (read by other threads via isOpen)
     private volatile ManagedConnection con;                 // connection if attached, null = detached
-    private boolean crashed;                                // true = session is closed because it is treated as crashed
+    private volatile boolean crashed;                       // true = session is closed because it is treated as crashed
     private final Set<SessionCloseHandler> closeHandlers;   // close handlers
     private Db me;                                          // != null if programmatic cleanup (close)
 
@@ -419,7 +418,7 @@ public class Db implements Session, Cloneable {
       this.rdel = rdel;
       this.rcon = rcon;
       this.rses = rses;
-      closeHandlers = new HashSet<>();
+      closeHandlers = ConcurrentHashMap.newKeySet();   // may be registered while being closed by another thread
     }
 
     @Override
