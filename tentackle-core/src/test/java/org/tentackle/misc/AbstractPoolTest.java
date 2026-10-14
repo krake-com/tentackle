@@ -114,6 +114,42 @@ public class AbstractPoolTest {
 
 
   /**
+   * A pool with a negative minimum size shuts down when empty. Once {@code monitor()} has decided so,
+   * no resource must be lent anymore, since {@code shutdown()} would close it under the borrower's hands.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void monitorShutdownDoesNotRaceWithGet() throws Exception {
+    CountDownLatch inShutdown = new CountDownLatch(1);
+    CountDownLatch proceed = new CountDownLatch(1);
+    TestPool pool = new TestPool("auto shutdown pool", 0, -1) {
+      @Override
+      public void shutdown() {
+        inShutdown.countDown();
+        try {
+          proceed.await();
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        super.shutdown();
+      }
+    };
+
+    Thread monitorThread = new Thread(pool::monitor);
+    monitorThread.start();
+    inShutdown.await();     // the empty pool is about to be shut down
+
+    assertTrue(pool.isShutdown());
+    expectThrows(TentackleRuntimeException.class, pool::get);
+    assertEquals(pool.getCreatedCount(), 0, "no resource must be created for a pool being shut down");
+
+    proceed.countDown();
+    monitorThread.join(AWAIT_TIMEOUT);
+    assertTrue(pool.isShutdown());
+  }
+
+
+  /**
    * {@code monitor()} replaces the resources that died while unused, up to the minimum size.
    */
   @Test(timeOut = AWAIT_TIMEOUT)
@@ -440,6 +476,10 @@ public class AbstractPoolTest {
 
     private TestPool(String name, int maximumSize) {
       super(name, 1, 1, 1, maximumSize, 0, 0);
+    }
+
+    private TestPool(String name, int initialSize, int minimumSize) {
+      super(name, initialSize, 1, minimumSize, 0, 0, 0);
     }
 
     @Override

@@ -54,6 +54,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
   private long usageMinutes;                    // usage timeout in [minutes]
 
   private long shutdownTimeout;                 // shutdown timeout in milliseconds
+  private boolean shutdownPending;              // true if monitor() decided to shut down this pool (guarded by this)
   private boolean initialized;                  // true if the pool is initialized
   private PoolSlot<T>[] slots;                  // the pooled resource slots
   private int[] freeList;                       // indexes of free slots in 'slots'
@@ -224,7 +225,9 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
     PoolSlot<T>[] slotsToClose;
     long timeout;
     synchronized (this) {
-      assertNotShutdown();
+      if (slots == null) {    // not isShutdown(): the shutdown may be pending, see monitor()
+        throw createException("pool '" + this + "' already shut down");
+      }
       LOGGER.info("shutting down pool {0}", this);
       slotsToClose = slots;
       timeout = shutdownTimeout;
@@ -249,7 +252,7 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
 
   @Override
   public synchronized boolean isShutdown() {
-    return slots == null;
+    return slots == null || shutdownPending;
   }
 
   @Override
@@ -340,9 +343,15 @@ public abstract class AbstractPool<T extends Poolable<T>> implements Pool<T> {
         return;   // shut down concurrently: nothing left to monitor
       }
       shutdownPool = monitorSlots();
+      if (shutdownPool) {
+        // Decided with the monitor held: from now on, the pool is treated as shut down, i.e., get() lends
+        // no more resources. Otherwise, a resource lent before shutdown() below would be closed under the
+        // borrower's hands.
+        shutdownPending = true;
+      }
     }
 
-    if (shutdownPool && !isShutdown()) {
+    if (shutdownPool) {
       // outside the monitor: shutdown() waits for the resources to be closed
       shutdown();
     }

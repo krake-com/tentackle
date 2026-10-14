@@ -78,7 +78,18 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
   @Override
   public synchronized Session get(SessionInfo sessionInfo) {
-    return getPool(sessionInfo).get();
+    for (;;) {
+      SessionPool pool = getPool(sessionInfo);
+      try {
+        return pool.get();
+      }
+      catch (RuntimeException rx) {
+        if (!pool.isShutdown()) {
+          throw rx;
+        }
+        // shut down concurrently by the timeout thread, since it was empty -> retry with a new sub-pool
+      }
+    }
   }
 
   @Override
