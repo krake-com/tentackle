@@ -25,7 +25,9 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Multiplexing connection manager.
@@ -76,10 +78,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   // optional configuration
 
   /** connection inactivity timeout in ms. */
-  private long connectionInactivityTimeoutMs;
+  private volatile long connectionInactivityTimeoutMs;
 
   /** periodical fake-select to prevent premature close of idle connections. */
-  private boolean connectionKeepAlive;
+  private volatile boolean connectionKeepAlive;
 
 
   // connect thread
@@ -87,8 +89,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private volatile boolean shutdownRequested;         // true if shutdown procedure initiated
   private final ConnectionThread connectThread;       // thread to bring up connections
   private int conRequestCount;                        // number of new connections requested (guarded by this)
-  private int warnLogSize;                            // number of connections when to start WARNING logging
-  private int infoLogSize;                            // number of connections when to start INFO logging
+  private volatile boolean probeRequested;            // true if the unattached connections should be verified
+  private volatile int warnLogSize;                   // number of connections when to start WARNING logging
+  private volatile int infoLogSize;                   // number of connections when to start INFO logging
   private final Object doneMtx;                       // connections created mutex
 
 
@@ -338,6 +341,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     for (;;) {   // until attached
 
+      ManagedConnection candidate = null;   // unattached connection to verify before use
+
       synchronized (this) {
 
         ManagedConnection con = session.getConnection();
@@ -357,16 +362,33 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
 
           if (con.isConnectionVerificationNecessary()) {
-            con.verifyConnection();
+            candidate = con;    // verify below, without blocking the connection manager
           }
+          else {
+            if (con.isDead()) {
+              cleanupDeadConnection(con);
+              continue;
+            }
 
-          if (con.isDead()) {
-            cleanupDeadConnection(con);
+            // found: attach!
+            con.attachSession(session);
+            break;
+          }
+        }
+      }
+
+      if (candidate != null) {
+        // the popped connection is invisible to other sessions while being verified
+        candidate.verifyConnection();
+        synchronized (this) {
+          if (candidate.getIndex() < 0 || candidate.isClosed()) {
+            continue;   // removed in the meantime, e.g., by shutdown
+          }
+          if (candidate.isDead()) {
+            cleanupDeadConnection(candidate);
             continue;
           }
-
-          // found: attach!
-          con.attachSession(session);
+          candidate.attachSession(session);
           break;
         }
       }
@@ -547,23 +569,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         cleanupDeadConnection(con);
         /*
          * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
-         * severe problems. Because we don't know how many unattached connections are down, we will probe them here. This
-         * is a little time-consuming but better than waiting for other clients to crash.
+         * severe problems. Because we don't know how many unattached connections are down, they will be probed.
+         * This is done by the connect thread, since probing may take a long time if the server is unreachable,
+         * and must not block the connection manager.
          */
-        int[] newUnConList = new int[unConList.length];
-        int newUnConCount = 0;
-        for (int i = 0; i < unConCount; i++) {
-          ManagedConnection c = conList[unConList[i]];
-          c.verifyConnection();
-          if (c.isDead()) {
-            cleanupDeadConnection(c);
-          }
-          else {
-            newUnConList[newUnConCount++] = c.getIndex();
-          }
-        }
-        unConList = newUnConList;
-        unConCount = newUnConCount;
+        probeRequested = true;
 
         // open any missing connections
         reopenConnections();
@@ -665,6 +675,59 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   /**
+   * Verifies all unattached connections and removes the dead ones.<br>
+   * Invoked by the connect thread. The connections are verified without holding the monitor.
+   * Each connection is taken from the unattached freelist while being verified, so that no session
+   * can attach it in the meantime, while the others stay available.
+   */
+  protected void probeUnattachedConnections() {
+    List<ManagedConnection> candidates = new ArrayList<>();
+    synchronized (this) {
+      probeRequested = false;
+      for (int i = 0; i < unConCount; i++) {
+        candidates.add(conList[unConList[i]]);
+      }
+    }
+
+    for (ManagedConnection con : candidates) {
+      synchronized (this) {
+        if (con.getIndex() < 0 || !removeUnattached(con.getIndex())) {
+          continue;   // attached or removed in the meantime
+        }
+      }
+      con.verifyConnection();   // marks the connection dead if it fails
+      synchronized (this) {
+        if (con.getIndex() >= 0 && !con.isClosed()) {   // else removed in the meantime, e.g., by shutdown
+          if (con.isDead()) {
+            cleanupDeadConnection(con);
+          }
+          else {
+            pushUnattached(con.getIndex());
+          }
+        }
+      }
+    }
+    reopenConnections();
+  }
+
+  /**
+   * Removes the index of a connection from the unattached freelist.
+   *
+   * @param index the index of the connection in the connection list
+   * @return true if removed, false if not in the freelist
+   */
+  protected boolean removeUnattached(int index) {
+    for (int i = 0; i < unConCount; i++) {
+      if (unConList[i] == index) {
+        System.arraycopy(unConList, i + 1, unConList, i, unConCount - (i + 1));
+        unConCount--;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Closes a dead connection and removes it from the
    * connection list.
    *
@@ -703,7 +766,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Triggers the connect thread if there are outstanding connection requests.
    */
   private void fireConnectionRequest() {
-    if (getConnectionRequestCount() > 0) {
+    if (probeRequested || getConnectionRequestCount() > 0) {
       connectThread.requestConnections();    // fire connect, but don't wait for completion
     }
   }
@@ -787,6 +850,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         MpxConnectionManager mgr = cmRef.get();
         if (mgr == null || mgr.shutdownRequested) {
           break;
+        }
+
+        if (mgr.probeRequested) {
+          try {
+            mgr.probeUnattachedConnections();
+          }
+          catch (RuntimeException e) {
+            LOGGER.severe(mgr + ": probing connections failed", e);
+          }
         }
 
         int requestCount = mgr.getConnectionRequestCount();

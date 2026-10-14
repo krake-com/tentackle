@@ -41,6 +41,7 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Iterator;
@@ -289,10 +290,10 @@ public class ManagedConnection {
    * As a consequence, they will be cleaned up when the ConnectionManager is cleaned up.
    */
   private static class Resources implements Runnable {
-    private Connection connection;  // the wrapped connection, null if closed
-    private String name;            // the name of the managed connection
-    private boolean dead;           // the connection is dead (comlink error detected)
-    private ManagedConnection me;   // != null if programmatic cleanup
+    private volatile Connection connection; // the wrapped connection, null if closed
+    private String name;                    // the name of the managed connection
+    private volatile boolean dead;          // the connection is dead (comlink error detected)
+    private ManagedConnection me;           // != null if programmatic cleanup
 
     Resources(Connection connection) {
       this.connection = connection;
@@ -339,11 +340,11 @@ public class ManagedConnection {
   private final boolean defaultReadOnly;                  // the initial/default read-only mode
   private int txIsolation;                                // the current transaction isolation level
   private boolean readOnly;                               // the current read-only mode
-  private Db db;                                          // currently attached Db, null = free connection
+  private volatile Db db;                                 // currently attached Db, null = free connection
   private long expireAt;                                  // connection shutdown at (epochal [ms]), 0 = forever
-  private long attachedSince;                             // attached since when...
-  private long detachedSince;                             // detached since when...
-  private long lastVerified;                              // last connection verification
+  private volatile long attachedSince;                    // attached since when...
+  private volatile long detachedSince;                    // detached since when...
+  private volatile long lastVerified;                     // last connection verification
   private int index;                                      // connection index given by connection manager, -1 not used
   private int attachCount;                                // 0 = not attached, else number of times db is attached
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
@@ -376,7 +377,7 @@ public class ManagedConnection {
     establishedSince = System.currentTimeMillis();
     detachedSince = establishedSince;
     index = -1;
-    statementHistory = new ArrayList<>();
+    statementHistory = Collections.synchronizedList(new ArrayList<>());   // may be cleared by forceDetached() from another thread
     preparedStatements = new ConcurrentHashMap<>();
     // use a thread-safe set due to concurrent cleanup of weak references in getOpenResultSets and cancelRunningStatements
     openResultSets = ConcurrentHashMap.newKeySet();
@@ -1563,6 +1564,7 @@ public class ManagedConnection {
     if (isAttached()) {
       // the database is still attached
       LOGGER.warning("forcing detach of connection {0}, attached to {1}", this, db);
+      cancelRunningStatements();
       // close pending statements
       closePreparedStatements(true);
       if (!isClosed()) {
