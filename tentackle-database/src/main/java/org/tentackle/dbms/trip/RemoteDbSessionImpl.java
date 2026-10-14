@@ -95,7 +95,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    *
    * @param checkInterval is the interval in ms
    */
-  public static void startCleanupThread(long checkInterval) {
+  public static synchronized void startCleanupThread(long checkInterval) {
+    stopCleanupThread();    // don't leak a running thread if started twice
     cleanupThread = new RemoteDbSessionCleanupThread(checkInterval, SESSIONS, 3);
     cleanupThread.start();
   }
@@ -196,7 +197,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     private final MethodStatistics methodStats; // method statistics (managed by invocation handler, null if no stats)
     private RemoteDbSessionImpl me;             // != null if programmatic close
     private String name;                        // the session name
-    private Db db;                              // the local session
+    private volatile Db db;                     // the local session (read by the cleanup thread)
     private String mdcInfo;                     // the cached MDC info
 
     Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
@@ -298,7 +299,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private final Map<String, Logger> loggers;                  // logger-name :: logger
   private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
   private int timeoutCount;                                   // consecutive timeouts
-  private long closedSince;                                   // session closed since, 0 if still open
+  private volatile long closedSince;                          // session closed since, 0 if still open
+  private final Object closeLock = new Object();              // serializes closing by the client and the cleanup thread
   private Registry registry;                                  // the registry where the delegate is registered
   private UUID remoteId;                                      // the remote delegate ID of this session
   private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
@@ -947,10 +949,12 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @param crashed true if the client crashed, else regular logout
    */
   protected void cleanup(boolean crashed) {
-    DbUtilities.getInstance().cleanupRemoteSession(this);
-    unregisterFromRegistry();
-    if (resources != null) {
-      resources.cleanup(crashed);
+    synchronized (closeLock) {
+      DbUtilities.getInstance().cleanupRemoteSession(this);
+      unregisterFromRegistry();
+      if (resources != null) {
+        resources.cleanup(crashed);
+      }
     }
   }
 
@@ -971,15 +975,17 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * @param cleanup true if db must be physically closed even if pooled, due to session cleanup
    */
   protected void closeDb(boolean cleanup) {
-    if (closedSince == 0) {
-      if (resources != null) {
-        resources.me = this;    // programmatic cleanup
-        resources.closeDb(cleanup);
+    synchronized (closeLock) {    // the client's logout may race with the cleanup thread
+      if (closedSince == 0) {
+        if (resources != null) {
+          resources.me = this;    // programmatic cleanup
+          resources.closeDb(cleanup);
+        }
+        closedSince = System.currentTimeMillis();
       }
-      closedSince = System.currentTimeMillis();
-    }
-    if (cleanable != null) {
-      cleanable.clean();
+      if (cleanable != null) {
+        cleanable.clean();
+      }
     }
   }
 
@@ -989,18 +995,20 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
    * Simply marks the session closed and moves all references to GC.
    */
   protected void forceCleanup() {
-    closedSince = System.currentTimeMillis();
-    Db zombieDb = resources.db;
-    if (zombieDb != null) {
-      resources.db = null;  // block any further TRIP requests (isOpen() == false)
-      try {
-        zombieDb.close();   // should work
-        if (zombieDb.isPooled()) {
-          zombieDb.getPool().put(zombieDb);
+    synchronized (closeLock) {
+      closedSince = System.currentTimeMillis();
+      Db zombieDb = resources.db;
+      if (zombieDb != null) {
+        resources.db = null;  // block any further TRIP requests (isOpen() == false)
+        try {
+          zombieDb.close();   // should work
+          if (zombieDb.isPooled()) {
+            zombieDb.getPool().put(zombieDb);
+          }
         }
-      }
-      catch (RuntimeException ex) {
-        LOGGER.warning("forced cleanup may be incomplete", ex);
+        catch (RuntimeException ex) {
+          LOGGER.warning("forced cleanup may be incomplete", ex);
+        }
       }
     }
   }

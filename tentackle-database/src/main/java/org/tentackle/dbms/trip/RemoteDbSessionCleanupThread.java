@@ -220,22 +220,30 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
         iter.remove();    // was removed by GC: remove it from set too
       }
       else  {
-        if (session.isOpen()) {
-          int groupId = session.getSession().getExportedSessionGroupId();
-          if (groupId != 0) {
-            boolean deadInTransaction = deadTxGroups.contains(groupId);
-            if (deadInTransaction || !activeGroups.containsKey(groupId)) {
-              if (deadInTransaction) {
-                LOGGER.info("disconnect dead {0}, group={1}, due to hanging transaction on {2}",
-                            session, groupId, session.getSession());
+        try {
+          Db db = session.getSession();   // local copy: the client may close the session concurrently
+          if (db != null) {
+            int groupId = db.getExportedSessionGroupId();
+            if (groupId != 0) {
+              boolean deadInTransaction = deadTxGroups.contains(groupId);
+              if (deadInTransaction || !activeGroups.containsKey(groupId)) {
+                if (deadInTransaction) {
+                  LOGGER.info("disconnect dead {0}, group={1}, due to hanging transaction on {2}",
+                              session, groupId, db);
+                }
+                else  {
+                  LOGGER.info("disconnect dead {0}, group={1}", session, groupId);
+                }
+                cleanupSession(session);
+                iter.remove();
               }
-              else  {
-                LOGGER.info("disconnect dead {0}, group={1}", session, groupId);
-              }
-              cleanupSession(session);
-              iter.remove();
             }
           }
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("verifying " + session + " failed -> force cleanup", rx);
+          session.forceCleanup();
+          iter.remove();
         }
       }
     }
