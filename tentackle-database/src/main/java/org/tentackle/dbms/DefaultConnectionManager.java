@@ -313,12 +313,11 @@ public class DefaultConnectionManager implements ConnectionManager {
       con = createConnection(backendInfo);    // lengthy operation outside synchronized!
       synchronized (this) {
         /*
-         * because we add the connections in the same order as the sessions (1:1 mapping), the
-         * index returned after adding the connection must be the same as for the session.
+         * Sessions and connections are mapped 1:1 by index.
+         * Concurrent logins may complete in a different order than they started,
+         * so the connection must be stored at the session's index explicitly.
          */
-        if (addConnection(con) != id) {
-          throw new PersistenceException(this + ": session- and connection-list out of sync");
-        }
+        addConnection(con, id);
       }
     }
     catch (RuntimeException rx) {
@@ -536,33 +535,64 @@ public class DefaultConnectionManager implements ConnectionManager {
   protected int addConnection(ManagedConnection con) {
     if (freeConCount == 0) {
       // no more free connection entries: double the list size
-      if (maxConSize > 0 && conList.length >= maxConSize) {
-        PersistenceException pex = new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")");
-        pex.setTemporary(true);
-        throw pex;
-      }
-      // no more free connection entries: double the list size
-      int newSize = conList.length << 1;
-      if (maxConSize > 0 && newSize > maxConSize) {
-        newSize = maxConSize;
-      }
-      ManagedConnection[] nConList = new ManagedConnection[newSize];
-      System.arraycopy(conList, 0, nConList, 0, conList.length);
-      int[] nFreeConList = new int[newSize];
-      System.arraycopy(freeConList, 0, nFreeConList, 0, conList.length);
-      for (int i=newSize-1; i >= conList.length; i--) {
-        nFreeConList[freeConCount++] = i;
-        nFreeConList[i] = -1;
-        nConList[i] = null;
-      }
-      conList = nConList;
-      freeConList = nFreeConList;
+      growConnectionList(conList.length << 1);
     }
 
     int index = freeConList[--freeConCount];
     conList[index] = con;
     con.setIndex(index);
     return index;
+  }
+
+  /**
+   * Adds a connection to the list at a given index.<br>
+   * Used if connections are mapped 1:1 to session indexes.
+   *
+   * @param con the connection to add
+   * @param index the index of the connection in the list
+   * @throws PersistenceException if the index is not free
+   */
+  protected void addConnection(ManagedConnection con, int index) {
+    if (index >= conList.length) {
+      growConnectionList(Math.max(conList.length << 1, index + 1));
+    }
+    for (int i = 0; i < freeConCount; i++) {
+      if (freeConList[i] == index) {
+        freeConList[i] = freeConList[--freeConCount];   // remove from freelist
+        conList[index] = con;
+        con.setIndex(index);
+        return;
+      }
+    }
+    throw new PersistenceException(this + ": session- and connection-list out of sync at index " + index);
+  }
+
+  /**
+   * Enlarges the connection list.
+   *
+   * @param newSize the requested new size, limited by the maximum number of connections
+   * @throws PersistenceException if the maximum number of connections is already reached
+   */
+  private void growConnectionList(int newSize) {
+    if (maxConSize > 0 && conList.length >= maxConSize) {
+      PersistenceException pex = new PersistenceException(this + ": max. number of connections exceeded (" + maxConSize + ")");
+      pex.setTemporary(true);
+      throw pex;
+    }
+    if (maxConSize > 0 && newSize > maxConSize) {
+      newSize = maxConSize;
+    }
+    ManagedConnection[] nConList = new ManagedConnection[newSize];
+    System.arraycopy(conList, 0, nConList, 0, conList.length);
+    int[] nFreeConList = new int[newSize];
+    System.arraycopy(freeConList, 0, nFreeConList, 0, conList.length);
+    for (int i=newSize-1; i >= conList.length; i--) {
+      nFreeConList[freeConCount++] = i;
+      nFreeConList[i] = -1;
+      nConList[i] = null;
+    }
+    conList = nConList;
+    freeConList = nFreeConList;
   }
 
 
