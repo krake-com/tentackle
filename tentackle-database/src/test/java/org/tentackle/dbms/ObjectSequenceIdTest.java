@@ -27,7 +27,15 @@ import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -60,7 +68,7 @@ public class ObjectSequenceIdTest extends AbstractDbTest {
   public void createSequences() {
     Db db = getSession();
     Backend backend = db.getBackend();
-    for (String suffix : new String[] { "_mono", "_boundary", "_global", "_low_user", "_multidb" }) {
+    for (String suffix : new String[] { "_mono", "_boundary", "_global", "_low_user", "_multidb", "_concurrent" }) {
       // each StatementWrapper is single-use: it detaches the session once executeUpdate() returns
       try (StatementWrapper st = db.createStatement()) {
         st.executeUpdate(backend.sqlCreateSequence(SEQUENCE_NAME + suffix, null, null));
@@ -149,6 +157,54 @@ public class ObjectSequenceIdTest extends AbstractDbTest {
       long id = source.nextId(getSession());
       assertEquals(id % globalMultiplier, 0, "id " + id + " must be a multiple of the global multiplier");
     }
+  }
+
+
+  @Test(timeOut = 60000)
+  public void testConcurrentIdsAreUnique() throws Exception {
+    int threadCount = 8;
+    int idsPerThread = 50;    // 5 ranges per thread, i.e., the threads race for new ranges
+    ObjectSequenceId source = ObjectSequenceId.get(SEQUENCE_NAME + "_concurrent", SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
+    ConnectionManager connectionManager = new DefaultConnectionManager("objseqidtest-concurrent", threadCount, threadCount, 1, 0, 0);
+    Set<Long> ids = ConcurrentHashMap.newKeySet();
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    CountDownLatch start = new CountDownLatch(1);
+    List<Thread> threads = new ArrayList<>();
+    try {
+      for (int t = 0; t < threadCount; t++) {
+        threads.add(new Thread(() -> {
+          Db db = null;
+          try {
+            db = new Db(connectionManager, new DefaultSessionInfo());
+            start.await();
+            for (int i = 0; i < idsPerThread; i++) {
+              if (!ids.add(source.nextId(db))) {
+                throw new AssertionError("duplicate id");
+              }
+            }
+          }
+          catch (Throwable ex) {
+            failure.compareAndSet(null, ex);
+          }
+          finally {
+            if (db != null) {
+              db.close();
+            }
+          }
+        }));
+      }
+      threads.forEach(Thread::start);
+      start.countDown();
+      for (Thread thread : threads) {
+        thread.join();
+      }
+    }
+    finally {
+      connectionManager.shutdown();
+    }
+
+    assertNull(failure.get(), "concurrent id creation failed: " + failure.get());
+    assertEquals(ids.size(), threadCount * idsPerThread);
   }
 
 

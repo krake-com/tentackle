@@ -22,6 +22,7 @@ import org.tentackle.session.PersistenceException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An {@link IdSource} to create unique object IDs from a database sequence.
@@ -121,9 +122,9 @@ public class ObjectSequenceId extends AbstractIdSource {
 
   /**
    * The ranges taken from the sequence, one per database.<br>
-   * Guarded by this instance's monitor.
+   * Each range is guarded by its own monitor.
    */
-  private final Map<Integer, Range> ranges = new HashMap<>();
+  private final Map<Integer, Range> ranges = new ConcurrentHashMap<>();
 
 
 
@@ -169,36 +170,71 @@ public class ObjectSequenceId extends AbstractIdSource {
   }
 
   @Override
-  public synchronized long nextId(Db db) {
+  public long nextId(Db db) {
 
     assertDbNotRemote(db);
 
     Range range = ranges.computeIfAbsent(db.getBackendIdentity(), _ -> new Range(sequenceMultiplier));
-    if (range.idCount >= sequenceMultiplier) {
-      // get the new offset from the sequence
-      try {
-        PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass(), getName()), false,
-                                                                b -> b.sqlNextFromSequence(getName())
-        );
-        try (ResultSetWrapper rs = stmt.executeQuery()) {
-          if (rs.next()) {
-            range.sequenceNo = rs.getLong(1);
-            range.idCount = 0;
-          }
-          else {
-            throw new PersistenceException(db, "cannot retrieve ID from sequence");
-          }
-        }
-      }
-      catch (PersistenceException px) {
-        throw px;
-      }
-      catch (RuntimeException rx) {
-        throw new PersistenceException(db, rx);
+
+    synchronized (range) {
+      if (range.idCount < sequenceMultiplier) {
+        return nextId(range);
       }
     }
 
+    /*
+     * Range exhausted: fetch the next sequence number without holding any lock.
+     * Holding one across the database roundtrip would serialize all ID creation and could even deadlock,
+     * if the session must wait for a connection held by another thread waiting for that lock.
+     * If another thread installed a new range in the meantime, the fetched sequence number is
+     * dropped. This only leaves a gap, as with any non-transactional sequence.
+     */
+    long sequenceNo = selectNextSequenceNo(db);
+
+    synchronized (range) {
+      if (range.idCount >= sequenceMultiplier) {
+        range.sequenceNo = sequenceNo;
+        range.idCount = 0;
+      }
+      return nextId(range);
+    }
+  }
+
+  /**
+   * Computes the next ID from a range.<br>
+   * Must be invoked with the range's monitor held.
+   *
+   * @param range the range, not exhausted
+   * @return the ID
+   */
+  private long nextId(Range range) {
     return (range.sequenceNo * sequenceMultiplier + range.idCount++) * globalMultiplier;
+  }
+
+  /**
+   * Selects the next number from the database sequence.
+   *
+   * @param db the session
+   * @return the sequence number
+   */
+  private long selectNextSequenceNo(Db db) {
+    try {
+      PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass(), getName()), false,
+                                                              b -> b.sqlNextFromSequence(getName())
+      );
+      try (ResultSetWrapper rs = stmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getLong(1);
+        }
+        throw new PersistenceException(db, "cannot retrieve ID from sequence");
+      }
+    }
+    catch (PersistenceException px) {
+      throw px;
+    }
+    catch (RuntimeException rx) {
+      throw new PersistenceException(db, rx);
+    }
   }
 
 }
