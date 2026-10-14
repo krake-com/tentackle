@@ -189,7 +189,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private static class TableEntry {
 
     private final String tableName;                     // the table name
-    private long id;                                    // unique id
+    private volatile long id;                           // unique id
     private volatile long serial;                       // last serial
 
     /**
@@ -319,7 +319,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private final Set<DelayedEvent> delayedEvents;                    // delayed events (tracker thread only)
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
-  private boolean localClientMode;                                  // true if the local session and not a server
+  private volatile boolean localClientMode;                         // true if the local session and not a server
   private long lastPollTime;                                        // last polling time
   private Map<String, IdSerialTuple> remoteSerials;                 // initial id/serial/name tuples of the remote server's tracker (null if local)
   private boolean remoteConfigPending;                              // true if remote session configuration pending
@@ -552,12 +552,12 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param name the name to set
    * @param idSerial the id/serial pair to set
    */
-  public synchronized void setIdSerialForName(String name, IdSerialTuple idSerial) {
-    TableEntry entry = tableEntriesByName.get(name);
+  public void setIdSerialForName(String name, IdSerialTuple idSerial) {
+    // putIfAbsent: a concurrent configuration task must not install a second entry for the same name
+    TableEntry newEntry = new TableEntry(name, idSerial.getId(), idSerial.getSerial());
+    TableEntry entry = tableEntriesByName.putIfAbsent(name, newEntry);
     if (entry == null) {
-      entry = new TableEntry(name, idSerial.getId(), idSerial.getSerial());
-      tableEntriesByName.put(name, entry);
-      tableEntriesById.put(idSerial.getId(), entry);
+      tableEntriesById.put(idSerial.getId(), newEntry);
     }
     else {
       entry.serial = idSerial.getSerial();
@@ -1219,8 +1219,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
             idSer = selectIdSerialForName(name);
           }
           TableEntry entry = new TableEntry(name, idSer.getId(), idSer.getSerial());
-          tableEntriesByName.put(name, entry);
-          tableEntriesById.put(idSer.getId(), entry);
+          if (tableEntriesByName.putIfAbsent(name, entry) == null) {   // setIdSerialForName may have won the race
+            tableEntriesById.put(idSer.getId(), entry);
+          }
         }
       }
     };
