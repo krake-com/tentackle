@@ -31,14 +31,25 @@ import org.tentackle.trip.transport.LoopbackTransport;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class RemoteTest {
@@ -115,6 +126,70 @@ public class RemoteTest {
     assertEquals(methodTypeMap.size(), 2);    // echo + getUsername
 
     transport.close();
+  }
+
+  /**
+   * Remote proxies are shared among threads, the transport's {@link RemoteLookup} for example.
+   * Concurrent first invocations must not corrupt the proxy's method-index cache.
+   */
+  @Test
+  void testConcurrentInvocationsOnSharedProxy() throws Exception {
+    // the loopback transport provides a single connection only: concurrent calls need TCP
+    int port;
+    try (ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+      port = socket.getLocalPort();
+    }
+    URI uri = new URI("trip://127.0.0.1:" + port);
+    Transport server = TripFactory.getInstance().createTransport(uri);
+    server.accept();
+    Transport transport = TripFactory.getInstance().createTransport(uri);
+    try {
+      server.getRegistry().register(new DemoLoginImpl("1.0.0"), "login");
+      UUID remoteId = transport.getRemoteLookup().lookup("login");
+      DemoLogin login = TripFactory.getInstance().createRemoteProxy(remoteId, transport, DemoLogin.class);
+      DemoSession session = login.login("harr", "0815");
+
+      // a HashMap is not safe for concurrent puts and gets: the cache must be a concurrent map
+      InvocationHandler handler = Proxy.getInvocationHandler(session);
+      Field mapField = handler.getClass().getDeclaredField("methodTypeMap");
+      mapField.setAccessible(true);
+      assertTrue(mapField.get(handler) instanceof ConcurrentMap, "method-index cache is not thread-safe");
+
+      int threadCount = 8;
+      int rounds = 50;
+      CyclicBarrier barrier = new CyclicBarrier(threadCount);
+      List<Future<?>> futures = new ArrayList<>();
+      ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+      try {
+        for (int t = 0; t < threadCount; t++) {
+          int threadNo = t;
+          futures.add(executor.submit(() -> {
+            barrier.await();    // start together: the first invocations race on the empty cache
+            for (int i = 0; i < rounds; i++) {
+              assertEquals(session.getUsername(), "harr");
+              TestClass testObject = new TestClass();
+              testObject.name = "thread " + threadNo;
+              testObject.age = i;
+              assertEquals(session.echo(testObject), testObject);
+            }
+            return null;
+          }));
+        }
+        for (Future<?> future : futures) {
+          future.get(30, TimeUnit.SECONDS);   // rethrows any assertion error of the worker
+        }
+      }
+      finally {
+        executor.shutdownNow();
+      }
+
+      Map<?, ?> methodTypeMap = (Map<?, ?>) mapField.get(handler);
+      assertEquals(methodTypeMap.size(), 2);    // echo + getUsername
+    }
+    finally {
+      transport.close();
+      server.close();
+    }
   }
 
 }

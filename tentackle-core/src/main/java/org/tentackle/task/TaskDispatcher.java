@@ -135,10 +135,13 @@ public interface TaskDispatcher extends Terminatable {
   void removeTaskListener(TaskListener listener);
 
   /**
-   * Adds a task to the queue.
-   * 
+   * Adds a task to the queue.<br>
+   * A task can be added before the dispatcher is started, but not after it has terminated,
+   * for example due to the {@link #setShutdownIdleTimeout(long) idle timeout}.
+   *
    * @param task the task to add
    * @return true if added, false if already in queue
+   * @throws TaskException if the dispatcher has terminated and will never execute the task
    */
   boolean addTask(Task task);
 

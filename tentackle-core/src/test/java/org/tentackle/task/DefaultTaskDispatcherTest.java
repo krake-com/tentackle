@@ -26,9 +26,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
 
 import static org.testng.Assert.assertEquals;
@@ -653,6 +655,114 @@ public class DefaultTaskDispatcherTest {
 
     assertEquals(oneShotCount.get(), 1, "the one-shot listener should have been notified once");
     assertEquals(observerCount.get(), 1, "the listener behind the deregistering one was skipped");
+  }
+
+
+  // --- termination vs. adding tasks -----------------------------------------
+
+  /**
+   * A dispatcher shut down due to its idle timeout must reject new tasks instead of
+   * silently queueing tasks that will never be executed.
+   */
+  @Test
+  public void testAddTaskAfterIdleShutdownThrows() {
+    dispatcher = new DefaultTaskDispatcher("idle", false, 10, 0);
+    dispatcher.setShutdownIdleTimeout(20);
+    dispatcher.start();
+    await(() -> !dispatcher.isAlive());
+    RecordingTask task = new RecordingTask();
+    assertThrows(TaskException.class, () -> dispatcher.addTask(task));
+    assertFalse(dispatcher.isTaskPending(task));
+  }
+
+  /**
+   * A task added while the dispatcher shuts down due to its idle timeout must either be
+   * rejected or be executed, but never get lost.
+   */
+  @Test
+  public void testTaskAddedDuringIdleShutdownIsNeverLost() {
+    for (int i = 0; i < 200; i++) {
+      DefaultTaskDispatcher idleDispatcher = new DefaultTaskDispatcher("idleRace", false, 1, 0);
+      idleDispatcher.setShutdownIdleTimeout(1);
+      idleDispatcher.start();
+      // hit the dispatcher somewhere around its idle shutdown
+      long until = System.nanoTime() + ThreadLocalRandom.current().nextLong(TimeUnit.MILLISECONDS.toNanos(4));
+      while (System.nanoTime() < until) {
+        Thread.onSpinWait();
+      }
+      RecordingTask task = new RecordingTask();
+      boolean added;
+      try {
+        added = idleDispatcher.addTask(task);
+      }
+      catch (TaskException ex) {
+        added = false;    // rejected: already shut down
+      }
+      if (added) {
+        await(() -> task.getCompleted() != 0);
+        assertEquals(task.runCount.get(), 1);
+      }
+      if (idleDispatcher.isAlive()) {
+        idleDispatcher.terminate();
+      }
+    }
+  }
+
+
+  // --- waiting for a running task -------------------------------------------
+
+  /**
+   * A task waiting for a resource held by the thread waiting for that task is a deadlock.
+   * waitForTask() must detect it by its wait interval, even though the task is already running.
+   */
+  @Test
+  public void testWaitForRunningTaskTimesOut() throws InterruptedException {
+    startDispatcher("deadlock");
+    dispatcher.setWaitInterval(300);
+
+    ReentrantLock resource = new ReentrantLock();
+    CountDownLatch started = new CountDownLatch(1);
+    AtomicBoolean acquired = new AtomicBoolean();
+    AbstractTask task = new AbstractTask() {
+      @Serial
+      private static final long serialVersionUID = 1L;
+
+      @Override
+      public boolean isInterruptable() {
+        return false;   // the wakeup interrupt of addTask() must not abort the tryLock() below
+      }
+
+      @Override
+      public void run() {
+        started.countDown();
+        try {
+          // bounded, so that a regression fails the test instead of hanging it
+          if (resource.tryLock(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS)) {
+            acquired.set(true);
+            resource.unlock();
+          }
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    };
+
+    resource.lock();
+    try {
+      dispatcher.addTask(task);
+      assertTrue(started.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "task did not start");
+      long waitStarted = System.currentTimeMillis();
+      assertThrows(TaskException.class, () -> dispatcher.waitForTask(task));
+      long waited = System.currentTimeMillis() - waitStarted;
+      assertTrue(waited < AWAIT_TIMEOUT / 2, "wait timed out only after " + waited + "ms");
+    }
+    finally {
+      resource.unlock();
+    }
+    // the task gets the resource once the waiting thread gave up
+    await(() -> task.getCompleted() != 0);
+    assertTrue(acquired.get(), "task did not get the resource");
   }
 
 

@@ -35,10 +35,10 @@ import org.tentackle.trip.impl.TripError;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -59,7 +59,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
   private final TripType<InitialRemoteResponse> initialResponseType;
   private final TripType<IdentifiedRemoteCall> identifiedCallType;
   private final TripType<IdentifiedRemoteResponse> identifiedRemoteType;
-  private final Map<Method, Integer> methodTypeMap;    // method -> methodIndex
+  private final Map<Method, Integer> methodTypeMap;    // method -> methodIndex (concurrent: the proxy is shared among threads)
 
   /**
    * Creates a remote invocation handler.
@@ -75,7 +75,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
     initialResponseType = factory.getType(InitialRemoteResponse.class);
     identifiedCallType = factory.getType(IdentifiedRemoteCall.class);
     identifiedRemoteType = factory.getType(IdentifiedRemoteResponse.class);
-    methodTypeMap = new HashMap<>();
+    methodTypeMap = new ConcurrentHashMap<>();
   }
 
   @Override

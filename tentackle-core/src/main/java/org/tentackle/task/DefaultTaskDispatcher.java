@@ -80,6 +80,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final Object queueLock;                       // makes composite updates of queue + idMap atomic
+  private boolean closed;                               // true if no more tasks are accepted (guarded by queueLock)
   private final List<TaskListener> listeners;           // task listeners (notified without holding a lock)
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of the task
   private final Object interruptLock;                   // makes testing and setting delayInterrupt atomic
@@ -301,6 +302,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
                                 task.getDispatcher() + ", cannot be added to " + this);
       }
       synchronized (queueLock) {
+        if (closed) {
+          // decided under the same lock as the termination: the task would never be executed
+          throw new TaskException("dispatcher " + this + " has terminated, cannot add task " + task);
+        }
         if (task.getId() != 0 && queue.contains(task)) {
           LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
           return false;
@@ -616,10 +621,12 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
         if (task == null) {
           LOGGER.finer("{0}: queue is empty", this);
-          if (lastActivity != 0 && shutdownIdleTimeout > 0 && lastMillis - lastActivity > shutdownIdleTimeout) {
+          if (lastActivity != 0 && shutdownIdleTimeout > 0 && lastMillis - lastActivity > shutdownIdleTimeout &&
+              closeIfQueueEmpty()) {
             LOGGER.info("shutting down {0} due to idle timeout", this);
             break;
           }
+          // else: a task was added meanwhile and its interrupt cuts the sleep short
           unlockInternal(sleepInterval);   // unlock and wait (until interrupted due to the added task or time elapsed)
         }
         else if (task.getScheduledEpochalTime() > lastMillis) {
@@ -644,6 +651,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         LOGGER.severe("dispatcher failed", rex);
         terminationCause = rex;
       }
+    }
+
+    synchronized (queueLock) {
+      closed = true;    // tasks added from now on would never be executed
     }
 
     try {
@@ -698,81 +709,88 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
     fireStarted(task);
 
-    synchronized (task) {
+    // The task's monitor is deliberately not held while the task is running.
+    // Otherwise, waitForTask() could not even evaluate its timeout until the task has finished,
+    // and a task needing a resource held by the waiting thread would deadlock for good.
+    try {
+      interruptMutex.writeLock().lock();
       try {
-        interruptMutex.writeLock().lock();
-        try {
-          synchronized (interruptLock) {
-            if (!task.isInterruptable()) {
-              delayInterrupt = true;
-              if (Thread.interrupted()) {
-                // an interrupt landed just before the flag was raised: consume it, the task
-                // must not start out with a pending interrupt it declared it cannot handle
-                wasInterrupted = true;
-              }
+        synchronized (interruptLock) {
+          if (!task.isInterruptable()) {
+            delayInterrupt = true;
+            if (Thread.interrupted()) {
+              // an interrupt landed just before the flag was raised: consume it, the task
+              // must not start out with a pending interrupt it declared it cannot handle
+              wasInterrupted = true;
             }
           }
-          task.run();
         }
-        catch (Throwable t) {
-          task.setCause(t);
-          LOGGER.severe("task '" + task + "', ID=" + task.getId() + " terminated abnormally", t);
-        }
-        finally {
-          synchronized (interruptLock) {
-            delayInterrupt = false;
-            if (wasInterrupted) {
-              // deliver what was withheld while the task was running
-              wasInterrupted = false;
-              super.interrupt();
-            }
-          }
-          interruptMutex.writeLock().unlock();
-        }
-
-        if (task.getDispatcher() == null) {
-          LOGGER.warning("{0}: already removed task {1} completed", this, task);
-        }
-
-        lastMillis = System.currentTimeMillis();
-
-        // Finish all dispatcher-side bookkeeping *before* signaling completion.
-        // setCompleted() sets the (volatile) completion timestamp and fires the
-        // task's completion listeners, and the notifyAll() below wakes waitForTask().
-        // All of these observers must see a consistent dispatcher state: the task
-        // already dequeued and - unless it repeats - removed from the id map.
-        // Otherwise, a completion observer could still find the just-completed task
-        // via getTask() or isTaskPending() (see DefaultTaskDispatcherTest).
-        unlockInternal(0);
-
-        // A repeating task must be dequeued and re-queued because the queue is sorted
-        // by the scheduled time, which is about to change (see AbstractTask.compareTo).
-        // The lock keeps that update atomic: without it a concurrent removeTask() could
-        // hit the gap, fail to remove the task and thus fail to clear its dispatcher,
-        // whereupon the task would be re-queued below and repeat forever.
-        synchronized (queueLock) {
-          queue.remove(task);
-
-          long repeat = task.getRepeatInterval();
-          if (repeat > 0 && task.getDispatcher() == this) {
-            // if repeat and not removed from the dispatcher in the meantime
-            task.setScheduledEpochalTime(lastMillis + repeat);
-            queue.add(task);
-          }
-          else  {
-            idMap.remove(task.getId());
+        task.run();
+      }
+      catch (Throwable t) {
+        task.setCause(t);
+        LOGGER.severe("task '" + task + "', ID=" + task.getId() + " terminated abnormally", t);
+      }
+      finally {
+        synchronized (interruptLock) {
+          delayInterrupt = false;
+          if (wasInterrupted) {
+            // deliver what was withheld while the task was running
+            wasInterrupted = false;
+            super.interrupt();
           }
         }
+        interruptMutex.writeLock().unlock();
+      }
 
+      if (task.getDispatcher() == null) {
+        LOGGER.warning("{0}: already removed task {1} completed", this, task);
+      }
+
+      lastMillis = System.currentTimeMillis();
+
+      // Finish all dispatcher-side bookkeeping *before* signaling completion.
+      // setCompleted() sets the (volatile) completion timestamp and fires the
+      // task's completion listeners, and the notifyAll() below wakes waitForTask().
+      // All of these observers must see a consistent dispatcher state: the task
+      // already dequeued and - unless it repeats - removed from the id map.
+      // Otherwise, a completion observer could still find the just-completed task
+      // via getTask() or isTaskPending() (see DefaultTaskDispatcherTest).
+      unlockInternal(0);
+
+      // A repeating task must be dequeued and re-queued because the queue is sorted
+      // by the scheduled time, which is about to change (see AbstractTask.compareTo).
+      // The lock keeps that update atomic: without it a concurrent removeTask() could
+      // hit the gap, fail to remove the task and thus fail to clear its dispatcher,
+      // whereupon the task would be re-queued below and repeat forever.
+      synchronized (queueLock) {
+        queue.remove(task);
+
+        long repeat = task.getRepeatInterval();
+        if (repeat > 0 && task.getDispatcher() == this) {
+          // if repeat and not removed from the dispatcher in the meantime
+          task.setScheduledEpochalTime(lastMillis + repeat);
+          queue.add(task);
+        }
+        else  {
+          idMap.remove(task.getId());
+        }
+      }
+
+      synchronized (task) {   // the task's listeners are guarded by its monitor
         try {
           task.setCompleted(lastMillis);
         }
         catch (RuntimeException ex) {
           LOGGER.severe("cannot set task '" + task + "', ID=" + task.getId() + " completed", ex);
         }
-        lastActivity = lastMillis;
       }
-      finally {
+      lastActivity = lastMillis;
+    }
+    finally {
+      // waitForTask() tests isTaskPending() and waits while holding the task's monitor,
+      // so a wakeup sent under the monitor cannot get lost
+      synchronized (task) {
         task.notifyAll();
       }
     }
@@ -1040,6 +1058,22 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
 
+
+  /**
+   * Stops accepting tasks if the queue is empty.<br>
+   * The emptiness check and the closing must be atomic: a task added after the dispatcher
+   * found the queue empty, but before it terminated, would never be executed.
+   *
+   * @return true if closed, false if a task was added in the meantime
+   */
+  private boolean closeIfQueueEmpty() {
+    synchronized (queueLock) {
+      if (queue.isEmpty()) {
+        closed = true;
+      }
+      return closed;
+    }
+  }
 
   /**
    * Safely interrupt the dispatcher without interrupting any running task.
