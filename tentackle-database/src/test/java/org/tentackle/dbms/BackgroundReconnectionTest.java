@@ -24,6 +24,7 @@ import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
@@ -84,6 +85,10 @@ public class BackgroundReconnectionTest {
    * An error thrown by the reconnection.
    */
   private static class SimulatedError extends Error {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private SimulatedError() {
       super("simulated error");
     }

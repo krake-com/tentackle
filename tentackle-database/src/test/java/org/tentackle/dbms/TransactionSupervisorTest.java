@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.SessionInfo;
 
+import java.io.Serial;
+
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -56,6 +58,10 @@ public class TransactionSupervisorTest extends AbstractDbTest {
    * An error thrown in the supervisor thread.
    */
   private static class SupervisorKiller extends Error {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private SupervisorKiller() {
       super("simulated error in the transaction supervisor");
     }
