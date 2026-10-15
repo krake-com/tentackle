@@ -1056,6 +1056,8 @@ public class MyTripConnectionPool extends AbstractConnectionPool {
 
 The pool parameters (`initial`, `increment`, `minimum`, `maximum`, `idle`, `usage`) are read from the URI query string and control dynamic sizing.
 
+`createSlot()` runs with the pool's monitor held, so opening a connection blocks the other threads using the transport. If it does not depend on that monitor, override `isCreatingSlotsConcurrently()` to return true, as `TcpConnectionPool` does (see [Pooling](misc.md#pooling)).
+
 #### 3. Create the Connection
 
 ```java

@@ -24,8 +24,8 @@ import org.tentackle.log.Logger.Level;
 
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -238,35 +238,20 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
   @Override
   public boolean removeAll(Collection<?> collection) {
-    // ArrayList.removeAll bypasses remove(int)
-    if (stream().anyMatch(collection::contains)) {
-      assertMutable();
-    }
-    return super.removeAll(collection);
+    Objects.requireNonNull(collection);
+    return removeIndexes(matchIndexes(collection::contains));
   }
 
   @Override
   public boolean retainAll(Collection<?> collection) {
-    // re-implemented via the iterator, whose remove() invokes remove(int) and thus checks mutability
-    boolean someRemoved = false;
-    Iterator<E> iter = iterator();
-    while (iter.hasNext()) {
-      E obj = iter.next();
-      if (!collection.contains(obj)) {
-        iter.remove();
-        someRemoved = true;
-      }
-    }
-    return someRemoved;
+    Objects.requireNonNull(collection);
+    return removeIndexes(matchIndexes(element -> !collection.contains(element)));
   }
 
   @Override
   public boolean removeIf(Predicate<? super E> filter) {
-    // ArrayList.removeIf bypasses remove(int)
-    if (stream().anyMatch(filter)) {
-      assertMutable();
-    }
-    return super.removeIf(filter);
+    Objects.requireNonNull(filter);
+    return removeIndexes(matchIndexes(filter));
   }
 
   @Override
@@ -311,6 +296,53 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
     return obj;
   }
 
+
+  /**
+   * Determines the indexes of the elements matching a filter.<br>
+   * The filter is evaluated exactly once per element.
+   *
+   * @param filter the filter
+   * @return the indexes of the matching elements, null if none
+   */
+  protected BitSet matchIndexes(Predicate<? super E> filter) {
+    BitSet indexes = null;
+    int size = size();
+    for (int i = 0; i < size; i++) {
+      if (filter.test(super.get(i))) {
+        if (indexes == null) {
+          indexes = new BitSet(size);
+        }
+        indexes.set(i);
+      }
+    }
+    return indexes;
+  }
+
+  /**
+   * Removes the elements at the given indexes in a single pass.<br>
+   * Asserts the list is mutable if there is anything to remove.
+   * <p>
+   * Unlike removing them one by one via {@link #remove(int)} or an iterator, which shifts the
+   * remaining elements each time, this takes linear time. The overridden mutators are bypassed.
+   *
+   * @param indexes the indexes, null if none
+   * @return true if elements were removed
+   */
+  protected boolean removeIndexes(BitSet indexes) {
+    if (indexes == null) {
+      return false;
+    }
+    assertMutable();
+    int size = size();
+    int target = indexes.nextSetBit(0);
+    for (int source = target + 1; source < size; source++) {
+      if (!indexes.get(source)) {
+        super.set(target++, super.get(source));
+      }
+    }
+    super.removeRange(target, size);
+    return true;
+  }
 
   /**
    * Asserts that the object is mutable.<br>

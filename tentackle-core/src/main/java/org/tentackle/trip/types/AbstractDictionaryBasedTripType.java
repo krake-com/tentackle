@@ -67,6 +67,13 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
   private volatile TripInstanceCreator<T> instanceCreator;
 
   /**
+   * The cached no-args constructor, null if not resolved yet.<br>
+   * Resolved once, since {@link Class#getDeclaredConstructor} returns a new copy on each call
+   * whose accessibility would have to be granted again for every object read from a stream.
+   */
+  private volatile Constructor<T> noArgsConstructor;
+
+  /**
    * An optional method provided by {@link TripSerializable} to prepare the object before serialization.
    */
   protected final Method prepareMethod;
@@ -307,7 +314,6 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    *
    * @return the instance, null if the class is abstract or an interface
    */
-  @SuppressWarnings("unchecked")
   protected T createInitializedDefault() {
     if (isInstantiable()) {
       TripInstanceCreator<T> creator = getInstanceCreator();
@@ -315,32 +321,35 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
         return creator.create(getObjectClass());
       }
 
-      Constructor<?> constructor;
-      try {
-        constructor = getObjectClass().getDeclaredConstructor();
-      }
-      catch (NoSuchMethodException e) {
-        if (ReflectionHelper.isNonStaticInnerClass(getObjectClass())) {
-          // By default, serialization of non-static inner classes is disabled since they cannot exist on their own
-          // and will always be serialized along with their enclosing object (and all its non-transient references
-          // to other objects). This is probably not intended by the developer.
-          // To enable it, annotate the constructor with @CanonicalConstructor or provide a @TripInstanceCreator.
-          // This is necessary since we cannot (and don't want to) use
-          // sun.reflect.ReflectionFactory.newConstructorForSerialization.
-          // Important: even with serialization via TRIP, the inner class must implement Serializable!
-          // Otherwise, the synthetic field "this$0" won't be created by the compiler.
-          throw new TripInstantiationException(
-            getObjectClass(), "non-static inner classes need a @CanonicalConstructor or @TripInstanceCreator", e);
+      Constructor<T> constructor = noArgsConstructor;
+      if (constructor == null) {
+        try {
+          // deliberately unlocked: concurrent threads may resolve it more than once, which is harmless
+          constructor = noArgsConstructor = getObjectClass().getDeclaredConstructor();
         }
-        throw new TripInstantiationException(getObjectClass(), "missing no-args constructor for " + getObjectClass(), e);
+        catch (NoSuchMethodException e) {
+          if (ReflectionHelper.isNonStaticInnerClass(getObjectClass())) {
+            // By default, serialization of non-static inner classes is disabled since they cannot exist on their own
+            // and will always be serialized along with their enclosing object (and all its non-transient references
+            // to other objects). This is probably not intended by the developer.
+            // To enable it, annotate the constructor with @CanonicalConstructor or provide a @TripInstanceCreator.
+            // This is necessary since we cannot (and don't want to) use
+            // sun.reflect.ReflectionFactory.newConstructorForSerialization.
+            // Important: even with serialization via TRIP, the inner class must implement Serializable!
+            // Otherwise, the synthetic field "this$0" won't be created by the compiler.
+            throw new TripInstantiationException(
+              getObjectClass(), "non-static inner classes need a @CanonicalConstructor or @TripInstanceCreator", e);
+          }
+          throw new TripInstantiationException(getObjectClass(), "missing no-args constructor for " + getObjectClass(), e);
+        }
       }
       try {
         try {
-          return (T) constructor.newInstance();
+          return constructor.newInstance();
         }
         catch (IllegalAccessException ix) {
-          constructor.setAccessible(true);
-          return (T) constructor.newInstance();
+          constructor.setAccessible(true);    // once, since the constructor is cached
+          return constructor.newInstance();
         }
       }
       catch (InaccessibleObjectException | InstantiationException | IllegalAccessException | InvocationTargetException e) {

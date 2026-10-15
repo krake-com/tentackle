@@ -105,6 +105,7 @@ public class CompoundValue {
   private Object constantValue;                                               // the cached constant value
   private String reference;                                                   // the reference, null if none
   private String staticClassName;                                             // the name of the static class reference
+  private volatile Class<?> staticClass;                                      // the loaded static class, null if not loaded yet
   private boolean negate;                                                     // true if negate the (boolean) reference
   private Script script;                                                      // the script, null if none
 
@@ -408,7 +409,11 @@ public class CompoundValue {
 
       case STATIC_REFERENCE:
         try {
-          Class<?> staticClass = Class.forName(staticClassName);
+          Class<?> staticClass = this.staticClass;
+          if (staticClass == null) {
+            // load once: this is evaluated over and over again, e.g. by validators
+            staticClass = this.staticClass = Class.forName(staticClassName);
+          }
           Object value = ReflectionHelper.getStaticValueByPath(staticClass, reference);
           return negate ? negateBoolean(value) : value;
         }

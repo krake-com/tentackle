@@ -25,7 +25,11 @@ import org.tentackle.log.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.Assert.assertEquals;
@@ -396,6 +400,126 @@ public class AbstractPoolTest {
   }
 
 
+  // -------------------------- concurrent slot creation -----------------------
+
+  /**
+   * While a new resource is opened, other threads must still be able to return and get resources.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void concurrentCreationDoesNotBlockGetAndPut() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("concurrent pool", 0);
+    TestResource first = pool.get();      // initial slot, created with the monitor held
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+
+    // the creator waits in createSlot: the pool must still be usable
+    pool.put(first);
+    assertSame(pool.get(), first);
+    assertEquals(pool.getSize(), 2);       // the reserved slot counts
+
+    pool.release.countDown();
+    TestResource second = creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS);
+    assertNotSame(second, first);
+    assertTrue(second.isOpen());
+    assertEquals(second.getPoolId(), 2);
+    assertEquals(pool.getSize(), 2);
+    assertEquals(pool.created.size(), 2);
+
+    pool.put(second);
+    pool.put(first);
+    assertEquals(pool.getSize(), 2);
+    pool.shutdown();
+  }
+
+  /**
+   * The slot reserved for a resource whose creation failed must be released.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void failedConcurrentCreationReleasesTheSlot() {
+    ConcurrentTestPool pool = new ConcurrentTestPool("failing pool", 2);
+    TestResource first = pool.get();
+    pool.armed = true;
+    pool.release.countDown();
+    pool.failure = new TentackleRuntimeException("cannot connect");
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+    assertEquals(exception.getMessage(), "cannot connect");
+    assertEquals(pool.getSize(), 1);
+
+    // the slot is free again: the maximum size of 2 is not reached yet
+    pool.failure = null;
+    TestResource second = pool.get();
+    assertNotSame(second, first);
+    assertEquals(pool.getSize(), 2);
+    pool.shutdown();
+  }
+
+  /**
+   * A resource created while the pool was shut down must be closed and not lent.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void shutdownDuringConcurrentCreationClosesTheNewResource() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("shutdown pool", 0);
+    pool.get();
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    pool.shutdown();
+    pool.release.countDown();
+
+    ExecutionException exception = expectThrows(ExecutionException.class,
+                                                () -> creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    assertTrue(exception.getCause().getMessage().contains("shut down"), exception.getCause().getMessage());
+    TestResource orphan = pool.created.getLast();
+    long deadline = System.currentTimeMillis() + AWAIT_TIMEOUT;
+    while (orphan.isOpen() && System.currentTimeMillis() < deadline) {
+      Thread.onSpinWait();    // closed asynchronously
+    }
+    assertFalse(orphan.isOpen(), "resource created during shutdown was not closed");
+  }
+
+  /**
+   * Slots reserved for resources being created count against the maximum pool size.
+   */
+  @Test(timeOut = AWAIT_TIMEOUT)
+  public void reservedSlotsCountAgainstTheMaximumSize() throws Exception {
+    ConcurrentTestPool pool = new ConcurrentTestPool("max pool", 2);
+    pool.get();
+    pool.armed = true;
+
+    CompletableFuture<TestResource> creator = CompletableFuture.supplyAsync(pool::get);
+    assertTrue(pool.creating.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+
+    TentackleRuntimeException exception = expectThrows(TentackleRuntimeException.class, pool::get);
+    assertTrue(exception.getMessage().contains("max. pool size"), exception.getMessage());
+
+    pool.release.countDown();
+    assertNotNull(creator.get(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS));
+    pool.shutdown();
+  }
+
+  /**
+   * With an increment size greater than one, a pool at its maximum size must still use its free slots.
+   */
+  @Test
+  public void usesFreeSlotsAtMaximumSize() {
+    TestPool pool = new TestPool("increment pool", 1, 2, 1, 2);
+    TestResource first = pool.get();
+    TestResource second = pool.get();
+    assertEquals(pool.getSize(), 2);
+    second.open = false;
+    pool.put(second);                     // closed: removed, its slot becomes free
+    assertEquals(pool.getSize(), 1);
+
+    TestResource third = pool.get();      // used to fail with "max. pool size reached"
+    assertNotSame(third, first);
+    assertEquals(pool.getSize(), 2);
+  }
+
+
   /**
    * A minimal poolable for testing.
    */
@@ -460,7 +584,7 @@ public class AbstractPoolTest {
 
     private final AtomicInteger monitorCount = new AtomicInteger();   // number of monitor() invocations
     private final AtomicInteger logSlotCountPerThreadInvocations = new AtomicInteger();
-    private int createdCount;
+    private final AtomicInteger createdCount = new AtomicInteger();   // atomic: slots may be created concurrently
     private boolean createOpen = true;
     private boolean slotsRemovable = true;
     private boolean restoringMinimumSize = true;
@@ -482,6 +606,10 @@ public class AbstractPoolTest {
       super(name, initialSize, 1, minimumSize, 0, 0, 0);
     }
 
+    private TestPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize) {
+      super(name, initialSize, incrementSize, minimumSize, maximumSize, 0, 0);
+    }
+
     @Override
     public void logSlotCountPerThread(Logger.Level level) {
       logSlotCountPerThreadInvocations.incrementAndGet();
@@ -489,7 +617,7 @@ public class AbstractPoolTest {
     }
 
     private int getCreatedCount() {
-      return createdCount;
+      return createdCount.get();
     }
 
     @Override
@@ -514,7 +642,7 @@ public class AbstractPoolTest {
 
     @Override
     protected PoolSlot<TestResource> createSlot(int slotNumber) {
-      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(this, ++createdCount, createOpen)) {
+      return new AbstractPoolSlot<>(this, slotNumber, new TestResource(this, createdCount.incrementAndGet(), createOpen)) {
         @Override
         protected TentackleRuntimeException createException(String msg) {
           return new TentackleRuntimeException(msg);
@@ -536,6 +664,53 @@ public class AbstractPoolTest {
     @Override
     protected TentackleRuntimeException createException(TestResource resource, String msg) {
       return new TentackleRuntimeException(resource + ": " + msg);
+    }
+  }
+
+
+  /**
+   * A {@link TestPool} creating its slots without holding the pool's monitor.<br>
+   * Once armed, the creation of a slot waits until released and may fail.
+   */
+  private static class ConcurrentTestPool extends TestPool {
+
+    private volatile boolean armed;                                     // true to wait in createSlot
+    private final CountDownLatch creating = new CountDownLatch(1);      // a thread waits in createSlot
+    private final CountDownLatch release = new CountDownLatch(1);       // let it continue
+    private volatile RuntimeException failure;                         // thrown by createSlot if set
+    private final List<TestResource> created = new CopyOnWriteArrayList<>();
+
+    private ConcurrentTestPool(String name, int maximumSize) {
+      super(name, maximumSize);
+    }
+
+    private ConcurrentTestPool(String name, int initialSize, int incrementSize, int minimumSize, int maximumSize) {
+      super(name, initialSize, incrementSize, minimumSize, maximumSize);
+    }
+
+    @Override
+    protected boolean isCreatingSlotsConcurrently() {
+      return true;
+    }
+
+    @Override
+    protected PoolSlot<TestResource> createSlot(int slotNumber) {
+      if (armed) {
+        assertFalse(Thread.holdsLock(this), "slot must be created without holding the pool's monitor");
+        creating.countDown();
+        try {
+          assertTrue(release.await(AWAIT_TIMEOUT, TimeUnit.MILLISECONDS), "not released");
+        }
+        catch (InterruptedException ex) {
+          Thread.currentThread().interrupt();
+        }
+        if (failure != null) {
+          throw failure;
+        }
+      }
+      PoolSlot<TestResource> slot = super.createSlot(slotNumber);
+      created.add(slot.getPoolable());
+      return slot;
     }
   }
 

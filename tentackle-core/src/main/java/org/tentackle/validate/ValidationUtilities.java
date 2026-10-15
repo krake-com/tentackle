@@ -358,9 +358,7 @@ public class ValidationUtilities {
           List<Validator> validators, ValidationScope effectiveScope,
           String validationPath, Object parentObject) {
 
-    if (validationPath == null) {
-      validationPath = getDefaultValidationPath(parentObject);
-    }
+    String path = validationPath == null ? getDefaultValidationPath(parentObject) : validationPath;
 
     List<ValidationResult> allResults = new ArrayList<>();
 
@@ -371,7 +369,7 @@ public class ValidationUtilities {
     try {
       for (Validator validator : validators) {
 
-        ValidationContext validationContext = contextMap.computeIfAbsent(validationPath + "." + validator.getValidatedElementName(), path -> {
+        ValidationContext validationContext = contextMap.computeIfAbsent(validator.getValidatedElementName(), elementName -> {
           // build validation context
           Supplier<?> objectSupplier = null;      // lazy object provider
           Class<?> type = null;                   // the object's type
@@ -418,19 +416,15 @@ public class ValidationUtilities {
               }
             };
           }
-          return ValidationContextFactory.getInstance().create(path, type, objectSupplier, parentObject, effectiveScope, allResults);
+          return ValidationContextFactory.getInstance().create(path + "." + elementName, type, objectSupplier,
+                                                               parentObject, effectiveScope, allResults);
         });
 
         if (inTest) {
           logTest(validator, validationContext);
         }
 
-        // check if scope applies
-        // runs the condition check even if in testmode
-        if (validator.isConditionValid(validationContext) &&
-            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-            ||
-            inTest) {
+        if (isApplicable(validator, validationContext, effectiveScope, inTest)) {
           // condition and scope apply
           List<? extends ValidationResult> results = validator.validate(validationContext);
           if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
@@ -484,11 +478,7 @@ public class ValidationUtilities {
             logTest(validator, validationContext);
           }
 
-          // check if scope applies and validator is valid (even if in testmode)
-          if (validator.isConditionValid(validationContext) &&
-              (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-              ||
-              inTest) {
+          if (isApplicable(validator, validationContext, effectiveScope, inTest)) {
             // condition and scope apply
             try {
               List<? extends ValidationResult> results = validator.validate(validationContext);
@@ -511,6 +501,35 @@ public class ValidationUtilities {
     }
 
     return allResults;
+  }
+
+  /**
+   * Determines whether a validator applies, i.e. its scope applies and its condition is valid.
+   * <p>
+   * The scope is checked first, since it's cheap, whereas the condition may be a script.
+   * In test mode, all validators apply, but the condition is evaluated anyway to detect broken ones.
+   *
+   * @param validator the validator
+   * @param validationContext the validation context
+   * @param effectiveScope the effective scope, null if all
+   * @param inTest true if in test mode
+   * @return true if the validator must be invoked
+   */
+  private boolean isApplicable(Validator validator, ValidationContext validationContext,
+                               ValidationScope effectiveScope, boolean inTest) {
+    if (inTest) {
+      // runs the condition check (and the scope check, if the condition holds) even in test mode
+      if (validator.isConditionValid(validationContext)) {
+        isScopeApplicable(validator, validationContext, effectiveScope);
+      }
+      return true;
+    }
+    return isScopeApplicable(validator, validationContext, effectiveScope) &&
+           validator.isConditionValid(validationContext);
+  }
+
+  private boolean isScopeApplicable(Validator validator, ValidationContext validationContext, ValidationScope effectiveScope) {
+    return effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext));
   }
 
   /**

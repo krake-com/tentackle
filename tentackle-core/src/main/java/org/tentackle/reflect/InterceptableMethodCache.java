@@ -78,8 +78,13 @@ public class InterceptableMethodCache {
    * @throws Throwable if invocation failed
    */
   public Object invoke(InterceptableMethodInvoker invoker, Interceptable delegate, Method method, Object[] args) throws Throwable {
-    InterceptableMethod delegateMethod = methodCache.computeIfAbsent(method,
-        m -> InterceptionUtilities.getInstance().createInterceptableMethod(clazz, delegate.getClass(), m));
+    // get() first: the lambda below captures the delegate and would be allocated on every invocation,
+    // although the method is missing only on its first invocation
+    InterceptableMethod delegateMethod = methodCache.get(method);
+    if (delegateMethod == null) {
+      delegateMethod = methodCache.computeIfAbsent(method,
+          m -> InterceptionUtilities.getInstance().createInterceptableMethod(clazz, delegate.getClass(), m));
+    }
     return invoker.invoke(delegate, delegateMethod, args);
   }
 

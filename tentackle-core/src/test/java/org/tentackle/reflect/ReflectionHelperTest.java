@@ -669,6 +669,31 @@ public class ReflectionHelperTest {
     assertThrows(TentackleRuntimeException.class, () -> ReflectionHelper.getStaticValueByPath(Bean.class, null));
   }
 
+  @SuppressWarnings({"missing-explicit-ctor", "unused"})
+  public static class OtherBean {
+    public String name = "field";   // same element name as Bean#getName, but resolved to a field
+    public boolean isActive() { return true; }
+  }
+
+  @Test
+  public void testGetValueByPathRepeated() {
+    // the resolved members are cached per class and element: repeated evaluation must yield the
+    // current value, and the same element name must not be confused between classes
+    Bean bean = new Bean();
+    OtherBean otherBean = new OtherBean();
+    for (int i = 0; i < 3; i++) {
+      bean.setName("name" + i);
+      bean.setActive(i % 2 == 0);
+      assertEquals(ReflectionHelper.getValueByPath(bean, "name"), "name" + i);
+      assertEquals(ReflectionHelper.getValueByPath(bean, "active"), i % 2 == 0);
+      assertEquals(ReflectionHelper.getValueByPath(otherBean, "name"), "field");
+      assertEquals(ReflectionHelper.getValueByPath(otherBean, "active"), true);
+      // unknown elements are cached as well, but must still fail every time
+      assertThrows(TentackleRuntimeException.class, () -> ReflectionHelper.getValueByPath(bean, "doesNotExist"));
+      assertEquals(ReflectionHelper.getStaticValueByPath(StaticHolder.class, "BEAN.name"), "created");
+    }
+  }
+
 
   // -------------------------- interfaces -----------------------------------
 

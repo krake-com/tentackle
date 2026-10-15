@@ -42,9 +42,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Methods related to the reflection API.
@@ -1316,7 +1318,39 @@ public final class ReflectionHelper {
   private static final InvocationHandler FAKE_INVOCATION_HANDLER = new FakeInvocationHandler();
 
 
+  /**
+   * Cache of the methods found by {@link #getMethodForElement(Class, String)} per class and path element.<br>
+   * Resolving an element throws up to two {@link NoSuchMethodException}s before the getter is found,
+   * which is way too expensive for path expressions evaluated over and over again, such as
+   * the references in validation annotations. Furthermore, the cached methods keep their accessibility.
+   */
+  private static final ClassValue<Map<String, Optional<Method>>> METHOD_FOR_ELEMENT = new ClassValue<>() {
+    @Override
+    protected Map<String, Optional<Method>> computeValue(Class<?> type) {
+      return new ConcurrentHashMap<>();
+    }
+  };
+
+  /**
+   * Cache of the fields found by {@link #getFieldForElement(Class, String)} per class and path element.
+   */
+  private static final ClassValue<Map<String, Optional<Field>>> FIELD_FOR_ELEMENT = new ClassValue<>() {
+    @Override
+    protected Map<String, Optional<Field>> computeValue(Class<?> type) {
+      return new ConcurrentHashMap<>();
+    }
+  };
+
   private static Method getMethodForElement(Class<?> clazz, String element) {
+    Map<String, Optional<Method>> methods = METHOD_FOR_ELEMENT.get(clazz);
+    Optional<Method> method = methods.get(element);
+    if (method == null) {
+      method = methods.computeIfAbsent(element, e -> Optional.ofNullable(findMethodForElement(clazz, e)));
+    }
+    return method.orElse(null);
+  }
+
+  private static Method findMethodForElement(Class<?> clazz, String element) {
     Method method = null;
     String camelName = StringHelper.firstToUpper(element);   // camelcase name part
     try {
@@ -1341,6 +1375,15 @@ public final class ReflectionHelper {
   }
 
   private static Field getFieldForElement(Class<?> clazz, String element) {
+    Map<String, Optional<Field>> fields = FIELD_FOR_ELEMENT.get(clazz);
+    Optional<Field> field = fields.get(element);
+    if (field == null) {
+      field = fields.computeIfAbsent(element, e -> Optional.ofNullable(findFieldForElement(clazz, e)));
+    }
+    return field.orElse(null);
+  }
+
+  private static Field findFieldForElement(Class<?> clazz, String element) {
     Field field = null;
     try {
       field = clazz.getField(element);

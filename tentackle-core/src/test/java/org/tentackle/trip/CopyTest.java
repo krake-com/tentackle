@@ -22,11 +22,14 @@ import org.testng.annotations.Test;
 
 import org.tentackle.common.ObjectSerializer;
 import org.tentackle.common.Timestamp;
+import org.tentackle.trip.impl.PackagePrivateConstructorClass;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestSubClass;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
@@ -58,6 +61,23 @@ public class CopyTest {
     assertNotSame(copy, testObject);
     assertNotSame(copy.child, testObject.child);
     assertSame(((TestSubClass) copy.child).parent, copy);
+  }
+
+  @Test
+  void testCopyWithPackagePrivateConstructor() {
+    // the no-args constructor is not accessible from the trip types: it must be made accessible,
+    // and since the constructor is cached, this must work for every object, not just the first one
+    List<PackagePrivateConstructorClass> list = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      list.add(new PackagePrivateConstructorClass("name" + i, i));
+    }
+    List<PackagePrivateConstructorClass> copy = ObjectSerializer.getInstance().copy(list);
+    assertEquals(copy, list);
+    for (int i = 0; i < list.size(); i++) {
+      assertNotSame(copy.get(i), list.get(i));
+    }
+    // again, with the constructor already resolved
+    assertEquals(ObjectSerializer.getInstance().copy(list), list);
   }
 
   @Test

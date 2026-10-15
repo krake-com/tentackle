@@ -77,6 +77,17 @@ public class TcpConnectionPool extends AbstractConnectionPool {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to connect without holding the pool's monitor, since connecting a socket and the
+   * TLS handshake may take a while, and other threads must still be able to get and put connections.
+   */
+  @Override
+  protected boolean isCreatingSlotsConcurrently() {
+    return true;
+  }
+
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {
     return new ConnectionPoolSlot(this, slotNumber,

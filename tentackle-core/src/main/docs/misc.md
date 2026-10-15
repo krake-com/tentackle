@@ -151,6 +151,13 @@ A pool that cannot create a resource without blocking for long overrides
 `AbstractPool.restoreMinimumSize()` to leave that to the next `get()`, since the monitor runs on the
 one thread all pools share.
 
+By default, `get()` creates a new resource with the pool's monitor held, so no other thread can get
+or return a resource meanwhile. A pool whose `createSlot()` is thread-safe overrides
+`isCreatingSlotsConcurrently()` to return true: `get()` then only reserves the slot under the
+monitor (it counts against the maximum size), creates the resource without holding it, and lends it
+to the calling thread. `TcpConnectionPool` does so, since a TCP connect and TLS handshake may take a
+while. The initial resources and those restoring the minimum size are always created under the monitor.
+
 While a resource is lent, its slot holds only a weak reference to it. A resource that was lent but
 never returned and has been garbage collected is thus detected by the monitor and removed from the
 pool with a warning naming the thread that took it. `AbstractPool.getSlotCountPerThread()` and

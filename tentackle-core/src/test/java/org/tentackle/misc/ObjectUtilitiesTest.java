@@ -51,6 +51,43 @@ public class ObjectUtilitiesTest {
 
   private final String MAGIC_WORD = "wave rod";
 
+  /**
+   * Provides a non-public valueOf(String), which must be skipped, and a public valueOf(Object).
+   */
+  public static class ValueOfBean {
+
+    private final String text;
+
+    private ValueOfBean(String text) {
+      this.text = text;
+    }
+
+    private static ValueOfBean valueOf(String text) {
+      throw new IllegalStateException("must not be invoked");
+    }
+
+    public static ValueOfBean valueOf(Object object) {
+      return new ValueOfBean(object.toString());
+    }
+  }
+
+  /**
+   * Provides only a non-public valueOf(String).
+   */
+  public static class PrivateValueOfBean {
+
+    private static PrivateValueOfBean valueOf(String text) {
+      throw new IllegalStateException("must not be invoked");
+    }
+  }
+
+  @Test(timeOut = 10000)    // this used to loop forever
+  public void testValueOfSkipsNonPublicMethods() {
+    assertEquals(ObjectUtilities.getInstance().convert(ValueOfBean.class, "abc").text, "abc");
+    assertThrows(IllegalArgumentException.class,
+                 () -> ObjectUtilities.getInstance().convert(PrivateValueOfBean.class, "abc"));
+  }
+
   @Test
   public void testConverters() {
 

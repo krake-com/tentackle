@@ -386,7 +386,7 @@ A peer may only open as many concurrent streams as the other end grants it
 `maxstreams` configures that limit. Fresh credits are granted only when a stream is *closed* — but
 every pooled connection holds its stream for as long as it sits in the pool, so a busy client walks
 straight into the limit. KWIK's `createStream` does not fail there, it waits, and it waits with the
-connection pool's *and* the transport's monitor held. No other thread could return a connection to
+connection pool's monitor held. No other thread could return a connection to
 free a stream, so the wait would never end, and the whole client transport would be stuck.
 
 Two things prevent this. The pool's `maximum` defaults to `maxstreams` instead of *unlimited*, so the

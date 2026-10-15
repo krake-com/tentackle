@@ -232,7 +232,7 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
    * <p>
    * KWIK's {@code createStream} blocks until the peer grants the credits to open another stream, and the
    * only way to get them is closing one of the streams already open. Since all of them belong to pooled
-   * connections and this method runs with the pool's (and the transport's) monitor held, no other thread
+   * connections and this method runs with the pool's monitor held, no other thread
    * could return one: the wait must be bounded, or the whole client transport deadlocks.
    * <p>
    * Under normal circumstances the limit is never reached because the pool's maximum size is capped to

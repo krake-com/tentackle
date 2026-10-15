@@ -211,9 +211,9 @@ public class ObjectUtilities {
         if (Modifier.isStatic(valueOfMethod.getModifiers()) && Modifier.isPublic(valueOfMethod.getModifiers())) {
           break;
         }
-        else {
-          valueOfMethod = null;
-        }
+        // not usable: try the superclass, or the loop would never terminate
+        valueOfMethod = null;
+        valueType = valueType.getSuperclass();
       }
       catch (NoSuchMethodException exception) {
         // try superclass

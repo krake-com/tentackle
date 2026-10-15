@@ -20,6 +20,7 @@ package org.tentackle.validate;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.validate.scope.PersistenceScope;
 import org.tentackle.validate.severity.FailedValidationResult;
 import org.tentackle.validate.severity.InfoValidationResult;
 import org.tentackle.validate.validator.NotNull;
@@ -44,6 +45,16 @@ public class ValidationUtilitiesTest {
   }
 
   public static class SomeEntity {
+  }
+
+  public static class ConditionalBean {
+    @NotNull(condition = "$checked", scope = PersistenceScope.class) public String text;
+    public int conditionEvaluations;
+
+    public boolean isChecked() {
+      conditionEvaluations++;
+      return true;
+    }
   }
 
   private final ValidationUtilities utilities = ValidationUtilities.getInstance();
@@ -86,6 +97,19 @@ public class ValidationUtilitiesTest {
     ValidationScopeFactory factory = ValidationScopeFactory.getInstance();
     assertEquals(utilities.validate(new Bean(), null, factory.getAllScope()).size(), 1);
     assertTrue(utilities.validate(new Bean(), null, factory.getPersistenceScope()).isEmpty());
+  }
+
+  /**
+   * The condition may be an expensive script: it must not be evaluated if the scope does not apply.
+   */
+  @Test
+  public void testConditionNotEvaluatedOutOfScope() {
+    ValidationScopeFactory factory = ValidationScopeFactory.getInstance();
+    ConditionalBean bean = new ConditionalBean();
+    assertTrue(utilities.validate(bean, null, factory.getInteractiveScope()).isEmpty());
+    assertEquals(bean.conditionEvaluations, 0);
+    assertEquals(utilities.validate(bean, null, factory.getPersistenceScope()).size(), 1);
+    assertEquals(bean.conditionEvaluations, 1);
   }
 
   @Test

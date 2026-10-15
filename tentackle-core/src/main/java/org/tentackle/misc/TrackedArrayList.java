@@ -25,6 +25,7 @@ import org.tentackle.log.Logger;
 import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -715,63 +716,44 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   public boolean removeAll(Collection<?> collection) {
-    // re-implemented here to catch removed objects
-    boolean someRemoved = false;
-    Iterator<E> iter = iterator();
-    while (iter.hasNext()) {
-      E obj = iter.next();
-      if (collection.contains(obj)) {
-        iter.remove();
-        someRemoved = true;
-      }
-    }
-    return someRemoved;
+    Objects.requireNonNull(collection);
+    return removeTrackedIndexes(matchIndexes(collection::contains));
   }
 
 
-  /**
-   * Removes all objects that are not contained in the given collection.<br>
-   * All removed objects will be added to the list of removed objects.
-   *
-   * @param collection the collection containing the objects not to be removed from this list.
-   * @return true if at least one object has been removed.
-   */
   @Override
   public boolean retainAll(Collection<?> collection) {
-    // re-implemented here to catch removed objects
-    boolean someRemoved = false;
-    Iterator<E> iter = iterator();
-    while (iter.hasNext()) {
-      E obj = iter.next();
-      if (!collection.contains(obj)) {
-        iter.remove();
-        addRemovedObject(obj);
-        someRemoved = true;
-      }
-    }
-    return someRemoved;
+    Objects.requireNonNull(collection);
+    return removeTrackedIndexes(matchIndexes(element -> !collection.contains(element)));
   }
 
 
   @Override
   public boolean removeIf(Predicate<? super E> filter) {
-    // catch removed objects
-    stream().filter(filter).forEach(this::addRemovedObject);
-    return super.removeIf(filter);
+    Objects.requireNonNull(filter);
+    return removeTrackedIndexes(matchIndexes(filter));
   }
 
 
   /**
-   * Removes from this list all elements whose index is between
-   * <code>fromIndex</code>, inclusive, and <code>toIndex</code>, exclusive.<br>
-   * Shifts any succeeding elements to the left (reduces their index).
-   * This call shortens the list by <code>(toIndex - fromIndex)</code> elements.
-   * (If <code>toIndex==fromIndex</code>, this operation has no effect.)
-   * All removed object will be added to the list of removed objects.
+   * Removes the elements at the given indexes in a single pass and catches them as removed objects.<br>
+   * The listeners are notified after all elements have been removed.
    *
-   * @param fromIndex index of the first element to be removed
-   * @param toIndex index after the last element to be removed
+   * @param indexes the indexes, null if none
+   * @return true if elements were removed
    */
+  private boolean removeTrackedIndexes(BitSet indexes) {
+    if (indexes == null) {
+      return false;
+    }
+    List<E> removedElements = new ArrayList<>(indexes.cardinality());
+    indexes.stream().forEach(index -> removedElements.add(get(index)));
+    removeIndexes(indexes);
+    addRemovedObjects(removedElements);
+    return true;
+  }
+
+
   @Override
   protected void removeRange(int fromIndex, int toIndex) {
     int max = size();

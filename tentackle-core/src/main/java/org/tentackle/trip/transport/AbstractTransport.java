@@ -72,7 +72,7 @@ public abstract class AbstractTransport implements Transport {
   private Dictionary dictionary;                      // single dictionary for client transports
   private Registry registry;                          // the server's registry
   private RemoteLookup remoteLookup;                  // the cached remote lookup
-  private boolean closed;                             // true if the transport is closed (cannot be used anymore)
+  private volatile boolean closed;                    // true if the transport is closed (cannot be used anymore)
 
   /**
    * A server-side map with weak UUIDs mapped to weak references to dictionaries.
@@ -125,24 +125,35 @@ public abstract class AbstractTransport implements Transport {
   }
 
   @Override
-  public synchronized Connection getConnection() {
-    assertNotClosed();
-    if (callThreadPool != null) {
-      throw new TripRuntimeException("transport is in server mode");
+  public Connection getConnection() {
+    Pool<Connection> pool;
+    synchronized (this) {
+      assertNotClosed();
+      if (callThreadPool != null) {
+        throw new TripRuntimeException("transport is in server mode");
+      }
+      if (clientConnectionPool == null) {
+        dictionary = TripFactory.getInstance().createDictionary(id,false);
+        clientConnectionPool = createClientConnectionPool();
+      }
+      pool = clientConnectionPool;
     }
-    if (clientConnectionPool == null) {
-      dictionary = TripFactory.getInstance().createDictionary(id,false);
-      clientConnectionPool = createClientConnectionPool();
-    }
-    return clientConnectionPool.get();
+    // Not holding the transport's monitor: the pool is thread-safe, and getting a connection may
+    // have to open a new one, which must not block the other threads using this transport.
+    // If the transport is closed meanwhile, the pool is shut down and refuses to lend.
+    return pool.get();
   }
 
   @Override
-  public synchronized void putConnection(Connection connection) {
-    if (clientConnectionPool == null) {
-      throw new TripRuntimeException("transport is not in client mode");
+  public void putConnection(Connection connection) {
+    Pool<Connection> pool;
+    synchronized (this) {
+      if (clientConnectionPool == null) {
+        throw new TripRuntimeException("transport is not in client mode");
+      }
+      pool = clientConnectionPool;
     }
-    clientConnectionPool.put(connection);
+    pool.put(connection);   // see getConnection()
   }
 
   @Override
