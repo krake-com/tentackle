@@ -61,17 +61,18 @@ Two consistency rules apply at the join point:
 
 ## The Attributes
 
-| Attribute          | Default            | Meaning                                                                                                     |
-|--------------------|--------------------|-------------------------------------------------------------------------------------------------------------|
-| `value`            | derived            | The transaction name; defaults to `DeclaringClass#methodName`.                                              |
-| `running`          | `false`            | Assert that a transaction is *already* running instead of beginning one.                                    |
-| `rollbackSilently` | `false`            | Never log rollback details for this method.                                                                 |
-| `isolation`        | `DEFAULT`          | Transaction isolation: `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`, `NONE`.     |
-| `writability`      | `DEFAULT`          | `READ_WRITE` or `READ_ONLY` (a hint the database may use to optimize).                                      |
-| `deferred`         | `false`            | Defer deferrable constraint checks to commit time (see [below](#deferring-constraint-checks-with-deferred)).|
-| `retry`            | `false`            | Retry the transaction after a *temporary* failure.                                                          |
-| `retryPolicy`      | `""` (the default) | Name of the [`TransactionRetryPolicy`](../java/org/tentackle/pdo/TransactionRetryPolicy.java) to use.       |
-| `retryLogLevel`    | `WARNING`          | Level at which each retry is logged.                                                                        |
+| Attribute               | Default            | Meaning                                                                                                                                                                     |
+|-------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `value`                 | derived            | The transaction name; defaults to `DeclaringClass#methodName`.                                                                                                              |
+| `running`               | `false`            | Assert that a transaction is *already* running instead of beginning one.                                                                                                    |
+| `rollbackSilently`      | `false`            | Never log rollback details for this method.                                                                                                                                 |
+| `isolation`             | `DEFAULT`          | Transaction isolation: `READ_UNCOMMITTED`, `READ_COMMITTED`, `REPEATABLE_READ`, `SERIALIZABLE`, `NONE`.                                                                     |
+| `writability`           | `DEFAULT`          | `READ_WRITE` or `READ_ONLY` (a hint the database may use to optimize).                                                                                                      |
+| `deferred`              | `false`            | Defer deferrable constraint checks to commit time (see [below](#deferring-constraint-checks-with-deferred)).                                                                |
+| `statementHistoryLimit` | `-1`               | Keep only the most recent statements in the diagnostic statement history (`0` = none, `-1` = all), see [below](#limiting-the-statement-history-with-statementhistorylimit). |
+| `retry`                 | `false`            | Retry the transaction after a *temporary* failure.                                                                                                                          |
+| `retryPolicy`           | `""` (the default) | Name of the [`TransactionRetryPolicy`](../java/org/tentackle/pdo/TransactionRetryPolicy.java) to use.                                                                       |
+| `retryLogLevel`         | `WARNING`          | Level at which each retry is logged.                                                                                                                                        |
 
 `DEFAULT` for `isolation` and `writability` means: whatever the session (and ultimately the
 database backend) is configured with — most applications never need to override either.
@@ -120,6 +121,21 @@ calls `Session.setConstraintsDeferred(true)` right after the transaction actuall
 joining an already-running one), for the rest of that transaction. It only has an effect on
 constraints declared `deferred` or `deferrable` in the model — see
 [Index Lines](../../../../tentackle-model/src/main/docs/model-definition.md#7-index-lines).
+
+### Limiting the statement history with `statementHistoryLimit`
+
+Within a transaction, the session keeps every executed statement with its parameters, so that a
+rollback or a transaction timeout can log what happened. For bulk transactions, e.g., importing
+a million rows, that history costs a lot of memory.
+
+```java
+@Transaction(statementHistoryLimit = 100)
+```
+
+calls `Session.setStatementHistoryLimit(100)` right after the transaction actually starts (not when
+joining an already-running one), so only the 100 most recent statements are kept for the rest of that
+transaction. `0` keeps no history at all. Other transactions are not affected. See
+[Diagnostics and statistics](../../../../tentackle-database/src/main/docs/database.md#diagnostics-and-statistics).
 
 ### Remote sessions
 

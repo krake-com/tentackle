@@ -276,6 +276,7 @@ topic-grouped listing of every document, see the
 - **SQL script execution (`tentackle-sql:run`)** — [SQL Maven Plugin](../../../tentackle-sql-maven-plugin/src/main/docs/tentackle-sql-maven-plugin.md#the-run-goal), [AI Agent Tooling Support](./ai-agents.md#plain-sql-tentackle-sqlrun)
 - **Startup / shutdown sequence** — [Application Bootstrap](../../../tentackle-pdo/src/main/docs/application.md)
 - **Stateless domain logic (warning)** — [Annotation Processors](../../../tentackle-core/src/main/docs/annotation-processors.md#the-stateless-domain-logic-warning), [Tentackle Domain](../../../tentackle-domain/src/main/docs/domain.md)
+- **Statement history limit (per transaction, `statementHistoryLimit`)** — [Tentackle Database](../../../tentackle-database/src/main/docs/database.md#diagnostics-and-statistics), [Transactions](../../../tentackle-pdo/src/main/docs/transaction.md#limiting-the-statement-history-with-statementhistorylimit)
 - **Session administration (list, log out, kill client sessions)** — [tentackle-fx-rdc](../../../tentackle-fx-rdc/src/main/docs/rdc.md#session-administration), [Tentackle Persistence](../../../tentackle-persistence/src/main/docs/persistence.md#remoting-trip)
 
 ## T

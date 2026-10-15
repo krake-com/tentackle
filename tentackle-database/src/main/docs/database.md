@@ -437,6 +437,15 @@ includes the statement history. Code stuck in a loop can execute the same statem
 times, so histories of 256 or more entries are compressed by the `StatementHistoryCompressor`: a block of
 up to 64 statements that repeats immediately is printed once, followed by the number of repetitions.
 
+Within a transaction, every statement is kept in the history until the connection is released,
+including its parameters. For large transactions such as bulk inserts, this costs memory.
+`Session.setStatementHistoryLimit(int)` limits the history for the rest of the *current*
+transaction to its most recent statements (`0` keeps none) — or declaratively via
+`@Transaction(statementHistoryLimit = ...)`, see [Transactions](../../../../tentackle-pdo/src/main/docs/transaction.md).
+The limit is reset when the transaction ends, so other transactions keep their full history. The dump
+then shows how many older statements were omitted. Dropped statements still count for the statement statistics,
+the transaction statistics, and `setMaxStatementsPerTransaction`.
+
 ### Utilities (SPI replacements)
 
 - [`DbUtilities`](../java/org/tentackle/dbms/DbUtilities.java) (`@Service(DbUtilities.class)`) — persistence

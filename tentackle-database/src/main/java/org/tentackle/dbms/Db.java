@@ -635,6 +635,7 @@ public class Db implements Session, Cloneable {
   private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in the modification log
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private boolean constraintsDeferred;                        // true if deferrable constraints are deferred for the current tx
+  private int statementHistoryLimit = -1;                     // max. statements kept in the history of the current tx, < 0 if unlimited
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private volatile DbTransaction transaction;                 // the running transaction (only for local sessions, read by the modification tracker)
   private RemoteTransaction remoteTransaction;                // the running transaction (only for remote sessions)
@@ -1992,6 +1993,7 @@ public class Db implements Session, Cloneable {
       autoCommit = true;
       logModificationDeferred = false;
       constraintsDeferred = false;
+      statementHistoryLimit = -1;
       modificationLogList = null;
       if (committed) {
         tx.finishCommit();
@@ -2407,6 +2409,7 @@ public class Db implements Session, Cloneable {
           setAutoCommit(null);    // according to the specs: this will commit!
           logModificationDeferred = false;
           constraintsDeferred = false;
+          statementHistoryLimit = -1;
           long txNo = getTxNumber();
           transaction = null;
           modificationLogList = null;
@@ -2518,6 +2521,7 @@ public class Db implements Session, Cloneable {
             }
             logModificationDeferred = false;
             constraintsDeferred = false;
+            statementHistoryLimit = -1;
             modificationLogList = null;
             logModificationTxId = 0;
             transaction = null;
@@ -3243,6 +3247,7 @@ public class Db implements Session, Cloneable {
       logModificationTxId = 0;
       logModificationDeferred = false;
       constraintsDeferred = false;
+      statementHistoryLimit = -1;
       modificationLogList = null;
       immediatelyRolledBack = 0;
       applicationProperties = null;
@@ -3642,6 +3647,21 @@ public class Db implements Session, Cloneable {
   @Override
   public boolean isConstraintsDeferred() {
     return constraintsDeferred;
+  }
+
+  @Override
+  public void setStatementHistoryLimit(int limit) {
+    assertOpen();
+    assertTxRunning();
+    if (isRemote()) {
+      resources.rdel.setStatementHistoryLimit(limit);
+    }
+    statementHistoryLimit = limit;
+  }
+
+  @Override
+  public int getStatementHistoryLimit() {
+    return statementHistoryLimit;
   }
 
 

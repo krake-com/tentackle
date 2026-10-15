@@ -379,6 +379,8 @@ public class ManagedConnection {
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
   private int counterForClearWarnings;                    // current counter
   private StatementHistory currentStatement;              // statement history while not in transaction
+  private int statementCount;                             // number of statements executed in transactions since attached
+  private int omittedStatementCount;                      // number of statements dropped from the history due to the transaction's history limit
   private volatile long connectionInactivityTimeoutMs;    // optional database connection inactivity timeout (read by the monitor thread)
   private volatile boolean connectionKeepAliveEnabled;    // optional periodical fake-select to prevent premature close of idle connection (read by the monitor thread)
 
@@ -791,6 +793,8 @@ public class ManagedConnection {
     }
 
     statementHistory.clear();
+    statementCount = 0;
+    omittedStatementCount = 0;
     currentStatement = null;
 
     restoreTransactionDefaults();
@@ -996,6 +1000,10 @@ public class ManagedConnection {
     try {
       if (!statementHistory.isEmpty() || currentStatement != null) {
         buf.append("\n\n    Statements:");
+        int omitted = omittedStatementCount;
+        if (omitted > 0) {
+          buf.append(" (").append(omitted).append(" older statements omitted)");
+        }
         try {
           buf.append(logStatementHistory(statementHistory, false));
         }
@@ -1649,6 +1657,7 @@ public class ManagedConnection {
    * The execution start is the current epochal time.
    * The execution end must be set via {@link StatementHistory#end()}.
    * Within a transaction, the statement is appended to the statement history.
+   * If the transaction {@link Db#setStatementHistoryLimit(int) limits the history}, the oldest statements are dropped.
    * Otherwise, it replaces the current statement.
    *
    * @param statement the statement
@@ -1659,8 +1668,27 @@ public class ManagedConnection {
   StatementHistory logStatementHistory(StatementWrapper statement, String sql) {
     StatementHistory history = new StatementHistory(statement, sql);
     if (isTxRunning()) {
-      statementHistory.add(history);
-      if (maxStatementsPerTransaction != 0 && statementHistory.size() > maxStatementsPerTransaction) {
+      int limit = db.getStatementHistoryLimit();
+      if (limit < 0) {
+        statementHistory.add(history);
+      }
+      else if (limit == 0) {
+        // no history: keep only the running statement for diagnostics
+        if (currentStatement != null) {
+          // the current statement may also stem from before the transaction, i.e. is not counted in statementCount
+          boolean currentInTx = statementCount > statementHistory.size() + omittedStatementCount;
+          dropStatementHistory(currentStatement, currentInTx);
+        }
+        currentStatement = history;
+      }
+      else {
+        statementHistory.add(history);
+        while (statementHistory.size() > limit) {
+          dropStatementHistory(statementHistory.removeFirst(), true);
+        }
+      }
+      statementCount++;
+      if (maxStatementsPerTransaction != 0 && statementCount > maxStatementsPerTransaction) {
         throw new PersistenceException(db, "transaction limit of statements exceeded (" + maxStatementsPerTransaction + ")");
       }
     }
@@ -1668,6 +1696,32 @@ public class ManagedConnection {
       currentStatement = history;
     }
     return history;
+  }
+
+  /**
+   * Drops a statement from the history due to the transaction's history limit.<br>
+   * The statement is collected for the statistics right away, since it won't be collected when the session is detached.
+   *
+   * @param history the dropped statement
+   * @param omitted true if the statement was executed within the transaction and is omitted from the history
+   */
+  private void dropStatementHistory(StatementHistory history, boolean omitted) {
+    if (omitted) {
+      omittedStatementCount++;
+    }
+    if (collectStatistics && isMDCValid()) {
+      StatementStatistics.collect(history);
+    }
+  }
+
+  /**
+   * Gets the number of statements executed within transactions since the connection was attached.<br>
+   * Includes the statements dropped from the history due to a {@link Db#setStatementHistoryLimit(int) history limit}.
+   *
+   * @return the number of statements
+   */
+  int getStatementCount() {
+    return statementCount;
   }
 
   /**
@@ -1802,6 +1856,8 @@ public class ManagedConnection {
       }
     }
     statementHistory.clear();
+    statementCount = 0;
+    omittedStatementCount = 0;
     currentStatement = null;
     openResultSets.clear();
     if (!isClosed()) {

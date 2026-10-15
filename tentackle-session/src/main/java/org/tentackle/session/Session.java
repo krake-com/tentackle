@@ -362,6 +362,27 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
   boolean isConstraintsDeferred();
 
   /**
+   * Limits the statement history for the rest of the current transaction.<br>
+   * Within a transaction, all executed statements are kept for diagnostic purposes, for example
+   * to be logged if the transaction is rolled back or times out. For large transactions, such as bulk inserts,
+   * this costs memory. With a limit, only the most recent statements are kept.
+   * Requires a running transaction (see the {@code statementHistoryLimit} attribute of {@code @Transaction}
+   * for the declarative equivalent).
+   * The limit is reset to unlimited after each begin/commit/rollback.
+   *
+   * @param limit the maximum number of most recent statements to keep, 0 to keep none, &lt; 0 for unlimited
+   * @throws PersistenceException if no transaction is running
+   */
+  void setStatementHistoryLimit(int limit);
+
+  /**
+   * Gets the statement history limit of the current transaction.
+   *
+   * @return the maximum number of statements kept, &lt; 0 if unlimited (default)
+   */
+  int getStatementHistoryLimit();
+
+  /**
    * Runs code within a transaction.
    * <p>
    * Provided as an alternative to the {@code @Transaction}-interceptor, if the class holding the implementation of the

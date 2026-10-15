@@ -75,6 +75,8 @@ public interface DbRemoteDelegate extends RemoteDbDelegate {
 
   boolean setConstraintsDeferred(boolean flag);
 
+  void setStatementHistoryLimit(int limit);
+
   List<ModificationLog> popModificationLogsOfTransaction();
 
   DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor);

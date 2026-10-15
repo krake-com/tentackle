@@ -171,6 +171,11 @@ public class DbRemoteDelegateImpl extends RemoteDbDelegateImpl<Db>
   }
 
   @Override
+  public void setStatementHistoryLimit(int limit) {
+    getSession().setStatementHistoryLimit(limit);
+  }
+
+  @Override
   public List<ModificationLog> popModificationLogsOfTransaction() {
     return getSession().popModificationLogsOfTransaction();
   }
