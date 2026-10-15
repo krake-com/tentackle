@@ -376,6 +376,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           break;
         }
 
+        if (session.isTxRunning()) {
+          // force-detached within the transaction (e.g. by the attach-timeout thread):
+          // another connection would execute the remaining statements of the transaction in autocommit mode.
+          // Checked within the monitor, since the connection may be released concurrently.
+          throw session.createConnectionLostException();
+        }
+
         assertNotShutdown();    // again within the monitor: shutdown may have closed the connections meanwhile
 
         // find an unattached connection
@@ -487,58 +494,79 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is cleaned up without holding the monitor of this manager, since this may access the database.
+   * Meanwhile, the connection is neither attached nor unattached, and thus invisible to other sessions.
+   */
   @Override
   public void detach(Db session) {
     assertSessionBelongsToMe(session);
 
-    boolean expired = false;
-    boolean dead = false;
     ManagedConnection con;
 
     synchronized (this) {
-
       con = session.getConnection();
       if (con == null) {
         throw new PersistenceException(this + ": no connection attached to " + session);
       }
-
-      con.detachSession(session);
-
-      if (!con.isAttached()) {
-        if (con.isClosed()) {
-          LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
-          int ndx = con.getIndex();
-          if (ndx >= 0) {
-            removeConnection(ndx);
-          }
+      if (!con.unbindSession(session)) {
+        return;   // still attached (nested attach)
+      }
+      if (con.isClosed()) {
+        LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
+        int ndx = con.getIndex();
+        if (ndx >= 0) {
+          removeConnection(ndx);
         }
-        else {
-          if (!con.getAutoCommit()) {
-            /*
-             * The connection has been detached, even though a transaction is still running!
-             * This is bad and indicates some MT problem, or that some thread keeps on using
-             * a Db even if there has been an exception causing a rollback.
-             * Anyway: mark the connection dead so that it is closed and cleaned up.
-             * The Db is also closed to prevent any further use.
-             */
-            LOGGER.severe("connection {0} detached while still in transaction", con);
-            con.setDead(true);
-          }
+        return;
+      }
+    }
 
-          if (con.isDead()) {
-            removeDeadConnection(con);
-            dead = true;    // will close below
-          }
-          else if (con.isExpired()) {
-            // connection time elapsed: close it
-            removeConnection(con.getIndex());
-            expired = true;    // will close below
-          }
-          else {
-            // add unattached connection
-            pushUnattached(con.getIndex());
-          }
+    // un-synchronized: restoring the transaction defaults and checking the autocommit mode are JDBC calls
+    if (!con.isDead()) {    // else closed below: a dead connection may block until a network timeout
+      try {
+        con.cleanupDetached();
+        if (!con.getAutoCommit()) {
+          /*
+           * The connection has been detached, even though a transaction is still running!
+           * This is bad and indicates some MT problem, or that some thread keeps on using
+           * a Db even if there has been an exception causing a rollback.
+           * Anyway: mark the connection dead so that it is closed and cleaned up.
+           * The Db is also closed to prevent any further use.
+           */
+          LOGGER.severe("connection {0} detached while still in transaction", con);
+          con.setDead(true);
         }
+      }
+      catch (RuntimeException rx) {
+        if (!con.isClosed()) {    // else closed by shutdown in the meantime
+          LOGGER.warning(this + ": cleaning up detached connection " + con + " failed -> marked dead", rx);
+        }
+        con.setDead(true);
+      }
+    }
+
+    boolean expired = false;
+    boolean dead = false;
+
+    synchronized (this) {
+      if (con.getIndex() < 0) {
+        return;   // removed by shutdown in the meantime
+      }
+      if (con.isDead() || con.isClosed()) {
+        removeDeadConnection(con);
+        dead = true;    // will close below
+      }
+      else if (con.isExpired()) {
+        // connection time elapsed: close it
+        removeConnection(con.getIndex());
+        expired = true;    // will close below
+      }
+      else {
+        // add unattached connection
+        pushUnattached(con.getIndex());
       }
     }
 

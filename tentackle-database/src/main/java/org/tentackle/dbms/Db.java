@@ -85,6 +85,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -410,6 +411,7 @@ public class Db implements Session, Cloneable {
     private volatile boolean crashed;                       // true = session is closed because it is treated as crashed
     private final Set<SessionCloseHandler> closeHandlers;   // close handlers
     private Db me;                                          // != null if programmatic cleanup (close)
+    private Cleanable cleanable;                            // the cleanable running these resources (published along with them)
 
     Resources(ConnectionManager conMgr, int sessionId, Transport transport, DbRemoteDelegate rdel, RemoteDbConnection rcon, RemoteDbSession rses) {
       this.conMgr = conMgr;
@@ -460,7 +462,7 @@ public class Db implements Session, Cloneable {
                 TransportManager.getInstance().releaseTransport(transport);
               }
               if (me != null) {
-                DbUtilities.getInstance().closeGroupsOfSession(me);
+                closeGroupsOfSession();
                 LOGGER.info("remote session {0} closed", name);
               }
               else {
@@ -478,7 +480,7 @@ public class Db implements Session, Cloneable {
                 }
               }
               if (me != null) {
-                DbUtilities.getInstance().closeGroupsOfSession(me);
+                closeGroupsOfSession();   // must not prevent the logout below
                 conMgr.logout(me);
                 LOGGER.info("session {0} closed", name);
               }
@@ -536,6 +538,19 @@ public class Db implements Session, Cloneable {
       }
       finally {
         me = null;
+      }
+    }
+
+    /**
+     * Closes the session groups if the closing session is a group root.<br>
+     * Failures are logged only, since the session must be closed nevertheless.
+     */
+    private void closeGroupsOfSession() {
+      try {
+        DbUtilities.getInstance().closeGroupsOfSession(me);
+      }
+      catch (RuntimeException ex) {
+        LOGGER.warning("closing the session groups failed for " + name, ex);
       }
     }
 
@@ -597,8 +612,10 @@ public class Db implements Session, Cloneable {
 
   private final BackendInfo backendInfo;                      // the backend information
   private final int backendIdentity;                          // identity of the physical backend (0 if remote)
-  private Resources resources;                                // resources to be cleaned up (not final due to reopen)
-  private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
+  private volatile Resources resources;                       // resources to be cleaned up (not final due to reopen, which may run in background)
+  private Object reOpenLock = new Object();                   // serializes close and reopen (not final: replaced by clone)
+  private AtomicBoolean reconnectionPending = new AtomicBoolean();   // true while a background reconnection runs (not final: replaced by clone)
+  private volatile Thread reconnectingThread;                 // the thread performing the background reconnection attempt, null if none
   private int instanceNumber;                                 // each session gets a unique instance number
   private String idConfig;                                    // configuration of IdSource
   private volatile int sessionGroupId;                        // ID of the session group, 0 = none (read by other threads)
@@ -791,10 +808,12 @@ public class Db implements Session, Cloneable {
 
       alive = true;   // all sessions start alive!
 
-      resources = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
-      resources.name = toString();
-      cleanable = CLEANER.register(this, resources);
+      // the cleanable belongs to the resources: both are published at once by the volatile write below
+      Resources res = new Resources(conMgr, sessionId, transport, rdel, rcon, rses);
+      res.cleanable = CLEANER.register(this, res);
       transportHandedOver = true;   // from here on the resources release the transport
+      resources = res;
+      res.name = toString();
 
       registerSession();
 
@@ -1385,21 +1404,28 @@ public class Db implements Session, Cloneable {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Serialized with other reopens, which may run in background, see {@link #enableReconnection(boolean, long)}.
+   */
   @Override
   public void reOpen() {
-    if (isOpen()) {
-      try {
-        close();
+    synchronized (reOpenLock) {
+      if (isOpen()) {
+        try {
+          close();
+        }
+        catch (PersistenceException ex) {
+          // nothing to log
+        }
       }
-      catch (PersistenceException ex) {
-        // nothing to log
+      clearMembers();
+      unregisterSession();
+      open(resources.conMgr);
+      if (sessionGroupId > 0) {
+        groupWith(sessionGroupId);
       }
-    }
-    clearMembers();
-    unregisterSession();
-    open(resources.conMgr);
-    if (sessionGroupId > 0) {
-      groupWith(sessionGroupId);
     }
   }
 
@@ -1408,6 +1434,10 @@ public class Db implements Session, Cloneable {
    * Enables the automatic reconnection capability.<br>
    * If the backend is shutdown or not available for some other reason,
    * the application will retry to connect periodically.
+   * <p>
+   * If non-blocking, the session is reopened in the background, at most once at a time.
+   * Meanwhile, the session cannot be used by other threads: attaching it fails with a temporary
+   * {@link PersistenceException}, see {@link #isReconnecting()}.
    *
    * @param blocking true if reconnection blocks the current thread
    * @param millis the milliseconds between connection retries
@@ -1429,11 +1459,86 @@ public class Db implements Session, Cloneable {
    * @return true if reconnected, false if reconnection is disabled or runs non-blocking (in background)
    */
   public boolean optionallyReconnect() {
-    if (reconnectionPolicy != null) {
-      Reconnector.getInstance().submit(reconnectionPolicy, this);
-      return reconnectionPolicy.isBlocking();
+    ReconnectionPolicy<Db> policy = reconnectionPolicy;
+    if (policy != null) {
+      if (policy.isBlocking()) {
+        Reconnector.getInstance().submit(policy, this);
+        return true;
+      }
+      // non-blocking: at most one reconnection at a time, no matter how many statements fail meanwhile
+      if (reconnectionPending.compareAndSet(false, true)) {
+        try {
+          Thread.ofPlatform().daemon().name("reconnect " + this).start(() -> reconnectInBackground(policy));
+        }
+        catch (RuntimeException | Error ex) {
+          reconnectionPending.set(false);
+          throw ex;
+        }
+      }
     }
     return false;
+  }
+
+  /**
+   * Runs the reconnection in the background.<br>
+   * The reconnection is performed by the {@link Reconnector} within the current thread, so that the
+   * pending reconnection is cleared however it terminates: reconnected, aborted by the policy, interrupted
+   * or failed due to an {@link Error}. Otherwise, the session would refuse to attach forever.
+   *
+   * @param policy the application's non-blocking policy
+   */
+  private void reconnectInBackground(ReconnectionPolicy<Db> policy) {
+    try {
+      Reconnector.getInstance().submit(new BackgroundReconnection(policy), this);
+    }
+    catch (RuntimeException rx) {
+      LOGGER.severe("reconnection of " + this + " failed", rx);
+    }
+    finally {
+      reconnectionPending.set(false);   // the session is usable again, or must be reconnected by the next failure
+    }
+  }
+
+  /**
+   * Wraps a non-blocking reconnection policy.<br>
+   * Tracks the thread reopening the session in the background, which is the only thread allowed to use the session
+   * while it is being reopened.
+   * <p>
+   * Blocking, because it is submitted from the background thread, see {@link #reconnectInBackground(ReconnectionPolicy)}.
+   */
+  private final class BackgroundReconnection implements ReconnectionPolicy<Db> {
+
+    private final ReconnectionPolicy<Db> policy;    // the application's policy
+
+    private BackgroundReconnection(ReconnectionPolicy<Db> policy) {
+      this.policy = policy;
+    }
+
+    @Override
+    public boolean isBlocking() {
+      return true;
+    }
+
+    @Override
+    public long timeToReconnect() {
+      return policy.timeToReconnect();
+    }
+
+    @Override
+    public void reconnect(Db resource) {
+      reconnectingThread = Thread.currentThread();
+      try {
+        policy.reconnect(resource);
+      }
+      finally {
+        reconnectingThread = null;
+      }
+    }
+
+    @Override
+    public String toString() {
+      return policy.toString();
+    }
   }
 
 
@@ -1450,10 +1555,17 @@ public class Db implements Session, Cloneable {
 
   @Override
   public void close() {
-    if (isOpen()) {
+    /*
+     * Not serialized with reOpen: closing a session closes the other sessions of its group as well,
+     * which may be reopened concurrently. Hence, the resources are read only once and cleaned up
+     * by their own cleanable. Otherwise, a concurrent reopen could replace the cleanable in between,
+     * and the reopened session would be cleaned up as if it were unreferenced.
+     */
+    Resources res = resources;
+    if (res.isOpen()) {
       LOGGER.fine("closing session {0}", this);
-      resources.me = this;    // programmatic close
-      cleanable.clean();
+      res.me = this;    // programmatic close
+      res.cleanable.clean();
     }
   }
 
@@ -2728,10 +2840,41 @@ public class Db implements Session, Cloneable {
     if (resources.conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
     }
+    if (reconnectionPending.get() && reconnectingThread != Thread.currentThread()) {
+      PersistenceException px = new PersistenceException(this, "reconnection in progress");
+      px.setTemporary(true);
+      throw px;
+    }
     if (!autoCommit && resources.con == null) {
-      throw new PersistenceException(this, "connection lost within transaction (force-detached and rolled back)");
+      throw createConnectionLostException();    // fast path: checked by the connection manager as well
     }
     resources.conMgr.attach(this);
+  }
+
+  /**
+   * Creates the exception thrown if the connection was lost within a transaction.<br>
+   * The connection was force-detached or is dead, and the transaction has been rolled back.
+   * The application must roll back the transaction as well.
+   * <p>
+   * Used by the connection managers.
+   *
+   * @return the exception
+   */
+  PersistenceException createConnectionLostException() {
+    DbTransaction tx = transaction;
+    return new PersistenceException(this, tx != null && tx.isTimedOut() ?
+        tx + " timed out and has been rolled back by the transaction supervisor" :
+        "connection lost within transaction (force-detached and rolled back)");
+  }
+
+  /**
+   * Returns whether a reconnection is running in the background.
+   *
+   * @return true if a non-blocking reconnection was submitted and has not succeeded yet
+   * @see #enableReconnection(boolean, long)
+   */
+  public boolean isReconnecting() {
+    return reconnectionPending.get();
   }
 
   /**
@@ -3103,6 +3246,7 @@ public class Db implements Session, Cloneable {
       modificationLogList = null;
       immediatelyRolledBack = 0;
       applicationProperties = null;
+      transactionProperties = null;
     }
 
     postCommits = null;
@@ -3146,6 +3290,9 @@ public class Db implements Session, Cloneable {
       }
 
       newDb.resources = null;
+      newDb.reOpenLock = new Object();
+      newDb.reconnectionPending = new AtomicBoolean();
+      newDb.reconnectingThread = null;
       newDb.clearMembers();
       newDb.sessionGroupId = 0;
       newDb.exportedSessionGroupId = 0;

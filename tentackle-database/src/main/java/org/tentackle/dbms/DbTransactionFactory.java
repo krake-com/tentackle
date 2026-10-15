@@ -258,8 +258,13 @@ public class DbTransactionFactory {
   }
 
 
+  /**
+   * Starts the supervisor if not running.<br>
+   * A supervisor that died unexpectedly is replaced as well, see {@link #dropSupervisor(TransactionSupervisor)}.
+   * The new supervisor takes over all running transactions.
+   */
   private synchronized void ensureSupervisorAlive() {
-    if (transactionSupervisor == null) {
+    if (transactionSupervisor == null || !transactionSupervisor.isAlive()) {
       configChanged = true;   // log the configuration when started
       transactionSupervisor = new TransactionSupervisor();
       transactionSupervisor.start();
@@ -283,6 +288,19 @@ public class DbTransactionFactory {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Drops the terminating supervisor, unless already replaced.<br>
+   * If the supervisor died unexpectedly, e.g., due to an {@link Error}, the next transaction starts a new one.
+   * Otherwise, the transactions would not be supervised anymore.
+   *
+   * @param supervisor the supervisor thread
+   */
+  private synchronized void dropSupervisor(TransactionSupervisor supervisor) {
+    if (transactionSupervisor == supervisor) {
+      transactionSupervisor = null;
+    }
   }
 
 
@@ -340,6 +358,23 @@ public class DbTransactionFactory {
 
     @Override
     public void run() {
+      try {
+        supervise();
+      }
+      catch (Throwable t) {
+        LOGGER.severe(getName() + " died -> restarted by the next transaction", t);
+        throw t;
+      }
+      finally {
+        dropSupervisor(this);
+      }
+      LOGGER.info("{0} terminated", getName());
+    }
+
+    /**
+     * Supervises the transactions until terminated.
+     */
+    private void supervise() {
       while (keepSupervising(this)) {
         if (configChanged) {
           LOGGER.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
@@ -419,8 +454,6 @@ public class DbTransactionFactory {
           LOGGER.severe("cleanup transactions failed", ex);
         }
       }
-
-      LOGGER.info("{0} terminated", getName());
     }
 
     private static Thread createTxCleanupThread(ManagedConnection mc, Connection con) {

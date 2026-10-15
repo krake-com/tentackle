@@ -99,6 +99,7 @@ class BlockingConnection extends ManagedConnection {
   private final AtomicReference<Blocker> closeBlocker = new AtomicReference<>();
   private final AtomicReference<Blocker> autoCommitBlocker = new AtomicReference<>();
   private final AtomicReference<Blocker> verifyBlocker = new AtomicReference<>();
+  private final AtomicReference<Blocker> cleanupDetachedBlocker = new AtomicReference<>();
 
   BlockingConnection(ConnectionManager manager, Backend backend, BackendVersionInfo backendVersionInfo, Connection connection) {
     super(manager, backend, backendVersionInfo, connection);
@@ -137,6 +138,17 @@ class BlockingConnection extends ManagedConnection {
     return blocker;
   }
 
+  /**
+   * Blocks the next {@link #cleanupDetached()}, as invoked when detaching a session.
+   *
+   * @return the blocker
+   */
+  Blocker blockCleanupDetached() {
+    Blocker blocker = new Blocker();
+    cleanupDetachedBlocker.set(blocker);
+    return blocker;
+  }
+
   @Override
   public void close() {
     block(closeBlocker);
@@ -153,6 +165,12 @@ class BlockingConnection extends ManagedConnection {
   public boolean verifyConnection() {
     block(verifyBlocker);
     return super.verifyConnection();
+  }
+
+  @Override
+  void cleanupDetached() {
+    block(cleanupDetachedBlocker);    // as if restoring the transaction defaults takes a while
+    super.cleanupDetached();
   }
 
   private void block(AtomicReference<Blocker> blockerRef) {

@@ -183,12 +183,18 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
    * {@inheritDoc}
    * <p>
    * Overridden to close the session, if {@link #isSessionClosedOnTermination()}.
+   * The session of a killed dispatcher thread still running is closed by that thread when it returns.
    */
   @Override
   protected void cleanup() {
     super.cleanup();
 
     if (session != null && sessionClosedOnTermination) {
+      if (isCleanupDeferred()) {
+        // the session is not thread-safe and still owned by the killed dispatcher thread
+        LOGGER.warning("{0} still running -> closing the session left to the dispatcher thread", this);
+        return;
+      }
       try {
         session.close();
       }

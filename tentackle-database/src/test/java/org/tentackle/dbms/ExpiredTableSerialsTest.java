@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.ModificationTracker;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,6 +40,7 @@ import static org.testng.Assert.assertFalse;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ExpiredTableSerialsTest extends AbstractDbTest {
 
   /**
@@ -46,9 +48,13 @@ public class ExpiredTableSerialsTest extends AbstractDbTest {
    */
   private static class ExpiringObject extends AbstractDbObject<ExpiringObject> {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private static final DbObjectClassVariables<ExpiringObject> CLASSVARIABLES =
         DbObjectClassVariables.create(ExpiringObject.class, 0, "expiredtableserialstest");
 
+    @SuppressWarnings("serial")
     private final List<IdSerialTuple> storage = new ArrayList<>();    // the "database"
     private int selectCount;                                          // number of database queries
 

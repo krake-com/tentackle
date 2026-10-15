@@ -20,6 +20,9 @@ package org.tentackle.dbms;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.session.DefaultSessionInfo;
+import org.tentackle.session.SessionInfo;
+
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
@@ -27,6 +30,37 @@ import static org.testng.Assert.assertTrue;
  * Tests the lifecycle of the transaction supervisor of the {@link DbTransactionFactory}.
  */
 public class TransactionSupervisorTest extends AbstractDbTest {
+
+  /**
+   * A session making the supervisor die once when it times out the session's transaction.
+   */
+  private static class FailingDb extends Db {
+
+    private volatile boolean fail = true;
+
+    private FailingDb(ConnectionManager conMgr, SessionInfo sessionInfo) {
+      super(conMgr, sessionInfo);
+    }
+
+    @Override
+    public ConnectionManager getConnectionManager() {
+      if (fail && Thread.currentThread().getName().equals("Transaction Supervisor")) {
+        fail = false;
+        throw new SupervisorKiller();
+      }
+      return super.getConnectionManager();
+    }
+  }
+
+  /**
+   * An error thrown in the supervisor thread.
+   */
+  private static class SupervisorKiller extends Error {
+    private SupervisorKiller() {
+      super("simulated error in the transaction supervisor");
+    }
+  }
+
 
   public TransactionSupervisorTest() {
     super(TransactionType.NONE);
@@ -81,6 +115,39 @@ public class TransactionSupervisorTest extends AbstractDbTest {
         factory.finish(tx, false);
       }
       factory.requestTermination();
+    }
+  }
+
+
+  @Test
+  public void testRestartAfterSupervisorDied() throws InterruptedException {
+    DbTransactionFactory factory = new DbTransactionFactory();    // not the singleton used by the other tests
+    factory.setTxIdleInterval(20);
+    factory.setTxIdleTimeout(1);    // time out after 2 idle intervals
+    ConnectionManager conMgr = new DefaultConnectionManager("supervisor-died-test", 2, 8, 1, 720, 2160);
+    FailingDb failingDb = new FailingDb(conMgr, new DefaultSessionInfo());
+    try {
+      DbTransaction idleTx = factory.create(failingDb, "idle", false);    // never alive -> timed out
+      for (int i = 0; i < 100 && factory.isSupervisorRunning(); i++) {
+        Thread.sleep(20);
+      }
+      assertFalse(factory.isSupervisorRunning(), "supervisor should have died");
+      factory.finish(idleTx, true);
+
+      // the next transaction must start a new supervisor, which must keep running
+      DbTransaction tx = factory.create(getSession(), "next", false);
+      try {
+        Thread.sleep(200);    // several supervisor intervals
+        assertTrue(factory.isSupervisorRunning(), "supervisor not restarted");
+      }
+      finally {
+        factory.finish(tx, false);
+      }
+    }
+    finally {
+      factory.requestTermination();
+      failingDb.close();
+      conMgr.shutdown();
     }
   }
 

@@ -29,6 +29,7 @@ import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
@@ -332,11 +333,16 @@ public class DbUtilities {
     boolean isExportedGroupRoot = sessionId == session.getExportedSessionGroupId();
     if (isGroupRoot || isExportedGroupRoot) {
       for (Db db: Db.getAllOpenSessions()) {
-        if (isGroupRoot && db.getSessionGroupId() == sessionId) {
-          db.setSessionGroupId(0);
+        try {
+          if (isGroupRoot && db.getSessionGroupId() == sessionId) {
+            db.setSessionGroupId(0);
+          }
+          if (isExportedGroupRoot && db.getExportedSessionGroupId() == sessionId) {
+            db.setExportedSessionGroupId(0);
+          }
         }
-        if (isExportedGroupRoot && db.getExportedSessionGroupId() == sessionId) {
-          db.setExportedSessionGroupId(0);
+        catch (SessionClosedException ex) {
+          // closed by another thread in the meantime: nothing to ungroup
         }
       }
     }

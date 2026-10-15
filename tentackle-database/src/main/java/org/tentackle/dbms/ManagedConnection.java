@@ -716,6 +716,23 @@ public class ManagedConnection {
    * @param db the db to detach
    */
   public void detachSession(Db db) {
+    if (unbindSession(db)) {
+      cleanupDetached();
+    }
+  }
+
+  /**
+   * Detaches a session from the connection without accessing the database.<br>
+   * This is the first part of {@link #detachSession(Db)}. If the session is detached completely,
+   * {@link #cleanupDetached()} must be invoked afterward, before the connection is attached again.
+   * Allows connection managers to update their bookkeeping with the monitor held, and to clean up the
+   * connection without blocking other sessions, while the connection is invisible to them.
+   * The method is used from connection managers only, hence package scope.
+   *
+   * @param db the db to detach
+   * @return true if detached completely, false if still attached (nested attach)
+   */
+  boolean unbindSession(Db db) {
     Objects.requireNonNull(db, "db");
 
     if (this.db != db) {
@@ -738,37 +755,45 @@ public class ManagedConnection {
       this.db = null;
       db.setConnection(null);
       attachedSince = 0;
-
-      if (collectStatistics) {
-        if (logStatisticsMillis > 0 && detachedSince - StatementStatistics.getSince() > logStatisticsMillis) {
-          // log and clear statistics
-          StatementStatistics.log(Logger.Level.INFO, true);
-          DbTransactionFactory.getInstance().logStatistics(Logger.Level.INFO, true);
-        }
-        // collect all statements
-        if (isMDCValid()) {
-          for (StatementHistory history: statementHistory) {
-            StatementStatistics.collect(history);
-          }
-          if (currentStatement != null) {
-            StatementStatistics.collect(currentStatement);
-          }
-        }
-      }
-
-      statementHistory.clear();
-      currentStatement = null;
-
-      restoreTransactionDefaults();
+      return true;
     }
-    else {
-      if (db.getConnection() != this) {
-        throw new PersistenceException(db, "db lost current connection " + this + ", count=" + attachCount++);
+    if (db.getConnection() != this) {
+      throw new PersistenceException(db, "db lost current connection " + this + ", count=" + attachCount++);
+    }
+    if (attachCount < 0) {
+      throw new PersistenceException(db, "connection " + this + " detached too often, attach count = " + attachCount++);
+    }
+    return false;
+  }
+
+  /**
+   * Cleans up the connection after its session has been detached completely.<br>
+   * This is the second part of {@link #detachSession(Db)}, see {@link #unbindSession(Db)}.
+   * Collects and logs the statistics and restores the transaction defaults, which may access the database.
+   * The method is used from connection managers only, hence package scope.
+   */
+  void cleanupDetached() {
+    if (collectStatistics) {
+      if (logStatisticsMillis > 0 && detachedSince - StatementStatistics.getSince() > logStatisticsMillis) {
+        // log and clear statistics
+        StatementStatistics.log(Logger.Level.INFO, true);
+        DbTransactionFactory.getInstance().logStatistics(Logger.Level.INFO, true);
       }
-      if (attachCount < 0) {
-        throw new PersistenceException(db, "connection " + this + " detached too often, attach count = " + attachCount++);
+      // collect all statements
+      if (isMDCValid()) {
+        for (StatementHistory history: statementHistory) {
+          StatementStatistics.collect(history);
+        }
+        if (currentStatement != null) {
+          StatementStatistics.collect(currentStatement);
+        }
       }
     }
+
+    statementHistory.clear();
+    currentStatement = null;
+
+    restoreTransactionDefaults();
   }
 
   /**
@@ -1278,35 +1303,52 @@ public class ManagedConnection {
 
   /**
    * Reads all warnings, logs, and clears them.
+   * <p>
+   * The connection or its prepared statements may be closed concurrently, for example by the cleanup of a
+   * force-detached connection, see {@link #cleanupReleased(Db)}. Closed ones are skipped.
    */
   public void logAndClearWarnings() {
+    Connection c = resources.connection;    // local copy in case of race-condition
+    if (c == null) {
+      return;   // closed
+    }
     try {
       // log connection warning
-      SQLWarning warning = getConnection().getWarnings();
+      SQLWarning warning = c.getWarnings();
       while (warning != null) {
         LOGGER.warning(warning.getMessage());
         warning = warning.getNextWarning();
       }
-      getConnection().clearWarnings();  // release memory used by warnings
-      // log prepared statement warnings
-      for (PreparedStatementWrapper stmt: preparedStatements.values()) {
-        if (!stmt.isClosed()) { // if not closed
-          warning = stmt.getStatement().getWarnings();
+      c.clearWarnings();  // release memory used by warnings
+    }
+    catch (SQLException e) {
+      if (!resources.dead && resources.connection != null) {
+        throw createFromSqlException("reading warnings failed", e);
+      }
+      return;
+    }
+    // log prepared statement warnings
+    for (PreparedStatementWrapper stmt: preparedStatements.values()) {
+      Statement st = stmt.getStatement();   // local copy in case of race-condition
+      if (st != null) {   // if not closed
+        try {
+          SQLWarning warning = st.getWarnings();
           while (warning != null) {
             LOGGER.warning(warning.getMessage());
             warning = warning.getNextWarning();
           }
-          stmt.getStatement().clearWarnings();
+          st.clearWarnings();
+        }
+        catch (SQLException e) {
+          if (!resources.dead && !stmt.isClosed()) {
+            throw createFromSqlException("reading warnings failed for " + stmt, e);
+          }
+          // else closed in the meantime
         }
       }
-      // as this statement is called when there are no more running statements,
-      // we ignore the unprepared running statements.
     }
-    catch (SQLException e) {
-      if (!resources.dead) {
-        throw createFromSqlException("reading warnings failed", e);
-      }
-    }
+    // as this statement is called when there are no more running statements,
+    // we ignore the unprepared running statements.
   }
 
   /**
@@ -1362,11 +1404,19 @@ public class ManagedConnection {
         }
       }
 
-      logAndClearWarnings();
-      forceDetached();
-      closePreparedStatements(false);
-
-      closeImpl();
+      try {
+        logAndClearWarnings();
+      }
+      catch (RuntimeException ex) {
+        LOGGER.warning("logging the warnings failed: {0}", ex.getMessage());
+      }
+      try {
+        forceDetached();
+        closePreparedStatements(false);
+      }
+      finally {
+        closeImpl();    // the connection must be closed in any case
+      }
     }
   }
 

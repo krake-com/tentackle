@@ -180,6 +180,37 @@ public class ConnectionManagerBlockingIoTest {
 
 
   @Test(timeOut = 60000)
+  public void testDetachCleansUpWithoutBlocking() throws Exception {
+    TestMpxManager conMgr = new TestMpxManager("blocking-regular-detach");
+    Db db = new Db(conMgr, new DefaultSessionInfo());
+    try {
+      conMgr.attach(db);
+      BlockingConnection con = (BlockingConnection) db.getConnection();
+      Blocker blocker = con.blockAutoCommit();    // checked to detect a transaction still running
+
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+      Thread detacher = start("detacher", failure, () -> conMgr.detach(db));
+      blocker.awaitBlocked();
+      assertNotBlocked("the connection manager", blocker, conMgr::getNumConnections);
+
+      detacher.join(AWAIT_MILLIS);
+      assertNull(failure.get(), "detach failed: " + failure.get());
+      assertNull(db.getConnection());
+      assertTrue(db.isOpen());
+
+      // the detached connection is unattached again
+      conMgr.attach(db);
+      assertSame(db.getConnection(), con);
+      conMgr.detach(db);
+    }
+    finally {
+      db.close();
+      conMgr.shutdown();
+    }
+  }
+
+
+  @Test(timeOut = 60000)
   public void testForceDetachCleansUpWithoutBlocking() throws Exception {
     TestMpxManager conMgr = new TestMpxManager("blocking-force-detach");
     Db db = new Db(conMgr, new DefaultSessionInfo());
@@ -268,6 +299,48 @@ public class ConnectionManagerBlockingIoTest {
 
       detacher.join(AWAIT_MILLIS);
       assertNull(failure.get(), "force detach failed: " + failure.get());
+      attacher.join(AWAIT_MILLIS);
+      assertNull(attachFailure.get(), "attach failed: " + attachFailure.get());
+      assertSame(db.getConnection(), con);
+      conMgr.detach(db);
+    }
+    finally {
+      db.close();
+      db2.close();
+      conMgr.shutdown();
+    }
+  }
+
+
+  @Test(timeOut = 60000)
+  public void testDefaultDetachCleansUpWithoutBlocking() throws Exception {
+    TestDefaultManager conMgr = new TestDefaultManager("blocking-default-detach");
+    Db db = new Db(conMgr, new DefaultSessionInfo());
+    Db db2 = new Db(conMgr, new DefaultSessionInfo());
+    try {
+      conMgr.attach(db);
+      BlockingConnection con = (BlockingConnection) db.getConnection();
+      Blocker blocker = con.blockCleanupDetached();
+
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+      Thread detacher = start("detacher", failure, () -> conMgr.detach(db));
+      blocker.awaitBlocked();
+      assertNull(db.getConnection());
+
+      // the session must wait for the cleanup to complete before re-attaching
+      AtomicReference<Throwable> attachFailure = new AtomicReference<>();
+      Thread attacher = start("attacher", attachFailure, () -> conMgr.attach(db));
+      attacher.join(500);
+      assertTrue(attacher.isAlive(), "attached while the connection is being cleaned up");
+
+      assertNotBlocked("another session", blocker, () -> {
+        conMgr.verifyIdleConnection(con);   // skipped: reserved by the cleanup
+        conMgr.attach(db2);
+        conMgr.detach(db2);
+      });
+
+      detacher.join(AWAIT_MILLIS);
+      assertNull(failure.get(), "detach failed: " + failure.get());
       attacher.join(AWAIT_MILLIS);
       assertNull(attachFailure.get(), "attach failed: " + attachFailure.get());
       assertSame(db.getConnection(), con);

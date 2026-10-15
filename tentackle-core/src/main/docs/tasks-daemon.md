@@ -63,6 +63,12 @@ Useful operations on the dispatcher:
   that long; `setWaitInterval` (default: half the dead interval) times out `waitForTask` if the
   dispatcher is inactive meanwhile, removing the task; `setShutdownIdleTimeout` terminates an idle
   dispatcher.
+- **Termination** — `terminate()` asks the dispatcher to stop and waits up to the dead interval
+  for its thread. A thread that does not stop in time, for example because a task is stuck in a
+  blocking call, is marked killed, and `cleanup()` runs in the terminating thread while the
+  dispatcher thread is still running. Resources owned by the dispatcher thread, such as the session
+  of a session dispatcher, are left to the dispatcher thread: it runs `cleanup()` itself as soon
+  as it returns (see `isCleanupDeferred()`).
 - **Diagnostics** — `toDiagnosticString()`, `isAlive()`.
 
 ### `TaskListener`

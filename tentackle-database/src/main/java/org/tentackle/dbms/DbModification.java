@@ -28,6 +28,7 @@ import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
+import java.util.concurrent.ThreadLocalRandom;
 
 /*
  * @> $mapfile
@@ -51,6 +52,8 @@ import java.io.Serial;
  * <p>
  * Each tracked name (usually a table name) gets a row in the modification table holding its modification
  * serial. The row with ID 0 holds the master serial, which is incremented with every modification.
+ * Its tracked name holds the generation of the table, which changes whenever the table is re-initialized,
+ * see {@link #initializeModificationTable(Db)}.
  *
  * @author harald
  */
@@ -70,12 +73,31 @@ public class DbModification extends AbstractDbObject<DbModification> {
 
 
   /**
+   * Prefix of the master row's tracked name holding the generation.
+   */
+  private static final String GENERATION_PREFIX = "#M#";
+
+  /**
+   * The generation of a modification table initialized by a former version, i.e., without a generation.
+   */
+  public static final long LEGACY_GENERATION = 0;
+
+
+  /**
    * Initializes the modification table.
+   * <p>
+   * All rows are deleted, and the master row is re-created with a new random generation.
+   * The ids of the tracked names change, since the rows are re-created on demand.
+   * Other trackers using the table detect the re-initialization by the changed generation.
+   * The master serial alone is not sufficient: it is reset to 1 but may have been counted
+   * beyond the serial known to another tracker before its next poll.
    *
    * @param db the session
+   * @return the new generation
    */
-  public static void initializeModificationTable(Db db) {
+  public static long initializeModificationTable(Db db) {
     LOGGER.info("initializing modification table");
+    long generation = ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
     long txVoucher = db.begin("initialize");
     try {
       try (StatementWrapper st = db.createStatement()) {    // non-prepared statements can only be used once!
@@ -83,8 +105,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
       }
       try (StatementWrapper st = db.createStatement()) {
         st.executeUpdate(Backend.SQL_INSERT_INTO + CLASSVARIABLES.tableName + Backend.SQL_LEFT_PARENTHESIS +
-                         CN_ID + Backend.SQL_COMMA + AbstractDbObject.CN_SERIAL +
-                         Backend.SQL_INSERT_VALUES + "0,1)");
+                         CN_TRACKEDNAME + Backend.SQL_COMMA + CN_ID + Backend.SQL_COMMA + AbstractDbObject.CN_SERIAL +
+                         Backend.SQL_INSERT_VALUES + "'" + GENERATION_PREFIX + generation + "',0,1)");
       }
       db.commit(txVoucher);
     }
@@ -92,6 +114,25 @@ public class DbModification extends AbstractDbObject<DbModification> {
       db.rollback(txVoucher);
       throw ex;
     }
+    return generation;
+  }
+
+  /**
+   * Extracts the generation from the tracked name of the master row.
+   *
+   * @param masterName the tracked name of the master row
+   * @return the generation, {@link #LEGACY_GENERATION} if none
+   */
+  private static long parseGeneration(String masterName) {
+    if (masterName != null && masterName.startsWith(GENERATION_PREFIX)) {
+      try {
+        return Long.parseLong(masterName.substring(GENERATION_PREFIX.length()));
+      }
+      catch (NumberFormatException ex) {
+        LOGGER.warning("malformed generation in master row of " + CLASSVARIABLES.tableName + ": " + masterName);
+      }
+    }
+    return LEGACY_GENERATION;
   }
 
 
@@ -409,21 +450,38 @@ public class DbModification extends AbstractDbObject<DbModification> {
 
 
   /**
+   * The master serial and the generation of the modification table.
+   *
+   * @param serial the master serial
+   * @param generation the generation, {@link #LEGACY_GENERATION} if none
+   */
+  public record Master(long serial, long generation) {}
+
+  /**
    * Reads the master-serial.
    *
    * @return the master serial
    */
   public long selectMasterSerial() {
+    return selectMaster().serial();
+  }
+
+  /**
+   * Reads the master-serial and the generation of the modification table.
+   *
+   * @return the master serial and generation
+   */
+  public Master selectMaster() {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_MASTERSERIAL_ID, _ ->
-        Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + getTableName() +
+        Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_COMMA + CN_TRACKEDNAME + Backend.SQL_FROM + getTableName() +
         Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setLong(1, 0);   // ID=0 is the master
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next()) {
-        return rs.getLong(1);
+        return new Master(rs.getLong(1), parseGeneration(rs.getString(2)));
       }
       else  {
         throw new PersistenceException(getSession(), "can't read master serial from " + getTableName());

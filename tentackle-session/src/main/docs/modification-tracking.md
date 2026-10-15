@@ -41,11 +41,11 @@ Everything is built on one small table, mapped by
 [`DbModification`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/DbModification.java) and
 named `modification`:
 
-| Column      | Meaning                                                        |
-|-------------|----------------------------------------------------------------|
-| `tablename` | the **tracked name** — usually a table name, but any string     |
-| `id`        | a unique numeric id for that name; **id 0 is the master row**   |
-| `serial`    | the modification counter for that name                          |
+| Column      | Meaning                                                                                                                     |
+|-------------|-----------------------------------------------------------------------------------------------------------------------------|
+| `tablename` | the **tracked name** — usually a table name, but any string; the master row holds the table's [generation](#the-generation) |
+| `id`        | a unique numeric id for that name; **id 0 is the master row**                                                               |
+| `serial`    | the modification counter for that name                                                                                      |
 
 The row with `id = 0` is special: it is the **master serial**, the sum of all modifications of everything.
 Every count updates two rows — the row of the tracked name, and the master row — in a single statement:
@@ -75,6 +75,18 @@ The table is created and seeded by
 `DbModification.initializeModificationTable(...)`, which is also what happens implicitly when the tracker is
 given a session and finds the table missing or unreadable, and explicitly when the application calls
 [`invalidate()`](#invalidate).
+
+### The generation
+
+Reinitializing deletes all rows and re-creates the master row with its serial reset to 1. The rows of the
+tracked names are re-created on demand, so they get new ids. Every other tracker working on the table has to
+notice, or it keeps the stale ids and misses all modifications from then on. A master serial that went
+backwards is not a reliable sign: by the time the other tracker polls next, the master serial may already
+have been counted beyond the value it knew.
+
+So the master row's `tablename` holds a **generation** — `#M#` followed by a random number — that
+changes with every reinitialization. The poll reads it along with the master serial in the same single-row
+query. A table created by an older version has no generation; the backwards check still applies to it.
 
 ---
 
@@ -160,12 +172,12 @@ serial X and Y?", the gaps in the answer can be explained instead of causing a n
 `ModificationTracker.isLocalClientMode()` selects between two counting strategies. It is not a preference —
 it is a consequence of the deployment.
 
-| | **Local client mode** | **Optimized mode** (default) |
-|---|---|---|
-| Who | desktop app talking straight to the database, no middle tier | servers, and remote clients |
-| Counting | `performPendingCount()` runs **immediately**, inside `countModification()` | pending, flushed by the tracker thread once no transaction is running |
-| Session | must use the thread-local session — the count has to join the caller's transaction | the tracker's own session |
-| Tally state | no `sessionsInTx` bookkeeping, no `TableSerialHistory` | full bookkeeping |
+|             | **Local client mode**                                                              | **Optimized mode** (default)                                          |
+|-------------|------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| Who         | desktop app talking straight to the database, no middle tier                       | servers, and remote clients                                           |
+| Counting    | `performPendingCount()` runs **immediately**, inside `countModification()`         | pending, flushed by the tracker thread once no transaction is running |
+| Session     | must use the thread-local session — the count has to join the caller's transaction | the tracker's own session                                             |
+| Tally state | no `sessionsInTx` bookkeeping, no `TableSerialHistory`                             | full bookkeeping                                                      |
 
 `PdoModificationTracker.setSession(...)` decides this automatically:
 
@@ -213,10 +225,13 @@ hooks in there — the polling happens on the way to acquiring the lock, at most
    the tracker's session (`configureRemoteSession()`, needed before the server will accept master serial
    events for it).
 2. **Read the master serial** via `getModifiedMasterSerial()`. Unchanged → done, that is the whole poll.
-3. If it moved: if the new serial is *lower* than the last one, the modification table was reinitialized
-   underneath — force a full `invalidate()`.
+3. If the [generation](#the-generation) changed, or the new serial is *lower* than the last one, the
+   modification table was reinitialized underneath. The tracker then rebuilds its counters and table entries
+   from the reinitialized table, without reinitializing it again, since that would discard the rows the other
+   trackers have re-created meanwhile.
 4. **Read all id/serial tuples**, update the tallies' last serials, and for every listener whose tracked name
-   advanced, collect a `ModificationEventDetail`.
+   advanced, collect a `ModificationEventDetail`. After a reinitialization, every listener fires: the serials
+   of the old and the new table are unrelated, so the modifications counted in between could not be told apart.
 5. **Fire** the listeners — immediately, or by parking a
    [delayed event](#delaying-and-coalescing).
 
@@ -286,13 +301,13 @@ times. Keep it short: the tracker is not polling while you hold it.
 
 [`ModificationListener`](../java/org/tentackle/session/ModificationListener.java):
 
-| Method | Purpose |
-|---|---|
-| `String[] getNames()` | the tracked names to listen to; `null` or empty means **master listener** — fire on *any* change |
-| `int getPriority()` | execution order within a poll; **lower comes first** |
-| `long getTimeFrame()` | if > 0, fire at a *random* moment within this window instead (priority then has no effect) |
-| `long getTimeDelay()` | delay before firing, to collect events for several names; combined with a time frame it acts as an offset |
-| `void dataChanged(ModificationEvent ev)` | the callback |
+| Method                                   | Purpose                                                                                                   |
+|------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| `String[] getNames()`                    | the tracked names to listen to; `null` or empty means **master listener** — fire on *any* change          |
+| `int getPriority()`                      | execution order within a poll; **lower comes first**                                                      |
+| `long getTimeFrame()`                    | if > 0, fire at a *random* moment within this window instead (priority then has no effect)                |
+| `long getTimeDelay()`                    | delay before firing, to collect events for several names; combined with a time frame it acts as an offset |
+| `void dataChanged(ModificationEvent ev)` | the callback                                                                                              |
 
 [`ModificationListenerAdapter`](../java/org/tentackle/session/ModificationListenerAdapter.java) supplies the
 boring parts (priority 100, no frame, no delay), and
@@ -341,11 +356,11 @@ frame or a delay must still subclass `PdoListener` or `ModificationListenerAdapt
 [`ModificationEvent`](../java/org/tentackle/session/ModificationEvent.java) comes in three flavors, decided by
 the listener that receives it:
 
-| Flavor | `isMasterEvent()` | `getName()` | `getDetails()` | When |
-|---|---|---|---|---|
-| **master** | `true` | `null` | empty | listener registered without names; carries only the master serial |
-| **single** | `false` | the name | one detail | one tracked name advanced |
-| **multi** | `false` | first name | one detail per name | several of the listener's names advanced in the same poll |
+| Flavor     | `isMasterEvent()` | `getName()` | `getDetails()`      | When                                                              |
+|------------|-------------------|-------------|---------------------|-------------------------------------------------------------------|
+| **master** | `true`            | `null`      | empty               | listener registered without names; carries only the master serial |
+| **single** | `false`           | the name    | one detail          | one tracked name advanced                                         |
+| **multi**  | `false`           | first name  | one detail per name | several of the listener's names advanced in the same poll         |
 
 Each [`ModificationEventDetail`](../java/org/tentackle/session/ModificationEventDetail.java) is a
 `name` + `serial` pair, and equality is by name alone — which is what lets details for the same name collapse
@@ -382,13 +397,13 @@ A client with a remote session cannot read the modification table — there is n
 tracker asks the server's tracker over TRIP, through
 [`DbModificationTrackerRemoteDelegate`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/DbModificationTrackerRemoteDelegate.java):
 
-| Delegate method | Server side |
-|---|---|
-| `configureRemoteSession()` | marks this session as *the* tracker session (once) |
-| `selectMasterSerial()` | returns the server tracker's in-memory master serial, wrapped |
-| `selectIdSerialForName(name)` | one name's id/serial |
-| `selectAllIdSerials()` | all id/serial tuples |
-| `selectAllIdSerialNames()` | all id/serial/**name** tuples — fetched once at startup to save round trips |
+| Delegate method               | Server side                                                                                     |
+|-------------------------------|-------------------------------------------------------------------------------------------------|
+| `configureRemoteSession()`    | marks this session as *the* tracker session (once)                                              |
+| `selectMasterSerial()`        | returns the server tracker's in-memory master serial and [generation](#the-generation), wrapped |
+| `selectIdSerialForName(name)` | one name's id/serial                                                                            |
+| `selectAllIdSerials()`        | all id/serial tuples                                                                            |
+| `selectAllIdSerialNames()`    | all id/serial/**name** tuples — fetched once at startup to save round trips                     |
 
 The server answers from memory: its own tracker is already polling the database, so serving a client costs no
 SQL. Cascade this and you have the [multi-tier](../../../../src/main/docs/tiers.md) picture — a nested server's
@@ -407,7 +422,8 @@ public interface MasterSerial {
 ```
 
 When there is nothing to say, the server returns the record
-[`DefaultMasterSerial(serial)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/DefaultMasterSerial.java).
+[`DefaultMasterSerial(serial, generation)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/DefaultMasterSerial.java),
+which also carries the [generation](#the-generation) of the table the server's tracker works on.
 When there *is* something to say, it returns a
 [`MasterSerialEvent`](../java/org/tentackle/session/MasterSerialEvent.java) — the same serial, plus arbitrary
 application payload — and the client's tracker handles it before returning the serial to its poll loop. The
@@ -489,7 +505,7 @@ On the next poll,
 [`DbModificationTrackerRemoteDelegateImpl.createMasterSerial(...)`](../../../../tentackle-database/src/main/java/org/tentackle/dbms/trip/DbModificationTrackerRemoteDelegateImpl.java)
 drains the queue:
 
-- queue empty → `DefaultMasterSerial(serial)`
+- queue empty → `DefaultMasterSerial(serial, generation)`
 - exactly one event → that event, with the serial stamped into it
 - several events → a
   [`MasterSerialListEvent`](../java/org/tentackle/session/MasterSerialListEvent.java), itself a
@@ -567,9 +583,10 @@ logged rather than allowed to stop the rest.
 ### invalidate()
 
 `invalidate()` forces the tracking information to be rebuilt: counters cleared, master serial reset to 1, the
-modification table reinitialized (local sessions only), all table entries refreshed. The tracker calls it on
-itself when it notices the master serial went *backwards* — someone reinitialized the table underneath. It
-runs as a task on the tracker thread, or directly if called from that thread or before it started.
+modification table reinitialized with a new [generation](#the-generation) (local sessions only), all table
+entries refreshed. When the tracker notices that someone else reinitialized the table underneath, it rebuilds
+the same way but leaves the table alone. It runs as a task on the tracker thread, or directly if called from
+that thread or before it started.
 
 ---
 
@@ -616,14 +633,14 @@ but it is why nothing else should call this method.
 
 ## Who Uses It
 
-| Consumer | What it does |
-|---|---|
-| [`PdoCache`](../../../../tentackle-pdo/src/main/docs/cache.md) | expires cached PDOs via `expire(ModificationEvent)`; consults `TableSerialHistory` for gaps; checks `isLocalClientMode()` |
-| [`PdoCacheOperation`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoCacheOperation.java) | [preloads the caches](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache) at startup and seeds the tracker with the upstream baseline via `setIdSerialForName` |
-| [`DefaultSecurityManager`](../../../../tentackle-pdo/src/main/java/org/tentackle/security/DefaultSecurityManager.java) | a `PdoListener(Security.class)` invalidates the permission rules when they change |
-| [`StoredBundleControl`](../../../../tentackle-i18n/src/main/java/org/tentackle/i18n/StoredBundleControl.java) | a `PdoListener(StoredBundle.class)` clears the bundle cache, so a translator's edit reaches every JVM |
-| [`DesktopApplication`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java) | uses the tracker as a background worker via `ModificationTracker.submit(...)` |
-| RDC tables and forms | refresh their contents when the underlying entities change |
+| Consumer                                                                                                               | What it does                                                                                                                                                                                           |
+|------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`PdoCache`](../../../../tentackle-pdo/src/main/docs/cache.md)                                                         | expires cached PDOs via `expire(ModificationEvent)`; consults `TableSerialHistory` for gaps; checks `isLocalClientMode()`                                                                              |
+| [`PdoCacheOperation`](../../../../tentackle-pdo/src/main/java/org/tentackle/pdo/PdoCacheOperation.java)                | [preloads the caches](../../../../tentackle-pdo/src/main/docs/cache.md#preloading-caches-at-startup-preloadcache) at startup and seeds the tracker with the upstream baseline via `setIdSerialForName` |
+| [`DefaultSecurityManager`](../../../../tentackle-pdo/src/main/java/org/tentackle/security/DefaultSecurityManager.java) | a `PdoListener(Security.class)` invalidates the permission rules when they change                                                                                                                      |
+| [`StoredBundleControl`](../../../../tentackle-i18n/src/main/java/org/tentackle/i18n/StoredBundleControl.java)          | a `PdoListener(StoredBundle.class)` clears the bundle cache, so a translator's edit reaches every JVM                                                                                                  |
+| [`DesktopApplication`](../../../../tentackle-fx-rdc/src/main/java/org/tentackle/fx/rdc/app/DesktopApplication.java)    | uses the tracker as a background worker via `ModificationTracker.submit(...)`                                                                                                                          |
+| RDC tables and forms                                                                                                   | refresh their contents when the underlying entities change                                                                                                                                             |
 
 ---
 
@@ -633,13 +650,13 @@ The implementation is a `@Service(ModificationTracker.class)` singleton, so the 
 `PdoModificationTracker` is itself nothing but a subclass registering for the same service. The interesting
 hooks are `protected`:
 
-| Method | Why override |
-|---|---|
-| `getModifiedMasterSerial()` | listen for changes beyond the modification table — return non-null to trigger a poll cycle |
-| `selectAllIdSerials()` | track additional modification tables, e.g. those of another application |
-| `createModificationEvent(details)` | supply an application-specific event subclass |
-| `extractMasterSerial(...)` / `handleMasterSerialEvent(...)` | change how server-pushed events are unwrapped or dispatched |
-| `isReOpenOnceEnabled()` | change the policy for reopening a session the server closed |
+| Method                                                      | Why override                                                                               |
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| `getModifiedMasterSerial()`                                 | listen for changes beyond the modification table — return non-null to trigger a poll cycle |
+| `selectAllIdSerials()`                                      | track additional modification tables, e.g. those of another application                    |
+| `createModificationEvent(details)`                          | supply an application-specific event subclass                                              |
+| `extractMasterSerial(...)` / `handleMasterSerialEvent(...)` | change how server-pushed events are unwrapped or dispatched                                |
+| `isReOpenOnceEnabled()`                                     | change the policy for reopening a session the server closed                                |
 
 For application-specific server→client notifications, though, you almost never need a subclass: implement a
 `MasterSerialEvent` plus an `@MasterSerialEventService` handler and the existing tracker carries it for you.

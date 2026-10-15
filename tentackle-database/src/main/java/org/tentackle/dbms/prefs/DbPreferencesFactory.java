@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms.prefs;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
@@ -78,6 +79,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Modification tracker name.
    */
   private static final String TRACKER_NAME = "preferences";
+
+  private static final long WRITE_LOCK_POLL_MS = 100;   // interval to check whether the write lock's transaction has ended
+  private static final long WRITE_LOCK_MAX_WAIT_MS = 60000;   // max. time to wait for the write lock
 
 
   /**
@@ -152,9 +156,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
 
-  private boolean autoSync;                 // auto-sync flag
-  private boolean readOnly;                 // readonly flag
-  private boolean systemOnly;               // system-only flag
+  private volatile boolean autoSync;        // auto-sync flag (read by the modification tracker)
+  private volatile boolean readOnly;        // readonly flag
+  private volatile boolean systemOnly;      // system-only flag
 
   private final Map<String,Root> roots;     // loaded roots, key is username ("" for system)
 
@@ -167,6 +171,19 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private long keyTableSerial;              // highest tableSerial of _all_ DbPreferencesKeys
 
   private Db fallbackDb;                    // session used if there is no thread-local session (guarded by this factory)
+
+  /*
+   * The write lock serializes the modifications of the backing store, see acquireWriteLock.
+   */
+  private final Object writeLock = new Object();
+  private Db writeOwner;                    // the session holding the write lock, null if none (guarded by writeLock)
+  private long writeOwnerTxNumber;          // the owner's transaction holding the write lock until it ends, 0 if none (guarded by writeLock)
+  private int writeHoldCount;               // number of nested acquisitions in progress by the owner (guarded by writeLock)
+
+  private final Object scheduleLock = new Object();   // guards the scheduled update
+  private boolean updateScheduled;          // true if the update thread is running
+  private long scheduledNodeMaxSerial;      // node serial to update the repository to, 0 if none
+  private long scheduledKeyMaxSerial;       // key serial to update the repository to, 0 if none
 
 
   /**
@@ -189,7 +206,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           @Override
           public void dataChanged(ModificationEvent ev) {
             if (isAutoSync()) {
-              updateRepository((Db) ev.getSession(), ev.getSerial(), 0);
+              scheduleUpdate(ev.getSerial(), 0);
             }
           }
         });
@@ -213,7 +230,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
               }
             }
             if (isAutoSync()) {
-              updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
+              scheduleUpdate(nodeMaxSerial, keyMaxSerial);
             }
           }
         });
@@ -296,7 +313,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param user the username, null or "" if system
    * @return the serial, 0 if no such root loaded
    */
-  public long getSerial(String user) {
+  public synchronized long getSerial(String user) {
     String key = user == null ? "" : user;
     Root root = roots.get(key);
     return root == null ? 0 : root.serial;
@@ -459,25 +476,44 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * <p>
    * The change listeners are invoked once the flush completed, without holding the monitor of this factory.
    * If the flush fails, they are not invoked at all.
+   * <p>
+   * If the session is running a transaction, the flush joins it and the modified rows stay locked in the database
+   * until the transaction ends. So does the write lock of this factory, see {@link #acquireWriteLock(Db)}.
    *
    * @param node the preferences node
    * @param sync true if load modifications from storage before flush
    * @throws BackingStoreException if failed
    */
   public void flush(DbPreferences node, boolean sync) throws BackingStoreException {
+    Db db = requestDb(node.isUserNode(), true);
     try {
-      flushSynchronized(node, sync);
+      boolean locked;
+      try {
+        locked = acquireWriteLock(db);
+      }
+      catch (RuntimeException rex) {
+        throw new BackingStoreException(rex);
+      }
+      try {
+        flushSynchronized(db, node, sync);
+      }
+      finally {
+        if (locked) {
+          releaseWriteLock(db);
+        }
+      }
     }
     finally {
+      releaseDb(db);
       firePendingEvents();
     }
   }
 
-  private synchronized void flushSynchronized(DbPreferences node, boolean sync) throws BackingStoreException {
+  private synchronized void flushSynchronized(Db db, DbPreferences node, boolean sync) throws BackingStoreException {
     int eventMark = pendingEvents.size();
     boolean flushed = false;
     try {
-      flushImpl(node, sync);
+      flushImpl(db, node, sync);
       flushed = true;
     }
     finally {
@@ -487,8 +523,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-  private void flushImpl(DbPreferences node, boolean sync) throws BackingStoreException {
-    Db db = requestDb(node.isUserNode(), true);
+  private void flushImpl(Db db, DbPreferences node, boolean sync) throws BackingStoreException {
     try {
       boolean updated = db.transaction(() -> {
         try {
@@ -508,9 +543,87 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     catch (RuntimeException rex) {
       throw new BackingStoreException(rex);
     }
-    finally {
-      releaseDb(db);
+  }
+
+  /**
+   * Acquires the write lock.<br>
+   * The write lock serializes the modifications of the backing store by the sessions of this JVM.
+   * It is acquired before the monitor of this factory, which guards the in-memory repository.
+   * <p>
+   * If the session is running a transaction, the lock is held until the transaction ends,
+   * since the modified rows stay locked in the database until then. Hence, another session waits for the
+   * write lock without holding the monitor, instead of waiting for the row locks while holding it.
+   * Otherwise, the owner of the transaction could not even read a preference before committing, and both
+   * would wait for each other until the database's lock timeout.
+   * <p>
+   * The lock is reentrant for the owning session.
+   * <p>
+   * If the owner's transaction does not end in time, e.g., because the application leaked it, the session proceeds
+   * without the lock. It then waits for the row locks as before, which fails after the database's lock timeout.
+   *
+   * @param db the session modifying the backing store
+   * @return true if acquired, false if not acquired because the current thread holds the monitor of this factory
+   * or the lock was not released in time
+   * @throws InterruptedRuntimeException if interrupted while waiting
+   */
+  private boolean acquireWriteLock(Db db) {
+    long deadline = System.currentTimeMillis() + WRITE_LOCK_MAX_WAIT_MS;
+    synchronized (writeLock) {
+      while (writeOwner != db && isWriteLocked()) {
+        if (Thread.holdsLock(this)) {
+          return false;   // waiting with the monitor held would block the owner as well
+        }
+        if (System.currentTimeMillis() >= deadline) {
+          LOGGER.warning("{0} still holds the preferences write lock within transaction {1} -> {2} proceeds without",
+                         writeOwner, writeOwnerTxNumber, db);
+          return false;
+        }
+        try {
+          writeLock.wait(WRITE_LOCK_POLL_MS);   // the end of the owner's transaction is not notified
+        }
+        catch (InterruptedException ix) {
+          Thread.currentThread().interrupt();
+          throw new InterruptedRuntimeException(ix);
+        }
+      }
+      if (writeOwner != db || !isWriteLocked()) {
+        writeOwner = db;
+        writeOwnerTxNumber = db.isTxRunning() ? db.getTxNumber() : 0;
+        writeHoldCount = 0;
+      }
+      writeHoldCount++;
+      return true;
     }
+  }
+
+  /**
+   * Releases the write lock acquired by {@link #acquireWriteLock(Db)}.<br>
+   * If acquired within a transaction, the lock is held until the transaction ends.
+   *
+   * @param db the session modifying the backing store
+   */
+  private void releaseWriteLock(Db db) {
+    synchronized (writeLock) {
+      if (writeOwner == db && writeHoldCount > 0 && --writeHoldCount == 0) {
+        if (!isWriteLocked()) {
+          writeOwner = null;
+        }
+        writeLock.notifyAll();
+      }
+    }
+  }
+
+  /**
+   * Returns whether the write lock is held.<br>
+   * Must be invoked with the {@link #writeLock} held.
+   *
+   * @return true if held by a modification in progress or by the owner's transaction
+   */
+  private boolean isWriteLocked() {
+    Db owner = writeOwner;
+    return owner != null &&
+           (writeHoldCount > 0 ||
+            writeOwnerTxNumber != 0 && owner.isOpen() && owner.isTxRunning() && owner.getTxNumber() == writeOwnerTxNumber);
   }
 
   /**
@@ -613,22 +726,95 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
     try {
-      synchronized (this) {
-        int eventMark = pendingEvents.size();
-        boolean updated = false;
-        try {
-          updateRepositoryImpl(db, nodeMaxSerial, keyMaxSerial);
-          updated = true;
-        }
-        finally {
-          if (!updated) {
-            discardPendingEvents(eventMark);
+      boolean locked = acquireWriteLock(db);    // the update counts a modification in the backing store
+      try {
+        synchronized (this) {
+          int eventMark = pendingEvents.size();
+          boolean updated = false;
+          try {
+            updateRepositoryImpl(db, nodeMaxSerial, keyMaxSerial);
+            updated = true;
           }
+          finally {
+            if (!updated) {
+              discardPendingEvents(eventMark);
+            }
+          }
+        }
+      }
+      finally {
+        if (locked) {
+          releaseWriteLock(db);
         }
       }
     }
     finally {
       firePendingEvents();
+    }
+  }
+
+  /**
+   * Schedules the update of the repository on behalf of the modification tracker.
+   * <p>
+   * The repository is not updated by the tracker thread, since it must not wait for the monitor of this factory.
+   * The thread holding the monitor may wait for the tracker thread, for example to configure the modification
+   * counter in a flush, and both would wait for each other until the tracker's wait interval elapsed.
+   * Instead, the update is performed by a separate thread, using the session of {@link #requestDb(boolean, boolean)}.
+   * Updates scheduled while the thread is still running are merged.
+   *
+   * @param nodeMaxSerial the new table serial for prefnodes, 0 if unchanged
+   * @param keyMaxSerial the new table serial for prefkeys, 0 if unchanged
+   */
+  protected void scheduleUpdate(long nodeMaxSerial, long keyMaxSerial) {
+    synchronized (scheduleLock) {
+      scheduledNodeMaxSerial = Math.max(scheduledNodeMaxSerial, nodeMaxSerial);
+      scheduledKeyMaxSerial = Math.max(scheduledKeyMaxSerial, keyMaxSerial);
+      if (updateScheduled) {
+        return;   // picked up by the running thread
+      }
+      updateScheduled = true;
+    }
+    try {
+      // a platform thread: it uses the JDBC driver while holding the monitor
+      Thread.ofPlatform().daemon().name("preferences update").start(this::runScheduledUpdates);
+    }
+    catch (RuntimeException | Error ex) {
+      synchronized (scheduleLock) {
+        updateScheduled = false;
+      }
+      throw ex;
+    }
+  }
+
+  /**
+   * Performs the scheduled updates until there are no more.
+   */
+  private void runScheduledUpdates() {
+    for (;;) {
+      long nodeMaxSerial;
+      long keyMaxSerial;
+      synchronized (scheduleLock) {
+        nodeMaxSerial = scheduledNodeMaxSerial;
+        keyMaxSerial = scheduledKeyMaxSerial;
+        if (nodeMaxSerial == 0 && keyMaxSerial == 0) {
+          updateScheduled = false;
+          return;
+        }
+        scheduledNodeMaxSerial = 0;
+        scheduledKeyMaxSerial = 0;
+      }
+      try {
+        Db db = requestDb(false, false);
+        try {
+          updateRepository(db, nodeMaxSerial, keyMaxSerial);
+        }
+        finally {
+          releaseDb(db);
+        }
+      }
+      catch (RuntimeException ex) {
+        LOGGER.severe("updating the preferences repository failed", ex);
+      }
     }
   }
 

@@ -25,16 +25,25 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.expectThrows;
 
 /**
- * Tests returning sessions to a {@link DbPool} more than once.
+ * Tests returning sessions to a {@link DbPool}.
  * <p>
  * According to {@link org.tentackle.misc.AbstractPool#put}, a session may be returned again
  * after it has been returned to or removed from the pool. Its pool ID is 0 or -1 then,
  * i.e. its slot index is not known anymore and must not be used to access the pool's slots.
+ * <p>
+ * Cleaning up a returned session may perform I/O, such as rolling back a pending transaction or
+ * a remote round trip. This must not block the other users of the pool.
  *
  * @author harald
  */
@@ -49,6 +58,8 @@ public class DbPoolReturnTest {
   private static class PretendingDb extends Db {
 
     private boolean pretendRemoteTx;
+    private volatile CountDownLatch clearBlocked;     // != null if clearProperties blocks until counted down
+    private volatile CountDownLatch clearEntered;     // counted down when clearProperties started blocking
 
     private PretendingDb(ConnectionManager conMgr, SessionInfo sessionInfo) {
       super(conMgr, sessionInfo);
@@ -66,6 +77,17 @@ public class DbPoolReturnTest {
 
     @Override
     public void clearProperties() {
+      CountDownLatch blocked = clearBlocked;
+      if (blocked != null) {
+        clearBlocked = null;
+        clearEntered.countDown();
+        try {
+          blocked.await();    // as a slow remote round trip
+        }
+        catch (InterruptedException ix) {
+          Thread.currentThread().interrupt();
+        }
+      }
       if (pretendRemoteTx) {
         return;   // there is no remote delegate to forward this to
       }
@@ -114,6 +136,92 @@ public class DbPoolReturnTest {
 
       // the pool must still be usable
       Session again = pool.get();
+      pool.put(again);
+    }
+    finally {
+      pool.shutdown();
+      conMgr.shutdown();
+    }
+  }
+
+
+  /**
+   * Returning a session must not block the pool while the session is cleaned up.
+   */
+  @Test(timeOut = 60000)
+  public void testReturnDoesNotBlockPool() throws Exception {
+    ConnectionManager conMgr = new DefaultConnectionManager("pool-return-block-test-mgr", 2, 8, 1, 720, 2160);
+    DbPool pool = new PretendingDbPool(conMgr, new DefaultSessionInfo());
+    try {
+      PretendingDb db = (PretendingDb) pool.get();
+      CountDownLatch blocked = new CountDownLatch(1);
+      db.clearEntered = new CountDownLatch(1);
+      db.clearBlocked = blocked;
+
+      AtomicReference<Throwable> failure = new AtomicReference<>();
+      Thread returningThread = new Thread(() -> {
+        try {
+          pool.put(db);
+        }
+        catch (Throwable t) {
+          failure.set(t);
+        }
+      }, "returning thread");
+      returningThread.start();
+      assertTrue(db.clearEntered.await(10, TimeUnit.SECONDS), "cleanup not started");
+
+      // the pool must be usable by other threads meanwhile
+      AtomicReference<Throwable> otherFailure = new AtomicReference<>();
+      Thread otherThread = new Thread(() -> {
+        try {
+          Session other = pool.get();
+          pool.put(other);
+        }
+        catch (Throwable t) {
+          otherFailure.set(t);
+        }
+      }, "other pool user");
+      otherThread.start();
+      otherThread.join(5000);
+      boolean otherBlocked = otherThread.isAlive();
+
+      blocked.countDown();
+      returningThread.join(10000);
+      otherThread.join(10000);
+
+      assertFalse(otherBlocked, "pool blocked while a returned session was cleaned up");
+      assertEquals(failure.get(), null, "returning the session failed");
+      assertEquals(otherFailure.get(), null, "using the pool failed");
+      assertEquals(db.getPoolId(), 0, "session not returned to the pool");
+    }
+    finally {
+      pool.shutdown();
+      conMgr.shutdown();
+    }
+  }
+
+  /**
+   * A local session returned within a transaction is rolled back and kept in the pool.
+   */
+  @Test
+  public void testLocalTransactionRolledBackOnReturn() {
+    ConnectionManager conMgr = new DefaultConnectionManager("pool-return-tx-test-mgr", 2, 8, 1, 720, 2160);
+    DbPool pool = new PretendingDbPool(conMgr, new DefaultSessionInfo());
+    try {
+      Db db = (Db) pool.get();
+      int size = pool.getSize();
+      db.begin("returned within transaction");
+      assertTrue(db.isTxRunning());
+
+      PersistenceException px = expectThrows(PersistenceException.class, () -> pool.put(db));
+      assertTrue(px.getMessage().contains("rolled back"), px.getMessage());
+      assertFalse(db.isTxRunning(), "transaction not rolled back");
+      assertEquals(db.getPoolId(), 0, "session not returned to the pool");
+      assertEquals(pool.getSize(), size, "session removed from the pool");
+
+      // the session is usable again
+      Session again = pool.get();
+      assertEquals(again, db);
       pool.put(again);
     }
     finally {

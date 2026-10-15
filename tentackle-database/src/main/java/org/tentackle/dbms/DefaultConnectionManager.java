@@ -398,6 +398,8 @@ public class DefaultConnectionManager implements ConnectionManager {
     ManagedConnection oldCon;             // the connection to reopen, null if attached
     for (;;) {
       ManagedConnection candidate;
+      ManagedConnection lostCon = null;   // the connection lost within a transaction
+      Db releasedDb = null;               // the session released from the lost connection
       synchronized (this) {
         assertSessionBelongsToMe(session);
         awaitNotReserved(getIndexFromSession(session));
@@ -406,7 +408,19 @@ public class DefaultConnectionManager implements ConnectionManager {
         }
         int index = getIndexFromSession(session);   // again: the session may have been closed while waiting
         ManagedConnection con = conList[index];
-        if (con != verified && con.isConnectionVerificationNecessary()) {
+        if (session.isTxRunning() && (con.getSession() != session || con.isDead() || con.isClosed())) {
+          /*
+           * The connection was lost within the transaction: force-detached (e.g. by the attach-timeout thread),
+           * or dead (e.g. killed by the transaction supervisor). Reopening it or attaching the rolled back
+           * connection again would execute the remaining statements of the transaction in autocommit mode.
+           * Checked within the monitor, since the connection may be released concurrently.
+           * A dead connection still attached is released, so that the session can roll back its transaction.
+           */
+          lostCon = con;
+          releasedDb = releaseConnection(con, session);   // null if not attached to the session anymore
+          candidate = null;
+        }
+        else if (con != verified && con.isConnectionVerificationNecessary()) {
           // reserved while being verified, so that no other thread uses it meanwhile
           con.setReserved(true);
           candidate = con;
@@ -415,6 +429,12 @@ public class DefaultConnectionManager implements ConnectionManager {
           oldCon = attachImpl(session, con, con == verified);
           break;
         }
+      }
+      if (lostCon != null) {
+        if (releasedDb != null) {
+          cleanupReleasedConnection(lostCon, releasedDb);   // without the monitor: may take a while
+        }
+        throw session.createConnectionLostException();
       }
       try {
         candidate.verifyConnection();   // marks the connection dead if it fails
@@ -465,16 +485,44 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The connection is cleaned up without holding the monitor of this manager, since this may access the database.
+   * Meanwhile, the connection is reserved, so that it is not verified concurrently and the session waits in
+   * {@link #attach(Db)} until the cleanup completes.
+   */
   @Override
-  public synchronized void detach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = getIndexFromSession(session);
-    ManagedConnection con = conList[index];
-    if (con == null) {
-      // closed by shutdown(), which detached the session already
-      throw new PersistenceException(session, this + ": connection manager has been shut down");
+  public void detach(Db session) {
+    ManagedConnection con;
+    synchronized (this) {
+      assertSessionBelongsToMe(session);
+      int index = getIndexFromSession(session);
+      con = conList[index];
+      if (con == null) {
+        // closed by shutdown(), which detached the session already
+        throw new PersistenceException(session, this + ": connection manager has been shut down");
+      }
+      if (!con.unbindSession(session) || con.isDead() || con.isClosed()) {
+        return;   // still attached (nested attach), or reopened by the next attach()
+      }
+      con.setReserved(true);
     }
-    con.detachSession(session);
+    try {
+      con.cleanupDetached();
+    }
+    catch (RuntimeException rx) {
+      if (!con.isClosed()) {    // else closed by shutdown in the meantime
+        LOGGER.warning(this + ": cleaning up detached connection " + con + " failed -> marked dead", rx);
+      }
+      con.setDead(true);    // attach() will reopen it
+    }
+    finally {
+      synchronized (this) {
+        con.setReserved(false);
+        notifyAll();    // wake up attach()
+      }
+    }
   }
 
 

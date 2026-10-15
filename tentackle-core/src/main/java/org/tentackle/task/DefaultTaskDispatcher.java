@@ -784,9 +784,26 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   /**
    * Does any necessary cleanup after the dispatcher thread has been terminated.
+   * <p>
+   * Invoked by the dispatcher thread when it terminates, and by the thread invoking {@link #terminate()}.
+   * If the dispatcher thread did not terminate in time, it is marked killed and still running while
+   * the terminating thread cleans up. Resources the dispatcher thread may still be using must not be
+   * cleaned up then, see {@link #isCleanupDeferred()}.
    */
   protected void cleanup() {
     terminationRequested = true;  // in case termination due to some exception
+  }
+
+  /**
+   * Returns whether the resources owned by the dispatcher thread must be left to the dispatcher thread itself.<br>
+   * This is the case if the dispatcher has been killed by another thread while still running, for example,
+   * if a task is stuck in a blocking call. The dispatcher thread invokes {@link #cleanup()} itself
+   * as soon as it returns.
+   *
+   * @return true if invoked by another thread while the killed dispatcher thread is still running
+   */
+  protected boolean isCleanupDeferred() {
+    return isKilled() && Thread.currentThread() != this && isAlive();
   }
 
   /**

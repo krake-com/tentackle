@@ -21,6 +21,7 @@ package org.tentackle.dbms;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.trip.DbModificationTrackerRemoteDelegate;
+import org.tentackle.dbms.trip.DefaultMasterSerial;
 import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
@@ -41,6 +42,7 @@ import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.task.Task;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,6 +57,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -238,13 +241,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   /**
    * A delayed event.<br>
    * There is only one event per listener.
-   * The natural ordering is by invocation time.
+   * The natural ordering is by invocation time, then by creation order.
    */
   private static class DelayedEvent implements Comparable<DelayedEvent> {
+
+    private static final AtomicLong INSTANCE_COUNTER = new AtomicLong();
 
     private final ModificationListener listener;
     private final Map<String,ModificationEventDetail> details;
     private final long invocationTime;
+    private final long instanceNumber;    // tie-breaker for equal invocation times, see compareTo
 
     /**
      * Creates a delayed event.
@@ -256,6 +262,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       this.invocationTime = invocationTime;
       this.listener = listener;
       this.details = new HashMap<>();
+      this.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
     }
 
     /**
@@ -299,10 +306,21 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
     @Override
     public int compareTo(DelayedEvent o) {
-      return Long.compare(invocationTime, o.invocationTime);
+      int rv = Long.compare(invocationTime, o.invocationTime);
+      if (rv == 0) {
+        // events of different listeners may share the same invocation time.
+        // Without the tie-breaker, the TreeSet would treat them as duplicates and drop the latter.
+        rv = Long.compare(instanceNumber, o.instanceNumber);
+      }
+      return rv;
     }
 
   }
+
+  /**
+   * The generation is not known, i.e., not read so far or not provided by the remote server.
+   */
+  private static final long UNKNOWN_GENERATION = -1;
 
   private volatile int remoteDelegateId;                            // the delegate ID
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
@@ -315,6 +333,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private final Map<String, TableEntry> tableEntriesByName;         // the table entries mapped by (table)name
   private final Map<Long, TableEntry> tableEntriesById;             // the table entries mapped by ID
   private volatile TableEntry masterEntry;                          // master serial entry
+  private volatile long generation = UNKNOWN_GENERATION;            // generation of the modification table the entries refer to
+  private volatile long selectedGeneration = UNKNOWN_GENERATION;    // generation read along with the master serial
   private final Random timeRandom;                                  // execution time randomizer
   private final Map<ModificationListener,DelayedEvent> delayedListeners;   // map of delayed listeners (tracker thread only)
   private final Set<DelayedEvent> delayedEvents;                    // delayed events (tracker thread only)
@@ -399,9 +419,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     try {
       masterModification = new DbModification((Db) session);
       selectMasterSerial();
+      generation = selectedGeneration;
     }
     catch (PersistenceException ex) {
-      DbModification.initializeModificationTable(getSession());
+      generation = DbModification.initializeModificationTable(getSession());
     }
   }
 
@@ -693,7 +714,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         }
         Db db = DbModificationTracker.this.getSession();
         if (initializeTable && !db.isRemote()) {
-          DbModification.initializeModificationTable(db);
+          generation = DbModification.initializeModificationTable(db);
+        }
+        else if (selectedGeneration != UNKNOWN_GENERATION) {
+          generation = selectedGeneration;   // re-initialized by another tracker or the remote server
         }
         refreshTableEntries();
       }
@@ -714,7 +738,14 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       lastPollTime = 0;   // cleanup is invoked a second time from the main thread for sure
     }
 
-    performPendingCounts();
+    if (isCleanupDeferred()) {
+      // killed by terminate(): the stuck tracker thread still owns the session, which is not thread-safe.
+      // The tracker thread performs the pending counts itself as soon as it returns and terminates.
+      LOGGER.warning("{0} still running -> pending counts left to the tracker thread", this);
+    }
+    else {
+      performPendingCounts();
+    }
     super.cleanup();
     invokeShutdownRunnables();
   }
@@ -849,10 +880,38 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   protected Long getModifiedMasterSerial() {
     long serial = selectMasterSerial();
-    if (serial != getMasterSerial()) {
+    if (serial != getMasterSerial() || isReinitialized()) {
       return serial;
     }
     return null;
+  }
+
+  /**
+   * Returns whether the modification table has been re-initialized by another tracker or the remote server.<br>
+   * Compares the generation read by the last {@link #selectMasterSerial()} with the one the entries refer to.
+   *
+   * @return true if re-initialized
+   */
+  private boolean isReinitialized() {
+    long selected = selectedGeneration;
+    if (selected == UNKNOWN_GENERATION) {
+      return false;   // not provided: detected by the next poll providing it
+    }
+    if (generation == UNKNOWN_GENERATION) {
+      generation = selected;    // first one provided by the remote server
+      return false;
+    }
+    return selected != generation;
+  }
+
+  /**
+   * Gets the generation of the modification table the entries and counters of this tracker refer to.<br>
+   * Used by the remote delegate to provide it to the remote clients.
+   *
+   * @return the generation, {@link DbModification#LEGACY_GENERATION} if the table has none, -1 if unknown
+   */
+  public long getGeneration() {
+    return generation;
   }
 
   /**
@@ -863,10 +922,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected long selectMasterSerial() {
     Db session = getSession();
     if (session.isRemote()) {
-      return extractMasterSerial(getRemoteDelegate(session).selectMasterSerial());
+      MasterSerial masterSerial = getRemoteDelegate(session).selectMasterSerial();
+      // master serial events don't provide the generation
+      selectedGeneration = masterSerial instanceof DefaultMasterSerial defaultMasterSerial ?
+                           defaultMasterSerial.generation() : UNKNOWN_GENERATION;
+      return extractMasterSerial(masterSerial);
     }
     else {
-      return masterModification.selectMasterSerial();
+      DbModification.Master master = masterModification.selectMaster();
+      selectedGeneration = master.generation();
+      return master.serial();
     }
   }
 
@@ -1042,10 +1107,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
       remoteSerials = null;   // no more valid
 
-      if (serial < masterEntry.serial) {
-        // the new serial is less than the current serial: the modification table was re-initialized.
+      boolean reinitialized = isReinitialized() || serial < masterEntry.serial;
+      if (reinitialized) {
+        // the modification table was re-initialized: the generation changed.
+        // A smaller serial indicates that as well, for tables without a generation or if the remote server did not
+        // provide it. The serial alone is not sufficient, since it may have been counted beyond the current serial
+        // in the meantime.
         // Don't initialize it again: this would delete the entries other trackers created meanwhile
         // and make them re-initialize as well.
+        // All listeners are fired, since the serials of the old and the new table are unrelated:
+        // modifications counted in between would be lost otherwise.
         rebuild(false);
       }
 
@@ -1065,7 +1136,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         TableEntry tableEntry = tableEntriesById.get(idSer.getId());     // serial changed for entry
         if (tableEntry != null) {                                        // no entry -> no listenerEntry
           for (ListenerEntry listenerEntry : listenerEntries) {
-            if (listenerEntry.tableEntry.id == idSer.getId() && listenerEntry.tableEntry.serial != idSer.getSerial()) {
+            if (listenerEntry.tableEntry.id == idSer.getId() &&
+                (reinitialized || listenerEntry.tableEntry.serial != idSer.getSerial())) {
               // table entry for listener has changed
               LOGGER.fine("modification detected for {0}, new serial {1}", listenerEntry.tableEntry, idSer.getSerial());
               Set<ModificationEventDetail> details = detailMap.computeIfAbsent(listenerEntry.listener, _ -> new HashSet<>());
@@ -1370,6 +1442,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Serialized by the configuration lock, no matter which thread executes it.
    */
   private abstract class ConfigurationTask extends AbstractSessionTask {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void run() {
