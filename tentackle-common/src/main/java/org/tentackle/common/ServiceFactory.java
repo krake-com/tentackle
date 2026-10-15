@@ -78,8 +78,8 @@ public class ServiceFactory {
   private static final Logger LOGGER = Logger.getLogger(ServiceFactory.class.getName());
 
 
-  private static String factoryClassname;
-  private static ClassLoader factoryClassloader;
+  private static volatile String factoryClassname;
+  private static volatile ClassLoader factoryClassloader;
 
   /** true once the singleton has been created, i.e., the settings above are frozen. */
   private static volatile boolean factoryCreated;
@@ -162,29 +162,31 @@ public class ServiceFactory {
   static ServiceFactory createServiceFactory() {
 
     factoryCreated = true;    // any further setFactoryXXX comes too late
+    String classname = factoryClassname;
+    ClassLoader classloader = factoryClassloader;
 
-    if (factoryClassname != null) {
+    if (classname != null) {
       try {
         @SuppressWarnings("unchecked")
         Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) (
-          factoryClassloader == null ?
-            Class.forName(factoryClassname) :
-            Class.forName(factoryClassname, true, factoryClassloader));
+          classloader == null ?
+            Class.forName(classname) :
+            Class.forName(classname, true, classloader));
 
         return clazz.getDeclaredConstructor().newInstance();
       }
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
              InvocationTargetException | NoSuchMethodException ex) {
         LOGGER.log(Level.WARNING,
-                "creating instance of " + factoryClassname + " failed -> trying ServiceLoader...",
+                "creating instance of " + classname + " failed -> trying ServiceLoader...",
                 ex);
       }
     }
 
     try {
-      ServiceLoader<ServiceFactory> loader = factoryClassloader == null ?
+      ServiceLoader<ServiceFactory> loader = classloader == null ?
               ServiceLoader.load(ServiceFactory.class) :
-              ServiceLoader.load(ServiceFactory.class, factoryClassloader);
+              ServiceLoader.load(ServiceFactory.class, classloader);
       for (ServiceFactory factory: loader) {
         if (factory != null) {
           return factory;
@@ -494,7 +496,7 @@ public class ServiceFactory {
    * Use another classloader, if set.<br>
    * Default is to use the context classloader (see {@link #getClassLoader()}).
    */
-  private ClassLoader fixedClassLoader;
+  private volatile ClassLoader fixedClassLoader;
 
 
   /**
@@ -730,16 +732,18 @@ public class ServiceFactory {
    */
   protected ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
     ServiceFinderKey key = new ServiceFinderKey(loader, servicePath);
-    ServiceFinder finder = getFinderMap().get(key);
+    ServiceFinder finder = getFinderMap().get(key);   // fast path without locking the bin
     if (finder == null) {
-      try {
-        finder = getServiceFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
-        getFinderMap().put(key, finder);
-      }
-      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-             InvocationTargetException ex) {
-        throw new TentackleRuntimeException("cannot instantiate service finder", ex);
-      }
+      // atomically, so that concurrent callers share the same finder and its caches
+      finder = getFinderMap().computeIfAbsent(key, k -> {
+        try {
+          return getServiceFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+               InvocationTargetException ex) {
+          throw new TentackleRuntimeException("cannot instantiate service finder", ex);
+        }
+      });
     }
     return finder;
   }

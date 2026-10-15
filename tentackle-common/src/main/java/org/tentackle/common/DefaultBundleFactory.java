@@ -48,7 +48,7 @@ public class DefaultBundleFactory implements BundleFactory {
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
   private final Map<String, BundleSupport> moduleBundlesMap;      // map of basenames to annotated bundles in modules
   private final boolean controlsSupported;                        // true if ResourceBundle.getBundle accepts a control from us
-  private ClassLoader classLoader;                                // another classloader, null for default loader
+  private volatile ClassLoader classLoader;                       // another classloader, null for default loader
 
   /**
    * Creates the bundle factory.
@@ -122,14 +122,15 @@ public class DefaultBundleFactory implements BundleFactory {
     }
     else {
       ResourceBundle.Control control = getControl(baseName);
-      if (classLoader == null) {
+      ClassLoader loader = classLoader;
+      if (loader == null) {
         return control == null ?
                   ResourceBundle.getBundle(baseName, locale) :
                   ResourceBundle.getBundle(baseName, locale, control);
       }
       return control == null ?
-                  ResourceBundle.getBundle(baseName, locale, classLoader) :
-                  ResourceBundle.getBundle(baseName, locale, classLoader, control);
+                  ResourceBundle.getBundle(baseName, locale, loader) :
+                  ResourceBundle.getBundle(baseName, locale, loader, control);
     }
   }
 

@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class Settings {
 
-  private static Charset encodingCharset = StandardCharsets.UTF_8;
+  private static volatile Charset encodingCharset = StandardCharsets.UTF_8;
 
 
   /**

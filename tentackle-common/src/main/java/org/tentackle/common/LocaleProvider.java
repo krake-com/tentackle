@@ -73,7 +73,7 @@ public class LocaleProvider {
   /**
    * The effective initial locale, created lazily.
    */
-  private Locale effectiveInitialLocale;
+  private volatile Locale effectiveInitialLocale;
 
   /**
    * Map of locales to default currencies.
@@ -108,10 +108,12 @@ public class LocaleProvider {
    * @see #getEffectiveLocale(Locale)
    */
   public Locale getEffectiveInitialLocale() {
-    if (effectiveInitialLocale == null) {
-      effectiveInitialLocale = getEffectiveLocale(initialLocale);
+    Locale locale = effectiveInitialLocale;
+    if (locale == null) {
+      locale = getEffectiveLocale(initialLocale);
+      effectiveInitialLocale = locale;
     }
-    return effectiveInitialLocale;
+    return locale;
   }
 
   /**

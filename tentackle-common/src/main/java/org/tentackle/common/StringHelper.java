@@ -120,7 +120,7 @@ public final class StringHelper {
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
    */
-  private static int maxLogCollectionSize = 10;
+  private static volatile int maxLogCollectionSize = 10;
 
   /**
    * Sets the size limit of collections to be logged.<br>
@@ -1272,11 +1272,11 @@ public final class StringHelper {
         buf.append('"');
         return buf.toString();
       }
-      else if (maxLogCollectionSize > 0 && object instanceof Collection &&
-               ((Collection<?>) object).size() > maxLogCollectionSize) {
-        return "[" + ((Collection<?>) object).size() + " items]";
-      }
       else {
+        int maxSize = maxLogCollectionSize;
+        if (maxSize > 0 && object instanceof Collection<?> collection && collection.size() > maxSize) {
+          return "[" + collection.size() + " items]";
+        }
         return object.toString();
       }
     }

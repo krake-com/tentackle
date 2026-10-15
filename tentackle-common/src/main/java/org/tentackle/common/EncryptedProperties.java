@@ -20,13 +20,13 @@ package org.tentackle.common;
 
 import java.io.Serial;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Encrypted {@link Properties}.<br>
@@ -48,19 +48,20 @@ public class EncryptedProperties extends Properties {
   /**
    * Optional name of the properties.
    */
-  private String name;
+  private volatile String name;
 
   /**
    * Optional prefix for the property keys.
    */
-  private String keyPrefix;
+  private volatile String keyPrefix;
 
   /**
    * Optional mapping of case-insensitive to case-sensitive keys.<br>
    * The map will be created and maintained after the first
-   * invocation of getPropertyIgnoreCase or getKeyIgnoreCase.
+   * invocation of getPropertyIgnoreCase or getKeyIgnoreCase.<br>
+   * Created and updated while holding the lock of this object, read without lock.
    */
-  private transient Map<String, String> keyCaseMap;
+  private transient volatile Map<String, String> keyCaseMap;
 
 
   /**
@@ -87,7 +88,7 @@ public class EncryptedProperties extends Properties {
   public synchronized EncryptedProperties clone() {
     EncryptedProperties clone = (EncryptedProperties) super.clone();
     if (keyCaseMap != null) {
-      clone.keyCaseMap = new HashMap<>(keyCaseMap);   // don't share with the original
+      clone.keyCaseMap = new ConcurrentHashMap<>(keyCaseMap);   // don't share with the original
     }
     return clone;
   }
@@ -284,17 +285,23 @@ public class EncryptedProperties extends Properties {
 
 
   private Map<String, String> getKeyCaseMap() {
-    if (keyCaseMap == null) {
-      // initialize the case map with already existing keys
-      Map<String, String> map = new HashMap<>();
-      for (String name : stringPropertyNames()) {
-        if (map.put(name.toUpperCase(Locale.ROOT), name) != null) {
-          throw new TentackleRuntimeException("duplicate case-insensitive key '" + name + "' found");
+    Map<String, String> map = keyCaseMap;
+    if (map == null) {
+      synchronized (this) {   // same lock as setProperty, so no concurrently added key gets lost
+        map = keyCaseMap;
+        if (map == null) {
+          // initialize the case map with already existing keys
+          map = new ConcurrentHashMap<>();
+          for (String name : stringPropertyNames()) {
+            if (map.put(name.toUpperCase(Locale.ROOT), name) != null) {
+              throw new TentackleRuntimeException("duplicate case-insensitive key '" + name + "' found");
+            }
+          }
+          keyCaseMap = map;
         }
       }
-      keyCaseMap = map;
     }
-    return keyCaseMap;
+    return map;
   }
 
 

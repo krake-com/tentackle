@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default implementation of a {@link ServiceFinder}.
@@ -47,8 +49,8 @@ public class DefaultServiceFinder implements ServiceFinder {
   private final ClassLoader loader;                         // the default classloader, never null
   private final ModuleLayer layer;                          // optional module layer, null if not layer-based
   private final String servicePath;                         // normalized service path, never null
-  private final Map<String,Map<String,URL>> serviceMap;     // cached configs
-  private final Map<String,Collection<Class<?>>> classMap;  // cached classes
+  private final Map<String,Map<String,URL>> serviceMap;     // cached configs (unmodifiable)
+  private final Map<String,Collection<Class<?>>> classMap;  // cached classes (unmodifiable)
 
 
   /**
@@ -88,8 +90,8 @@ public class DefaultServiceFinder implements ServiceFinder {
 
     this.servicePath = normalizeServicePath(servicePath);
 
-    serviceMap = new HashMap<>();
-    classMap = new HashMap<>();
+    serviceMap = new ConcurrentHashMap<>();
+    classMap = new ConcurrentHashMap<>();
   }
 
 
@@ -212,14 +214,23 @@ public class DefaultServiceFinder implements ServiceFinder {
    * The results are cached per service name. A configuration line found twice is tolerated
    * only if both URLs end with the same service path suffix, which happens in IDEs or test environments
    * that add the same resource directory more than once.
+   * <p>
+   * The returned map is unmodifiable.
    */
   @Override
-  public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
-    return serviceMap.computeIfAbsent(serviceName, sn -> {
-      Map<String, URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
-      parseURLs(findServiceURLs(sn), sn, services);
-      return services;
-    });
+  public Map<String,URL> findServiceConfigurations(String serviceName) {
+    Map<String, URL> services = serviceMap.get(serviceName);
+    if (services == null) {
+      // not via computeIfAbsent: parsing may recurse into this finder
+      Map<String, URL> parsedServices = new LinkedHashMap<>();   // linked hashmap to preserve order
+      parseURLs(findServiceURLs(serviceName), serviceName, parsedServices);
+      services = Collections.unmodifiableMap(parsedServices);
+      Map<String, URL> cachedServices = serviceMap.putIfAbsent(serviceName, services);
+      if (cachedServices != null) {
+        services = cachedServices;    // concurrently parsed by another thread
+      }
+    }
+    return services;
   }
 
 
@@ -227,7 +238,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * {@inheritDoc}
    */
   @Override
-  public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
+  public Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
     Map<String, URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -240,7 +251,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * {@inheritDoc}
    */
   @Override
-  public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
+  public Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
     Map<String, URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -264,22 +275,29 @@ public class DefaultServiceFinder implements ServiceFinder {
 
   /**
    * {@inheritDoc}
+   * <p>
+   * The returned collection is unmodifiable.
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
-  public synchronized <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
+  public <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();
     Collection<Class<T>> serviceImplClasses = (Collection) classMap.get(serviceName);
     if (serviceImplClasses == null) {
-      serviceImplClasses = new ArrayList<>();
+      // classes are loaded without holding a lock, a concurrent duplicate load is harmless
+      List<Class<T>> providers = new ArrayList<>();
       for (Map.Entry<String,URL> entry: findServiceConfigurations(serviceName).entrySet()) {
         String serviceImplName = entry.getKey();
         Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, getClassLoader(serviceName));
         // check that provides really implements service
         checkProvider(provider, service, entry.getValue());
-        serviceImplClasses.add(provider);
+        providers.add(provider);
       }
-      classMap.put(serviceName, (Collection) serviceImplClasses);
+      serviceImplClasses = List.copyOf(providers);
+      Collection<Class<?>> cachedClasses = classMap.putIfAbsent(serviceName, (Collection) serviceImplClasses);
+      if (cachedClasses != null) {
+        serviceImplClasses = (Collection) cachedClasses;    // concurrently loaded by another thread
+      }
     }
     return serviceImplClasses;
   }
@@ -321,7 +339,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * own service path, classloader and module layer.
    */
   @Override
-  public synchronized Map<String, String> createNameMap(String serviceName) {
+  public Map<String, String> createNameMap(String serviceName) {
     Map<String, String> nameMap = new HashMap<>();
 
     for (Map.Entry<String, URL> entry :
@@ -352,7 +370,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * own service path, classloader and module layer.
    */
   @Override
-  public synchronized Map<String, Set<String>> createNameMapToAll(String serviceName) {
+  public Map<String, Set<String>> createNameMapToAll(String serviceName) {
     Map<String, Set<String>> nameMap = new HashMap<>();
 
     for (Map.Entry<String, URL> entry :
