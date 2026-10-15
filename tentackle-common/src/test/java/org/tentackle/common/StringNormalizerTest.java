@@ -20,7 +20,10 @@ package org.tentackle.common;
 
 import org.testng.annotations.Test;
 
+import java.util.Random;
+
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * String normalizer test.
@@ -50,6 +53,34 @@ public class StringNormalizerTest {
     assertEquals(normalizer.unDiacrit("Ðð", true), "Dd");
     assertEquals(normalizer.unDiacrit("Þþ", true), "Tt");
     assertEquals(normalizer.unDiacrit("éñø", true), "eno");
+  }
+
+  @Test
+  public void testSameAsReference() {
+    // the normalized texts are persisted: the optimized implementation must not change any result
+    String alphabet = "AEIOUaeiouHhSCHchKkPpTtYyDdGgQqBbWwZzLMNRlmnr0123456789  ,,.-&'" +
+                      "ÄÖÜäöüßÆæÀÁÂÃÅÇÈÉÊËÌÍÎÏÐÑÒÓÔÕ×ØÙÚÛÝÞàáâãåçèéêëìíîïðñòóôõøùúûýþÿ÷ΩЖ€\t\n";
+    StringNormalizer[][] pairs = {
+      { new DefaultStringNormalizer(), new ReferenceStringNormalizer() },
+      { new DefaultStringNormalizer('\0', ' '), new ReferenceStringNormalizer('\0', ' ') },
+      { new DefaultStringNormalizer(';', '_'), new ReferenceStringNormalizer(';', '_') }
+    };
+    Random random = new Random(4711);
+    for (int run = 0; run < 200_000; run++) {
+      int length = random.nextInt(run % 100 == 0 ? 200 : 16);
+      StringBuilder buf = new StringBuilder(length);
+      for (int i = 0; i < length; i++) {
+        buf.append(alphabet.charAt(random.nextInt(alphabet.length())));
+      }
+      String str = buf.toString();
+      for (StringNormalizer[] pair : pairs) {
+        assertEquals(pair[0].normalize(str), pair[1].normalize(str), "normalize <" + str + ">");
+      }
+      assertEquals(pairs[0][0].unDiacrit(str, true), pairs[0][1].unDiacrit(str, true), "unDiacrit keep <" + str + ">");
+      assertEquals(pairs[0][0].unDiacrit(str, false), pairs[0][1].unDiacrit(str, false), "unDiacrit <" + str + ">");
+    }
+    assertNull(new DefaultStringNormalizer().normalize(null));
+    assertEquals(new DefaultStringNormalizer().normalize(""), "");
   }
 
 }

@@ -51,6 +51,18 @@ public class DefaultServiceFinder implements ServiceFinder {
   private final String servicePath;                         // normalized service path, never null
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs (unmodifiable)
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes (unmodifiable)
+  private final Map<Class<?>,ResolvedProvider> firstMap;    // cached first providers
+  private final Map<Class<?>,ResolvedProvider> uniqueMap;   // cached unique providers
+
+  /**
+   * A provider class resolved by {@link #findFirstServiceProvider} or {@link #findUniqueServiceProvider}.<br>
+   * Only valid as long as the classloader for the service is the same, since explicit classloaders
+   * may be added or removed at runtime (see {@link ServiceFactory#applyResourceIndex}).
+   *
+   * @param loader the classloader the provider was loaded with
+   * @param provider the provider class
+   */
+  private record ResolvedProvider(ClassLoader loader, Class<?> provider) {}
 
 
   /**
@@ -92,6 +104,8 @@ public class DefaultServiceFinder implements ServiceFinder {
 
     serviceMap = new ConcurrentHashMap<>();
     classMap = new ConcurrentHashMap<>();
+    firstMap = new ConcurrentHashMap<>();
+    uniqueMap = new ConcurrentHashMap<>();
   }
 
 
@@ -310,10 +324,17 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public <T> Class<T> findFirstServiceProvider(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();
-    Map.Entry<String,URL> entry = findFirstServiceConfiguration(serviceName);
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
-    checkProvider(provider, service, entry.getValue());
-    return provider;
+    ClassLoader cl = getClassLoader(serviceName);
+    ResolvedProvider resolved = firstMap.get(service);
+    if (resolved == null || resolved.loader() != cl) {
+      // classes are loaded without holding a lock, a concurrent duplicate load is harmless
+      Map.Entry<String,URL> entry = findFirstServiceConfiguration(serviceName);
+      Class<?> provider = Class.forName(entry.getKey(), true, cl);
+      checkProvider(provider, service, entry.getValue());
+      resolved = new ResolvedProvider(cl, provider);
+      firstMap.put(service, resolved);
+    }
+    return (Class<T>) resolved.provider();
   }
 
 
@@ -324,10 +345,17 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public <T> Class<T> findUniqueServiceProvider(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();
-    Map.Entry<String,URL> entry = findUniqueServiceConfiguration(serviceName);
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
-    checkProvider(provider, service, entry.getValue());
-    return provider;
+    ClassLoader cl = getClassLoader(serviceName);
+    ResolvedProvider resolved = uniqueMap.get(service);
+    if (resolved == null || resolved.loader() != cl) {
+      // classes are loaded without holding a lock, a concurrent duplicate load is harmless
+      Map.Entry<String,URL> entry = findUniqueServiceConfiguration(serviceName);
+      Class<?> provider = Class.forName(entry.getKey(), true, cl);
+      checkProvider(provider, service, entry.getValue());
+      resolved = new ResolvedProvider(cl, provider);
+      uniqueMap.put(service, resolved);
+    }
+    return (Class<T>) resolved.provider();
   }
 
 

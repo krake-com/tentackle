@@ -24,8 +24,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -416,7 +416,7 @@ public class ServiceFactory {
 
   /**
    * Adds an explicit classloader for a given service path and name.<br>
-   * Loaders are kept in a linked list for each path and name combination, the most recently added first.
+   * Loaders are kept in a list for each path and name combination, the most recently added first.
    * Adding a classloader pushes it onto the list (moving it to the front, if already contained),
    * removing it deletes it from the list, wherever it is located.
    * Thus, removing the most recently added loader activates the previously added one, if any.
@@ -433,7 +433,7 @@ public class ServiceFactory {
 
   /**
    * Removes an explicit classloader for a given service path and name.<br>
-   * Loaders are kept in a linked list for each path and name combination, the most recently added first.
+   * Loaders are kept in a list for each path and name combination, the most recently added first.
    * Adding a classloader pushes it onto the list (moving it to the front, if already contained),
    * removing it deletes it from the list, wherever it is located.
    * Thus, removing the most recently added loader activates the previously added one, if any.
@@ -477,7 +477,7 @@ public class ServiceFactory {
 
   private record ClassLoaderKey(String servicePath, String serviceName) {}      // key to maintain explicit classloaders
 
-  private final Map<ClassLoaderKey, LinkedList<ClassLoader>> explicitLoaders;   // optional explicit loaders for named services
+  private final Map<ClassLoaderKey, List<ClassLoader>> explicitLoaders;   // optional explicit loaders for named services (immutable, non-empty lists)
 
 
   /**
@@ -515,7 +515,7 @@ public class ServiceFactory {
     }
 
     finderMap = new ConcurrentHashMap<>();
-    explicitLoaders = new HashMap<>();
+    explicitLoaders = new ConcurrentHashMap<>();
   }
 
 
@@ -589,19 +589,16 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @return the classloader, null if no explicit classloader set
    */
-  protected synchronized ClassLoader getExplicitClassLoaderImpl(String servicePath, String serviceName) {
-    ClassLoader cl = null;
-    LinkedList<ClassLoader> cList = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
-    if (cList != null && !cList.isEmpty()) {
-      cl = cList.getFirst();
-    }
-    return cl;
+  protected ClassLoader getExplicitClassLoaderImpl(String servicePath, String serviceName) {
+    // lock-free: the lists are immutable and replaced atomically
+    List<ClassLoader> loaders = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
+    return loaders == null ? null : loaders.getFirst();
   }
 
 
   /**
    * Adds an explicit classloader for a given service path and name.<br>
-   * Loaders are kept in a linked list for each path and name combination, the most recently added first.
+   * Loaders are kept in a list for each path and name combination, the most recently added first.
    * Adding a classloader pushes it onto the list (moving it to the front, if already contained),
    * removing it deletes it from the list, wherever it is located.
    * Thus, removing the most recently added loader activates the previously added one, if any.
@@ -611,19 +608,26 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @param classLoader the classloader to add
    */
-  protected synchronized void addExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
-    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
-    LinkedList<ClassLoader> loaders = explicitLoaders.computeIfAbsent(key, k -> new LinkedList<>());
-    // remove previously added loader (-> Set)
-    // if the same classloader is added twice, the cl is moved to the start of the list
-    loaders.remove(classLoader);
-    loaders.push(classLoader);
+  protected void addExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
+    explicitLoaders.compute(new ClassLoaderKey(servicePath, serviceName), (key, loaders) -> {
+      // if the same classloader is added twice, the cl is moved to the start of the list
+      List<ClassLoader> newLoaders = new ArrayList<>();
+      newLoaders.add(classLoader);
+      if (loaders != null) {
+        for (ClassLoader loader : loaders) {
+          if (!loader.equals(classLoader)) {
+            newLoaders.add(loader);
+          }
+        }
+      }
+      return List.copyOf(newLoaders);
+    });
   }
 
 
   /**
    * Removes an explicit classloader for a given service path and name.<br>
-   * Loaders are kept in a linked list for each path and name combination, the most recently added first.
+   * Loaders are kept in a list for each path and name combination, the most recently added first.
    * Adding a classloader pushes it onto the list (moving it to the front, if already contained),
    * removing it deletes it from the list, wherever it is located.
    * Thus, removing the most recently added loader activates the previously added one, if any.
@@ -633,15 +637,12 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @param classLoader the classloader to remove
    */
-  protected synchronized void removeExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
-    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
-    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
-    if (loaders != null) {
-      loaders.remove(classLoader);
-      if (loaders.isEmpty()) {
-        explicitLoaders.remove(key);
-      }
-    }
+  protected void removeExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
+    explicitLoaders.computeIfPresent(new ClassLoaderKey(servicePath, serviceName), (key, loaders) -> {
+      List<ClassLoader> newLoaders = new ArrayList<>(loaders);
+      newLoaders.remove(classLoader);
+      return newLoaders.isEmpty() ? null : List.copyOf(newLoaders);    // null removes the mapping
+    });
   }
 
 

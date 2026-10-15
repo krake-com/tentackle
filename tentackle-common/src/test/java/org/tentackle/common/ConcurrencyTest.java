@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertThrows;
 
@@ -126,6 +127,51 @@ public class ConcurrencyTest {
     assertThrows(UnsupportedOperationException.class, classes::clear);
     Map<String, URL> configurations = finder.findServiceConfigurations(Cryptor.class.getName());
     assertThrows(UnsupportedOperationException.class, configurations::clear);
+  }
+
+  @Test
+  public void concurrentFirstProviderLookups() throws Exception {
+    // new finder with empty caches
+    DefaultServiceFinder finder = new DefaultServiceFinder(getClass().getClassLoader(), null);
+    List<Class<StringNormalizer>> providers = runConcurrently(threadNo -> () -> {
+      Class<StringNormalizer> provider = null;
+      for (int i = 0; i < 1000; i++) {
+        provider = finder.findFirstServiceProvider(StringNormalizer.class);
+        assertSame(finder.findUniqueServiceProvider(StringNormalizer.class), provider);
+      }
+      return provider;
+    });
+    for (Class<StringNormalizer> provider : providers) {
+      assertSame(provider, DefaultStringNormalizer.class);
+    }
+  }
+
+  @Test
+  public void concurrentExplicitClassLoaders() throws Exception {
+    ServiceFactory factory = new ServiceFactory();
+    String path = "META-INF/services/";
+    String name = "concurrent.Service";
+    ClassLoader parent = getClass().getClassLoader();
+    ClassLoader base = new ClassLoader(parent) {};
+    factory.addExplicitClassLoaderImpl(path, name, base);
+
+    runConcurrently(threadNo -> () -> {
+      ClassLoader own = new ClassLoader(parent) {};
+      for (int i = 0; i < 1000; i++) {
+        factory.addExplicitClassLoaderImpl(path, name, own);
+        // some loader must always be present, since base is never removed
+        if (factory.getExplicitClassLoaderImpl(path, name) == null) {
+          throw new AssertionError("explicit classloader lost");
+        }
+        factory.removeExplicitClassLoaderImpl(path, name, own);
+      }
+      return null;
+    });
+
+    // no update got lost: only base remains
+    assertSame(factory.getExplicitClassLoaderImpl(path, name), base);
+    factory.removeExplicitClassLoaderImpl(path, name, base);
+    assertNull(factory.getExplicitClassLoaderImpl(path, name));
   }
 
 }

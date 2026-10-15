@@ -42,6 +42,25 @@ public class DefaultStringNormalizer implements StringNormalizer {
   private static final char[] CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß".toCharArray();
   private static final char[] NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYTaaaaaaaceeeeiiiinodooooouuuuytys".toCharArray();
 
+  // all CRITS are within the upper half of Latin-1: direct lookup instead of a linear search
+  private static final char FIRST_CRIT = 'À';
+  private static final char LAST_CRIT = 'ÿ';
+  private static final char[] CRIT_TABLE = createCritTable();    // 0 if no mapping
+
+  private static char[] createCritTable() {
+    char[] table = new char[LAST_CRIT - FIRST_CRIT + 1];
+    for (int m = 0; m < CRITS.length; m++) {
+      char c = CRITS[m];
+      if (c < FIRST_CRIT || c > LAST_CRIT) {
+        throw new TentackleRuntimeException("diacritic '" + c + "' out of table range");
+      }
+      if (table[c - FIRST_CRIT] == 0) {   // first mapping wins, as with the linear search
+        table[c - FIRST_CRIT] = NORMS[m];
+      }
+    }
+    return table;
+  }
+
 
   /** to separate words during reduction. */
   private final char wordSeparator;
@@ -77,8 +96,8 @@ public class DefaultStringNormalizer implements StringNormalizer {
 
     if (str != null)  {
 
-      StringBuilder buf = new StringBuilder();
       int len = str.length();
+      StringBuilder buf = new StringBuilder(len + 8);   // a few umlauts expand to 2 chars
 
       for (int i=0; i < len; i++) {
 
@@ -123,10 +142,10 @@ public class DefaultStringNormalizer implements StringNormalizer {
         }
 
         // convert possible diacritic (single char)
-        for (int m=0; m < CRITS.length; m++) {
-          if (CRITS[m] == c)  {
-            c = NORMS[m];
-            break;
+        if (c >= FIRST_CRIT && c <= LAST_CRIT) {
+          char norm = CRIT_TABLE[c - FIRST_CRIT];
+          if (norm != 0) {
+            c = norm;
           }
         }
 
@@ -263,66 +282,76 @@ public class DefaultStringNormalizer implements StringNormalizer {
 
 
       // next round...
-
-      len = sb.length();
-
-      for (int i = 0; i < len; i++) {
-
-        char c = sb.charAt(i);
-
-        if (i + 1 < len)  {
-
-          // solve the Mayer, Maier, Meier, Meyer problem
-          if (c == 'A' && sb.charAt(i+1) == 'I')  {
-            sb.setCharAt(i, 'E');    /* AI,AY -> EI */
-          }
-
-          // remove repeating characters (except for numbers!)
-          if (Character.isLetter(c) && c == sb.charAt(i+1)) {
-            sb.deleteCharAt(i+1);
-            len--;
-            continue;
-          }
-
-          // map IE to I
-          if (c == 'I' && sb.charAt(i+1) == 'E')  {
-            sb.deleteCharAt(i+1);
-            len--;
-            continue;
-          }
-        }
-
-        // vowel + H + consonant --> remove the H
-        if (i + 1 < len)  {
-          char c2 = sb.charAt(i+1);
-          char c3 = i + 2 < len ? sb.charAt(i+2) : ' ';
-          if ((c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') &&
-              c2 == 'H' &&
-              c3 != 'A' && c3 != 'E' && c3 != 'I' && c3 != 'O' && c3 != 'U') {
-            sb.deleteCharAt(i+1);
-            len--;
-          }
-        }
-      }
-
-      // remove word separators inserted above
-      len = sb.length();
-      if (len > 0) {
-        StringBuilder fb = new StringBuilder(len);
-        for (int i=0; i < len; i++) {
-          char c = sb.charAt(i);
-          if (c != wordSeparator) {
-            fb.append(c);
-          }
-        }
-        return fb.toString();
-      }
-      else  {
-        return "";
-      }
+      return reduce(sb);
     }
 
     return null;
+  }
+
+
+  /**
+   * Applies the second round of reductions and removes the word separators.
+   * <p>
+   * Logically, the reductions are applied to a buffer from which characters following the
+   * current one are deleted. Instead of shifting the buffer on each deletion, the buffer is split into the
+   * already processed part {@code out[0..o]}, where {@code out[o]} is the current character,
+   * and the unprocessed rest {@code in[j..n-1]}. Deleting the character following the current one is just
+   * skipping {@code in[j]}, which keeps the reduction linear.
+   *
+   * @param sb the result of the first round
+   * @return the normalized string
+   */
+  private String reduce(StringBuilder sb) {
+    int n = sb.length();
+    if (n == 0) {
+      return "";
+    }
+    char[] in = new char[n];
+    sb.getChars(0, n, in, 0);
+    char[] out = new char[n];
+    out[0] = in[0];
+    int o = 0;    // index of the current character in out
+    int j = 1;    // index of the character following the current one in in
+
+    while (true) {
+      char c = out[o];
+
+      if (j < n) {
+        char next = in[j];
+
+        // solve the Mayer, Maier, Meier, Meyer problem
+        if (c == 'A' && next == 'I') {
+          out[o] = 'E';    /* AI,AY -> EI */
+        }
+
+        // remove repeating characters (except for numbers!), or map IE to I
+        if ((Character.isLetter(c) && c == next) || (c == 'I' && next == 'E')) {
+          j++;
+        }
+        // vowel + H + consonant --> remove the H
+        else if ((c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') && next == 'H') {
+          char c3 = j + 1 < n ? in[j + 1] : ' ';
+          if (c3 != 'A' && c3 != 'E' && c3 != 'I' && c3 != 'O' && c3 != 'U') {
+            j++;
+          }
+        }
+      }
+
+      if (j >= n) {
+        break;
+      }
+      out[++o] = in[j++];    // next character becomes the current one
+    }
+
+    // remove word separators inserted above
+    int len = 0;
+    for (int i = 0; i <= o; i++) {
+      char c = out[i];
+      if (c != wordSeparator) {
+        out[len++] = c;
+      }
+    }
+    return new String(out, 0, len);
   }
 
 
