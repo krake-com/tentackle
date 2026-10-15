@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -144,6 +145,28 @@ public class ConcurrencyTest {
     for (Class<StringNormalizer> provider : providers) {
       assertSame(provider, DefaultStringNormalizer.class);
     }
+  }
+
+  @Test
+  public void concurrentI18NTextInDifferentLocales() throws Exception {
+    I18NText text = new I18NText(Locale.ENGLISH, "english").with(Locale.GERMAN, "deutsch").with(Locale.FRENCH, "francais");
+    Locale[] locales = { Locale.ENGLISH, Locale.GERMANY, Locale.FRANCE, Locale.ITALY };
+    String[] expected = { "english", "deutsch", "francais", "english" };    // italian is not supported -> fallback
+    runConcurrently(threadNo -> () -> {
+      int ndx = threadNo % locales.length;
+      LocaleProvider.getInstance().setCurrentLocale(locales[ndx]);
+      try {
+        for (int i = 0; i < 10_000; i++) {
+          // the cache is shared by all threads, each in its own locale
+          assertEquals(text.toString(), expected[ndx]);
+          assertEquals(text.length(), expected[ndx].length());
+        }
+      }
+      finally {
+        LocaleProvider.getInstance().setCurrentLocale(null);
+      }
+      return null;
+    });
   }
 
   @Test

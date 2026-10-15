@@ -96,6 +96,20 @@ public class I18NText implements CharSequence, Comparable<I18NText>, Serializabl
    */
   private final Locale defaultLocale;
 
+  /**
+   * The most recently resolved translation.<br>
+   * Resolving a locale is not cheap and {@link CharSequence} methods such as {@link #charAt(int)}
+   * may be invoked for each character, so the last result is cached.
+   * Valid because this object is immutable and the {@link LocaleProvider} maps locales deterministically.
+   *
+   * @param locale the requested locale, never null
+   * @param text the translation, null if none
+   */
+  private record Translation(Locale locale, String text) {}
+
+  /** cached last translation, null if none yet. */
+  private transient volatile Translation lastTranslation;
+
 
   /**
    * Creates a vacant <code>I18NText</code>.
@@ -189,6 +203,24 @@ public class I18NText implements CharSequence, Comparable<I18NText>, Serializabl
    * @return the string, null if no translations at all or no translation for the default or fallback locale
    */
   public String get(Locale locale) {
+    Translation translation = lastTranslation;
+    if (translation != null && translation.locale().equals(locale)) {
+      return translation.text();
+    }
+    String text = resolve(locale);
+    if (locale != null) {
+      lastTranslation = new Translation(locale, text);
+    }
+    return text;
+  }
+
+  /**
+   * Resolves the translation for the given locale.
+   *
+   * @param locale the locale
+   * @return the string, null if no translations at all or no translation for the default or fallback locale
+   */
+  private String resolve(Locale locale) {
     LocaleProvider localeProvider = LocaleProvider.getInstance();
     String text = textMap.get(narrowLocale(localeProvider.getEffectiveLocale(locale)));
     if (text == null) {
