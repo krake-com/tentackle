@@ -24,8 +24,13 @@ import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.SessionInfo;
 
 import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -120,6 +125,53 @@ public class TransactionSupervisorTest extends AbstractDbTest {
       if (tx != null) {
         factory.finish(tx, false);
       }
+      factory.requestTermination();
+    }
+  }
+
+
+  /**
+   * A transaction must always be supervised, even if the supervisor is requested to terminate concurrently.
+   */
+  @Test
+  public void testConcurrentTerminationRequests() throws InterruptedException {
+    DbTransactionFactory factory = new DbTransactionFactory();    // not the singleton used by the other tests
+    factory.setTxIdleInterval(5);
+    Db db = getSession();
+    AtomicBoolean done = new AtomicBoolean();
+    AtomicReference<String> failure = new AtomicReference<>();
+    List<Thread> threads = new ArrayList<>();
+    try {
+      for (int t = 0; t < 4; t++) {
+        threads.add(Thread.ofPlatform().start(() -> {
+          for (int i = 0; i < 2000 && failure.get() == null; i++) {
+            DbTransaction tx = factory.create(db, "concurrent", false);
+            try {
+              if (!factory.isSupervisorRunning()) {
+                failure.set("transaction " + tx.getTxNumber() + " not supervised");
+              }
+            }
+            finally {
+              factory.finish(tx, false);
+            }
+          }
+        }));
+      }
+      Thread terminator = Thread.ofPlatform().start(() -> {
+        while (!done.get()) {
+          factory.requestTermination();
+          Thread.onSpinWait();
+        }
+      });
+      for (Thread thread : threads) {
+        thread.join();
+      }
+      done.set(true);
+      terminator.join();
+      assertNull(failure.get(), failure.get());
+    }
+    finally {
+      done.set(true);
       factory.requestTermination();
     }
   }

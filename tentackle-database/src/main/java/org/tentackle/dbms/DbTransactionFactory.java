@@ -33,9 +33,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -74,7 +74,7 @@ public class DbTransactionFactory {
   private final Queue<Long> finishedTransactions;                               // txIds of finished transactions
   private final TransactionStatistics statistics;
 
-  private TransactionSupervisor transactionSupervisor;
+  private volatile TransactionSupervisor transactionSupervisor;
   private volatile long txIdleInterval = DEFAULT_TX_IDLE_INTERVAL;
   private volatile int txIdleTimeout = DEFAULT_TX_IDLE_TIMEOUT;
   private volatile boolean configChanged;
@@ -246,10 +246,10 @@ public class DbTransactionFactory {
    * @return the voucher
    */
   protected long createVoucher(boolean fromRemote) {
-    // create a new commit/rollback voucher
+    ThreadLocalRandom random = ThreadLocalRandom.current();
     long magic;
     do {
-      magic = UUID.randomUUID().getLeastSignificantBits();
+      magic = random.nextLong();
     }
     while (magic == 0);
 
@@ -262,8 +262,20 @@ public class DbTransactionFactory {
    * Starts the supervisor if not running.<br>
    * A supervisor that died unexpectedly is replaced as well, see {@link #dropSupervisor(TransactionSupervisor)}.
    * The new supervisor takes over all running transactions.
+   * <p>
+   * The happy path is lock-free.
    */
-  private synchronized void ensureSupervisorAlive() {
+  private void ensureSupervisorAlive() {
+    TransactionSupervisor supervisor = transactionSupervisor;
+    if (supervisor == null || supervisor.terminationRequested || !supervisor.isAlive()) {
+      startSupervisorIfNotAlive();
+    }
+  }
+
+  /**
+   * Starts the supervisor if not running.
+   */
+  private synchronized void startSupervisorIfNotAlive() {
     if (transactionSupervisor == null || !transactionSupervisor.isAlive()) {
       configChanged = true;   // log the configuration when started
       transactionSupervisor = new TransactionSupervisor();

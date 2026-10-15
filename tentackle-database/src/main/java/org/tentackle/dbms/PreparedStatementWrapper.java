@@ -31,6 +31,7 @@ import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
 import org.tentackle.common.TBinary;
+import org.tentackle.log.Logger;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
@@ -66,7 +67,11 @@ import java.util.Map;
  */
 public class PreparedStatementWrapper extends StatementWrapper implements BackendPreparedStatement {
 
+  private static final Logger LOGGER = Logger.get(PreparedStatementWrapper.class);
+
   private static final String INVOCATION_NOT_ALLOWED = "invocation not allowed for prepared statements";
+
+  private static final int PARAMETERS_CAPACITY = 16;   // initial capacity of the parameter map
 
 
   private final StatementKey statementKey;              // the statement key, if not a one-shot statement
@@ -75,6 +80,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   private boolean executionPending;                     // true if next setXXX(1, ...) will invoke addBatch
   private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
   private WeakReference<DbBatch> batchRef;              // set if currently batched (weak since the object just vanishes after tx)
+  private List<Object> lobs;                            // Clobs and SQLXMLs to free after execution, null if none
 
 
   /**
@@ -104,7 +110,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       setMaxRows(db.getMaxRows());
     }
 
-    parameters = new HashMap<>();
+    parameters = new HashMap<>(PARAMETERS_CAPACITY);
   }
 
 
@@ -119,8 +125,13 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public void close() {
-    super.close();
-    con.removePreparedStatement(this);
+    try {
+      super.close();
+    }
+    finally {
+      freeLobs();
+      con.removePreparedStatement(this);
+    }
   }
 
 
@@ -199,6 +210,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   protected void detachSession(Db db) {
+    freeLobs();   // before detaching: the connection may be attached to another session right after
     super.detachSession(db);
     // new map because the old reference is held in StatementHistory
     clearParametersImpl();
@@ -247,6 +259,51 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   /**
+   * Registers a LOB created for a parameter to be freed after execution.
+   *
+   * @param lob the {@link Clob} or {@link SQLXML}
+   */
+  private void addLob(Object lob) {
+    if (lobs == null) {
+      lobs = new ArrayList<>();
+    }
+    lobs.add(lob);
+  }
+
+  /**
+   * Frees the LOBs created for the parameters.<br>
+   * Temporary LOBs would otherwise be held by the driver or the database until the connection is closed.
+   */
+  private void freeLobs() {
+    List<Object> pendingLobs = lobs;
+    if (pendingLobs != null) {
+      lobs = null;
+      for (Object lob : pendingLobs) {
+        try {
+          if (lob instanceof Clob clob) {
+            clob.free();
+          }
+          else if (lob instanceof SQLXML sqlxml) {
+            sqlxml.free();
+          }
+        }
+        catch (SQLException | RuntimeException ex) {
+          LOGGER.warning("freeing " + lob.getClass().getName() + " failed for " + this, ex);
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns whether LOBs created for the parameters are pending to be freed.
+   *
+   * @return true if pending
+   */
+  boolean isLobPending() {
+    return lobs != null;
+  }
+
+  /**
    * Clears the current parameter values immediately.
    *
    * @see PreparedStatement#clearParameters()
@@ -265,7 +322,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   private void clearParametersImpl() {
-    parameters = new HashMap<>();
+    freeLobs();
+    parameters = new HashMap<>(PARAMETERS_CAPACITY);
     batchParameters = null;
     executionPending = false;
   }
@@ -351,7 +409,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         batchParameters = new ArrayList<>();
       }
       batchParameters.add(parameters);
-      parameters = new HashMap<>();
+      parameters = new HashMap<>(PARAMETERS_CAPACITY);
       executionPending = true;
       getStatement().addBatch();
     }
@@ -643,6 +701,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         if (s != null) {
           Clob clob = con.getConnection().createClob();
           clob.setString(1, s);
+          addLob(clob);
           getStatement().setClob(ep, clob);
         }
         else {
@@ -673,6 +732,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         if (s != null) {
           SQLXML sqlxml = con.getConnection().createSQLXML();
           sqlxml.setString(s);
+          addLob(sqlxml);
           getStatement().setSQLXML(ep, sqlxml);
         }
         else {

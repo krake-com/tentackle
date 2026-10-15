@@ -1813,9 +1813,9 @@ public class Db implements Session, Cloneable {
         // already running transaction
         assertTxRunning();
         if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT &&
-            connection().getTransactionIsolation() != transactionIsolation.getLevel()) {
+            connection().getCurrentTransactionIsolation() != transactionIsolation.getLevel()) {
           throw new PersistenceException(this, "cannot change a running transaction's isolation from " +
-                                               TransactionIsolation.valueOf(connection().getTransactionIsolation()) +
+                                               TransactionIsolation.valueOf(connection().getCurrentTransactionIsolation()) +
                                                " to " + transactionIsolation);
         }
         if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {

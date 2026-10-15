@@ -1050,6 +1050,15 @@ public class ManagedConnection {
   }
 
   /**
+   * Gets the transaction isolation level this connection was last {@link #setTransactionIsolation(int) put into}.
+   *
+   * @return the isolation level
+   */
+  public int getCurrentTransactionIsolation() {
+    return txIsolation;
+  }
+
+  /**
    * Sets the transaction isolation level.
    *
    * @param txIsolation the isolation level
