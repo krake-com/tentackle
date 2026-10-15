@@ -604,11 +604,17 @@ public class StatementWrapper implements AutoCloseable {
   public void close ()  {
     final Statement st = stmt;    // local copy in case of race-condition
     if (st != null) {
+      Db unconsumedSession = null;    // session to detach, if a one-shot statement is closed without being consumed
       try {
         synchronized (this) {
           if (ready) {
             LOGGER.warning("statement " + this + " not consumed -> cleanup");
             ready = false;
+            if (isOneShot()) {
+              // e.g., applying the parameters failed: the attachment of Db#createStatement or
+              // Db#createPreparedStatement would otherwise never be released
+              unconsumedSession = readySession;
+            }
           }
           // readySession is kept: if force-detached, it tells the session that used this statement
         }
@@ -618,6 +624,9 @@ public class StatementWrapper implements AutoCloseable {
         throw new PersistenceException(getSession(), toString(), sqx);
       }
       finally {
+        // not within the monitor, as with consume()
+        detachSession(unconsumedSession);
+
         stmt = null;  // this marks it closed!
         stackTrace = null;
         final WeakReference<ResultSetWrapper> ref = openResultSet;    // local copy in case of race-condition
@@ -783,6 +792,17 @@ public class StatementWrapper implements AutoCloseable {
    */
   protected void detachSession() {
     detachSession(con.getSession());
+  }
+
+  /**
+   * Returns whether this is a one-shot statement.<br>
+   * One-shot statements are created and closed by the application, whereas cached statements
+   * are closed by the connection.
+   *
+   * @return true if one-shot (default for non-prepared statements)
+   */
+  protected boolean isOneShot() {
+    return true;
   }
 
   /**

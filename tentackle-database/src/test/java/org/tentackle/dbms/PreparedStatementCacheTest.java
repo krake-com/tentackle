@@ -83,6 +83,9 @@ public class PreparedStatementCacheTest extends AbstractDbTest {
     db.connection().closePreparedStatements(true);
 
     assertTrue(stmt.isClosed(), "a pending statement must be closed by the cleanup");
+
+    // release the attachment of getPreparedStatement, as the force-detach following the cleanup would
+    db.detach();
   }
 
 

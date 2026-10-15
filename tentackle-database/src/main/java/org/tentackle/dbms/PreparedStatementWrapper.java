@@ -155,6 +155,11 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     return statementKey;
   }
 
+  @Override
+  protected boolean isOneShot() {
+    return statementKey == null;
+  }
+
 
   /**
    * Sets the column offset.
