@@ -673,6 +673,16 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   @Override
   public void invalidate() {
+    rebuild(true);
+  }
+
+  /**
+   * Re-initializes all entries and counters.
+   *
+   * @param initializeTable true to re-initialize the modification table as well,
+   *                        false if it has already been re-initialized by another tracker
+   */
+  private void rebuild(boolean initializeTable) {
     // a configuration task: it replaces the counters and uses the tracker's session
     runConfigurationTask(new ConfigurationTask() {
       @Override
@@ -682,7 +692,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
           masterEntry.serial = 1;
         }
         Db db = DbModificationTracker.this.getSession();
-        if (!db.isRemote()) {
+        if (initializeTable && !db.isRemote()) {
           DbModification.initializeModificationTable(db);
         }
         refreshTableEntries();
@@ -1033,8 +1043,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       remoteSerials = null;   // no more valid
 
       if (serial < masterEntry.serial) {
-        // the new serial is less than the current serial: force complete re-initialization
-        invalidate();
+        // the new serial is less than the current serial: the modification table was re-initialized.
+        // Don't initialize it again: this would delete the entries other trackers created meanwhile
+        // and make them re-initialize as well.
+        rebuild(false);
       }
 
       // read all serials and create modification events
