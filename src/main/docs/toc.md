@@ -168,6 +168,10 @@ the [Index](./index.md).
 ## Legacy
 - [Migrate from RMI to TRIP](./migrate_rmi_trip.md) — upgrading an existing RMI-based application to the TRIP protocol.
 
+## About
+
+- [The History of Tentackle](./history.md) — where Tentackle comes from, why it looks the way it does, and the milestones from 2001 to the move to GitHub.
+
 
 ---
 

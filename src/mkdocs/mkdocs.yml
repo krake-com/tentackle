@@ -190,6 +190,8 @@ nav:
       - tentackle-test-fx-rdc: tentackle-test-fx-rdc.md
   - Legacy:
       - Migrate from RMI to TRIP: migrate_rmi_trip.md
+  - About:
+      - The History of Tentackle: history.md
   - Reference:
       - Index (A–Z): concept-index.md
   - Legal Notice:
