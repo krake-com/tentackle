@@ -27,7 +27,7 @@ recovery resolves them. Not every JDBC driver handles all of this equally well.
 
 For the most common case, a database update plus a message, the *transactional outbox* is usually
 the better choice: write the message into a table within the local transaction and deliver it
-afterwards. Tentackle's [modification log](../../../../tentackle-session/src/main/docs/modification-tracking.md)
+afterwards. Tentackle's [modification log](../../../../tentackle-database/src/main/docs/database.md#modification-logging)
 already is such an outbox, written atomically with the business data.
 
 Use XA when you need real atomicity across several databases, or when the container requires it.
