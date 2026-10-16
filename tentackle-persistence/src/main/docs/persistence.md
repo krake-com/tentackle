@@ -207,7 +207,8 @@ side — see [Filtering components with TripFilter](../../../../tentackle-core/s
 
 [`TripModificationLogSerializer`](../java/org/tentackle/persist/trip/TripModificationLogSerializer.java) uses that
 filter to store the state of modified PDOs in the modification log, with a TRIP dictionary that spans several
-modlogs and is reset by count or time — see
+modlogs and is reset by count or time. The dictionary is commit-gated and split into epochs, so the modlog-writing
+transactions may overlap — see
 [Modification logging](../../../../tentackle-database/src/main/docs/database.md#modification-logging).
 
 [`PdoRemoteDelegateLocator`](../java/org/tentackle/persist/trip/PdoRemoteDelegateLocator.java)

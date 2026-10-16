@@ -386,6 +386,26 @@ registering a [`ModificationLogSerializer`](../java/org/tentackle/dbms/Modificat
 [`TripModificationLogSerializer`](../../../../tentackle-persistence/src/main/java/org/tentackle/persist/trip/TripModificationLogSerializer.java)
 in `tentackle-persistence`.
 
+`TripModificationLogSerializer` keeps the object data compact with a TRIP dictionary that spans many modlogs:
+a type definition is sent only with the first object of that type, later objects refer to it by ordinal. The
+modlog-writing transactions need **not** be serialized, although a receiver sees the modlogs only once they are
+committed, i.e., in commit order:
+
+- **Commit-gated dictionary.** The entries a transaction adds stay private to it until its physical commit
+  (`ModificationLogSerializer.commit`, invoked via `DbUtilities.notifyCommit`). A concurrent transaction needing the
+  same type defines it once more under an ordinal of its own. A rollback, or a rollback to a savepoint, discards
+  the transaction's private entries. Hence, a modlog refers only to entries defined earlier in its own transaction
+  or by transactions that committed before it was serialized. Their modlogs have lower ids and are visible to
+  every receiver that sees the referring modlog.
+- **Epochs.** The dictionary is reset after a number of objects or some time. The reset writes a `RESET` modlog
+  whose id becomes the number of the new *epoch*, stored in front of each serialized object. The receiver keeps
+  one dictionary per epoch, so a transaction that started before a reset but commits after it is still decoded
+  correctly. It must therefore not reset its dictionaries when it encounters a `RESET` modlog.
+- **No waiting at the receiver.** Unlike a TRIP connection, the receiver's dictionary fails immediately on an
+  unknown ordinal or epoch. This happens only if the receiver was restarted or discarded the epoch (see
+  `setMaxEpochs`), and is reported by a `RebuildEpochException` carrying the epoch. The receiver then rebuilds
+  that epoch via `rebuildEpoch` from the already processed modlogs with an id &ge; the epoch and retries.
+
 > **Note:** asynchronous coupling itself is out of scope. There are too many different scenarios — topology,
 > transport, ordering, conflict resolution, error handling and recovery, to name a few — to cover them with a
 > single generic solution. Tentackle therefore only provides the fundamental building blocks: the modlogs, their

@@ -31,8 +31,8 @@ import org.tentackle.session.SessionDependable;
  * Notice that the serializer, like the modlogs themselves, is only one of the fundamental building blocks to
  * implement asynchronous coupling. The coupling itself is out of Tentackle's scope, since there are too many
  * different scenarios to cover them with a single generic solution. Reading the modlogs, transferring them,
- * and applying them on the receiving side, which includes invoking {@link #deserialize} and {@link #reset},
- * must be implemented at the application level.
+ * and applying them on the receiving side, which includes invoking {@link #deserialize}, must be implemented
+ * at the application level.
  */
 public interface ModificationLogSerializer {
 
@@ -41,28 +41,39 @@ public interface ModificationLogSerializer {
    * <p>
    * If the serializer uses TRIP, it maintains a {@link org.tentackle.trip.Dictionary} that spans
    * several modlogs, i.e., a type definition is only sent along with the first serialized object of that type.
-   * The serializing side must reset its dictionary after a certain number of serialized objects or
-   * when some time has passed and write a {@link DbModificationType#RESET} modlog before the next serialized
+   * The serializing side resets its dictionary after a certain number of serialized objects or
+   * when some time has passed and writes a {@link DbModificationType#RESET} modlog before the next serialized
    * object. Since {@link #serialize} gets the session from the object, it writes the RESET modlog itself.
    * <p>
-   * The deserializing side, usually a replication processing the modlogs in order, invokes this method
-   * when it encounters a {@link DbModificationType#RESET} modlog. Its dictionary is then in sync again with
-   * the one used to serialize the following modlogs.
+   * Whether the deserializing side must reset when it encounters a {@link DbModificationType#RESET} modlog
+   * depends on the implementation. If the modlog-writing transactions overlap, the modlogs serialized before
+   * the RESET may be committed after it, so the deserializer must not simply discard its dictionary.
    */
   void reset();
 
   /**
-   * Invoked when a transaction is rolled back in which this serializer registered itself as the
-   * transaction property {@code ModificationLogSerializer.class}.
+   * Invoked when a transaction is rolled back, or rolled back to a savepoint, in which this serializer
+   * registered itself as the transaction property {@code ModificationLogSerializer.class}.
    * <p>
-   * A rolled-back transaction discards the modlogs written within it. If those carried
-   * dictionary entries, the serializer must not refer to them anymore and has to reset
-   * before serializing the next object.
+   * A rollback discards the modlogs written within the transaction or after the savepoint. If those carried
+   * dictionary entries, the serializer must not refer to them anymore.
    *
    * @param session the session
    * @see Db#setTransactionProperty(Object, Object)
    */
   void rollback(Db session);
+
+  /**
+   * Invoked after a transaction has been committed physically, in which this serializer
+   * registered itself as the transaction property {@code ModificationLogSerializer.class}.
+   * <p>
+   * From now on, the modlogs written within the transaction are visible to the deserializing side.
+   * Hence, the dictionary entries they carry may be referred to by other transactions.
+   *
+   * @param session the session
+   * @see Db#setTransactionProperty(Object, Object)
+   */
+  void commit(Db session);
 
   /**
    * Serializes an object.

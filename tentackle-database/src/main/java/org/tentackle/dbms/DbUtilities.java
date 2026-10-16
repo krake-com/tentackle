@@ -415,7 +415,9 @@ public class DbUtilities {
    * @param txNumber the transaction number
    */
   public void notifyCommit(Db session, long txNumber) {
-    // nothing to do
+    if (session.getTransactionProperty(ModificationLogSerializer.class) instanceof ModificationLogSerializer serializer) {
+      serializer.commit(session);
+    }
   }
 
 

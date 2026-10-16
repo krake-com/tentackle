@@ -61,11 +61,25 @@ public class RollbackNotificationTest extends AbstractDbTest {
    * @return the serializer
    */
   private static ModificationLogSerializer createSerializer(Runnable rollback) {
+    return createSerializer(rollback, () -> {});
+  }
+
+  /**
+   * Creates a serializer notified about the rollback via {@link DbUtilities#notifyRollback(Db, long)}
+   * and about the commit via {@link DbUtilities#notifyCommit(Db, long)}.
+   *
+   * @param rollback invoked on rollback
+   * @param commit invoked on commit
+   * @return the serializer
+   */
+  private static ModificationLogSerializer createSerializer(Runnable rollback, Runnable commit) {
     return (ModificationLogSerializer) Proxy.newProxyInstance(
         ModificationLogSerializer.class.getClassLoader(), new Class<?>[] { ModificationLogSerializer.class },
         (_, method, _) -> {
-          if (method.getName().equals("rollback")) {
-            rollback.run();
+          switch (method.getName()) {
+            case "rollback" -> rollback.run();
+            case "commit" -> commit.run();
+            default -> { }
           }
           return null;
         });
@@ -92,6 +106,25 @@ public class RollbackNotificationTest extends AbstractDbTest {
     assertTrue(txRunning.get(), "rollback notified after the transaction was cleared");
     assertEquals(txNumber.get(), expectedTxNumber);
     assertFalse(db.isTxRunning());
+  }
+
+  @Test
+  public void testNotifiedAfterCommit() {
+    Db db = getSession();
+    AtomicBoolean notified = new AtomicBoolean();
+    AtomicBoolean txRunning = new AtomicBoolean();
+    AtomicBoolean rolledBack = new AtomicBoolean();
+
+    long txVoucher = db.begin("commitNotification");
+    db.setTransactionProperty(ModificationLogSerializer.class, createSerializer(() -> rolledBack.set(true), () -> {
+      notified.set(true);
+      txRunning.set(db.isTxRunning());
+    }));
+
+    assertTrue(db.commit(txVoucher));
+    assertTrue(notified.get(), "commit not notified");
+    assertFalse(txRunning.get(), "commit notified before the transaction ended");
+    assertFalse(rolledBack.get());
   }
 
   @Test
