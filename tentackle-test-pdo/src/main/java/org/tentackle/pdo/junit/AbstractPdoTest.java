@@ -48,10 +48,14 @@ import org.tentackle.sql.Backend;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 
 /**
@@ -496,36 +500,48 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Waits for the process to terminate and writes its stdout and stderr to the console.<br>
-   * The output is read only after the process has terminated. A process that writes more than
-   * the pipe buffer can hold blocks forever. For such processes, use the {@code ServerProcessWrapper},
-   * which drains the output continuously.
+   * Both streams are drained while the process is running. Otherwise, a process writing more than
+   * the pipe buffer can hold would block forever (on Windows, the buffer holds only a few kilobytes).
    *
    * @param process the process
    * @throws IOException if some IO failed
    */
   public static void waitForProcess(Process process) throws IOException {
+    // drain stderr in another thread while stdout is read in this one
+    FutureTask<List<String>> stderr = new FutureTask<>(() -> readLines(process.getErrorStream()));
+    Thread.ofPlatform().daemon().name("stderr-drain").start(stderr);
+    List<String> lines = readLines(process.getInputStream());
     try {
       process.waitFor();
+      lines.addAll(stderr.get());
     }
     catch (InterruptedException ex) {
       throw new AssertionFailedError("executing " + process + " failed", ex);
     }
-    // collect stdout
-    Reader r = new InputStreamReader(process.getInputStream());
-    try (BufferedReader in = new BufferedReader(r)) {
+    catch (ExecutionException ex) {
+      throw ex.getCause() instanceof IOException iox ? iox : new IOException(ex.getCause());
+    }
+    for (String line : lines) {
+      System.out.println(line);
+    }
+  }
+
+  /**
+   * Reads all lines from a stream until EOF.
+   *
+   * @param stream the stream
+   * @return the lines
+   * @throws IOException if reading failed
+   */
+  private static List<String> readLines(InputStream stream) throws IOException {
+    List<String> lines = new ArrayList<>();
+    try (BufferedReader in = new BufferedReader(new InputStreamReader(stream))) {
       String line;
       while ((line = in.readLine()) != null) {
-        System.out.println(line);
+        lines.add(line);
       }
     }
-    // collect stderr
-    r = new InputStreamReader(process.getErrorStream());
-    try (BufferedReader in = new BufferedReader(r)) {
-      String line;
-      while ((line = in.readLine()) != null) {
-        System.out.println(line);
-      }
-    }
+    return lines;
   }
 
 }
