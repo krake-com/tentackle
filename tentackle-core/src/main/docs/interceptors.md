@@ -16,7 +16,7 @@ proxies, interception is the natural extension point for everything that has to
 happen *around* a domain- or persistence method:
 
 ```java
-public interface Invoice extends PersistentDomainObject<Invoice> {
+public interface InvoiceDomain extends DomainObject<Invoice> {
 
   @Transaction                         // wrap in a transaction
   @Secured(BookInvoicePermission.class) // check permission first
@@ -233,7 +233,7 @@ The order is deterministic:
 So for:
 
 ```java
-public interface Invoice extends PersistentDomainObject<Invoice> {
+public interface InvoiceDomain extends DomainObject<Invoice> {
   @Transaction
   @Secured(BookPermission.class)
   void book();

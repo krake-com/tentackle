@@ -32,8 +32,14 @@ connection. There is no DTO layer, no endpoint, no fetch plan, and no
 `LazyInitializationException` — the exception type does not exist here.
 
 ```java
+// domain interface of the Invoice PDO — the transactional contract is part of the API
+public interface InvoiceDomain extends DomainObject<Invoice> {
+  @Transaction
+  void approve();
+}
+
 // domain side of the Invoice PDO — written once, deployed everywhere
-@Transaction
+@Override
 public void approve() {
   Customer customer = getCustomer();                    // persistence side: fetched on demand, locally or over the wire
   if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {

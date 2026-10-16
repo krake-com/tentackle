@@ -11,7 +11,13 @@ unit when the failure was temporary — an optimistic-lock conflict, a deadlock,
 failure.
 
 ```java
-@Transaction
+// the domain interface declares the transactional contract
+public interface InvoiceDomain extends DomainObject<Invoice> {
+  @Transaction
+  void invoiceShipment(Shipment shipment);
+}
+
+// the implementation carries no annotation
 @Override
 public void invoiceShipment(Shipment shipment) {
   ...   // everything in here commits or rolls back as one unit
@@ -175,7 +181,11 @@ from the start would very likely succeed**. Scattering hand-written retry loops 
 logic is error-prone — so the `@Transaction` interceptor offers the loop as a one-word feature:
 
 ```java
+// domain interface
 @Transaction(retry = true)
+void transferStock(StorageBin from, StorageBin to, int amount);
+
+// implementation
 @Override
 public void transferStock(StorageBin from, StorageBin to, int amount) {
   ...
