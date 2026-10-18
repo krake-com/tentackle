@@ -132,8 +132,8 @@
                 <pdoPackage>\${package}.pdo.md</pdoPackage>
                 <minClassId>1000</minClassId>
                 <tablePrefix>md.</tablePrefix>
-                <pdoInterface>MasterData</pdoInterface>
-                <persistenceImplementation>AbstractPersistentMasterData</persistenceImplementation>
+                <pdoInterface>\${package}.pdo.MasterData</pdoInterface>
+                <persistenceImplementation>\${package}.persist.md.AbstractPersistentMasterData</persistenceImplementation>
                 <domainPackage>\${package}.pdo.md.domain</domainPackage>
                 <persistencePackage>\${package}.pdo.md.persist</persistencePackage>
                 <domainImplPackage>\${package}.domain.md</domainImplPackage>
@@ -144,8 +144,8 @@
                 <pdoPackage>\${package}.pdo.td</pdoPackage>
                 <minClassId>2000</minClassId>
                 <tablePrefix>td.</tablePrefix>
-                <pdoInterface>TransactionData</pdoInterface>
-                <persistenceImplementation>AbstractPersistentTransactionData</persistenceImplementation>
+                <pdoInterface>\${package}.pdo.TransactionData</pdoInterface>
+                <persistenceImplementation>\${package}.persist.td.AbstractPersistentTransactionData</persistenceImplementation>
                 <domainPackage>\${package}.pdo.td.domain</domainPackage>
                 <persistencePackage>\${package}.pdo.td.persist</persistencePackage>
                 <domainImplPackage>\${package}.domain.td</domainImplPackage>

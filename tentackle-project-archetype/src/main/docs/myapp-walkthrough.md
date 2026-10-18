@@ -719,9 +719,12 @@ step by step.
 - **Add an entity.** The [wizard plugin](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md)
   is pre-configured in the root POM with `masterdata` / `transactiondata` / `operation` profiles (package conventions
   and class-id ranges) and FreeMarker templates under `templates/`. It scaffolds the PDO interface, facets, and
-  implementations consistently with the examples. Then author the model block, run `mvn install` — which is also
+  implementations consistently with the examples. Then author the model block, add the entity's `@Singular`/`@Plural`
+  keys to `PdoBundle.properties` (and `PdoBundle_de.properties`), run `mvn install` — which is also
   when the wurblets generate the remote delegate pair from the `Remote*.ftl` templates — and add a
-  `GuiProvider`/`Editor` if it needs UI.
+  `GuiProvider` with its `.properties` bundle and an `Editor` if it needs UI. See
+  [What Is Left to Do](../../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#what-is-left-to-do)
+  for why the tests fail without these bundles.
 - **Add a business operation** that isn't tied to one entity: use the **operation** profile and the
   [operation pattern](../../../../tentackle-pdo/src/main/docs/operation.md). The *first* one costs a
   little setup: the profile's three packages (`…pdo.operation`, `…domain.operation`,
