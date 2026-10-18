@@ -27,10 +27,14 @@ module's `QuicheKwikInteropTest` verifies on every build.
 | Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                |
 | Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](#connection-migration) |
 
-Start with `tentackle-quic`. Reach for `tentackle-quiche` when you want the reference implementation's
-congestion control and packet processing, or when you are already shipping native code anyway. Nothing
-stops you from deploying both: they register different schemes, so a single application can offer
-`tripq` and `tripj` side by side and let each client pick.
+Start with `tentackle-quiche`: it migrates a stalled connection to a fresh source port instead of
+waiting for the idle timeout (see [Connection migration](#connection-migration)), and it brings the
+reference implementation's congestion control and packet processing. Reach for
+[`tentackle-quic`](../../../../tentackle-quic/src/main/docs/quic.md) when you need a pure-Java stack —
+for example, when the platform is not among those quiche ships binaries for, or the operating system is
+too old to run them and cannot be upgraded. Nothing stops you from deploying both: they register
+different schemes, so a single application can offer `tripj` and `tripq` side by side and let each
+client pick.
 
 ## How it fits into TRIP
 

@@ -49,8 +49,10 @@ a quiche server and vice versa, which `QuicheKwikInteropTest` verifies on every 
 | Schemes         | `tripq`, `tripcq`          | `tripj`, `tripcj`                                                                                                                    |
 | Stalled paths   | waits for the idle timeout | migrates to a new source port, see [Connection migration](../../../../tentackle-quiche/src/main/docs/quiche.md#connection-migration) |
 
-Start here. Reach for `tentackle-quiche` when you want the reference implementation's congestion control
-and packet processing, or when you are already shipping native code anyway. The two register different
+Prefer [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md): it migrates a stalled
+connection to a fresh source port, whereas this module waits for the idle timeout. Use this module when
+you need a pure-Java stack — for example, when the platform is not among those quiche ships binaries for,
+or the operating system is too old to run them and cannot be upgraded. The two register different
 schemes, so nothing stops an application from deploying both and letting each client pick.
 
 ---
@@ -462,10 +464,10 @@ scheme.
 
 ## Choosing a QUIC scheme
 
-| Scheme   | Transport  | Encryption         | Compression | When to use                                                                                   |
-|----------|------------|--------------------|-------------|-----------------------------------------------------------------------------------------------|
-| `tripq`  | UDP / QUIC | TLS 1.3 (built in) | no          | Lossy or high-latency networks; many concurrent streams; mobile clients that change networks. |
-| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate     | As `tripq`, when payloads are large and bandwidth-bound.                                      |
+| Scheme   | Transport  | Encryption         | Compression | When to use                                               |
+|----------|------------|--------------------|-------------|-----------------------------------------------------------|
+| `tripq`  | UDP / QUIC | TLS 1.3 (built in) | no          | Lossy or high-latency networks; many concurrent streams.  |
+| `tripcq` | UDP / QUIC | TLS 1.3 (built in) | deflate     | As `tripq`, when payloads are large and bandwidth-bound.  |
 
 Compared with the TCP-based schemes (`trip`, `trips`, `tripe`, `tripc`, …), QUIC
 provides TLS without a separate handshake layer and avoids TCP head-of-line
@@ -477,6 +479,8 @@ The `tripj` and `tripcj` schemes of
 [`tentackle-quiche`](../../../../tentackle-quiche/src/main/docs/quiche.md) are the same two choices on
 the quiche stack, and they talk to `tripq`/`tripcq` peers — the scheme selects the local implementation,
 not the wire protocol. The compression of `tripcq`/`tripcj`, on the other hand, must match on both ends.
+For clients that change networks or sit behind NATs that rebind, prefer `tripj`/`tripcj`: only quiche
+migrates a connection whose path has stalled.
 
 ---
 
