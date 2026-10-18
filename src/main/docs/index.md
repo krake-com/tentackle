@@ -116,6 +116,7 @@ topic-grouped listing of every document, see the
 
 - **H2 (backend peculiarities, test database)** — [The H2 Backend](../../../tentackle-sql/src/main/docs/h2.md), [tentackle-test-pdo](../../../tentackle-test-pdo/src/main/docs/tentackle-test-pdo.md)
 - **History (origins, milestones, the move to GitHub)** — [The History of Tentackle](./history.md)
+- **Host name verification (`hostcheck`, TLS)** — [TRIP](../../../tentackle-core/src/main/docs/trip.md#ssltls-configuration), [TRIP over Cloudflare quiche](../../../tentackle-quiche/src/main/docs/quiche.md#client-side), [TRIP over QUIC](../../../tentackle-quic/src/main/docs/quic.md)
 
 ## I
 

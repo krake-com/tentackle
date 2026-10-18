@@ -172,7 +172,8 @@ public class TcpConnectionPoolTest {
 
   /**
    * The socket is connected after it has been created, so it does not learn the host name from the
-   * socket factory anymore. The endpoint identification must still be applied to the name in the URI.
+   * socket factory anymore. The endpoint identification must still be applied to the name in the URI,
+   * by default, unless turned off with {@code hostcheck=false}.
    */
   @Test
   public void identifiesTheEndpointOfAnSslConnection() throws Exception {
@@ -184,12 +185,12 @@ public class TcpConnectionPoolTest {
       trustStoreFile = deriveTrustStore(keyStoreFile, "localhost");
       SslParameters serverParameters = new SslParameters(URI.create(
         "trips://localhost:0?ksfile=" + uriPath(keyStoreFile) + "&kspass=" + STORE_PASSWORD));
-      String clientQuery = "?tsfile=" + uriPath(trustStoreFile) + "&tspass=" + STORE_PASSWORD + "&endpointid=HTTPS";
+      String clientQuery = "?tsfile=" + uriPath(trustStoreFile) + "&tspass=" + STORE_PASSWORD;
 
       try (ServerSocket serverSocket = new TcpServerSocketFactory(serverParameters).createServerSocket(0)) {
         AtomicReference<Throwable> serverError = new AtomicReference<>();
         Thread serverThread = new Thread(() -> {
-          for (int i = 0; i < 2; i++) {
+          for (int i = 0; i < 3; i++) {
             try (Socket accepted = serverSocket.accept()) {
               ((SSLSocket) accepted).startHandshake();
               accepted.getInputStream().read();   // until the client closes
@@ -220,6 +221,13 @@ public class TcpConnectionPoolTest {
           URI.create("trips://" + LOOPBACK + ":" + serverSocket.getLocalPort() + clientQuery));
         TcpConnectionPool otherPool = createPool(otherTransport);
         expectThrows(TripRuntimeException.class, otherPool::createSocket);
+
+        // the chain is still verified, but not the host name
+        SslTransport uncheckedTransport = new SslTransport(
+          URI.create("trips://" + LOOPBACK + ":" + serverSocket.getLocalPort() + clientQuery + "&hostcheck=false"));
+        try (Socket socket = createPool(uncheckedTransport).createSocket()) {
+          assertNotNull(((SSLSocket) socket).getSession().getPeerCertificates());
+        }
         serverThread.join(5000);
       }
     }

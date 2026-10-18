@@ -155,7 +155,14 @@ value is resolved from up to three sources, in order of precedence:
 | `protocols`  | `protocols`              | —                         | both   | comma-separated enabled protocols, e.g. `TLSv1.3,TLSv1.2`                                   |
 | `ciphers`    | `cipherSuites`           | —                         | both   | comma-separated enabled cipher suites                                                       |
 | `clientauth` | `clientAuth`             | —                         | server | client-certificate policy: `none` (default), `want` or `need`                               |
-| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm, e.g. `HTTPS` (default: none)                             |
+| `endpointid` | `endpointIdentification` | —                         | client | endpoint identification algorithm (default `HTTPS`)                                         |
+| `hostcheck`  | `hostCheck`              | —                         | client | verify the server's host name against its certificate (default `true`)                      |
+
+The client verifies the server's certificate against the host name of the URI by default, just like
+the QUIC transports `tripq` and `tripj` do. A client connecting by an address the certificate is not
+issued for (an IP address, for example) can opt out with `hostcheck=false`: any value but `true` turns
+the check off, while the certificate chain is still verified against the truststore. Make sure the
+server certificate names its host in a `subjectAltName` entry (e.g. `keytool -ext san=dns:myserver`).
 
 Example — a server presenting the certificate stored under alias `server` and requiring client
 certificates, with clients verified against a dedicated truststore:

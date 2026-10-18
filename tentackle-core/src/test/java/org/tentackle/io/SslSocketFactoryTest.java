@@ -187,7 +187,8 @@ public class SslSocketFactoryTest {
   }
 
   /**
-   * Generates a self-signed RSA key pair with the given alias (and matching CN) into the keystore.
+   * Generates a self-signed RSA key pair with the given alias (and matching CN) into the keystore.<br>
+   * The certificate is issued for {@code localhost}, which the client verifies the host name against.
    */
   private static void generateKeyPair(Path keyStore, String alias) throws Exception {
     String keytool = Path.of(System.getProperty("java.home"), "bin", "keytool").toString();
@@ -196,6 +197,7 @@ public class SslSocketFactoryTest {
       "-genkeypair",
       "-alias", alias,
       "-dname", "CN=" + alias,
+      "-ext", "san=dns:localhost",
       "-keyalg", "RSA",
       "-keysize", "2048",
       "-validity", "1",

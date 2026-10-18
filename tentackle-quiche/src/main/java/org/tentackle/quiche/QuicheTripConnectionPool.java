@@ -105,7 +105,7 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   private QuicheEndpoint endpoint;          // replaced with every new QUIC connection
   private final QuicheConfig config;
   private final InetSocketAddress serverAddress;
-  private final String serverName;
+  private final String serverName;         // verified against the server's certificate, null to skip that check
   private final int connectTimeoutSeconds;
   private final int keepAliveSeconds;
   private final int migrationProbeTimeouts;
@@ -147,13 +147,22 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
     keepAliveSeconds = transport.getUriPars().getOrDefault("keepalive", -1);   // negative: derived
     migrationProbeTimeouts = transport.getMigrationProbeTimeouts();
-    serverName = uri.getHost();
     try {
-      serverAddress = new InetSocketAddress(InetAddress.getByName(serverName), uri.getPort());
+      serverAddress = new InetSocketAddress(InetAddress.getByName(uri.getHost()), uri.getPort());
     }
     catch (IOException e) {
       throw new TripRuntimeException("cannot resolve the host of URI " + uri, e);
     }
+
+    SslParameters sslParameters = new SslParameters(uri);
+    boolean certCheck = Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"));
+    /*
+     * The host name is handed to quiche, which sends it as SNI and, if the peer is verified, checks the
+     * server's certificate against it. A client connecting by an address the certificate is not issued for
+     * can opt out with hostcheck=false: without a name, quiche verifies the certificate chain only (and
+     * sends no SNI, which neither a Tentackle server nor KWIK needs to pick its certificate).
+     */
+    serverName = certCheck && !sslParameters.isHostCheck() ? null : uri.getHost();
 
     QuicheConfig newConfig = transport.createConfig(alpnId);
     try {
@@ -164,9 +173,9 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
        * certificate and relies on the TRIP handshake to authenticate the peers instead can opt out with
        * certcheck=false.
        */
-      if (Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "true"))) {
+      if (certCheck) {
         newConfig.verifyPeer(true);
-        KeyStore trustStore = trustStore(new SslParameters(uri));
+        KeyStore trustStore = trustStore(sslParameters);
         if (trustStore != null) {
           Path trusted = PemExporter.writeTrustedCertificates(trustStore);
           try {

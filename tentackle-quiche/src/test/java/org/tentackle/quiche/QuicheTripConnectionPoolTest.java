@@ -141,6 +141,84 @@ public class QuicheTripConnectionPoolTest {
   }
 
   /**
+   * A trusted certificate issued for another host than the one the client connects to must be rejected:
+   * the server's certificate is issued for {@code localhost}, but the client connects to {@code 127.0.0.1}.
+   * The failure is reported like an untrusted certificate, with an {@link SSLHandshakeException} as cause.
+   */
+  @Test(timeOut = 60000)
+  public void rejectsCertificateOfAnotherHost() throws Exception {
+    Reporter.log("rejectsCertificateOfAnotherHost", true);
+    connectByAddress("", client -> {
+      TripRuntimeException exception =
+        expectThrows(TripRuntimeException.class, () -> new QuicheTripConnectionPool(client, dictionary()));
+      Throwable cause = exception.getCause();
+      assertTrue(cause instanceof SSLHandshakeException,
+                 "expected the cause to be an SSLHandshakeException, got " + cause);
+    });
+  }
+
+  /**
+   * The escape hatch for {@link #rejectsCertificateOfAnotherHost}: with {@code hostcheck=false} the
+   * certificate chain is still verified, but not the host name.
+   */
+  @Test(timeOut = 60000)
+  public void acceptsCertificateOfAnotherHostWithoutHostcheck() throws Exception {
+    Reporter.log("acceptsCertificateOfAnotherHostWithoutHostcheck", true);
+    connectByAddress("&hostcheck=false", client -> new QuicheTripConnectionPool(client, dictionary()).shutdown());
+  }
+
+  /**
+   * Connects a client trusting the server's certificate, which is issued for {@code localhost}, by the
+   * server's IP address instead.
+   *
+   * @param clientParameters the additional client URI parameters
+   * @param test the test to run with the client transport
+   * @throws Exception if the test failed
+   */
+  private void connectByAddress(String clientParameters, ClientTest test) throws Exception {
+    Path serverKeyStore = QuicheTestSupport.createKeyStore();
+    try {
+      Path trustStore = QuicheTestSupport.deriveTrustStore(serverKeyStore);
+      try {
+        int port = QuicheTestSupport.freeUdpPort();
+        QuicheTripTransport server = new QuicheTripTransport(URI.create(
+          "tripj://127.0.0.1:" + port + "?" + QuicheTestSupport.keyStoreParameters(serverKeyStore)));
+        try {
+          server.accept();
+          Thread.sleep(1000);   // let the server start accepting connections
+
+          QuicheTripTransport client = new QuicheTripTransport(URI.create(
+            "tripj://127.0.0.1:" + port + "?certcheck=true&" + QuicheTestSupport.trustStoreParameters(trustStore) +
+            clientParameters));
+          try {
+            test.run(client);
+          }
+          finally {
+            client.close();
+          }
+        }
+        finally {
+          server.close();
+        }
+      }
+      finally {
+        Files.deleteIfExists(trustStore);
+      }
+    }
+    finally {
+      Files.deleteIfExists(serverKeyStore);
+    }
+  }
+
+  /**
+   * A test run with a client transport.
+   */
+  @FunctionalInterface
+  private interface ClientTest {
+    void run(QuicheTripTransport client) throws Exception;
+  }
+
+  /**
    * The counterpart of {@link #rejectsUntrustedCertificateWithCertcheck} proving that {@code certcheck}
    * defaults to {@code true}: a client that does not set the parameter at all must still reject a server
    * presenting a certificate it does not trust.

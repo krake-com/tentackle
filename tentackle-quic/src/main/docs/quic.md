@@ -181,7 +181,10 @@ establishes its QUIC connection right away:
    exactly like the TCP/SSL transports report the same failure, so code
    reacting to it (such as the client auto-update's
    `LoginFailedWithUpdateHandler`) does not need to know which transport is
-   in use. Set `certcheck=false` to disable validation
+   in use. The certificate must also be issued for the host name of the URI,
+   which KWIK always verifies — unlike the other transports, `tripq` does not
+   support `hostcheck=false` yet; it will with the next KWIK release. Set
+   `certcheck=false` to disable validation altogether
    (`noServerCertificateCheck()`) — for a client that runs on a trusted,
    non-public network against a server presenting a self-signed certificate
    without a matching truststore.

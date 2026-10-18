@@ -90,6 +90,7 @@ public final class QuicheTestSupport {
       "-genkeypair",
       "-alias", CERTIFICATE_ALIAS,
       "-dname", "CN=localhost",
+      "-ext", "san=dns:localhost",
       "-keyalg", keyAlgorithm,
       "-keysize", String.valueOf(keySize),
       "-validity", "1",

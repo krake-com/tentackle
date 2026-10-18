@@ -96,7 +96,7 @@ transport variants (TCP, SSL, compressed, encrypted, loopback) and when each app
 SSL-aware replacements for the JDK's default socket factories. The default
 `SSLServerSocketFactory` always presents the *first* suitable certificate in the keystore and gives
 no way to change that; these factories let you **select the certificate by its alias** and tune the
-SSL options (enabled protocols, cipher suites, client-certificate policy, endpoint identification).
+SSL options (enabled protocols, cipher suites, client-certificate policy, host name verification).
 Constructed without arguments they behave as plain TCP factories; constructed with an
 [`SslParameters`](../java/org/tentackle/io/SslParameters.java) they build an `SSLContext` and produce
 configured `SSLSocket`/`SSLServerSocket`s. Client certificates are supported by simply providing a

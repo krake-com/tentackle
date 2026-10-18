@@ -192,9 +192,14 @@ never comes cannot park it for good.
    This relies on `quiche_conn_local_error`, which reports the QUIC transport error a rejected certificate
    is encoded as (a TLS alert, per [RFC 9001 §4.8](https://www.rfc-editor.org/rfc/rfc9001.html#section-4.8))
    — any other handshake failure is deliberately left without that cause, to avoid mistaking it for one.
-   `certcheck=false` turns verification off — for a client that runs on a trusted, non-public network
-   against a server presenting a self-signed certificate and relying on TRIP to authenticate the peers
-   itself.
+   The certificate must also be issued for the host name of the URI, which is handed to quiche as the
+   server name (sent as SNI as well). `hostcheck=false` skips that check, for a client connecting by an
+   address the certificate is not issued for: no server name is passed then, so quiche verifies the
+   certificate chain only and sends no SNI — which neither a Tentackle server nor KWIK needs to pick
+   its certificate. This works like `hostcheck` of the TCP/SSL transports.
+   `certcheck=false` turns verification off altogether — for a client that runs on a trusted, non-public
+   network against a server presenting a self-signed certificate and relying on TRIP to authenticate the
+   peers itself.
 3. `connecttimeout` bounds the handshake.
 4. The connection is kept alive with ack-eliciting packets, see below.
 5. A connection whose path stalls moves to a new source port, see [Connection migration](#connection-migration).
@@ -249,6 +254,7 @@ tripj://host:port/service?parameter=value&...
 | `maxstreams`     | both   | 128                                            | concurrent bidirectional streams granted to the peer, >= 1; the default of the pool's `maximum` |
 | `streamwindow`   | both   | 250000                                         | flow control window per stream in bytes, >= 1500                                                |
 | `certcheck`      | client | `true`                                         | verify the server's certificate; any value but `true` turns verification off                    |
+| `hostcheck`      | client | `tentackle.ssl.hostCheck` / `true`             | verify the server's host name, used when `certcheck=true`; any value but `true` turns it off    |
 | `connecttimeout` | client | 10                                             | seconds to wait for the QUIC handshake, > 0                                                     |
 | `quicidle`       | both   | 30                                             | QUIC max idle timeout in **seconds**; 0 disables the timeout (and the derived keep-alive)       |
 | `keepalive`      | client | -1                                             | keep-alive interval in seconds; negative derives it from `quicidle`, 0 disables                 |
