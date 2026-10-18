@@ -321,9 +321,17 @@ timeouts have passed without an acknowledgment. The server needs no configuratio
 new path itself and follows the client, which shows up as `the peer migrated to ...` in the server's log.
 
 **Limits.** Quiche keeps the paths a connection has used, up to the connection ID limit, so the number of
-migrations per connection is bounded by `ACTIVE_CONNECTION_ID_LIMIT`. A stall that finds no spare
-connection ID of the server left logs a warning (once per connection), and the connection stays where it
-is until the idle timeout ends it; the pool then re-establishes it from a fresh source port. A migration
+migrations per connection is bounded by `ACTIVE_CONNECTION_ID_LIMIT`. What a stall that finds no spare
+connection ID of the server left does, depends on whether a call is in flight. Each pooled connection the
+pool lends out holds a lease on the QUIC connection until it is returned, i.e., for the duration of one
+call. If there is no lease, the connection is closed right away, and the next call re-establishes it
+from a fresh source port instead of waiting for the idle timeout. An idle connection sends its
+keep-alives, so a path that dies while nothing is going on is usually detected before the next call
+needs it. If there is a call in flight, the connection stays where it is, so that the call survives if
+the path recovers. This logs a warning (once per connection), and the idle timeout ends the connection
+if the path does not recover. The check is repeated whenever another `migrate` probe timeouts have
+passed without an acknowledgment, so the connection is closed soon after the last call has ended. A lease and the decision to close are a single
+atomic operation, so a call never starts on a connection that is being closed. A migration
 moves the client's source port only: it cannot help if the server's address, or the client's address as a
 whole, is what the network is penalizing. The client notices a stall in either direction by its own packets
 going unacknowledged; while it is only receiving — a large response, with nothing but acknowledgments

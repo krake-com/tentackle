@@ -19,6 +19,7 @@
 package org.tentackle.quiche.engine;
 
 import org.tentackle.quiche.QuicheTestSupport;
+import org.tentackle.quiche.QuicheTripTransport;
 import org.tentackle.quiche.ffm.QuicheConfig;
 import org.tentackle.quiche.ffm.RecvInfo;
 
@@ -391,6 +392,126 @@ public class QuicheEndpointTest {
       assertEquals(serverEndpoint.getConnectionCount(), 1, "the server must follow, not start over");
       assertTrue(connection.isConnected());
     }
+  }
+
+  /**
+   * Once the server has no spare connection ID left, a stalled connection nobody holds a lease on is
+   * given up on at once, long before its idle timeout, so that it can be replaced.
+   */
+  @Test(timeOut = 60000)
+  public void testIdleConnectionIsGivenUpWhenNoConnectionIdIsLeft() throws Exception {
+    Reporter.log("a stalled connection that cannot migrate any further is closed if it is not leased", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+
+      long stalledNanos = 0;
+      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !connection.isFailed(); i++) {
+        relay.blackhole(connection.getLocalAddress().getPort());
+        stalledNanos = System.nanoTime();
+        try {
+          // blocks until the connection found a way around the black hole or was given up on
+          assertEquals(roundTrip(connection, "after " + i), "after " + i);
+        }
+        catch (IOException e) {
+          break;
+        }
+      }
+
+      long millis = (System.nanoTime() - stalledNanos) / 1_000_000L;
+      assertTrue(connection.isFailed(), "the connection was not given up on");
+      assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+      assertTrue(connection.getMigrationCount() > 0, "the connection never migrated");
+      assertTrue(millis < 10_000, "given up on after " + millis + " ms only");
+      assertFalse(connection.isConnected());
+      assertFalse(connection.acquire(), "a connection given up on must not be leased");
+    }
+  }
+
+  /**
+   * A stalled connection that cannot migrate any further stays while it is leased, i.e., while a call is
+   * in flight on it, and is given up on only once the lease has been released.
+   */
+  @Test(timeOut = 60000)
+  public void testLeasedConnectionStaysWhenNoConnectionIdIsLeft() throws Exception {
+    Reporter.log("a stalled connection that cannot migrate any further stays while it is leased", true);
+    startServer(this::echo);
+    try (UdpRelay relay = new UdpRelay(serverAddress())) {
+      clientEndpoint = new QuicheEndpoint(loopback(0));
+      QuicheConnection connection = clientEndpoint.connect(relay.getAddress(), "localhost", clientConfig);
+      assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+      connection.setMigrationProbeTimeouts(2);
+      assertEquals(roundTrip(connection, "before"), "before");
+      assertTrue(connection.acquire());
+
+      // one stream for the whole test, echoed back in the background, since the server grants only a few
+      QuicheStream stream = connection.openStream();
+      OutputStream out = stream.getOutputStream();
+      InputStream in = stream.getInputStream();
+      AtomicInteger echoed = new AtomicInteger();
+      Thread reader = Thread.ofVirtual().start(() -> {
+        try {
+          while (in.read() >= 0) {
+            echoed.incrementAndGet();
+          }
+        }
+        catch (IOException e) {
+          // the connection is given up on at the end of the test
+        }
+      });
+      handlers.add(reader);
+
+      // Migrate until the connection runs out of connection IDs and stays on the stalled path. Waiting for
+      // the echo gives each new path a measured round trip time before it is black-holed: a path without
+      // one starts from quiche's initial estimate of 333 ms, and the probe timeouts would take seconds.
+      int written = 0;
+      boolean exhausted = false;
+      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !exhausted; i++) {
+        relay.blackhole(connection.getLocalAddress().getPort());
+        byte[] message = ("after " + i).getBytes(StandardCharsets.UTF_8);
+        out.write(message);
+        out.flush();
+        written += message.length;
+        long deadline = System.nanoTime() + 1_500_000_000L;
+        while (echoed.get() < written && System.nanoTime() < deadline) {
+          Thread.sleep(10);
+        }
+        exhausted = echoed.get() < written;
+      }
+      assertTrue(exhausted, "the connection never ran out of connection IDs");
+      assertFalse(connection.isFailed(), "a leased connection must not be given up on: " + connection.getFailure());
+      assertTrue(connection.isConnected());
+
+      connection.release();
+      long deadline = System.nanoTime() + 25_000_000_000L;   // below the idle timeout of 30 seconds
+      while (!connection.isFailed() && System.nanoTime() < deadline) {
+        Thread.sleep(20);
+      }
+      assertTrue(connection.isFailed(), "the connection was not given up on once released");
+      assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+    }
+  }
+
+  /**
+   * Leases are counted, and releasing more of them than were taken is ignored.
+   */
+  @Test(timeOut = 60000)
+  public void testLeases() throws Exception {
+    startServer(this::echo);
+    QuicheConnection connection = connect();
+    assertTrue(connection.awaitEstablished(TIMEOUT_MILLIS));
+    assertTrue(connection.acquire());
+    assertTrue(connection.acquire());
+    connection.release();
+    connection.release();
+    connection.release();   // one too many: ignored
+    assertTrue(connection.acquire());
+    connection.release();
+    assertTrue(connection.isConnected());
   }
 
   @Test(timeOut = 60000)

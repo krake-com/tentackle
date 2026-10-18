@@ -36,6 +36,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -68,6 +69,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * does the connection switch over, retire the connection ID of the old path and close the old socket,
  * unless that is the endpoint's own one. A probe that fails leaves the connection where it was. The server
  * follows a migration by itself.
+ * <p>
+ * <strong>Leases:</strong> a client that knows when the connection carries a call in flight says so with
+ * {@link #acquire()} and {@link #release()}. A stalled connection that cannot migrate any further, because
+ * the server has no spare connection ID left, is given up on at once if nothing holds a lease on it, so
+ * that its user can open a new one from a fresh source port instead of waiting for the idle timeout. One
+ * that is leased stays where it is, so that the calls in flight survive if the path recovers.
  */
 public class QuicheConnection implements AutoCloseable {
 
@@ -100,6 +107,11 @@ public class QuicheConnection implements AutoCloseable {
    */
   private static final int MAX_ISSUED_IDS = 16;
 
+  /**
+   * The value of {@link #leases} once the connection has been given up on for good.
+   */
+  private static final int RETIRED = Integer.MIN_VALUE;
+
   private static final Logger LOGGER = Logger.get(QuicheConnection.class);
 
 
@@ -130,6 +142,7 @@ public class QuicheConnection implements AutoCloseable {
   private long lastAckedBytes;                      // the acknowledged bytes at the last stall check, guarded by the lock
   private long ptoBaseline;                         // the probe timeouts at the last progress, guarded by the lock
   private boolean migrationRefusedLogged;           // guarded by the lock
+  private final AtomicInteger leases;               // the leases held, RETIRED once given up on
 
   /**
    * Creates a connection.
@@ -151,6 +164,7 @@ public class QuicheConnection implements AutoCloseable {
 
     activeLocal = endpoint.getLocalAddress();
     lastAckedBytes = -1;    // take the first stall check as the baseline
+    leases = new AtomicInteger();
     lock = new ReentrantLock();
     condition = lock.newCondition();
     arena = Arena.ofShared();
@@ -267,12 +281,47 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
+   * Takes a lease on the connection, telling it that a call is in flight.
+   * <p>
+   * A leased connection is never given up on merely because it cannot migrate any further, see
+   * {@link #detectStall()}. Every successful {@code acquire()} must be followed by a {@link #release()}.
+   * Never blocks.
+   *
+   * @return true if leased, false if the connection has been given up on and must not be used anymore
+   */
+  public boolean acquire() {
+    int count;
+    do {
+      count = leases.get();
+      if (count < 0) {
+        return false;
+      }
+    } while (!leases.compareAndSet(count, count + 1));
+    return true;
+  }
+
+  /**
+   * Releases a lease taken by {@link #acquire()}.
+   * <p>
+   * Never blocks.
+   */
+  public void release() {
+    int count;
+    do {
+      count = leases.get();
+      if (count <= 0) {
+        return;   // given up on meanwhile, or released more often than acquired
+      }
+    } while (!leases.compareAndSet(count, count - 1));
+  }
+
+  /**
    * Tells whether the connection is usable, i.e., established and neither closed nor failed.
    *
    * @return true if usable
    */
   public boolean isConnected() {
-    if (failed) {
+    if (failed || leases.get() < 0) {
       return false;
     }
     lock.lock();
@@ -849,6 +898,10 @@ public class QuicheConnection implements AutoCloseable {
    * The acknowledged bytes are sampled only here, so an acknowledgment that arrived after the last check
    * makes the next one take a new baseline: in the worst case, a stall is detected only after
    * {@code migrate} further probe timeouts.
+   * <p>
+   * If the server has no spare connection ID left to migrate with, a connection nobody holds a lease on
+   * (see {@link #acquire()}) is closed, so that it can be replaced right away. A leased one stays, and is
+   * checked again after another {@code migrate} probe timeouts.
    */
   private void detectStall() {
     int threshold = migrationProbeTimeouts;
@@ -876,12 +929,25 @@ public class QuicheConnection implements AutoCloseable {
       ptoBaseline = ptoCount;   // another attempt only after as many further timeouts
       if (conn.availableDcids() == 0) {
         // quiche keeps every path a connection ever used, up to the connection ID limit, and the server
-        // has none left to spare: the connection stays where it is and, if the path does not recover,
-        // runs into its idle timeout
-        if (!migrationRefusedLogged) {
+        // has none left to spare. A connection nobody uses is given up on, so that it is replaced by one
+        // from a fresh source port instead of waiting for the idle timeout. One with calls in flight
+        // stays where it is: they survive if the path recovers, and the idle timeout ends it otherwise.
+        if (leases.compareAndSet(0, RETIRED)) {
+          LOGGER.info("{0}: the path is stalled and the peer has no spare connection ID left after {1} " +
+                      "migrations -> closing the idle connection", this, Integer.toString(migrationCount));
+          fail("the path stalled, and no spare connection ID was left to migrate with");
+          try {
+            // best effort: the stalled path will most likely lose it
+            conn.closeConnection(true, 0, "stalled");
+          }
+          catch (QuicheException e) {
+            LOGGER.fine("{0}: cannot close: {1}", this, e.getMessage());
+          }
+        }
+        else if (!migrationRefusedLogged) {
           migrationRefusedLogged = true;
           LOGGER.warning(this + ": the path is stalled, but the peer has no spare connection ID left to " +
-                         "migrate with after " + migrationCount + " migrations");
+                         "migrate with after " + migrationCount + " migrations, staying for the calls in flight");
         }
         return;
       }

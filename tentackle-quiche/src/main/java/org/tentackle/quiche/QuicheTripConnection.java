@@ -18,21 +18,26 @@
 
 package org.tentackle.quiche;
 
+import org.tentackle.quiche.engine.QuicheConnection;
 import org.tentackle.quiche.engine.QuicheStream;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.AbstractConnection;
 
 import java.io.IOException;
-import java.util.function.BooleanSupplier;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A pooled TRIP connection on a single bidirectional QUIC stream.
+ * <p>
+ * While it is lent from the pool, i.e., while a call is in flight on it, the connection holds a lease on
+ * the QUIC connection, see {@link QuicheConnection#acquire()}.
  */
 public class QuicheTripConnection extends AbstractConnection {
 
-  private final BooleanSupplier connectionAlive;
+  private final QuicheConnection quicConnection;
   private final QuicheStream quicStream;
+  private final AtomicBoolean leased;
   private volatile boolean closed;    // volatile: closed by the pool's closing thread, read by the pool
 
   /**
@@ -43,21 +48,44 @@ public class QuicheTripConnection extends AbstractConnection {
    *
    * @param transport the transport associated with this connection
    * @param dictionary the dictionary associated with this connection
-   * @param connectionAlive tells whether the QUIC connection the stream belongs to is still established
    * @param quicStream the QUIC stream associated with this connection
    */
-  QuicheTripConnection(QuicheTripTransport transport, Dictionary dictionary,
-                       BooleanSupplier connectionAlive, QuicheStream quicStream) {
+  QuicheTripConnection(QuicheTripTransport transport, Dictionary dictionary, QuicheStream quicStream) {
     super(transport, transport.createStream(dictionary, quicStream));
-    this.connectionAlive = connectionAlive;
+    this.quicConnection = quicStream.getConnection();
     this.quicStream = quicStream;
+    leased = new AtomicBoolean();
   }
 
   @Override
   public boolean isOpen() {
     // The QUIC connection may be terminated without the stream being closed explicitly, for example,
     // by the max idle timeout of either peer. Such a stream is unusable, and the pool must not hand it out.
-    return !closed && connectionAlive.getAsBoolean();
+    return !closed && quicConnection.isConnected();
+  }
+
+  /**
+   * Takes a lease on the QUIC connection when the connection is lent from the pool.
+   *
+   * @return true if leased, false if the QUIC connection has been given up on meanwhile
+   */
+  boolean lease() {
+    if (quicConnection.acquire()) {
+      leased.set(true);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Releases the lease when the connection is returned to the pool.
+   * <p>
+   * Releases only once, even if the connection is returned more than once.
+   */
+  void unlease() {
+    if (leased.compareAndSet(true, false)) {
+      quicConnection.release();
+    }
   }
 
   @Override

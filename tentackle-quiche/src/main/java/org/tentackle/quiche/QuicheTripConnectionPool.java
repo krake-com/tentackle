@@ -74,6 +74,11 @@ import java.util.Set;
  * a new endpoint, i.e., from a fresh source port as well: the one the lost connection used may well be
  * what got it stuck. That happens when the next connection is requested from the pool, see
  * {@link #restoreMinimumSize(int)}.
+ * <p>
+ * A lent connection holds a lease on the QUIC connection (see {@link QuicheConnection#acquire()}), since a
+ * call is in flight on it. A QUIC connection whose path stalls when it cannot migrate any further is
+ * therefore given up on right away if no call is in flight, and replaced with the next {@link #get()},
+ * but kept for the calls in flight otherwise.
  */
 public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
@@ -220,6 +225,39 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to take a lease on the QUIC connection for the call the connection is lent for. Not
+   * synchronized: the lease is lock-free, and taking the pool's monitor here would serialize all calls.
+   */
+  @Override
+  public Connection get() {
+    for (;;) {
+      QuicheTripConnection tripConnection = (QuicheTripConnection) super.get();
+      if (tripConnection.lease()) {
+        return tripConnection;
+      }
+      // The QUIC connection was given up on between the pool's check that the connection is open and the
+      // lease. It is not open anymore, so put() removes it from the pool, and the next round takes another
+      // connection or creates one, which re-establishes the QUIC connection.
+      super.put(tripConnection);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to release the lease taken by {@link #get()}.
+   */
+  @Override
+  public void put(Connection connection) {
+    if (connection instanceof QuicheTripConnection tripConnection) {
+      tripConnection.unlease();
+    }
+    super.put(connection);
+  }
+
 
   /**
    * {@inheritDoc}
@@ -241,11 +279,9 @@ public class QuicheTripConnectionPool extends AbstractConnectionPool {
   @Override
   protected PoolSlot<Connection> createSlot(int slotNumber) {
     QuicheStream quicStream = createQuicStream();   // may re-establish the QUIC connection
-    QuicheConnection quicConnection = connection;
     try {
       return new ConnectionPoolSlot(this, slotNumber,
-                                    new QuicheTripConnection(transport, getDictionary(),
-                                                             quicConnection::isConnected, quicStream));
+                                    new QuicheTripConnection(transport, getDictionary(), quicStream));
     }
     catch (RuntimeException e) {
       // The connection did not take ownership of the stream because sending the TRIP preamble failed.
