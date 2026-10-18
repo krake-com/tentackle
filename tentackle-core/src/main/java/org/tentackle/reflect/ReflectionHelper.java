@@ -159,35 +159,41 @@ public final class ReflectionHelper {
    * Works also for inner classes, provided the class names start with an uppercase letter
    * and the package names don't.
    *
-   * @param str the classname
+   * @param str the classname (null is allowed)
    * @return the package name, "" if no package, str if str already is a package name
    * @see Class#getPackageName()
    */
   public static String getPackageName(String str) {
-    int ndx;
-    if (str.isEmpty() || Character.isUpperCase(str.charAt(0))) {
-      return "";
+    if (str != null) {
+      int ndx;
+      if (str.isEmpty() || Character.isUpperCase(str.charAt(0))) {
+        return "";
+      }
+      while ((ndx = str.lastIndexOf('.')) >= 0 && ndx < str.length() - 1 && Character.isUpperCase(str.charAt(ndx + 1))) {
+        str = str.substring(0, ndx);
+      }
+      return str;
     }
-    while ((ndx = str.lastIndexOf('.')) >= 0 && ndx < str.length() - 1 && Character.isUpperCase(str.charAt(ndx + 1))) {
-      str = str.substring(0, ndx);
-    }
-    return str;
+    return "";
   }
 
   /**
    * Gets the class basename of a classname(-like) string.<br>
    * The basename is the last name of a pathname with dots.
    *
-   * @param str the classname
+   * @param str the classname (null is allowed)
    * @return the simple classname, "" if this is not a classname (package name or something else)
    * @see Class#getSimpleName()
    */
   public static String getClassBaseName(String str)  {
-    String packageName = getPackageName(str);
-    if (packageName.isEmpty()) {
-      return str;
+    if (str != null) {
+      String packageName = getPackageName(str);
+      if (packageName.isEmpty()) {
+        return str;
+      }
+      return str.substring(packageName.length() + 1);
     }
-    return str.substring(packageName.length() + 1);
+    return "";
   }
 
   /**
