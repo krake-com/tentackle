@@ -21,9 +21,11 @@ package org.tentackle.dbms;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.ClassId;
+import org.tentackle.session.ConstraintException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.TableName;
+import org.tentackle.session.SavepointHandle;
 import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
 
@@ -306,10 +308,54 @@ public class DbModification extends AbstractDbObject<DbModification> {
    * If the referenced table provides a tableserial column, the initial serial is derived from the
    * highest tableserial of all objects in that table.
    *
+   * <p>
+   * The new id is the highest id plus one. Another session adding a row concurrently, for example, another
+   * tracker re-creating its rows after a re-initialization of the table, may get the same id.
+   * The insert is then retried, unless the other session added the row for the same name.
+   *
    * @param tableExists true if related to a PDO, false if just a name
    * @param tableSerialTableName the table to scan for max tableserial if PDO manages a tableserial
    */
   public void addToModificationTable(boolean tableExists, String tableSerialTableName)  {
+    Db db = getSession();
+    for (int attempt = 1; ; attempt++) {
+      // a failed statement aborts the whole transaction in some backends, such as PostgreSQL
+      SavepointHandle sh = db.isTxRunning() ? db.setSavepoint() : null;
+      try {
+        insertIntoModificationTable(tableExists, tableSerialTableName);
+        if (sh != null) {
+          db.releaseSavepoint(sh);
+        }
+        return;
+      }
+      catch (ConstraintException cx) {
+        if (sh != null) {
+          db.rollback(sh);
+        }
+        refresh();
+        if (getId() != 0) {
+          return;   // added by another session in the meantime
+        }
+        if (attempt >= MAX_ADD_ATTEMPTS) {
+          throw cx;
+        }
+        LOGGER.fine("id collision for {0} -> retrying", trackedName);
+      }
+    }
+  }
+
+  /**
+   * Maximum number of attempts to add an entry to the modification table.
+   */
+  private static final int MAX_ADD_ATTEMPTS = 10;
+
+  /**
+   * Inserts the entry for this counter into the modification table.
+   *
+   * @param tableExists true if related to a PDO, false if just a name
+   * @param tableSerialTableName the table to scan for max tableserial if PDO manages a tableserial
+   */
+  private void insertIntoModificationTable(boolean tableExists, String tableSerialTableName) {
     try (StatementWrapper st = getSession().createStatement()) {
       int count;
       if (tableExists) {
