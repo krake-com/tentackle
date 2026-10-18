@@ -23,6 +23,7 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationHandler;
@@ -85,18 +86,6 @@ public final class ReflectionHelper {
     WRAPPERS.put(Long.class, Long.TYPE);
     WRAPPERS.put(Double.class, Double.TYPE);
     WRAPPERS.put(Float.class, Float.TYPE);
-  }
-
-
-  /**
-   * Gets the basename of a classname(-like) string.<br>
-   * The basename is the last name of a pathname with dots.
-   *
-   * @param str the classname
-   * @return the basename
-   */
-  public static String getClassBaseName(String str)  {
-    return StringHelper.lastAfter(str, '.');
   }
 
   /**
@@ -172,6 +161,7 @@ public final class ReflectionHelper {
    *
    * @param str the classname
    * @return the package name, "" if no package, str if str already is a package name
+   * @see Class#getPackageName()
    */
   public static String getPackageName(String str) {
     int ndx;
@@ -185,8 +175,24 @@ public final class ReflectionHelper {
   }
 
   /**
+   * Gets the class basename of a classname(-like) string.<br>
+   * The basename is the last name of a pathname with dots.
+   *
+   * @param str the classname
+   * @return the simple classname, "" if this is not a classname (package name or something else)
+   * @see Class#getSimpleName()
+   */
+  public static String getClassBaseName(String str)  {
+    String packageName = getPackageName(str);
+    if (packageName.isEmpty()) {
+      return str;
+    }
+    return str.substring(packageName.length() + 1);
+  }
+
+  /**
    * Gets the outermost class name.<br>
-   * Cuts inner classes, lambdas and anonymous classes.
+   * Cuts inner classes, lambdas, and anonymous classes.
    *
    * @param name the probably inner classname
    * @return the outermost classname
@@ -476,7 +482,7 @@ public final class ReflectionHelper {
   /**
    * Gets all declared methods of the given class and its superclasses.<br>
    * The superclasses are scanned as long as they match the bounding classes and annotations.
-   * For interfaces, all public methods including the inherited ones are returned.
+   * For interfaces, all public methods, including the inherited ones, are returned.
    *
    * @param clazz the class to get all declared and inherited methods
    * @param boundingClasses bounding classes that all classes must implement or extend, null if all
@@ -514,7 +520,7 @@ public final class ReflectionHelper {
   }
 
   /**
-   * Returns whether a class is an immutable list, set or map of the JDK.
+   * Returns whether a class is an immutable list, set, or map of the JDK.
    *
    * @param clazz the class to check
    * @return true if the class is an immutable list, set or map
@@ -679,30 +685,9 @@ public final class ReflectionHelper {
    * @return the parameter names, empty array for no parameters
    */
   public static String[] getCanonicalNames(Constructor<?> constructor) {
-    Annotation[][] parameterAnnotations = constructor.getParameterAnnotations();
-    String[] canonicalNames = new String[parameterAnnotations.length];
-    for (int i = 0; i < parameterAnnotations.length; i++) {
-      Annotation[] annotations = parameterAnnotations[i];
-      for (Annotation annotation : annotations) {
-        if (annotation.annotationType().equals(CanonicalName.class)) {
-          canonicalNames[i] = ((CanonicalName) annotation).value();
-          break;
-        }
-      }
-    }
+    String[] canonicalNames = getCanonicalNamesImpl(constructor);
     if (isNonStaticInnerClass(constructor.getDeclaringClass())) {
       canonicalNames[0] = SYNTHETIC_THIS_PARAMETER;
-    }
-    Parameter[] parameters = constructor.getParameters();
-    if (parameters.length == canonicalNames.length) {   // must be the same, but one never knows...
-      for (int i = 0; i < canonicalNames.length; i++) {
-        if (canonicalNames[i] == null) {
-          String name = parameters[i].getName();
-          if (!(name.startsWith("arg") && name.length() > 3 && Character.isDigit(name.charAt(3)))) {   // argN if no -parameters
-            canonicalNames[i] = parameters[i].getName();
-          }
-        }
-      }
     }
     return canonicalNames;
   }
@@ -718,29 +703,7 @@ public final class ReflectionHelper {
    * @return the parameter names, empty array for no parameters
    */
   public static String[] getCanonicalNames(Method method) {
-    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
-    String[] canonicalNames = new String[parameterAnnotations.length];
-    for (int i = 0; i < parameterAnnotations.length; i++) {
-      Annotation[] annotations = parameterAnnotations[i];
-      for (Annotation annotation : annotations) {
-        if (annotation.annotationType().equals(CanonicalName.class)) {
-          canonicalNames[i] = ((CanonicalName) annotation).value();
-          break;
-        }
-      }
-    }
-    Parameter[] parameters = method.getParameters();
-    if (parameters.length == canonicalNames.length) {   // must be the same, but one never knows...
-      for (int i = 0; i < canonicalNames.length; i++) {
-        if (canonicalNames[i] == null) {
-          String name = parameters[i].getName();
-          if (!(name.startsWith("arg") && name.length() > 3 && Character.isDigit(name.charAt(3)))) {   // argN if no -parameters
-            canonicalNames[i] = parameters[i].getName();
-          }
-        }
-      }
-    }
-    return canonicalNames;
+    return getCanonicalNamesImpl(method);
   }
 
   /**
@@ -826,11 +789,10 @@ public final class ReflectionHelper {
    * Gets the field name from a clazz and method name.<br>
    * Skips the prefix "get" or "is", if any.
    *
-   * @param clazz the return type of the method (currently unused)
    * @param methodName the method name
    * @return the field name
    */
-  public static String getFieldName(Class<?> clazz, String methodName) {
+  public static String getFieldName(String methodName) {
     String fieldName = skipMethodNamePrefix(methodName, "get");
     if (fieldName == null) {
       fieldName = skipMethodNamePrefix(methodName, "is");
@@ -845,7 +807,7 @@ public final class ReflectionHelper {
    * @return the field name
    */
   public static String getFieldName(Method method) {
-    return getFieldName(method.getReturnType(), method.getName());
+    return getFieldName(method.getName());
   }
 
   /**
@@ -1056,7 +1018,7 @@ public final class ReflectionHelper {
    * if invoice or invoiceLine is null.
    *
    * <p>
-   * Notice: if {@code path} is null or empty the root object will be returned.
+   * Notice: if {@code path} is null or empty, the root object will be returned.
    *
    * @param root the root object the path refers to
    * @param path the member path in dot-notation relative to the given object
@@ -1300,7 +1262,7 @@ public final class ReflectionHelper {
    * @return the proxy class
    * @param <T> the type of the proxy class
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings("unchecked")
   public static <T> Class<T> createProxyClass(Class<?>[] interfaces) {
     if (interfaces == null || interfaces.length == 0) {
       throw new TentackleRuntimeException("no interfaces given");
@@ -1310,7 +1272,7 @@ public final class ReflectionHelper {
 
   private static class FakeInvocationHandler implements InvocationHandler {
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
       return null;
     }
   }
@@ -1392,6 +1354,32 @@ public final class ReflectionHelper {
       // return null below
     }
     return field;
+  }
+
+  private static String[] getCanonicalNamesImpl(Executable executable) {
+    Annotation[][] parameterAnnotations = executable.getParameterAnnotations();
+    String[] canonicalNames = new String[parameterAnnotations.length];
+    for (int i = 0; i < parameterAnnotations.length; i++) {
+      Annotation[] annotations = parameterAnnotations[i];
+      for (Annotation annotation : annotations) {
+        if (annotation.annotationType().equals(CanonicalName.class)) {
+          canonicalNames[i] = ((CanonicalName) annotation).value();
+          break;
+        }
+      }
+    }
+    Parameter[] parameters = executable.getParameters();
+    // parameters.length == canonicalNames.length is guaranteed
+    for (int i = 0; i < canonicalNames.length; i++) {
+      if (canonicalNames[i] == null) {
+        String name = parameters[i].getName();
+        // "argN" if compiled with no '-parameters'
+        if (!(name.startsWith("arg") && name.length() > 3 && Character.isDigit(name.charAt(3)))) {
+          canonicalNames[i] = parameters[i].getName();
+        }
+      }
+    }
+    return canonicalNames;
   }
 
 

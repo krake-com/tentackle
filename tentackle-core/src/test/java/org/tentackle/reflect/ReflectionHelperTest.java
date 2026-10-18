@@ -521,9 +521,9 @@ public class ReflectionHelperTest {
 
   @Test
   public void testGetFieldName() {
-    assertEquals(ReflectionHelper.getFieldName(String.class, "getName"), "name");
-    assertEquals(ReflectionHelper.getFieldName(boolean.class, "isActive"), "active");
-    assertEquals(ReflectionHelper.getFieldName(int.class, "compute"), "compute");
+    assertEquals(ReflectionHelper.getFieldName("getName"), "name");
+    assertEquals(ReflectionHelper.getFieldName("isActive"), "active");
+    assertEquals(ReflectionHelper.getFieldName("compute"), "compute");
   }
 
   @Test
