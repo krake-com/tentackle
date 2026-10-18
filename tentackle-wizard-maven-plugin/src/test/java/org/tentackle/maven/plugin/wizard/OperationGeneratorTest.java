@@ -124,6 +124,28 @@ public class OperationGeneratorTest {
   }
 
 
+  /**
+   * Fully qualified super types are imported, unless they live in the package of the generated type.
+   */
+  @Test
+  public void testFullyQualifiedSuperTypes() throws Exception {
+    OperationProfile profile = gen.getProfile();
+    setField(OperationProfile.class, profile, "operationInterface", "com.example.base.BaseOperation");
+    setField(Profile.class, profile, "domainImplementation", "com.example.domain.impl.AbstractMyDomainOperation");
+    OperationMojo.applyNames(gen, null, null, null, null);
+    List<ValidationResult> results = gen.generate();
+    assertTrue(results.isEmpty(), results.toString());
+
+    String source = Files.readString(outputDir.resolve("com.example.pdo/SendInvoice.java"), StandardCharsets.UTF_8);
+    assertTrue(source.contains("import com.example.base.BaseOperation;"), source);
+    assertTrue(source.contains("extends BaseOperation<SendInvoice>"), source);
+
+    source = Files.readString(outputDir.resolve("com.example.domain.impl/SendInvoiceDomainImpl.java"), StandardCharsets.UTF_8);
+    assertTrue(source.contains("extends AbstractMyDomainOperation<SendInvoice, SendInvoiceDomainImpl>"), source);
+    assertFalse(source.contains("import com.example.domain.impl.AbstractMyDomainOperation;"), source);   // same package
+  }
+
+
   private void setPackage(Profile profile, Class<?> clazz, String packageField, String infoField, String packageName)
           throws ReflectiveOperationException, IOException {
     setField(clazz, profile, packageField, packageName);

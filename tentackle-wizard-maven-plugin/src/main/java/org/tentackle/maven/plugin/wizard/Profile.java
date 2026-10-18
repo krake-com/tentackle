@@ -41,25 +41,29 @@ public class Profile {
   private String name;
 
   /**
-   * The super domain interface, null for the default.
+   * The super domain interface, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String domainInterface;
 
   /**
-   * The super persistence interface, null for default.
+   * The super persistence interface, null for default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String persistenceInterface;
 
   /**
-   * The super domain implementation, null for the default.
+   * The super domain implementation, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String domainImplementation;
 
   /**
-   * The super persistence implementation, null for the default.
+   * The super persistence implementation, null for the default.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String persistenceImplementation;

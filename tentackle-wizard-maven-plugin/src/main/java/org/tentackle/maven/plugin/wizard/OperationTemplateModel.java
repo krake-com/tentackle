@@ -59,6 +59,11 @@ public class OperationTemplateModel extends TemplateModel {
     putValue("superPersistenceInterface", generator.getSuperPersistenceInterface());
     putValue("superDomainImplementation", generator.getSuperDomainImplementation());
     putValue("superPersistenceImplementation", generator.getSuperPersistenceImplementation());
+    putValue("superOperationInterfacePackage", generator.getSuperOperationInterfacePackage());
+    putValue("superDomainInterfacePackage", generator.getSuperDomainInterfacePackage());
+    putValue("superPersistenceInterfacePackage", generator.getSuperPersistenceInterfacePackage());
+    putValue("superDomainImplementationPackage", generator.getSuperDomainImplementationPackage());
+    putValue("superPersistenceImplementationPackage", generator.getSuperPersistenceImplementationPackage());
     putValue("remoteInterface", namingRules.getOperationRemoteInterface(generator.getOperationName()));
     putValue("remoteImplementation", namingRules.getOperationRemoteImplementation(generator.getOperationName()));
 

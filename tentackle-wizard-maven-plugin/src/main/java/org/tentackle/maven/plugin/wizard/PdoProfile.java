@@ -32,7 +32,8 @@ import java.util.Map;
 public class PdoProfile extends Profile {
 
   /**
-   * The super PDO interface, null for the default {@code PersistentDomainObject}.
+   * The super PDO interface, null for the default {@code PersistentDomainObject}.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String pdoInterface;

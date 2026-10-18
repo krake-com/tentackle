@@ -4,6 +4,9 @@
 
 package ${operationPackage};
 
+<#if superOperationInterfacePackage != "" && superOperationInterfacePackage != operationPackage>
+import ${superOperationInterfacePackage}.${superOperationInterface};
+</#if>
 <#if domainInterface != "">
 import ${domainPackage}.${domainInterface};
 </#if>

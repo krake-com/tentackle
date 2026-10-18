@@ -314,6 +314,7 @@ public class PdoMojo extends AbstractWizardMojo {
     gen.setTemplateDirectory(new File(getTemplateDir(), Constants.CATEGORY_PDO));
     gen.setStatusDir(getStatusDir());
     gen.setModelSource(modelSource);
+    gen.setValidationImports(PdoGenerator.determineValidationImports(entity));
     gen.setEntityName(entity.getName());
     gen.setShortDescription(entity.getOptions().getComment());
     gen.setInheritanceType(entity.getInheritanceType());

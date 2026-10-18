@@ -59,6 +59,11 @@ public class PdoTemplateModel extends TemplateModel {
     putValue("superPersistenceInterface", generator.getSuperPersistenceInterface());
     putValue("superDomainImplementation", generator.getSuperDomainImplementation());
     putValue("superPersistenceImplementation", generator.getSuperPersistenceImplementation());
+    putValue("superPdoInterfacePackage", generator.getSuperPdoInterfacePackage());
+    putValue("superDomainInterfacePackage", generator.getSuperDomainInterfacePackage());
+    putValue("superPersistenceInterfacePackage", generator.getSuperPersistenceInterfacePackage());
+    putValue("superDomainImplementationPackage", generator.getSuperDomainImplementationPackage());
+    putValue("superPersistenceImplementationPackage", generator.getSuperPersistenceImplementationPackage());
     putValue("remoteInterface", namingRules.getPdoRemoteInterface(generator.getEntityName()));
     putValue("remoteImplementation", namingRules.getPdoRemoteImplementation(generator.getEntityName()));
 
@@ -72,6 +77,7 @@ public class PdoTemplateModel extends TemplateModel {
     putValue("cacheEnabled", generator.isCacheEnabled());
 
     putValue("modelSource", generator.getModelSource());
+    putValue("validationImports", generator.getValidationImports());
   }
 
 }

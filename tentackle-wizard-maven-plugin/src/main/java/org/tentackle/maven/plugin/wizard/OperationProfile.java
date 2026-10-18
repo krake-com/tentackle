@@ -31,7 +31,8 @@ import java.util.Map;
 public class OperationProfile extends Profile {
 
   /**
-   * The super operation interface, null for the default {@code Operation}.
+   * The super operation interface, null for the default {@code Operation}.<br>
+   * The fully qualified name lets the templates import it.
    */
   @Parameter
   private String operationInterface;

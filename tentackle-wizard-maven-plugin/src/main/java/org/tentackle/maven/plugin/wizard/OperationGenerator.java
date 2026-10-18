@@ -25,6 +25,7 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.common.NamingRules;
 import org.tentackle.model.Model;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.validator.Changeable;
@@ -437,7 +438,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superOperationInterface = superOperationName;
     }
     else if (profile.getOperationInterface() != null) {
-      superOperationInterface = profile.getOperationInterface();
+      superOperationInterface = ReflectionHelper.getClassBaseName(profile.getOperationInterface());
     }
     else {
       superOperationInterface = "Operation";
@@ -456,7 +457,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superDomainInterface = NamingRules.getInstance().getOperationDomainInterface(superOperationName);
     }
     else if (profile.getDomainInterface() != null) {
-      superDomainInterface = profile.getDomainInterface();
+      superDomainInterface = ReflectionHelper.getClassBaseName(profile.getDomainInterface());
     }
     else {
       superDomainInterface = "DomainOperation";
@@ -475,7 +476,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superPersistenceInterface = NamingRules.getInstance().getOperationPersistenceInterface(superOperationName);
     }
     else if (profile.getPersistenceInterface() != null) {
-      superPersistenceInterface = profile.getPersistenceInterface();
+      superPersistenceInterface = ReflectionHelper.getClassBaseName(profile.getPersistenceInterface());
     }
     else {
       superPersistenceInterface = "PersistentOperation";
@@ -494,7 +495,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superDomainImplementation = NamingRules.getInstance().getOperationDomainImplementation(superOperationName);
     }
     else if (profile.getDomainImplementation() != null) {
-      superDomainImplementation = profile.getDomainImplementation();
+      superDomainImplementation = ReflectionHelper.getClassBaseName(profile.getDomainImplementation());
     }
     else {
       superDomainImplementation = "AbstractDomainOperation";
@@ -513,12 +514,62 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       superPersistenceImplementation = NamingRules.getInstance().getOperationPersistenceImplementation(superOperationName);
     }
     else if (profile.getPersistenceImplementation() != null) {
-      superPersistenceImplementation = profile.getPersistenceImplementation();
+      superPersistenceImplementation = ReflectionHelper.getClassBaseName(profile.getPersistenceImplementation());
     }
     else {
       superPersistenceImplementation = "AbstractPersistentOperation";
     }
     return superPersistenceImplementation;
+  }
+
+  /**
+   * Gets the package of the parent operation interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperOperationInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getOperationInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getDomainInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceInterfacePackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getPersistenceInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainImplementationPackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getDomainImplementation()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceImplementationPackage() {
+    return superOperationName == null ? ReflectionHelper.getPackageName(profile.getPersistenceImplementation()) : "";
   }
 
 }

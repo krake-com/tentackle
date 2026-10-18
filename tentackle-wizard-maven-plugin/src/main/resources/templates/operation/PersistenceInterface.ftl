@@ -4,6 +4,9 @@
 
 package ${persistencePackage};
 
+<#if superPersistenceInterfacePackage != "" && superPersistenceInterfacePackage != persistencePackage>
+import ${superPersistenceInterfacePackage}.${superPersistenceInterface};
+</#if>
 import ${operationPackage}.${operationInterface};
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperation;

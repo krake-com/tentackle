@@ -4,6 +4,9 @@
 
 package ${persistenceImplPackage};
 
+<#if superPersistenceImplementationPackage != "" && superPersistenceImplementationPackage != persistenceImplPackage>
+import ${superPersistenceImplementationPackage}.${superPersistenceImplementation};
+</#if>
 import ${pdoPackage}.${pdoInterface};
 <#if persistencePackage != persistenceImplPackage>
 import ${persistencePackage}.${persistenceInterface};

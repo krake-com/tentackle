@@ -25,10 +25,13 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.common.NamingRules;
 import org.tentackle.common.Settings;
+import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.Relation;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.scope.InteractiveScope;
@@ -42,12 +45,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Generator for the PDO files.<br>
  * Used by the interactive PDO wizard and the batch mode of the {@code pdo} goal.
  */
 public class PdoGenerator extends AbstractValidateableGenerator {
+
+  private static final String VALIDATOR_PACKAGE = "org.tentackle.validate.validator";
 
   private File statusDir;
   private PdoProfile profile;
@@ -65,6 +72,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   private boolean remoteEnabled;
   private boolean cacheEnabled;
   private String modelSource;
+  private String validationImports;
 
 
   /**
@@ -644,6 +652,78 @@ public class PdoGenerator extends AbstractValidateableGenerator {
     return modelSource;
   }
 
+  /**
+   * Sets the import statements of the validation annotations in batch mode.
+   *
+   * @param validationImports the import statements, one per line, null if none
+   * @see #determineValidationImports(Entity)
+   */
+  public void setValidationImports(String validationImports) {
+    this.validationImports = validationImports;
+  }
+
+  /**
+   * Gets the import statements of the validation annotations in batch mode.
+   *
+   * @return the import statements, one per line, null if none
+   */
+  public String getValidationImports() {
+    return validationImports;
+  }
+
+  /**
+   * Determines the import statements for the validation annotations of an entity.<br>
+   * The wurblets generate the annotations of the entity's own attributes and relations into
+   * the persistence interface, but cannot add the imports. Only annotations given by their simple
+   * name and provided by Tentackle's built-in validators in {@code org.tentackle.validate.validator}
+   * are imported. Fully qualified annotations need no import, and application-specific ones are left
+   * to the developer.
+   *
+   * @param entity the entity
+   * @return the import statements, one per line, null if none
+   */
+  public static String determineValidationImports(Entity entity) {
+    Set<String> names = new TreeSet<>();
+    for (Attribute attribute : entity.getAttributes()) {
+      addAnnotationNames(names, attribute.getOptions().getAnnotations());
+    }
+    for (Relation relation : entity.getRelations()) {
+      addAnnotationNames(names, relation.getAnnotations());
+    }
+    StringBuilder buf = new StringBuilder();
+    for (String name : names) {
+      String className = VALIDATOR_PACKAGE + "." + name;
+      try {
+        if (Class.forName(className, false, PdoGenerator.class.getClassLoader()).isAnnotation()) {
+          buf.append("import ").append(className).append(";\n");
+        }
+      }
+      catch (ClassNotFoundException e) {
+        // not a built-in validator
+      }
+    }
+    return buf.isEmpty() ? null : buf.toString();
+  }
+
+  private static void addAnnotationNames(Set<String> names, List<String> annotations) {
+    if (annotations != null) {
+      for (String annotation : annotations) {
+        String name = annotation.trim();
+        if (name.startsWith("@")) {
+          name = name.substring(1);
+        }
+        int ndx = name.indexOf('(');
+        if (ndx >= 0) {
+          name = name.substring(0, ndx);
+        }
+        name = name.trim();
+        if (!name.isEmpty() && name.indexOf('.') < 0) {
+          names.add(name);
+        }
+      }
+    }
+  }
+
 
   /**
    * Gets the name of the parent PDO interface.
@@ -656,7 +736,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPdoInterface = superEntity.getName();
     }
     else if (profile.getPdoInterface() != null) {
-      superPdoInterface = profile.getPdoInterface();
+      superPdoInterface = ReflectionHelper.getClassBaseName(profile.getPdoInterface());
     }
     else {
       superPdoInterface = "PersistentDomainObject";
@@ -675,7 +755,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superDomainInterface = NamingRules.getInstance().getPdoDomainInterface(superEntity.getName());
     }
     else if (profile.getDomainInterface() != null) {
-      superDomainInterface = profile.getDomainInterface();
+      superDomainInterface = ReflectionHelper.getClassBaseName(profile.getDomainInterface());
     }
     else {
       superDomainInterface = "DomainObject";
@@ -694,7 +774,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPersistenceInterface = NamingRules.getInstance().getPdoPersistenceInterface(superEntity.getName());
     }
     else if (profile.getPersistenceInterface() != null) {
-      superPersistenceInterface = profile.getPersistenceInterface();
+      superPersistenceInterface = ReflectionHelper.getClassBaseName(profile.getPersistenceInterface());
     }
     else {
       superPersistenceInterface = "PersistentObject";
@@ -713,7 +793,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superDomainImplementation = NamingRules.getInstance().getPdoDomainImplementation(superEntity.getName());
     }
     else if (profile.getDomainImplementation() != null) {
-      superDomainImplementation = profile.getDomainImplementation();
+      superDomainImplementation = ReflectionHelper.getClassBaseName(profile.getDomainImplementation());
     }
     else {
       superDomainImplementation = "AbstractDomainObject";
@@ -732,12 +812,62 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       superPersistenceImplementation = NamingRules.getInstance().getPdoPersistenceImplementation(superEntity.getName());
     }
     else if (profile.getPersistenceImplementation() != null) {
-      superPersistenceImplementation = profile.getPersistenceImplementation();
+      superPersistenceImplementation = ReflectionHelper.getClassBaseName(profile.getPersistenceImplementation());
     }
     else {
       superPersistenceImplementation = "AbstractPersistentObject";
     }
     return superPersistenceImplementation;
+  }
+
+  /**
+   * Gets the package of the parent PDO interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPdoInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPdoInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getDomainInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence interface.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceInterfacePackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPersistenceInterface()) : "";
+  }
+
+  /**
+   * Gets the package of the parent domain class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperDomainImplementationPackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getDomainImplementation()) : "";
+  }
+
+  /**
+   * Gets the package of the parent persistence class.<br>
+   * Only known if the profile configures it by its fully qualified name.
+   *
+   * @return the package name, the empty string if unknown or no import is necessary
+   */
+  public String getSuperPersistenceImplementationPackage() {
+    return superEntity == null ? ReflectionHelper.getPackageName(profile.getPersistenceImplementation()) : "";
   }
 
 }
