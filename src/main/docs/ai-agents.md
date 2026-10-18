@@ -227,7 +227,7 @@ Customer:
  delete = restrict
 ```
 
-Two things make this work in an agent's hands:
+Three things make this work in an agent's hands:
 
 - **The class id must be free.** Confirm it with `model_list_entities` first — a duplicate class id is
   the single most common mistake. The goal rejects a class id already used in the project model, but
@@ -235,6 +235,9 @@ Two things make this work in an agent's hands:
 - **Validate before generating.** Run each candidate through `model_validate` on the MCP server. The
   parse and consistency errors it reports in under a second are the ones that would otherwise surface
   as a `WurbelTerminationException` after a full reactor build.
+- **Add the bundle keys afterwards.** The goal does not touch resource files: each new entity needs
+  its `@Singular`/`@Plural` keys in the PDO bundle, or the project's tests fail — see
+  [What Is Left to Do](../../../tentackle-wizard-maven-plugin/src/main/docs/tentackle-wizard-maven-plugin.md#what-is-left-to-do).
 
 ### Profile Selection
 

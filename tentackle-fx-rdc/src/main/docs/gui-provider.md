@@ -90,10 +90,10 @@ ships.
 
 The annotation has two optional elements:
 
-| Element    | Default | Meaning                                                                                                                             |
-|------------|---------|-------------------------------------------------------------------------------------------------------------------------------------|
-| `noBundle` | `false` | Declares that the provider ships **no resource bundle** (see [Internationalization](#internationalization)); avoids warnings in the i18n build goals. |
-| `test`     | `true`  | Whether the provider participates in the generic [GuiProvider unit test](#testing).                                                 |
+| Element    | Default | Meaning                                                                                                     |
+|------------|---------|-------------------------------------------------------------------------------------------------------------|
+| `noBundle` | `false` | Declares that the provider ships **no resource bundle** (see [Internationalization](#internationalization)) |
+| `test`     | `true`  | Whether the provider participates in the generic [GuiProvider unit test](#testing).                         |
 
 At compile time the
 [`GuiProviderServiceAnnotationProcessor`](../java/org/tentackle/fx/rdc/apt/GuiProviderServiceAnnotationProcessor.java)
@@ -106,15 +106,15 @@ the application even runs.
 
 The interface groups into seven responsibilities:
 
-| Concern              | Methods                                                                                                                                                | Consumed by                                       |
-|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| **Appearance**       | `createGraphic()`, `getBundle()`, `isBundleProvided()`                                                                                                 | tree/table cells, editors, i18n                     |
-| **Editing**          | `isEditorAvailable()`, `isEditAllowed()`, `isViewAllowed()`, `createEditor()`                                                                          | `PdoCrud`, context-menu *edit*/*view* items         |
-| **Searching**        | `isFinderAvailable()`, `createFinder()`                                                                                                                | `PdoSearch`                                         |
-| **Tables**           | `createTableConfiguration()` (inherited), `createTableView()`                                                                                          | search-result tables, `Rdc` table helpers           |
-| **Trees**            | `getTreeText(parent)`, `getToolTipText(parent)`, `createTreeItem()`, `getTreeCellFactory()`, `providesTreeChildObjects()`, `getTreeChildObjects(parent)` | `PdoTreeItem`, `PdoTreeCell`, search-result trees  |
-| **Navigation hooks** | `getTreeRoot()`, `providesTreeParentObjects()`, `getTreeParentObjects(parent)`, `getTreeExpandMaxDepth()`, `stopTreeExpansion()` | application-specific navigable object trees only |
-| **Drag & drop**      | `createDragboard(node)`, `isDragAccepted(event)`, `dropDragboard(dragboard)`                                                                           | tables, trees, PDO-aware components                 |
+| Concern              | Methods                                                                                                                                                  | Consumed by                                       |
+|----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------|
+| **Appearance**       | `createGraphic()`, `getBundle()`, `isBundleProvided()`                                                                                                   | tree/table cells, editors, i18n                   |
+| **Editing**          | `isEditorAvailable()`, `isEditAllowed()`, `isViewAllowed()`, `createEditor()`                                                                            | `PdoCrud`, context-menu *edit*/*view* items       |
+| **Searching**        | `isFinderAvailable()`, `createFinder()`                                                                                                                  | `PdoSearch`                                       |
+| **Tables**           | `createTableConfiguration()` (inherited), `createTableView()`                                                                                            | search-result tables, `Rdc` table helpers         |
+| **Trees**            | `getTreeText(parent)`, `getToolTipText(parent)`, `createTreeItem()`, `getTreeCellFactory()`, `providesTreeChildObjects()`, `getTreeChildObjects(parent)` | `PdoTreeItem`, `PdoTreeCell`, search-result trees |
+| **Navigation hooks** | `getTreeRoot()`, `providesTreeParentObjects()`, `getTreeParentObjects(parent)`, `getTreeExpandMaxDepth()`, `stopTreeExpansion()`                         | application-specific navigable object trees only  |
+| **Drag & drop**      | `createDragboard(node)`, `isDragAccepted(event)`, `dropDragboard(dragboard)`                                                                             | tables, trees, PDO-aware components               |
 
 The tree methods take the *parent* PDO as an argument because the same entity
 may render differently depending on where it hangs in a tree — an invoice
@@ -134,28 +134,28 @@ same providers.
 implements every method of the contract and is designed as an adapter: override
 selectively, call `super` for the rest. What the defaults do:
 
-| Method                                     | Default behavior                                                                                                                                         |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `createGraphic()`                          | The generic `"object"` icon via `Fx.createGraphic`.                                                                                                       |
-| `isBundleProvided()` / `getBundle()`       | Loads the [provider bundle](#level-2-the-provider-bundle) named after the provider class via `BundleFactory`; auto-detects its presence (see below).      |
-| `isEditorAvailable()`                      | `false` — an entity opts in to editing.                                                                                                                   |
-| `isEditAllowed()` / `isViewAllowed()`      | `isEditorAvailable() && pdo.isEditAllowed()` (resp. `isViewAllowed()`) — combines UI capability with the PDO's **domain and security rules**.             |
-| `createEditor()`                           | A generated [`DefaultPdoEditor`](#the-default-editor) (throws if `isEditorAvailable()` is `false`).                                                       |
-| `isFinderAvailable()`                      | `false` — an entity opts in to searching.                                                                                                                 |
-| `createFinder()`                           | The [`DefaultPdoFinder`](#the-default-finder) (throws if `isFinderAvailable()` is `false`).                                                               |
-| `createTableConfiguration()`               | [Generated from the PDO model via reflection](#table-configuration-and-table-view).                                                                       |
-| `createTableView()`                        | Creates, binds and configures an `FxTableView` from the table configuration.                                                                              |
-| `createDragboard(node)`                    | Every PDO **is** a drag source: puts the PDO's `IdentifiableKey` on the dragboard via `RdcUtilities`.                                                     |
-| `isDragAccepted(event)`                    | `false` — a PDO does not accept drops unless it says so.                                                                                                  |
-| `dropDragboard(dragboard)`                 | Extracts the dropped PDOs from the dragboard and calls `dropPdo(pdo)` for each — override `dropPdo` to implement the drop.                                |
-| `getTreeRoot()`                            | The PDO itself.                                                                                                                                            |
-| `getTreeText(parent)`                      | `pdo.toString()`.                                                                                                                                          |
-| `getToolTipText(parent)`                   | The PDO's long text if it implements `ShortLongText`, else the tree text.                                                                                 |
-| `providesTreeChildObjects()` / `getTreeChildObjects(parent)` | `false` / empty — leaf node.                                                                                                              |
-| `providesTreeParentObjects()` / `getTreeParentObjects(parent)` | `false` / empty.                                                                                                                        |
-| `getTreeExpandMaxDepth()` / `stopTreeExpansion()` | `0` (no limit) / `false`.                                                                                                                          |
-| `createTreeItem()` / `getTreeCellFactory()` | The standard lazily-expanding `PdoTreeItem` / `PdoTreeCell` via `Rdc`.                                                                                    |
-| `dropPdo(pdo)`                             | Throws an `RdcRuntimeException` — override it together with `isDragAccepted(event)`.                                                                      |
+| Method                                                         | Default behavior                                                                                                                                                                                                                                                 |
+|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `createGraphic()`                                              | The generic `"object"` icon via `Fx.createGraphic`.                                                                                                                                                                                                              |
+| `isBundleProvided()` / `getBundle()`                           | Loads the [provider bundle](#level-2-the-provider-bundle) named after the provider class via `BundleFactory`. `isBundleProvided()` is `!noBundle` of the `@GuiProviderService` annotation; only a provider without the annotation detects the bundle's presence. |
+| `isEditorAvailable()`                                          | `false` — an entity opts in to editing.                                                                                                                                                                                                                          |
+| `isEditAllowed()` / `isViewAllowed()`                          | `isEditorAvailable() && pdo.isEditAllowed()` (resp. `isViewAllowed()`) — combines UI capability with the PDO's **domain and security rules**.                                                                                                                    |
+| `createEditor()`                                               | A generated [`DefaultPdoEditor`](#the-default-editor) (throws if `isEditorAvailable()` is `false`).                                                                                                                                                              |
+| `isFinderAvailable()`                                          | `false` — an entity opts in to searching.                                                                                                                                                                                                                        |
+| `createFinder()`                                               | The [`DefaultPdoFinder`](#the-default-finder) (throws if `isFinderAvailable()` is `false`).                                                                                                                                                                      |
+| `createTableConfiguration()`                                   | [Generated from the PDO model via reflection](#table-configuration-and-table-view).                                                                                                                                                                              |
+| `createTableView()`                                            | Creates, binds and configures an `FxTableView` from the table configuration.                                                                                                                                                                                     |
+| `createDragboard(node)`                                        | Every PDO **is** a drag source: puts the PDO's `IdentifiableKey` on the dragboard via `RdcUtilities`.                                                                                                                                                            |
+| `isDragAccepted(event)`                                        | `false` — a PDO does not accept drops unless it says so.                                                                                                                                                                                                         |
+| `dropDragboard(dragboard)`                                     | Extracts the dropped PDOs from the dragboard and calls `dropPdo(pdo)` for each — override `dropPdo` to implement the drop.                                                                                                                                       |
+| `getTreeRoot()`                                                | The PDO itself.                                                                                                                                                                                                                                                  |
+| `getTreeText(parent)`                                          | `pdo.toString()`.                                                                                                                                                                                                                                                |
+| `getToolTipText(parent)`                                       | The PDO's long text if it implements `ShortLongText`, else the tree text.                                                                                                                                                                                        |
+| `providesTreeChildObjects()` / `getTreeChildObjects(parent)`   | `false` / empty — leaf node.                                                                                                                                                                                                                                     |
+| `providesTreeParentObjects()` / `getTreeParentObjects(parent)` | `false` / empty.                                                                                                                                                                                                                                                 |
+| `getTreeExpandMaxDepth()` / `stopTreeExpansion()`              | `0` (no limit) / `false`.                                                                                                                                                                                                                                        |
+| `createTreeItem()` / `getTreeCellFactory()`                    | The standard lazily-expanding `PdoTreeItem` / `PdoTreeCell` via `Rdc`.                                                                                                                                                                                           |
+| `dropPdo(pdo)`                                                 | Throws an `RdcRuntimeException` — override it together with `isDragAccepted(event)`.                                                                                                                                                                             |
 
 Note the division of labor in the editing guards: `isEditorAvailable()` states
 whether an editor *exists* for the entity, while `isEditAllowed()` and
@@ -228,14 +228,14 @@ The generated form is a two-column `GridPane` (right-aligned label, control),
 one row per bindable model attribute, where the control type is chosen from
 the attribute's type:
 
-| Attribute type                                             | Control                                          |
-|------------------------------------------------------------|----------------------------------------------------|
-| `Boolean` / `boolean`                                      | `CheckBox`                                        |
-| enum                                                        | `ChoiceBox`                                       |
-| PDO relation, related entity has a **preloading cache**     | `ComboBox` (populated from the cache)             |
-| PDO relation, no preloading cache                           | `TextField`                                       |
-| any other type, model option `LINES=n`                      | `TextArea`                                        |
-| any other type                                              | `TextField`                                       |
+| Attribute type                                          | Control                               |
+|---------------------------------------------------------|---------------------------------------|
+| `Boolean` / `boolean`                                   | `CheckBox`                            |
+| enum                                                    | `ChoiceBox`                           |
+| PDO relation, related entity has a **preloading cache** | `ComboBox` (populated from the cache) |
+| PDO relation, no preloading cache                       | `TextField`                           |
+| any other type, model option `LINES=n`                  | `TextArea`                            |
+| any other type                                          | `TextField`                           |
 
 Field widths honor the model: an explicit `COLS=n` option wins, otherwise text
 fields size themselves to the attribute's maximum column count. Every control
@@ -318,9 +318,11 @@ default editor labels its fields with the **attribute comments** from the model
 The UI is fully functional but single-language — whatever language the model
 is written in.
 
-A provider that intentionally stays at this level declares
-`@GuiProviderService(value = User.class, noBundle = true)` so the i18n build
-goals do not warn about the missing bundle.
+A provider that intentionally stays at this level **must** declare
+`@GuiProviderService(value = User.class, noBundle = true)`. Without it, the
+provider claims a bundle (see the `noBundle` element above), and the first text
+lookup — the table columns, at the latest — fails with a `MissingResourceException`.
+The flag also keeps the i18n build goals from warning about the missing bundle.
 
 ### Level 2: the provider bundle
 
