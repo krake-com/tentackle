@@ -38,12 +38,17 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelManager;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
+import org.tentackle.model.SourceInfo;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.DataType;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,6 +63,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Extended {@link AbstractJavaWurblet} providing basic functionality for the persistent object model.
@@ -84,7 +90,10 @@ public class ModelWurblet extends AbstractJavaWurblet {
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile("\\s*([\\w\\.]+)\\.class");  // only 1-line annos for now
   private static final Pattern IMPORT_PATTERN = Pattern.compile("^\\s*import\\s+([\\w\\.]+)\\s*;");
 
-  private static final Map<String, String> PACKAGE_CACHE = new ConcurrentHashMap<>();
+  private static final Pattern PACKAGE_PATTERN = Pattern.compile("^\\s*package\\s+([\\w\\.]+)\\s*;");
+
+  private static final Map<String, String> PACKAGE_CACHE = new ConcurrentHashMap<>();         // <source>:<class> -> package
+  private static final Map<String, String> ENTITY_PACKAGE_CACHE = new ConcurrentHashMap<>();  // source file -> package
 
   /**
    * The name of the model directory.<br>
@@ -1103,23 +1112,83 @@ public class ModelWurblet extends AbstractJavaWurblet {
    */
   public String determinePackageName(String className) throws WurbelException {
     final String packageName = getPackageName();    // default is the same package
-    return PACKAGE_CACHE.computeIfAbsent(className, _ -> {
-      String sourceText = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_FILECONTENTS);
-      if (sourceText != null) {
-        String endStr = '.' + className;
-        // scan imports to determine the package
-        for (String line : sourceText.lines().toList()) {
-          Matcher matcher = IMPORT_PATTERN.matcher(line);
-          if (matcher.find()) {
-            String fqcn = matcher.group(1);
-            if (fqcn.endsWith(endStr)) {
-              return fqcn.substring(0, fqcn.length() - endStr.length());
-            }
+    // the result depends on the imports of the current source, hence the key includes the source's class
+    String key = packageName + '.' + getClassName() + ':' + className;
+    return PACKAGE_CACHE.computeIfAbsent(key, _ -> {
+      String importedPackageName = findImportedPackageName(className);
+      return importedPackageName != null ? importedPackageName : packageName;
+    });
+  }
+
+  /**
+   * Finds the package of a class imported by the current source.<br>
+   * Scans the import statements.
+   *
+   * @param className the simple classname
+   * @return the package name, null if the class is not imported
+   */
+  public String findImportedPackageName(String className) {
+    String sourceText = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_FILECONTENTS);
+    if (sourceText != null) {
+      String endStr = '.' + className;
+      for (String line : sourceText.lines().toList()) {
+        Matcher matcher = IMPORT_PATTERN.matcher(line);
+        if (matcher.find()) {
+          String fqcn = matcher.group(1);
+          if (fqcn.endsWith(endStr)) {
+            return fqcn.substring(0, fqcn.length() - endStr.length());
           }
         }
       }
-      return packageName;
+    }
+    return null;
+  }
+
+  /**
+   * Determines the package of an entity's PDO interface.<br>
+   * The package is read from the package declaration of the source file the entity's model was loaded from.
+   *
+   * @param entity the entity
+   * @return the package name, null if unknown
+   */
+  public String determinePdoPackageName(Entity entity) {
+    SourceInfo sourceInfo = entity.getSourceInfo();
+    String fileName = sourceInfo == null ? null : sourceInfo.getFileName();
+    if (fileName == null) {
+      return null;
+    }
+    return ENTITY_PACKAGE_CACHE.computeIfAbsent(fileName, _ -> {
+      try (Stream<String> lines = Files.lines(Path.of(fileName))) {
+        return lines.map(PACKAGE_PATTERN::matcher)
+                    .filter(Matcher::find)
+                    .map(matcher -> matcher.group(1))
+                    .findFirst()
+                    .orElse(null);
+      }
+      catch (IOException | UncheckedIOException | InvalidPathException e) {
+        return null;    // no source file available
+      }
     });
+  }
+
+  /**
+   * Gets the name of an entity's PDO interface as used in the current source.<br>
+   * The simple name is returned if the interface is imported or belongs to the same package,
+   * otherwise the fully qualified name, if its package is known.
+   *
+   * @param entity the entity
+   * @return the class name
+   * @throws WurbelException if the package of the current source could not be determined
+   */
+  public String getPdoClassNameInSource(Entity entity) throws WurbelException {
+    String name = entity.getName();
+    if (findImportedPackageName(name) == null) {
+      String pdoPackageName = determinePdoPackageName(entity);
+      if (pdoPackageName != null && !pdoPackageName.equals(getPackageName())) {
+        name = pdoPackageName + '.' + name;
+      }
+    }
+    return name;
   }
 
   /**

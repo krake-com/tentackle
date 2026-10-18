@@ -105,7 +105,7 @@ For more options, see {\@link DbModelWurblet}.
         if (!listenNames.isEmpty()) {
           listenNames.append(", ");
         }
-        listenNames.append(leaf.getName()).append(".class");
+        listenNames.append(getPdoClassNameInSource(leaf)).append(".class");   // leaves are not necessarily imported
       }
     }
     else {
