@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -168,10 +169,20 @@ public class UdpRelay implements Closeable {
   }
 
   private static SocketAddress receive(DatagramChannel channel, ByteBuffer buffer) throws IOException {
-    buffer.clear();
-    SocketAddress source = channel.receive(buffer);
-    buffer.flip();
-    return source;
+    while (true) {
+      buffer.clear();
+      try {
+        SocketAddress source = channel.receive(buffer);
+        buffer.flip();
+        return source;
+      }
+      catch (PortUnreachableException e) {
+        // an earlier datagram was relayed to a client port that is closed by now, e.g. the one of a path
+        // that failed validation, and bounced off an ICMP "port unreachable". On Windows this surfaces on
+        // the next receive(), see QuicheEndpoint. A router does not care, and this relay must not die of it,
+        // or every flow would stall for good.
+      }
+    }
   }
 
 }
