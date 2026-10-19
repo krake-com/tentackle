@@ -71,10 +71,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * follows a migration by itself.
  * <p>
  * <strong>Leases:</strong> a client that knows when the connection carries a call in flight says so with
- * {@link #acquire()} and {@link #release()}. A stalled connection that cannot migrate any further, because
- * the server has no spare connection ID left, is given up on at once if nothing holds a lease on it, so
- * that its user can open a new one from a fresh source port instead of waiting for the idle timeout. One
- * that is leased stays where it is, so that the calls in flight survive if the path recovers.
+ * {@link #acquire()} and {@link #release()}. A connection that cannot migrate any further, because a
+ * migration used up the server's last spare connection ID, is given up on as soon as nothing holds a lease
+ * on it, i.e., right after that migration or once the last lease is released, so that its user can open a
+ * new one from a fresh source port, with a full set of connection IDs, before the next stall. There is no
+ * point in waiting for that stall: the path has proven to stall repeatedly, and moving to a fresh source
+ * port to get around it has worked every time. A connection that is leased stays where it is, so that the
+ * calls in flight finish, even on a stalled path if it recovers.
  */
 public class QuicheConnection implements AutoCloseable {
 
@@ -142,6 +145,7 @@ public class QuicheConnection implements AutoCloseable {
   private long lastAckedBytes;                      // the acknowledged bytes at the last stall check, guarded by the lock
   private long ptoBaseline;                         // the probe timeouts at the last progress, guarded by the lock
   private boolean migrationRefusedLogged;           // guarded by the lock
+  private volatile boolean migrationExhausted;      // true once a migration used up the peer's spare connection IDs
   private final AtomicInteger leases;               // the leases held, RETIRED once given up on
 
   /**
@@ -281,11 +285,23 @@ public class QuicheConnection implements AutoCloseable {
   }
 
   /**
+   * Tells whether a migration used up the peer's spare connection IDs, so that the connection cannot
+   * migrate any further.
+   * <p>
+   * Such a connection is given up on as soon as nobody holds a lease on it, see {@link #acquire()}.
+   *
+   * @return true if no further migration is possible
+   */
+  public boolean isMigrationExhausted() {
+    return migrationExhausted;
+  }
+
+  /**
    * Takes a lease on the connection, telling it that a call is in flight.
    * <p>
    * A leased connection is never given up on merely because it cannot migrate any further, see
-   * {@link #detectStall()}. Every successful {@code acquire()} must be followed by a {@link #release()}.
-   * Never blocks.
+   * {@link #isMigrationExhausted()}. Every successful {@code acquire()} must be followed by a
+   * {@link #release()}. Never blocks.
    *
    * @return true if leased, false if the connection has been given up on and must not be used anymore
    */
@@ -303,7 +319,9 @@ public class QuicheConnection implements AutoCloseable {
   /**
    * Releases a lease taken by {@link #acquire()}.
    * <p>
-   * Never blocks.
+   * Releasing the last lease on a connection that cannot migrate any further (see
+   * {@link #isMigrationExhausted()}) gives it up, so that it is replaced before its path stalls again.
+   * Never blocks, except for taking the lock briefly to close the connection in that case.
    */
   public void release() {
     int count;
@@ -313,6 +331,15 @@ public class QuicheConnection implements AutoCloseable {
         return;   // given up on meanwhile, or released more often than acquired
       }
     } while (!leases.compareAndSet(count, count - 1));
+    // The event loop sets migrationExhausted before it tries to retire the connection, and this thread
+    // decrements the leases before it reads the flag: at least one of both sees the other, and only one of
+    // them wins the race to RETIRED.
+    if (count == 1 && migrationExhausted && leases.compareAndSet(0, RETIRED)) {
+      String reason = noSpareIdsLeft();
+      LOGGER.info("{0}: {1} -> closing the connection after the last call", this, reason);
+      fail(reason);
+      closeGracefully(0, "no spare connection ID left");
+    }
   }
 
   /**
@@ -901,7 +928,9 @@ public class QuicheConnection implements AutoCloseable {
    * <p>
    * If the server has no spare connection ID left to migrate with, a connection nobody holds a lease on
    * (see {@link #acquire()}) is closed, so that it can be replaced right away. A leased one stays, and is
-   * checked again after another {@code migrate} probe timeouts.
+   * checked again after another {@code migrate} probe timeouts. Usually, a connection whose last migration
+   * used up the spare connection IDs has been closed already, see {@link #pathValidated(PathEvent)}; this
+   * covers a server that never handed out any.
    */
   private void detectStall() {
     int threshold = migrationProbeTimeouts;
@@ -932,19 +961,7 @@ public class QuicheConnection implements AutoCloseable {
         // has none left to spare. A connection nobody uses is given up on, so that it is replaced by one
         // from a fresh source port instead of waiting for the idle timeout. One with calls in flight
         // stays where it is: they survive if the path recovers, and the idle timeout ends it otherwise.
-        if (leases.compareAndSet(0, RETIRED)) {
-          LOGGER.info("{0}: the path is stalled and the peer has no spare connection ID left after {1} " +
-                      "migrations -> closing the idle connection", this, Integer.toString(migrationCount));
-          fail("the path stalled, and no spare connection ID was left to migrate with");
-          try {
-            // best effort: the stalled path will most likely lose it
-            conn.closeConnection(true, 0, "stalled");
-          }
-          catch (QuicheException e) {
-            LOGGER.fine("{0}: cannot close: {1}", this, e.getMessage());
-          }
-        }
-        else if (!migrationRefusedLogged) {
+        if (!retireIfIdle("the path is stalled, and " + noSpareIdsLeft()) && !migrationRefusedLogged) {
           migrationRefusedLogged = true;
           LOGGER.warning(this + ": the path is stalled, but the peer has no spare connection ID left to " +
                          "migrate with after " + migrationCount + " migrations, staying for the calls in flight");
@@ -1022,6 +1039,50 @@ public class QuicheConnection implements AutoCloseable {
     endpoint.closeChannel(oldLocal);   // a no-op for the endpoint's own socket
     LOGGER.info("{0}: migrated from local port {1} to {2}",
                 this, Integer.toString(oldLocal.getPort()), Integer.toString(newLocal.getPort()));
+    if (conn.availableDcids() == 0) {
+      // The path stalled often enough to use up the server's spare connection IDs, and moving to a fresh
+      // source port worked every time. Rather than waiting for the next stall, which this connection could
+      // not get around anymore, it is replaced by a new one with a full set of connection IDs as soon as
+      // no call is in flight anymore: right now, or when the last lease is released.
+      migrationExhausted = true;
+      if (!retireIfIdle(noSpareIdsLeft())) {
+        LOGGER.info("{0}: {1}, closing the connection after the calls in flight", this, noSpareIdsLeft());
+      }
+    }
+  }
+
+  /**
+   * Gives up on the connection if nobody holds a lease on it.
+   * <p>
+   * The connection is closed, so that its user replaces it with a new one from a fresh source port. Must be
+   * called while holding {@link #getLock()}, with {@code conn} not freed.
+   *
+   * @param reason why the connection is given up on
+   * @return true if given up on, false if it is leased
+   */
+  private boolean retireIfIdle(String reason) {
+    if (!leases.compareAndSet(0, RETIRED)) {
+      return false;
+    }
+    LOGGER.info("{0}: {1} -> closing the idle connection", this, reason);
+    fail(reason);
+    try {
+      // best effort: a stalled path will most likely lose it
+      conn.closeConnection(true, 0, "no spare connection ID left");
+    }
+    catch (QuicheException e) {
+      LOGGER.fine("{0}: cannot close: {1}", this, e.getMessage());
+    }
+    return true;
+  }
+
+  /**
+   * Describes why the connection cannot migrate any further.
+   *
+   * @return the description
+   */
+  private String noSpareIdsLeft() {
+    return "the peer has no spare connection ID left after " + migrationCount + " migrations";
   }
 
   /**

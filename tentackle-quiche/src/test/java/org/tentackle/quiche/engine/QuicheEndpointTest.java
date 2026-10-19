@@ -395,12 +395,12 @@ public class QuicheEndpointTest {
   }
 
   /**
-   * Once the server has no spare connection ID left, a stalled connection nobody holds a lease on is
-   * given up on at once, long before its idle timeout, so that it can be replaced.
+   * Once a migration used up the server's spare connection IDs, a connection nobody holds a lease on is
+   * given up on at once, without waiting for its path to stall again, so that it can be replaced.
    */
   @Test(timeOut = 60000)
   public void testIdleConnectionIsGivenUpWhenNoConnectionIdIsLeft() throws Exception {
-    Reporter.log("a stalled connection that cannot migrate any further is closed if it is not leased", true);
+    Reporter.log("a connection that cannot migrate any further is closed right away if it is not leased", true);
     startServer(this::echo);
     try (UdpRelay relay = new UdpRelay(serverAddress())) {
       clientEndpoint = new QuicheEndpoint(loopback(0));
@@ -409,9 +409,11 @@ public class QuicheEndpointTest {
       connection.setMigrationProbeTimeouts(2);
       assertEquals(roundTrip(connection, "before"), "before");
 
+      int blackholes = 0;
       long stalledNanos = 0;
       for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !connection.isFailed(); i++) {
         relay.blackhole(connection.getLocalAddress().getPort());
+        blackholes = i;
         stalledNanos = System.nanoTime();
         try {
           // blocks until the connection found a way around the black hole or was given up on
@@ -425,7 +427,10 @@ public class QuicheEndpointTest {
       long millis = (System.nanoTime() - stalledNanos) / 1_000_000L;
       assertTrue(connection.isFailed(), "the connection was not given up on");
       assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+      assertTrue(connection.isMigrationExhausted(), "the connection did not run out of connection IDs");
       assertTrue(connection.getMigrationCount() > 0, "the connection never migrated");
+      // each black hole led to a migration, the last one included: no further stall was waited for
+      assertEquals(connection.getMigrationCount(), blackholes, "not given up on right after the last migration");
       assertTrue(millis < 10_000, "given up on after " + millis + " ms only");
       assertFalse(connection.isConnected());
       assertFalse(connection.acquire(), "a connection given up on must not be leased");
@@ -433,12 +438,12 @@ public class QuicheEndpointTest {
   }
 
   /**
-   * A stalled connection that cannot migrate any further stays while it is leased, i.e., while a call is
-   * in flight on it, and is given up on only once the lease has been released.
+   * A connection that cannot migrate any further stays while it is leased, i.e., while a call is in flight
+   * on it, and is given up on as soon as the lease has been released.
    */
   @Test(timeOut = 60000)
   public void testLeasedConnectionStaysWhenNoConnectionIdIsLeft() throws Exception {
-    Reporter.log("a stalled connection that cannot migrate any further stays while it is leased", true);
+    Reporter.log("a connection that cannot migrate any further stays while it is leased", true);
     startServer(this::echo);
     try (UdpRelay relay = new UdpRelay(serverAddress())) {
       clientEndpoint = new QuicheEndpoint(loopback(0));
@@ -465,35 +470,49 @@ public class QuicheEndpointTest {
       });
       handlers.add(reader);
 
-      // Migrate until the connection runs out of connection IDs and stays on the stalled path. Waiting for
-      // the echo gives each new path a measured round trip time before it is black-holed: a path without
-      // one starts from quiche's initial estimate of 333 ms, and the probe timeouts would take seconds.
+      // Migrate until the connection runs out of connection IDs. Waiting for the echo gives each new path a
+      // measured round trip time before it is black-holed: a path without one starts from quiche's initial
+      // estimate of 333 ms, and the probe timeouts would take seconds.
       int written = 0;
-      boolean exhausted = false;
-      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !exhausted; i++) {
+      for (int i = 1; i <= 2 * QuicheTripTransport.ACTIVE_CONNECTION_ID_LIMIT && !connection.isMigrationExhausted(); i++) {
         relay.blackhole(connection.getLocalAddress().getPort());
-        byte[] message = ("after " + i).getBytes(StandardCharsets.UTF_8);
-        out.write(message);
-        out.flush();
-        written += message.length;
-        long deadline = System.nanoTime() + 1_500_000_000L;
-        while (echoed.get() < written && System.nanoTime() < deadline) {
-          Thread.sleep(10);
-        }
-        exhausted = echoed.get() < written;
+        written += awaitEcho(out, echoed, written, "after " + i);
       }
-      assertTrue(exhausted, "the connection never ran out of connection IDs");
+      assertTrue(connection.isMigrationExhausted(), "the connection never ran out of connection IDs");
       assertFalse(connection.isFailed(), "a leased connection must not be given up on: " + connection.getFailure());
       assertTrue(connection.isConnected());
+      // the call in flight continues on the new path
+      awaitEcho(out, echoed, written, "still alive");
 
       connection.release();
-      long deadline = System.nanoTime() + 25_000_000_000L;   // below the idle timeout of 30 seconds
-      while (!connection.isFailed() && System.nanoTime() < deadline) {
-        Thread.sleep(20);
-      }
+      // given up on right away, not after the next stall
       assertTrue(connection.isFailed(), "the connection was not given up on once released");
       assertTrue(connection.getFailure().contains("spare connection ID"), connection.getFailure());
+      assertFalse(connection.isConnected());
+      assertFalse(connection.acquire(), "a connection given up on must not be leased");
     }
+  }
+
+  /**
+   * Writes a message to an echoing stream and waits for its echo.
+   *
+   * @param out the stream's output
+   * @param echoed the number of bytes echoed so far
+   * @param written the number of bytes written so far
+   * @param text the message
+   * @return the number of bytes written
+   */
+  private int awaitEcho(OutputStream out, AtomicInteger echoed, int written, String text) throws Exception {
+    byte[] message = text.getBytes(StandardCharsets.UTF_8);
+    out.write(message);
+    out.flush();
+    int expected = written + message.length;
+    long deadline = System.nanoTime() + 10_000_000_000L;
+    while (echoed.get() < expected && System.nanoTime() < deadline) {
+      Thread.sleep(10);
+    }
+    assertEquals(echoed.get(), expected, "no echo of '" + text + "'");
+    return message.length;
   }
 
   /**

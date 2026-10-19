@@ -76,9 +76,10 @@ import java.util.Set;
  * {@link #restoreMinimumSize(int)}.
  * <p>
  * A lent connection holds a lease on the QUIC connection (see {@link QuicheConnection#acquire()}), since a
- * call is in flight on it. A QUIC connection whose path stalls when it cannot migrate any further is
- * therefore given up on right away if no call is in flight, and replaced with the next {@link #get()},
- * but kept for the calls in flight otherwise.
+ * call is in flight on it. A QUIC connection that cannot migrate any further, because a migration used up
+ * the server's spare connection IDs, is therefore given up on as soon as no call is in flight anymore, and
+ * replaced with the next {@link #get()} by one with a full set of connection IDs, before its path stalls
+ * again.
  */
 public class QuicheTripConnectionPool extends AbstractConnectionPool {
 
