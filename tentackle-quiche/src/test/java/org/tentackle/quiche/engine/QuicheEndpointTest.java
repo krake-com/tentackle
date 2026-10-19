@@ -23,6 +23,7 @@ import org.tentackle.quiche.QuicheTripTransport;
 import org.tentackle.quiche.ffm.QuicheConfig;
 import org.tentackle.quiche.ffm.RecvInfo;
 
+import org.testng.ITestResult;
 import org.testng.Reporter;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -38,8 +39,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -72,7 +74,7 @@ public class QuicheEndpointTest {
   private QuicheEndpoint serverEndpoint;
   private QuicheEndpoint clientEndpoint;
   private QuicheServer server;
-  private final List<Thread> handlers = new ArrayList<>();
+  private final List<Thread> handlers = new CopyOnWriteArrayList<>();    // added to by the server's event loop
 
   @BeforeMethod
   public void setUp() throws Exception {
@@ -81,7 +83,10 @@ public class QuicheEndpointTest {
   }
 
   @AfterMethod
-  public void tearDown() {
+  public void tearDown(ITestResult result) {
+    if (!result.isSuccess()) {
+      dumpThreads();
+    }
     for (Thread handler : handlers) {
       handler.interrupt();
     }
@@ -557,6 +562,35 @@ public class QuicheEndpointTest {
     }
   }
 
+
+  /**
+   * Prints the stacks of the endpoints' event loops, the UDP relay and the stream handlers.
+   * <p>
+   * Taken before the endpoints are closed, so that a failure that cannot be reproduced at will (it has
+   * only ever shown up on a Windows build machine) leaves a trace of what each side was doing: an event
+   * loop parked on a connection's lock, for instance, explains a peer that falls silent until the idle
+   * timeout, whereas one idling in {@code select()} rules that out.
+   */
+  private void dumpThreads() {
+    StringBuilder dump = new StringBuilder("threads at the failure of the test:\n");
+    for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+      String name = entry.getKey().getName();
+      if (name.startsWith("QUIC endpoint") || name.startsWith("UDP relay")) {
+        appendThread(dump, entry.getKey(), entry.getValue());
+      }
+    }
+    for (Thread handler : handlers) {
+      appendThread(dump, handler, handler.getStackTrace());   // virtual, so not among the above
+    }
+    System.err.println(dump);
+  }
+
+  private static void appendThread(StringBuilder dump, Thread thread, StackTraceElement[] stack) {
+    dump.append('"').append(thread.getName()).append("\" ").append(thread.getState()).append('\n');
+    for (StackTraceElement element : stack) {
+      dump.append("\tat ").append(element).append('\n');
+    }
+  }
 
   /**
    * Starts the server endpoint.
