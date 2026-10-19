@@ -90,7 +90,7 @@
     <javac.lint>all,-processing,-this-escape,-module</javac.lint>
     <javac.version>25</javac.version>
 
-    <asm.version>9.11</asm.version>
+    <asm.version>9.11.1</asm.version>
     <atlantafx.version>3.0.0</atlantafx.version>
     <freemarker.version>2.3.35</freemarker.version>
     <groovy.version>6.0.0</groovy.version>
@@ -114,7 +114,7 @@
     <poi.version>5.5.1</poi.version>
     <postgresql.version>42.7.14</postgresql.version>
     <quiche.native.version>0.29.3</quiche.native.version>
-    <slf4j.version>2.0.19</slf4j.version>
+    <slf4j.version>2.0.20</slf4j.version>
     <testng.version>7.12.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
@@ -154,8 +154,8 @@
          tentackle-test-fx-rdc pin the plugin (and its surefire-testng provider) back to the last
          working 3.5.x release until that's fixed upstream - see their poms. -->
     <maven.surefire.plugin.pinned.version>3.5.6</maven.surefire.plugin.pinned.version>
-    <maven.versions.plugin.version>2.22.0</maven.versions.plugin.version>
-    <maven.central-publishing.plugin.version>0.11.0</maven.central-publishing.plugin.version>
+    <maven.versions.plugin.version>2.23.0</maven.versions.plugin.version>
+    <maven.central-publishing.plugin.version>0.12.0</maven.central-publishing.plugin.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
