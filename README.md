@@ -176,6 +176,8 @@ detailed argument — with code on both sides — is in
   design overview: the central ideas and how they depend on each other.
 - 🤝 **[Contributing](https://github.com/krake-com/tentackle/blob/develop/CONTRIBUTING.md)** — how
   to report issues and submit changes.
+- 📝 **[Changelog](https://github.com/krake-com/tentackle/blob/develop/CHANGELOG.md)** — the notable
+  changes of every release since 2.0.0.
 
 and for the impatient Java developer:
 
