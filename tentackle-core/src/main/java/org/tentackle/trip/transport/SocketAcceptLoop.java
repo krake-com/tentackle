@@ -95,6 +95,10 @@ public class SocketAcceptLoop implements Runnable {
           final Socket sock = socket;
           connectionThreadPool.execute(() -> {
             try {
+              if (transport instanceof TcpTransport tcpTransport) {
+                // in the connection's thread: a failure concerns this connection only, not the accept loop
+                tcpTransport.configureSocket(sock);
+              }
               SocketAddress remoteSocketAddress = sock.getRemoteSocketAddress();
               String connectionName = remoteSocketAddress != null ? remoteSocketAddress.toString() : "0.0.0.0";
               transport.createConnectionHandler(connectionName, sock.getInputStream(), sock.getOutputStream()).run();

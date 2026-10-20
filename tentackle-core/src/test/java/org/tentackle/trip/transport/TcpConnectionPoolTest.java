@@ -123,6 +123,19 @@ public class TcpConnectionPoolTest {
       try (Socket socket = pool.createSocket()) {
         assertTrue(socket.isConnected());
         assertEquals(socket.getPort(), serverSocket.getLocalPort());
+        assertTrue(socket.getTcpNoDelay(), "Nagle's algorithm is not disabled");
+      }
+    }
+  }
+
+  @Test
+  public void keepsNagleIfRequested() throws Exception {
+    try (ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getByName(LOOPBACK))) {
+      TcpTransport transport = new TcpTransport(URI.create("trip://" + LOOPBACK + ":" + serverSocket.getLocalPort() + "?nodelay=0"));
+      TcpConnectionPool pool = createPool(transport);
+
+      try (Socket socket = pool.createSocket()) {
+        assertFalse(socket.getTcpNoDelay(), "Nagle's algorithm is disabled");
       }
     }
   }

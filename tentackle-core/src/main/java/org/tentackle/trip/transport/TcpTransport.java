@@ -41,6 +41,10 @@ import java.net.URI;
  * <p>
  * The server binds to the host and port of the URI. Host {@code 0} binds to all interfaces.
  * The URI query parameter {@code backlog} sets the server socket's backlog (default 50).
+ * <p>
+ * Nagle's algorithm is disabled on both ends ({@code TCP_NODELAY}), unless the URI query parameter
+ * {@code nodelay} is {@code 0}. The serializer hands each message to the socket in one piece anyway,
+ * so Nagle would only hold back the tail of a message until the peer's delayed ACK arrives.
  */
 @TransportService(TcpTransport.PROTOCOL)
 public class TcpTransport extends AbstractTransport {
@@ -155,6 +159,20 @@ public class TcpTransport extends AbstractTransport {
   @Override
   protected Pool<Connection> createClientConnectionPool() {
     return new TcpConnectionPool(this, getClientDictionary());
+  }
+
+  /**
+   * Configures a connected socket, either created by the client or accepted by the server.<br>
+   * The default implementation disables Nagle's algorithm, unless the URI query parameter
+   * {@code nodelay} is {@code 0}.
+   *
+   * @param socket the socket
+   * @throws IOException if configuring the socket failed
+   */
+  protected void configureSocket(Socket socket) throws IOException {
+    if (getUriPars().getOrDefault("nodelay", 1) != 0) {
+      socket.setTcpNoDelay(true);
+    }
   }
 
   /**

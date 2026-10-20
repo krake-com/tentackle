@@ -114,6 +114,7 @@ public class TcpConnectionPool extends AbstractConnectionPool {
       socket = transport.getSocketFactory().createSocket();
       // resolves the host name, which the SSL socket needs for SNI and the endpoint identification
       socket.connect(new InetSocketAddress(uri.getHost(), uri.getPort()), remainingMillis(deadline));
+      transport.configureSocket(socket);
       if (socket instanceof SSLSocket sslSocket) {
         int soTimeout = sslSocket.getSoTimeout();
         sslSocket.setSoTimeout(remainingMillis(deadline));

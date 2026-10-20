@@ -69,6 +69,7 @@ requires Java 11.
   coding in batch mode.
 - Performance and memory improvements in `tentackle-common`, `tentackle-core`, `tentackle-database`,
   TRIP and `I18NText`.
+- added URI parameter `nodelay` to turn off `TCP_NODELAY` which is on by default
 
 ### Fixed
 

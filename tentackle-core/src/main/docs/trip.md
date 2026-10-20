@@ -115,6 +115,7 @@ see [QUIC](../../../../tentackle-quic/src/main/docs/quic.md) and
 | `connecttimeout` | client | `10`    | Seconds to wait for a connection to the server to be established, including the TLS handshake of the SSL transports. Must be > 0. |
 | `idle`           | server | `5`     | Minutes after which an unused thread of the call-handling thread pool terminates.                                                 |
 | `backlog`        | server | `50`    | The listen backlog of the server socket.                                                                                          |
+| `nodelay`        | both   | `1`     | `0` keeps Nagle's algorithm enabled. By default, `TCP_NODELAY` is set on the client's and on the accepted sockets.                |
 | `mincompress`    | both   | `1024`  | Compressing transports only: packets smaller than this many bytes are sent uncompressed.                                          |
 
 Connections are created with the pool locked, by the thread requesting one and by the timeout thread
