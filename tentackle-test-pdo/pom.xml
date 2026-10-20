@@ -291,6 +291,27 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <!--
+        Run the invocation benchmark of PDOs and operations instead of the tests: mvn -Pbenchmark test
+        Tunable with -Dpdo.bench.warmupMillis, -Dpdo.bench.measureMillis and -Dpdo.bench.runs.
+      -->
+      <id>benchmark</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <suiteXmlFiles>
+                <suiteXmlFile>src/test/testng-benchmark.xml</suiteXmlFile>
+              </suiteXmlFiles>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>

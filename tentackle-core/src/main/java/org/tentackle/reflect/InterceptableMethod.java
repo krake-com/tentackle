@@ -18,8 +18,14 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.log.Logger;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * A method wrapper to optionally invoke the interceptors around a delegate's method.
@@ -28,13 +34,18 @@ import java.lang.reflect.Method;
  */
 public class InterceptableMethod {
 
-  // see note below...
-  // private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+  private static final Logger LOGGER = Logger.get(InterceptableMethod.class);
+
+  /**
+   * Whether non-intercepted methods are invoked via method handles instead of reflection.<br>
+   * Defaults to true, set the system property {@code tentackle.reflect.methodHandles} to false to use reflection.
+   */
+  public static final boolean METHOD_HANDLES = Boolean.parseBoolean(System.getProperty("tentackle.reflect.methodHandles", "true"));
 
   private final Method method;                // the original method of the interface
   private final Method delegateMethod;        // the delegate method
   private final Interceptor interceptor;      // the head of interceptors, null if none
-  // private final MethodHandle delegateHandle;  // the delegate method handle
+  private final MethodHandle delegateHandle;  // typed (Object,Object[])Object, null if intercepted or not bindable
 
   /**
    * Creates an interceptable method.
@@ -47,6 +58,46 @@ public class InterceptableMethod {
     this.method = method;
     this.delegateMethod = delegateMethod;
     this.interceptor = interceptor;
+    delegateHandle = METHOD_HANDLES && interceptor == null ? bind(delegateMethod) : null;
+  }
+
+  /**
+   * Binds the delegate method to a method handle.
+   *
+   * @param method the delegate method
+   * @return the handle, null if the method cannot be bound (reflection is used instead)
+   */
+  private static MethodHandle bind(Method method) {
+    if (Modifier.isStatic(method.getModifiers())) {
+      return null;
+    }
+    Module module = InterceptableMethod.class.getModule();
+    Module targetModule = method.getDeclaringClass().getModule();
+    if (!module.canRead(targetModule)) {
+      // MethodHandles.lookup() is caller-sensitive: make the method's module readable by this module
+      module.addReads(targetModule);
+    }
+    try {
+      int paramCount = method.getParameterCount();
+      // invokeExact on a handle avoids the caller-sensitive access check and the argument checks of Method#invoke
+      return MethodHandles.lookup().unreflect(method)
+                          .asType(MethodType.genericMethodType(paramCount + 1))
+                          .asSpreader(Object[].class, paramCount);
+    }
+    catch (IllegalAccessException | RuntimeException e) {
+      // not accessible from here: fall back to reflection
+      LOGGER.fine("cannot bind " + method + ", falling back to reflection", e);
+      return null;
+    }
+  }
+
+  /**
+   * Returns whether the delegate method is invoked via a method handle.
+   *
+   * @return true if method handle, false if reflection or intercepted
+   */
+  public boolean isMethodHandleBound() {
+    return delegateHandle != null;
   }
 
   /**
@@ -86,17 +137,14 @@ public class InterceptableMethod {
    * @throws Throwable if invocation failed, the cause of an {@link InvocationTargetException}
    */
   public Object invoke(Object delegate, Object[] args) throws Throwable {
+    if (delegateHandle != null) {
+      return delegateHandle.invokeExact(delegate, args);
+    }
     try {
       if (interceptor != null) {
         return interceptor.invoke(delegate, delegateMethod, args);
       }
       else {
-        // we stick to old reflection because the new MethodHandles are a lot slower, at least when using invokeWithArguments.
-        // The opposite should be true, since the security is checked only once when creating the method handle,
-        // but in reality it shows a significant performance degradation -- for whatever reason.
-        //
-        //        return delegateHandle.bindTo(delegate).invokeWithArguments(args);
-        //
         return delegateMethod.invoke(delegate, args);
       }
     }
