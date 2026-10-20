@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Default implementation of a trip factory.
@@ -73,6 +74,12 @@ public class DefaultTripFactory implements TripFactory {
   private final Map<Class<?>, TripType<?>> typeMap;       // map of concrete classes to trip types
   private final Map<String, Class<Transport>> transports; // protocol::transport map
 
+  /**
+   * The resolver passed to {@link #typeMap}.<br>
+   * Held in a field, since {@code this::createType} would allocate a new function object per call.
+   */
+  private final Function<Class<?>, TripType<?>> typeCreator;
+
 
   /**
    * Creates the factory.
@@ -81,6 +88,7 @@ public class DefaultTripFactory implements TripFactory {
   public DefaultTripFactory() {
     allOpCodes = List.of(DefaultOpCode.values());
     typeMap = new ConcurrentHashMap<>();
+    typeCreator = this::createType;
     typeClassMapper = ClassMapperFactory.getInstance().create("TripType", TripType.class);
     providerClassMapper = ClassMapperFactory.getInstance().create("TripComponentProvider", TripComponentProvider.class);
     creatorClassMapper = ClassMapperFactory.getInstance().create("TripInstanceCreator", TripInstanceCreator.class);
@@ -141,7 +149,12 @@ public class DefaultTripFactory implements TripFactory {
       // anonymous subclass of an enum constant with a class body -> use the enum class itself
       clazz = (Class<? extends T>) superClass;
     }
-    return (TripType<T>) typeMap.computeIfAbsent(clazz, this::createType);
+    // get() first: on a hit, computeIfAbsent locks the bin unless the key is the bin's first node
+    TripType<?> type = typeMap.get(clazz);
+    if (type == null) {
+      type = typeMap.computeIfAbsent(clazz, typeCreator);
+    }
+    return (TripType<T>) type;
   }
 
   @Override
