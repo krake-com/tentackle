@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.types;
 
+import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.TripComponent;
@@ -32,6 +33,9 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripSerializable;
 import org.tentackle.trip.TripTypeCategory;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
@@ -47,6 +51,14 @@ import java.util.Collection;
  * @param <T> the type
  */
 public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripType<T> {
+
+  private static final Logger LOGGER = Logger.get(AbstractDictionaryBasedTripType.class);
+
+  /** the type of the handles for the void hook methods. */
+  private static final MethodType VOID_HOOK_TYPE = MethodType.methodType(void.class, Object.class);
+
+  /** the type of the handles for the boolean hook methods. */
+  private static final MethodType BOOLEAN_HOOK_TYPE = MethodType.methodType(boolean.class, Object.class);
 
   /**
    * The lazily resolved component provider and its resolution flag.<br>
@@ -106,6 +118,19 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    * Null if no annotation present.
    */
   protected final Boolean referencable;
+
+  /**
+   * The hook methods above bound to method handles, null if not provided or not bindable.<br>
+   * The hooks run once per object written or read, and {@link Method#invoke(Object, Object...)} costs a varargs array,
+   * its argument checks, and for the boolean hooks, the boxing of the result each time.
+   * The method handles are determined only once per type and speed things up.
+   *
+   * @see #bindHook(Method, MethodType)
+   */
+  private final MethodHandle prepareHandle;
+  private final MethodHandle validateHandle;
+  private final MethodHandle deduplicatableHandle;
+  private final MethodHandle referencableHandle;
 
   /**
    * Creates the type.
@@ -224,6 +249,11 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
       referencable = null;
       referencableMethod = null;
     }
+
+    prepareHandle = bindHook(prepareMethod, VOID_HOOK_TYPE);
+    validateHandle = bindHook(validateMethod, VOID_HOOK_TYPE);
+    deduplicatableHandle = bindHook(deduplicatableMethod, BOOLEAN_HOOK_TYPE);
+    referencableHandle = bindHook(referencableMethod, BOOLEAN_HOOK_TYPE);
   }
 
   @Override
@@ -232,12 +262,17 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
       // all objects are referencable, except when explicitly marked as NEVER
       return !Boolean.FALSE.equals(referencable);
     }
-    try {
-      return (Boolean) referencableMethod.invoke(value);
-    }
-    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      throw new TripRuntimeException("cannot invoke referencable method", e);
-    }
+    return invokeBooleanHook(referencableHandle, referencableMethod, value, "referencable");
+  }
+
+  /**
+   * Invokes the {@link #deduplicatableMethod}.
+   *
+   * @param value the object
+   * @return true if the object is de-duplicatable
+   */
+  protected boolean invokeDeduplicatableMethod(T value) {
+    return invokeBooleanHook(deduplicatableHandle, deduplicatableMethod, value, "deduplicateable");
   }
 
   @Override
@@ -283,12 +318,7 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    */
   protected void prepareWrite(T value) {
     if (prepareMethod != null) {
-      try {
-        prepareMethod.invoke(value);
-      }
-      catch (IllegalAccessException | InvocationTargetException e) {
-        throw new TripRuntimeException("cannot invoke method " + prepareMethod, e);
-      }
+      invokeVoidHook(prepareHandle, prepareMethod, value);
     }
   }
 
@@ -299,12 +329,7 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
    */
   protected void validateRead(T value) {
     if (validateMethod != null) {
-      try {
-        validateMethod.invoke(value);
-      }
-      catch (IllegalAccessException | InvocationTargetException e) {
-        throw new TripRuntimeException("cannot invoke method " + validateMethod, e);
-      }
+      invokeVoidHook(validateHandle, validateMethod, value);
     }
   }
 
@@ -395,6 +420,85 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
     return provider.getComponents(this);
   }
 
+
+  /**
+   * Invokes a void hook method.
+   *
+   * @param handle the bound method, null to invoke it reflectively
+   * @param method the method
+   * @param value the object to invoke the method on
+   */
+  private static void invokeVoidHook(MethodHandle handle, Method method, Object value) {
+    if (handle != null) {
+      try {
+        handle.invokeExact(value);
+      }
+      catch (Throwable t) {
+        throw new TripRuntimeException("cannot invoke method " + method, t);
+      }
+    }
+    else {
+      try {
+        method.invoke(value);
+      }
+      catch (IllegalAccessException | InvocationTargetException e) {
+        throw new TripRuntimeException("cannot invoke method " + method, e);
+      }
+    }
+  }
+
+  /**
+   * Invokes a boolean hook method.
+   *
+   * @param handle the bound method, null to invoke it reflectively
+   * @param method the method
+   * @param value the object to invoke the method on
+   * @param what what the method decides, for the error message
+   * @return the method's result
+   */
+  private static boolean invokeBooleanHook(MethodHandle handle, Method method, Object value, String what) {
+    if (handle != null) {
+      try {
+        return (boolean) handle.invokeExact(value);
+      }
+      catch (Throwable t) {
+        throw new TripRuntimeException("cannot invoke " + what + " method", t);
+      }
+    }
+    try {
+      return (Boolean) method.invoke(value);
+    }
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      throw new TripRuntimeException("cannot invoke " + what + " method", e);
+    }
+  }
+
+  /**
+   * Binds a hook method to a method handle.
+   *
+   * @param method the public no-args method, null if none
+   * @param type the type of the handle, i.e., {@code (Object)void} or {@code (Object)boolean}
+   * @return the handle, null if no method or the method cannot be bound (reflection is used instead)
+   */
+  private static MethodHandle bindHook(Method method, MethodType type) {
+    if (method == null) {
+      return null;
+    }
+    Module module = AbstractDictionaryBasedTripType.class.getModule();
+    Module targetModule = method.getDeclaringClass().getModule();
+    if (!module.canRead(targetModule)) {
+      // MethodHandles.lookup() is caller-sensitive: make the method's module readable by this module
+      module.addReads(targetModule);
+    }
+    try {
+      return MethodHandles.lookup().unreflect(method).asType(type);
+    }
+    catch (IllegalAccessException | RuntimeException e) {
+      // not accessible from here: fall back to reflection, exactly as before
+      LOGGER.fine("cannot bind " + method + ", falling back to reflection", e);
+      return null;
+    }
+  }
 
   /**
    * Checks whether the field is serializable.

@@ -107,12 +107,7 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
         // all records are de-duplicatable, except when explicitly marked as not de-duplicatable
         return !Boolean.FALSE.equals(deduplicatable);
       }
-      try {
-        return (Boolean) deduplicatableMethod.invoke(value);
-      }
-      catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-        throw new TripRuntimeException("cannot invoke deduplicateable method", e);
-      }
+      return invokeDeduplicatableMethod(value);
     }
     return false;
   }
