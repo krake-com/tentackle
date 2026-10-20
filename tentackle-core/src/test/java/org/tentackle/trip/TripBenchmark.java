@@ -18,19 +18,28 @@
 
 package org.tentackle.trip;
 
+import org.testng.annotations.Test;
+
 import org.tentackle.io.MutableByteArrayInputStream;
 import org.tentackle.trip.impl.BenchmarkEntity;
 import org.tentackle.trip.impl.CanonicalDto;
+import org.tentackle.trip.impl.DemoLogin;
+import org.tentackle.trip.impl.DemoLoginImpl;
+import org.tentackle.trip.impl.DemoSession;
+import org.tentackle.trip.impl.ValidatedBenchmarkEntity;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
 import org.tentackle.trip.remote.IdentifiedRemoteResponse;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -95,6 +104,37 @@ public class TripBenchmark {
   }
 
   @Test(groups = "benchmark")
+  void benchmarkClientEntityList() {
+    // same as entity-list-1000, but written by a client: its entries stay client-only for as long as
+    // the server never sends the class back, which is the case for everything a client sends
+    BenchmarkEntity parent = new BenchmarkEntity(0, null);
+    List<BenchmarkEntity> list = new ArrayList<>(1000);
+    for (int i = 0; i < 1000; i++) {
+      list.add(new BenchmarkEntity(i, parent));
+    }
+    measure("client-entity-list-1000", list, ArrayList.class, true);
+  }
+
+  @Test(groups = "benchmark")
+  void benchmarkValidatedEntityList() {
+    // @TripSerializable hooks invoked per object, like AbstractDbObject's validate method
+    BenchmarkEntity parent = new BenchmarkEntity(0, null);
+    List<BenchmarkEntity> list = new ArrayList<>(1000);
+    for (int i = 0; i < 1000; i++) {
+      list.add(new ValidatedBenchmarkEntity(i, parent));
+    }
+    measure("validated-entity-list-1000", list, ArrayList.class);
+  }
+
+  @Test(groups = "benchmark")
+  void benchmarkRpcRoundTrip() throws Exception {
+    // a real TCP connection on the loopback interface: the latency of a remote call is dominated
+    // by how the transport hands its bytes to the socket, not by the codec
+    measureRpc("trip");
+    measureRpc("tripc");
+  }
+
+  @Test(groups = "benchmark")
   void benchmarkCanonicalDto() {
     // immutable objects created by their @CanonicalConstructor: a different read path than the
     // no-args construction of BenchmarkEntity
@@ -124,14 +164,61 @@ public class TripBenchmark {
         dense[i] = 1;   // no zeros at all, so the skip encoding never triggers
       }
     }
-    measure("byte-array-1M-dense", dense, byte[].class);
+    measure("byte-array-1M-dense (100%)", dense, byte[].class);
+
+    dense = new byte[1 << 20];
+    Random random = new Random(42);
+    for (int i = 0; i < dense.length; i++) {
+      dense[i] = (byte) random.nextInt(256);
+    }
+    measure("byte-array-1M-dense (0-255)", dense, byte[].class);
 
     byte[] sparse = new byte[1 << 20];
-    Random random = new Random(43);
-    for (int i = 0; i < sparse.length; i++) {
-      sparse[i] = (byte) (random.nextBoolean() ? 0 : 1 + random.nextInt(127));
+    random = new Random(43);
+    byte nextVal = 0;
+    int blkLen = 1;
+    for (int i = 0; i < sparse.length - blkLen; i += blkLen) {
+      Arrays.fill(sparse, i, i + blkLen, nextVal);
+      blkLen = random.nextInt(500);
+      nextVal = (byte) (nextVal == 0 ? 1 : 0);
     }
-    measure("byte-array-1M-sparse", sparse, byte[].class);
+    measure("byte-array-1M-sparse (50%)", sparse, byte[].class);
+
+    sparse = new byte[1 << 20];
+    Random randomZero = new Random(43);
+    Random randomOne = new Random(63);
+    nextVal = 0;
+    blkLen = 1;
+    for (int i = 0; i < sparse.length - blkLen; i += blkLen) {
+      Arrays.fill(sparse, i, i + blkLen, nextVal);
+      if (nextVal == 0) {
+        nextVal = 1;
+        blkLen = randomZero.nextInt(100);
+      }
+      else {
+        nextVal = 0;
+        blkLen = randomOne.nextInt(1000);
+      }
+    }
+    measure("byte-array-1M-sparse (10%)", sparse, byte[].class);
+
+    sparse = new byte[1 << 20];
+    randomZero = new Random(43);
+    randomOne = new Random(63);
+    nextVal = 0;
+    blkLen = 1;
+    for (int i = 0; i < sparse.length - blkLen; i += blkLen) {
+      Arrays.fill(sparse, i, i + blkLen, nextVal);
+      if (nextVal == 0) {
+        nextVal = 1;
+        blkLen = randomZero.nextInt(1000);
+      }
+      else {
+        nextVal = 0;
+        blkLen = randomOne.nextInt(100);
+      }
+    }
+    measure("byte-array-1M-sparse (90%)", sparse, byte[].class);
   }
 
   @Test(groups = "benchmark")
@@ -154,7 +241,20 @@ public class TripBenchmark {
    * @param <T> the type of the value
    */
   private <T> void measure(String name, T value, Class<?> clazz) {
-    Rig rig = new Rig();
+    measure(name, value, clazz, false);
+  }
+
+  /**
+   * Measures a workload and prints the result.
+   *
+   * @param name the name of the workload
+   * @param value the value to serialize
+   * @param clazz the class to resolve the trip type from
+   * @param clientWrite true if written by a client and read by a server, false for the other way round
+   * @param <T> the type of the value
+   */
+  private <T> void measure(String name, T value, Class<?> clazz, boolean clientWrite) {
+    Rig rig = new Rig(clientWrite);
     @SuppressWarnings("unchecked")
     TripType<T> type = (TripType<T>) TripFactory.getInstance().getType(clazz);
 
@@ -203,6 +303,80 @@ public class TripBenchmark {
     return results[results.length / 2];
   }
 
+  /**
+   * Measures remote calls over a TCP transport on the loopback interface and prints the result.
+   * <p>
+   * Each call is timed on its own, so that the occasional stall of a single call shows up in the
+   * upper percentiles instead of being averaged away.
+   *
+   * @param scheme the transport scheme, e.g. "trip" or "tripc"
+   * @throws Exception if setting up the transports failed
+   */
+  private void measureRpc(String scheme) throws Exception {
+    int port;
+    try (ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+      port = socket.getLocalPort();
+    }
+    URI uri = new URI(scheme + "://127.0.0.1:" + port);
+    Transport server = TripFactory.getInstance().createTransport(uri);
+    server.accept();
+    Transport client = TripFactory.getInstance().createTransport(uri);
+    try {
+      server.getRegistry().register(new DemoLoginImpl("1.0.0"), "login");
+      UUID remoteId = client.getRemoteLookup().lookup("login");
+      DemoLogin login = TripFactory.getInstance().createRemoteProxy(remoteId, client, DemoLogin.class);
+      DemoSession session = login.login("harr", "0815");
+
+      BenchmarkEntity parent = new BenchmarkEntity(0, null);
+      List<BenchmarkEntity> small = new ArrayList<>(10);
+      for (int i = 0; i < 10; i++) {
+        small.add(new BenchmarkEntity(i, parent));
+      }
+      List<BenchmarkEntity> large = new ArrayList<>(1000);
+      for (int i = 0; i < 1000; i++) {
+        large.add(new BenchmarkEntity(i, parent));
+      }
+
+      runRpc(scheme + "-call", session::getUsername);
+      runRpc(scheme + "-echo-10", () -> session.echo(small));
+      runRpc(scheme + "-echo-1000", () -> session.echo(large));
+    }
+    finally {
+      client.close();
+      server.close();
+    }
+  }
+
+  /**
+   * Runs a remote call repeatedly and prints the latency distribution.
+   *
+   * @param name the name of the workload
+   * @param call the remote call
+   */
+  private void runRpc(String name, Supplier<?> call) {
+    long warmupEnd = System.nanoTime() + WARMUP_MILLIS * 1_000_000L;
+    while (System.nanoTime() < warmupEnd) {
+      sink = call.get();
+    }
+    long[] samples = new long[1024];
+    int count = 0;
+    long measureEnd = System.nanoTime() + MEASURE_MILLIS * RUNS * 1_000_000L;
+    long start;
+    while ((start = System.nanoTime()) < measureEnd) {
+      sink = call.get();
+      if (count == samples.length) {
+        samples = Arrays.copyOf(samples, count << 1);
+      }
+      samples[count++] = System.nanoTime() - start;
+    }
+    Arrays.sort(samples, 0, count);
+    System.out.printf("%-24s calls=%8d   median=%10.1f us   p99=%10.1f us   max=%10.1f us%n",
+                      name, count,
+                      samples[count / 2] / 1e3,
+                      samples[Math.min(count - 1, (int) (count * 0.99))] / 1e3,
+                      samples[count - 1] / 1e3);
+  }
+
   private void report(String name, int size, double writeNs, double readNs, double roundTripNs) {
     System.out.printf("%-24s size=%9d B   write=%12.1f ns (%10.0f ops/s)   " +
                       "read=%12.1f ns (%10.0f ops/s)   roundtrip=%12.1f ns (%10.0f ops/s)%n",
@@ -217,8 +391,9 @@ public class TripBenchmark {
    * A serialize/deserialize rig.
    * <p>
    * This is {@link org.tentackle.trip.impl.EchoTransceiver} without its buffer copy in
-   * {@code echo()}, so that the serialize and deserialize phases can be timed on their own. The
-   * sending dictionary is a server dictionary, which avoids temporary (client-only) entries.
+   * {@code echo()}, so that the serialize and deserialize phases can be timed on their own. By
+   * default, the sending dictionary is a server dictionary, which avoids temporary (client-only)
+   * entries. A client rig sends with a client dictionary instead.
    */
   private static final class Rig {
 
@@ -229,12 +404,12 @@ public class TripBenchmark {
     private final TripStream outStream;
     private final TripStream inStream;
 
-    private Rig() {
+    private Rig(boolean clientWrite) {
       TripFactory factory = TripFactory.getInstance();
       serializer = factory.createSerializer(bos);
       deserializer = factory.createDeserializer(bis);
-      outStream = factory.createStream(factory.createDictionary(NIL_UUID, true), serializer, deserializer);
-      inStream = factory.createStream(factory.createDictionary(NIL_UUID, false), serializer, deserializer);
+      outStream = factory.createStream(factory.createDictionary(NIL_UUID, !clientWrite), serializer, deserializer);
+      inStream = factory.createStream(factory.createDictionary(NIL_UUID, clientWrite), serializer, deserializer);
     }
 
     /**
