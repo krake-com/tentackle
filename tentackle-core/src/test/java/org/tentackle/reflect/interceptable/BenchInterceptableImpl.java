@@ -33,6 +33,7 @@ public class BenchInterceptableImpl implements BenchInterceptable {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private Object touched;
 
   public BenchInterceptableImpl(BenchInterceptable bench) {

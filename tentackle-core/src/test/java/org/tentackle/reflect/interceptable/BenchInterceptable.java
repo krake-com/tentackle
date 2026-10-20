@@ -20,6 +20,7 @@ package org.tentackle.reflect.interceptable;
 
 import org.tentackle.reflect.Interceptable;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -72,6 +73,9 @@ public interface BenchInterceptable extends Interceptable, Serializable {
    * Exception thrown by {@link #fail()}.
    */
   class BenchException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * Creates the exception.
