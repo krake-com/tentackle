@@ -25,6 +25,7 @@ import org.tentackle.trip.DictionaryEntry;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
@@ -34,6 +35,41 @@ import static org.testng.Assert.assertTrue;
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class DefaultDictionaryTest {
+
+  /**
+   * A client-only entry replaced by the server's entry must be marked superseded,
+   * so that the streams caching it look it up again.
+   */
+  @Test
+  public void replacedClientEntryIsSuperseded() {
+    DefaultDictionary client = new DefaultDictionary(UUID.randomUUID(), false);
+    DictionaryEntry clientEntry = client.createTemporaryEntry(TestClass.class);
+    client.addEntry(clientEntry);
+    assertTrue(clientEntry.isClientOnly());
+    assertFalse(clientEntry.isSuperseded());
+
+    DictionaryEntry serverEntry = new DefaultDictionary(UUID.randomUUID(), true).createEntry(TestClass.class);
+    client.addEntry(serverEntry);
+    assertTrue(clientEntry.isSuperseded());
+    assertFalse(serverEntry.isSuperseded());
+    assertSame(client.getEntry(clientEntry.getClassName()), serverEntry);
+  }
+
+  /**
+   * The server keeps a client's entry by ordinal, but its own entry replaces it by name.
+   */
+  @Test
+  public void clientEntryReplacedAtServerIsSuperseded() {
+    DictionaryEntry clientEntry = new DefaultDictionary(UUID.randomUUID(), false).createTemporaryEntry(TestClass.class);
+    DefaultDictionary server = new DefaultDictionary(UUID.randomUUID(), true);
+    server.addEntry(clientEntry);
+    assertFalse(clientEntry.isSuperseded());
+
+    DictionaryEntry serverEntry = server.createEntry(TestClass.class);
+    server.addEntry(serverEntry);
+    assertTrue(clientEntry.isSuperseded());
+    assertSame(server.getEntry(clientEntry.getOrdinal()), clientEntry);    // still resolvable by ordinal
+  }
 
   /**
    * An interrupt must not turn the wait for a missing entry into an immediate timeout.

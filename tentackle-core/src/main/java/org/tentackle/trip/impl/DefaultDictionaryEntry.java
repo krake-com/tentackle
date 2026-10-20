@@ -45,6 +45,7 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
   private final Class<?>[] proxyInterfaces;               // proxy interfaces, if proxy
   private final TripType<?> tripType;                     // matching trip-type
   private final TripComponent<?, ?>[] tripComponents;     // fast array lookup for the type's components
+  private volatile boolean superseded;                    // true if replaced by another entry for the same class
 
 
   /**
@@ -111,6 +112,16 @@ public class DefaultDictionaryEntry implements DictionaryEntry {
   @Override
   public boolean isClientOnly() {
     return ordinal < 0;
+  }
+
+  @Override
+  public boolean isSuperseded() {
+    return superseded;
+  }
+
+  @Override
+  public void markSuperseded() {
+    superseded = true;
   }
 
   @Override

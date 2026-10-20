@@ -145,12 +145,14 @@ public class DefaultDictionary implements Dictionary {
   public synchronized void addEntry(DictionaryEntry entry) {
     // synchronized since two maps are involved and entries can be added concurrently,
     // i.e., this operation must be atomic!
+    DictionaryEntry replacedEntry;
     if (entry.isClientOnly()) {
       DictionaryEntry oldEntry = entriesByName.put(entry.getClassName(), entry);
       if (oldEntry != null) {
         entriesByOrdinal.remove(oldEntry.getOrdinal());
       }
       entriesByOrdinal.put(entry.getOrdinal(), entry);
+      replacedEntry = oldEntry;
     }
     else {
       DictionaryEntry oldEntry = entriesByOrdinal.get(entry.getOrdinal());
@@ -174,6 +176,11 @@ public class DefaultDictionary implements Dictionary {
       }
       entriesByOrdinal.put(entry.getOrdinal(), entry);
       entriesByName.put(entry.getClassName(), entry);
+      replacedEntry = oldEntry;
+    }
+    if (replacedEntry != null && replacedEntry != entry) {
+      // after the new entry is in place: streams caching the old one look it up again (see TripStream)
+      replacedEntry.markSuperseded();
     }
     this.notifyAll();
   }

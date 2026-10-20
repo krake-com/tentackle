@@ -51,6 +51,25 @@ public interface DictionaryEntry {
   boolean isClientOnly();
 
   /**
+   * Returns whether this entry has been replaced by another entry for the same class.
+   * <p>
+   * Streams cache the entries by class. A client-only entry, however, may be replaced by the
+   * server's entry later, so a stream may keep it only as long as it is not superseded.
+   *
+   * @return true if superseded or not tracked, false if still the dictionary's entry for its class
+   * @see #markSuperseded()
+   */
+  boolean isSuperseded();
+
+  /**
+   * Marks this entry as replaced by another entry for the same class.<br>
+   * Invoked by the dictionary after the new entry has been added.
+   *
+   * @see #isSuperseded()
+   */
+  void markSuperseded();
+
+  /**
    * Returns whether the entry describes a dynamic proxy.
    *
    * @return true if dynamic proxy, else false

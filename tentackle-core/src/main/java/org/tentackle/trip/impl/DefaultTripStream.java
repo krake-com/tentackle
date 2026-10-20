@@ -188,16 +188,35 @@ public class DefaultTripStream implements TripStream {
     // getSerializableClassName() and a string-hashed lookup for each of them is pure overhead,
     // since the class already identifies the entry.
     DictionaryEntry dictionaryEntry = dictionaryEntriesByClass.get(clazz);
-    if (dictionaryEntry != null) {
+    if (dictionaryEntry != null && (!dictionaryEntry.isClientOnly() || !dictionaryEntry.isSuperseded())) {
       return dictionaryEntry;
     }
+    // kept out of line, so that the cache hit above stays small enough to be inlined
+    return resolveDictionaryEntry(clazz, dictionaryEntry);
+  }
+
+  /**
+   * Resolves the dictionary entry for a class not cached by this stream.
+   *
+   * @param clazz the class
+   * @param supersededEntry the cached entry superseded by another one, null if none
+   * @return the entry, null if the dictionary has none
+   */
+  private DictionaryEntry resolveDictionaryEntry(Class<?> clazz, DictionaryEntry supersededEntry) {
+    if (supersededEntry != null) {
+      // a server entry replaced the client-only entry: drop it and look up the current one
+      dictionaryEntriesByClass.remove(clazz);
+      dictionaryEntriesByName.remove(supersededEntry.getClassName());
+    }
     String className = ReflectionHelper.getSerializableClassName(clazz);
-    dictionaryEntry = dictionaryEntriesByName.get(className);
+    DictionaryEntry dictionaryEntry = dictionaryEntriesByName.get(className);
     if (dictionaryEntry == null) {
       dictionaryEntry = dictionary.getEntry(className);
     }
-    if (dictionaryEntry != null && !dictionaryEntry.isClientOnly()) {
-      // since server entries replace client-only entries, we cannot cache client-only entries
+    if (dictionaryEntry != null && (!dictionaryEntry.isClientOnly() || !dictionaryEntry.isSuperseded())) {
+      // Client-only entries are cached as well, since a client keeps them for every class the
+      // server never sends back, i.e., for most of what it sends. Server entries replace them,
+      // which marks them as superseded and evicts them on the next lookup (see above).
       dictionaryEntriesByName.put(className, dictionaryEntry);
       dictionaryEntriesByClass.put(clazz, dictionaryEntry);
     }
@@ -282,10 +301,22 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public void clear() {
-    // creating new maps is faster than clear() for large maps
-    identityMap = new IdentityHashMap<>();
-    deDupMap = new HashMap<>();
-    initializeReferences();
+    if (references != null && references.length == INITIAL_REF_ARRAY_SIZE) {
+      // A small message: the array never grew, so neither map holds more than its length.
+      // Recycling them is cheaper than allocating anew, which would happen several times per remote call.
+      if (nextReferenceId > 0) {    // otherwise, nothing was referenced at all
+        identityMap.clear();
+        deDupMap.clear();
+        Arrays.fill(references, 0, nextReferenceId, null);
+        nextReferenceId = 0;
+      }
+    }
+    else {
+      // creating new maps is faster than clear() for large maps
+      identityMap = new IdentityHashMap<>();
+      deDupMap = new HashMap<>();
+      initializeReferences();
+    }
   }
 
   @Override
