@@ -48,6 +48,38 @@ public class CompressedStreamTest {
     }
   }
 
+  /**
+   * The header and the data of a packet must reach the underlying stream in a single write.<br>
+   * Written separately, a socket sends the header on its own and, with Nagle's algorithm, holds back
+   * the data until the peer acknowledges it.
+   */
+  @Test
+  public void testEachPacketIsWrittenAtOnce() throws IOException {
+    WriteCountingOutputStream sink = new WriteCountingOutputStream();
+    byte[] small = "hi".getBytes(StandardCharsets.US_ASCII);
+    byte[] compressible = new byte[3000];
+    java.util.Arrays.fill(compressible, (byte) 'A');
+    byte[] incompressible = new byte[500];
+    new Random(4711).nextBytes(incompressible);
+    try (CompressedOutputStream out = new CompressedOutputStream(sink, 1024, 64)) {
+      out.write(small);
+      out.flush();
+      assertEquals(sink.getWrites(), 1, "uncompressed packet");
+      out.write(compressible);    // 1024 + 1024 + 952 bytes
+      out.flush();
+      assertEquals(sink.getWrites(), 4, "compressed packets");
+      out.write(incompressible);
+      out.flush();
+      assertEquals(sink.getWrites(), 5, "incompressible packet");
+    }
+    try (CompressedInputStream in = new CompressedInputStream(new ByteArrayInputStream(sink.toByteArray()))) {
+      assertEquals(in.readNBytes(small.length), small);
+      assertEquals(in.readNBytes(compressible.length), compressible);
+      assertEquals(in.readNBytes(incompressible.length), incompressible);
+      assertEquals(in.read(), -1);
+    }
+  }
+
   @Test
   public void testSmallPayloadStaysUncompressed() throws IOException {
     // below minCompressSize -> uncompressed packet, but must still round trip

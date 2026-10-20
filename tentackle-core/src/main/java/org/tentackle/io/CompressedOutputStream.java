@@ -57,10 +57,10 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
   private final int bufSize;                  // buffer size
 
   private final byte[] byteBuf = new byte[1]; // single byte buffer for write(b)
-  private final byte[] orgBuf;                // original uncompressed data buffer
-  private int orgLen;                         // number of bytes in orgBuf
+  private final byte[] orgBuf;                // original uncompressed data buffer, data starts at HEADER_SIZE
+  private int orgLen;                         // number of data bytes in orgBuf
   private final Deflater deflater;            // the zip deflater
-  private final byte[] defBuf;                // deflated/compressed output data buffer
+  private final byte[] defBuf;                // deflated/compressed output data buffer, data starts at HEADER_SIZE
 
   // for statistic only (Level.FINE)
   private long totalWritten;                  // total number of bytes written by the application
@@ -84,9 +84,10 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
     this.bufSize = bufSize;
     this.minCompressSize = minCompressSize;
 
-    orgBuf = new byte[bufSize];
+    // both buffers reserve room for the header in front of the data, see writePacket
+    orgBuf = new byte[HEADER_SIZE + bufSize];
     deflater = createDeflater();
-    defBuf = new byte[bufSize];
+    defBuf = new byte[HEADER_SIZE + bufSize];
   }
 
   /**
@@ -147,7 +148,7 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
         num = bufSize - orgLen;    // align to buffer size
       }
 
-      System.arraycopy(b, off, orgBuf, orgLen, num);
+      System.arraycopy(b, off, orgBuf, HEADER_SIZE + orgLen, num);
       off    += num;
       len    -= num;
       orgLen += num;
@@ -200,20 +201,6 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
 
 
   /**
-   * Writes the header.
-   *
-   * @param size the logical packet size
-   * @param compressed is true if the packet is compressed, false if uncompressed
-   * @throws IOException if writing failed
-   */
-  protected void writeHeader(int size, boolean compressed) throws IOException {
-    if (compressed) {
-      size |= COMPRESSED;
-    }
-    super.writeHeader(size);
-  }
-
-  /**
    * Flushes the buffer.<br>
    * If the packet size is large enough, the data will be compressed.
    * If the compressed data is smaller than the original data, a compressed
@@ -225,11 +212,11 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
       if (orgLen >= minCompressSize) {
         // compress the data
         deflater.reset();   // sadly we must reset() cause of finish() :(
-        deflater.setInput(orgBuf, 0, orgLen);
+        deflater.setInput(orgBuf, HEADER_SIZE, orgLen);
         deflater.finish();
         int defLen = 0;
         while (!deflater.finished()) {
-          int num = deflater.deflate(defBuf, defLen, bufSize - defLen);
+          int num = deflater.deflate(defBuf, HEADER_SIZE + defLen, bufSize - defLen);
           if (num <= 0 &&
               // can this really happen? Yes: if minCompressSize is too small!
               deflater.needsInput()) {
@@ -239,21 +226,19 @@ public class CompressedOutputStream extends PacketSizedOutputStream {
         }
         if (defLen < orgLen) {
           // deflate
-          writeHeader(defLen, true);
-          out.write(defBuf, 0, defLen);
+          writePacket(defBuf, defLen | COMPRESSED, defLen);
           totalCompressed += defLen;
-          orgLen = 0;
           LOGGER.fine("compressed packet written: {0}/{1}", defLen, orgLen);
+          orgLen = 0;
           return;
         }
       }
 
       // uncompressed packet
-      writeHeader(orgLen, false);
-      out.write(orgBuf, 0, orgLen);
+      writePacket(orgBuf, orgLen, orgLen);
       totalUncompressed += orgLen;
-      orgLen = 0;
       LOGGER.fine("uncompressed packet written: {0}", orgLen);
+      orgLen = 0;
     }
   }
 

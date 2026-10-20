@@ -21,7 +21,6 @@ package org.tentackle.io;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,8 +44,8 @@ public class PacketSizedStreamTest {
     TestOut(OutputStream out) {
       super(out);
     }
-    void header(int size) throws IOException {
-      writeHeader(size);
+    void packet(byte[] buf, int header, int length) throws IOException {
+      writePacket(buf, header, length);
     }
   }
 
@@ -61,23 +60,14 @@ public class PacketSizedStreamTest {
   }
 
   @Test
-  public void testHeaderIsLittleEndianTwoBytes() throws IOException {
-    ByteArrayOutputStream sink = new ByteArrayOutputStream();
-    new TestOut(sink).header(0x1234);
-    byte[] bytes = sink.toByteArray();
-    assertEquals(bytes.length, 2);
-    assertEquals(bytes[0] & 0xFF, 0x34);   // low byte first
-    assertEquals(bytes[1] & 0xFF, 0x12);
-  }
-
-  @Test
-  public void testHeaderRoundTrip() throws IOException {
-    for (int size : new int[] {0, 1, 255, 256, 0x1234, 0x7FFF, 0xFFFF}) {
-      ByteArrayOutputStream sink = new ByteArrayOutputStream();
-      new TestOut(sink).header(size);
-      TestIn in = new TestIn(new ByteArrayInputStream(sink.toByteArray()));
-      assertEquals(in.header(), size, "round trip failed for size " + size);
-    }
+  public void testPacketIsHeaderFollowedByData() throws IOException {
+    WriteCountingOutputStream sink = new WriteCountingOutputStream();
+    byte[] buf = new byte[] {0, 0, 'a', 'b', 'c', 'x'};    // data starts after the header, 'x' is not part of it
+    new TestOut(sink).packet(buf, 0x8003, 3);
+    assertEquals(sink.getWrites(), 1);
+    assertEquals(sink.toByteArray(), new byte[] {0x03, (byte) 0x80, 'a', 'b', 'c'});
+    TestIn in = new TestIn(new ByteArrayInputStream(sink.toByteArray()));
+    assertEquals(in.header(), 0x8003);
   }
 
   @Test

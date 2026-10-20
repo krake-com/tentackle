@@ -30,7 +30,8 @@ import java.io.InputStream;
  */
 public abstract class PacketSizedInputStream extends FilterInputStream {
 
-  private boolean closed;               // true if closed
+  private final byte[] headerBuf = new byte[2];   // the header of the current packet
+  private boolean closed;                         // true if closed
 
   /**
    * Creates the input stream.
@@ -66,8 +67,8 @@ public abstract class PacketSizedInputStream extends FilterInputStream {
    * @throws IOException if reading failed
    */
   protected int readHeader() throws IOException {
-    byte[] header = in.readNBytes(2);
-    if (header.length != 2) {
+    byte[] header = headerBuf;
+    if (in.readNBytes(header, 0, 2) != 2) {
       return -1;
     }
     return header[0] & 0xFF | (header[1] & 0xFF) << 8;

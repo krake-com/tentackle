@@ -57,6 +57,7 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
   private final byte[] orgBuf;                // original unencrypted data buffer
   private int orgOff;                         // number of bytes / offset in orgBuf
   private final Cryptor cryptor;              // the cryptor
+  private byte[] packetBuf;                   // header followed by the encrypted data (size is dynamically adapted)
 
   // for statistic only (Level.FINE)
   private long totalWritten;                  // total number of bytes written by the application
@@ -182,8 +183,13 @@ public class EncryptingOutputStream extends PacketSizedOutputStream {
         // the header cannot hold the size: fail instead of corrupting the stream
         throw new IOException("encrypted packet too large (" + encBuf.length + " bytes): reduce the buffer size of " + bufSize);
       }
-      writeHeader(encBuf.length);
-      out.write(encBuf, 0, encBuf.length);
+      // the cryptor returns a new array: copy it behind the header to write the packet in one piece
+      int packetSize = HEADER_SIZE + encBuf.length;
+      if (packetBuf == null || packetBuf.length < packetSize) {
+        packetBuf = new byte[packetSize];
+      }
+      System.arraycopy(encBuf, 0, packetBuf, HEADER_SIZE, encBuf.length);
+      writePacket(packetBuf, encBuf.length, encBuf.length);
       LOGGER.fine("encrypted packet written: {0}/{1}", encBuf.length, orgOff);
       totalEncrypted += encBuf.length;
       orgOff = 0;
