@@ -24,8 +24,10 @@ import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStreamClosedException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -35,6 +37,9 @@ public class DefaultDeserializer implements Deserializer {
 
   /** default deserialization buffer size. */
   private static final int DEFAULT_BUFFER_SIZE = 16384;
+
+  /** chunk size for longer UTF8 strings. */
+  private static final int UTF8_CHUNK_SIZE = 8192;
 
 
   /** input stream to fill the buffer from. */
@@ -242,6 +247,33 @@ public class DefaultDeserializer implements Deserializer {
            (long) (b[p + 5] & 0xFF) << 40 |
            (long) (b6 & 0xFF) << 48 |
            ((b6 & 0x80) == 0x80 ? 0xFFL << 56 : 0L);
+  }
+
+  @Override
+  public String deserializeUtf8(int length) {
+    if (length < 0) {
+      throw new TripRuntimeException("negative string length " + length);
+    }
+    if (length <= buf.length) {
+      // decoded straight from the buffer: no intermediate array and no extra copy.
+      want(length);
+      String value = new String(buf, pos, length, StandardCharsets.UTF_8);
+      pos += length;
+      return value;
+    }
+
+    // read longer strings in chunks so that a corrupted length cannot allocate
+    // more than the stream actually delivers
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream(UTF8_CHUNK_SIZE);
+    byte[] chunk = new byte[UTF8_CHUNK_SIZE];
+    int remaining = length;
+    while (remaining > 0) {
+      int count = Math.min(remaining, UTF8_CHUNK_SIZE);
+      deserialize(chunk, 0, count);
+      buffer.write(chunk, 0, count);
+      remaining -= count;
+    }
+    return buffer.toString(StandardCharsets.UTF_8);
   }
 
   @Override

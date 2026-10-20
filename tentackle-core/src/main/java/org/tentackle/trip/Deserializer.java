@@ -162,4 +162,13 @@ public interface Deserializer {
    */
   double deserializeDouble();
 
+  /**
+   * Deserializes a UTF-8 encoded string.
+   *
+   * @param length the number of bytes, not the number of characters
+   * @return the string
+   * @throws TripRuntimeException if the length is negative
+   */
+  String deserializeUtf8(int length);
+
 }
