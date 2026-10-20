@@ -206,7 +206,12 @@ public class TcpConnectionPoolTest {
           for (int i = 0; i < 3; i++) {
             try (Socket accepted = serverSocket.accept()) {
               ((SSLSocket) accepted).startHandshake();
-              accepted.getInputStream().read();   // until the client closes
+              try {
+                accepted.getInputStream().read();   // until the client closes
+              }
+              catch (IOException e) {
+                // the client closing with unread session tickets may reset the connection (Windows)
+              }
             }
             catch (IOException e) {
               serverError.compareAndSet(null, e);   // the rejected client makes the 2nd handshake fail
