@@ -18,12 +18,16 @@
 
 package org.tentackle.trip.impl;
 
+import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripType;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -40,6 +44,8 @@ import java.util.Objects;
  */
 public class MethodTripComponent<P, T> implements TripComponent<P, T> {
 
+  private static final Logger LOGGER = Logger.get(MethodTripComponent.class);
+
   private final TripType<P> parentType;
   private final int ordinal;
   private final Method getter;
@@ -48,6 +54,8 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
   private final T defaultValue;
   private final Class<T> componentClass;
   private final String componentName;
+  private final MethodHandle getterHandle;    // typed (Object)Object, null if not bindable
+  private final MethodHandle setterHandle;    // typed (Object,Object)void, null if no setter or not bindable
   private TripType<T> tripType;
 
   /**
@@ -76,6 +84,36 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
     }
     if (setter != null && !ReflectionHelper.isSetter(setter)) {
       throw new TripRuntimeException("method is not a setter: " + setter);
+    }
+    // invokeExact on a handle avoids the varargs array and the argument checks of Method#invoke
+    getterHandle = bind(getter, MethodType.methodType(Object.class, Object.class));
+    setterHandle = bind(setter, MethodType.methodType(void.class, Object.class, Object.class));
+  }
+
+  /**
+   * Binds a getter or setter to a method handle.
+   *
+   * @param method the method, null if none
+   * @param type the type of the handle
+   * @return the handle, null if no method or the method cannot be bound (reflection is used instead)
+   */
+  private MethodHandle bind(Method method, MethodType type) {
+    if (method == null) {
+      return null;
+    }
+    Module module = MethodTripComponent.class.getModule();
+    Module targetModule = method.getDeclaringClass().getModule();
+    if (!module.canRead(targetModule)) {
+      // MethodHandles.lookup() is caller-sensitive: make the method's module readable by this module
+      module.addReads(targetModule);
+    }
+    try {
+      return MethodHandles.lookup().unreflect(method).asType(type);
+    }
+    catch (IllegalAccessException | RuntimeException e) {
+      // not accessible from here: fall back to reflection
+      LOGGER.fine("cannot bind " + method + ", falling back to reflection", e);
+      return null;
     }
   }
 
@@ -129,6 +167,14 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
   @Override
   @SuppressWarnings("unchecked")
   public T getValue(P parent) {
+    if (getterHandle != null) {
+      try {
+        return (T) getterHandle.invokeExact((Object) parent);
+      }
+      catch (Throwable t) {
+        throw new TripRuntimeException("cannot retrieve the value via getter for component " + this, t);
+      }
+    }
     try {
       try {
         return (T) getter.invoke(parent);
@@ -147,6 +193,15 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
   public void setValue(P parent, T value) {
     if (setter == null) {
       throw new TripRuntimeException("no setter provided for component " + this);
+    }
+    if (setterHandle != null) {
+      try {
+        setterHandle.invokeExact((Object) parent, (Object) value);
+      }
+      catch (Throwable t) {
+        throw new TripRuntimeException("cannot set the value via setter for component " + this, t);
+      }
+      return;
     }
     try {
       try {
