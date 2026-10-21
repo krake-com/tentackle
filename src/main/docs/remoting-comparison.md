@@ -50,11 +50,11 @@ public interface InvoiceDomain extends DomainObject<Invoice> {
 // InvoiceDomainImpl — the domain layer, with no remoting in sight
 @Override
 public void approve() {
-  Customer customer = getCustomer();                       // fetched on demand, locally or over TRIP
+  Customer customer = me().getCustomer();                       // fetched on demand, locally or over TRIP
   if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {
     throw new DomainException("credit limit exceeded for " + customer.getName());
   }
-  setState(InvoiceState.APPROVED);
+  me().setState(InvoiceState.APPROVED);
   me().persist();                                          // whole aggregate validated, then written
 }
 ```
