@@ -3,10 +3,10 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.tentackle/tentackle-core?label=Maven%20Central)](https://central.sonatype.com/namespace/org.tentackle)
 
 > **Tentackle is a Java framework for building multi-tier applications around a single
-> domain model. Its entities are Persistent Domain Objects — persistence and domain
+> domain model. Its entities — Persistent Domain Objects — keep persistence and domain
 > logic in separate classes, united behind one interface. They travel between JVMs as
-> real objects, so any of their methods can be called in any JVM, on any tier, with
-> no REST plumbing in between.**
+> real, live objects, so you can call any of their methods on any tier — server, web,
+> edge, or desktop — with no DTOs and no REST plumbing in between.**
 
 Two ideas carry the framework, and each makes the other possible.
 
@@ -21,12 +21,12 @@ and the generated persistence code never depends on a business rule.
 **Location transparency.** This is not about invoking methods on objects that stay
 on a server. The PDO itself travels between JVMs — physically, serialized by
 [TRIP](tentackle-core/src/main/docs/trip.md), Tentackle's compact binary protocol —
-and arrives with its state and its domain logic. It is no stub and no DTO: its
+and arrives with its state and its domain logic. It is neither a stub nor a DTO: its
 methods run in the JVM that currently holds it, and because the persistence side is
 remoting-capable, only what needs the database goes over the wire. Write
 `invoice.approve()` once, in the domain layer, and call it from a server, an edge
-node next to the machine, a web node, or a JavaFX desktop client — three tiers away
-from the database, and it works: the object arrives fully alive, navigates its
+node on the shop floor, a web node, or a JavaFX desktop client. Even three tiers away
+from the database, it just works: the object arrives fully alive, navigates its
 relations on demand, and opens a real transaction on the tier that owns the
 connection. There is no DTO layer, no endpoint, no fetch plan, and no
 `LazyInitializationException` — the exception type does not exist here.
@@ -41,12 +41,12 @@ public interface InvoiceDomain extends DomainObject<Invoice> {
 // domain side of the Invoice PDO — written once, deployed everywhere
 @Override
 public void approve() {
-  Customer customer = getCustomer();                    // persistence side: fetched on demand, locally or over the wire
+  Customer customer = me().getCustomer();               // me() is the whole PDO; the customer is fetched on demand, locally or over the wire
   if (customer.getCreditLimit().compareTo(customer.openAmount()) < 0) {
     throw new DomainException("credit limit exceeded");
   }
-  setState(InvoiceState.APPROVED);
-  me().persist();                                       // me() is the whole PDO: validates the aggregate, then writes
+  me().setState(InvoiceState.APPROVED);
+  me().persist();                                       // validates the aggregate, then writes
 }
 
 // any client JVM, three tiers from the database — the entire call site
@@ -58,8 +58,11 @@ which implementation answers — JDBC or a remote delegate — is not its concer
 tier that code runs on is a connection URL in a properties file, not a decision
 baked into the source.
 
+To see it running, the [Quickstart](src/main/docs/quickstart.md) generates and builds
+a complete multi-tier application in minutes.
+
 Tentackle is Open Source (LGPL 2.1), available from
-[Maven Central](https://search.maven.org/search?q=org.tentackle), and requires
+[Maven Central](https://central.sonatype.com/namespace/org.tentackle), and requires
 Java 25 or later (older LTS lines are maintained on the `java21`, `java17`,
 `java11` and `java8` branches).
 
@@ -67,20 +70,18 @@ Java 25 or later (older LTS lines are maintained on the `java21`, `java17`,
 
 Five things set Tentackle apart from other Java frameworks:
 
-1. **Persistent Domain Objects (PDOs), not an ORM.** A PDO unifies persistence
-   and domain logic behind one interface via runtime-injected proxies — emulated
-   multiple inheritance that keeps the two concerns fully independent. There are
-   no lifecycle states and **no `LazyInitializationException`, ever**.
+1. **Persistent Domain Objects (PDOs), not an ORM.** Persistence and domain logic
+   stay fully independent, yet form one object — and there are no lifecycle states:
+   no attached, detached, or half-loaded entities.
    See [PDO](tentackle-pdo/src/main/docs/pdo.md) and
    [PDOs vs. Traditional ORMs](tentackle-pdo/src/main/docs/pdo-vs-orm.md).
 
-2. **Write the domain logic once, run it on any tier.** The same artifact works
-   whether the database is local, behind a middle-tier server, or reached through
-   a cascade of nested servers — transparently, over
+2. **Write the domain logic once, run it on any tier.** The database may be local,
+   behind a middle-tier server, or at the end of a cascade of nested servers — the
+   topology is pure configuration. PDOs travel over
    [TRIP](tentackle-core/src/main/docs/trip.md), a compact binary protocol that
-   replaces RMI/JOS with pluggable, SD-WAN-friendly transports (TLS, compression,
-   pre-shared-key encryption, QUIC). The topology is pure configuration: a
-   connection URL decides where each node sits. See the
+   replaces RMI and Java serialization with pluggable, SD-WAN-friendly transports
+   (TLS, compression, pre-shared-key encryption, QUIC). See the
    [Multi-Tier Cascade](src/main/docs/tiers.md).
 
 3. **Correctness is the default, not an add-on.** Optimistic (`serial`) locking
@@ -91,23 +92,22 @@ Five things set Tentackle apart from other Java frameworks:
    [Correctness First](src/main/docs/correctness-first.md).
 
 4. **One model — generated everywhere, and queryable by tools.** The model lives
-   in the PDO interface and drives generation of the persistence layer, DDL and
-   database migrations through the
-   [Wurbelizer](tentackle-wurblets/src/main/docs/wurblets.md). Service discovery
-   is resolved at compile time by the
-   [ServiceFinder SPI](tentackle-common/src/main/docs/services.md) — no runtime
-   classpath scanning, fast startup, and it works in both modular and classpath
-   mode. That model is not locked away in a comment block, though:
-   `mvn tentackle-mcp:serve` serves it *relation-resolved* — as the code generators
-   see it — to coding agents over MCP, validating a candidate definition against the
-   whole model in under a second, and the JavaFX wizards all run headless too. See
+   in a comment block of the PDO interface and drives generation of the persistence
+   layer, DDL and database migrations through the
+   [Wurbelizer](tentackle-wurblets/src/main/docs/wurblets.md). That model is not
+   locked away in the source, though: `mvn tentackle-mcp:serve` serves it
+   *relation-resolved* — as the code generators see it — to coding agents over MCP,
+   validating a candidate definition against the whole model in under a second, and
+   the code-generation wizards also run headless. See
    [AI Agent Tooling Support](src/main/docs/ai-agents.md).
 
-5. **True JPMS, self-contained apps.** Every module is a real
-   [JPMS module](src/main/docs/modules.md); applications ship as self-contained
-   jlink/jpackage images with built-in client
-   [auto-update](tentackle-update/src/main/docs/update.md) and rich
-   [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md) desktop clients.
+5. **True JPMS, self-contained apps.** Every runtime module is a real
+   [JPMS module](src/main/docs/modules.md). Service discovery is resolved at build
+   time by the [ServiceFinder SPI](tentackle-common/src/main/docs/services.md) — no
+   runtime classpath scanning, fast startup, and it works in both modular and
+   classpath mode. Applications ship as self-contained jlink/jpackage images, and
+   desktop clients get a rich [JavaFX](tentackle-fx-rdc/src/main/docs/rdc.md)
+   framework and built-in [auto-update](tentackle-update/src/main/docs/update.md).
 
 ## When to use Tentackle — and when not to
 
@@ -139,7 +139,7 @@ and a poor deal for others, so here is the honest filter.
 ### Look elsewhere if…
 
 - **You are building a stateless web API or microservices.** Use Quarkus, Spring
-  Boot, or Micronaut. They are excellent at it, Tentackle is not aiming at it, and
+  Boot, or Micronaut. They are excellent at it, Tentackle isn't built for it, and
   its location-transparency machinery solves a problem you do not have.
 - **Your clients are browsers, mobile apps, or other teams' services.** They cannot
   speak TRIP and should not have to. You *can* put a Tentackle
@@ -165,20 +165,19 @@ detailed argument — with code on both sides — is in
 
 - 🚀 **[Quickstart](src/main/docs/quickstart.md)** — generate, build, and run a
   complete multi-tier application in minutes.
-- ⚖️ **[Tentackle vs. REST, RMI and Spring Remoting](src/main/docs/remoting-comparison.md)** —
+- 🔔 **[What a Seasoned Java Developer Would Not Expect](src/main/docs/unexpected.md)** —
+  the short version, for the impatient.
+- ⚖️ **[Location Transparency vs. REST, RMI and Spring Remoting](src/main/docs/remoting-comparison.md)** —
   what the tier boundary costs in each approach, and where each one wins.
 - 📚 **[Table of Contents](src/main/docs/toc.md)** — every document, grouped by topic.
 - 🔎 **[Index](src/main/docs/index.md)** — look up a concept and jump straight to it.
 - 🤖 **[AI Agent Tooling](src/main/docs/ai-agents.md)** — the MCP model server, the
   headless wizard batch modes, and the bundled agent skills.
-- 🧾 **[Java site docs](https://tentackle.org/tentackle/)** — as a reference.
+- 🧾 **[Maven site](https://tentackle.org/tentackle/)** — Javadoc, source
+  cross-reference, and reports.
 - 🏛️ **[Architecture](https://github.com/krake-com/tentackle/blob/develop/ARCHITECTURE.md)** — the
   design overview: the central ideas and how they depend on each other.
 - 🤝 **[Contributing](https://github.com/krake-com/tentackle/blob/develop/CONTRIBUTING.md)** — how
   to report issues and submit changes.
 - 📝 **[Changelog](https://github.com/krake-com/tentackle/blob/develop/CHANGELOG.md)** — the notable
   changes of every release since 2.0.0.
-
-and for the impatient Java developer:
-
-- 🔔 **[Concise Summary](src/main/docs/unexpected.md)** — main facts you might not expect
