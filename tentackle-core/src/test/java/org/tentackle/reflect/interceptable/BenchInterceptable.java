@@ -62,6 +62,23 @@ public interface BenchInterceptable extends Interceptable, Serializable {
   Object touched();
 
   /**
+   * Counts the variable arguments.
+   *
+   * @param args the arguments
+   * @return the number of arguments
+   */
+  int count(Object... args);
+
+  /**
+   * Joins typed variable arguments.
+   *
+   * @param prefix the prefix
+   * @param parts the parts to join
+   * @return the prefix followed by the comma-separated parts
+   */
+  String join(String prefix, String... parts);
+
+  /**
    * Always fails.
    *
    * @return never

@@ -80,7 +80,9 @@ public class InterceptableMethod {
     try {
       int paramCount = method.getParameterCount();
       // invokeExact on a handle avoids the caller-sensitive access check and the argument checks of Method#invoke
+      // asFixedArity: varargs already arrive packed in args, a variable arity handle would wrap them again
       return MethodHandles.lookup().unreflect(method)
+                          .asFixedArity()
                           .asType(MethodType.genericMethodType(paramCount + 1))
                           .asSpreader(Object[].class, paramCount);
     }

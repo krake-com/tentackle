@@ -83,6 +83,21 @@ public class InterceptableMethodTest {
   }
 
   @Test
+  public void testVarargs() throws Exception {
+    Method method = BenchInterceptable.class.getMethod("count", Object[].class);
+    InterceptableMethod interceptableMethod = InterceptionUtilities.getInstance().createInterceptableMethod(
+      BenchInterceptable.class, BenchInterceptableImpl.class, method);
+    assertEquals(interceptableMethod.isMethodHandleBound(), InterceptableMethod.METHOD_HANDLES);
+
+    BenchInterceptable bench = InterceptableFactory.getInstance().createInterceptable(BenchInterceptable.class);
+    assertEquals(bench.count(), 0);
+    assertEquals(bench.count("a", "b", "c"), 3);
+    assertEquals(bench.count((Object) new Object[] { 1, 2 }), 1);   // single array element
+    assertEquals(bench.join("x:", "a", "b"), "x:a,b");
+    assertEquals(bench.join("x:"), "x:");
+  }
+
+  @Test
   public void testExceptionUnwrapped() {
     BenchInterceptable bench = InterceptableFactory.getInstance().createInterceptable(BenchInterceptable.class);
     assertThrows(BenchInterceptable.BenchException.class, bench::fail);

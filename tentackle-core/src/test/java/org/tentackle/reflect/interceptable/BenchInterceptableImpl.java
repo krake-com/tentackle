@@ -60,6 +60,16 @@ public class BenchInterceptableImpl implements BenchInterceptable {
   }
 
   @Override
+  public int count(Object... args) {
+    return args.length;
+  }
+
+  @Override
+  public String join(String prefix, String... parts) {
+    return prefix + String.join(",", parts);
+  }
+
+  @Override
   public long fail() {
     throw new BenchException();
   }
