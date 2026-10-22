@@ -50,7 +50,7 @@ Single sign-on is added by putting new classes next to the generated ones.
                                                   the ordinary session machinery
 ```
 
-Eight new classes, spread over three modules:
+Nine new classes, spread over three modules:
 
 | Module         | Class                                 | Role                                                           |
 |----------------|---------------------------------------|----------------------------------------------------------------|
