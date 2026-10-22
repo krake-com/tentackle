@@ -31,6 +31,7 @@ import org.tentackle.session.TableName;
  * name := ${symbol_dollar}classname
  * table := ${symbol_dollar}tablename
  * id := ${symbol_dollar}classid
+ * alias := u2g
  * integrity := ${symbol_dollar}integrity
  *
  * ${symbol_pound}${symbol_pound} attributes[-bind, -autoselect, -size]
