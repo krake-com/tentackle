@@ -99,8 +99,8 @@ The framework's first commitment is [fail loudly and early rather than corrupt q
   read; a stale write matches zero rows and is rejected — from a form, a batch, or an admin tool
   alike ([locking](../../../tentackle-persistence/src/main/docs/locking.md)). An opt-in, auto-expiring
   **token lock** adds early conflict warning on top.
-- **A `@Transaction` transparently retries** a whole unit of work when the failure was temporary —
-  an optimistic-lock conflict, a deadlock, a serialization failure.
+- **A `@Transaction(retry = true)` transparently retries** a whole unit of work when the failure was
+  temporary — an optimistic-lock conflict, a deadlock, a serialization failure.
 - **[Validation](../../../tentackle-core/src/main/docs/validation.md) travels with the object.**
   Declared on the member, scope-aware (persisting vs. interactive), severity-aware, executed before
   every persist regardless of code path — and a `ValidationResult` survives a TRIP round-trip with a

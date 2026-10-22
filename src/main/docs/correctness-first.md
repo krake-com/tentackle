@@ -209,9 +209,9 @@ columns — *without a database query*. From that one structural fact, four boun
 by the framework** rather than a recommendation to the programmer:
 
 - **A component cannot be persisted on its own.** There is no "create a child, set its parent id, save the child" path.
-  A component may be persisted only within the **root context of its own root entity**; attempt it through any other
-  context, and the persistence layer throws, fail-fast. The orphaned write that a flat ORM waves through simply has *no
-  API* in Tentackle.
+  A component is persisted only **by its root entity**, together with the root; calling `persist()`, `save()` or
+  `delete()` on the component itself throws, fail-fast, in any context — even the root context of its own aggregate.
+  The orphaned write that a flat ORM waves through simply has *no API* in Tentackle.
 
   ```java
   InvoiceLine line = invoice.on(InvoiceLine.class);  // born into the invoice's root context
@@ -288,7 +288,7 @@ For correctness the important details are:
   order, then hidden ones) — `Transaction → Secured → book()` — so the security check and the transaction boundary
   compose the same way every time, never racing.
 - **Transparent retry on optimistic conflict.** Because the `serial` check (§1) raises a *temporary*
-  `NotFoundException`, a `@Transaction` can re-run the whole transaction against the now-current row — turning a
+  `NotFoundException`, a `@Transaction(retry = true)` re-runs the whole transaction against the now-current row — turning a
   detected conflict into an automatic, correct retry rather than a surfaced error.
 - **Compile-time verification.** Misplacing an interceptor annotation (a `PUBLIC` interceptor on a class method, or
   any interceptor on a non-`Interceptable` method) is a **compilation error**, not a runtime surprise. The mistake
@@ -330,7 +330,7 @@ the safe behavior the default, and fail loudly when the safe path is violated.
 | Rule enforced on only some code paths              | [Validation](../../../tentackle-core/src/main/docs/validation.md)                      | Declared on the member, run before persist, scope/severity-aware, travels over TRIP                                      |
 | Shared cached object mutated by one caller         | [`Immutable`](../../../tentackle-core/src/main/docs/immutable.md)                      | `assertMutable()` guard in every setter; cached PDOs finally immutable; immutable ⇒ not persistable                      |
 | Half-applied undo leaving an impossible state      | [Snapshots](../../../tentackle-pdo/src/main/docs/snapshot.md)                          | Whole aggregate reverts atomically; identity never reverted; stale snapshot throws                                       |
-| Child written or mutated behind its aggregate root | [Aggregate boundaries](../../../tentackle-pdo/src/main/docs/root-columns.md)           | Component persistable only in its root's context; root validates the whole aggregate; out-of-context component immutable |
+| Child written or mutated behind its aggregate root | [Aggregate boundaries](../../../tentackle-pdo/src/main/docs/root-columns.md)           | Component persistable only through its root; root validates the whole aggregate; out-of-context component immutable     |
 | Object valid here, broken there                    | [PDO model](../../../tentackle-pdo/src/main/docs/pdo-vs-orm.md)                        | No lifecycle states; no `LazyInitializationException`; behaviour safe on the object                                      |
 | Forgotten transaction / permission check           | [Interceptors](../../../tentackle-core/src/main/docs/interceptors.md)                  | Declarative, deterministically ordered, compile-time-verified placement                                                  |
 | Mapping drifts from schema                         | [Model + Wurbelizer](../../../tentackle-model/src/main/docs/model-definition.md)       | Single definition generates classes, DDL and migrations together                                                         |
