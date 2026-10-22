@@ -20,6 +20,7 @@ package org.tentackle.persist;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.Serial;
@@ -36,6 +37,8 @@ public class DemoOperationPersistenceImpl extends AbstractPersistentOperation<De
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  private transient int attempts;     // number of invocations of executeWithRetry
 
   /** Variables common to all instances of DemoOperationPersistenceImpl. */
   public static final PersistentOperationClassVariables<DemoOperation, DemoOperationPersistenceImpl> CLASSVARIABLES =
@@ -89,6 +92,29 @@ public class DemoOperationPersistenceImpl extends AbstractPersistentOperation<De
   @Override
   public String execute() {
     return "executed in " + getDomainContext();
+  }
+
+  @Override
+  public int executeWithRetry(int failures, boolean temporary) {
+    attempts++;
+    if (!getSession().isTxRunning()) {
+      throw new PersistenceException(getSession(), "no transaction running");
+    }
+    if (attempts <= failures) {
+      PersistenceException ex = new PersistenceException(getSession(), "failure #" + attempts);
+      ex.setTemporary(temporary);
+      throw ex;
+    }
+    return attempts;
+  }
+
+  /**
+   * Gets the number of invocations of {@link #executeWithRetry(int, boolean)}.
+   *
+   * @return the attempts
+   */
+  public int getAttempts() {
+    return attempts;
   }
 
 }

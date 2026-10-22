@@ -19,6 +19,7 @@
 package org.tentackle.persist;
 
 import org.tentackle.pdo.PersistentOperation;
+import org.tentackle.pdo.Transaction;
 
 /**
  * Persistence interface of {@link DemoOperation}.
@@ -31,5 +32,15 @@ public interface DemoOperationPersistence extends PersistentOperation<DemoOperat
    * @return the result
    */
   String execute();
+
+  /**
+   * Runs within a retryable transaction and fails the given number of times.
+   *
+   * @param failures the number of attempts that fail
+   * @param temporary true if the failures are temporary exceptions
+   * @return the number of attempts until success
+   */
+  @Transaction(value = "retry", retry = true, retryPolicy = "test")
+  int executeWithRetry(int failures, boolean temporary);
 
 }
